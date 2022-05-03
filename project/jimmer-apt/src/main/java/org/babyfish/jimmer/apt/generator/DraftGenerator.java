@@ -1,0 +1,143 @@
+package org.babyfish.jimmer.apt.generator;
+
+import com.squareup.javapoet.*;
+import org.babyfish.jimmer.Draft;
+import org.babyfish.jimmer.apt.GeneratorException;
+import org.babyfish.jimmer.apt.TypeUtils;
+import org.babyfish.jimmer.apt.meta.ImmutableProp;
+import org.babyfish.jimmer.apt.meta.ImmutableType;
+
+import javax.annotation.processing.Filer;
+import javax.lang.model.element.Modifier;
+import java.io.IOException;
+
+import static org.babyfish.jimmer.apt.generator.Constants.DRAFT_CONSUMER_CLASS_NAME;
+
+public class DraftGenerator {
+
+    private TypeUtils typeUtils;
+
+    private ImmutableType type;
+
+    private Filer filer;
+
+    private TypeSpec.Builder typeBuilder;
+
+    public DraftGenerator(
+            TypeUtils typeUtils,
+            ImmutableType type,
+            Filer filer
+    ) {
+        this.typeUtils = typeUtils;
+        this.type = type;
+        this.filer = filer;
+    }
+
+    public void generate() {
+        typeBuilder = TypeSpec
+                .interfaceBuilder(type.getName() + "Draft")
+                .addSuperinterface(type.getClassName())
+                .addSuperinterface(Draft.class);
+        addMembers(type);
+        try {
+            JavaFile
+                    .builder(
+                            type.getPackageName(),
+                            typeBuilder.build()
+                    )
+                    .indent("    ")
+                    .build()
+                    .writeTo(filer);
+        } catch (IOException ex) {
+            throw new GeneratorException(
+                    String.format(
+                            "Cannot generate draft interface for '%s'",
+                            type.getName()
+                    ),
+                    ex
+            );
+        }
+    }
+
+    private void addMembers(
+            ImmutableType type
+    ) {
+        if (type.getModifiers().contains(Modifier.PUBLIC)) {
+            typeBuilder.modifiers.add(Modifier.PUBLIC);
+        }
+        add$();
+        for (ImmutableProp prop : type.getProps().values()) {
+            addGetter(prop, false);
+            addGetter(prop, true);
+            addSetter(prop);
+            addUtilMethod(prop, false);
+            addUtilMethod(prop, true);
+        }
+        new ProducerGenerator(typeUtils, type).generate(typeBuilder);
+    }
+
+    private void add$() {
+        FieldSpec.Builder builder = FieldSpec.builder(
+                ClassName.get(
+                        type.getPackageName(),
+                        type.getName() + "Draft.Producer"
+                ),
+                "$"
+        );
+        builder.modifiers.add(Modifier.PUBLIC);
+        builder.modifiers.add(Modifier.STATIC);
+        builder.modifiers.add(Modifier.FINAL);
+        builder.initializer("Producer.INSTANCE");
+        typeBuilder.addField(builder.build());
+    }
+
+    private void addGetter(
+            ImmutableProp prop,
+            boolean autoCreate
+    ) {
+        if (autoCreate && !prop.isAssociation() && !prop.isList()) {
+            return;
+        }
+        MethodSpec.Builder builder = MethodSpec.methodBuilder(prop.getGetterName());
+        builder.modifiers.add(Modifier.PUBLIC);
+        builder.modifiers.add(Modifier.ABSTRACT);
+        if (autoCreate) {
+            builder.addParameter(boolean.class, "autoCreate");
+        }
+        builder.returns(prop.getDraftTypeName(autoCreate));
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addSetter(
+            ImmutableProp prop
+    ) {
+        MethodSpec.Builder builder = MethodSpec.methodBuilder(prop.getSetterName());
+        builder.modifiers.add(Modifier.PUBLIC);
+        builder.modifiers.add(Modifier.ABSTRACT);
+        builder.addParameter(TypeName.get(prop.getReturnType()), prop.getName());
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addUtilMethod(ImmutableProp prop, boolean withBase) {
+        if (!prop.isAssociation()) {
+            return;
+        }
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder(
+                        prop.isList() ?
+                                prop.getAdderByName() :
+                                prop.getSetterName()
+                )
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
+        if (withBase) {
+            builder.addParameter(prop.getElementTypeName(), "base");
+        }
+
+        ParameterizedTypeName consumerTypeName = ParameterizedTypeName.get(
+                DRAFT_CONSUMER_CLASS_NAME,
+                prop.getDraftElementTypeName()
+        );
+        builder.addParameter(consumerTypeName, "block");
+        typeBuilder.addMethod(builder.build());
+    }
+}
