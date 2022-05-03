@@ -4,10 +4,10 @@ This project has two sub-projects:
 
 ## 1. jimmer-core
      
-     Ported [immer](https://github.com/immerjs/immer) to Java.
+    Ported [immer](https://github.com/immerjs/immer) to Java.
      
-     Click [here](doc/jimmer-core/README.md) to see more
+    Click [here](doc/jimmer-core/README.md) to see more
 
 ## 2. jimmer-sql
      
-     Will come soon
+    Will come soon
