@@ -15,9 +15,6 @@ dependencies {
     annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.2'
 
     implementation 'javax.validation:validation-api:2.0.1.Final'
-
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
 
 java {
