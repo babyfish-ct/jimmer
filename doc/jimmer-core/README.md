@@ -216,13 +216,15 @@ Jimmer-core ported it to Java, let's start
 
 4. Create new object base on existing object(Core value of immer[https://github.com/immerjs/immer] and jimmer-core)
 
-    Book book2 = BookDraft.$.produce(book, b -> {
+    ```java
+    Book book2 = BookDraft.$.produce(book, b -> { // "book" is the object created in the previous step
         b.setName(b.name() + "!");
         b.store().setName(b.store().name() + "!");
         for (AuthorDraft author : b.authors(true)) {
             author.setName(author.name() + "!");
         }
     });
+    ```
     
      The result is
     ```
