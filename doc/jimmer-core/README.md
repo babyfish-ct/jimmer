@@ -2,7 +2,7 @@
 
 jimmer-core ported https://github.com/immerjs/immer to Java.
 
-1. Problems with Java records.
+## 1. Unresolved problems of java record.
 
   Java supported record type since 14, which guarantees the immutability of data and automatically generates all behavioral solidification code.
 
