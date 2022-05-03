@@ -46,7 +46,7 @@ However, although it is suitable for building tuples with few fields in the proj
     ```
 
     1.  Change the name of the root object to "Hello"
-        ```kt
+        ```java
         var newNode = new TreeNode(
             "Hello", // Set name of root node
             oldNode.childNodes()
@@ -58,7 +58,7 @@ However, although it is suitable for building tuples with few fields in the proj
         Breadcrumbs condition as follows
         - first-level object position: pos1
    
-        ```kt
+        ```java
         var newNode = new TreeNode(
             oldNode.name(),
             IntStream
@@ -82,7 +82,7 @@ However, although it is suitable for building tuples with few fields in the proj
         - first-level object position: pos1
         - second-level object position: pos2
 
-        ```kt
+        ```java
         var newNode = new TreeNode(
                 oldNode.name(),
                 IntStream
@@ -123,3 +123,62 @@ However, although it is suitable for building tuples with few fields in the proj
     If you've ever worked with JPA/Hibernate, you've heard about the concept of lazy loading. Objects allow some properties not to be initialized (not null, but unknown). When these unknown properties are accessed for the first time, if the object still maintains a database connection (common in monolithic applications), the data will be loaded from the database; otherwise (common in distributed applications), an exception will be thrown (such as classic exception of Hibernate: org.hibernate.LazyInitializationException).
 
     Of course, there are many technical solutions in the field of data access, not limited to JPA/Hibernate, so not all readers have used JPA/Hibernate. However, the people who have used JPA/Hibernate in the past should be the most, so I still use this example to illustrate the point: entity objects need to be dynamic, not all properties need to be assigned. Unassigned fields cause exceptions when accessed directly, and are automatically ignored in JSON serialization.
+      
+## 2. Is it possible to make immutable objects powerful enough to solve all of the above problems?
+
+Sure!
+
+In the field of JavaScript/TypeScript, there is a well-known open source project [immer](https://github.com/immerjs/immer), which can solve the first three points of the above problems.
+
+> It's winner of the "Breakthrough of the year" React open source award and "Most impactful contribution" JavaScript open source award in 2019
+
+Jimmer-core ported it to Java, let's start
+
+1.  Create project and add gradle dependencies
+    ```grovvy
+    dependencies {
+      implementation 'org.babyfish.jimmer:jimmer-core:0.0.2'
+      annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.2'
+    }
+    ```
+3.  Define your immutable interfaces
+    - BookStore.java
+      ```java
+      package yourpackage;
+      
+      import org.babyfish.jimmer.Immutable;
+      import java.util.List;
+      
+      @Immutable
+      public interface BookStore {
+          String name();
+          List<Book> books(); // one-to-many
+      }
+      ```
+    - Book.java
+      ```java
+      package yourpackage;
+      
+      import org.babyfish.jimmer.Immutable;
+      import java.util.List;
+      
+      @Immutable
+      public interface Book {
+          String name();
+          BookStore store(); // many-to-one
+          List<Author> authors(); // many-to-many
+      }
+      ```
+    - Author.java
+      ```java
+      package yourpackage;
+      
+      import org.babyfish.jimmer.Immutable;
+      import java.util.List;
+      
+      @Immutable
+      public interface Author {
+          String name();
+          List<Book> books(); // many-to-many
+      }
+      ```
