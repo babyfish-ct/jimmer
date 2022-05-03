@@ -109,6 +109,8 @@ public class DraftContext {
                     if (newList == null) {
                         newList = new ArrayList<>(list.subList(0, index));
                     }
+                }
+                if (newList != null) {
                     newList.add(resolved);
                 }
                 index++;
