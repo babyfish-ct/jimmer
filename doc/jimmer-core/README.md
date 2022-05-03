@@ -249,8 +249,10 @@ Jimmer-core ported it to Java, let's start
         List<TreeNode> childNodes();
     }
     ```
+    
     Then
-    ```
+    
+    ```java
     TreeNode oldNode = ...blabla...
     TreeNode newNode = TreeNode.$produce(oldNode, n -> {
         n.childNodes(true).get(pos1).childNodes(true).get(pos2).setName("Hello");
