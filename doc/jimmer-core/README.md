@@ -141,7 +141,8 @@ Jimmer-core ported it to Java, let's start
       annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.2'
     }
     ```
-3.  Define your immutable interfaces
+    
+2.  Define your immutable interfaces
     - BookStore.java
       ```java
       package yourpackage;
@@ -188,3 +189,42 @@ Jimmer-core ported it to Java, let's start
     > Regardless of the choice, everyone on the team should be on the same page.
     
     After the Annotation processor completes, 3 new interfaces are automatically generated: **BookStoreDraft**, **BookDraft** and **AuthorDraft**. All the magic is in these three auto-generated interfaces.
+     
+3.  Create a completely new object from scratch
+
+    ```java
+    Book book = BookDraft.$.produce(b -> {
+        b.setName("book");
+        b.setStore(s -> {
+            s.setName("parent");
+        });
+        b.addIntoAuthors(a -> {
+            a.setName("child-1");
+        });
+        b.addIntoAuthors(a -> {
+            a.setName("child-2");
+        });
+    });
+    System.out.println(book);
+    ```
+    
+    The result is
+    ```
+    {"name":"book","store":{"name":"parent"},"authors":[{"name":"child-1"},{"name":"child-2"}]}
+    ```
+    > Properties not found in the output (eg: *BookStore.books*, *Author.books*) are unloaded properties, they are automatically ignored in JSON.
+
+4. Create new object base on existing object(Core value of immer[https://github.com/immerjs/immer] and jimmer-core)
+
+    Book book2 = BookDraft.$.produce(book, b -> {
+        b.setName(b.name() + "!");
+        b.store().setName(b.store().name() + "!");
+        for (AuthorDraft author : b.authors(true)) {
+            author.setName(author.name() + "!");
+        }
+    });
+    
+     The result is
+    ```
+    {"name":"book!","store":{"name":"parent!"},"authors":[{"name":"child-1!"},{"name":"child-2!"}]}
+    ```
