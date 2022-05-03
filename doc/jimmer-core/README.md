@@ -182,3 +182,9 @@ Jimmer-core ported it to Java, let's start
           List<Book> books(); // many-to-many
       }
       ```
+      
+    > When defining these interfaces, you can either follow the naming convention of java record, with properties not starting with "get" (as in the example here), or follow the naming convention of traditional Java Beans, with properties starting with "get".
+    > 
+    > Regardless of the choice, everyone on the team should be on the same page.
+    
+    After the Annotation processor completes, 3 new interfaces are automatically generated: **BookStoreDraft**, **BookDraft** and **AuthorDraft**. All the magic is in these three auto-generated interfaces.
