@@ -237,7 +237,7 @@ Jimmer-core ported it to Java, let's start
 
     - For a huge object tree, only the proxy of the root object is created unconditionally, and other proxy objects are created on demand according to the operation of the code.
 
-    - Finally, only the modified proxies and their parent proxies recreate new immutable objects, the unmodified proxies still only hold a reference to the original object. That is, future modified subtrees are fully shared from the original object tree.
+    - Finally, only the modified proxies and their parent proxies recreate new immutable objects, the unmodified proxies still only hold a reference to the original object. That is, unchanged subtrees are fully shared from the original object tree.
 
 5.  How to solve that nightmarish problem in Chapter 1?
     
