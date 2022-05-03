@@ -230,3 +230,29 @@ Jimmer-core ported it to Java, let's start
     ```
     {"name":"book!","store":{"name":"parent!"},"authors":[{"name":"child-1!"},{"name":"child-2!"}]}
     ```
+    
+    - BookStore, Book and Author are immutable types; but BookStoreDraft, BookDraft and AuthorDraft are mutable types and you can modify them very simply (Drafts are parameters of lambda expressions in the example).
+
+    - The Draft object is a proxy, which does NOT unconditionally copy the data of the object. Only modifying the proxy will cause the data to be copied. This is very similar to the copy-on-write strategy of linux fork.
+
+    - For a huge object tree, only the proxy of the root object is created unconditionally, and other proxy objects are created on demand according to the operation of the code.
+
+    - Finally, only the modified proxies and their parent proxies recreate new immutable objects, the unmodified proxies still only hold a reference to the original object. That is, future modified subtrees are fully shared from the original object tree.
+
+5.  How to solve that nightmarish problem in Chapter 1?
+    
+    Define TreeNode
+    ```java
+    @Immutable
+    public interface TreeNode {
+        String name();
+        List<TreeNode> childNodes();
+    }
+    ```
+    Then
+    ```
+    TreeNode oldNode = ...blabla...
+    TreeNode newNode = TreeNode.$produce(oldNode, n -> {
+        n.childNodes(true).get(pos1).childNodes(true).get(pos2).setName("Hello");
+    });
+    ```
