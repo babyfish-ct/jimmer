@@ -101,7 +101,10 @@ However, although it is suitable for building tuples with few fields in the proj
                                         } else {
                                             return new TreeNode(
                                                     "Hello", // Set name of level-2 node
-                                                    oldNode.childNodes().get(index1).childNodes().get(index2).childNodes()
+                                                    oldNode
+                                                        .childNodes().get(index1)
+                                                        .childNodes().get(index2)
+                                                        .childNodes()
                                             );
                                         }
                                     })
