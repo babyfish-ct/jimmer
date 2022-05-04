@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.apt;
 
 import org.babyfish.jimmer.apt.generator.DraftGenerator;
+import org.babyfish.jimmer.apt.generator.TableGenerator;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.apt.meta.MetaException;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -37,14 +39,28 @@ public class ImmutableProcessor extends AbstractProcessor {
         for (Element element : roundEnv.getRootElements()) {
             if (element instanceof TypeElement) {
                 TypeElement typeElement = (TypeElement)element;
-                if (typeUtils.isImmutable(typeElement) &&
-                        element.getKind() == ElementKind.INTERFACE) {
+                if (typeUtils.isImmutable(typeElement)) {
+                    if (typeElement.getKind() != ElementKind.INTERFACE) {
+                        throw new MetaException(
+                                "Illegal class \"" +
+                                        typeElement.getQualifiedName().toString() +
+                                        "\", immutable type must be interface"
+                        );
+                    }
                     if (typeUtils.isImmutable(typeElement)) {
+                        ImmutableType immutableType = typeUtils.getImmutableType(typeElement);
                         new DraftGenerator(
                                 typeUtils,
-                                typeUtils.getImmutableType(typeElement),
+                                immutableType,
                                 filer
                         ).generate();
+                        if (immutableType.isEntity()) {
+                            new TableGenerator(
+                                    typeUtils,
+                                    immutableType,
+                                    filer
+                            ).generate();
+                        }
                     }
                 }
             }

@@ -14,6 +14,8 @@ import java.util.function.Function;
 
 public class ImmutableType {
 
+    private boolean isEntity;
+
     private String packageName;
 
     private String name;
@@ -40,10 +42,15 @@ public class ImmutableType {
 
     private ClassName draftImplClassName;
 
+    private ClassName tableClassName;
+
+    private ClassName subQueryTableClassName;
+
     public ImmutableType(
             TypeUtils typeUtils,
             TypeElement typeElement
     ) {
+        isEntity = typeUtils.isEntity(typeElement);
         packageName = ((PackageElement)typeElement.getEnclosingElement()).getQualifiedName().toString();
         name = typeElement.getSimpleName().toString();
         qualifiedName = typeElement.getQualifiedName().toString();
@@ -80,6 +87,12 @@ public class ImmutableType {
         implementorClassName = toClassName(name -> name + "Draft", "Producer", "Implementor");
         implClassName = toClassName(name -> name + "Draft", "Producer", "Impl");
         draftImplClassName = toClassName(name -> name + "Draft", "Producer", "DraftImpl");
+        tableClassName = toClassName(name -> name + "Table");
+        subQueryTableClassName = toClassName(name -> name + "Table", "SQT");
+    }
+
+    public boolean isEntity() {
+        return isEntity;
     }
 
     public String getPackageName() {
@@ -142,6 +155,14 @@ public class ImmutableType {
 
     public ClassName getDraftImplClassName() {
         return draftImplClassName;
+    }
+
+    public ClassName getTableClassName() {
+        return tableClassName;
+    }
+
+    public ClassName getSubQueryTableClassName() {
+        return subQueryTableClassName;
     }
 
     private ClassName toClassName(

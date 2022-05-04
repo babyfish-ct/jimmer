@@ -1,4 +1,6 @@
-package org.babyfish.jimmer;
+package org.babyfish.jimmer.model;
+
+import org.babyfish.jimmer.Immutable;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;

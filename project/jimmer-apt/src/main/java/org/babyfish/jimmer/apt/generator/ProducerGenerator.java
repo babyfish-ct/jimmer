@@ -98,7 +98,8 @@ public class ProducerGenerator {
 
         builder
                 .add(
-                        "(ctx, base) -> new DraftImpl(ctx, ($T)base)\n",
+                        "(ctx, base) -> new $T(ctx, ($T)base)\n",
+                        type.getDraftImplClassName(),
                         type.getClassName()
                 )
                 .unindent()

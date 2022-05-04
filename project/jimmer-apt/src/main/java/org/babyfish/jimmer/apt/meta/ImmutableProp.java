@@ -107,7 +107,7 @@ public class ImmutableProp {
                     getterName.substring(1);
         }
 
-        loadedStateName = getterName + "Loaded";
+        loadedStateName = name + "Loaded";
 
         if (typeUtils.isCollection(returnType)) {
             if (!typeUtils.isListStrictly(returnType)) {
@@ -134,6 +134,17 @@ public class ImmutableProp {
         }
 
         isAssociation = typeUtils.isImmutable(elementType);
+
+        if (typeUtils.isEntity(declaringElement) &&
+                (isAssociation || isList) &&
+                !typeUtils.isEntity(elementType)
+        ) {
+            throw new MetaException(
+                    "Illegal property \"" +
+                            this +
+                            "\", association property of entity interface must reference to entity type"
+            );
+        }
 
         elementTypeName = TypeName.get(elementType);
         if (isList) {
@@ -325,8 +336,9 @@ public class ImmutableProp {
         if (implicitNullable != null) {
             return implicitNullable;
         }
-        return declaringElement.getAnnotation(Immutable.class).value() ==
-                Immutable.Nullity.NULLABLE;
+
+        Immutable immutable = declaringElement.getAnnotation(Immutable.class);
+        return immutable != null && (immutable.value() == Immutable.Nullity.NULLABLE);
     }
 
     private Boolean getImplicitNullable() {
