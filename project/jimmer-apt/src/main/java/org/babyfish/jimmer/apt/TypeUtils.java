@@ -24,6 +24,12 @@ public class TypeUtils {
 
     private TypeMirror collectionType;
 
+    private TypeMirror stringType;
+
+    private TypeMirror numberType;
+
+    private TypeMirror comparableType;
+
     private Set<Class<? extends Annotation>> annotationTypes;
 
     private Map<TypeElement, ImmutableType> immutableTypeMap = new HashMap<>();
@@ -35,6 +41,15 @@ public class TypeUtils {
                         .getTypeElement(Collection.class.getName())
                         .asType()
         );
+        stringType = elements
+                .getTypeElement(String.class.getName())
+                .asType();
+        numberType = elements
+                .getTypeElement(Number.class.getName())
+                .asType();
+        comparableType = elements
+                .getTypeElement(Comparable.class.getName())
+                .asType();
     }
 
     public boolean isImmutable(TypeElement typeElement) {
@@ -42,9 +57,21 @@ public class TypeUtils {
                 typeElement.getAnnotation(Entity.class) != null;
     }
 
+    public boolean isEntity(TypeElement typeElement) {
+        return typeElement.getAnnotation(Entity.class) != null;
+    }
+
     public boolean isImmutable(TypeMirror type) {
         Element element = types.asElement(type);
-        return element != null && element.getAnnotation(Immutable.class) != null;
+        return element != null && (
+                element.getAnnotation(Immutable.class) != null ||
+                        element.getAnnotation(Entity.class) != null
+        );
+    }
+
+    public boolean isEntity(TypeMirror type) {
+        Element element = types.asElement(type);
+        return element != null && element.getAnnotation(Entity.class) != null;
     }
 
     public boolean isCollection(TypeMirror type) {
@@ -53,7 +80,7 @@ public class TypeUtils {
 
     public boolean isListStrictly(TypeMirror type) {
         Element element = types.asElement(type);
-        return element != null && element.toString() != "java.util.List";
+        return element != null && element.toString().equals("java.util.List");
     }
 
     public ImmutableType getImmutableType(TypeElement typeElement) {
@@ -68,18 +95,15 @@ public class TypeUtils {
         return getImmutableType(typeElement);
     }
 
-    public ClassName classNameOf(
-            TypeMirror type,
-            Function<String, String> nameTranslator,
-            String ... deeperSimpleNames) {
-        Element element = types.asElement(type);
+    public boolean isString(TypeMirror type) {
+        return types.isSubtype(type, stringType);
+    }
 
-        return ClassName.get(
-                ((PackageElement)element.getEnclosingElement()).getQualifiedName().toString(),
-                nameTranslator != null ?
-                        nameTranslator.apply(element.getSimpleName().toString()) :
-                        element.getSimpleName().toString(),
-                deeperSimpleNames
-        );
+    public boolean isNumber(TypeMirror type) {
+        return types.isSubtype(type, numberType);
+    }
+
+    public boolean isComparable(TypeMirror type) {
+        return types.isSubtype(type, comparableType);
     }
 }

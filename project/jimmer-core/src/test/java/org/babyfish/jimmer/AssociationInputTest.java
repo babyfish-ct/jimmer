@@ -1,10 +1,11 @@
 package org.babyfish.jimmer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.babyfish.jimmer.model.AssociationInput;
+import org.babyfish.jimmer.model.AssociationInputDraft;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Iterator;
 import java.util.ListIterator;
 
 public class AssociationInputTest {
