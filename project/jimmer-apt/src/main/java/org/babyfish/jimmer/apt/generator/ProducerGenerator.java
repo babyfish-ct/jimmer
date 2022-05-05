@@ -9,6 +9,8 @@ import org.babyfish.jimmer.runtime.Internal;
 
 import javax.lang.model.element.Modifier;
 
+import java.lang.annotation.Annotation;
+
 import static org.babyfish.jimmer.apt.generator.Constants.DRAFT_CONSUMER_CLASS_NAME;
 import static org.babyfish.jimmer.apt.generator.Constants.RUNTIME_TYPE_CLASS_NAME;
 
@@ -115,14 +117,26 @@ public class ProducerGenerator {
             } else {
                 category = ImmutablePropCategory.SCALAR;
             }
-            builder.add(
-                    ".add($S, $T.$L, $T.class, $L)\n",
-                    prop.getName(),
-                    ImmutablePropCategory.class,
-                    category.name(),
-                    prop.getElementTypeName(),
-                    prop.isNullable()
-            );
+            if (prop.getAssociationAnnotation() != null) {
+                builder.add(
+                        ".add($S, $T.$L, $T.class, $L, $T.class)\n",
+                        prop.getName(),
+                        ImmutablePropCategory.class,
+                        category.name(),
+                        prop.getElementTypeName(),
+                        prop.isNullable(),
+                        prop.getAssociationAnnotation().annotationType()
+                );
+            } else {
+                builder.add(
+                        ".add($S, $T.$L, $T.class, $L)\n",
+                        prop.getName(),
+                        ImmutablePropCategory.class,
+                        category.name(),
+                        prop.getElementTypeName(),
+                        prop.isNullable()
+                );
+            }
         }
         builder.add(".build()")
                 .unindent();
