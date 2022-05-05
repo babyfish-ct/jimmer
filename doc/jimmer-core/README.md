@@ -137,8 +137,8 @@ Jimmer-core ported it to Java, let's start
 1.  Create project and add gradle dependencies
     ```grovvy
     dependencies {
-      implementation 'org.babyfish.jimmer:jimmer-core:0.0.2'
-      annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.2'
+      implementation 'org.babyfish.jimmer:jimmer-core:0.0.3'
+      annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.3'
     }
     ```
     
@@ -214,7 +214,7 @@ Jimmer-core ported it to Java, let's start
     ```
     > Properties not found in the output (eg: *BookStore.books*, *Author.books*) are unloaded properties, they are automatically ignored in JSON.
 
-4. Create new object base on old object(Core value of immer[https://github.com/immerjs/immer] and jimmer-core)
+4. Create new object base on old object(Core value of [immer](https://github.com/immerjs/immer) and jimmer-core)
 
     ```java
     Book book2 = BookDraft.$.produce(book, b -> { // "book" is the old object
