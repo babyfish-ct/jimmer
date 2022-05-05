@@ -137,8 +137,8 @@ Jimmer-core ported it to Java, let's start
 1.  Create project and add gradle dependencies
     ```grovvy
     dependencies {
-      implementation 'org.babyfish.jimmer:jimmer-core:0.0.2'
-      annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.2'
+      implementation 'org.babyfish.jimmer:jimmer-core:0.0.3'
+      annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.3'
     }
     ```
     
