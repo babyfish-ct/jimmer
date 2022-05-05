@@ -214,7 +214,7 @@ Jimmer-core ported it to Java, let's start
     ```
     > Properties not found in the output (eg: *BookStore.books*, *Author.books*) are unloaded properties, they are automatically ignored in JSON.
 
-4. Create new object base on old object(Core value of immer[https://github.com/immerjs/immer] and jimmer-core)
+4. Create new object base on old object(Core value of [immer](https://github.com/immerjs/immer) and jimmer-core)
 
     ```java
     Book book2 = BookDraft.$.produce(book, b -> { // "book" is the old object
