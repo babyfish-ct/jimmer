@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.meata;
 
+import java.lang.annotation.Annotation;
+
 public class ImmutableProp {
 
     private ImmutableType declaringType;
@@ -12,17 +14,22 @@ public class ImmutableProp {
 
     private boolean nullable;
 
+    private Class<? extends Annotation> associationType;
+
     ImmutableProp(
             ImmutableType declaringType,
             String name,
             ImmutablePropCategory category,
             Class<?> elementClass,
-            boolean nullable
+            boolean nullable,
+            Class<? extends Annotation> associationType
     ) {
         this.declaringType = declaringType;
         this.name = name;
         this.category = category;
         this.elementClass = elementClass;
+        this.nullable = nullable;
+        this.associationType = associationType;
     }
 
     public ImmutableType getDeclaringType() {
@@ -59,6 +66,14 @@ public class ImmutableProp {
 
     public boolean isEntityList() {
         return this.category == ImmutablePropCategory.ENTITY_LIST;
+    }
+
+    public boolean isNullable() {
+        return nullable;
+    }
+
+    public Class<? extends Annotation> getAssociationType() {
+        return associationType;
     }
 
     @Override

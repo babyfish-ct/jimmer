@@ -14,11 +14,11 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Null;
 import java.lang.annotation.Annotation;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class ImmutableProp {
 
@@ -53,6 +53,8 @@ public class ImmutableProp {
     private boolean isAssociation;
 
     private boolean isNullable;
+
+    private Annotation associationAnnotation;
 
     public ImmutableProp(
             TypeUtils typeUtils,
@@ -144,6 +146,72 @@ public class ImmutableProp {
                             this +
                             "\", association property of entity interface must reference to entity type"
             );
+        }
+
+        OneToOne oneToOne = getAnnotation(OneToOne.class);
+        OneToMany oneToMany = getAnnotation(OneToMany.class);
+        ManyToOne manyToOne = getAnnotation(ManyToOne.class);
+        ManyToMany manyToMany = getAnnotation(ManyToMany.class);
+        Annotation[] associationAnnotations = Arrays.stream(
+                new Annotation[] { oneToOne, oneToMany, manyToOne, manyToMany }
+        ).filter(Objects::nonNull).toArray(Annotation[]::new);
+        if (declaringElement.getAnnotation(Entity.class) == null) {
+            if (associationAnnotations.length != 0) {
+                throw new MetaException(
+                        "Illegal property \"" +
+                                this +
+                                "\", it cannot be marked by @" +
+                                associationAnnotations[0].annotationType().getName() +
+                                "because the current type is nto entity"
+                );
+            }
+        } else {
+            if (isAssociation) {
+                if (associationAnnotations.length == 0) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", association property must be marked by one of these annotations: " +
+                                    "@OneToOne, @OneToMany, @ManyToOne or @ManyToMany"
+                    );
+                }
+                if (associationAnnotations.length > 1) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it cannot be marked by both @" +
+                                    associationAnnotations[0].annotationType().getName() +
+                                    "and @" +
+                                    associationAnnotations[1].annotationType().getName()
+                    );
+                }
+                associationAnnotation = associationAnnotations[0];
+                if (isList && (associationAnnotation instanceof OneToOne ||
+                        associationAnnotation instanceof ManyToOne)) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", list property cannot be marked by both @" +
+                                    associationAnnotation.annotationType().getName()
+                    );
+                }
+                if (!isList && (associationAnnotation instanceof OneToMany ||
+                        associationAnnotation instanceof ManyToMany)) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", list property cannot be marked by both @" +
+                                    associationAnnotation.annotationType().getName()
+                    );
+                }
+            } else if (associationAnnotations.length != 0) {
+                throw new MetaException(
+                        "Illegal property \"" +
+                                this +
+                                "\", scalar property cannot be marked by @" +
+                                associationAnnotations[0].annotationType().getName()
+                );
+            }
         }
 
         elementTypeName = TypeName.get(elementType);
@@ -270,64 +338,123 @@ public class ImmutableProp {
         return executableElement.getAnnotationsByType(annotationType);
     }
 
+    public Annotation getAssociationAnnotation() {
+        return associationAnnotation;
+    }
+
     @Override
     public String toString() {
         return declaringElement.getQualifiedName().toString() + '.' + name;
     }
 
     private boolean determineNullable() {
-        Annotation notNullAnnotation = Arrays.stream(getAnnotations(NotNull.class))
+
+        AnnotationRef notNullAnnotationRef = Arrays.stream(getAnnotations(NotNull.class))
                 .findFirst()
+                .map(it -> AnnotationRef.of(it))
                 .orElse(null);
-        if (notNullAnnotation == null) {
-            notNullAnnotation = getAnnotation(NonNull.class);
+        if (notNullAnnotationRef == null) {
+            notNullAnnotationRef = AnnotationRef.of(getAnnotation(NonNull.class));
         }
-        if (notNullAnnotation == null) {
-            notNullAnnotation = getAnnotation(org.jetbrains.annotations.NotNull.class);
+        if (notNullAnnotationRef == null) {
+            notNullAnnotationRef = AnnotationRef.of(getAnnotation(org.jetbrains.annotations.NotNull.class));
+        }
+        if (notNullAnnotationRef == null) {
+            ManyToOne manyToOne = getAnnotation(ManyToOne.class);
+            if (manyToOne != null && !manyToOne.optional()) {
+                notNullAnnotationRef = new AnnotationRef(ManyToOne.class, "optional", false);
+            }
+        }
+        if (notNullAnnotationRef == null) {
+            OneToOne oneToOne = getAnnotation(OneToOne.class);
+            if (oneToOne != null && !oneToOne.optional()) {
+                notNullAnnotationRef = new AnnotationRef(OneToOne.class, "optional", false);
+            }
+        }
+        if (notNullAnnotationRef == null) {
+            notNullAnnotationRef = Arrays.stream(getAnnotations(Column.class))
+                    .filter(it -> !it.nullable())
+                    .findFirst()
+                    .map(it -> new AnnotationRef(Column.class, "nullable", false))
+                    .orElse(null);
+        }
+        if (notNullAnnotationRef == null) {
+            notNullAnnotationRef = Arrays.stream(getAnnotations(JoinColumn.class))
+                    .filter(it -> !it.nullable())
+                    .findFirst()
+                    .map(it -> new AnnotationRef(JoinColumn.class, "nullable", false))
+                    .orElse(null);
         }
 
-        Annotation nullAnnotation = Arrays.stream(getAnnotations(Null.class))
+        AnnotationRef nullAnnotationRef = Arrays.stream(getAnnotations(Null.class))
                 .findFirst()
+                .map(it -> AnnotationRef.of(it))
                 .orElse(null);
-        if (nullAnnotation == null) {
-            nullAnnotation = getAnnotation(Nullable.class);
+        if (nullAnnotationRef == null) {
+            nullAnnotationRef = AnnotationRef.of(getAnnotation(Nullable.class));
         }
-        if (nullAnnotation == null) {
-            nullAnnotation = getAnnotation(org.jetbrains.annotations.Nullable.class);
+        if (nullAnnotationRef == null) {
+            nullAnnotationRef = AnnotationRef.of(getAnnotation(org.jetbrains.annotations.Nullable.class));
+        }
+        if (nullAnnotationRef == null) {
+            ManyToOne manyToOne = getAnnotation(ManyToOne.class);
+            if (manyToOne != null && manyToOne.optional()) {
+                nullAnnotationRef = new AnnotationRef(ManyToOne.class, "optional", true);
+            }
+        }
+        if (nullAnnotationRef == null) {
+            OneToOne oneToOne = getAnnotation(OneToOne.class);
+            if (oneToOne != null && oneToOne.optional()) {
+                nullAnnotationRef = new AnnotationRef(OneToOne.class, "optional", true);
+            }
+        }
+        if (nullAnnotationRef == null) {
+            nullAnnotationRef = Arrays.stream(getAnnotations(Column.class))
+                    .filter(it -> it.nullable())
+                    .findFirst()
+                    .map(it -> new AnnotationRef(Column.class, "nullable", true))
+                    .orElse(null);
+        }
+        if (nullAnnotationRef == null) {
+            nullAnnotationRef = Arrays.stream(getAnnotations(JoinColumn.class))
+                    .filter(it -> it.nullable())
+                    .findFirst()
+                    .map(it -> new AnnotationRef(JoinColumn.class, "nullable", true))
+                    .orElse(null);
         }
 
-        if (notNullAnnotation != null && nullAnnotation != null) {
+        if (notNullAnnotationRef != null && nullAnnotationRef != null) {
             throw new MetaException(
                     "Illegal property \"" +
                             this +
-                            "\", it is marked by both @" +
-                            notNullAnnotation.annotationType().getName() +
+                            "\", its nullity is conflict because it is marked by both " +
+                            notNullAnnotationRef +
                             " and @" +
-                            nullAnnotation.annotationType().getName()
+                            nullAnnotationRef
             );
         }
 
         Boolean implicitNullable = getImplicitNullable();
 
-        if (notNullAnnotation != null) {
+        if (notNullAnnotationRef != null) {
             if (Boolean.TRUE.equals(implicitNullable)) {
                 throw new MetaException(
                         "Illegal property \"" +
                                 this +
-                                "\", it is marked by @" +
-                                notNullAnnotation.annotationType().getName() +
+                                "\", it is marked by" +
+                                notNullAnnotationRef +
                                 ", but its type is consider as nullable type"
                 );
             }
             return false;
         }
-        if (nullAnnotation != null) {
+        if (nullAnnotationRef != null) {
             if (Boolean.FALSE.equals(implicitNullable)) {
                 throw new MetaException(
                         "Illegal property \"" +
                                 this +
                                 "\", it is marked by @" +
-                                nullAnnotation.annotationType().getName() +
+                                nullAnnotationRef +
                                 ", but its type is consider as non-null type"
                 );
             }
@@ -352,5 +479,64 @@ public class ImmutableProp {
             return true;
         }
         return null;
+    }
+
+    private static class AnnotationRef {
+
+        private Class<? extends Annotation> annotationType;
+
+        private Map<String, Object> valueMap;
+
+        public static AnnotationRef of(Annotation annotation) {
+            return annotation == null ?
+                    null :
+                    new AnnotationRef(annotation.annotationType());
+        }
+
+        public AnnotationRef(Class<? extends Annotation> annotationType) {
+            this.annotationType = annotationType;
+        }
+
+        public AnnotationRef(
+                Class<? extends Annotation> annotationType,
+                String attrName,
+                Object attrValue
+        ) {
+            this.annotationType = annotationType;
+            Map<String, Object> valueMap = new HashMap<>();
+            valueMap.put(attrName, attrValue);
+            this.valueMap = valueMap;
+        }
+
+        public AnnotationRef(
+                Class<Annotation> annotationType,
+                Map<String, Object> valueMap
+        ) {
+            this.annotationType = annotationType;
+            this.valueMap = valueMap;
+        }
+
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append('@');
+            builder.append(annotationType.getName());
+            if (valueMap != null && !valueMap.isEmpty()) {
+                builder.append('(');
+                boolean addComma = false;
+                for (Map.Entry<String, Object> e : valueMap.entrySet()) {
+                    if (addComma) {
+                        builder.append(", ");
+                    } else {
+                        addComma = true;
+                    }
+                    builder
+                            .append(e.getKey())
+                            .append('=')
+                            .append(e.getValue());
+                }
+                builder.append(')');
+            }
+            return builder.toString();
+        }
     }
 }

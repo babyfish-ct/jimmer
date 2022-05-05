@@ -4,6 +4,7 @@ import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.runtime.DraftContext;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -212,6 +213,22 @@ public class ImmutableType {
                 Class<?> elementType,
                 boolean nullable
         ) {
+            return add(
+                    name,
+                    category,
+                    elementType,
+                    nullable,
+                    null
+            );
+        }
+
+        public Builder add(
+                String name,
+                ImmutablePropCategory category,
+                Class<?> elementType,
+                boolean nullable,
+                Class<? extends Annotation> associationType
+        ) {
             validate();
             if (type.declaredProps.containsKey(name)) {
                 throw new IllegalArgumentException(
@@ -229,7 +246,8 @@ public class ImmutableType {
                             name,
                             category,
                             elementType,
-                            nullable
+                            nullable,
+                            associationType
                     )
             );
             return this;
