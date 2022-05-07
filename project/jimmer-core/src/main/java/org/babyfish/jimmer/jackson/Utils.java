@@ -3,7 +3,7 @@ package org.babyfish.jimmer.jackson;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.SimpleType;
-import org.babyfish.jimmer.meata.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableProp;
 
 import java.util.List;
 

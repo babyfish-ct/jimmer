@@ -3,7 +3,7 @@ package org.babyfish.jimmer.apt.generator;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.DraftConsumer;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
-import org.babyfish.jimmer.meata.ImmutableType;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftContext;
 
 import java.util.function.BiConsumer;
@@ -30,6 +30,12 @@ class Constants {
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.table",
                     "SubQueryTable"
+            );
+
+    public static final ClassName ABSTRACT_TABLE_WRAPPER_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.table.spi",
+                    "AbstractTableWrapper"
             );
 
     public static final ClassName SQL_CLIENT_CLASS_NAME =

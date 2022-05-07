@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationConfig;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.deser.Deserializers;
-import org.babyfish.jimmer.meata.ImmutableType;
+import org.babyfish.jimmer.meta.ImmutableType;
 
 public class ImmutableDeserializers extends Deserializers.Base {
 

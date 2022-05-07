@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.ast.Executable;
 
 import java.util.List;
 
-interface TypedRootQuery<R> extends Executable<List<R>> {
+public interface TypedRootQuery<R> extends Executable<List<R>> {
 
     TypedRootQuery<R> union(TypedRootQuery<R> other);
 

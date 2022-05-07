@@ -11,7 +11,6 @@ import org.springframework.lang.Nullable;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.persistence.*;
@@ -137,7 +136,7 @@ public class ImmutableProp {
 
         isAssociation = typeUtils.isImmutable(elementType);
 
-        if (typeUtils.isEntity(declaringElement) &&
+        if (declaringElement.getAnnotation(Entity.class) != null &&
                 (isAssociation || isList) &&
                 !typeUtils.isEntity(elementType)
         ) {
@@ -148,71 +147,7 @@ public class ImmutableProp {
             );
         }
 
-        OneToOne oneToOne = getAnnotation(OneToOne.class);
-        OneToMany oneToMany = getAnnotation(OneToMany.class);
-        ManyToOne manyToOne = getAnnotation(ManyToOne.class);
-        ManyToMany manyToMany = getAnnotation(ManyToMany.class);
-        Annotation[] associationAnnotations = Arrays.stream(
-                new Annotation[] { oneToOne, oneToMany, manyToOne, manyToMany }
-        ).filter(Objects::nonNull).toArray(Annotation[]::new);
-        if (declaringElement.getAnnotation(Entity.class) == null) {
-            if (associationAnnotations.length != 0) {
-                throw new MetaException(
-                        "Illegal property \"" +
-                                this +
-                                "\", it cannot be marked by @" +
-                                associationAnnotations[0].annotationType().getName() +
-                                "because the current type is nto entity"
-                );
-            }
-        } else {
-            if (isAssociation) {
-                if (associationAnnotations.length == 0) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", association property must be marked by one of these annotations: " +
-                                    "@OneToOne, @OneToMany, @ManyToOne or @ManyToMany"
-                    );
-                }
-                if (associationAnnotations.length > 1) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", it cannot be marked by both @" +
-                                    associationAnnotations[0].annotationType().getName() +
-                                    "and @" +
-                                    associationAnnotations[1].annotationType().getName()
-                    );
-                }
-                associationAnnotation = associationAnnotations[0];
-                if (isList && (associationAnnotation instanceof OneToOne ||
-                        associationAnnotation instanceof ManyToOne)) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", list property cannot be marked by both @" +
-                                    associationAnnotation.annotationType().getName()
-                    );
-                }
-                if (!isList && (associationAnnotation instanceof OneToMany ||
-                        associationAnnotation instanceof ManyToMany)) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", list property cannot be marked by both @" +
-                                    associationAnnotation.annotationType().getName()
-                    );
-                }
-            } else if (associationAnnotations.length != 0) {
-                throw new MetaException(
-                        "Illegal property \"" +
-                                this +
-                                "\", scalar property cannot be marked by @" +
-                                associationAnnotations[0].annotationType().getName()
-                );
-            }
-        }
+        initializeAssociationAnnotation();
 
         elementTypeName = TypeName.get(elementType);
         if (isList) {
@@ -347,6 +282,208 @@ public class ImmutableProp {
         return declaringElement.getQualifiedName().toString() + '.' + name;
     }
 
+    private void initializeAssociationAnnotation() {
+        Transient trans = getAnnotation(Transient.class);
+        JoinColumn[] joinColumns = getAnnotations(JoinColumn.class);
+        JoinTable joinTable = getAnnotation(JoinTable.class);
+        Column column = getAnnotation(Column.class);
+        OneToOne oneToOne = getAnnotation(OneToOne.class);
+        OneToMany oneToMany = getAnnotation(OneToMany.class);
+        ManyToOne manyToOne = getAnnotation(ManyToOne.class);
+        ManyToMany manyToMany = getAnnotation(ManyToMany.class);
+        Annotation[] associationAnnotations = Arrays.stream(
+                new Annotation[] { oneToOne, oneToMany, manyToOne, manyToMany }
+        ).filter(Objects::nonNull).toArray(Annotation[]::new);
+        if (trans != null) {
+            Annotation conflict = joinColumns.length != 0 ? joinColumns[0] : null;
+            if (conflict == null) {
+                conflict = joinTable;
+                if (conflict == null) {
+                    conflict = column;
+                    if (conflict == null && associationAnnotations.length != 0) {
+                        conflict = associationAnnotations[0];
+                    }
+                }
+            }
+            if (conflict != null) {
+                throw new MetaException(
+                        "Illegal property \"" +
+                                this +
+                                "\", it is marked by both @" +
+                                Transient.class.getName() +
+                                " and @" +
+                                conflict.annotationType().getName()
+                );
+            }
+            return;
+        }
+        if (declaringElement.getAnnotation(Entity.class) == null) {
+            if (associationAnnotations.length != 0) {
+                throw new MetaException(
+                        "Illegal property \"" +
+                                this +
+                                "\", it cannot be marked by @" +
+                                associationAnnotations[0].annotationType().getName() +
+                                "because the current type is nto entity"
+                );
+            }
+        } else {
+            if (isAssociation) {
+                if (associationAnnotations.length == 0) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", association property must be marked by one of these annotations: " +
+                                    "@OneToOne, @OneToMany, @ManyToOne or @ManyToMany"
+                    );
+                }
+                if (associationAnnotations.length > 1) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it cannot be marked by both @" +
+                                    associationAnnotations[0].annotationType().getName() +
+                                    "and @" +
+                                    associationAnnotations[1].annotationType().getName()
+                    );
+                }
+                associationAnnotation = associationAnnotations[0];
+                if (isList && (associationAnnotation instanceof OneToOne ||
+                        associationAnnotation instanceof ManyToOne)) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", list property cannot be marked by both @" +
+                                    associationAnnotation.annotationType().getName()
+                    );
+                }
+                if (!isList && (associationAnnotation instanceof OneToMany ||
+                        associationAnnotation instanceof ManyToMany)) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", list property cannot be marked by both @" +
+                                    associationAnnotation.annotationType().getName()
+                    );
+                }
+                if (oneToOne != null && oneToOne.mappedBy().equals("")) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", one-to-one property must be mapped by another reference property"
+                    );
+                }
+                if (oneToMany != null && oneToMany.mappedBy().equals("")) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", one-to-many property must be mapped by another reference property"
+                    );
+                }
+                if (oneToOne != null || oneToMany != null || (
+                        manyToMany != null && !manyToMany.mappedBy().equals(""))
+                ) {
+                    if (joinColumns.length != 0) {
+                        throw new MetaException(
+                                "Illegal property \"" +
+                                        this +
+                                        "\", mapped property cannot be marked by @" +
+                                        associationAnnotation.annotationType().getName()
+                        );
+                    }
+                }
+                if (column != null) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", association property cannot be marked by @" +
+                                    associationAnnotation.annotationType().getName()
+                    );
+                }
+                if (joinColumns.length != 0 && joinTable != null) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it is marked by both @JoinColumn and @JoinTable"
+                    );
+                }
+                if (joinColumns.length > 1) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", multiple join columns is not supported"
+                    );
+                }
+                if (Arrays
+                        .stream(joinColumns)
+                        .anyMatch(it -> !it.referencedColumnName().isEmpty())) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", the referenced column of join column is not supported"
+                    );
+                }
+                if (joinTable != null && joinTable.joinColumns().length > 1) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", join table with multiple join columns is not supported"
+                    );
+                }
+                if (joinTable != null &&
+                        Arrays.stream(joinTable.joinColumns())
+                                .anyMatch(it -> !it.referencedColumnName().isEmpty())) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", the referenced column of join column is not supported"
+                    );
+                }
+                if (joinTable != null && joinTable.inverseJoinColumns().length > 1) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", join table with multiple inverse join columns is not supported"
+                    );
+                }
+                if (joinTable != null &&
+                        Arrays.stream(joinTable.inverseJoinColumns())
+                                .anyMatch(it -> !it.referencedColumnName().isEmpty())) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", the referenced column of inverse join column is not supported"
+                    );
+                }
+            } else {
+                if (associationAnnotations.length != 0) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", scalar property cannot be marked by @" +
+                                    associationAnnotations[0].annotationType().getName()
+                    );
+                }
+                if (joinColumns.length != 0) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", scalar property cannot be marked by @" +
+                                    JoinColumn.class.getName()
+                    );
+                }
+                if (joinTable != null) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", scalar property cannot be marked by @" +
+                                    JoinTable.class.getName()
+                    );
+                }
+            }
+        }
+    }
+
     private boolean determineNullable() {
 
         AnnotationRef notNullAnnotationRef = Arrays.stream(getAnnotations(NotNull.class))
@@ -358,6 +495,11 @@ public class ImmutableProp {
         }
         if (notNullAnnotationRef == null) {
             notNullAnnotationRef = AnnotationRef.of(getAnnotation(org.jetbrains.annotations.NotNull.class));
+        }
+        if (notNullAnnotationRef == null) {
+            if (getAnnotation(Id.class) != null) {
+                notNullAnnotationRef = new AnnotationRef(Id.class);
+            }
         }
         if (notNullAnnotationRef == null) {
             ManyToOne manyToOne = getAnnotation(ManyToOne.class);

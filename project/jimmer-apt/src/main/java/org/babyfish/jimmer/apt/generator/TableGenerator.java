@@ -8,6 +8,7 @@ import org.babyfish.jimmer.apt.meta.ImmutableType;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
+import javax.persistence.criteria.JoinType;
 import java.io.IOException;
 
 import static org.babyfish.jimmer.apt.generator.Constants.*;
@@ -56,7 +57,7 @@ public class TableGenerator {
     private TypeSpec generateTable(boolean subQueryTable) {
         TypeSpec.Builder oldTypeBuilder = typeBuilder;
         typeBuilder = TypeSpec
-                .interfaceBuilder(
+                .classBuilder(
                         subQueryTable ?
                                 type.getSubQueryTableClassName().simpleName() :
                                 type.getTableClassName().simpleName()
@@ -64,7 +65,7 @@ public class TableGenerator {
                 .addModifiers(Modifier.PUBLIC);
         if (subQueryTable) {
             typeBuilder.addModifiers(Modifier.STATIC);
-            typeBuilder.addSuperinterface(type.getTableClassName());
+            typeBuilder.superclass(type.getTableClassName());
             typeBuilder.addSuperinterface(
                     ParameterizedTypeName.get(
                             Constants.SUB_QUERY_TABLE_CLASS_NAME,
@@ -72,9 +73,9 @@ public class TableGenerator {
                     )
             );
         } else {
-            typeBuilder.addSuperinterface(
+            typeBuilder.superclass(
                     ParameterizedTypeName.get(
-                            Constants.TABLE_CLASS_NAME,
+                            Constants.ABSTRACT_TABLE_WRAPPER_CLASS_NAME,
                             type.getClassName()
                     )
             );
@@ -82,6 +83,7 @@ public class TableGenerator {
             addCreateSubQuery();
             addCreateWildSubQuery();
         }
+        addConstructor(subQueryTable);
         try {
             for (ImmutableProp prop : type.getProps().values()) {
                 if (subQueryTable || !prop.isList()){
@@ -98,7 +100,7 @@ public class TableGenerator {
         }
     }
 
-    public void addCreateQuery() {
+    private void addCreateQuery() {
         TypeVariableName typeVariable = TypeVariableName.get("R");
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("createQuery")
@@ -119,7 +121,7 @@ public class TableGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    public void addCreateSubQuery() {
+    private void addCreateSubQuery() {
         TypeVariableName typeVariable = TypeVariableName.get("R");
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("createSubQuery")
@@ -140,7 +142,7 @@ public class TableGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    public void addCreateWildSubQuery() {
+    private void addCreateWildSubQuery() {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("createWildSubQuery")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
@@ -158,13 +160,34 @@ public class TableGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    public void addProperty(
+    private void addConstructor(boolean subQueryTable) {
+        MethodSpec.Builder builder = MethodSpec
+                .constructorBuilder();
+        TypeName tableTypeName;
+        if (subQueryTable) {
+            tableTypeName = ParameterizedTypeName.get(
+                    SUB_QUERY_TABLE_CLASS_NAME,
+                    type.getClassName()
+            );
+        } else {
+            tableTypeName = ParameterizedTypeName.get(
+                    TABLE_CLASS_NAME,
+                    type.getClassName()
+            );
+        }
+        builder
+                .addParameter(tableTypeName, "table")
+                .addStatement("super(table)");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addProperty(
             ImmutableProp prop,
             boolean subQueryTable,
-            boolean outer
+            boolean withJoinType
     ) {
 
-        if (outer && !prop.isAssociation()) {
+        if (withJoinType && !prop.isAssociation()) {
             return;
         }
 
@@ -207,17 +230,17 @@ public class TableGenerator {
 
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
-                .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
+                .addModifiers(Modifier.PUBLIC)
                 .returns(returnType);
         if (subQueryTable && !prop.isList()) {
             builder.addAnnotation(Override.class);
         }
-        if (outer) {
-            builder.addParameter(boolean.class, "left");
+        if (withJoinType) {
+            builder.addParameter(JoinType.class, "joinType");
         }
         if (prop.isAssociation()) {
-            if (outer) {
-                builder.addStatement("return join($S, left)", prop.getName());
+            if (withJoinType) {
+                builder.addStatement("return join($S, joinType)", prop.getName());
             } else {
                 builder.addStatement("return join($S)", prop.getName());
             }

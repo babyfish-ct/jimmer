@@ -57,10 +57,6 @@ public class TypeUtils {
                 typeElement.getAnnotation(Entity.class) != null;
     }
 
-    public boolean isEntity(TypeElement typeElement) {
-        return typeElement.getAnnotation(Entity.class) != null;
-    }
-
     public boolean isImmutable(TypeMirror type) {
         Element element = types.asElement(type);
         return element != null && (
