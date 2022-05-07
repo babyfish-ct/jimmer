@@ -9,6 +9,7 @@ import java.util.UUID;
 @Entity
 public interface Book {
 
+    @Id
     UUID id();
 
     String name();

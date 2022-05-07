@@ -4,12 +4,10 @@ import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
-import org.babyfish.jimmer.meata.ImmutablePropCategory;
+import org.babyfish.jimmer.meta.ImmutablePropCategory;
 import org.babyfish.jimmer.runtime.Internal;
 
 import javax.lang.model.element.Modifier;
-
-import java.lang.annotation.Annotation;
 
 import static org.babyfish.jimmer.apt.generator.Constants.DRAFT_CONSUMER_CLASS_NAME;
 import static org.babyfish.jimmer.apt.generator.Constants.RUNTIME_TYPE_CLASS_NAME;
@@ -117,7 +115,13 @@ public class ProducerGenerator {
             } else {
                 category = ImmutablePropCategory.SCALAR;
             }
-            if (prop.getAssociationAnnotation() != null) {
+            if (prop == type.getIdProp()) {
+                builder.add(
+                        ".id($S, $T.class)\n",
+                        prop.getName(),
+                        prop.getElementTypeName()
+                );
+            } else if (prop.getAssociationAnnotation() != null) {
                 builder.add(
                         ".add($S, $T.$L, $T.class, $L, $T.class)\n",
                         prop.getName(),

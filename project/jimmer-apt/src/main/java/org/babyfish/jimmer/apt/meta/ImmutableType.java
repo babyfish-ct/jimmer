@@ -9,8 +9,12 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
+import javax.persistence.Embeddable;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class ImmutableType {
 
@@ -29,6 +33,8 @@ public class ImmutableType {
     private Map<String, ImmutableProp> declaredProps;
 
     private Map<String, ImmutableProp> props;
+
+    private ImmutableProp idProp;
 
     private ClassName className;
 
@@ -50,7 +56,15 @@ public class ImmutableType {
             TypeUtils typeUtils,
             TypeElement typeElement
     ) {
-        isEntity = typeUtils.isEntity(typeElement);
+        isEntity = typeElement.getAnnotation(Entity.class) != null;
+        if (typeElement.getAnnotation(Embeddable.class) != null) {
+            throw new MetaException(
+                    "Illegal type \"" +
+                            typeElement.getQualifiedName() +
+                            "\"@Embeddable is not supported"
+            );
+        }
+
         packageName = ((PackageElement)typeElement.getEnclosingElement()).getQualifiedName().toString();
         name = typeElement.getSimpleName().toString();
         qualifiedName = typeElement.getQualifiedName().toString();
@@ -74,12 +88,78 @@ public class ImmutableType {
             superType = typeUtils.getImmutableType(superTypeMirror);
         }
 
+        if (superType != null && superType.isEntity() && !isEntity) {
+            throw new MetaException(
+                    "Illegal type \"" +
+                            typeElement.getQualifiedName() +
+                            "\", it must be entity because its super type is entity"
+            );
+        }
+
         Map<String, ImmutableProp> map = new LinkedHashMap<>();
         for (ExecutableElement executableElement : ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
             ImmutableProp prop = new ImmutableProp(typeUtils, executableElement);
             map.put(prop.getName(), prop);
         }
         declaredProps = Collections.unmodifiableMap(map);
+        List<ImmutableProp> idProps = declaredProps
+                .values()
+                .stream()
+                .filter(it -> it.getAnnotation(Id.class) != null)
+                .collect(Collectors.toList());
+        if (superType != null) {
+            if (!idProps.isEmpty()) {
+                throw new MetaException(
+                        "Illegal type \"" +
+                                typeElement.getQualifiedName() +
+                                "\", " +
+                                idProps.get(0) +
+                                "\" cannot be marked by @Id because id has been declared in super type"
+                );
+            }
+            idProp = superType.idProp;
+        }
+        if (!isEntity) {
+            if (!idProps.isEmpty()) {
+                throw new MetaException(
+                        "Illegal type \"" +
+                                typeElement.getQualifiedName() +
+                                "\", " +
+                                idProps.get(0) +
+                                "\" cannot be marked by @Id because current type is not entity"
+                );
+            }
+        } else {
+            if (idProps.size() > 1) {
+                throw new MetaException(
+                        "Illegal type \"" +
+                                typeElement.getQualifiedName() +
+                                "\", multiple id properties are not supported, " +
+                                "but both \"" +
+                                idProps.get(0) +
+                                "\" and \"" +
+                                idProps.get(1) +
+                                "\" is marked by @Id"
+                );
+            }
+            if (idProp == null) {
+                if (idProps.isEmpty()) {
+                    throw new MetaException(
+                            "Illegal type \"" +
+                                    typeElement.getQualifiedName() +
+                                    "\", entity type must have an id property"
+                    );
+                }
+                idProp = idProps.get(0);
+            }
+            if (idProp.isAssociation()) {
+                throw new MetaException(
+                        "Illegal property \"" +
+                                idProp +
+                                "\", association cannot be id property"
+                );
+            }
+        }
 
         className = toClassName(null);
         draftClassName = toClassName(name -> name + "Draft");
@@ -131,6 +211,10 @@ public class ImmutableType {
             this.props = props;
         }
         return props;
+    }
+
+    public ImmutableProp getIdProp() {
+        return idProp;
     }
 
     public ClassName getClassName() {

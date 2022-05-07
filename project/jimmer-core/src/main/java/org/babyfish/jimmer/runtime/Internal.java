@@ -3,7 +3,7 @@ package org.babyfish.jimmer.runtime;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.DraftConsumer;
 import org.babyfish.jimmer.DraftConsumerUncheckedException;
-import org.babyfish.jimmer.meata.ImmutableType;
+import org.babyfish.jimmer.meta.ImmutableType;
 
 public class Internal {
 

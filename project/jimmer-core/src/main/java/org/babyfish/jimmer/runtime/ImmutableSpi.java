@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.runtime;
 
-import org.babyfish.jimmer.Draft;
-import org.babyfish.jimmer.meata.ImmutableType;
-
-import java.util.function.BiFunction;
+import org.babyfish.jimmer.meta.ImmutableType;
 
 public interface ImmutableSpi {
 

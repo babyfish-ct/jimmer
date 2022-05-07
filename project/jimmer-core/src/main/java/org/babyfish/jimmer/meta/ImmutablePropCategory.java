@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.meata;
+package org.babyfish.jimmer.meta;
 
 public enum ImmutablePropCategory {
 

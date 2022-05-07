@@ -1,9 +1,12 @@
-package org.babyfish.jimmer.meata;
+package org.babyfish.jimmer.meta;
 
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
+import org.babyfish.jimmer.meta.sql.Column;
 import org.babyfish.jimmer.runtime.DraftContext;
 
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -12,6 +15,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 public class ImmutableType {
 
@@ -30,9 +34,15 @@ public class ImmutableType {
 
     private BiFunction<DraftContext, Object, Draft> draftFactory;
 
-    Map<String, ImmutableProp> declaredProps = new LinkedHashMap<>();
+    private Map<String, ImmutableProp> declaredProps = new LinkedHashMap<>();
 
-    Map<String, ImmutableProp> props;
+    private Map<String, ImmutableProp> props;
+
+    private Map<String, ImmutableProp> selectableProps;
+
+    ImmutableProp idProp;
+
+    private String tableName;
 
     ImmutableType(
             Class<?> javaClass,
@@ -43,6 +53,12 @@ public class ImmutableType {
         this.javaClass = javaClass;
         this.superType = superType;
         this.draftFactory = draftFactory;
+
+        Table table = javaClass.getAnnotation(Table.class);
+        tableName = table != null ? table.name() : "";
+        if (tableName.isEmpty()) {
+            tableName = Utils.databaseIdentifier(tableName);
+        }
     }
 
     public static Builder newBuilder(
@@ -176,6 +192,14 @@ public class ImmutableType {
         return declaredProps;
     }
 
+    public ImmutableProp getIdProp() {
+        return idProp;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
     public Map<String, ImmutableProp> getProps() {
         Map<String, ImmutableProp> props = this.props;
         if (props == null) {
@@ -190,6 +214,21 @@ public class ImmutableType {
         return props;
     }
 
+    public Map<String, ImmutableProp> getSelectableProps() {
+        Map<String, ImmutableProp> selectableProps = this.selectableProps;
+        if (selectableProps == null) {
+            selectableProps = new LinkedHashMap<>();
+            selectableProps.put(getIdProp().getName(), getIdProp());
+            for (ImmutableProp prop : getProps().values()) {
+                if (!prop.isId() && prop.getStorage() instanceof Column) {
+                    selectableProps.put(prop.getName(), prop);
+                }
+            }
+            this.selectableProps = selectableProps;
+        }
+        return selectableProps;
+    }
+
     @Override
     public String toString() {
         return javaClass.getName();
@@ -199,12 +238,25 @@ public class ImmutableType {
 
         private ImmutableType type;
 
+        private String idPropName;
+
         Builder(
                 Class<?> javaClass,
                 ImmutableType superType,
                 BiFunction<DraftContext, Object, Draft> draftFactory
         ) {
             this.type = new ImmutableType(javaClass, superType, draftFactory);
+        }
+
+        public Builder id(String name, Class<?> elementType) {
+            if (!type.javaClass.isAnnotationPresent(Entity.class)) {
+                throw new IllegalStateException("Cannot set id for type that is not entity");
+            }
+            if (idPropName != null) {
+                throw new IllegalStateException("id property has been set");
+            }
+            idPropName = name;
+            return add(name, ImmutablePropCategory.SCALAR, elementType, false);
         }
 
         public Builder add(
@@ -257,6 +309,11 @@ public class ImmutableType {
             validate();
             ImmutableType type = this.type;
             type.declaredProps = Collections.unmodifiableMap(type.declaredProps);
+            if (idPropName != null) {
+                type.idProp = type.declaredProps.get(idPropName);
+            } else if (type.superType != null) {
+                type.idProp = type.superType.idProp;
+            }
             this.type = null;
             return type;
         }
