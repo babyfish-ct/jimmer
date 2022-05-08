@@ -1,13 +1,14 @@
 package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.impl.Constants;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import static org.babyfish.jimmer.sql.common.Constants.*;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
 
 import javax.persistence.criteria.JoinType;
 import java.math.BigDecimal;
+import java.util.Arrays;
 
 public class JoinTest extends AbstractQueryTest {
 
@@ -101,6 +102,121 @@ public class JoinTest extends AbstractQueryTest {
                                     "where tb_3.PRICE >= ? and tb_3.PRICE <= ? and lower(tb_4.NAME) like ?"
                     );
                     ctx.variables(new BigDecimal(20), new BigDecimal(30), "%manning%");
+                }
+        );
+    }
+
+    @Test
+    public void testUnnecessaryJoin() {
+        executeAndExpect(
+                BookTable.createQuery(getSqlClient(), (query, book) -> {
+                    query.where(
+                            book.store().id().in(oreillyId, manningId)
+                    );
+                    return query.select(Expression.constant(1));
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select 1 from BOOK as tb_1 where tb_1.STORE_ID in (?, ?)"
+                    );
+                    ctx.variables(oreillyId, manningId);
+                }
+        );
+    }
+
+    @Test
+    public void testHalfJoin() {
+        executeAndExpect(
+                BookTable.createQuery(getSqlClient(), (query, book) -> {
+                    return query.where(
+                            book.<AuthorTable>join("authors")
+                                    .id()
+                                    .in(alexId, borisId)
+                    ).select(Expression.constant(1));
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select 1 " +
+                                    "from BOOK as tb_1 " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_2 on tb_1.ID = tb_2.BOOK_ID " +
+                                    "where tb_2.AUTHOR_ID in (?, ?)"
+                    );
+                    ctx.variables(alexId, borisId);
+                }
+        );
+    }
+
+    @Test
+    public void testHalfInverseJoin() {
+        executeAndExpect(
+                AuthorTable.createQuery(getSqlClient(), (query, author) ->
+                    query
+                            .where(
+                                    author
+                                            .<BookTable>join("books")
+                                            .id()
+                                            .in(learningGraphQLId1, learningGraphQLId2)
+                            )
+                            .select(Expression.constant(1))
+                ),
+                ctx -> {
+                    ctx.sql(
+                            "select 1 " +
+                                    "from AUTHOR as tb_1 " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_2 on tb_1.ID = tb_2.AUTHOR_ID " +
+                                    "where tb_2.BOOK_ID in (?, ?)"
+                    );
+                    ctx.variables(learningGraphQLId1, learningGraphQLId2);
+                }
+        );
+    }
+
+    @Test
+    public void testOneToManyCannotBeOptimized() {
+        executeAndExpect(
+                BookStoreTable.createQuery(getSqlClient(), (query, store) ->
+                        query
+                                .where(
+                                        store
+                                                .<BookTable>join("books")
+                                                .id()
+                                                .in(learningGraphQLId1, learningGraphQLId2)
+                                )
+                                .select(Expression.constant(1))
+                ),
+                ctx -> {
+                    ctx.sql(
+                            "select 1 " +
+                                    "from BOOK_STORE as tb_1 " +
+                                    "inner join BOOK as tb_2 on tb_1.ID = tb_2.STORE_ID " +
+                                    "where tb_2.ID in (?, ?)"
+                    );
+                    ctx.variables(learningGraphQLId1, learningGraphQLId2);
+                }
+        );
+    }
+
+    @Test
+    public void testOuterJoin() {
+        executeAndExpect(
+                BookTable.createQuery(getSqlClient(), (query, book) ->
+                        query
+                                .where(
+                                        book.store(JoinType.LEFT).id().isNotNull().or(
+                                                book.store(JoinType.LEFT).name().ilike("MANNING")
+                                        )
+                                )
+                                .select(Expression.constant(1))
+                ),
+                ctx -> {
+                    ctx.sql(
+                            "select 1 " +
+                                    "from BOOK as tb_1 " +
+                                    "left join BOOK_STORE as tb_2 on tb_1.STORE_ID = tb_2.ID " +
+                                    "where tb_1.STORE_ID is not null " +
+                                    "or lower(tb_2.NAME) like ?"
+                    );
+                    ctx.variables("%manning%");
                 }
         );
     }
