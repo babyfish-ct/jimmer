@@ -14,6 +14,8 @@ public interface Book {
 
     String name();
 
+    int edition();
+
     BigDecimal price();
 
     @ManyToOne

@@ -29,7 +29,11 @@ public class ImmutableProp {
 
     private Storage storage;
 
+    private boolean storageResolved;
+
     private boolean isId;
+
+    private boolean isIdResolved;
 
     private ImmutableType targetType;
 
@@ -85,10 +89,6 @@ public class ImmutableProp {
         if (associationType != null) {
             associationAnnotation = getAnnotation(associationType);
         }
-
-        storage = Storages.of(this);
-        ImmutableProp idProp = declaringType.getIdProp();
-        isId = idProp == this || (idProp != null && idProp.getName().equals(name));
     }
 
     public ImmutableType getDeclaringType() {
@@ -152,10 +152,21 @@ public class ImmutableProp {
     }
 
     public Storage getStorage() {
+        if (storageResolved) {
+            return storage;
+        }
+        storage = Storages.of(this);
+        storageResolved = true;
         return storage;
     }
 
     public boolean isId() {
+        if (isIdResolved) {
+            return isId;
+        }
+        isIdResolved = true;
+        ImmutableProp idProp = declaringType.getIdProp();
+        isId = idProp == this || (idProp != null && idProp.getName().equals(name));
         return isId;
     }
 

@@ -74,6 +74,12 @@ class Constants {
                     "ConfigurableTypedSubQuery"
             );
 
+    public static final ClassName QUERIES_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl",
+                    "Queries"
+            );
+
     public static final ClassName BI_FUNCTION_CLASS_NAME =
             ClassName.get(BiFunction.class);
 

@@ -33,4 +33,8 @@ class AbstractMutableStatementImpl {
     TableAliasAllocator getTableAliasAllocator() {
         return tableAliasAllocator;
     }
+
+    SqlClient getSqlClient() {
+        return sqlClient;
+    }
 }

@@ -16,6 +16,8 @@ public interface Author {
 
     String lastName();
 
+    Gender gender();
+
     @ManyToMany(mappedBy = "author")
     List<Book> books();
 }

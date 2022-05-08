@@ -22,7 +22,7 @@ public class TypedQueryData {
     private boolean forUpdate;
 
     public TypedQueryData(List<Selection<?>> selections) {
-        selections = Collections.unmodifiableList(selections);
+        this.selections = Collections.unmodifiableList(selections);
         limit = Integer.MAX_VALUE;
     }
 

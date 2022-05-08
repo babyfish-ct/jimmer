@@ -24,6 +24,11 @@ abstract class AbstractPredicate extends AbstractExpression<Boolean> implements 
         return new NotPredicate(this);
     }
 
+    @Override
+    public Class<Boolean> getType() {
+        return Boolean.class;
+    }
+
     private static abstract class CompositePredicate extends AbstractPredicate {
 
         private AbstractPredicate[] predicates;

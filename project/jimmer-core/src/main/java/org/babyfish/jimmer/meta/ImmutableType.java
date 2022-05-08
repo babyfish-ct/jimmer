@@ -57,7 +57,7 @@ public class ImmutableType {
         Table table = javaClass.getAnnotation(Table.class);
         tableName = table != null ? table.name() : "";
         if (tableName.isEmpty()) {
-            tableName = Utils.databaseIdentifier(tableName);
+            tableName = Utils.databaseIdentifier(javaClass.getSimpleName());
         }
     }
 

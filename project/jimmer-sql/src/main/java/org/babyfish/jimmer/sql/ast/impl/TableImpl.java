@@ -4,7 +4,6 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.sql.Column;
 import org.babyfish.jimmer.meta.sql.MiddleTable;
-import org.babyfish.jimmer.meta.sql.Storage;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTableWrapper;
@@ -390,7 +389,7 @@ public class TableImpl<E> implements Table<E>, Ast {
                 return;
             }
         }
-        builder.sql(alias).sql(".").sql(((Column)joinProp.getStorage()).getName());
+        builder.sql(alias).sql(".").sql(((Column)prop.getStorage()).getName());
     }
 
     @Override
