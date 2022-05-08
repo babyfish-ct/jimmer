@@ -50,6 +50,12 @@ class PropExpression<T> extends AbstractExpression<T> {
         return 0;
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public Class<T> getType() {
+        return (Class<T>) prop.getElementClass();
+    }
+
     private static class Str extends PropExpression<String> implements StringExpression {
 
         Str(TableImpl table, ImmutableProp prop) {

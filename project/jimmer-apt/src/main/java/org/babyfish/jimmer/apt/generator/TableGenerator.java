@@ -117,7 +117,11 @@ public class TableGenerator {
                         "block"
                 )
                 .returns(ParameterizedTypeName.get(CONFIGURABLE_TYPED_ROOT_QUERY_CLASS_NAME, typeVariable))
-                .addStatement("throw new RuntimeException()");
+                .addStatement(
+                        "return $T.createQuery($T.class, sqlClient, block)",
+                        QUERIES_CLASS_NAME,
+                        type.getTableClassName()
+                );
         typeBuilder.addMethod(builder.build());
     }
 
@@ -162,7 +166,8 @@ public class TableGenerator {
 
     private void addConstructor(boolean subQueryTable) {
         MethodSpec.Builder builder = MethodSpec
-                .constructorBuilder();
+                .constructorBuilder()
+                .addModifiers(Modifier.PUBLIC);
         TypeName tableTypeName;
         if (subQueryTable) {
             tableTypeName = ParameterizedTypeName.get(

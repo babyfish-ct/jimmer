@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
@@ -7,9 +8,11 @@ import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.query.selectable.RootSelectable;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.sql.Connection;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
@@ -108,7 +111,19 @@ class ConfigurableTypedRootQueryImpl<R>
 
     @Override
     public List<R> execute(Connection con) {
-        return null;
+        TypedQueryData data = getData();
+        if (getData().getLimit() == 0) {
+            return Collections.emptyList();
+        }
+        SqlClient sqlClient = getBaseQuery().getSqlClient();
+        Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(sqlClient));
+        return Selectors.select(
+                sqlClient,
+                con,
+                sqlResult._1(),
+                sqlResult._2(),
+                data.getSelections()
+        );
     }
 
     private Tuple2<String, List<Object>> preExecute(SqlBuilder builder) {

@@ -14,6 +14,8 @@ public interface BookStore {
 
     String name();
 
+    String website();
+
     @ManyToMany(mappedBy = "store")
     List<Book> books();
 }

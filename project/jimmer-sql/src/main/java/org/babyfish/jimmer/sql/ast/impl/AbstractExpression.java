@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.Collection;
 
-abstract class AbstractExpression<T> implements Expression<T>, Ast {
+abstract class AbstractExpression<T> implements ExpressionSpi<T>, Ast {
 
     @Override
     public Predicate eq(Expression<T> other) {

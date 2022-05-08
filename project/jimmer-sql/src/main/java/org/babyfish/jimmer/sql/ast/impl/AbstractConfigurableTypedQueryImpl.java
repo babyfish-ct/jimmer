@@ -40,7 +40,11 @@ class AbstractConfigurableTypedQueryImpl<R> implements TypedQueryImplementor {
     @Override
     public void accept(AstVisitor visitor) {
         for (Selection<?> selection : data.getSelections()) {
-            ((Ast)selection).accept(visitor);
+            if (selection instanceof Table<?>) {
+                TableImpl.unwrap((Table<?>) selection).accept(visitor);
+            } else{
+                ((Ast) selection).accept(visitor);
+            }
         }
         baseQuery.accept(visitor, data.getOldSelections(), data.isWithoutSortingAndPaging());
     }

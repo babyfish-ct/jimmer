@@ -142,6 +142,7 @@ abstract class AbstractMutableQueryImpl
 
     void renderTo(SqlBuilder sqlBuilder, boolean withoutSortingAndPaging) {
         TableImpl<?> table = TableImpl.unwrap(this.table);
+        table.renderTo(sqlBuilder);
         if (!predicates.isEmpty()) {
             String separator = " where ";
             for (Predicate predicate : predicates) {

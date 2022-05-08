@@ -2,12 +2,9 @@ package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.ast.tuple.*;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 public class SqlBuilder {
@@ -20,9 +17,9 @@ public class SqlBuilder {
 
     private int childBuilderCount;
 
-    private StringBuilder builder;
+    private StringBuilder builder = new StringBuilder();
 
-    private List<Object> variables;
+    private List<Object> variables = new ArrayList<>();
 
     private boolean terminated;
 
@@ -54,11 +51,194 @@ public class SqlBuilder {
     }
 
     public SqlBuilder variable(Object value) {
-        variables.add(Objects.requireNonNull(value, "value cannot be null"));
+        validate();
+        if (value instanceof Tuple2<?,?>) {
+            Tuple2<?,?> tuple = (Tuple2<?,?>)value;
+            this
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._1(), "tuple._1 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._2(), "tuple._2 cannot be null"));
+        } else if (value instanceof Tuple3<?,?,?>) {
+            Tuple3<?,?,?> tuple = (Tuple3<?,?,?>)value;
+            this
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._1(), "tuple._1 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._2(), "tuple._2 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._3(), "tuple._3 cannot be null"));
+        } else if (value instanceof Tuple4<?,?,?,?>) {
+            Tuple4<?,?,?,?> tuple = (Tuple4<?,?,?,?>)value;
+            this
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._1(), "tuple._1 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._2(), "tuple._2 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._3(), "tuple._3 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._4(), "tuple._4 cannot be null"));
+        } else if (value instanceof Tuple5<?,?,?,?,?>) {
+            Tuple5<?,?,?,?,?> tuple = (Tuple5<?,?,?,?,?>)value;
+            this
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._1(), "tuple._1 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._2(), "tuple._2 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._3(), "tuple._3 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._4(), "tuple._4 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._5(), "tuple._5 cannot be null"));
+        } else if (value instanceof Tuple6<?,?,?,?,?,?>) {
+            Tuple6<?,?,?,?,?,?> tuple = (Tuple6<?,?,?,?,?,?>)value;
+            this
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._1(), "tuple._1 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._2(), "tuple._2 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._3(), "tuple._3 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._4(), "tuple._4 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._5(), "tuple._5 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._6(), "tuple._6 cannot be null"));
+        } else if (value instanceof Tuple7<?,?,?,?,?,?,?>) {
+            Tuple7<?,?,?,?,?,?,?> tuple = (Tuple7<?,?,?,?,?,?,?>)value;
+            this
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._1(), "tuple._1 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._2(), "tuple._2 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._3(), "tuple._3 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._4(), "tuple._4 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._5(), "tuple._5 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._6(), "tuple._6 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._7(), "tuple._7 cannot be null"));
+        } else if (value instanceof Tuple8<?,?,?,?,?,?,?,?>) {
+            Tuple8<?,?,?,?,?,?,?,?> tuple = (Tuple8<?,?,?,?,?,?,?,?>)value;
+            this
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._1(), "tuple._1 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._2(), "tuple._2 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._3(), "tuple._3 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._4(), "tuple._4 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._5(), "tuple._5 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._6(), "tuple._6 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._7(), "tuple._7 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._8(), "tuple._8 cannot be null"));
+        } else if (value instanceof Tuple9<?,?,?,?,?,?,?,?,?>) {
+            Tuple9<?,?,?,?,?,?,?,?,?> tuple = (Tuple9<?,?,?,?,?,?,?,?,?>)value;
+            this
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._1(), "tuple._1 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._2(), "tuple._2 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._3(), "tuple._3 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._4(), "tuple._4 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._5(), "tuple._5 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._6(), "tuple._6 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._7(), "tuple._7 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._8(), "tuple._8 cannot be null"))
+                    .sql(", ")
+                    .sql("(")
+                    .singleVariable(Objects.requireNonNull(tuple._9(), "tuple._9 cannot be null"));
+        } else {
+            singleVariable(value);
+        }
         return this;
     }
 
+    @SuppressWarnings("unchecked")
+    private SqlBuilder singleVariable(Object value) {
+        if (value instanceof DbNull) {
+            throw new ExecutionException(
+                    "Cannot add variable whose type is " + DbNull.class.getName()
+            );
+        }
+        ScalarProvider<Object, Object> scalarProvider =
+                sqlClient.getScalarProvider((Class<Object>)value.getClass());
+        Object finalValue;
+        if (scalarProvider != null) {
+            finalValue = scalarProvider.toSql(value);
+        } else {
+            finalValue = value;
+        }
+        builder.append('?');
+        variables.add(finalValue);
+        return this;
+    }
+
+    @SuppressWarnings("unchecked")
     public SqlBuilder nullVariables(Class<?> type) {
+        validate();
+        ScalarProvider<Object, Object> scalarProvider =
+                sqlClient.getScalarProvider((Class<Object>)type);
+        Object finalValue;
+        if (scalarProvider != null) {
+            finalValue = new DbNull(scalarProvider.getSqlType());
+        } else {
+            finalValue = new DbNull(type);
+        }
+        builder.append('?');
+        variables.add(finalValue);
         return this;
     }
 
