@@ -10,13 +10,12 @@ class Utils {
             if (Character.isUpperCase(c)) {
                 if (!prevUpper) {
                     builder.append('_');
-                    prevUpper = true;
-                } else {
-                    prevUpper = false;
                 }
                 builder.append(c);
+                prevUpper = true;
             } else {
                 builder.append(Character.toUpperCase(c));
+                prevUpper = false;
             }
         }
         return builder.toString();

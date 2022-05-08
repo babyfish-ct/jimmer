@@ -1,0 +1,83 @@
+package org.babyfish.jimmer.sql.ast.impl;
+
+import org.babyfish.jimmer.sql.ast.ComparableExpression;
+import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.NumericExpression;
+import org.babyfish.jimmer.sql.ast.StringExpression;
+import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+
+public class Literals {
+
+    public static StringExpression string(String value) {
+        return new Str(value);
+    }
+
+    public static <N extends Number> NumericExpression<N> number(N value) {
+        return new Num<>(value);
+    }
+
+    public static <T extends Comparable<T>> ComparableExpression<T> comparable(T value) {
+        return new Cmp<>(value);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static <T> Expression<T> any(T value) {
+        if (value instanceof String) {
+            return (Expression<T>) string((String)value);
+        }
+        if (value instanceof Number) {
+            return (Expression<T>) number((Number)value);
+        }
+        if (value instanceof Comparable<?>) {
+            return (Expression<T>) comparable((Comparable)value);
+        }
+        return new Any<>(value);
+    }
+
+    private static class Any<T> extends AbstractExpression<T> {
+
+        private T value;
+
+        public Any(T value) {
+            this.value = value;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Class<T> getType() {
+            return (Class<T>)value.getClass();
+        }
+
+        @Override
+        public void accept(AstVisitor visitor) {
+        }
+
+        @Override
+        public void renderTo(SqlBuilder builder) {
+            builder.variable(value);
+        }
+
+        @Override
+        protected int precedence() {
+            return 0;
+        }
+    }
+
+    private static class Str extends Any<String> implements StringExpressionImplementor {
+        public Str(String value) {
+            super(value);
+        }
+    }
+
+    private static class Num<N extends Number> extends Any<N> implements NumberExpressionImplementor<N> {
+        public Num(N value) {
+            super(value);
+        }
+    }
+
+    private static class Cmp<T extends Comparable<T>> extends Any<T> implements ComparableExpressionImplementor<T> {
+        public Cmp(T value) {
+            super(value);
+        }
+    }
+}

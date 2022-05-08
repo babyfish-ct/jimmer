@@ -1,17 +1,18 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 public abstract class ComparisonPredicate extends AbstractPredicate {
 
-    protected AbstractExpression<?> left;
+    protected Expression<?> left;
 
-    protected AbstractExpression<?> right;
+    protected Expression<?> right;
 
     public ComparisonPredicate(
-            AbstractExpression<?> left,
-            AbstractExpression<?> right
+            Expression<?> left,
+            Expression<?> right
     ) {
         this.left = left;
         this.right = right;
@@ -21,17 +22,17 @@ public abstract class ComparisonPredicate extends AbstractPredicate {
 
     @Override
     public void accept(AstVisitor visitor) {
-        left.accept(visitor);
-        left.accept(visitor);
+        ((Ast) left).accept(visitor);
+        ((Ast) left).accept(visitor);
     }
 
     @Override
     public void renderTo(SqlBuilder builder) {
-        renderChild(left, builder);
+        renderChild((Ast) left, builder);
         builder.sql(" ");
         builder.sql(operator());
         builder.sql(" ");
-        renderChild(right, builder);
+        renderChild((Ast) right, builder);
     }
 
     @Override
@@ -41,7 +42,7 @@ public abstract class ComparisonPredicate extends AbstractPredicate {
 
     static class Eq extends ComparisonPredicate {
 
-        public Eq(AbstractExpression<?> left, AbstractExpression<?> right) {
+        public Eq(Expression<?> left, Expression<?> right) {
             super(left, right);
         }
 
@@ -58,7 +59,7 @@ public abstract class ComparisonPredicate extends AbstractPredicate {
 
     static class Ne extends ComparisonPredicate {
 
-        public Ne(AbstractExpression<?> left, AbstractExpression<?> right) {
+        public Ne(Expression<?> left, Expression<?> right) {
             super(left, right);
         }
 
@@ -75,7 +76,7 @@ public abstract class ComparisonPredicate extends AbstractPredicate {
 
     static class Lt extends ComparisonPredicate {
 
-        public Lt(AbstractExpression<?> left, AbstractExpression<?> right) {
+        public Lt(Expression<?> left, Expression<?> right) {
             super(left, right);
         }
 
@@ -92,7 +93,7 @@ public abstract class ComparisonPredicate extends AbstractPredicate {
 
     static class Le extends ComparisonPredicate {
 
-        public Le(AbstractExpression<?> left, AbstractExpression<?> right) {
+        public Le(Expression<?> left, Expression<?> right) {
             super(left, right);
         }
 
@@ -109,7 +110,7 @@ public abstract class ComparisonPredicate extends AbstractPredicate {
 
     static class Gt extends ComparisonPredicate {
 
-        public Gt(AbstractExpression<?> left, AbstractExpression<?> right) {
+        public Gt(Expression<?> left, Expression<?> right) {
             super(left, right);
         }
 
@@ -126,7 +127,7 @@ public abstract class ComparisonPredicate extends AbstractPredicate {
 
     static class Ge extends ComparisonPredicate {
 
-        public Ge(AbstractExpression<?> left, AbstractExpression<?> right) {
+        public Ge(Expression<?> left, Expression<?> right) {
             super(left, right);
         }
 
