@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.ast;
 
+import java.math.BigDecimal;
+
 public interface NumericExpression<N extends Number> extends Expression<N> {
 
     NumericExpression<N> plus(NumericExpression<N> other);
@@ -10,9 +12,9 @@ public interface NumericExpression<N extends Number> extends Expression<N> {
 
     NumericExpression<N> minus(N other);
 
-    NumericExpression<N> prod(NumericExpression<N> other);
+    NumericExpression<N> times(NumericExpression<N> other);
 
-    NumericExpression<N> prod(N other);
+    NumericExpression<N> times(N other);
 
     NumericExpression<N> div(NumericExpression<N> other);
 
@@ -38,7 +40,17 @@ public interface NumericExpression<N extends Number> extends Expression<N> {
 
     Predicate ge(N other);
 
+    default NumericExpression<Long> count() {
+        return count(false);
+    }
+
+    NumericExpression<Long> count(boolean distinct);
+
     NumericExpression<N> sum();
 
-    NumericExpression<N> avg();
+    NumericExpression<N> min();
+
+    NumericExpression<N> max();
+
+    NumericExpression<BigDecimal> avg();
 }

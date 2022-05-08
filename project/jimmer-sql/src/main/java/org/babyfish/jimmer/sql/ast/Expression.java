@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.ast;
 
+import org.babyfish.jimmer.sql.ast.impl.Constants;
+import org.babyfish.jimmer.sql.ast.impl.Literals;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 
 import java.util.Collection;
@@ -22,7 +24,27 @@ public interface Expression<T> extends Selection<T> {
 
     Predicate notIn(TypedSubQuery<T> subQuery);
 
-    static StringExpression stringSqlExpression(
+    static <N extends Number> NumericExpression<N> constant(N value) {
+        return Constants.number(value);
+    }
+
+    static StringExpression string(String value) {
+        return Literals.string(value);
+    }
+
+    static <N extends Number> NumericExpression<N> number(N value) {
+        return Literals.number(value);
+    }
+
+    static <T extends Comparable<T>> ComparableExpression<T> comparable(T value) {
+        return Literals.comparable(value);
+    }
+
+    static <T> Expression<T> any(T value) {
+        return Literals.any(value);
+    }
+
+    static StringExpression nativeString(
             String sql,
             Expression<?>[] expressions,
             Object[] values
@@ -30,7 +52,7 @@ public interface Expression<T> extends Selection<T> {
         throw new RuntimeException();
     }
 
-    static <N extends Number> NumericExpression<N> numericSqlExpression(
+    static <N extends Number> NumericExpression<N> nativeNumber(
             Class<N> type,
             String sql,
             Expression<?>[] expressions,
@@ -39,7 +61,7 @@ public interface Expression<T> extends Selection<T> {
         throw new RuntimeException();
     }
 
-    static <T extends Comparable<T>> ComparableExpression<T> comparableSqlExpression(
+    static <T extends Comparable<T>> ComparableExpression<T> nativeComparable(
             Class<T> type,
             String sql,
             Expression<?>[] expressions,
@@ -48,7 +70,7 @@ public interface Expression<T> extends Selection<T> {
         throw new RuntimeException();
     }
 
-    static <T> Expression<T> sqlExpression(
+    static <T> Expression<T> nativeAny(
             Class<T> type,
             String sql,
             Expression<?>[] expressions,

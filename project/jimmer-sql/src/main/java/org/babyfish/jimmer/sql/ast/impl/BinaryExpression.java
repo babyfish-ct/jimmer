@@ -1,0 +1,126 @@
+package org.babyfish.jimmer.sql.ast.impl;
+
+import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+
+abstract class BinaryExpression<N extends Number> extends AbstractExpression<N> implements NumberExpressionImplementor<N> {
+
+    private Class<N> type;
+    
+    private Expression<N> left;
+
+    private Expression<N> right;
+
+    protected BinaryExpression(Class<N> type, Expression<N> left, Expression<N> right) {
+        this.type = type;
+        this.left = left;
+        this.right = right;
+    }
+
+    @Override
+    public Class<N> getType() {
+        return type;
+    }
+
+    protected abstract String operator();
+
+    @Override
+    public void accept(AstVisitor visitor) {
+        ((Ast) left).accept(visitor);
+        ((Ast) right).accept(visitor);
+    }
+
+    @Override
+    public void renderTo(SqlBuilder builder) {
+        renderChild((Ast) left, builder);
+        builder.sql(" ");
+        builder.sql(operator());
+        builder.sql(" ");
+        renderChild((Ast) right, builder);
+    }
+    
+    static class Plus<N extends Number> extends BinaryExpression<N> {
+        
+        public Plus(Class<N> type, Expression<N> left, Expression<N> right) {
+            super(type, left, right);
+        }
+
+        @Override
+        protected int precedence() {
+            return 3;
+        }
+
+        @Override
+        protected String operator() {
+            return "+";
+        }
+    }
+
+    static class Minus<N extends Number> extends BinaryExpression<N> {
+
+        public Minus(Class<N> type, Expression<N> left, Expression<N> right) {
+            super(type, left, right);
+        }
+
+        @Override
+        protected int precedence() {
+            return 3;
+        }
+
+        @Override
+        protected String operator() {
+            return "-";
+        }
+    }
+
+    static class Times<N extends Number> extends BinaryExpression<N> {
+
+        public Times(Class<N> type, Expression<N> left, Expression<N> right) {
+            super(type, left, right);
+        }
+
+        @Override
+        protected int precedence() {
+            return 2;
+        }
+
+        @Override
+        protected String operator() {
+            return "*";
+        }
+    }
+
+    static class Div<N extends Number> extends BinaryExpression<N> {
+
+        public Div(Class<N> type, Expression<N> left, Expression<N> right) {
+            super(type, left, right);
+        }
+
+        @Override
+        protected int precedence() {
+            return 2;
+        }
+
+        @Override
+        protected String operator() {
+            return "/";
+        }
+    }
+
+    static class Rem<N extends Number> extends BinaryExpression<N> {
+
+        public Rem(Class<N> type, Expression<N> left, Expression<N> right) {
+            super(type, left, right);
+        }
+
+        @Override
+        protected int precedence() {
+            return 2;
+        }
+
+        @Override
+        protected String operator() {
+            return "%";
+        }
+    }
+}

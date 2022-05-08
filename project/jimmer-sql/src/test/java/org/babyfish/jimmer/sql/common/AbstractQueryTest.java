@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -40,6 +41,10 @@ public class AbstractQueryTest extends AbstractTest {
                     sql,
                     executions.get(executions.size() - 1).getSql()
             );
+        }
+
+        public void variables(Object ...variables) {
+            variables(Arrays.asList(variables));
         }
 
         public void variables(List<Object> variables) {

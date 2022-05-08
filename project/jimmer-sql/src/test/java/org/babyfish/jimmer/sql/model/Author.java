@@ -18,6 +18,6 @@ public interface Author {
 
     Gender gender();
 
-    @ManyToMany(mappedBy = "author")
+    @ManyToMany(mappedBy = "authors")
     List<Book> books();
 }
