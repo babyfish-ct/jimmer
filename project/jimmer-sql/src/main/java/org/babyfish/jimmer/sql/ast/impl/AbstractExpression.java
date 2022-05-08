@@ -31,12 +31,12 @@ abstract class AbstractExpression<T> implements ExpressionSpi<T>, Ast {
 
     @Override
     public Predicate in(Collection<T> values) {
-        return null;
+        return new InCollectionPredicate(this, values, false);
     }
 
     @Override
     public Predicate notIn(Collection<T> values) {
-        return null;
+        return new InCollectionPredicate(this, values, true);
     }
 
     @Override

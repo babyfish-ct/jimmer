@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.impl.Constants;
 import org.babyfish.jimmer.sql.ast.impl.Literals;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 public interface Expression<T> extends Selection<T> {
@@ -18,7 +19,15 @@ public interface Expression<T> extends Selection<T> {
 
     Predicate in(Collection<T> values);
 
+    default Predicate in(T ... values) {
+        return in(Arrays.asList(values));
+    }
+
     Predicate notIn(Collection<T> values);
+
+    default Predicate notIn(T ... values) {
+        return notIn(Arrays.asList(values));
+    }
 
     Predicate in(TypedSubQuery<T> subQuery);
 
