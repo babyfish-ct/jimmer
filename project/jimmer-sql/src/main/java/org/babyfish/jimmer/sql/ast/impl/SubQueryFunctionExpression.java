@@ -21,7 +21,7 @@ abstract class SubQueryFunctionExpression<R> extends AbstractExpression<R> {
 
     @Override
     public int precedence() {
-        return 7;
+        return 0;
     }
 
     @Override

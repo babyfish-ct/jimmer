@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.ast;
 
+import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
+
 public interface ComparableExpression<T extends Comparable<T>> extends Expression<T> {
 
     Predicate lt(ComparableExpression<T> other);
@@ -17,4 +19,10 @@ public interface ComparableExpression<T extends Comparable<T>> extends Expressio
     Predicate ge(ComparableExpression<T> other);
 
     Predicate ge(T other);
+
+    @Override
+    ComparableExpression<T> coalesce(T defaultValue);
+
+    @Override
+    CoalesceBuilder.Cmp<T> coalesceBuilder();
 }

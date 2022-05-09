@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast;
 
+import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
 import org.babyfish.jimmer.sql.ast.impl.Constants;
 import org.babyfish.jimmer.sql.ast.impl.Literals;
 import org.babyfish.jimmer.sql.ast.impl.Tuples;
@@ -33,6 +34,10 @@ public interface Expression<T> extends Selection<T> {
     Predicate in(TypedSubQuery<T> subQuery);
 
     Predicate notIn(TypedSubQuery<T> subQuery);
+
+    Expression<T> coalesce(T defaultValue);
+
+    CoalesceBuilder<T> coalesceBuilder();
 
     static <N extends Number> NumericExpression<N> constant(N value) {
         return Constants.number(value);
