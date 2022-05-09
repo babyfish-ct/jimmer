@@ -12,16 +12,23 @@ class UseTableVisitor extends AstVisitor {
 
     @Override
     public void visitTableReference(Table<?> table, ImmutableProp prop) {
-        SqlBuilder sqlBuilder = getSqlBuilder();
+
         TableImpl<?> tableImpl = TableImpl.unwrap(table);
         if (prop == null) {
             if (tableImpl.getImmutableType().getSelectableProps().size() > 1) {
-                sqlBuilder.useTable(tableImpl);
+                use(tableImpl);
             }
         } else if (prop.isId()) {
-            sqlBuilder.useTable(tableImpl.getParent());
+            use(tableImpl.getParent());
         } else {
-            sqlBuilder.useTable(tableImpl);
+            use(tableImpl);
+        }
+    }
+
+    private void use(TableImpl<?> table) {
+        if (table != null) {
+            getSqlBuilder().useTable(table);
+            use(table.getParent());
         }
     }
 }

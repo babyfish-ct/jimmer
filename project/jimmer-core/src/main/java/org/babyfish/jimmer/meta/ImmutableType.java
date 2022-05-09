@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.meta;
 
+import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.meta.sql.Column;
@@ -10,14 +11,16 @@ import javax.persistence.Table;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 public class ImmutableType {
+
+    private static final Class<?> TABLE_CLASS;
 
     private static Map<Class<?>, ImmutableType> positiveCacheMap =
             new WeakHashMap<Class<?>, ImmutableType>();
@@ -131,6 +134,20 @@ public class ImmutableType {
     }
 
     private static ImmutableType create(Class<?> javaClass) {
+        if (TABLE_CLASS != null && TABLE_CLASS.isAssignableFrom(javaClass)) {
+            if (javaClass.getTypeParameters().length != 0) {
+                return null;
+            }
+            Type type = TypeUtils
+                    .getTypeArguments(javaClass, TABLE_CLASS)
+                    .values()
+                    .iterator()
+                    .next();
+            if (!(type instanceof Class<?>)) {
+                return null;
+            }
+            javaClass = (Class<?>) type;
+        }
         Class<?> immutableJavaClass = getImmutableJavaClass(javaClass);
         if (immutableJavaClass == null) {
             return null;
@@ -335,5 +352,15 @@ public class ImmutableType {
         protected boolean removeEldestEntry(Map.Entry eldest) {
             return true;
         }
+    }
+
+    static {
+        Class<?> tableClass;
+        try {
+            tableClass = Class.forName("org.babyfish.jimmer.sql.ast.table.Table");
+        } catch (ClassNotFoundException ex) {
+            tableClass = null;
+        }
+        TABLE_CLASS = tableClass;
     }
 }

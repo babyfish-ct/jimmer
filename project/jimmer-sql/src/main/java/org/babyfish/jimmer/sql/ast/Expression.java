@@ -11,7 +11,11 @@ public interface Expression<T> extends Selection<T> {
 
     Predicate eq(Expression<T> other);
 
+    Predicate eq(T other);
+
     Predicate ne(Expression<T> other);
+
+    Predicate ne(T other);
 
     Predicate isNull();
 

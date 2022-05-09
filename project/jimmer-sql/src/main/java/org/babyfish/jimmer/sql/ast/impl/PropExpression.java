@@ -35,13 +35,13 @@ class PropExpression<T> extends AbstractExpression<T> {
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
-        table.renderSelection(prop, builder);
+    public void accept(AstVisitor visitor) {
+        visitor.visitTableReference(table, prop);
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
-        visitor.visitTableReference(table, prop);
+    public void renderTo(SqlBuilder builder) {
+        table.renderSelection(prop, builder);
     }
 
     @Override

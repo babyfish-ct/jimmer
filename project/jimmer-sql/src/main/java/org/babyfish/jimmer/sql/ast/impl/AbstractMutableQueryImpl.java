@@ -220,17 +220,19 @@ abstract class AbstractMutableQueryImpl
         }
 
         private void handle(TableImpl<?> table, boolean isId) {
-            SqlBuilder sqlBuilder = getSqlBuilder();
             if (table.getDestructive() != TableImpl.Destructive.NONE) {
                 if (isId) {
-                    sqlBuilder.useTable(table.getParent());
+                    use(table.getParent());
                 } else {
-                    sqlBuilder.useTable(table);
+                    use(table);
                 }
             }
-            TableImpl parent = table.getParent();
-            if (parent != null) {
-                handle(parent, false);
+        }
+
+        private void use(TableImpl<?> table) {
+            if (table != null) {
+                getSqlBuilder().useTable(table);
+                use(table.getParent());
             }
         }
     }

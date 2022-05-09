@@ -15,8 +15,18 @@ abstract class AbstractExpression<T> implements ExpressionSpi<T>, Ast {
     }
 
     @Override
+    public Predicate eq(T other) {
+        return eq(Literals.any(other));
+    }
+
+    @Override
     public Predicate ne(Expression<T> other) {
         return new ComparisonPredicate.Ne(this, (AbstractExpression<?>)other);
+    }
+
+    @Override
+    public Predicate ne(T other) {
+        return ne(Literals.any(other));
     }
 
     @Override

@@ -116,13 +116,13 @@ public class TableImpl<E> implements Table<E>, Ast {
     }
 
     @Override
-    public <XT extends Table<?>> XT inverseJoin(Class<?> targetType, String backProp) {
+    public <XE, XT extends Table<XE>> XT inverseJoin(Class<XE> targetType, String backProp) {
         return inverseJoin(targetType, backProp, JoinType.INNER);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <XT extends Table<?>> XT inverseJoin(Class<?> targetType, String backProp, JoinType joinType) {
+    public <XE, XT extends Table<XE>> XT inverseJoin(Class<XE> targetType, String backProp, JoinType joinType) {
         ImmutableType immutableTargetType = ImmutableType.tryGet(targetType);
         if (immutableTargetType == null) {
             throw new IllegalArgumentException("'" + targetType.getName() + "' is not entity type");
@@ -132,6 +132,32 @@ public class TableImpl<E> implements Table<E>, Ast {
             throw new IllegalArgumentException("'" + backProp + "' is not back association property");
         }
         return (XT)join0(true, immutableBackProp, joinType);
+    }
+
+    @Override
+    public <XT extends Table<?>> XT inverseJoinByTable(
+            Class<XT> targetTableType,
+            String backProp
+    ) {
+        return inverseJoinByTable(targetTableType, backProp, joinType);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <XT extends Table<?>> XT inverseJoinByTable(
+            Class<XT> targetTableType,
+            String backProp,
+            JoinType joinType
+    ) {
+        ImmutableType immutableType = ImmutableType.tryGet(targetTableType);
+        if (immutableType == null) {
+            throw new IllegalArgumentException(
+                    "Cannot get immutable type from table type \"" +
+                            targetTableType.getName() +
+                            "\""
+            );
+        }
+        return (XT)inverseJoin(immutableType.getJavaClass(), backProp, joinType);
     }
 
     private Table<?> join0(

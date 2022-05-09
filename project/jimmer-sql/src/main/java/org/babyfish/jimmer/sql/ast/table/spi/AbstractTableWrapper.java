@@ -29,13 +29,30 @@ public abstract class AbstractTableWrapper<E> implements Table<E> {
     }
 
     @Override
-    public <XT extends Table<?>> XT inverseJoin(Class<?> targetType, String backProp) {
+    public <XE, XT extends Table<XE>> XT inverseJoin(Class<XE> targetType, String backProp) {
         return raw.inverseJoin(targetType, backProp);
     }
 
     @Override
-    public <XT extends Table<?>> XT inverseJoin(Class<?> targetType, String backProp, JoinType joinType) {
+    public <XE, XT extends Table<XE>> XT inverseJoin(Class<XE> targetType, String backProp, JoinType joinType) {
         return raw.inverseJoin(targetType, backProp, joinType);
+    }
+
+    @Override
+    public <XT extends Table<?>> XT inverseJoinByTable(
+            Class<XT> targetTableType,
+            String backProp
+    ) {
+        return raw.inverseJoinByTable(targetTableType, backProp);
+    }
+
+    @Override
+    public <XT extends Table<?>> XT inverseJoinByTable(
+            Class<XT> targetTableType,
+            String backProp,
+            JoinType joinType
+    ) {
+        return raw.inverseJoinByTable(targetTableType, backProp, joinType);
     }
 
     public Table<E> __unwrap() {
