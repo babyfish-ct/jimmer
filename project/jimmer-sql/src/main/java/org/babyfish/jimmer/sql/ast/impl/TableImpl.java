@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.sql.Column;
 import org.babyfish.jimmer.meta.sql.MiddleTable;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTableWrapper;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
@@ -20,7 +21,7 @@ public class TableImpl<E> implements Table<E>, Ast {
 
     private ImmutableType immutableType;
 
-    private TableImpl parent;
+    private TableImpl<?> parent;
 
     private boolean isInverse;
 
@@ -38,7 +39,7 @@ public class TableImpl<E> implements Table<E>, Ast {
     public TableImpl(
             AbstractMutableStatementImpl statement,
             ImmutableType immutableType,
-            TableImpl parent,
+            TableImpl<?> parent,
             boolean isInverse,
             ImmutableProp joinProp,
             JoinType joinType
@@ -67,6 +68,10 @@ public class TableImpl<E> implements Table<E>, Ast {
         return immutableType;
     }
 
+    public AbstractMutableStatementImpl getStatement() {
+        return statement;
+    }
+
     public TableImpl<?> getParent() {
         return parent;
     }
@@ -80,7 +85,7 @@ public class TableImpl<E> implements Table<E>, Ast {
             ImmutableProp joinProp,
             JoinType joinType
     ) {
-        return new TableImpl(
+        return new TableImpl<>(
                 statement,
                 isInverse ? joinProp.getDeclaringType() : joinProp.getTargetType(),
                 this,
@@ -88,6 +93,15 @@ public class TableImpl<E> implements Table<E>, Ast {
                 joinProp,
                 joinType
         );
+    }
+
+    @Override
+    public Predicate eq(Table<E> other) {
+        if (TableImpl.unwrap(other).getImmutableType() != immutableType) {
+            throw new IllegalArgumentException("Cannot compare tables of different types");
+        }
+        String idPropName = immutableType.getIdProp().getName();
+        return this.<Expression<Object>>get(idPropName).eq(other.get(idPropName));
     }
 
     @SuppressWarnings("unchecked")

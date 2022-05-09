@@ -142,7 +142,11 @@ public class TableGenerator {
                         "block"
                 )
                 .returns(ParameterizedTypeName.get(CONFIGURABLE_TYPED_SUB_QUERY_CLASS_NAME, typeVariable))
-                .addStatement("throw new RuntimeException()");
+                .addStatement(
+                        "return $T.createSubQuery($T.class, parent, block)",
+                        QUERIES_CLASS_NAME,
+                        type.getSubQueryTableClassName()
+                );
         typeBuilder.addMethod(builder.build());
     }
 
@@ -160,7 +164,11 @@ public class TableGenerator {
                         "block"
                 )
                 .returns(MUTABLE_SUB_QUERY_CLASS_NAME)
-                .addStatement("throw new RuntimeException()");
+                .addStatement(
+                        "return $T.createWildSubQuery($T.class, parent, block)",
+                        QUERIES_CLASS_NAME,
+                        type.getSubQueryTableClassName()
+                );
         typeBuilder.addMethod(builder.build());
     }
 

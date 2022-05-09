@@ -1,27 +1,28 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 public class NullityPredicate extends AbstractPredicate {
 
-    private AbstractExpression<?> expression;
+    private Expression<?> expression;
 
     private boolean negative;
 
-    public NullityPredicate(AbstractExpression<?> expression, boolean negative) {
+    public NullityPredicate(Expression<?> expression, boolean negative) {
         this.expression = expression;
         this.negative = negative;
     }
 
     @Override
     public void accept(AstVisitor visitor) {
-        expression.accept(visitor);
+        ((Ast) expression).accept(visitor);
     }
 
     @Override
     public void renderTo(SqlBuilder builder) {
-        renderChild(expression, builder);
+        renderChild((Ast) expression, builder);
         if (negative) {
             builder.sql(" is not null");
         } else {
@@ -30,7 +31,7 @@ public class NullityPredicate extends AbstractPredicate {
     }
 
     @Override
-    protected int precedence() {
+    public int precedence() {
         return 0;
     }
 

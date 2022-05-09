@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 
@@ -8,7 +9,7 @@ import java.math.BigDecimal;
 interface NumberExpressionImplementor<N extends Number> extends NumericExpression<N> {
 
     @Override
-    default NumericExpression<N> plus(NumericExpression<N> other) {
+    default NumericExpression<N> plus(Expression<N> other) {
         return new BinaryExpression.Plus<>(getType(), this, other);
     }
 
@@ -18,7 +19,7 @@ interface NumberExpressionImplementor<N extends Number> extends NumericExpressio
     }
 
     @Override
-    default NumericExpression<N> minus(NumericExpression<N> other) {
+    default NumericExpression<N> minus(Expression<N> other) {
         return new BinaryExpression.Minus<>(getType(), this, other);
     }
 
@@ -28,7 +29,7 @@ interface NumberExpressionImplementor<N extends Number> extends NumericExpressio
     }
 
     @Override
-    default NumericExpression<N> times(NumericExpression<N> other) {
+    default NumericExpression<N> times(Expression<N> other) {
         return new BinaryExpression.Times<>(getType(), this, other);
     }
 
@@ -38,7 +39,7 @@ interface NumberExpressionImplementor<N extends Number> extends NumericExpressio
     }
 
     @Override
-    default NumericExpression<N> div(NumericExpression<N> other) {
+    default NumericExpression<N> div(Expression<N> other) {
         return new BinaryExpression.Div<>(getType(), this, other);
     }
 
@@ -48,7 +49,7 @@ interface NumberExpressionImplementor<N extends Number> extends NumericExpressio
     }
 
     @Override
-    default NumericExpression<N> rem(NumericExpression<N> other) {
+    default NumericExpression<N> rem(Expression<N> other) {
         return new BinaryExpression.Rem<>(getType(), this, other);
     }
 
@@ -58,7 +59,7 @@ interface NumberExpressionImplementor<N extends Number> extends NumericExpressio
     }
 
     @Override
-    default Predicate lt(NumericExpression<N> other) {
+    default Predicate lt(Expression<N> other) {
         return new ComparisonPredicate.Lt(this, other);
     }
 
@@ -68,7 +69,7 @@ interface NumberExpressionImplementor<N extends Number> extends NumericExpressio
     }
 
     @Override
-    default Predicate le(NumericExpression<N> other) {
+    default Predicate le(Expression<N> other) {
         return new ComparisonPredicate.Le(this, other);
     }
 
@@ -78,7 +79,7 @@ interface NumberExpressionImplementor<N extends Number> extends NumericExpressio
     }
 
     @Override
-    default Predicate gt(NumericExpression<N> other) {
+    default Predicate gt(Expression<N> other) {
         return new ComparisonPredicate.Gt(this, other);
     }
 
@@ -88,7 +89,7 @@ interface NumberExpressionImplementor<N extends Number> extends NumericExpressio
     }
 
     @Override
-    default Predicate ge(NumericExpression<N> other) {
+    default Predicate ge(Expression<N> other) {
         return new ComparisonPredicate.Ge(this, other);
     }
 

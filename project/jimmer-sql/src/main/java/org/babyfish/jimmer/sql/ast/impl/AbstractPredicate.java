@@ -73,7 +73,7 @@ abstract class AbstractPredicate extends AbstractExpression<Boolean> implements 
         }
 
         @Override
-        protected int precedence() {
+        public int precedence() {
             return 6;
         }
     }
@@ -90,7 +90,7 @@ abstract class AbstractPredicate extends AbstractExpression<Boolean> implements 
         }
 
         @Override
-        protected int precedence() {
+        public int precedence() {
             return 7;
         }
     }
@@ -115,7 +115,7 @@ abstract class AbstractPredicate extends AbstractExpression<Boolean> implements 
         }
 
         @Override
-        protected int precedence() {
+        public int precedence() {
             return 5;
         }
     }

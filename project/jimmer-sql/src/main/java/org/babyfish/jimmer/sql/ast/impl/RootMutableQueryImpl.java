@@ -12,7 +12,6 @@ import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 
 import java.util.Arrays;
-import java.util.Collections;
 
 public class RootMutableQueryImpl
         extends AbstractMutableQueryImpl

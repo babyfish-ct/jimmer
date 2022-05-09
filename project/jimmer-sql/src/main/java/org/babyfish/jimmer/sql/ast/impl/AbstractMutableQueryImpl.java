@@ -73,7 +73,7 @@ abstract class AbstractMutableQueryImpl
     }
 
     protected TableImpl<?> createTableImpl(ImmutableType immutableType) {
-        return new TableImpl(
+        return new TableImpl<>(
                 this,
                 immutableType,
                 null,

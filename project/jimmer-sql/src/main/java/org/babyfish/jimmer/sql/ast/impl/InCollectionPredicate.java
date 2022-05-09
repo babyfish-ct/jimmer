@@ -49,7 +49,7 @@ public class InCollectionPredicate extends AbstractPredicate {
     }
 
     @Override
-    protected int precedence() {
+    public int precedence() {
         return 7;
     }
 
