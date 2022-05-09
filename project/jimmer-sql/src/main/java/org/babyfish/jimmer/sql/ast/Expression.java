@@ -35,6 +35,10 @@ public interface Expression<T> extends Selection<T> {
 
     Predicate notIn(TypedSubQuery<T> subQuery);
 
+    NumericExpression<Long> count();
+
+    NumericExpression<Long> count(boolean distinct);
+
     Expression<T> coalesce(T defaultValue);
 
     CoalesceBuilder<T> coalesceBuilder();

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql;
 
+import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
@@ -12,17 +13,26 @@ public interface SqlClient {
         return new Builder();
     }
 
+    Dialect getDialect();
+
     Executor getExecutor();
 
     <T, S> ScalarProvider<T, S> getScalarProvider(Class<T> scalarType);
 
     class Builder {
 
+        private Dialect dialect;
+
         private Executor executor;
 
         private Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap = new HashMap<>();
 
         Builder() {}
+
+        public Builder setDialect(Dialect dialect) {
+            this.dialect = dialect;
+            return this;
+        }
 
         public Builder setExecutor(Executor executor) {
             this.executor = executor;
@@ -42,7 +52,7 @@ public interface SqlClient {
         }
 
         public SqlClient build() {
-            return new SqlClientImpl(executor, scalarProviderMap);
+            return new SqlClientImpl(dialect, executor, scalarProviderMap);
         }
     }
 }

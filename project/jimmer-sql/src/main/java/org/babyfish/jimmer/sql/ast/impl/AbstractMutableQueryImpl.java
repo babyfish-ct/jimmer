@@ -31,7 +31,8 @@ abstract class AbstractMutableQueryImpl
 
     private List<Order> orders = new ArrayList<>();
 
-    public AbstractMutableQueryImpl(
+    @SuppressWarnings("unchecked")
+    protected AbstractMutableQueryImpl(
             TableAliasAllocator tableAliasAllocator,
             SqlClient sqlClient,
             ImmutableType immutableType
@@ -135,7 +136,7 @@ abstract class AbstractMutableQueryImpl
         if (overriddenSelections != null) {
             AstVisitor ignoredVisitor = new UseJoinOfIgnoredClauseVisitor(visitor.getSqlBuilder());
             for (Selection<?> selection : overriddenSelections) {
-                ((Ast)selection).accept(ignoredVisitor);
+                Ast.from(selection).accept(ignoredVisitor);
             }
         }
     }

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.common;
 
 import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.model.Gender;
 import org.babyfish.jimmer.sql.runtime.DefaultExecutor;
 import org.babyfish.jimmer.sql.runtime.Executor;
@@ -24,6 +25,8 @@ public class AbstractTest {
 
     private static final String JDBC_URL = "jdbc:h2:~/jdbc_test_db";
 
+    private DynamicDialect dynamicDialect = new DynamicDialect();
+
     @BeforeEach
     public void beforeTest() {
         executions.clear();
@@ -31,6 +34,7 @@ public class AbstractTest {
 
     private SqlClient sqlClient = SqlClient
             .newBuilder()
+            .setDialect(dynamicDialect)
             .setExecutor(new ExecutorImpl())
             .addScalarProvider(
                     ScalarProvider.enumProviderByString(Gender.class, builder -> {
@@ -40,6 +44,16 @@ public class AbstractTest {
                     })
             )
             .build();
+
+    protected void using(Dialect dialect, Runnable block) {
+        Dialect oldTargetDialect = dynamicDialect.targetDialect;
+        dynamicDialect.targetDialect = dialect;
+        try {
+            block.run();
+        } finally {
+            dynamicDialect.targetDialect = oldTargetDialect;
+        }
+    }
 
     private List<Execution> executions = new ArrayList<>();
 

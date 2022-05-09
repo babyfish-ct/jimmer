@@ -110,13 +110,26 @@ public class TableGenerator {
                 .addParameter(
                         ParameterizedTypeName.get(
                                 BI_FUNCTION_CLASS_NAME,
-                                MUTABLE_ROOT_QUERY_CLASS_NAME,
+                                ParameterizedTypeName.get(
+                                        MUTABLE_ROOT_QUERY_CLASS_NAME,
+                                        type.getTableClassName()
+                                ),
                                 type.getTableClassName(),
-                                ParameterizedTypeName.get(CONFIGURABLE_TYPED_ROOT_QUERY_CLASS_NAME, typeVariable)
+                                ParameterizedTypeName.get(
+                                        CONFIGURABLE_TYPED_ROOT_QUERY_CLASS_NAME,
+                                        type.getTableClassName(),
+                                        typeVariable
+                                )
                         ),
                         "block"
                 )
-                .returns(ParameterizedTypeName.get(CONFIGURABLE_TYPED_ROOT_QUERY_CLASS_NAME, typeVariable))
+                .returns(
+                        ParameterizedTypeName.get(
+                                CONFIGURABLE_TYPED_ROOT_QUERY_CLASS_NAME,
+                                type.getTableClassName(),
+                                typeVariable
+                        )
+                )
                 .addStatement(
                         "return $T.createQuery($T.class, sqlClient, block)",
                         QUERIES_CLASS_NAME,

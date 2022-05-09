@@ -99,11 +99,13 @@ interface NumberExpressionImplementor<N extends Number> extends NumericExpressio
     }
 
     @Override
-    default NumericExpression<Long> count(boolean distinct) {
-        if (distinct) {
-            return new AggregationExpression.CountDistinct(this);
-        }
-        return new AggregationExpression.Count(this);
+    default Predicate between(Expression<N> min, Expression<N> max) {
+        return new BetweenPredicate(this, min, max);
+    }
+
+    @Override
+    default Predicate between(N min, N max) {
+        return new BetweenPredicate(this, Literals.any(min), Literals.any(max));
     }
 
     @Override

@@ -20,6 +20,10 @@ public interface ComparableExpression<T extends Comparable<T>> extends Expressio
 
     Predicate ge(T other);
 
+    Predicate between(Expression<T> min, Expression<T> max);
+
+    Predicate between(T min, T max);
+
     @Override
     ComparableExpression<T> coalesce(T defaultValue);
 

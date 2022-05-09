@@ -15,8 +15,8 @@ public class JoinTest extends AbstractQueryTest {
     @Test
     public void testSimple() {
         executeAndExpect(
-                BookTable.createQuery(getSqlClient(), (query, book) -> {
-                    return query.select(book);
+                BookTable.createQuery(getSqlClient(), (q, book) -> {
+                    return q.select(book);
                 }),
                 ctx -> {
                     ctx.sql(
@@ -31,24 +31,23 @@ public class JoinTest extends AbstractQueryTest {
     @Test
     public void testMergedJoinFromParentToChild() {
         executeAndExpect(
-                BookStoreTable.createQuery(getSqlClient(), (query, store) -> {
-                    return query
-                            .where(
-                                    store.<BookTable>join("books", JoinType.LEFT).price()
-                                            .ge(new BigDecimal(20))
-                            )
-                            .where(
-                                    store.<BookTable>join("books").price()
-                                            .le(new BigDecimal(30))
-                            )
-                            .where(
-                                    store
-                                            .<BookTable>join("books")
-                                            .<AuthorTable>join("authors")
-                                            .firstName()
-                                            .ilike("Alex")
-                            )
-                            .select(Expression.constant(1));
+                BookStoreTable.createQuery(getSqlClient(), (q, store) -> {
+                    q.where(
+                            store.<BookTable>join("books", JoinType.LEFT).price()
+                                    .ge(new BigDecimal(20))
+                    );
+                    q.where(
+                            store.<BookTable>join("books").price()
+                                    .le(new BigDecimal(30))
+                    );
+                    q.where(
+                            store
+                                    .<BookTable>join("books")
+                                    .<AuthorTable>join("authors")
+                                    .firstName()
+                                    .ilike("Alex")
+                    );
+                    return q.select(Expression.constant(1));
                 }),
                 ctx -> {
                     ctx.sql(
@@ -69,28 +68,27 @@ public class JoinTest extends AbstractQueryTest {
     @Test
     public void testMergedJoinFromChildToParent() {
         executeAndExpect(
-                AuthorTable.createQuery(getSqlClient(), (query, author) -> {
-                    return query
-                            .where(
-                                    author
-                                            .<BookTable>join("books", JoinType.LEFT)
-                                            .price()
-                                            .ge(new BigDecimal(20))
-                            )
-                            .where(
-                                    author
-                                            .<BookTable>join("books")
-                                            .price()
-                                            .le(new BigDecimal(30))
-                            )
-                            .where(
-                                    author
-                                            .<BookTable>join("books")
-                                            .store()
-                                            .name()
-                                            .ilike("MANNING")
-                            )
-                            .select(Expression.constant(1));
+                AuthorTable.createQuery(getSqlClient(), (q, author) -> {
+                    q.where(
+                            author
+                                    .<BookTable>join("books", JoinType.LEFT)
+                                    .price()
+                                    .ge(new BigDecimal(20))
+                    );
+                    q.where(
+                            author
+                                    .<BookTable>join("books")
+                                    .price()
+                                    .le(new BigDecimal(30))
+                    );
+                    q.where(
+                            author
+                                    .<BookTable>join("books")
+                                    .store()
+                                    .name()
+                                    .ilike("MANNING")
+                    );
+                    return q.select(Expression.constant(1));
                 }),
                 ctx -> {
                     ctx.sql(
@@ -109,11 +107,11 @@ public class JoinTest extends AbstractQueryTest {
     @Test
     public void testUnnecessaryJoin() {
         executeAndExpect(
-                BookTable.createQuery(getSqlClient(), (query, book) -> {
-                    query.where(
+                BookTable.createQuery(getSqlClient(), (q, book) -> {
+                    q.where(
                             book.store().id().in(oreillyId, manningId)
                     );
-                    return query.select(Expression.constant(1));
+                    return q.select(Expression.constant(1));
                 }),
                 ctx -> {
                     ctx.sql(
@@ -127,12 +125,13 @@ public class JoinTest extends AbstractQueryTest {
     @Test
     public void testHalfJoin() {
         executeAndExpect(
-                BookTable.createQuery(getSqlClient(), (query, book) -> {
-                    return query.where(
+                BookTable.createQuery(getSqlClient(), (q, book) -> {
+                    q.where(
                             book.<AuthorTable>join("authors")
                                     .id()
                                     .in(alexId, borisId)
-                    ).select(Expression.constant(1));
+                    );
+                    return q.select(Expression.constant(1));
                 }),
                 ctx -> {
                     ctx.sql(
@@ -149,16 +148,15 @@ public class JoinTest extends AbstractQueryTest {
     @Test
     public void testHalfInverseJoin() {
         executeAndExpect(
-                AuthorTable.createQuery(getSqlClient(), (query, author) ->
-                    query
-                            .where(
-                                    author
-                                            .<BookTable>join("books")
-                                            .id()
-                                            .in(learningGraphQLId1, learningGraphQLId2)
-                            )
-                            .select(Expression.constant(1))
-                ),
+                AuthorTable.createQuery(getSqlClient(), (q, author) -> {
+                    q.where(
+                            author
+                                    .<BookTable>join("books")
+                                    .id()
+                                    .in(learningGraphQLId1, learningGraphQLId2)
+                    );
+                    return q.select(Expression.constant(1));
+                }),
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
@@ -174,16 +172,15 @@ public class JoinTest extends AbstractQueryTest {
     @Test
     public void testOneToManyCannotBeOptimized() {
         executeAndExpect(
-                BookStoreTable.createQuery(getSqlClient(), (query, store) ->
-                        query
-                                .where(
-                                        store
-                                                .<BookTable>join("books")
-                                                .id()
-                                                .in(learningGraphQLId1, learningGraphQLId2)
-                                )
-                                .select(Expression.constant(1))
-                ),
+                BookStoreTable.createQuery(getSqlClient(), (q, store) -> {
+                    q.where(
+                            store
+                                    .<BookTable>join("books")
+                                    .id()
+                                    .in(learningGraphQLId1, learningGraphQLId2)
+                    );
+                    return q.select(Expression.constant(1));
+                }),
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
@@ -199,15 +196,14 @@ public class JoinTest extends AbstractQueryTest {
     @Test
     public void testOuterJoin() {
         executeAndExpect(
-                BookTable.createQuery(getSqlClient(), (query, book) ->
-                        query
-                                .where(
-                                        book.store(JoinType.LEFT).id().isNotNull().or(
-                                                book.store(JoinType.LEFT).name().ilike("MANNING")
-                                        )
-                                )
-                                .select(Expression.constant(1))
-                ),
+                BookTable.createQuery(getSqlClient(), (q, book) -> {
+                    q.where(
+                            book.store(JoinType.LEFT).id().isNotNull().or(
+                                    book.store(JoinType.LEFT).name().ilike("MANNING")
+                            )
+                    );
+                    return q.select(Expression.constant(1));
+                }),
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
