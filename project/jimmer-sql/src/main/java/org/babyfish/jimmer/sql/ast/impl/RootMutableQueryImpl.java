@@ -9,13 +9,14 @@ import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.NullOrderMode;
 import org.babyfish.jimmer.sql.ast.query.OrderMode;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 
 import java.util.Arrays;
 
-public class RootMutableQueryImpl
+class RootMutableQueryImpl<T extends Table<?>>
         extends AbstractMutableQueryImpl
-        implements MutableRootQuery {
+        implements MutableRootQuery<T> {
 
     public RootMutableQueryImpl(
             SqlClient sqlClient,
@@ -25,7 +26,7 @@ public class RootMutableQueryImpl
     }
 
     @Override
-    public <R> ConfigurableTypedRootQuery<R> select(Selection<R> selection) {
+    public <R> ConfigurableTypedRootQuery<T, R> select(Selection<R> selection) {
         return new ConfigurableTypedRootQueryImpl<>(
                 new TypedQueryData(Arrays.asList(selection)),
                 this
@@ -33,7 +34,7 @@ public class RootMutableQueryImpl
     }
 
     @Override
-    public <T1, T2> ConfigurableTypedRootQuery<Tuple2<T1, T2>> select(Selection<T1> selection1, Selection<T2> selection2) {
+    public <T1, T2> ConfigurableTypedRootQuery<T, Tuple2<T1, T2>> select(Selection<T1> selection1, Selection<T2> selection2) {
         return new ConfigurableTypedRootQueryImpl<>(
                 new TypedQueryData(Arrays.asList(selection1, selection2)),
                 this
@@ -41,7 +42,7 @@ public class RootMutableQueryImpl
     }
 
     @Override
-    public <T1, T2, T3> ConfigurableTypedRootQuery<Tuple3<T1, T2, T3>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3) {
+    public <T1, T2, T3> ConfigurableTypedRootQuery<T, Tuple3<T1, T2, T3>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3) {
         return new ConfigurableTypedRootQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
@@ -55,7 +56,7 @@ public class RootMutableQueryImpl
     }
 
     @Override
-    public <T1, T2, T3, T4> ConfigurableTypedRootQuery<Tuple4<T1, T2, T3, T4>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4) {
+    public <T1, T2, T3, T4> ConfigurableTypedRootQuery<T, Tuple4<T1, T2, T3, T4>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4) {
         return new ConfigurableTypedRootQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
@@ -70,7 +71,7 @@ public class RootMutableQueryImpl
     }
 
     @Override
-    public <T1, T2, T3, T4, T5> ConfigurableTypedRootQuery<Tuple5<T1, T2, T3, T4, T5>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5) {
+    public <T1, T2, T3, T4, T5> ConfigurableTypedRootQuery<T, Tuple5<T1, T2, T3, T4, T5>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5) {
         return new ConfigurableTypedRootQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
@@ -86,7 +87,7 @@ public class RootMutableQueryImpl
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6> ConfigurableTypedRootQuery<Tuple6<T1, T2, T3, T4, T5, T6>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6) {
+    public <T1, T2, T3, T4, T5, T6> ConfigurableTypedRootQuery<T, Tuple6<T1, T2, T3, T4, T5, T6>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6) {
         return new ConfigurableTypedRootQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
@@ -103,7 +104,7 @@ public class RootMutableQueryImpl
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7> ConfigurableTypedRootQuery<Tuple7<T1, T2, T3, T4, T5, T6, T7>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7) {
+    public <T1, T2, T3, T4, T5, T6, T7> ConfigurableTypedRootQuery<T, Tuple7<T1, T2, T3, T4, T5, T6, T7>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7) {
         return new ConfigurableTypedRootQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
@@ -121,7 +122,7 @@ public class RootMutableQueryImpl
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7, T8> ConfigurableTypedRootQuery<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7, Selection<T8> selection8) {
+    public <T1, T2, T3, T4, T5, T6, T7, T8> ConfigurableTypedRootQuery<T, Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7, Selection<T8> selection8) {
         return new ConfigurableTypedRootQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
@@ -140,7 +141,7 @@ public class RootMutableQueryImpl
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7, T8, T9> ConfigurableTypedRootQuery<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7, Selection<T8> selection8, Selection<T9> selection9) {
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9> ConfigurableTypedRootQuery<T, Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7, Selection<T8> selection8, Selection<T9> selection9) {
         return new ConfigurableTypedRootQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(

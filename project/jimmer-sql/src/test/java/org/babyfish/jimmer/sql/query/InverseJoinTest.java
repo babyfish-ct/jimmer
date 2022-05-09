@@ -14,16 +14,15 @@ public class InverseJoinTest extends AbstractQueryTest {
     @Test
     public void testReverseJoinOnInverseProp() {
         executeAndExpect(
-                BookTable.createQuery(getSqlClient(), (query, book) ->
-                        query
-                                .where(
-                                        book
-                                                .inverseJoinByTable(AuthorTable.class, "books")
-                                                .firstName()
-                                                .eq("Alex")
-                                )
-                                .select(Expression.constant(1))
-                ),
+                BookTable.createQuery(getSqlClient(), (q, book) -> {
+                    q.where(
+                            book
+                                    .inverseJoinByTable(AuthorTable.class, "books")
+                                    .firstName()
+                                    .eq("Alex")
+                    );
+                    return q.select(Expression.constant(1));
+                }),
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
@@ -40,16 +39,15 @@ public class InverseJoinTest extends AbstractQueryTest {
     @Test
     public void testReverseJoinOnNormalProp() {
         executeAndExpect(
-                AuthorTable.createQuery(getSqlClient(), (query, author) ->
-                        query
-                                .where(
-                                        author
-                                                .inverseJoinByTable(BookTable.class, "authors")
-                                                .name()
-                                                .eq("Learning GraphQL")
-                                )
-                                .select(Expression.constant(1))
-                ),
+                AuthorTable.createQuery(getSqlClient(), (q, author) -> {
+                    q.where(
+                            author
+                                    .inverseJoinByTable(BookTable.class, "authors")
+                                    .name()
+                                    .eq("Learning GraphQL")
+                    );
+                    return q.select(Expression.constant(1));
+                }),
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
@@ -66,16 +64,15 @@ public class InverseJoinTest extends AbstractQueryTest {
     @Test
     public void testInverseHalfJoinOnInverseProp() {
         executeAndExpect(
-                BookTable.createQuery(getSqlClient(), (query, book) ->
-                        query
-                                .where(
-                                        book
-                                                .inverseJoinByTable(AuthorTable.class, "books")
-                                                .id()
-                                                .in(alexId, danId)
-                                )
-                                .select(Expression.constant(1))
-                ),
+                BookTable.createQuery(getSqlClient(), (q, book) -> {
+                    q.where(
+                            book
+                                    .inverseJoinByTable(AuthorTable.class, "books")
+                                    .id()
+                                    .in(alexId, danId)
+                    );
+                    return q.select(Expression.constant(1));
+                }),
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
@@ -91,16 +88,15 @@ public class InverseJoinTest extends AbstractQueryTest {
     @Test
     public void testInverseHalfJoinOnNormalProp() {
         executeAndExpect(
-                AuthorTable.createQuery(getSqlClient(), (query, author) ->
-                        query
-                                .where(
-                                        author
-                                                .inverseJoinByTable(BookTable.class, "authors")
-                                                .id()
-                                                .in(learningGraphQLId1, learningGraphQLId2)
-                                )
-                                .select(Expression.constant(1))
-                ),
+                AuthorTable.createQuery(getSqlClient(), (q, author) -> {
+                    q.where(
+                            author
+                                    .inverseJoinByTable(BookTable.class, "authors")
+                                    .id()
+                                    .in(learningGraphQLId1, learningGraphQLId2)
+                    );
+                    return q.select(Expression.constant(1));
+                }),
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
@@ -116,23 +112,22 @@ public class InverseJoinTest extends AbstractQueryTest {
     @Test
     public void mergeNormalJoinsAndInverseJoins() {
         executeAndExpect(
-                BookStoreTable.createQuery(getSqlClient(), (query, store) ->
-                        query
-                                .where(
-                                        store
-                                                .inverseJoinByTable(BookTable.class, "store", JoinType.LEFT)
-                                                .inverseJoinByTable(AuthorTable.class, "books", JoinType.LEFT)
-                                                .firstName()
-                                                .eq("Alex").or(
-                                                        store
-                                                                .<BookTable>join("books", JoinType.LEFT)
-                                                                .<AuthorTable>join("authors", JoinType.LEFT)
-                                                                .firstName()
-                                                                .eq("Tim")
-                                                )
-                                )
-                                .select(Expression.constant(1))
-                ),
+                BookStoreTable.createQuery(getSqlClient(), (q, store) -> {
+                    q.where(
+                            store
+                                    .inverseJoinByTable(BookTable.class, "store", JoinType.LEFT)
+                                    .inverseJoinByTable(AuthorTable.class, "books", JoinType.LEFT)
+                                    .firstName()
+                                    .eq("Alex").or(
+                                            store
+                                                    .<BookTable>join("books", JoinType.LEFT)
+                                                    .<AuthorTable>join("authors", JoinType.LEFT)
+                                                    .firstName()
+                                                    .eq("Tim")
+                                    )
+                    );
+                    return q.select(Expression.constant(1));
+                }),
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
@@ -150,23 +145,22 @@ public class InverseJoinTest extends AbstractQueryTest {
     @Test
     public void mergeNormalJoinsAndInverseJoinsWithDiffJoinTypes() {
         executeAndExpect(
-                BookStoreTable.createQuery(getSqlClient(), (query, store) ->
-                        query
-                                .where(
-                                        store
-                                                .inverseJoinByTable(BookTable.class, "store", JoinType.LEFT)
-                                                .inverseJoinByTable(AuthorTable.class, "books", JoinType.LEFT)
-                                                .firstName()
-                                                .eq("Alex").or(
-                                                        store
-                                                                .<BookTable>join("books", JoinType.RIGHT)
-                                                                .<AuthorTable>join("authors", JoinType.RIGHT)
-                                                                .firstName()
-                                                                .eq("Tim")
-                                                )
-                                )
-                                .select(Expression.constant(1))
-                ),
+                BookStoreTable.createQuery(getSqlClient(), (q, store) -> {
+                    q.where(
+                            store
+                                    .inverseJoinByTable(BookTable.class, "store", JoinType.LEFT)
+                                    .inverseJoinByTable(AuthorTable.class, "books", JoinType.LEFT)
+                                    .firstName()
+                                    .eq("Alex").or(
+                                            store
+                                                    .<BookTable>join("books", JoinType.RIGHT)
+                                                    .<AuthorTable>join("authors", JoinType.RIGHT)
+                                                    .firstName()
+                                                    .eq("Tim")
+                                    )
+                    );
+                    return q.select(Expression.constant(1));
+                }),
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
@@ -180,31 +174,4 @@ public class InverseJoinTest extends AbstractQueryTest {
                 }
         );
     }
-
-    /*
-    @Test
-    fun mergeNormalJoinsAndReversedJoinsWithDiffJoinTypes() {
-        sqlClient.createQuery(BookStore::class) {
-            where {
-                or(
-                    table
-                        .`←joinReference?`(Book::store)
-                        .`←joinList?`(Author::books)
-                        .get(Author::firstName) eq "Alex",
-                    table.books.authors.firstName eq "Tim"
-                )
-            }
-            select(constant(1))
-        }.executeAndExpect {
-            sql {
-                """select 1 from BOOK_STORE as tb_1_
-                    |inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID
-                    |inner join BOOK_AUTHOR_MAPPING as tb_3_ on tb_2_.ID = tb_3_.BOOK_ID
-                    |inner join AUTHOR as tb_4_ on tb_3_.AUTHOR_ID = tb_4_.ID
-                    |where tb_4_.FIRST_NAME = $1 or tb_4_.FIRST_NAME = $2""".trimMargin()
-            }
-            variables("Alex", "Tim")
-        }
-    }
-     */
 }

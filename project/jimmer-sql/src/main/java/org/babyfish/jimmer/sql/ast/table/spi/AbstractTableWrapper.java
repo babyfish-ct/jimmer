@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.table.spi;
 
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
@@ -17,6 +18,16 @@ public abstract class AbstractTableWrapper<E> implements Table<E> {
     @Override
     public Predicate eq(Table<E> other) {
         return raw.eq(other);
+    }
+
+    @Override
+    public NumericExpression<Long> count() {
+        return raw.count();
+    }
+
+    @Override
+    public NumericExpression<Long> count(boolean distinct) {
+        return raw.count(distinct);
     }
 
     @Override

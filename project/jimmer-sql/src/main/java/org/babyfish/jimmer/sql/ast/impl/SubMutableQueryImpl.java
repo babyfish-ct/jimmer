@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedSubQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.NullOrderMode;
 import org.babyfish.jimmer.sql.ast.query.OrderMode;
+import org.babyfish.jimmer.sql.ast.table.SubQueryTable;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 
 import javax.persistence.criteria.JoinType;

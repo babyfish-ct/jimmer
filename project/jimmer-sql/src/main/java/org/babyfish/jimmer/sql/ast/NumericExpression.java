@@ -42,11 +42,9 @@ public interface NumericExpression<N extends Number> extends Expression<N> {
 
     Predicate ge(N other);
 
-    default NumericExpression<Long> count() {
-        return count(false);
-    }
+    Predicate between(Expression<N> min, Expression<N> max);
 
-    NumericExpression<Long> count(boolean distinct);
+    Predicate between(N min, N max);
 
     NumericExpression<N> sum();
 

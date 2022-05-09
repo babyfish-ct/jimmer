@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.table;
 
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 
@@ -9,6 +10,10 @@ import javax.persistence.criteria.JoinType;
 public interface Table<E> extends Selection<E> {
 
     Predicate eq(Table<E> other);
+
+    NumericExpression<Long> count();
+
+    NumericExpression<Long> count(boolean distinct);
 
     <XE extends Expression<?>> XE get(String prop);
 

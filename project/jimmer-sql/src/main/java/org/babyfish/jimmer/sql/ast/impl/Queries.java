@@ -14,10 +14,10 @@ public class Queries {
     private Queries() {}
 
     @SuppressWarnings("unchecked")
-    public static <T extends Table<?>, R> ConfigurableTypedRootQuery<R> createQuery(
+    public static <T extends Table<?>, R> ConfigurableTypedRootQuery<T, R> createQuery(
             Class<T> tableType,
             SqlClient sqlClient,
-            BiFunction<MutableRootQuery, T, ConfigurableTypedRootQuery<R>> block
+            BiFunction<MutableRootQuery<T>, T, ConfigurableTypedRootQuery<T, R>> block
     ) {
         ImmutableType immutableType = ImmutableType.tryGet(tableType);
         if (immutableType == null) {
@@ -27,11 +27,11 @@ public class Queries {
                             "\""
             );
         }
-        RootMutableQueryImpl query = new RootMutableQueryImpl(
+        RootMutableQueryImpl<T> query = new RootMutableQueryImpl<>(
                 sqlClient,
                 immutableType
         );
-        ConfigurableTypedRootQuery<R> typedQuery = block.apply(query, (T)query.getTable());
+        ConfigurableTypedRootQuery<T, R> typedQuery = block.apply(query, (T)query.getTable());
         query.freeze();
         return typedQuery;
     }

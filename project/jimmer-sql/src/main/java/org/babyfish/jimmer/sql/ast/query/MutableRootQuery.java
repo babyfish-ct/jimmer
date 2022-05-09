@@ -3,28 +3,31 @@ package org.babyfish.jimmer.sql.ast.query;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.query.selectable.RootSelectable;
+import org.babyfish.jimmer.sql.ast.table.Table;
 
-public interface MutableRootQuery extends MutableQuery, RootSelectable {
-
-    @Override
-    MutableRootQuery where(Predicate... predicates);
+public interface MutableRootQuery<T extends Table<?>> extends MutableQuery, RootSelectable<T> {
 
     @Override
-    default MutableRootQuery orderBy(Expression<?> expression) {
-        return (MutableRootQuery) MutableQuery.super.orderBy(expression);
+    MutableRootQuery<T> where(Predicate... predicates);
+
+    @SuppressWarnings("unchecked")
+    @Override
+    default MutableRootQuery<T> orderBy(Expression<?> expression) {
+        return (MutableRootQuery<T>) MutableQuery.super.orderBy(expression);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    default MutableRootQuery<T> orderBy(Expression<?> expression, OrderMode orderMode) {
+        return (MutableRootQuery<T>) MutableQuery.super.orderBy(expression, orderMode);
     }
 
     @Override
-    default MutableRootQuery orderBy(Expression<?> expression, OrderMode orderMode) {
-        return (MutableRootQuery) MutableQuery.super.orderBy(expression, orderMode);
-    }
+    MutableRootQuery<T> orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode);
 
     @Override
-    MutableRootQuery orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode);
+    MutableRootQuery<T> groupBy(Expression<?>... expressions);
 
     @Override
-    MutableRootQuery groupBy(Expression<?>... expressions);
-
-    @Override
-    MutableRootQuery having(Predicate... predicates);
+    MutableRootQuery<T> having(Predicate... predicates);
 }

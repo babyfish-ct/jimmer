@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 
@@ -86,6 +87,19 @@ public interface ExpressionImplementor<T> extends Expression<T> {
     @Override
     default Predicate notIn(TypedSubQuery<T> subQuery) {
         return new InSubQueryPredicate(this, subQuery, true);
+    }
+
+    @Override
+    default NumericExpression<Long> count() {
+        return count(false);
+    }
+
+    @Override
+    default NumericExpression<Long> count(boolean distinct) {
+        if (distinct) {
+            return new AggregationExpression.CountDistinct(this);
+        }
+        return new AggregationExpression.Count(this);
     }
 
     @Override

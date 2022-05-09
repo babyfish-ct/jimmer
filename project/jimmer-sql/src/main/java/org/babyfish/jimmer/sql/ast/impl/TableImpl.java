@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.sql.Column;
 import org.babyfish.jimmer.meta.sql.MiddleTable;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTableWrapper;
@@ -102,6 +103,16 @@ public class TableImpl<E> implements Table<E>, Ast {
         }
         String idPropName = immutableType.getIdProp().getName();
         return this.<Expression<Object>>get(idPropName).eq(other.get(idPropName));
+    }
+
+    @Override
+    public NumericExpression<Long> count() {
+        return count(false);
+    }
+
+    @Override
+    public NumericExpression<Long> count(boolean distinct) {
+        return this.get(immutableType.getIdProp().getName()).count(distinct);
     }
 
     @SuppressWarnings("unchecked")
@@ -469,7 +480,7 @@ public class TableImpl<E> implements Table<E>, Ast {
         if (prop.isEntityList()) {
             return Destructive.BREAK_REPEATABILITY;
         }
-        if (prop.isNullable() || joinType != JoinType.INNER) {
+        if (prop.isNullable() && joinType != JoinType.LEFT) {
             return Destructive.BREAK_ROW_COUNT;
         }
         return Destructive.NONE;

@@ -60,12 +60,19 @@ public class AbstractQueryTest extends AbstractTest {
         }
 
         @SuppressWarnings("unchecked")
-        void rows(Consumer<List<R>> block) {
+        public void rows(Consumer<List<R>> block) {
             Assertions.assertNotNull(
                     rows,
                     "rows is not recorded"
             );
             block.accept((List<R>) rows);
+        }
+
+        public void rows(R ... rows) {
+            Assertions.assertEquals(
+                    Arrays.asList(rows),
+                    AbstractQueryTest.this.rows
+            );
         }
     }
 }
