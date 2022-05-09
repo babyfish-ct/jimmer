@@ -125,11 +125,11 @@ abstract class AbstractMutableQueryImpl
         if (withoutSortingAndPaging) {
             AstVisitor ignoredVisitor = new UseJoinOfIgnoredClauseVisitor(visitor.getSqlBuilder());
             for (Order order : orders) {
-                ((Ast)order).accept(ignoredVisitor);
+                ((Ast)order.expression).accept(ignoredVisitor);
             }
         } else {
             for (Order order : orders) {
-                ((Ast)order).accept(visitor);
+                ((Ast)order.expression).accept(visitor);
             }
         }
         if (overriddenSelections != null) {

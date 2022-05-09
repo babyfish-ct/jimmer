@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.ast;
 
+import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
+
 public interface StringExpression extends Expression<String> {
 
     default Predicate like(String pattern) {
@@ -13,4 +15,10 @@ public interface StringExpression extends Expression<String> {
     }
 
     Predicate ilike(String pattern, LikeMode likeMode);
+
+    @Override
+    StringExpression coalesce(String defaultValue);
+
+    @Override
+    CoalesceBuilder.Str coalesceBuilder();
 }

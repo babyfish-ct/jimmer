@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.ast;
 
+import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
+
 import java.math.BigDecimal;
 
 public interface NumericExpression<N extends Number> extends Expression<N> {
@@ -53,4 +55,10 @@ public interface NumericExpression<N extends Number> extends Expression<N> {
     NumericExpression<N> max();
 
     NumericExpression<BigDecimal> avg();
+
+    @Override
+    NumericExpression<N> coalesce(N defaultValue);
+
+    @Override
+    CoalesceBuilder.Num<N> coalesceBuilder();
 }

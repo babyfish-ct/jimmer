@@ -87,4 +87,14 @@ public interface ExpressionImplementor<T> extends Expression<T> {
     default Predicate notIn(TypedSubQuery<T> subQuery) {
         return new InSubQueryPredicate(this, subQuery, true);
     }
+
+    @Override
+    default Expression<T> coalesce(T defaultValue) {
+        return coalesceBuilder().or(defaultValue).build();
+    }
+
+    @Override
+    default CoalesceBuilder<T> coalesceBuilder() {
+        return new CoalesceBuilder<>(this);
+    }
 }

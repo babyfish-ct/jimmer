@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.model;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
+import javax.validation.constraints.Null;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,6 +15,7 @@ public interface BookStore {
 
     String name();
 
+    @Null
     String website();
 
     @ManyToMany(mappedBy = "store")
