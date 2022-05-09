@@ -42,7 +42,7 @@ abstract class AbstractPredicate extends AbstractExpression<Boolean> implements 
         @Override
         public void accept(AstVisitor visitor) {
             for (Predicate predicate : predicates) {
-                ((Ast)predicate).accept(visitor);
+                ((Ast) predicate).accept(visitor);
             }
         }
 

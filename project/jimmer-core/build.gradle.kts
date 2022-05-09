@@ -21,6 +21,7 @@ dependencies {
     implementation("javax.persistence:javax.persistence-api:2.2")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.13.2.2")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.2")
+    implementation("org.apache.commons:commons-lang3:3.12.0")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

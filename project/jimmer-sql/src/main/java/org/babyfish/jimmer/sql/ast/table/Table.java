@@ -13,13 +13,24 @@ public interface Table<E> extends Selection<E> {
 
     <XT extends Table<?>> XT join(String prop, JoinType joinType);
 
-    <XT extends Table<?>> XT inverseJoin(
-            Class<?> targetType,
+    <XE, XT extends Table<XE>> XT inverseJoin(
+            Class<XE> targetType,
             String backProp
     );
 
-    <XT extends Table<?>> XT inverseJoin(
-            Class<?> targetType,
+    <XE, XT extends Table<XE>> XT inverseJoin(
+            Class<XE> targetType,
+            String backProp,
+            JoinType joinType
+    );
+
+    <XT extends Table<?>> XT inverseJoinByTable(
+            Class<XT> targetTableType,
+            String backProp
+    );
+
+    <XT extends Table<?>> XT inverseJoinByTable(
+            Class<XT> targetTableType,
             String backProp,
             JoinType joinType
     );
