@@ -1,11 +1,14 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 
 import java.util.Collections;
 import java.util.List;
 
 public class TypedQueryData {
+
+    private static final Package TUPLE_PACKAGE = Tuple2.class.getPackage();
 
     private List<Selection<?>> selections;
 
@@ -22,7 +25,7 @@ public class TypedQueryData {
     private boolean forUpdate;
 
     public TypedQueryData(List<Selection<?>> selections) {
-        this.selections = Collections.unmodifiableList(selections);
+        this.selections = processSelections(selections);
         limit = Integer.MAX_VALUE;
     }
 
@@ -74,7 +77,7 @@ public class TypedQueryData {
 
     public TypedQueryData reselect(List<Selection<?>> selections) {
         return new TypedQueryData(
-                Collections.unmodifiableList(selections),
+                processSelections(selections),
                 this.selections,
                 distinct,
                 limit,
@@ -130,5 +133,17 @@ public class TypedQueryData {
                 withoutSortingAndPaging,
                 true
         );
+    }
+
+    private static List<Selection<?>> processSelections(List<Selection<?>> selections) {
+        for (Selection<?> selection : selections) {
+            if (selection instanceof ExpressionImplementor<?>) {
+                Class<?> type = ((ExpressionImplementor<?>)selection).getType();
+                if (TUPLE_PACKAGE.equals(type.getPackage())) {
+                    throw new IllegalArgumentException("Tuple expression cannot be selected");
+                }
+            }
+        }
+        return Collections.unmodifiableList(selections);
     }
 }

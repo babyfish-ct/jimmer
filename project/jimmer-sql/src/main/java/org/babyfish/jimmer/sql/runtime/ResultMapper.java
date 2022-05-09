@@ -6,7 +6,7 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Selection;
-import org.babyfish.jimmer.sql.ast.impl.ExpressionSpi;
+import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.TableImpl;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
@@ -122,7 +122,7 @@ class ResultMapper {
         if (selection instanceof Table<?>) {
             return map(TableImpl.unwrap((Table<?>)selection).getImmutableType());
         }
-        return read(((ExpressionSpi<?>)selection).getType());
+        return read(((ExpressionImplementor<?>)selection).getType());
     }
 
     private Object map(ImmutableType immutableType) throws SQLException {

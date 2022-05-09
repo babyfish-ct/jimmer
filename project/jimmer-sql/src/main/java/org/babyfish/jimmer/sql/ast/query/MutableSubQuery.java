@@ -27,4 +27,8 @@ public interface MutableSubQuery extends MutableQuery, SubSelectable {
 
     @Override
     MutableSubQuery having(Predicate... predicates);
+
+    Predicate exists();
+
+    Predicate notExists();
 }

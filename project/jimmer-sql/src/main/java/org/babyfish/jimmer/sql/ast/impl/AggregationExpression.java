@@ -38,7 +38,7 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
     }
 
     @Override
-    protected int precedence() {
+    public int precedence() {
         return 0;
     }
 
@@ -115,7 +115,7 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
 
         @Override
         protected String functionName() {
-            return "min";
+            return "max";
         }
 
         @SuppressWarnings("unchecked")
@@ -133,7 +133,7 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
 
         @Override
         protected String functionName() {
-            return "min";
+            return "avg";
         }
 
         @SuppressWarnings("unchecked")

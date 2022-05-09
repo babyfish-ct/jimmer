@@ -33,7 +33,7 @@ public class Constants {
         }
 
         @Override
-        protected int precedence() {
+        public int precedence() {
             return 0;
         }
     }
