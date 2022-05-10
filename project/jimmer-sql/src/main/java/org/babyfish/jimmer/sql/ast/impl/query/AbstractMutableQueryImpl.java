@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.ast.impl;
+package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -6,10 +6,12 @@ import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
-import org.babyfish.jimmer.sql.ast.query.MutableQuery;
-import org.babyfish.jimmer.sql.ast.query.NullOrderMode;
-import org.babyfish.jimmer.sql.ast.query.OrderMode;
-import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
+import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableRowCountDestructive;
+import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
+import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -17,7 +19,7 @@ import javax.persistence.criteria.JoinType;
 import java.util.ArrayList;
 import java.util.List;
 
-abstract class AbstractMutableQueryImpl
+public abstract class AbstractMutableQueryImpl
         extends AbstractMutableStatementImpl
         implements MutableQuery {
 
@@ -73,15 +75,8 @@ abstract class AbstractMutableQueryImpl
         return this;
     }
 
-    protected TableImpl<?> createTableImpl(ImmutableType immutableType) {
-        return new TableImpl<>(
-                this,
-                immutableType,
-                null,
-                false,
-                null,
-                JoinType.INNER
-        );
+    protected TableImplementor<?> createTableImpl(ImmutableType immutableType) {
+        return TableImplementor.create(this, immutableType);
     }
 
     @Override
@@ -142,7 +137,7 @@ abstract class AbstractMutableQueryImpl
     }
 
     void renderTo(SqlBuilder sqlBuilder, boolean withoutSortingAndPaging) {
-        TableImpl<?> table = TableImplementor.unwrap(this.table);
+        TableImplementor<?> table = TableImplementor.unwrap(this.table);
         table.renderTo(sqlBuilder);
         if (!predicates.isEmpty()) {
             String separator = " where ";
@@ -220,8 +215,8 @@ abstract class AbstractMutableQueryImpl
             handle(TableImplementor.unwrap(table), prop != null && prop.isId());
         }
 
-        private void handle(TableImpl<?> table, boolean isId) {
-            if (table.getDestructive() != TableImpl.Destructive.NONE) {
+        private void handle(TableImplementor<?> table, boolean isId) {
+            if (table.getDestructive() != TableRowCountDestructive.NONE) {
                 if (isId) {
                     use(table.getParent());
                 } else {
@@ -230,7 +225,7 @@ abstract class AbstractMutableQueryImpl
             }
         }
 
-        private void use(TableImpl<?> table) {
+        private void use(TableImplementor<?> table) {
             if (table != null) {
                 getSqlBuilder().useTable(table);
                 use(table.getParent());

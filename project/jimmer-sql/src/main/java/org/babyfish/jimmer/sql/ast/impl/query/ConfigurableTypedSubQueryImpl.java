@@ -1,8 +1,13 @@
-package org.babyfish.jimmer.sql.ast.impl;
+package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
+import org.babyfish.jimmer.sql.ast.impl.ExistsPredicate;
+import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.impl.SubQueryFunctionExpression;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedSubQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
@@ -10,14 +15,14 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.List;
 
-class ConfigurableTypedSubQueryImpl<R>
-extends AbstractConfigurableTypedQueryImpl<R>
-implements ConfigurableTypedSubQuery<R>, ExpressionImplementor<R> {
+public class ConfigurableTypedSubQueryImpl<R>
+        extends AbstractConfigurableTypedQueryImpl<R>
+        implements ConfigurableTypedSubQuery<R>, ExpressionImplementor<R> {
 
     private Class<R> type;
 
     @SuppressWarnings("unchecked")
-    public ConfigurableTypedSubQueryImpl(
+    ConfigurableTypedSubQueryImpl(
             TypedQueryData data,
             SubMutableQueryImpl baseQuery
     ) {
@@ -27,7 +32,7 @@ implements ConfigurableTypedSubQuery<R>, ExpressionImplementor<R> {
             case 1:
                 Selection<?> selection = selections.get(0);
                 if (selection instanceof Table<?>) {
-                    type = (Class<R>)TableImplementor.unwrap((Table<?>) selection).getImmutableType().getJavaClass();
+                    type = (Class<R>) TableImplementor.unwrap((Table<?>) selection).getImmutableType().getJavaClass();
                 } else {
                     type = (Class<R>)((ExpressionImplementor<?>)selection).getType();
                 }

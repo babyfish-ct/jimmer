@@ -1,10 +1,11 @@
-package org.babyfish.jimmer.sql.ast.impl;
+package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.NullOrderMode;
@@ -14,7 +15,7 @@ import org.babyfish.jimmer.sql.ast.tuple.*;
 
 import java.util.Arrays;
 
-class RootMutableQueryImpl<T extends Table<?>>
+public class RootMutableQueryImpl<T extends Table<?>>
         extends AbstractMutableQueryImpl
         implements MutableRootQuery<T> {
 

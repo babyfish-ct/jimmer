@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.ast.impl;
+package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.dialect.PaginationContext;

@@ -1,12 +1,12 @@
-package org.babyfish.jimmer.sql.ast.impl;
+package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.ast.table.SubQueryTable;
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 
 import javax.persistence.criteria.JoinType;
 
-class SubQueryTableImpl<E> extends TableImpl<E> implements SubQueryTable<E> {
+class SubQueryTableImpl<E> extends TableImpl<E> implements SubQueryTableImplementor<E> {
 
     public SubQueryTableImpl(
             AbstractMutableStatementImpl statement,

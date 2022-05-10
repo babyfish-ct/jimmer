@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.ast.impl;
+package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -7,6 +7,9 @@ import org.babyfish.jimmer.meta.sql.MiddleTable;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
+import org.babyfish.jimmer.sql.ast.impl.PropExpression;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -73,7 +76,8 @@ class TableImpl<E> implements TableImplementor<E> {
         return statement;
     }
 
-    public TableImpl<?> getParent() {
+    @Override
+    public TableImplementor<?> getParent() {
         return parent;
     }
 
@@ -122,7 +126,7 @@ class TableImpl<E> implements TableImplementor<E> {
         if (immutableProp == null || !immutableProp.isScalar()) {
             throw new IllegalArgumentException("'" + prop + "' is not scalar property");
         }
-        return (XE)PropExpression.of(this, immutableProp);
+        return (XE) PropExpression.of(this, immutableProp);
     }
 
     @Override
@@ -414,7 +418,8 @@ class TableImpl<E> implements TableImplementor<E> {
         DEEPER_JOIN_ONLY;
     }
 
-    void renderSelection(ImmutableProp prop, SqlBuilder builder) {
+    @Override
+    public void renderSelection(ImmutableProp prop, SqlBuilder builder) {
         if (prop.isId() && joinProp != null) {
             MiddleTable middleTable;
             if (joinProp.getStorage() instanceof MiddleTable) {
@@ -464,31 +469,26 @@ class TableImpl<E> implements TableImplementor<E> {
         return text + '(' + joinType.name().toLowerCase() + ')';
     }
 
-    Destructive getDestructive() {
+    @Override
+    public TableRowCountDestructive getDestructive() {
         if (joinProp == null) {
-            return Destructive.NONE;
+            return TableRowCountDestructive.NONE;
         }
         ImmutableProp prop;
         if (isInverse) {
             prop = joinProp.getOpposite();
             if (prop == null) {
-                return Destructive.BREAK_REPEATABILITY;
+                return TableRowCountDestructive.BREAK_REPEATABILITY;
             }
         } else {
             prop = joinProp;
         }
         if (prop.isEntityList()) {
-            return Destructive.BREAK_REPEATABILITY;
+            return TableRowCountDestructive.BREAK_REPEATABILITY;
         }
         if (prop.isNullable() && joinType != JoinType.LEFT) {
-            return Destructive.BREAK_ROW_COUNT;
+            return TableRowCountDestructive.BREAK_ROW_COUNT;
         }
-        return Destructive.NONE;
-    }
-
-    enum Destructive {
-        NONE, // Left join for nullable reference, Left/Inner join for non-null reference
-        BREAK_ROW_COUNT, // inner join for nullable-reference
-        BREAK_REPEATABILITY // Any join for Collection
+        return TableRowCountDestructive.NONE;
     }
 }

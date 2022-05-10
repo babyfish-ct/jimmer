@@ -3,11 +3,11 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
-abstract class SubQueryFunctionExpression<R> extends AbstractExpression<R> {
+public abstract class SubQueryFunctionExpression<R> extends AbstractExpression<R> {
 
     private TypedSubQuery<R> subQuery;
 
-    public SubQueryFunctionExpression(TypedSubQuery<R> subQuery) {
+    SubQueryFunctionExpression(TypedSubQuery<R> subQuery) {
         this.subQuery = subQuery;
     }
 
@@ -35,7 +35,7 @@ abstract class SubQueryFunctionExpression<R> extends AbstractExpression<R> {
         renderChild((Ast) subQuery, builder);
     }
 
-    static class All<R> extends SubQueryFunctionExpression<R> {
+    public static class All<R> extends SubQueryFunctionExpression<R> {
 
         public All(TypedSubQuery<R> subQuery) {
             super(subQuery);
@@ -47,7 +47,7 @@ abstract class SubQueryFunctionExpression<R> extends AbstractExpression<R> {
         }
     }
 
-    static class Any<R> extends SubQueryFunctionExpression<R> {
+    public static class Any<R> extends SubQueryFunctionExpression<R> {
 
         public Any(TypedSubQuery<R> subQuery) {
             super(subQuery);

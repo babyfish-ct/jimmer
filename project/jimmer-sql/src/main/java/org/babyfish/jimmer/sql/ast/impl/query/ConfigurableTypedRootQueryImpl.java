@@ -1,8 +1,11 @@
-package org.babyfish.jimmer.sql.ast.impl;
+package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
@@ -17,7 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 
-class ConfigurableTypedRootQueryImpl<T extends Table<?>, R>
+public class ConfigurableTypedRootQueryImpl<T extends Table<?>, R>
         extends AbstractConfigurableTypedQueryImpl<R>
         implements ConfigurableTypedRootQuery<T, R> {
 
