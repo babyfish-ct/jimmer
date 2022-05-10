@@ -1,0 +1,30 @@
+plugins {
+    id 'java'
+}
+
+group 'org.babyfish.jimmer.example.sql'
+version '0.0.4'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.babyfish.jimmer:jimmer-core:0.0.4'
+    implementation 'org.babyfish.jimmer:jimmer-sql:0.0.4'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.4'
+
+    implementation 'javax.validation:validation-api:2.0.1.Final'
+    implementation 'javax.persistence:javax.persistence-api:2.2'
+
+    runtimeOnly 'com.h2database:h2:2.1.210'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+test {
+    useJUnitPlatform()
+}
