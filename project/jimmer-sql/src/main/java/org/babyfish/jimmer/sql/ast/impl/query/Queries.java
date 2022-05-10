@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.ast.impl;
+package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.SqlClient;

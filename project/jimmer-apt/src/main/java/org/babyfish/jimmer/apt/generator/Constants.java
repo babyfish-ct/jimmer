@@ -76,7 +76,7 @@ class Constants {
 
     public static final ClassName QUERIES_CLASS_NAME =
             ClassName.get(
-                    "org.babyfish.jimmer.sql.ast.impl",
+                    "org.babyfish.jimmer.sql.ast.impl.query",
                     "Queries"
             );
 

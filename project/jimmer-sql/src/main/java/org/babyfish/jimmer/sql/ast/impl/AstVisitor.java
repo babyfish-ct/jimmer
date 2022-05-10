@@ -6,11 +6,11 @@ import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
-class AstVisitor {
+public class AstVisitor {
 
     private SqlBuilder sqlBuilder;
 
-    AstVisitor(SqlBuilder sqlBuilder) {
+    protected AstVisitor(SqlBuilder sqlBuilder) {
         this.sqlBuilder = sqlBuilder;
     }
 

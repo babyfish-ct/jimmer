@@ -1,8 +1,9 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
 
-class AbstractMutableStatementImpl {
+public class AbstractMutableStatementImpl {
 
     private TableAliasAllocator tableAliasAllocator;
 
@@ -18,11 +19,11 @@ class AbstractMutableStatementImpl {
         this.sqlClient = sqlClient;
     }
 
-    void freeze() {
+    public void freeze() {
         frozen = true;
     }
 
-    void validateMutable() {
+    public void validateMutable() {
         if (frozen) {
             throw new IllegalStateException(
                     "Cannot mutate the statement because it has been frozen"
@@ -30,11 +31,11 @@ class AbstractMutableStatementImpl {
         }
     }
 
-    TableAliasAllocator getTableAliasAllocator() {
+    public TableAliasAllocator getTableAliasAllocator() {
         return tableAliasAllocator;
     }
 
-    SqlClient getSqlClient() {
+    public SqlClient getSqlClient() {
         return sqlClient;
     }
 }

@@ -1,11 +1,19 @@
 package org.babyfish.jimmer.sql;
 
+import org.babyfish.jimmer.sql.ast.Executable;
+import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
+import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
+import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 public interface SqlClient {
 
@@ -18,6 +26,21 @@ public interface SqlClient {
     Executor getExecutor();
 
     <T, S> ScalarProvider<T, S> getScalarProvider(Class<T> scalarType);
+
+    <T extends Table<?>, R> ConfigurableTypedRootQuery<T, R> createQuery(
+            Class<T> tableType,
+            BiFunction<MutableRootQuery<T>, T, ConfigurableTypedRootQuery<T, R>> block
+    );
+
+    <T extends Table<?>> Executable<Integer> createUpdate(
+            Class<T> tableType,
+            BiConsumer<MutableUpdate, T> block
+    );
+
+    <T extends Table<?>> Executable<Integer> createDelete(
+            Class<T> tableType,
+            BiConsumer<MutableDelete, T> block
+    );
 
     class Builder {
 

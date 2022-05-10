@@ -2,15 +2,16 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.sql.Column;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
-class PropExpression<T> extends AbstractExpression<T> {
+public class PropExpression<T> extends AbstractExpression<T> {
 
-    private TableImpl<?> table;
+    private TableImplementor<?> table;
 
     private ImmutableProp prop;
 
-    static PropExpression<?> of(TableImpl<?> table, ImmutableProp prop) {
+    public static PropExpression<?> of(TableImplementor<?> table, ImmutableProp prop) {
         Class<?> elementClass = prop.getElementClass();
         if (String.class.isAssignableFrom(elementClass)) {
             return new Str(table, prop);
@@ -24,7 +25,7 @@ class PropExpression<T> extends AbstractExpression<T> {
         return new PropExpression<>(table, prop);
     }
 
-    PropExpression(TableImpl<?> table, ImmutableProp prop) {
+    PropExpression(TableImplementor<?> table, ImmutableProp prop) {
         if (prop.isAssociation()) {
             throw new IllegalArgumentException("prop '" + prop + "' cannot be association property");
         }
@@ -58,14 +59,14 @@ class PropExpression<T> extends AbstractExpression<T> {
 
     private static class Str extends PropExpression<String> implements StringExpressionImplementor {
 
-        Str(TableImpl table, ImmutableProp prop) {
+        Str(TableImplementor table, ImmutableProp prop) {
             super(table, prop);
         }
     }
 
     private static class Num extends PropExpression<Number> implements NumberExpressionImplementor<Number> {
 
-        Num(TableImpl<?> table, ImmutableProp prop) {
+        Num(TableImplementor<?> table, ImmutableProp prop) {
             super(table, prop);
         }
 
@@ -73,7 +74,7 @@ class PropExpression<T> extends AbstractExpression<T> {
 
     private static class Cmp<T extends Comparable<T>> extends PropExpression<T> implements ComparableExpressionImplementor<T> {
 
-        Cmp(TableImpl<?> table, ImmutableProp prop) {
+        Cmp(TableImplementor<?> table, ImmutableProp prop) {
             super(table, prop);
         }
     }

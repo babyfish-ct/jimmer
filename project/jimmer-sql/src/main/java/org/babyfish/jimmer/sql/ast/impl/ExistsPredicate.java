@@ -1,26 +1,29 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableTypedSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
-class ExistsPredicate extends AbstractPredicate {
+public class ExistsPredicate extends AbstractPredicate {
 
     private TypedSubQuery<Integer> subQuery;
 
     private boolean negative;
 
-    static ExistsPredicate of(MutableSubQuery subQuery, boolean negative) {
+    public static ExistsPredicate of(MutableSubQuery subQuery, boolean negative) {
         return new ExistsPredicate(
                 subQuery.select(Constants.number(1)),
                 negative
         );
     }
 
-    static ExistsPredicate of(TypedSubQuery<?> subQuery, boolean negative) {
+    public static ExistsPredicate of(TypedSubQuery<?> subQuery, boolean negative) {
         return new ExistsPredicate(
-                ((ConfigurableTypedSubQueryImpl<?>)subQuery).getBaseQuery().select(Constants.number(1)),
+                ((ConfigurableTypedSubQueryImpl<?>)subQuery).getBaseQuery()
+                        .select(Constants.number(1)),
                 negative
         );
     }

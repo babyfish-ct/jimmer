@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.ast.impl;
+package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.sql.ast.table.SubQueryTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -15,7 +15,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-class SubQueryTableWrappers {
+public class SubQueryTableWrappers {
 
     private static final Map<Class<?>, Constructor<?>> positiveCacheMap =
             new WeakHashMap<>();
@@ -28,7 +28,7 @@ class SubQueryTableWrappers {
 
     private SubQueryTableWrappers() {}
 
-    public static Table<?> wrap(TableImpl<?> table) {
+    public static Table<?> wrap(TableImplementor<?> table) {
         Class<?> javaClass = table.getImmutableType().getJavaClass();
         Constructor<?> constructor = tryGetConstructor(javaClass);
         if (constructor == null) {
