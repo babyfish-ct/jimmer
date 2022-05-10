@@ -7,7 +7,6 @@ import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
-import org.babyfish.jimmer.sql.ast.query.selectable.RootSelectable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.Selectors;
@@ -148,22 +147,22 @@ class ConfigurableTypedRootQueryImpl<T extends Table<?>, R>
 
     @Override
     public TypedRootQuery<R> union(TypedRootQuery<R> other) {
-        return null;
+        return new MergedTypedRootQueryImpl<>(getBaseQuery().getSqlClient(), "union", this, other);
     }
 
     @Override
     public TypedRootQuery<R> unionAll(TypedRootQuery<R> other) {
-        return null;
+        return new MergedTypedRootQueryImpl<>(getBaseQuery().getSqlClient(), "union all", this, other);
     }
 
     @Override
     public TypedRootQuery<R> minus(TypedRootQuery<R> other) {
-        return null;
+        return new MergedTypedRootQueryImpl<>(getBaseQuery().getSqlClient(), "minus", this, other);
     }
 
     @Override
     public TypedRootQuery<R> intersect(TypedRootQuery<R> other) {
-        return null;
+        return new MergedTypedRootQueryImpl<>(getBaseQuery().getSqlClient(), "intersect", this, other);
     }
 
     private static class ReselectValidator extends AstVisitor {
