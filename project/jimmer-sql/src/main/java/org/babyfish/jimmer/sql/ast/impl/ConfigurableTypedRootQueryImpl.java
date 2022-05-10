@@ -49,7 +49,7 @@ class ConfigurableTypedRootQueryImpl<T extends Table<?>, R>
         AstVisitor visitor = new ReselectValidator();
         for (Selection<?> selection : getData().getSelections()) {
             if (selection instanceof Table<?>) {
-                ((Ast) TableImpl.unwrap((Table<?>) selection)).accept(visitor);
+                ((Ast) TableImplementor.unwrap((Table<?>) selection)).accept(visitor);
             } else {
                 ((Ast) selection).accept(visitor);
             }

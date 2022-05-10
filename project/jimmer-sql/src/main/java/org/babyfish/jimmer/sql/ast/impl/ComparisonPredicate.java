@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
-public abstract class ComparisonPredicate extends AbstractPredicate {
+abstract class ComparisonPredicate extends AbstractPredicate {
 
     protected Expression<?> left;
 

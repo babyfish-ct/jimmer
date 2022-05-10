@@ -12,7 +12,7 @@ interface Ast {
 
     static Ast from(Selection<?> selection) {
         if (selection instanceof Table<?>) {
-            return TableImpl.unwrap((Table<?>) selection);
+            return TableImplementor.unwrap((Table<?>) selection);
         }
         return (Ast) selection;
     }

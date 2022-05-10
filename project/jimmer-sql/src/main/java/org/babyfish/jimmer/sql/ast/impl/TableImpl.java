@@ -8,7 +8,6 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.spi.AbstractTableWrapper;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -16,7 +15,7 @@ import javax.persistence.criteria.JoinType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TableImpl<E> implements Table<E>, Ast {
+class TableImpl<E> implements TableImplementor<E> {
 
     private AbstractMutableStatementImpl statement;
 
@@ -65,6 +64,7 @@ public class TableImpl<E> implements Table<E>, Ast {
         alias = statement.getTableAliasAllocator().allocate();
     }
 
+    @Override
     public ImmutableType getImmutableType() {
         return immutableType;
     }
@@ -98,7 +98,7 @@ public class TableImpl<E> implements Table<E>, Ast {
 
     @Override
     public Predicate eq(Table<E> other) {
-        if (TableImpl.unwrap(other).getImmutableType() != immutableType) {
+        if (TableImplementor.unwrap(other).getImmutableType() != immutableType) {
             throw new IllegalArgumentException("Cannot compare tables of different types");
         }
         String idPropName = immutableType.getIdProp().getName();
@@ -490,15 +490,5 @@ public class TableImpl<E> implements Table<E>, Ast {
         NONE, // Left join for nullable reference, Left/Inner join for non-null reference
         BREAK_ROW_COUNT, // inner join for nullable-reference
         BREAK_REPEATABILITY // Any join for Collection
-    }
-
-    public static TableImpl<?> unwrap(Table<?> table) {
-        if (table instanceof TableImpl<?>) {
-            return (TableImpl<?>) table;
-        }
-        if (table instanceof AbstractTableWrapper<?>) {
-            return unwrap(((AbstractTableWrapper<?>) table).__unwrap());
-        }
-        throw new IllegalArgumentException("Unknown table implementation");
     }
 }

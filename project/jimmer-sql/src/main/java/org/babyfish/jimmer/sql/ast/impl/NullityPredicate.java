@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
-public class NullityPredicate extends AbstractPredicate {
+class NullityPredicate extends AbstractPredicate {
 
     private Expression<?> expression;
 

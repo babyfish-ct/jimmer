@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.StringExpression;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
-public class Literals {
+class Literals {
 
     public static StringExpression string(String value) {
         return new Str(value);

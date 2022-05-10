@@ -58,148 +58,120 @@ public class SqlBuilder {
                     .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._1(), "tuple._1 cannot be null"))
                     .sql(", ")
-                    .sql("(")
-                    .singleVariable(Objects.requireNonNull(tuple._2(), "tuple._2 cannot be null"));
+                    .singleVariable(Objects.requireNonNull(tuple._2(), "tuple._2 cannot be null"))
+                    .sql(")");
         } else if (value instanceof Tuple3<?,?,?>) {
             Tuple3<?,?,?> tuple = (Tuple3<?,?,?>)value;
             this
                     .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._1(), "tuple._1 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._2(), "tuple._2 cannot be null"))
                     .sql(", ")
-                    .sql("(")
-                    .singleVariable(Objects.requireNonNull(tuple._3(), "tuple._3 cannot be null"));
+                    .singleVariable(Objects.requireNonNull(tuple._3(), "tuple._3 cannot be null"))
+                    .sql(")");
         } else if (value instanceof Tuple4<?,?,?,?>) {
             Tuple4<?,?,?,?> tuple = (Tuple4<?,?,?,?>)value;
             this
                     .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._1(), "tuple._1 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._2(), "tuple._2 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._3(), "tuple._3 cannot be null"))
                     .sql(", ")
-                    .sql("(")
-                    .singleVariable(Objects.requireNonNull(tuple._4(), "tuple._4 cannot be null"));
+                    .singleVariable(Objects.requireNonNull(tuple._4(), "tuple._4 cannot be null"))
+                    .sql(")");
         } else if (value instanceof Tuple5<?,?,?,?,?>) {
             Tuple5<?,?,?,?,?> tuple = (Tuple5<?,?,?,?,?>)value;
             this
                     .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._1(), "tuple._1 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._2(), "tuple._2 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._3(), "tuple._3 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._4(), "tuple._4 cannot be null"))
                     .sql(", ")
-                    .sql("(")
-                    .singleVariable(Objects.requireNonNull(tuple._5(), "tuple._5 cannot be null"));
+                    .singleVariable(Objects.requireNonNull(tuple._5(), "tuple._5 cannot be null"))
+                    .sql(")");
         } else if (value instanceof Tuple6<?,?,?,?,?,?>) {
             Tuple6<?,?,?,?,?,?> tuple = (Tuple6<?,?,?,?,?,?>)value;
             this
                     .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._1(), "tuple._1 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._2(), "tuple._2 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._3(), "tuple._3 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._4(), "tuple._4 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._5(), "tuple._5 cannot be null"))
                     .sql(", ")
-                    .sql("(")
-                    .singleVariable(Objects.requireNonNull(tuple._6(), "tuple._6 cannot be null"));
+                    .singleVariable(Objects.requireNonNull(tuple._6(), "tuple._6 cannot be null"))
+                    .sql(")");
         } else if (value instanceof Tuple7<?,?,?,?,?,?,?>) {
             Tuple7<?,?,?,?,?,?,?> tuple = (Tuple7<?,?,?,?,?,?,?>)value;
             this
                     .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._1(), "tuple._1 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._2(), "tuple._2 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._3(), "tuple._3 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._4(), "tuple._4 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._5(), "tuple._5 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._6(), "tuple._6 cannot be null"))
                     .sql(", ")
-                    .sql("(")
-                    .singleVariable(Objects.requireNonNull(tuple._7(), "tuple._7 cannot be null"));
+                    .singleVariable(Objects.requireNonNull(tuple._7(), "tuple._7 cannot be null"))
+                    .sql(")");
         } else if (value instanceof Tuple8<?,?,?,?,?,?,?,?>) {
             Tuple8<?,?,?,?,?,?,?,?> tuple = (Tuple8<?,?,?,?,?,?,?,?>)value;
             this
                     .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._1(), "tuple._1 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._2(), "tuple._2 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._3(), "tuple._3 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._4(), "tuple._4 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._5(), "tuple._5 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._6(), "tuple._6 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._7(), "tuple._7 cannot be null"))
                     .sql(", ")
-                    .sql("(")
-                    .singleVariable(Objects.requireNonNull(tuple._8(), "tuple._8 cannot be null"));
+                    .singleVariable(Objects.requireNonNull(tuple._8(), "tuple._8 cannot be null"))
+                    .sql(")");
         } else if (value instanceof Tuple9<?,?,?,?,?,?,?,?,?>) {
             Tuple9<?,?,?,?,?,?,?,?,?> tuple = (Tuple9<?,?,?,?,?,?,?,?,?>)value;
             this
                     .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._1(), "tuple._1 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._2(), "tuple._2 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._3(), "tuple._3 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._4(), "tuple._4 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._5(), "tuple._5 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._6(), "tuple._6 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._7(), "tuple._7 cannot be null"))
                     .sql(", ")
-                    .sql("(")
                     .singleVariable(Objects.requireNonNull(tuple._8(), "tuple._8 cannot be null"))
                     .sql(", ")
-                    .sql("(")
-                    .singleVariable(Objects.requireNonNull(tuple._9(), "tuple._9 cannot be null"));
+                    .singleVariable(Objects.requireNonNull(tuple._9(), "tuple._9 cannot be null"))
+                    .sql(")");
         } else {
             singleVariable(value);
         }

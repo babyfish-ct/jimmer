@@ -1,13 +1,11 @@
 package org.babyfish.jimmer.sql.ast;
 
-import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
-import org.babyfish.jimmer.sql.ast.impl.Constants;
-import org.babyfish.jimmer.sql.ast.impl.Literals;
-import org.babyfish.jimmer.sql.ast.impl.Tuples;
+import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 
 import java.util.Collection;
+import java.util.function.Consumer;
 
 public interface Expression<T> extends Selection<T> {
 
@@ -47,55 +45,20 @@ public interface Expression<T> extends Selection<T> {
         return Constants.number(value);
     }
 
-    static StringExpression string(String value) {
-        return Literals.string(value);
+    static StringFactory string() {
+        return ExpressionFactories.of(StringFactory.class);
     }
 
-    static <N extends Number> NumericExpression<N> number(N value) {
-        return Literals.number(value);
+    static NumericFactory numeric() {
+        return ExpressionFactories.of(NumericFactory.class);
     }
 
-    static <T extends Comparable<T>> ComparableExpression<T> comparable(T value) {
-        return Literals.comparable(value);
+    static ComparableFactory comparable() {
+        return ExpressionFactories.of(ComparableFactory.class);
     }
 
-    static <T> Expression<T> any(T value) {
-        return Literals.any(value);
-    }
-
-    static StringExpression nativeString(
-            String sql,
-            Expression<?>[] expressions,
-            Object[] values
-    ) {
-        throw new RuntimeException();
-    }
-
-    static <N extends Number> NumericExpression<N> nativeNumber(
-            Class<N> type,
-            String sql,
-            Expression<?>[] expressions,
-            Object[] values
-    ) {
-        throw new RuntimeException();
-    }
-
-    static <T extends Comparable<T>> ComparableExpression<T> nativeComparable(
-            Class<T> type,
-            String sql,
-            Expression<?>[] expressions,
-            Object[] values
-    ) {
-        throw new RuntimeException();
-    }
-
-    static <T> Expression<T> nativeAny(
-            Class<T> type,
-            String sql,
-            Expression<?>[] expressions,
-            Object[] values
-    ) {
-        throw new RuntimeException();
+    static AnyFactory any() {
+        return ExpressionFactories.of(AnyFactory.class);
     }
 
     static <T1, T2> Expression<Tuple2<T1, T2>> tuple(
@@ -180,5 +143,77 @@ public interface Expression<T> extends Selection<T> {
         Expression<T9> expr9
     ) {
         return new Tuples.Expr9<>(expr1, expr2, expr3, expr4, expr5, expr6, expr7, expr8, expr9);
+    }
+
+    interface StringFactory {
+
+        StringExpression value(String value);
+
+        StringExpression sql(String sql);
+
+        StringExpression sql(String sql, Consumer<SqlExpressionContext> block);
+
+        <C> SimpleCaseBuilder.Str<C> caseBuilder(C value);
+
+        <C> SimpleCaseBuilder.Str<C> caseBuilder(Expression<C> expression);
+
+        CaseBuilder.Str caseBuilder();
+    }
+
+    interface NumericFactory {
+
+        <N extends Number> NumericExpression<N> value(N value);
+
+        <N extends Number> NumericExpression<N> sql(Class<N> type, String sql);
+
+        <N extends Number> NumericExpression<N> sql(
+                Class<N> type,
+                String sql,
+                Consumer<SqlExpressionContext> block
+        );
+
+        <C, N extends Number> SimpleCaseBuilder.Num<C, N> caseBuilder(Class<N> type, C value);
+
+        <C, N extends Number> SimpleCaseBuilder.Num<C, N> caseBuilder(Class<N> type, Expression<C> expression);
+
+        <N extends Number> CaseBuilder.Num<N> caseBuilder(Class<N> type);
+    }
+
+    interface ComparableFactory {
+
+        <T extends Comparable<T>> ComparableExpression<T> value(T value);
+
+        <T extends Comparable<T>> ComparableExpression<T> sql(Class<T> type, String sql);
+
+        <T extends Comparable<T>> ComparableExpression<T> sql(
+                Class<T> type,
+                String sql,
+                Consumer<SqlExpressionContext> block
+        );
+
+        <C, T extends Comparable<T>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, C value);
+
+        <C, T extends Comparable<T>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, Expression<C> expression);
+
+        <T extends Comparable<T>> CaseBuilder.Cmp<T> caseBuilder(Class<T> type);
+    }
+
+    interface AnyFactory {
+
+        <T> Expression<T> value(T value);
+
+        <T> Expression<T> sql(Class<T> type, String sql);
+
+        <T> Expression<T> sql(
+                Class<T> type,
+                String sql,
+                Consumer<SqlExpressionContext> block
+        );
+
+        <C, T> SimpleCaseBuilder<C, T> caseBuilder(Class<T> type, C value);
+
+        <C, T> SimpleCaseBuilder<C, T> caseBuilder(Class<T> type, Expression<C> expression);
+
+        <T> CaseBuilder<T> caseBuilder(Class<T> type);
     }
 }
