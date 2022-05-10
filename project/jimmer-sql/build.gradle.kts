@@ -4,9 +4,6 @@ plugins {
     id("signing")
 }
 
-group = "org.babyfish.jimmer"
-version = "0.0.2"
-
 repositories {
     mavenCentral()
 }
