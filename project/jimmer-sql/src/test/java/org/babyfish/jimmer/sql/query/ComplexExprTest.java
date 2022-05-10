@@ -5,7 +5,6 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.Book;
-import org.babyfish.jimmer.sql.model.BookStore;
 import org.babyfish.jimmer.sql.model.BookStoreTable;
 import org.babyfish.jimmer.sql.model.BookTable;
 import org.junit.jupiter.api.Assertions;
@@ -149,14 +148,5 @@ public class ComplexExprTest extends AbstractQueryTest {
                     );
                 }
         );
-        /*
-        select {
-                table then
-                case()
-                    .match(table.price gt BigDecimal(200), "Expensive")
-                    .match(table.price lt BigDecimal(100), "Cheap")
-                    .otherwise("Fitting")
-            }
-         */
     }
 }
