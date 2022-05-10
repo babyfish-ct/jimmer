@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
-public class TableAliasAllocator {
+class TableAliasAllocator {
 
     private int num;
 

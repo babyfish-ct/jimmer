@@ -1,10 +1,8 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.sql.Column;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.dialect.PaginationContext;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.List;
@@ -78,7 +76,8 @@ class AbstractConfigurableTypedQueryImpl<R> implements TypedQueryImplementor {
         for (Selection<?> selection : data.getSelections()) {
             builder.sql(separator);
             if (selection instanceof Table<?>) {
-                renderAllProps(TableImpl.unwrap((Table<?>)selection), builder);
+                TableImpl<?> tableImpl = TableImplementor.unwrap((Table<?>)selection);
+                renderAllProps(tableImpl, builder);
             } else {
                 Ast.from(selection).renderTo(builder);
             }

@@ -13,7 +13,7 @@ class UseTableVisitor extends AstVisitor {
     @Override
     public void visitTableReference(Table<?> table, ImmutableProp prop) {
 
-        TableImpl<?> tableImpl = TableImpl.unwrap(table);
+        TableImpl<?> tableImpl = TableImplementor.unwrap(table);
         if (prop == null) {
             if (tableImpl.getImmutableType().getSelectableProps().size() > 1) {
                 use(tableImpl);

@@ -142,7 +142,7 @@ abstract class AbstractMutableQueryImpl
     }
 
     void renderTo(SqlBuilder sqlBuilder, boolean withoutSortingAndPaging) {
-        TableImpl<?> table = TableImpl.unwrap(this.table);
+        TableImpl<?> table = TableImplementor.unwrap(this.table);
         table.renderTo(sqlBuilder);
         if (!predicates.isEmpty()) {
             String separator = " where ";
@@ -217,7 +217,7 @@ abstract class AbstractMutableQueryImpl
 
         @Override
         public void visitTableReference(Table<?> table, ImmutableProp prop) {
-            handle(TableImpl.unwrap(table), prop != null && prop.isId());
+            handle(TableImplementor.unwrap(table), prop != null && prop.isId());
         }
 
         private void handle(TableImpl<?> table, boolean isId) {

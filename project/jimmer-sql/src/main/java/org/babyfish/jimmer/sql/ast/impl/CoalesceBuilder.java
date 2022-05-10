@@ -37,7 +37,7 @@ public class CoalesceBuilder<T> {
         if (String.class == javaClass) {
             return (Expression<T>) new StrExpr(clonedList);
         }
-        if (Number.class.isAssignableFrom(javaClass)) {
+        if (javaClass.isPrimitive() || Number.class.isAssignableFrom(javaClass)) {
             return (Expression<T>) new NumExpr<>(clonedList);
         }
         if (Comparable.class.isAssignableFrom(javaClass)) {

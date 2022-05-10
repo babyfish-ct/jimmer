@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import java.util.Collections;
 import java.util.List;
 
-public class TypedQueryData {
+class TypedQueryData {
 
     private static final Package TUPLE_PACKAGE = Tuple2.class.getPackage();
 

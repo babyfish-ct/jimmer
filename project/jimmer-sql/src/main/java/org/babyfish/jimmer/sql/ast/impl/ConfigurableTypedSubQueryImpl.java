@@ -27,7 +27,7 @@ implements ConfigurableTypedSubQuery<R>, ExpressionImplementor<R> {
             case 1:
                 Selection<?> selection = selections.get(0);
                 if (selection instanceof Table<?>) {
-                    type = (Class<R>)TableImpl.unwrap((Table<?>) selection).getImmutableType().getJavaClass();
+                    type = (Class<R>)TableImplementor.unwrap((Table<?>) selection).getImmutableType().getJavaClass();
                 } else {
                     type = (Class<R>)((ExpressionImplementor<?>)selection).getType();
                 }

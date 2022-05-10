@@ -11,13 +11,14 @@ class PropExpression<T> extends AbstractExpression<T> {
     private ImmutableProp prop;
 
     static PropExpression<?> of(TableImpl<?> table, ImmutableProp prop) {
-        if (String.class.isAssignableFrom(prop.getElementClass())) {
+        Class<?> elementClass = prop.getElementClass();
+        if (String.class.isAssignableFrom(elementClass)) {
             return new Str(table, prop);
         }
-        if (Number.class.isAssignableFrom(prop.getElementClass())) {
+        if (elementClass.isPrimitive() || Number.class.isAssignableFrom(elementClass)) {
             return new Num(table, prop);
         }
-        if (Comparable.class.isAssignableFrom(prop.getElementClass())) {
+        if (Comparable.class.isAssignableFrom(elementClass)) {
             return new Cmp<>(table, prop);
         }
         return new PropExpression<>(table, prop);

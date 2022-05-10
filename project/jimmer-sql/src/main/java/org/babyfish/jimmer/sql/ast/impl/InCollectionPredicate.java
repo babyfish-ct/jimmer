@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import java.util.Collection;
 import java.util.List;
 
-public class InCollectionPredicate extends AbstractPredicate {
+class InCollectionPredicate extends AbstractPredicate {
 
     private Expression<?> expression;
 
