@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.AbstractTableWrapper;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import javax.persistence.criteria.JoinType;
+import java.util.Collection;
 
 public interface TableImplementor<E> extends Table<E>, Ast {
 
@@ -16,9 +17,19 @@ public interface TableImplementor<E> extends Table<E>, Ast {
 
     TableImplementor<?> getParent();
 
+    Collection<TableImplementor<?>> getChildren();
+
+    ImmutableProp getJoinProp();
+
+    JoinType getJoinType();
+
+    String getAlias();
+
     void renderSelection(ImmutableProp prop, SqlBuilder builder);
 
     TableRowCountDestructive getDestructive();
+
+    void renderJoinAsFrom(SqlBuilder builder, RenderMode mode);
 
     @SuppressWarnings("unchecked")
     static TableImplementor<?> unwrap(Table<?> table) {
@@ -43,5 +54,12 @@ public interface TableImplementor<E> extends Table<E>, Ast {
                 null,
                 JoinType.INNER
         );
+    }
+
+    enum RenderMode {
+        NORMAL,
+        FROM_ONLY,
+        WHERE_ONLY,
+        DEEPER_JOIN_ONLY;
     }
 }

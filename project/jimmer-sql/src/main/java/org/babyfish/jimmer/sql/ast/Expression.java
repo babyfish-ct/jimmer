@@ -61,6 +61,10 @@ public interface Expression<T> extends Selection<T> {
         return ExpressionFactories.of(AnyFactory.class);
     }
 
+    static <T> Expression<T> nullValue(Class<T> type) {
+        return any().nullValue(type);
+    }
+
     static <T1, T2> Expression<Tuple2<T1, T2>> tuple(
             Expression<T1> expr1,
             Expression<T2> expr2
@@ -201,6 +205,8 @@ public interface Expression<T> extends Selection<T> {
     interface AnyFactory {
 
         <T> Expression<T> value(T value);
+
+        <T> Expression<T> nullValue(Class<T> type);
 
         <T> Expression<T> sql(Class<T> type, String sql);
 

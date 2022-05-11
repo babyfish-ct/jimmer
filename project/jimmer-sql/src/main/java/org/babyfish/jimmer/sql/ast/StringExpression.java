@@ -16,6 +16,10 @@ public interface StringExpression extends Expression<String> {
 
     Predicate ilike(String pattern, LikeMode likeMode);
 
+    StringExpression concat(String ... others);
+
+    StringExpression concat(Expression<String> ... others);
+
     @Override
     StringExpression coalesce(String defaultValue);
 

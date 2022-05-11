@@ -2,9 +2,9 @@ package org.babyfish.jimmer.sql.ast.table;
 
 public interface AssociationSubQueryTable<
         S,
-        SST extends SubQueryTable<S>,
+        SST extends TableEx<S>,
         T,
-        TST extends SubQueryTable<T>
+        TST extends TableEx<T>
 > extends Table<Association<S, T>> {
 
     @SuppressWarnings("unchecked")

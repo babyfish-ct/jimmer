@@ -21,11 +21,17 @@ dependencies {
     implementation("javax.validation:validation-api:2.0.1.Final")
     implementation("javax.persistence:javax.persistence-api:2.2")
 
+    testAnnotationProcessor(project(":jimmer-apt"))
+
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
-    testImplementation("com.h2database:h2:2.1.212")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
-    testAnnotationProcessor(project(":jimmer-apt"))
+    testImplementation("org.springframework:spring-jdbc:5.3.19")
+    testImplementation("com.fasterxml.uuid:java-uuid-generator:4.0.1")
+
+    testImplementation("com.h2database:h2:2.1.212")
+    testImplementation("mysql:mysql-connector-java:8.0.29")
+    testImplementation("org.postgresql:postgresql:42.3.4")
 }
 
 tasks.getByName<Test>("test") {

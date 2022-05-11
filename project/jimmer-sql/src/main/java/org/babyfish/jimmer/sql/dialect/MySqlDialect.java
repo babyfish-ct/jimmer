@@ -11,4 +11,9 @@ public class MySqlDialect implements Dialect {
                 .sql(", ")
                 .variable(ctx.getLimit());
     }
+
+    @Override
+    public UpdateJoin getUpdateJoin() {
+        return new UpdateJoin(true, UpdateJoin.From.UNNECESSARY);
+    }
 }

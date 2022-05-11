@@ -11,6 +11,7 @@ import org.h2.Driver;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -103,9 +104,24 @@ public class AbstractTest {
         }
     }
 
-    protected static void jdbc(SqlConsumer<Connection> consumer) {
-        try (Connection con = new Driver().connect(JDBC_URL, null)) {
-            consumer.accept(con);
+    protected static void jdbc(SqlConsumer<Connection> block) {
+        jdbc(null, false, block);
+    }
+
+    protected static void jdbc(DataSource dataSource, boolean rollback, SqlConsumer<Connection> block) {
+        try (Connection con = dataSource != null ?
+                dataSource.getConnection() :
+                new Driver().connect(JDBC_URL, null)) {
+            if (rollback) {
+                con.setAutoCommit(false);
+                try {
+                    block.accept(con);
+                } finally {
+                    con.rollback();
+                }
+            } else {
+                block.accept(con);
+            }
         } catch (SQLException ex) {
             Assertions.fail("SQL error", ex);
         }

@@ -26,10 +26,10 @@ class Constants {
                     "Table"
             );
 
-    public static final ClassName SUB_QUERY_TABLE_CLASS_NAME =
+    public static final ClassName QUERY_TABLE_EX_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.table",
-                    "SubQueryTable"
+                    "TableEx"
             );
 
     public static final ClassName ABSTRACT_TABLE_WRAPPER_CLASS_NAME =
@@ -92,22 +92,25 @@ class Constants {
                     "Expression"
             );
 
-    public static final ClassName STRING_EXPRESSION_CLASS_NAME =
+    public static final ClassName PROP_STRING_EXPRESSION_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast",
-                    "StringExpression"
+                    "PropExpression",
+                    "Str"
             );
 
-    public static final ClassName NUMERIC_EXPRESSION_CLASS_NAME =
+    public static final ClassName PROP_NUMERIC_EXPRESSION_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast",
-                    "NumericExpression"
+                    "PropExpression",
+                    "Num"
             );
 
-    public static final ClassName COMPARABLE_EXPRESSION_CLASS_NAME =
+    public static final ClassName PROP_COMPARABLE_EXPRESSION_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast",
-                    "ComparableExpression"
+                    "PropExpression",
+                    "Cmp"
             );
 
     public static final String DRAFT_FIELD_CTX =

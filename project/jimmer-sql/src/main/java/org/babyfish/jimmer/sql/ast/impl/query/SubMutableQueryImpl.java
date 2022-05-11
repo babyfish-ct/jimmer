@@ -5,14 +5,13 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.ExistsPredicate;
-import org.babyfish.jimmer.sql.ast.impl.table.SubQueryTableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableExImplementor;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedSubQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.NullOrderMode;
 import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 
-import javax.persistence.criteria.JoinType;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -35,8 +34,8 @@ public class SubMutableQueryImpl
     }
 
     @Override
-    protected SubQueryTableImplementor<?> createTableImpl(ImmutableType immutableType) {
-        return SubQueryTableImplementor.create(this, immutableType);
+    protected TableExImplementor<?> createTableImpl(ImmutableType immutableType) {
+        return TableExImplementor.create(this, immutableType);
     }
 
     @Override

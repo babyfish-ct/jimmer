@@ -1,0 +1,28 @@
+package org.babyfish.jimmer.sql.ast.impl.mutation;
+
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.ast.Executable;
+import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
+import org.babyfish.jimmer.sql.ast.table.Table;
+
+import java.util.function.BiConsumer;
+
+public class Mutations {
+
+    private Mutations() {}
+
+    public static <T extends Table<?>> Executable<Integer> createUpdate(
+            SqlClient sqlClient,
+            Class<T> tableType,
+            BiConsumer<MutableUpdate, T> block
+    ) {
+        MutableUpdateImpl update = new MutableUpdateImpl(
+                sqlClient,
+                ImmutableType.tryGet(tableType)
+        );
+        block.accept(update, update.getTable());
+        update.freeze();
+        return update;
+    }
+}

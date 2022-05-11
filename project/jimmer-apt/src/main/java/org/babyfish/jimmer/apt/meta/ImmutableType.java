@@ -50,7 +50,7 @@ public class ImmutableType {
 
     private ClassName tableClassName;
 
-    private ClassName subQueryTableClassName;
+    private ClassName tableExClassName;
 
     public ImmutableType(
             TypeUtils typeUtils,
@@ -168,7 +168,7 @@ public class ImmutableType {
         implClassName = toClassName(name -> name + "Draft", "Producer", "Impl");
         draftImplClassName = toClassName(name -> name + "Draft", "Producer", "DraftImpl");
         tableClassName = toClassName(name -> name + "Table");
-        subQueryTableClassName = toClassName(name -> name + "Table", "SQT");
+        tableExClassName = toClassName(name -> name + "Table", "Ex");
     }
 
     public boolean isEntity() {
@@ -245,8 +245,8 @@ public class ImmutableType {
         return tableClassName;
     }
 
-    public ClassName getSubQueryTableClassName() {
-        return subQueryTableClassName;
+    public ClassName getTableExClassName() {
+        return tableExClassName;
     }
 
     private ClassName toClassName(

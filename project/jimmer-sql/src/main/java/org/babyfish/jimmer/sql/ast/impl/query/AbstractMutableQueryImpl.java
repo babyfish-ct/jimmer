@@ -12,12 +12,14 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableRowCountDestructive;
 import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
-import javax.persistence.criteria.JoinType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 public abstract class AbstractMutableQueryImpl
         extends AbstractMutableStatementImpl
@@ -93,6 +95,20 @@ public abstract class AbstractMutableQueryImpl
     public AbstractMutableQueryImpl orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
         this.orders.add(new Order(expression, orderMode, nullOrderMode));
         return this;
+    }
+
+    @Override
+    public <T extends TableEx<?>, R> ConfigurableTypedSubQuery<R> createSubQuery(
+            Class<T> tableType, BiFunction<MutableSubQuery, T, ConfigurableTypedSubQuery<R>> block
+    ) {
+        return Queries.createSubQuery(this, tableType, block);
+    }
+
+    @Override
+    public <T extends TableEx<?>> MutableSubQuery createWildSubQuery(
+            Class<T> tableType, BiConsumer<MutableSubQuery, T> block
+    ) {
+        return Queries.createWildSubQuery(this, tableType, block);
     }
 
     Table<?> getTable() {

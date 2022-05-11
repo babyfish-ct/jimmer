@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 interface ComparableExpressionImplementor<T extends Comparable<T>> extends ComparableExpression<T>, ExpressionImplementor<T> {
 
     @Override
-    default Predicate lt(ComparableExpression<T> other) {
+    default Predicate lt(Expression<T> other) {
         return null;
     }
 
@@ -17,7 +17,7 @@ interface ComparableExpressionImplementor<T extends Comparable<T>> extends Compa
     }
 
     @Override
-    default Predicate le(ComparableExpression<T> other) {
+    default Predicate le(Expression<T> other) {
         return null;
     }
 
@@ -27,7 +27,7 @@ interface ComparableExpressionImplementor<T extends Comparable<T>> extends Compa
     }
 
     @Override
-    default Predicate gt(ComparableExpression<T> other) {
+    default Predicate gt(Expression<T> other) {
         return null;
     }
 
@@ -37,7 +37,7 @@ interface ComparableExpressionImplementor<T extends Comparable<T>> extends Compa
     }
 
     @Override
-    default Predicate ge(ComparableExpression<T> other) {
+    default Predicate ge(Expression<T> other) {
         return null;
     }
 
