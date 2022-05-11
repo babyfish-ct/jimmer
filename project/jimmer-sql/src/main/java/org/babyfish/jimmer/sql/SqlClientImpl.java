@@ -1,12 +1,14 @@
 package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.sql.ast.Executable;
+import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.DefaultExecutor;
@@ -54,12 +56,12 @@ class SqlClientImpl implements SqlClient {
 
     @Override
     public <T extends Table<?>, R> ConfigurableTypedRootQuery<T, R> createQuery(Class<T> tableType, BiFunction<MutableRootQuery<T>, T, ConfigurableTypedRootQuery<T, R>> block) {
-        return Queries.createQuery(tableType, this, block);
+        return Queries.createQuery(this, tableType, block);
     }
 
     @Override
-    public <T extends Table<?>> Executable<Integer> createUpdate(Class<T> tableType, BiConsumer<MutableUpdate, T> block) {
-        return null;
+    public <T extends TableEx<?>> Executable<Integer> createUpdate(Class<T> tableType, BiConsumer<MutableUpdate, T> block) {
+        return Mutations.createUpdate(this, tableType, block);
     }
 
     @Override

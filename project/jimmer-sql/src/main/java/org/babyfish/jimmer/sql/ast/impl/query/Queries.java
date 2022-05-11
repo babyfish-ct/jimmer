@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.query.*;
-import org.babyfish.jimmer.sql.ast.table.SubQueryTable;
+import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
 import java.util.function.BiConsumer;
@@ -15,8 +15,8 @@ public class Queries {
 
     @SuppressWarnings("unchecked")
     public static <T extends Table<?>, R> ConfigurableTypedRootQuery<T, R> createQuery(
-            Class<T> tableType,
             SqlClient sqlClient,
+            Class<T> tableType,
             BiFunction<MutableRootQuery<T>, T, ConfigurableTypedRootQuery<T, R>> block
     ) {
         ImmutableType immutableType = ImmutableType.tryGet(tableType);
@@ -37,9 +37,9 @@ public class Queries {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends SubQueryTable<?>, R> ConfigurableTypedSubQuery<R> createSubQuery(
-            Class<T> tableType,
+    public static <T extends TableEx<?>, R> ConfigurableTypedSubQuery<R> createSubQuery(
             Filterable parent,
+            Class<T> tableType,
             BiFunction<MutableSubQuery, T, ConfigurableTypedSubQuery<R>> block
     ) {
         ImmutableType immutableType = ImmutableType.tryGet(tableType);
@@ -60,9 +60,9 @@ public class Queries {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends SubQueryTable<?>> MutableSubQuery createWildSubQuery(
-            Class<T> tableType,
+    public static <T extends TableEx<?>> MutableSubQuery createWildSubQuery(
             Filterable parent,
+            Class<T> tableType,
             BiConsumer<MutableSubQuery, T> block
     ) {
         ImmutableType immutableType = ImmutableType.tryGet(tableType);

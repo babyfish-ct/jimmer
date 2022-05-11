@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
@@ -32,7 +33,7 @@ public interface SqlClient {
             BiFunction<MutableRootQuery<T>, T, ConfigurableTypedRootQuery<T, R>> block
     );
 
-    <T extends Table<?>> Executable<Integer> createUpdate(
+    <T extends TableEx<?>> Executable<Integer> createUpdate(
             Class<T> tableType,
             BiConsumer<MutableUpdate, T> block
     );

@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
-import org.babyfish.jimmer.sql.ast.table.SubQueryTable;
+import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTableWrapper;
 
@@ -15,7 +15,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class SubQueryTableWrappers {
+public class TableExWrappers {
 
     private static final Map<Class<?>, Constructor<?>> positiveCacheMap =
             new WeakHashMap<>();
@@ -26,7 +26,7 @@ public class SubQueryTableWrappers {
     private static final ReadWriteLock cacheLock =
             new ReentrantReadWriteLock();
 
-    private SubQueryTableWrappers() {}
+    private TableExWrappers() {}
 
     public static Table<?> wrap(TableImplementor<?> table) {
         Class<?> javaClass = table.getImmutableType().getJavaClass();
@@ -104,7 +104,7 @@ public class SubQueryTableWrappers {
             return null;
         }
         Class<?> sqtClass = Arrays.stream(tableClass.getClasses())
-                .filter(it -> it.getSimpleName().equals("SQT"))
+                .filter(it -> it.getSimpleName().equals("Ex"))
                 .findFirst()
                 .orElse(null);
         if (sqtClass == null ||
@@ -113,7 +113,7 @@ public class SubQueryTableWrappers {
             return null;
         }
         try {
-            return sqtClass.getConstructor(SubQueryTable.class);
+            return sqtClass.getConstructor(TableEx.class);
         } catch (NoSuchMethodException ex) {
             return null;
         }

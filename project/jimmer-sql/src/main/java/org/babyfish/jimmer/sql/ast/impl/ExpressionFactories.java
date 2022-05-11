@@ -147,6 +147,11 @@ public class ExpressionFactories {
         }
 
         @Override
+        public <T> Expression<T> nullValue(Class<T> type) {
+            return new NullExpression<>(type);
+        }
+
+        @Override
         public <T> Expression<T> sql(Class<T> type, String sql) {
             return sql(type, sql, null);
         }

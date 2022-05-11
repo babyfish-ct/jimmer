@@ -9,12 +9,14 @@ import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
-import org.babyfish.jimmer.sql.ast.impl.PropExpression;
+import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import javax.persistence.criteria.JoinType;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -81,6 +83,22 @@ class TableImpl<E> implements TableImplementor<E> {
         return parent;
     }
 
+    @Override
+    public Collection<TableImplementor<?>> getChildren() {
+        return Collections.unmodifiableCollection(childTableMap.values());
+    }
+
+    @Override
+    public ImmutableProp getJoinProp() {
+        return joinProp;
+    }
+
+    @Override
+    public JoinType getJoinType() {
+        return joinType;
+    }
+
+    @Override
     public String getAlias() {
         return alias;
     }
@@ -126,7 +144,7 @@ class TableImpl<E> implements TableImplementor<E> {
         if (immutableProp == null || !immutableProp.isScalar()) {
             throw new IllegalArgumentException("'" + prop + "' is not scalar property");
         }
-        return (XE) PropExpression.of(this, immutableProp);
+        return (XE) PropExpressionImpl.of(this, immutableProp);
     }
 
     @Override
@@ -239,6 +257,24 @@ class TableImpl<E> implements TableImplementor<E> {
         );
         childTableMap.put(joinName, newTable);
         return TableWrappers.wrap(newTable);
+    }
+
+    @Override
+    public void renderJoinAsFrom(SqlBuilder builder, RenderMode mode) {
+        if (parent == null) {
+            throw new IllegalStateException("Internal bug: renderJoinAsFrom can only be called base on joined tables");
+        }
+        if (mode == RenderMode.NORMAL) {
+            throw new IllegalStateException("Internal bug: renderJoinAsFrom does not accept render mode ALL");
+        }
+        if (builder.isTableUsed(this)) {
+            renderSelf(builder, mode);
+            if (mode == RenderMode.DEEPER_JOIN_ONLY) {
+                for (TableImpl<?> childTable : childTableMap.values()) {
+                    childTable.renderTo(builder);
+                }
+            }
+        }
     }
 
     @Override
@@ -411,13 +447,6 @@ class TableImpl<E> implements TableImplementor<E> {
         }
     }
 
-    private enum RenderMode {
-        NORMAL,
-        FROM_ONLY,
-        WHERE_ONLY,
-        DEEPER_JOIN_ONLY;
-    }
-
     @Override
     public void renderSelection(ImmutableProp prop, SqlBuilder builder) {
         if (prop.isId() && joinProp != null) {
@@ -456,7 +485,7 @@ class TableImpl<E> implements TableImplementor<E> {
         } else if (isInverse) {
             ImmutableProp opposite = joinProp.getOpposite();
             if (opposite != null) {
-                text = parent.toString() + '.' + opposite;
+                text = parent.toString() + '.' + opposite.getName();
             } else {
                 text = "← " + parent + '.' + joinProp.getName();
             }

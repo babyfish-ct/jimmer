@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
-import org.babyfish.jimmer.sql.ast.table.SubQueryTable;
+import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTableWrapper;
 
@@ -27,8 +27,8 @@ public class TableWrappers {
     private TableWrappers() {}
 
     public static Table<?> wrap(TableImplementor<?> table) {
-        if (table instanceof SubQueryTable<?>) {
-            return SubQueryTableWrappers.wrap(table);
+        if (table instanceof TableEx<?>) {
+            return TableExWrappers.wrap(table);
         }
         Class<?> javaClass = table.getImmutableType().getJavaClass();
         Constructor<?> constructor = tryGetConstructor(javaClass);

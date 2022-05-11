@@ -59,7 +59,7 @@ public class TableGenerator {
         typeBuilder = TypeSpec
                 .classBuilder(
                         subQueryTable ?
-                                type.getSubQueryTableClassName().simpleName() :
+                                type.getTableExClassName().simpleName() :
                                 type.getTableClassName().simpleName()
                 )
                 .addModifiers(Modifier.PUBLIC);
@@ -68,7 +68,7 @@ public class TableGenerator {
             typeBuilder.superclass(type.getTableClassName());
             typeBuilder.addSuperinterface(
                     ParameterizedTypeName.get(
-                            Constants.SUB_QUERY_TABLE_CLASS_NAME,
+                            Constants.QUERY_TABLE_EX_CLASS_NAME,
                             type.getClassName()
                     )
             );
@@ -131,7 +131,7 @@ public class TableGenerator {
                         )
                 )
                 .addStatement(
-                        "return $T.createQuery($T.class, sqlClient, block)",
+                        "return $T.createQuery(sqlClient, $T.class, block)",
                         QUERIES_CLASS_NAME,
                         type.getTableClassName()
                 );
@@ -149,16 +149,16 @@ public class TableGenerator {
                         ParameterizedTypeName.get(
                                 BI_FUNCTION_CLASS_NAME,
                                 MUTABLE_SUB_QUERY_CLASS_NAME,
-                                type.getSubQueryTableClassName(),
+                                type.getTableExClassName(),
                                 ParameterizedTypeName.get(CONFIGURABLE_TYPED_SUB_QUERY_CLASS_NAME, typeVariable)
                         ),
                         "block"
                 )
                 .returns(ParameterizedTypeName.get(CONFIGURABLE_TYPED_SUB_QUERY_CLASS_NAME, typeVariable))
                 .addStatement(
-                        "return $T.createSubQuery($T.class, parent, block)",
+                        "return $T.createSubQuery(parent, $T.class, block)",
                         QUERIES_CLASS_NAME,
-                        type.getSubQueryTableClassName()
+                        type.getTableExClassName()
                 );
         typeBuilder.addMethod(builder.build());
     }
@@ -172,15 +172,15 @@ public class TableGenerator {
                         ParameterizedTypeName.get(
                                 BI_CONSUMER_CLASS_NAME,
                                 MUTABLE_SUB_QUERY_CLASS_NAME,
-                                type.getSubQueryTableClassName()
+                                type.getTableExClassName()
                         ),
                         "block"
                 )
                 .returns(MUTABLE_SUB_QUERY_CLASS_NAME)
                 .addStatement(
-                        "return $T.createWildSubQuery($T.class, parent, block)",
+                        "return $T.createWildSubQuery(parent, $T.class, block)",
                         QUERIES_CLASS_NAME,
-                        type.getSubQueryTableClassName()
+                        type.getTableExClassName()
                 );
         typeBuilder.addMethod(builder.build());
     }
@@ -192,7 +192,7 @@ public class TableGenerator {
         TypeName tableTypeName;
         if (subQueryTable) {
             tableTypeName = ParameterizedTypeName.get(
-                    SUB_QUERY_TABLE_CLASS_NAME,
+                    QUERY_TABLE_EX_CLASS_NAME,
                     type.getClassName()
             );
         } else {
@@ -222,7 +222,7 @@ public class TableGenerator {
             if (subQueryTable) {
                 returnType = typeUtils
                         .getImmutableType(prop.getElementType())
-                        .getSubQueryTableClassName();
+                        .getTableExClassName();
             } else {
                 returnType = typeUtils
                         .getImmutableType(prop.getElementType())
@@ -231,19 +231,19 @@ public class TableGenerator {
         } else {
             if (prop.getTypeName().isPrimitive()) {
                 returnType = ParameterizedTypeName.get(
-                        Constants.NUMERIC_EXPRESSION_CLASS_NAME,
+                        Constants.PROP_NUMERIC_EXPRESSION_CLASS_NAME,
                         prop.getTypeName().box()
                 );
             } else if (typeUtils.isString(prop.getReturnType())) {
-                returnType = Constants.STRING_EXPRESSION_CLASS_NAME;
+                returnType = Constants.PROP_STRING_EXPRESSION_CLASS_NAME;
             } else if (typeUtils.isNumber(prop.getReturnType())) {
                 returnType = ParameterizedTypeName.get(
-                        Constants.NUMERIC_EXPRESSION_CLASS_NAME,
+                        Constants.PROP_NUMERIC_EXPRESSION_CLASS_NAME,
                         prop.getTypeName()
                 );
             } else if (typeUtils.isComparable(prop.getReturnType())) {
                 returnType = ParameterizedTypeName.get(
-                        Constants.COMPARABLE_EXPRESSION_CLASS_NAME,
+                        Constants.PROP_COMPARABLE_EXPRESSION_CLASS_NAME,
                         prop.getTypeName()
                 );
             } else {

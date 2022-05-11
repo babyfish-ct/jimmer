@@ -6,9 +6,9 @@ import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 
 import javax.persistence.criteria.JoinType;
 
-class SubQueryTableImpl<E> extends TableImpl<E> implements SubQueryTableImplementor<E> {
+class TableExImpl<E> extends TableImpl<E> implements TableExImplementor<E> {
 
-    public SubQueryTableImpl(
+    public TableExImpl(
             AbstractMutableStatementImpl statement,
             ImmutableType immutableType,
             TableImpl<?> parent,
@@ -20,12 +20,12 @@ class SubQueryTableImpl<E> extends TableImpl<E> implements SubQueryTableImplemen
     }
 
     @Override
-    protected SubQueryTableImpl<?> createChildTable(
+    protected TableExImpl<?> createChildTable(
             boolean isInverse,
             ImmutableProp joinProp,
             JoinType joinType
     ) {
-        return new SubQueryTableImpl<>(
+        return new TableExImpl<>(
                 getStatement(),
                 isInverse ? joinProp.getDeclaringType() : joinProp.getTargetType(),
                 this,

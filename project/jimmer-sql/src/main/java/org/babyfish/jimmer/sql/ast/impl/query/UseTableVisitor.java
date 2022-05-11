@@ -6,9 +6,9 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
-class UseTableVisitor extends AstVisitor {
+public class UseTableVisitor extends AstVisitor {
 
-    UseTableVisitor(SqlBuilder sqlBuilder) {
+    protected UseTableVisitor(SqlBuilder sqlBuilder) {
         super(sqlBuilder);
     }
 

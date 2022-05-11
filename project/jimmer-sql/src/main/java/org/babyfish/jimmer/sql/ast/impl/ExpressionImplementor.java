@@ -31,6 +31,11 @@ public interface ExpressionImplementor<T> extends Expression<T> {
 
     @Override
     default Predicate eq(Expression<T> other) {
+        if (other instanceof NullExpression<?>) {
+            return isNull();
+        } else if (this instanceof NullExpression<?>) {
+            return other.isNull();
+        }
         return new ComparisonPredicate.Eq(this, other);
     }
 
@@ -41,6 +46,11 @@ public interface ExpressionImplementor<T> extends Expression<T> {
 
     @Override
     default Predicate ne(Expression<T> other) {
+        if (other instanceof NullExpression<?>) {
+            return isNotNull();
+        } else if (this instanceof NullExpression<?>) {
+            return other.isNotNull();
+        }
         return new ComparisonPredicate.Ne(this, other);
     }
 
