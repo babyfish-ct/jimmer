@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
@@ -15,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 public interface SqlClient {
 
@@ -27,6 +29,8 @@ public interface SqlClient {
     Executor getExecutor();
 
     <T, S> ScalarProvider<T, S> getScalarProvider(Class<T> scalarType);
+
+    OnDeleteAction getOnDeleteAction(ImmutableProp prop);
 
     <T extends Table<?>, R> ConfigurableTypedRootQuery<T, R> createQuery(
             Class<T> tableType,
@@ -42,6 +46,10 @@ public interface SqlClient {
             Class<T> tableType,
             BiConsumer<MutableDelete, T> block
     );
+
+    Entities getEntities();
+
+    SqlClient subClient(Consumer<SubClientContext> block);
 
     class Builder {
 
@@ -78,5 +86,14 @@ public interface SqlClient {
         public SqlClient build() {
             return new SqlClientImpl(dialect, executor, scalarProviderMap);
         }
+    }
+
+    interface SubClientContext {
+
+        SubClientContext setOnDeleteAction(
+                Class<?> entityType,
+                String prop,
+                OnDeleteAction onDeleteAction
+        );
     }
 }

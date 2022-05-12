@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.List;
+import java.util.Map;
 
 public class MutableDeleteImpl
         extends AbstractMutableStatementImpl
@@ -61,8 +62,15 @@ public class MutableDeleteImpl
         if (ids.isEmpty()) {
             return 0;
         }
-        // TODO
-        return -1;
+        Map<String, Integer> rowCountMap = getSqlClient().getEntities().batchDeleteCommand(
+                table.getImmutableType().getJavaClass(),
+                ids
+        ).execute(con);
+        int totalRowCount = 0;
+        for (Integer rowCount : rowCountMap.values()) {
+            totalRowCount += rowCount;
+        }
+        return totalRowCount;
     }
 
     private void renderDirectly(SqlBuilder builder) {
