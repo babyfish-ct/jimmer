@@ -4,8 +4,7 @@ import org.babyfish.jimmer.sql.ast.Executable;
 import org.junit.jupiter.api.Assertions;
 
 import javax.sql.DataSource;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
 
 public abstract class AbstractMutationTest extends AbstractTest {
@@ -35,12 +34,40 @@ public abstract class AbstractMutationTest extends AbstractTest {
         });
     }
 
+    protected void executeAndExpectRowCountMap(
+            Executable<Map<String, Integer>> executable,
+            Consumer<ExpectDSLWithRowCountMap> block
+    ) {
+        jdbc(null, true, con -> {
+            clearExecutions();
+            Map<String, Integer> affectedRowCountMap;
+            Throwable throwable = null;
+            try {
+                affectedRowCountMap = executable.execute(con);
+            } catch (Throwable ex) {
+                throwable = ex;
+                affectedRowCountMap = Collections.emptyMap();
+            }
+            assertRowCountMap(throwable, affectedRowCountMap, block);
+        });
+    }
+
     private void assertRowCount(
         Throwable throwable,
         int rowCount,
         Consumer<ExpectDSLWithRowCount> block
     ) {
         ExpectDSLWithRowCount dsl = new ExpectDSLWithRowCount(getExecutions(), throwable, rowCount);
+        block.accept(dsl);
+        dsl.close();
+    }
+
+    private void assertRowCountMap(
+            Throwable throwable,
+            Map<String, Integer> rowCountMap,
+            Consumer<ExpectDSLWithRowCountMap> block
+    ) {
+        ExpectDSLWithRowCountMap dsl = new ExpectDSLWithRowCountMap(getExecutions(), throwable, rowCountMap);
         block.accept(dsl);
         dsl.close();
     }
@@ -108,6 +135,39 @@ public abstract class AbstractMutationTest extends AbstractTest {
         }
     }
 
+    protected static class ExpectDSLWithRowCountMap extends ExpectDSL {
+
+        private Map<String, Integer> rowCountMap;
+
+        public ExpectDSLWithRowCountMap(
+                List<Execution> executions,
+                Throwable throwable,
+                Map<String, Integer> rowCountMap
+        ) {
+            super(executions, throwable);
+            this.rowCountMap = rowCountMap;
+        }
+
+        public ExpectDSLWithRowCountMap totalRowCount(int totalRowCount) {
+            int actualTotalCount = 0;
+            for (Integer c : rowCountMap.values()) {
+                actualTotalCount += c;
+            }
+            Assertions.assertEquals(totalRowCount, actualTotalCount);
+            return this;
+        }
+
+        public ExpectDSLWithRowCountMap rowCount(String tableName, int rowCount) {
+            Integer actualRowCount = rowCountMap.get(tableName);
+            Assertions.assertEquals(
+                    rowCount,
+                    actualRowCount != null ? actualRowCount : 0,
+                    "rowCountMap['" + tableName + "']"
+            );
+            return this;
+        }
+    }
+
     protected static class StatementDSL {
 
         private int index;
@@ -138,16 +198,24 @@ public abstract class AbstractMutationTest extends AbstractTest {
                 if (exp instanceof byte[]) {
                     Assertions.assertTrue(
                             Arrays.equals((byte[])exp, (byte[])act),
-                            "statements[" + index + "].variables[$i]."
+                            "statements[" + index + "].variables[$" + i + "]."
                     );
                 } else {
                     Assertions.assertEquals(
                             exp,
                             act,
-                            "statements[" + index + "].variables[$i]."
+                            "statements[" + index + "].variables[$" + i + "]."
                     );
                 }
             }
+        }
+
+        public void unorderedVariables(Object ... values) {
+            Assertions.assertEquals(
+                    new HashSet<Object>(Arrays.asList(values)),
+                    new HashSet<>(execution.getVariables()),
+                    "statements[" + index + "].variables."
+            );
         }
 
         public void variables(Consumer<List<Object>> block) {
