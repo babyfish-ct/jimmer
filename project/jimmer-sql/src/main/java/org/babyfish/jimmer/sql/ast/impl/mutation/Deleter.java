@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.sql.Column;
 import org.babyfish.jimmer.meta.sql.MiddleTable;
 import org.babyfish.jimmer.sql.OnDeleteAction;
 import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -17,7 +18,7 @@ import java.util.*;
 
 public class Deleter {
 
-    private SqlClient sqlClient;
+    private DeleteCommandImpl.Data data;
 
     private Connection con;
 
@@ -30,8 +31,8 @@ public class Deleter {
     private Map<String, Integer> affectedRowCountMap =
             new LinkedHashMap<>();
 
-    public Deleter(SqlClient sqlClient, Connection con) {
-        this.sqlClient = sqlClient;
+    public Deleter(DeleteCommandImpl.Data data, Connection con) {
+        this.data = data;
         this.con = con;
     }
 
@@ -68,14 +69,14 @@ public class Deleter {
         }
     }
 
-    public Map<String, Integer> execute() {
+    public DeleteResult execute() {
         while (!preHandleIdInputMap.isEmpty() || !postHandleIdInputMap.isEmpty()) {
             while (!preHandleIdInputMap.isEmpty()) {
                 preHandle();
             }
             postHandle();
         }
-        return affectedRowCountMap;
+        return new DeleteResult(affectedRowCountMap);
     }
 
     private void preHandle() {
@@ -104,7 +105,7 @@ public class Deleter {
                 deleteFromMiddleTable(middleTable, ids);
             }
             if (prop.isEntityList() && mappedByProp != null && mappedByProp.isReference()) {
-                OnDeleteAction onDeleteAction = sqlClient.getOnDeleteAction(mappedByProp);
+                OnDeleteAction onDeleteAction = data.getOnDeleteAction(mappedByProp);
                 if (onDeleteAction == OnDeleteAction.SET_NULL ||
                         (onDeleteAction == OnDeleteAction.SMART && mappedByProp.isNullable())) {
                     updateChildTable(mappedByProp, ids);
@@ -117,7 +118,7 @@ public class Deleter {
     }
 
     private void deleteFromMiddleTable(MiddleTable middleTable, Collection<Object> ids) {
-        SqlBuilder builder = new SqlBuilder(sqlClient);
+        SqlBuilder builder = new SqlBuilder(data.getSqlClient());
         builder.sql("delete from ");
         builder.sql(middleTable.getTableName());
         builder.sql(" where ");
@@ -131,7 +132,8 @@ public class Deleter {
         }
         builder.sql(")");
         Tuple2<String, List<Object>> sqlResult = builder.build();
-        int affectedRowCount = sqlClient
+        int affectedRowCount = data
+                .getSqlClient()
                 .getExecutor()
                 .execute(
                         con,
@@ -148,7 +150,7 @@ public class Deleter {
     ) {
         ImmutableType childType = manyToOneProp.getDeclaringType();
         String fkColumnName = ((Column)manyToOneProp.getStorage()).getName();
-        SqlBuilder builder = new SqlBuilder(sqlClient);
+        SqlBuilder builder = new SqlBuilder(data.getSqlClient());
         builder
                 .sql("update ")
                 .sql(childType.getTableName())
@@ -165,7 +167,8 @@ public class Deleter {
         }
         builder.sql(")");
         Tuple2<String, List<Object>> sqlResult = builder.build();
-        int affectedRowCount = sqlClient
+        int affectedRowCount = data
+                .getSqlClient()
                 .getExecutor()
                 .execute(
                         con,
@@ -179,7 +182,7 @@ public class Deleter {
     private void tryDeleteFromChildTable(ImmutableProp manyToOneProp, Collection<?> ids) {
         ImmutableType childType = manyToOneProp.getDeclaringType();
         String fkColumnName = ((Column)manyToOneProp.getStorage()).getName();
-        SqlBuilder builder = new SqlBuilder(sqlClient);
+        SqlBuilder builder = new SqlBuilder(data.getSqlClient());
         builder
                 .sql("select ")
                 .sql(childType.getIdProp().getName())
@@ -196,7 +199,8 @@ public class Deleter {
         }
         builder.sql(")");
         Tuple2<String, List<Object>> sqlResult = builder.build();
-        List<Object> childIds = sqlClient
+        List<Object> childIds = data
+                .getSqlClient()
                 .getExecutor()
                 .execute(
                         con,
@@ -213,7 +217,7 @@ public class Deleter {
                         }
                 );
         if (!childIds.isEmpty()) {
-            if (sqlClient.getOnDeleteAction(manyToOneProp) != OnDeleteAction.CASCADE) {
+            if (data.getOnDeleteAction(manyToOneProp) != OnDeleteAction.CASCADE) {
                 throw new ExecutionException(
                         "Cannot delete entities whose type are \"" +
                                 manyToOneProp.getTargetType().getJavaClass().getName() +
@@ -239,7 +243,7 @@ public class Deleter {
 
     private void deleteFromSelfTable(ImmutableType type, Collection<Object> ids) {
         String fkColumnName = ((Column)type.getIdProp().getStorage()).getName();
-        SqlBuilder builder = new SqlBuilder(sqlClient);
+        SqlBuilder builder = new SqlBuilder(data.getSqlClient());
         builder.sql("delete from ");
         builder.sql(type.getTableName());
         builder.sql(" where ");
@@ -253,7 +257,8 @@ public class Deleter {
         }
         builder.sql(")");
         Tuple2<String, List<Object>> sqlResult = builder.build();
-        int affectedRowCount = sqlClient
+        int affectedRowCount = data
+                .getSqlClient()
                 .getExecutor()
                 .execute(
                         con,

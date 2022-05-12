@@ -38,4 +38,9 @@ public class AbstractMutableStatementImpl {
     public SqlClient getSqlClient() {
         return sqlClient;
     }
+
+    public static AbstractMutableStatementImpl fake(SqlClient sqlClient) {
+        return new AbstractMutableStatementImpl(new TableAliasAllocator(), sqlClient) {
+        };
+    }
 }

@@ -19,14 +19,7 @@ public class Queries {
             Class<T> tableType,
             BiFunction<MutableRootQuery<T>, T, ConfigurableTypedRootQuery<T, R>> block
     ) {
-        ImmutableType immutableType = ImmutableType.tryGet(tableType);
-        if (immutableType == null) {
-            throw new IllegalArgumentException(
-                    "Cannot get immutable type from table type \"" +
-                            tableType.getName() +
-                            "\""
-            );
-        }
+        ImmutableType immutableType = ImmutableType.get(tableType);
         RootMutableQueryImpl<T> query = new RootMutableQueryImpl<>(
                 sqlClient,
                 immutableType
@@ -42,14 +35,7 @@ public class Queries {
             Class<T> tableType,
             BiFunction<MutableSubQuery, T, ConfigurableTypedSubQuery<R>> block
     ) {
-        ImmutableType immutableType = ImmutableType.tryGet(tableType);
-        if (immutableType == null) {
-            throw new IllegalArgumentException(
-                    "Cannot get immutable type from table type \"" +
-                            tableType.getName() +
-                            "\""
-            );
-        }
+        ImmutableType immutableType = ImmutableType.get(tableType);
         SubMutableQueryImpl query = new SubMutableQueryImpl(
                 (AbstractMutableQueryImpl) parent,
                 immutableType
@@ -65,14 +51,7 @@ public class Queries {
             Class<T> tableType,
             BiConsumer<MutableSubQuery, T> block
     ) {
-        ImmutableType immutableType = ImmutableType.tryGet(tableType);
-        if (immutableType == null) {
-            throw new IllegalArgumentException(
-                    "Cannot get immutable type from table type \"" +
-                            tableType.getName() +
-                            "\""
-            );
-        }
+        ImmutableType immutableType = ImmutableType.get(tableType);
         SubMutableQueryImpl query = new SubMutableQueryImpl(
                 (AbstractMutableQueryImpl) parent,
                 immutableType
