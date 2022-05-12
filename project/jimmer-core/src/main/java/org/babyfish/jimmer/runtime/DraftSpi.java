@@ -2,7 +2,7 @@ package org.babyfish.jimmer.runtime;
 
 import org.babyfish.jimmer.Draft;
 
-public interface DraftSpi extends Draft {
+public interface DraftSpi extends Draft, ImmutableSpi {
 
     void __unload(String prop);
 

@@ -21,12 +21,12 @@ public class EntitiesImpl implements Entities {
 
     @Override
     public <E> SimpleSaveCommand<E> saveCommand(E entity) {
-        return null;
+        return new SimpleSaveCommandImpl<>(sqlClient, entity);
     }
 
     @Override
     public <E> BatchSaveCommand<E> batchSaveCommand(Collection<E> entities) {
-        return null;
+        return new BatchSaveCommandImpl<>(sqlClient, entities);
     }
 
     @Override

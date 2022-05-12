@@ -28,14 +28,17 @@ public class TableExWrappers {
 
     private TableExWrappers() {}
 
-    public static Table<?> wrap(TableImplementor<?> table) {
+    @SuppressWarnings("unchecked")
+    public static <T extends TableEx<?>> T wrap(TableImplementor<?> table) {
         Class<?> javaClass = table.getImmutableType().getJavaClass();
         Constructor<?> constructor = tryGetConstructor(javaClass);
         if (constructor == null) {
-            return table;
+            throw new IllegalStateException(
+                    "No TableEx wrapper class for \"" + table.getImmutableType() +"\""
+            );
         }
         try {
-            return (Table<?>) constructor.newInstance(table);
+            return (T) constructor.newInstance(table);
         } catch (InstantiationException | IllegalAccessException ex) {
             throw new AssertionError(
                     "Internal bug: Can not create instance of " +

@@ -37,7 +37,7 @@ class DeleteCommandImpl implements DeleteCommand {
         this.sqlClient = sqlClient;
         this.immutableType = immutableType;
         this.ids = ids;
-        this.data = new Data(sqlClient);
+        this.data = new Data(sqlClient).freeze();
     }
 
     public DeleteCommandImpl(
@@ -47,7 +47,7 @@ class DeleteCommandImpl implements DeleteCommand {
         this.sqlClient = base.sqlClient;
         this.immutableType = base.immutableType;
         this.ids = base.ids;
-        this.data = data;
+        this.data = data.freeze();
     }
 
     @Override

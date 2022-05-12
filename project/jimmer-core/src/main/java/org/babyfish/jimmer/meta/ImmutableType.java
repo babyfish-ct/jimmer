@@ -241,6 +241,16 @@ public class ImmutableType {
         return props;
     }
 
+    public ImmutableProp getProp(String name) {
+        ImmutableProp prop = getProps().get(name);
+        if (prop == null) {
+            throw new IllegalArgumentException(
+                    "There is no property \"" + name + "\" in \"" + this + "\""
+            );
+        }
+        return prop;
+    }
+
     public Map<String, ImmutableProp> getSelectableProps() {
         Map<String, ImmutableProp> selectableProps = this.selectableProps;
         if (selectableProps == null) {
