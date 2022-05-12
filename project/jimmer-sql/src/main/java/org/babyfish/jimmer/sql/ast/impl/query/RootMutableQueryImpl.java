@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 public class RootMutableQueryImpl<T extends Table<?>>
         extends AbstractMutableQueryImpl
@@ -29,7 +30,7 @@ public class RootMutableQueryImpl<T extends Table<?>>
     @Override
     public <R> ConfigurableTypedRootQuery<T, R> select(Selection<R> selection) {
         return new ConfigurableTypedRootQueryImpl<>(
-                new TypedQueryData(Arrays.asList(selection)),
+                new TypedQueryData(Collections.singletonList(selection)),
                 this
         );
     }

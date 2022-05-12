@@ -17,6 +17,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -111,8 +112,12 @@ public abstract class AbstractMutableQueryImpl
         return Queries.createWildSubQuery(this, tableType, block);
     }
 
-    Table<?> getTable() {
+    public Table<?> getTable() {
         return table;
+    }
+
+    public List<Predicate> getPredicates() {
+        return Collections.unmodifiableList(predicates);
     }
 
     void accept(

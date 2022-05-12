@@ -33,13 +33,12 @@ public class Mutations {
             Class<T> tableType,
             BiConsumer<MutableDelete, T> block
     ) {
-        throw new UnsupportedOperationException();
-//        MutableDeleteImpl delete = new MutableDeleteImpl(
-//                sqlClient,
-//                ImmutableType.tryGet(tableType)
-//        );
-//        block.accept(delete, delete.getTable());
-//        delete.freeze();
-//        return delete;
+        MutableDeleteImpl delete = new MutableDeleteImpl(
+                sqlClient,
+                ImmutableType.tryGet(tableType)
+        );
+        block.accept(delete, delete.getTable());
+        delete.freeze();
+        return delete;
     }
 }

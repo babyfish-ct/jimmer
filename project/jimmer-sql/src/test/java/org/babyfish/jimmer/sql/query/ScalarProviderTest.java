@@ -17,9 +17,9 @@ public class ScalarProviderTest extends AbstractQueryTest {
                 }),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1.ID, tb_1.FIRST_NAME, tb_1.LAST_NAME, tb_1.GENDER " +
-                                    "from AUTHOR as tb_1 " +
-                                    "where tb_1.GENDER = ?"
+                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                    "from AUTHOR as tb_1_ " +
+                                    "where tb_1_.GENDER = ?"
                     );
                     ctx.variables("M");
                     ctx.rows(it -> Assertions.assertEquals(5, it.size()));

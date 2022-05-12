@@ -27,13 +27,13 @@ public class SubQueryTest extends AbstractQueryTest  {
                 }),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1.ID, tb_1.NAME, tb_1.EDITION, tb_1.PRICE, tb_1.STORE_ID " +
-                                    "from BOOK as tb_1 " +
-                                    "where tb_1.ID in (" +
-                                        "select tb_3.BOOK_ID " +
-                                        "from AUTHOR as tb_2 " +
-                                        "inner join BOOK_AUTHOR_MAPPING as tb_3 on tb_2.ID = tb_3.AUTHOR_ID " +
-                                        "where tb_2.FIRST_NAME = ?" +
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_ " +
+                                    "where tb_1_.ID in (" +
+                                        "select tb_3_.BOOK_ID " +
+                                        "from AUTHOR as tb_2_ " +
+                                        "inner join BOOK_AUTHOR_MAPPING as tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
+                                        "where tb_2_.FIRST_NAME = ?" +
                                     ")"
                     );
                     ctx.variables("Alex");
@@ -61,12 +61,12 @@ public class SubQueryTest extends AbstractQueryTest  {
                 }),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1.ID, tb_1.NAME, tb_1.EDITION, tb_1.PRICE, tb_1.STORE_ID " +
-                                    "from BOOK as tb_1 " +
-                                    "where (tb_1.NAME, tb_1.PRICE) in (" +
-                                        "select tb_2.NAME, max(tb_2.PRICE) " +
-                                        "from BOOK as tb_2 " +
-                                        "group by tb_2.NAME" +
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_ " +
+                                    "where (tb_1_.NAME, tb_1_.PRICE) in (" +
+                                        "select tb_2_.NAME, max(tb_2_.PRICE) " +
+                                        "from BOOK as tb_2_ " +
+                                        "group by tb_2_.NAME" +
                                     ")"
                     );
                 }
@@ -89,13 +89,13 @@ public class SubQueryTest extends AbstractQueryTest  {
                 }),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1.ID, tb_1.NAME, tb_1.EDITION, tb_1.PRICE, tb_1.STORE_ID " +
-                                    "from BOOK as tb_1 where exists (" +
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_ where exists (" +
                                         "select 1 " +
-                                        "from AUTHOR as tb_2 " +
-                                        "inner join BOOK_AUTHOR_MAPPING as tb_3 on tb_2.ID = tb_3.AUTHOR_ID " +
-                                        "where tb_1.ID = tb_3.BOOK_ID " +
-                                        "and tb_2.FIRST_NAME = ?" +
+                                        "from AUTHOR as tb_2_ " +
+                                        "inner join BOOK_AUTHOR_MAPPING as tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
+                                        "where tb_1_.ID = tb_3_.BOOK_ID " +
+                                        "and tb_2_.FIRST_NAME = ?" +
                                     ")"
                     );
                     ctx.variables("Alex");
@@ -120,13 +120,13 @@ public class SubQueryTest extends AbstractQueryTest  {
                 }),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1.ID, tb_1.NAME, tb_1.EDITION, tb_1.PRICE, tb_1.STORE_ID " +
-                                    "from BOOK as tb_1 where exists (" +
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_ where exists (" +
                                     "select 1 " +
-                                    "from AUTHOR as tb_2 " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_3 on tb_2.ID = tb_3.AUTHOR_ID " +
-                                    "where tb_1.ID = tb_3.BOOK_ID " +
-                                    "and tb_2.FIRST_NAME = ?" +
+                                    "from AUTHOR as tb_2_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
+                                    "where tb_1_.ID = tb_3_.BOOK_ID " +
+                                    "and tb_2_.FIRST_NAME = ?" +
                                     ")"
                     );
                     ctx.variables("Alex");
@@ -149,9 +149,9 @@ public class SubQueryTest extends AbstractQueryTest  {
                 }),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1.ID, tb_1.NAME, tb_1.EDITION, tb_1.PRICE, tb_1.STORE_ID " +
-                                    "from BOOK as tb_1 where tb_1.PRICE > (" +
-                                        "select coalesce(avg(tb_1.PRICE), ?) from BOOK as tb_2" +
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_ where tb_1_.PRICE > (" +
+                                        "select coalesce(avg(tb_1_.PRICE), ?) from BOOK as tb_2_" +
                                     ")"
                     );
                     ctx.variables(BigDecimal.ZERO);
@@ -176,19 +176,19 @@ public class SubQueryTest extends AbstractQueryTest  {
                 ctx -> {
                     ctx.sql(
                             "select " +
-                                        "tb_1.ID, " +
-                                        "tb_1.NAME, " +
-                                        "tb_1.WEBSITE, " +
+                                        "tb_1_.ID, " +
+                                        "tb_1_.NAME, " +
+                                        "tb_1_.WEBSITE, " +
                                         "(" +
-                                            "select coalesce(avg(tb_2.PRICE), ?) " +
-                                            "from BOOK as tb_2 " +
-                                            "where tb_1.ID = tb_2.STORE_ID" +
+                                            "select coalesce(avg(tb_2_.PRICE), ?) " +
+                                            "from BOOK as tb_2_ " +
+                                            "where tb_1_.ID = tb_2_.STORE_ID" +
                                         ") " +
-                                    "from BOOK_STORE as tb_1 " +
+                                    "from BOOK_STORE as tb_1_ " +
                                     "order by (" +
-                                        "select coalesce(avg(tb_2.PRICE), ?) " +
-                                        "from BOOK as tb_2 " +
-                                        "where tb_1.ID = tb_2.STORE_ID" +
+                                        "select coalesce(avg(tb_2_.PRICE), ?) " +
+                                        "from BOOK as tb_2_ " +
+                                        "where tb_1_.ID = tb_2_.STORE_ID" +
                                     ") desc"
                     );
                     ctx.variables(BigDecimal.ZERO, BigDecimal.ZERO);
@@ -212,13 +212,13 @@ public class SubQueryTest extends AbstractQueryTest  {
                 }),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1.ID, tb_1.NAME, tb_1.EDITION, tb_1.PRICE, tb_1.STORE_ID " +
-                                    "from BOOK as tb_1 " +
-                                    "where tb_1.ID = any(" +
-                                        "select tb_3.BOOK_ID " +
-                                        "from AUTHOR as tb_2 " +
-                                        "inner join BOOK_AUTHOR_MAPPING as tb_3 on tb_2.ID = tb_3.AUTHOR_ID " +
-                                        "where tb_2.FIRST_NAME in (?, ?)" +
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_ " +
+                                    "where tb_1_.ID = any(" +
+                                        "select tb_3_.BOOK_ID " +
+                                        "from AUTHOR as tb_2_ " +
+                                        "inner join BOOK_AUTHOR_MAPPING as tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
+                                        "where tb_2_.FIRST_NAME in (?, ?)" +
                                     ")"
                     );
                     ctx.variables("Alex", "Bill");
@@ -242,13 +242,13 @@ public class SubQueryTest extends AbstractQueryTest  {
                 }),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1.ID, tb_1.NAME, tb_1.EDITION, tb_1.PRICE, tb_1.STORE_ID " +
-                                    "from BOOK as tb_1 " +
-                                    "where tb_1.ID = all(" +
-                                        "select tb_3.BOOK_ID " +
-                                        "from AUTHOR as tb_2 " +
-                                        "inner join BOOK_AUTHOR_MAPPING as tb_3 on tb_2.ID = tb_3.AUTHOR_ID " +
-                                        "where tb_2.FIRST_NAME in (?, ?)" +
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_ " +
+                                    "where tb_1_.ID = all(" +
+                                        "select tb_3_.BOOK_ID " +
+                                        "from AUTHOR as tb_2_ " +
+                                        "inner join BOOK_AUTHOR_MAPPING as tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
+                                        "where tb_2_.FIRST_NAME in (?, ?)" +
                                     ")"
                     );
                     ctx.variables("Alex", "Bill");

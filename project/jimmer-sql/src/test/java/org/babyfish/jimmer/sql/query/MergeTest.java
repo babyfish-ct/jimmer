@@ -37,24 +37,24 @@ public class MergeTest extends AbstractQueryTest {
                 ),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1.ID, tb_1.NAME, tb_1.EDITION, tb_1.PRICE, tb_1.STORE_ID " +
-                                    "from BOOK as tb_1 " +
-                                    "where lower(tb_1.NAME) like ? " +
-                                    "and tb_1.ID in (" +
-                                        "select tb_3.BOOK_ID " +
-                                        "from AUTHOR as tb_2 " +
-                                        "inner join BOOK_AUTHOR_MAPPING as tb_3 on tb_2.ID = tb_3.AUTHOR_ID " +
-                                        "where tb_2.FIRST_NAME like ?" +
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_ " +
+                                    "where lower(tb_1_.NAME) like ? " +
+                                    "and tb_1_.ID in (" +
+                                        "select tb_3_.BOOK_ID " +
+                                        "from AUTHOR as tb_2_ " +
+                                        "inner join BOOK_AUTHOR_MAPPING as tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
+                                        "where tb_2_.FIRST_NAME like ?" +
                                     ") " +
                                     "minus " +
-                                    "select tb_1.ID, tb_1.NAME, tb_1.EDITION, tb_1.PRICE, tb_1.STORE_ID " +
-                                    "from BOOK as tb_1 " +
-                                    "where lower(tb_1.NAME) like ? " +
-                                    "and tb_1.ID in (" +
-                                        "select tb_3.BOOK_ID " +
-                                        "from AUTHOR as tb_2 " +
-                                        "inner join BOOK_AUTHOR_MAPPING as tb_3 on tb_2.ID = tb_3.AUTHOR_ID " +
-                                        "where tb_2.FIRST_NAME like ?" +
+                                    "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_ " +
+                                    "where lower(tb_1_.NAME) like ? " +
+                                    "and tb_1_.ID in (" +
+                                        "select tb_3_.BOOK_ID " +
+                                        "from AUTHOR as tb_2_ " +
+                                        "inner join BOOK_AUTHOR_MAPPING as tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
+                                        "where tb_2_.FIRST_NAME like ?" +
                                     ")"
                     );
                     ctx.variables("%g%", "%A%", "%f%", "%C%");
