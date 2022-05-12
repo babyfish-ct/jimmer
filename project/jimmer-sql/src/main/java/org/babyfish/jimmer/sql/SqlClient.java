@@ -38,7 +38,7 @@ public interface SqlClient {
             BiConsumer<MutableUpdate, T> block
     );
 
-    <T extends Table<?>> Executable<Integer> createDelete(
+    <T extends TableEx<?>> Executable<Integer> createDelete(
             Class<T> tableType,
             BiConsumer<MutableDelete, T> block
     );

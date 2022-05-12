@@ -5,6 +5,6 @@ public class TableAliasAllocator {
     private int num;
 
     public String allocate() {
-        return "tb_" + ++num;
+        return "tb_" + ++num + '_';
     }
 }

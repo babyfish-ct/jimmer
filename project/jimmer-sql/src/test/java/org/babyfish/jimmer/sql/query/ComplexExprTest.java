@@ -38,10 +38,10 @@ public class ComplexExprTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select " +
-                                    "tb_1.ID, tb_1.NAME, tb_1.EDITION, tb_1.PRICE, tb_1.STORE_ID, " +
-                                    "rank() over(order by tb_1.PRICE desc), " +
-                                    "rank() over(partition by tb_1.STORE_ID order by tb_1.PRICE desc) " +
-                                    "from BOOK as tb_1"
+                                    "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, " +
+                                    "rank() over(order by tb_1_.PRICE desc), " +
+                                    "rank() over(partition by tb_1_.STORE_ID order by tb_1_.PRICE desc) " +
+                                    "from BOOK as tb_1_"
                     );
                     ctx.variables();
                     ctx.rows(list -> {
@@ -81,9 +81,9 @@ public class ComplexExprTest extends AbstractQueryTest {
                 }),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1.ID, tb_1.NAME, tb_1.EDITION, tb_1.PRICE, tb_1.STORE_ID " +
-                                    "from BOOK as tb_1 " +
-                                    "where (tb_1.NAME, tb_1.EDITION) in ((?, ?), (?, ?))"
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_ " +
+                                    "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
                     );
                     ctx.variables("Learning GraphQL", 3, "Effective TypeScript", 2);
                 }
@@ -105,13 +105,13 @@ public class ComplexExprTest extends AbstractQueryTest {
                 }),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1.ID, tb_1.NAME, tb_1.WEBSITE, " +
-                                    "case tb_1.NAME " +
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, " +
+                                    "case tb_1_.NAME " +
                                     "when ? then ? " +
                                     "when ? then ? " +
                                     "else ? " +
                                     "end " +
-                                    "from BOOK_STORE as tb_1"
+                                    "from BOOK_STORE as tb_1_"
                     );
                     ctx.variables(
                             "O'REILLY",
@@ -138,13 +138,13 @@ public class ComplexExprTest extends AbstractQueryTest {
                 }),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1.ID, tb_1.NAME, tb_1.EDITION, tb_1.PRICE, tb_1.STORE_ID, " +
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, " +
                                     "case " +
-                                    "when tb_1.PRICE > ? then ? " +
-                                    "when tb_1.PRICE < ? then ? " +
+                                    "when tb_1_.PRICE > ? then ? " +
+                                    "when tb_1_.PRICE < ? then ? " +
                                     "else ? " +
                                     "end " +
-                                    "from BOOK as tb_1"
+                                    "from BOOK as tb_1_"
                     );
                 }
         );

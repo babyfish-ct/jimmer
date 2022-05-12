@@ -26,10 +26,10 @@ public class InverseJoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
-                                    "from BOOK as tb_1 " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2 on tb_1.ID = tb_2.BOOK_ID " +
-                                    "inner join AUTHOR as tb_3 on tb_2.AUTHOR_ID = tb_3.ID " +
-                                    "where tb_3.FIRST_NAME = ?"
+                                    "from BOOK as tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                    "inner join AUTHOR as tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID " +
+                                    "where tb_3_.FIRST_NAME = ?"
                     );
                     ctx.variables("Alex");
                 }
@@ -51,10 +51,10 @@ public class InverseJoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
-                                    "from AUTHOR as tb_1 " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2 on tb_1.ID = tb_2.AUTHOR_ID " +
-                                    "inner join BOOK as tb_3 on tb_2.BOOK_ID = tb_3.ID " +
-                                    "where tb_3.NAME = ?"
+                                    "from AUTHOR as tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "inner join BOOK as tb_3_ on tb_2_.BOOK_ID = tb_3_.ID " +
+                                    "where tb_3_.NAME = ?"
                     );
                     ctx.variables("Learning GraphQL");
                 }
@@ -76,9 +76,9 @@ public class InverseJoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
-                                    "from BOOK as tb_1 " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2 on tb_1.ID = tb_2.BOOK_ID " +
-                                    "where tb_2.AUTHOR_ID in (?, ?)"
+                                    "from BOOK as tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                    "where tb_2_.AUTHOR_ID in (?, ?)"
                     );
                     ctx.variables(alexId, danId);
                 }
@@ -100,9 +100,9 @@ public class InverseJoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
-                                    "from AUTHOR as tb_1 " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2 on tb_1.ID = tb_2.AUTHOR_ID " +
-                                    "where tb_2.BOOK_ID in (?, ?)"
+                                    "from AUTHOR as tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "where tb_2_.BOOK_ID in (?, ?)"
                     );
                     ctx.variables(learningGraphQLId1, learningGraphQLId2);
                 }
@@ -131,11 +131,11 @@ public class InverseJoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
-                                    "from BOOK_STORE as tb_1 " +
-                                    "left join BOOK as tb_2 on tb_1.ID = tb_2.STORE_ID " +
-                                    "left join BOOK_AUTHOR_MAPPING as tb_3 on tb_2.ID = tb_3.BOOK_ID " +
-                                    "left join AUTHOR as tb_4 on tb_3.AUTHOR_ID = tb_4.ID " +
-                                    "where tb_4.FIRST_NAME = ? or tb_4.FIRST_NAME = ?"
+                                    "from BOOK_STORE as tb_1_ " +
+                                    "left join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                                    "left join BOOK_AUTHOR_MAPPING as tb_3_ on tb_2_.ID = tb_3_.BOOK_ID " +
+                                    "left join AUTHOR as tb_4_ on tb_3_.AUTHOR_ID = tb_4_.ID " +
+                                    "where tb_4_.FIRST_NAME = ? or tb_4_.FIRST_NAME = ?"
                     );
                     ctx.variables("Alex", "Tim");
                 }
@@ -164,11 +164,11 @@ public class InverseJoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
-                                    "from BOOK_STORE as tb_1 " +
-                                    "inner join BOOK as tb_2 on tb_1.ID = tb_2.STORE_ID " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_3 on tb_2.ID = tb_3.BOOK_ID " +
-                                    "inner join AUTHOR as tb_4 on tb_3.AUTHOR_ID = tb_4.ID " +
-                                    "where tb_4.FIRST_NAME = ? or tb_4.FIRST_NAME = ?"
+                                    "from BOOK_STORE as tb_1_ " +
+                                    "inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_3_ on tb_2_.ID = tb_3_.BOOK_ID " +
+                                    "inner join AUTHOR as tb_4_ on tb_3_.AUTHOR_ID = tb_4_.ID " +
+                                    "where tb_4_.FIRST_NAME = ? or tb_4_.FIRST_NAME = ?"
                     );
                     ctx.variables("Alex", "Tim");
                 }

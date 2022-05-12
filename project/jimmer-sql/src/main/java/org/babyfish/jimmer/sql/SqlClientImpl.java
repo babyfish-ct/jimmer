@@ -55,17 +55,26 @@ class SqlClientImpl implements SqlClient {
     }
 
     @Override
-    public <T extends Table<?>, R> ConfigurableTypedRootQuery<T, R> createQuery(Class<T> tableType, BiFunction<MutableRootQuery<T>, T, ConfigurableTypedRootQuery<T, R>> block) {
+    public <T extends Table<?>, R> ConfigurableTypedRootQuery<T, R> createQuery(
+            Class<T> tableType,
+            BiFunction<MutableRootQuery<T>, T, ConfigurableTypedRootQuery<T, R>> block
+    ) {
         return Queries.createQuery(this, tableType, block);
     }
 
     @Override
-    public <T extends TableEx<?>> Executable<Integer> createUpdate(Class<T> tableType, BiConsumer<MutableUpdate, T> block) {
+    public <T extends TableEx<?>> Executable<Integer> createUpdate(
+            Class<T> tableType,
+            BiConsumer<MutableUpdate, T> block
+    ) {
         return Mutations.createUpdate(this, tableType, block);
     }
 
     @Override
-    public <T extends Table<?>> Executable<Integer> createDelete(Class<T> tableType, BiConsumer<MutableDelete, T> block) {
-        return null;
+    public <T extends TableEx<?>> Executable<Integer> createDelete(
+            Class<T> tableType,
+            BiConsumer<MutableDelete, T> block
+    ) {
+        return Mutations.createDelete(this, tableType, block);
     }
 }

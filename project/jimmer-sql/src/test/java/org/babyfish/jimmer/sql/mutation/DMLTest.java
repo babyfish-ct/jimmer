@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.AuthorTable;
 import org.babyfish.jimmer.sql.model.BookStoreTable;
+import org.babyfish.jimmer.sql.model.BookTable;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.junit.jupiter.api.Test;
 
@@ -24,9 +25,9 @@ public class DMLTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "update AUTHOR tb_1 " +
-                                        "set FIRST_NAME = concat(tb_1.FIRST_NAME, ?) " +
-                                        "where tb_1.FIRST_NAME = ?"
+                                "update AUTHOR tb_1_ " +
+                                        "set FIRST_NAME = concat(tb_1_.FIRST_NAME, ?) " +
+                                        "where tb_1_.FIRST_NAME = ?"
                         );
                         it.variables("*", "Dan");
                     });
@@ -43,7 +44,7 @@ public class DMLTest extends AbstractMutationTest {
                 }),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("update BOOK_STORE tb_1 set WEBSITE = null");
+                        it.sql("update BOOK_STORE tb_1_ set WEBSITE = null");
                     });
                     ctx.rowCount(2);
                 }
@@ -67,15 +68,15 @@ public class DMLTest extends AbstractMutationTest {
                     ctx -> {
                         ctx.statement(it -> {
                             it.sql(
-                                    "update AUTHOR tb_1 " +
-                                            "inner join BOOK_AUTHOR_MAPPING as tb_2 on tb_1.ID = tb_2.AUTHOR_ID " +
-                                            "inner join BOOK as tb_3 on tb_2.BOOK_ID = tb_3.ID " +
-                                            "inner join BOOK_STORE as tb_4 on tb_3.STORE_ID = tb_4.ID " +
+                                    "update AUTHOR tb_1_ " +
+                                            "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                            "inner join BOOK as tb_3_ on tb_2_.BOOK_ID = tb_3_.ID " +
+                                            "inner join BOOK_STORE as tb_4_ on tb_3_.STORE_ID = tb_4_.ID " +
                                             "set " +
-                                            "tb_1.FIRST_NAME = concat(tb_1.FIRST_NAME, ?), " +
-                                            "tb_3.NAME = concat(tb_3.NAME, ?), " +
-                                            "tb_4.NAME = concat(tb_4.NAME, ?) " +
-                                            "where tb_4.NAME = ?"
+                                            "tb_1_.FIRST_NAME = concat(tb_1_.FIRST_NAME, ?), " +
+                                            "tb_3_.NAME = concat(tb_3_.NAME, ?), " +
+                                            "tb_4_.NAME = concat(tb_4_.NAME, ?) " +
+                                            "where tb_4_.NAME = ?"
                             );
                             it.variables("*", "*", "*", "MANNING");
                         });
@@ -99,16 +100,16 @@ public class DMLTest extends AbstractMutationTest {
                     ctx -> {
                         ctx.statement(it -> {
                             it.sql(
-                                    "update AUTHOR tb_1 " +
-                                            "set FIRST_NAME = concat(tb_1.FIRST_NAME, ?) " +
-                                            "from BOOK_AUTHOR_MAPPING as tb_2 " +
-                                            "inner join BOOK as tb_3 on tb_2.BOOK_ID = tb_3.ID " +
-                                            "inner join BOOK_STORE as tb_4 on " +
-                                            "tb_3.STORE_ID = tb_4.ID " +
+                                    "update AUTHOR tb_1_ " +
+                                            "set FIRST_NAME = concat(tb_1_.FIRST_NAME, ?) " +
+                                            "from BOOK_AUTHOR_MAPPING as tb_2_ " +
+                                            "inner join BOOK as tb_3_ on tb_2_.BOOK_ID = tb_3_.ID " +
+                                            "inner join BOOK_STORE as tb_4_ on " +
+                                            "tb_3_.STORE_ID = tb_4_.ID " +
                                             "where " +
-                                            "tb_1.ID = tb_2.AUTHOR_ID " +
+                                            "tb_1_.ID = tb_2_.AUTHOR_ID " +
                                             "and " +
-                                            "tb_4.NAME = ?"
+                                            "tb_4_.NAME = ?"
                             );
                             it.variables("*", "MANNING");
                         });
@@ -143,5 +144,21 @@ public class DMLTest extends AbstractMutationTest {
                     }
             );
         });
+    }
+
+    @Test
+    public void testDelete() {
+        executeAndExpectRowCount(
+                getSqlClient().createDelete(BookTable.Ex.class, (d, book) -> {
+                    d.where(book.name().eq("Learning GraphQL"));
+                }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("delete from BOOK as tb_1_ where tb_1_.NAME = ?");
+                        it.variables("Learning GraphQL");
+                    });
+                    ctx.rowCount(3);
+                }
+        );
     }
 }
