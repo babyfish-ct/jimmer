@@ -62,15 +62,10 @@ public class MutableDeleteImpl
         if (ids.isEmpty()) {
             return 0;
         }
-        Map<String, Integer> rowCountMap = getSqlClient().getEntities().batchDeleteCommand(
+        return getSqlClient().getEntities().batchDeleteCommand(
                 table.getImmutableType().getJavaClass(),
                 ids
-        ).execute(con);
-        int totalRowCount = 0;
-        for (Integer rowCount : rowCountMap.values()) {
-            totalRowCount += rowCount;
-        }
-        return totalRowCount;
+        ).execute(con).getTotalAffectedRowCount();
     }
 
     private void renderDirectly(SqlBuilder builder) {

@@ -3,13 +3,13 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.SqlClient;
-import org.babyfish.jimmer.sql.ast.Executable;
+import org.babyfish.jimmer.sql.ast.mutation.BatchSaveCommand;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
+import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveCommand;
 
 import java.sql.Connection;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 
 public class EntitiesImpl implements Entities {
 
@@ -20,7 +20,17 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public Executable<Map<String, Integer>> deleteCommand(
+    public <E> SimpleSaveCommand<E> saveCommand(E entity) {
+        return null;
+    }
+
+    @Override
+    public <E> BatchSaveCommand<E> batchSaveCommand(Collection<E> entities) {
+        return null;
+    }
+
+    @Override
+    public DeleteCommand deleteCommand(
             Class<?> entityType,
             Object id
     ) {
@@ -28,52 +38,19 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public Executable<Map<String, Integer>> batchDeleteCommand(
+    public DeleteCommand batchDeleteCommand(
             Class<?> entityType,
             Collection<?> ids
     ) {
-        ImmutableType immutableType = ImmutableType.tryGet(entityType);
-        if (immutableType == null) {
-            throw new IllegalArgumentException(
-                    "Cannot get immutable type from '" +
-                            entityType.getName() +
-                            "'"
-            );
-        }
-        return new DeleteCommand(sqlClient, immutableType, ids);
+        ImmutableType immutableType = ImmutableType.get(entityType);
+        return new DeleteCommandImpl(sqlClient, immutableType, ids);
     }
 
     @Override
-    public Executable<Map<String, Integer>> batchDeleteCommand(
+    public DeleteCommand batchDeleteCommand(
             Class<?> entityType,
             Object... ids
     ) {
         return batchDeleteCommand(entityType, Arrays.asList(ids));
-    }
-
-    private static class DeleteCommand implements Executable<Map<String, Integer>> {
-
-        private SqlClient sqlClient;
-
-        private ImmutableType immutableType;
-
-        private Collection<?> ids;
-
-        public DeleteCommand(
-                SqlClient sqlClient,
-                ImmutableType immutableType,
-                Collection<?> ids
-        ) {
-            this.sqlClient = sqlClient;
-            this.immutableType = immutableType;
-            this.ids = ids;
-        }
-
-        @Override
-        public Map<String, Integer> execute(Connection con) {
-            Deleter deleter = new Deleter(sqlClient, con);
-            deleter.addPreHandleInput(immutableType, ids);
-            return deleter.execute();
-        }
     }
 }

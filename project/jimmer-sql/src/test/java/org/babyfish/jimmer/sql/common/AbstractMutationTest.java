@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.common;
 
+import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.ast.Executable;
+import org.babyfish.jimmer.sql.ast.mutation.MutationResult;
 import org.junit.jupiter.api.Assertions;
 
 import javax.sql.DataSource;
@@ -34,21 +36,21 @@ public abstract class AbstractMutationTest extends AbstractTest {
         });
     }
 
-    protected void executeAndExpectRowCountMap(
-            Executable<Map<String, Integer>> executable,
-            Consumer<ExpectDSLWithRowCountMap> block
+    protected void executeAndExpectResult(
+            Executable<? extends MutationResult> executable,
+            Consumer<ExpectDSLWithResult> block
     ) {
         jdbc(null, true, con -> {
             clearExecutions();
-            Map<String, Integer> affectedRowCountMap;
+            MutationResult result;
             Throwable throwable = null;
             try {
-                affectedRowCountMap = executable.execute(con);
+                result = executable.execute(con);
             } catch (Throwable ex) {
                 throwable = ex;
-                affectedRowCountMap = Collections.emptyMap();
+                result = null;
             }
-            assertRowCountMap(throwable, affectedRowCountMap, block);
+            assertResult(throwable, result, block);
         });
     }
 
@@ -62,12 +64,12 @@ public abstract class AbstractMutationTest extends AbstractTest {
         dsl.close();
     }
 
-    private void assertRowCountMap(
+    private void assertResult(
             Throwable throwable,
-            Map<String, Integer> rowCountMap,
-            Consumer<ExpectDSLWithRowCountMap> block
+            MutationResult result,
+            Consumer<ExpectDSLWithResult> block
     ) {
-        ExpectDSLWithRowCountMap dsl = new ExpectDSLWithRowCountMap(getExecutions(), throwable, rowCountMap);
+        ExpectDSLWithResult dsl = new ExpectDSLWithResult(getExecutions(), throwable, result);
         block.accept(dsl);
         dsl.close();
     }
@@ -135,33 +137,30 @@ public abstract class AbstractMutationTest extends AbstractTest {
         }
     }
 
-    protected static class ExpectDSLWithRowCountMap extends ExpectDSL {
+    protected static class ExpectDSLWithResult extends ExpectDSL {
 
-        private Map<String, Integer> rowCountMap;
+        private MutationResult result;
 
-        public ExpectDSLWithRowCountMap(
+        public ExpectDSLWithResult(
                 List<Execution> executions,
                 Throwable throwable,
-                Map<String, Integer> rowCountMap
+                MutationResult result
         ) {
             super(executions, throwable);
-            this.rowCountMap = rowCountMap;
+            this.result = result;
         }
 
-        public ExpectDSLWithRowCountMap totalRowCount(int totalRowCount) {
-            int actualTotalCount = 0;
-            for (Integer c : rowCountMap.values()) {
-                actualTotalCount += c;
-            }
-            Assertions.assertEquals(totalRowCount, actualTotalCount);
+        public ExpectDSLWithResult totalRowCount(int totalRowCount) {
+            Assertions.assertNotNull(result);
+            Assertions.assertEquals(totalRowCount, result.getTotalAffectedRowCount());
             return this;
         }
 
-        public ExpectDSLWithRowCountMap rowCount(String tableName, int rowCount) {
-            Integer actualRowCount = rowCountMap.get(tableName);
+        public ExpectDSLWithResult rowCount(String tableName, int rowCount) {
+            Assertions.assertNotNull(result);
             Assertions.assertEquals(
                     rowCount,
-                    actualRowCount != null ? actualRowCount : 0,
+                    result.getAffectedRowCount(tableName),
                     "rowCountMap['" + tableName + "']"
             );
             return this;

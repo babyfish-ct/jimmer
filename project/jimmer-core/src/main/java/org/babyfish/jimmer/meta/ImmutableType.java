@@ -96,6 +96,16 @@ public class ImmutableType {
         return null;
     }
 
+    public static ImmutableType get(Class<?> javaClass) {
+        ImmutableType immutableType = tryGet(javaClass);
+        if (immutableType == null) {
+            throw new IllegalArgumentException(
+                    "Cannot get immutable type for \"" + javaClass.getName() + "\""
+            );
+        }
+        return immutableType;
+    }
+
     public static ImmutableType tryGet(Class<?> javaClass) {
 
         ImmutableType immutableType;

@@ -7,6 +7,7 @@ import static org.babyfish.jimmer.sql.common.Constants.*;
 import org.babyfish.jimmer.sql.model.Author;
 import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.BookStore;
+import org.babyfish.jimmer.sql.model.BookTable;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +17,7 @@ public class DeleteTest extends AbstractMutationTest {
 
     @Test
     public void testDeleteBookStore() {
-        executeAndExpectRowCountMap(
+        executeAndExpectResult(
                 getSqlClient().getEntities().deleteCommand(
                         BookStore.class,
                         manningId
@@ -41,17 +42,17 @@ public class DeleteTest extends AbstractMutationTest {
 
     @Test
     public void testDeleteBookStoreOnDeleteSetNull() {
-        executeAndExpectRowCountMap(
-                getSqlClient().subClient(ctx -> {
-                    ctx.setOnDeleteAction(
-                            Book.class,
-                            "store",
-                            OnDeleteAction.SET_NULL
-                    );
-                }).getEntities().deleteCommand(
+        executeAndExpectResult(
+                getSqlClient().getEntities().deleteCommand(
                         BookStore.class,
                         manningId
-                ),
+                ).configure(cfg -> {
+                    cfg.setOnDeleteAction(
+                            BookTable.class,
+                            it -> it.store(),
+                            OnDeleteAction.SET_NULL
+                    );
+                }),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("update BOOK set STORE_ID = null where STORE_ID in(?)");
@@ -71,17 +72,17 @@ public class DeleteTest extends AbstractMutationTest {
 
     @Test
     public void testDeleteBookStoreOnDeleteCascade() {
-        executeAndExpectRowCountMap(
-                getSqlClient().subClient(ctx -> {
-                    ctx.setOnDeleteAction(
-                            Book.class,
-                            "store",
-                            OnDeleteAction.CASCADE
-                    );
-                }).getEntities().deleteCommand(
+        executeAndExpectResult(
+                getSqlClient().getEntities().deleteCommand(
                         BookStore.class,
                         manningId
-                ),
+                ).configure(cfg -> {
+                    cfg.setOnDeleteAction(
+                            BookTable.class,
+                            it -> it.store(),
+                            OnDeleteAction.CASCADE
+                    );
+                }),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("select id from BOOK where STORE_ID in(?)");
@@ -110,7 +111,7 @@ public class DeleteTest extends AbstractMutationTest {
     @Test
     public void testBook() {
         UUID nonExistingId = UUID.fromString("56506a3c-801b-4f7d-a41d-e889cdc3d67d");
-        executeAndExpectRowCountMap(
+        executeAndExpectResult(
                 getSqlClient().getEntities().batchDeleteCommand(
                         Book.class,
                         learningGraphQLId1,
@@ -135,7 +136,7 @@ public class DeleteTest extends AbstractMutationTest {
 
     @Test
     public void testDeleteAuthor() {
-        executeAndExpectRowCountMap(
+        executeAndExpectResult(
                 getSqlClient().getEntities().deleteCommand(
                         Author.class,
                         alexId

@@ -21,7 +21,7 @@ public class Mutations {
     ) {
         MutableUpdateImpl update = new MutableUpdateImpl(
                 sqlClient,
-                ImmutableType.tryGet(tableType)
+                ImmutableType.get(tableType)
         );
         block.accept(update, update.getTable());
         update.freeze();
@@ -35,7 +35,7 @@ public class Mutations {
     ) {
         MutableDeleteImpl delete = new MutableDeleteImpl(
                 sqlClient,
-                ImmutableType.tryGet(tableType)
+                ImmutableType.get(tableType)
         );
         block.accept(delete, delete.getTable());
         delete.freeze();

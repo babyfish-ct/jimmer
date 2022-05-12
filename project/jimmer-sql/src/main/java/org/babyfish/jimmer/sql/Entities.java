@@ -1,24 +1,30 @@
 package org.babyfish.jimmer.sql;
 
-import org.babyfish.jimmer.sql.ast.Executable;
-import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.mutation.BatchSaveCommand;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
+import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveCommand;
 
 import java.util.Collection;
-import java.util.Map;
 
 public interface Entities {
 
-    Executable<Map<String, Integer>> deleteCommand(
+    <E> SimpleSaveCommand<E> saveCommand(E entity);
+
+    <E> BatchSaveCommand<E> batchSaveCommand(
+            Collection<E> entities
+    );
+
+    DeleteCommand deleteCommand(
             Class<?> entityType,
             Object id
     );
 
-    Executable<Map<String, Integer>> batchDeleteCommand(
+    DeleteCommand batchDeleteCommand(
             Class<?> entityType,
             Collection<?> ids
     );
 
-    Executable<Map<String, Integer>> batchDeleteCommand(
+    DeleteCommand batchDeleteCommand(
             Class<?> entityType,
             Object ... ids
     );
