@@ -287,6 +287,8 @@ public class ImmutableProp {
         JoinColumn[] joinColumns = getAnnotations(JoinColumn.class);
         JoinTable joinTable = getAnnotation(JoinTable.class);
         Column column = getAnnotation(Column.class);
+        Id id = getAnnotation(Id.class);
+        Version version = getAnnotation(Version.class);
         OneToOne oneToOne = getAnnotation(OneToOne.class);
         OneToMany oneToMany = getAnnotation(OneToMany.class);
         ManyToOne manyToOne = getAnnotation(ManyToOne.class);
@@ -362,7 +364,7 @@ public class ImmutableProp {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
-                                    "\", list property cannot be marked by both @" +
+                                    "\", reference property cannot be marked by both @" +
                                     associationAnnotation.annotationType().getName()
                     );
                 }
@@ -397,7 +399,23 @@ public class ImmutableProp {
                             "Illegal property \"" +
                                     this +
                                     "\", association property cannot be marked by @" +
-                                    associationAnnotation.annotationType().getName()
+                                    column.annotationType().getName()
+                    );
+                }
+                if (id != null) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", association property cannot be marked by @" +
+                                    id.annotationType().getName()
+                    );
+                }
+                if (version != null) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", association property cannot be marked by @" +
+                                    version.annotationType().getName()
                     );
                 }
                 if (joinColumns.length != 0 && joinTable != null) {
@@ -478,6 +496,25 @@ public class ImmutableProp {
                                     this +
                                     "\", scalar property cannot be marked by @" +
                                     JoinTable.class.getName()
+                    );
+                }
+                if (id != null && version != null) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it is marked by both @" +
+                                    Id.class.getName() +
+                                    " @" +
+                                    Version.class.getName()
+                    );
+                }
+                if (version != null && returnType.getKind() != TypeKind.INT) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it is marked by @" +
+                                    JoinTable.class.getName() +
+                                    " but its type is not int"
                     );
                 }
             }

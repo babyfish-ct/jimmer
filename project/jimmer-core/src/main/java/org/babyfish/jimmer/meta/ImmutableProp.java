@@ -151,13 +151,14 @@ public class ImmutableProp {
         return isTransient;
     }
 
-    public Storage getStorage() {
+    @SuppressWarnings("unchecked")
+    public <S extends Storage> S getStorage() {
         if (storageResolved) {
-            return storage;
+            return (S)storage;
         }
         storage = Storages.of(this);
         storageResolved = true;
-        return storage;
+        return (S)storage;
     }
 
     public boolean isId() {

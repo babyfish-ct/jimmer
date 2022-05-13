@@ -121,6 +121,11 @@ public class ProducerGenerator {
                         prop.getName(),
                         prop.getElementTypeName()
                 );
+            } else if (prop == type.getVersionProp()) {
+                builder.add(
+                        ".version($S)\n",
+                        prop.getName()
+                );
             } else if (prop.getAssociationAnnotation() != null) {
                 builder.add(
                         ".add($S, $T.$L, $T.class, $L, $T.class)\n",

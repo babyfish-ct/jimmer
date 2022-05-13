@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.sql.IdGenerator;
+import org.babyfish.jimmer.meta.sql.UserIdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.impl.mutation.EntitiesImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
@@ -31,16 +34,20 @@ class SqlClientImpl implements SqlClient {
 
     private Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap;
 
+    private Map<Class<?>, UserIdGenerator> userIdGeneratorMap;
+
     private Entities entities;
 
     SqlClientImpl(
             Dialect dialect,
             Executor executor,
-            Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap
+            Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
+            Map<Class<?>, UserIdGenerator> userIdGeneratorMap
     ) {
         this.dialect = dialect != null ? dialect : DefaultDialect.INSTANCE;
         this.executor = executor != null ? executor : DefaultExecutor.INSTANCE;
         this.scalarProviderMap = new HashMap<>(scalarProviderMap);
+        this.userIdGeneratorMap = new HashMap<>(userIdGeneratorMap);
         this.entities = new EntitiesImpl(this);
     }
 
@@ -58,6 +65,18 @@ class SqlClientImpl implements SqlClient {
     @Override
     public <T, S> ScalarProvider<T, S> getScalarProvider(Class<T> scalarType) {
         return (ScalarProvider<T, S>) scalarProviderMap.get(scalarType);
+    }
+
+    @Override
+    public IdGenerator getIdGenerator(Class<?> entityType) {
+        IdGenerator userIdGenerator = userIdGeneratorMap.get(entityType);
+        if (userIdGenerator == null) {
+            userIdGenerator = userIdGeneratorMap.get(null);
+            if (userIdGenerator == null) {
+                userIdGenerator = ImmutableType.get(entityType).getIdGenerator();
+            }
+        }
+        return userIdGenerator;
     }
 
     @Override

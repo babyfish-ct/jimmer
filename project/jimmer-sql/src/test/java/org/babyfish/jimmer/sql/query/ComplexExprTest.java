@@ -105,7 +105,7 @@ public class ComplexExprTest extends AbstractQueryTest {
                 }),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, " +
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION, " +
                                     "case tb_1_.NAME " +
                                     "when ? then ? " +
                                     "when ? then ? " +

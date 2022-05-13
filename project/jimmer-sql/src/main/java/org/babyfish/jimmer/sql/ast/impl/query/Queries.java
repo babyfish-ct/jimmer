@@ -60,4 +60,19 @@ public class Queries {
         query.freeze();
         return query;
     }
+
+    @SuppressWarnings("unchecked")
+    public static <R> ConfigurableTypedRootQuery<Table<?>, R> createQuery(
+            SqlClient sqlClient,
+            ImmutableType immutableType,
+            BiFunction<MutableRootQuery<Table<?>>, Table<?>, ConfigurableTypedRootQuery<Table<?>, R>> block
+    ) {
+        RootMutableQueryImpl<Table<?>> query = new RootMutableQueryImpl<>(
+                sqlClient,
+                immutableType
+        );
+        ConfigurableTypedRootQuery<Table<?>, R> typedQuery = block.apply(query, query.getTable());
+        query.freeze();
+        return typedQuery;
+    }
 }

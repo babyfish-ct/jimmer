@@ -138,7 +138,7 @@ public class PagingTest extends AbstractQueryTest {
                     ctx.sql(
                             "select " +
                                         "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, " +
-                                        "tb_1_.STORE_ID, tb_2_.NAME, tb_2_.WEBSITE " +
+                                        "tb_1_.STORE_ID, tb_2_.NAME, tb_2_.WEBSITE, tb_2_.VERSION " +
                                     "from BOOK as tb_1_ " +
                                     "left join BOOK_STORE as tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                                     "where tb_1_.PRICE between ? and ? " +
@@ -184,7 +184,7 @@ public class PagingTest extends AbstractQueryTest {
                     ctx.sql(
                             "select " +
                                     "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, " +
-                                    "tb_1_.STORE_ID, tb_2_.NAME, tb_2_.WEBSITE " +
+                                    "tb_1_.STORE_ID, tb_2_.NAME, tb_2_.WEBSITE, tb_2_.VERSION " +
                                     "from BOOK as tb_1_ " +
                                     "inner join BOOK_STORE as tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                                     "where tb_1_.PRICE between ? and ? " +

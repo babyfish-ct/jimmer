@@ -4,12 +4,15 @@ import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.meta.sql.Column;
+import org.babyfish.jimmer.meta.sql.IdGenerator;
+import org.babyfish.jimmer.meta.sql.IdentityIdGenerator;
+import org.babyfish.jimmer.meta.sql.SequenceIdGenerator;
 import org.babyfish.jimmer.runtime.DraftContext;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.*;
@@ -43,7 +46,11 @@ public class ImmutableType {
 
     private Map<String, ImmutableProp> selectableProps;
 
-    ImmutableProp idProp;
+    private ImmutableProp idProp;
+
+    private ImmutableProp versionProp;
+
+    private IdGenerator idGenerator;
 
     private String tableName;
 
@@ -266,16 +273,118 @@ public class ImmutableType {
         return selectableProps;
     }
 
+    void setIdProp(ImmutableProp idProp) {
+        this.idProp = idProp;
+        GeneratedValue generatedValue = idProp.getAnnotation(GeneratedValue.class);
+        if (generatedValue == null) {
+            return;
+        }
+        if (generatedValue.strategy() == GenerationType.AUTO) {
+            String generator = generatedValue.generator();
+            IdGenerator idGenerator = null;
+            String error = null;
+            Throwable errorCause = null;
+            if (generator.isEmpty()) {
+                error = "generator must be specified";
+            } else {
+                Class<?> idGeneratorType = null;
+                try {
+                    idGeneratorType = Class.forName(generator);
+                } catch (ClassNotFoundException ex) {
+                    error = "The class \"" + generator + "\" does not exists";
+                }
+                if (idGeneratorType != null) {
+                    if (!IdGenerator.class.isAssignableFrom(idGeneratorType)) {
+                        error = "the class \"" +
+                                generator +
+                                "\" does not implement \"" +
+                                IdGenerator.class.getName() +
+                                "\"";
+                    }
+                    try {
+                        idGenerator = (IdGenerator) idGeneratorType.getDeclaredConstructor().newInstance();
+                    } catch (InstantiationException | IllegalAccessException | NoSuchMethodException ex) {
+                        error = "cannot create the instance of \"" + generator + "\"";
+                        errorCause = ex;
+                    } catch (InvocationTargetException ex) {
+                        error = "cannot create the instance of \"" + generator + "\"";
+                        errorCause = ex.getTargetException();
+                    }
+                }
+            }
+            if (error != null) {
+                throw new ModelException(
+                        "Illegal property \"" + idProp + "\" with the annotation @GeneratedValue, " + error,
+                        errorCause
+                );
+            }
+            this.idGenerator = idGenerator;
+        } else if (generatedValue.strategy() == GenerationType.IDENTITY) {
+            this.idGenerator = IdentityIdGenerator.INSTANCE;
+        } else if (generatedValue.strategy() == GenerationType.SEQUENCE) {
+            String generator = generatedValue.generator();
+            String sequenceName;
+            if (generator.isEmpty()) {
+                sequenceName = tableName + "_ID_SEQ";
+            } else if (generator.startsWith(SEQUENCE_PREFIX)) {
+                sequenceName = generator.substring(SEQUENCE_PREFIX.length());
+            } else {
+                SequenceGenerator seqGenerator = Arrays.stream(idProp.getAnnotations(SequenceGenerator.class))
+                        .filter(it -> it.name().equals(generator))
+                        .findFirst()
+                        .orElseGet(null);
+                if (seqGenerator == null) {
+                    seqGenerator = Arrays.stream(javaClass.getAnnotationsByType(SequenceGenerator.class))
+                            .filter(it -> it.name().equals(generator))
+                            .findFirst()
+                            .orElse(null);
+                }
+                if (seqGenerator == null) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    idProp +
+                                    "\"with annotation @GeneratedValue, " +
+                                    "there is no sequence generator whose name is \"" +
+                                    generator +
+                                    "\""
+                    );
+                }
+                sequenceName = seqGenerator.sequenceName();
+            }
+            if (sequenceName.isEmpty()) {
+                sequenceName = tableName + "_ID_SEQ";
+            }
+            idGenerator = new SequenceIdGenerator(sequenceName);
+        } else {
+            throw new ModelException(
+                    "Illegal property \"" + idProp + "\" with annotation @GeneratedValue, " +
+                            "strategy \"" + generatedValue.strategy() + "\" is not supported"
+            );
+        }
+    }
+
+    void setVersionProp(ImmutableProp versionProp) {
+        this.versionProp = versionProp;
+    }
+
+    public IdGenerator getIdGenerator() {
+        return idGenerator;
+    }
+
     @Override
     public String toString() {
         return javaClass.getName();
     }
+
+    private static final String SEQUENCE_PREFIX = "sequence:";
 
     public static class Builder {
 
         private ImmutableType type;
 
         private String idPropName;
+
+        private String versionPropName;
 
         Builder(
                 Class<?> javaClass,
@@ -294,6 +403,16 @@ public class ImmutableType {
             }
             idPropName = name;
             return add(name, ImmutablePropCategory.SCALAR, elementType, false);
+        }
+        public Builder version(String name) {
+            if (!type.javaClass.isAnnotationPresent(Entity.class)) {
+                throw new IllegalStateException("Cannot set version for type that is not entity");
+            }
+            if (versionPropName != null) {
+                throw new IllegalStateException("version property has been set");
+            }
+            versionPropName = name;
+            return add(name, ImmutablePropCategory.SCALAR, int.class, false);
         }
 
         public Builder add(
@@ -347,9 +466,14 @@ public class ImmutableType {
             ImmutableType type = this.type;
             type.declaredProps = Collections.unmodifiableMap(type.declaredProps);
             if (idPropName != null) {
-                type.idProp = type.declaredProps.get(idPropName);
+                type.setIdProp(type.declaredProps.get(idPropName));
             } else if (type.superType != null) {
-                type.idProp = type.superType.idProp;
+                type.setIdProp(type.superType.idProp);
+            }
+            if (versionPropName != null) {
+                type.setVersionProp(type.declaredProps.get(versionPropName));
+            } else if (type.superType != null) {
+                type.setVersionProp(type.superType.versionProp);
             }
             this.type = null;
             return type;
