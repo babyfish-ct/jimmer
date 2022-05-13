@@ -179,6 +179,7 @@ public class SubQueryTest extends AbstractQueryTest  {
                                         "tb_1_.ID, " +
                                         "tb_1_.NAME, " +
                                         "tb_1_.WEBSITE, " +
+                                        "tb_1_.VERSION, " +
                                         "(" +
                                             "select coalesce(avg(tb_2_.PRICE), ?) " +
                                             "from BOOK as tb_2_ " +

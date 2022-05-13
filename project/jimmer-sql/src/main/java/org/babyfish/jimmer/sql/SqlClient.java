@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.sql.IdGenerator;
+import org.babyfish.jimmer.meta.sql.UserIdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
@@ -29,6 +31,8 @@ public interface SqlClient {
 
     <T, S> ScalarProvider<T, S> getScalarProvider(Class<T> scalarType);
 
+    IdGenerator getIdGenerator(Class<?> entityType);
+
     <T extends Table<?>, R> ConfigurableTypedRootQuery<T, R> createQuery(
             Class<T> tableType,
             BiFunction<MutableRootQuery<T>, T, ConfigurableTypedRootQuery<T, R>> block
@@ -54,6 +58,8 @@ public interface SqlClient {
 
         private Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap = new HashMap<>();
 
+        private Map<Class<?>, UserIdGenerator> userIdGeneratorMap = new HashMap<>();
+
         Builder() {}
 
         public Builder setDialect(Dialect dialect) {
@@ -63,6 +69,15 @@ public interface SqlClient {
 
         public Builder setExecutor(Executor executor) {
             this.executor = executor;
+            return this;
+        }
+
+        public Builder setUserIdGenerator(UserIdGenerator userIdGenerator) {
+            return setUserIdGenerator(null, userIdGenerator);
+        }
+
+        public Builder setUserIdGenerator(Class<?> entityType, UserIdGenerator userIdGenerator) {
+            userIdGeneratorMap.put(entityType, userIdGenerator);
             return this;
         }
 
@@ -79,7 +94,12 @@ public interface SqlClient {
         }
 
         public SqlClient build() {
-            return new SqlClientImpl(dialect, executor, scalarProviderMap);
+            return new SqlClientImpl(
+                    dialect,
+                    executor,
+                    scalarProviderMap,
+                    userIdGeneratorMap
+            );
         }
     }
 }

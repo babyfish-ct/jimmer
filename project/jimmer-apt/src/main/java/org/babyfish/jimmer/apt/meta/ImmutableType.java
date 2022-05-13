@@ -12,6 +12,7 @@ import javax.lang.model.util.ElementFilter;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Version;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -35,6 +36,8 @@ public class ImmutableType {
     private Map<String, ImmutableProp> props;
 
     private ImmutableProp idProp;
+
+    private ImmutableProp versionProp;
 
     private ClassName className;
 
@@ -107,6 +110,11 @@ public class ImmutableType {
                 .stream()
                 .filter(it -> it.getAnnotation(Id.class) != null)
                 .collect(Collectors.toList());
+        List<ImmutableProp> versionProps = declaredProps
+                .values()
+                .stream()
+                .filter(it -> it.getAnnotation(Version.class) != null)
+                .collect(Collectors.toList());
         if (superType != null) {
             if (!idProps.isEmpty()) {
                 throw new MetaException(
@@ -117,7 +125,17 @@ public class ImmutableType {
                                 "\" cannot be marked by @Id because id has been declared in super type"
                 );
             }
+            if (!versionProps.isEmpty()) {
+                throw new MetaException(
+                        "Illegal type \"" +
+                                typeElement.getQualifiedName() +
+                                "\", " +
+                                versionProps.get(0) +
+                                "\" cannot be marked by @Version because version has been declared in super type"
+                );
+            }
             idProp = superType.idProp;
+            versionProp = superType.versionProp;
         }
         if (!isEntity) {
             if (!idProps.isEmpty()) {
@@ -127,6 +145,15 @@ public class ImmutableType {
                                 "\", " +
                                 idProps.get(0) +
                                 "\" cannot be marked by @Id because current type is not entity"
+                );
+            }
+            if (!versionProps.isEmpty()) {
+                throw new MetaException(
+                        "Illegal type \"" +
+                                typeElement.getQualifiedName() +
+                                "\", " +
+                                versionProps.get(0) +
+                                "\" cannot be marked by @Version because current type is not entity"
                 );
             }
         } else {
@@ -140,6 +167,18 @@ public class ImmutableType {
                                 "\" and \"" +
                                 idProps.get(1) +
                                 "\" is marked by @Id"
+                );
+            }
+            if (versionProps.size() > 1) {
+                throw new MetaException(
+                        "Illegal type \"" +
+                                typeElement.getQualifiedName() +
+                                "\", multiple id properties are not supported, " +
+                                "but both \"" +
+                                versionProps.get(0) +
+                                "\" and \"" +
+                                versionProps.get(1) +
+                                "\" is marked by @Version"
                 );
             }
             if (idProp == null) {
@@ -158,6 +197,16 @@ public class ImmutableType {
                                 idProp +
                                 "\", association cannot be id property"
                 );
+            }
+            if (versionProp == null && !versionProps.isEmpty()) {
+                versionProp = versionProps.get(0);
+                if (versionProp.isAssociation()) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    versionProps +
+                                    "\", association cannot be version property"
+                    );
+                }
             }
         }
 
@@ -215,6 +264,10 @@ public class ImmutableType {
 
     public ImmutableProp getIdProp() {
         return idProp;
+    }
+
+    public ImmutableProp getVersionProp() {
+        return versionProp;
     }
 
     public ClassName getClassName() {

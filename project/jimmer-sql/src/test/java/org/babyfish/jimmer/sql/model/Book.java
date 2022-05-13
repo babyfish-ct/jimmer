@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.model;
 
+import org.babyfish.jimmer.meta.sql.UUIDIdGenerator;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
@@ -10,6 +12,7 @@ import java.util.UUID;
 public interface Book {
 
     @Id
+    @GeneratedValue(generator = UUIDIdGenerator.FULL_NAME)
     UUID id();
 
     String name();
