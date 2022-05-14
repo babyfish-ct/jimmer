@@ -230,6 +230,10 @@ public class ImmutableType {
         return idProp;
     }
 
+    public ImmutableProp getVersionProp() {
+        return versionProp;
+    }
+
     public String getTableName() {
         return tableName;
     }
@@ -241,7 +245,15 @@ public class ImmutableType {
                 props = declaredProps;
             } else {
                 props = new LinkedHashMap<>(superType.getProps());
-                props.putAll(declaredProps);
+                for (ImmutableProp declaredProp : declaredProps.values()) {
+                    if (props.put(declaredProp.getName(), declaredProp) != null) {
+                        throw new ModelException(
+                                "The property \"" +
+                                        declaredProp +
+                                        "\" overrides property of super type, this is not allowed"
+                        );
+                    }
+                }
             }
             this.props = props;
         }

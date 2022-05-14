@@ -2,6 +2,7 @@ package org.babyfish.jimmer.apt.meta;
 
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.apt.TypeUtils;
+import org.babyfish.jimmer.meta.ModelException;
 
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -255,7 +256,15 @@ public class ImmutableType {
                 props = declaredProps;
             } else {
                 props = new LinkedHashMap<>(superType.getProps());
-                props.putAll(declaredProps);
+                for (ImmutableProp declaredProp : declaredProps.values()) {
+                    if (props.put(declaredProp.getName(), declaredProp) != null) {
+                        throw new ModelException(
+                                "The property \"" +
+                                        declaredProp +
+                                        "\" overrides property of super type, this is not allowed"
+                        );
+                    }
+                }
             }
             this.props = props;
         }

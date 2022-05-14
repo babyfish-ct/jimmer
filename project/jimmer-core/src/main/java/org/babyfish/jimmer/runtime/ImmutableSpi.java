@@ -6,7 +6,7 @@ public interface ImmutableSpi {
 
     boolean __isLoaded(String prop);
 
-    <T> T __get(String prop);
+    Object __get(String prop);
 
     int __hashCode(boolean shallow);
 

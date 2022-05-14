@@ -22,18 +22,29 @@ public class Deleter {
 
     private Connection con;
 
+    private Map<String, Integer> affectedRowCountMap;
+
     private Map<ImmutableType, Set<Object>> preHandleIdInputMap =
             new LinkedHashMap<>();
 
     private Map<ImmutableType, Set<Object>> postHandleIdInputMap =
             new LinkedHashMap<>();
 
-    private Map<String, Integer> affectedRowCountMap =
-            new LinkedHashMap<>();
+    Deleter(
+            DeleteCommandImpl.Data data,
+            Connection con
+    ) {
+        this(data, con, new LinkedHashMap<>());
+    }
 
-    public Deleter(DeleteCommandImpl.Data data, Connection con) {
+    Deleter(
+            DeleteCommandImpl.Data data,
+            Connection con,
+            Map<String, Integer> affectedRowCountMap
+    ) {
         this.data = data;
         this.con = con;
+        this.affectedRowCountMap = affectedRowCountMap;
     }
 
     public void addPreHandleInput(ImmutableType type, Collection<?> ids) {
@@ -61,12 +72,7 @@ public class Deleter {
     }
 
     private void addOutput(String tableName, int affectedRowCount) {
-        Integer old = affectedRowCountMap.get(tableName);
-        if (old == null) {
-            affectedRowCountMap.put(tableName, affectedRowCount);
-        } else {
-            affectedRowCountMap.put(tableName, old + affectedRowCount);
-        }
+        affectedRowCountMap.merge(tableName, affectedRowCount, Integer::sum);
     }
 
     public DeleteResult execute() {
@@ -104,7 +110,10 @@ public class Deleter {
             if (middleTable != null) {
                 deleteFromMiddleTable(middleTable, ids);
             }
-            if (prop.isEntityList() && mappedByProp != null && mappedByProp.isReference()) {
+            if (prop.isEntityList() &&
+                    mappedByProp != null &&
+                    mappedByProp.isReference()
+            ) {
                 OnDeleteAction onDeleteAction = data.getOnDeleteAction(mappedByProp);
                 if (onDeleteAction == OnDeleteAction.SET_NULL ||
                         (onDeleteAction == OnDeleteAction.SMART && mappedByProp.isNullable())) {

@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
-import org.babyfish.jimmer.sql.Entities;
-
 import java.util.Map;
 
 public class DeleteResult extends AbstractMutationResult {

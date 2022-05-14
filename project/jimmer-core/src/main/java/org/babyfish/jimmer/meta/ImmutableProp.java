@@ -31,10 +31,6 @@ public class ImmutableProp {
 
     private boolean storageResolved;
 
-    private boolean isId;
-
-    private boolean isIdResolved;
-
     private ImmutableType targetType;
 
     private boolean targetTypeResolved;
@@ -162,13 +158,11 @@ public class ImmutableProp {
     }
 
     public boolean isId() {
-        if (isIdResolved) {
-            return isId;
-        }
-        isIdResolved = true;
-        ImmutableProp idProp = declaringType.getIdProp();
-        isId = idProp == this || (idProp != null && idProp.getName().equals(name));
-        return isId;
+        return this == declaringType.getIdProp();
+    }
+
+    public boolean isVersion() {
+        return this == declaringType.getVersionProp();
     }
 
     public ImmutableType getTargetType() {

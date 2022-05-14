@@ -6,7 +6,7 @@ public class DbNull {
 
     private Class<?> type;
 
-    DbNull(Class<?> type) {
+    public DbNull(Class<?> type) {
         this.type = type;
     }
 

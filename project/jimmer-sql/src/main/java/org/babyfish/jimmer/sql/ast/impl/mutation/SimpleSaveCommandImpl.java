@@ -30,7 +30,8 @@ class SimpleSaveCommandImpl<E>
 
     @Override
     public SimpleSaveResult<E> execute(Connection con) {
-        return null;
+        Saver saver = new Saver(data, con);
+        return saver.save(entity);
     }
 
     @Override

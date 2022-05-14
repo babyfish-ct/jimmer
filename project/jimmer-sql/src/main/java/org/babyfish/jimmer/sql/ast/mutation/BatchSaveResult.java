@@ -1,19 +1,22 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class BatchSaveResult<E> extends AbstractMutationResult {
 
     private List<SimpleSaveResult<E>> simpleResults;
 
     public BatchSaveResult(
-            Map<String, Integer> affectedRowCountMap,
             List<SimpleSaveResult<E>> simpleResults
     ) {
-        super(affectedRowCountMap);
+        this(mergedAffectedRowCount(simpleResults), simpleResults);
+    }
+
+    public BatchSaveResult(
+            Map<String, Integer> affectedRowMap,
+            List<SimpleSaveResult<E>> simpleResults
+    ) {
+        super(affectedRowMap);
         this.simpleResults = Collections.unmodifiableList(simpleResults);
     }
 
@@ -42,5 +45,23 @@ public class BatchSaveResult<E> extends AbstractMutationResult {
                 ", affectedRowCountMap=" + affectedRowCountMap +
                 ", simpleResults=" + simpleResults +
                 '}';
+    }
+
+    private static <E> Map<String, Integer> mergedAffectedRowCount(
+            List<SimpleSaveResult<E>> simpleResults
+    ) {
+        if (simpleResults.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        if (simpleResults.size() == 1) {
+            return simpleResults.get(0).getAffectedRowCountMap();
+        }
+        Map<String, Integer> mergedMap = new HashMap<>();
+        for (SimpleSaveResult<?> result : simpleResults) {
+            for (Map.Entry<String, Integer> e : result.getAffectedRowCountMap().entrySet()) {
+                mergedMap.merge(e.getKey(), e.getValue(), Integer::sum);
+            }
+        }
+        return mergedMap;
     }
 }
