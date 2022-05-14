@@ -6,6 +6,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 class Key {
@@ -14,6 +15,10 @@ class Key {
 
     private Key(Object[] arr) {
         this.arr = arr;
+    }
+
+    public List<Object> toList() {
+        return Arrays.asList(arr.clone());
     }
 
     @Override

@@ -20,4 +20,22 @@ public class DynamicDialect implements Dialect {
         Dialect dialect = targetDialect != null ? targetDialect : DefaultDialect.INSTANCE;
         return dialect.getUpdateJoin();
     }
+
+    @Override
+    public String getSelectIdFromSequenceSql(String String) {
+        Dialect dialect = targetDialect != null ? targetDialect : DefaultDialect.INSTANCE;
+        return dialect.getSelectIdFromSequenceSql(String);
+    }
+
+    @Override
+    public String getLastIdentitySql() {
+        Dialect dialect = targetDialect != null ? targetDialect : DefaultDialect.INSTANCE;
+        return dialect.getLastIdentitySql();
+    }
+
+    @Override
+    public String getOverrideIdentityIdSql() {
+        Dialect dialect = targetDialect != null ? targetDialect : DefaultDialect.INSTANCE;
+        return dialect.getOverrideIdentityIdSql();
+    }
 }

@@ -34,30 +34,22 @@ public class ImplementorGenerator {
     }
 
     private void addGet() {
-        TypeVariableName typeVariableName = TypeVariableName.get("T");
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("__get")
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
-                .addTypeVariable(typeVariableName)
-                .addAnnotation(
-                        AnnotationSpec
-                                .builder(SuppressWarnings.class)
-                                .addMember("value", "$S", "unchecked")
-                                .build()
-                )
                 .addParameter(String.class, "prop")
-                .returns(typeVariableName);
+                .returns(Object.class);
         builder.beginControlFlow("switch (prop)");
         for (ImmutableProp prop : type.getProps().values()) {
             if (prop.getBoxType() != null) {
-                builder.addStatement("case $S: return (T)($T)$L()",
+                builder.addStatement("case $S: return ($T)$L()",
                         prop.getName(),
                         prop.getBoxType(),
                         prop.getGetterName()
                 );
             } else {
-                builder.addStatement("case $S: return (T)$L()",
+                builder.addStatement("case $S: return $L()",
                         prop.getName(),
                         prop.getGetterName()
                 );

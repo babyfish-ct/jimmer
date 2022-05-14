@@ -508,12 +508,20 @@ public class ImmutableProp {
                                     Version.class.getName()
                     );
                 }
+                if (id != null && isNullable) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", nullable property cannot be marked by @" +
+                                    Id.class.getName()
+                    );
+                }
                 if (version != null && returnType.getKind() != TypeKind.INT) {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
                                     "\", it is marked by @" +
-                                    JoinTable.class.getName() +
+                                    Version.class.getName() +
                                     " but its type is not int"
                     );
                 }

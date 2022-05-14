@@ -113,6 +113,10 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
                         throw new IllegalArgumentException(
                                 "'" + prop + "' cannot be key property because it is id property"
                         );
+                    } else if (prop.isVersion()) {
+                        throw new IllegalArgumentException(
+                                "'" + prop + "' cannot be key property because it is version property"
+                        );
                     } else if (prop.isAssociation() || !(prop.getStorage() instanceof Column)) {
                         throw new IllegalArgumentException(
                                 "'" + prop + "' cannot be key property because it is not a scalar property with storagy"
