@@ -3,13 +3,11 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.sql.Column;
+import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.PropExpression;
-import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.mutation.AbstractSaveCommand;
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 
@@ -34,7 +32,7 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
     public C configure(Consumer<Cfg> block) {
         Data newData = new Data(data);
         block.accept(newData);
-        if (newData.mode == Mode.UPSERT &&
+        if (newData.mode == SaveMode.UPSERT &&
                 newData.keyPropMultiMap.isEmpty() &&
                 newData.autoDetachingSet.isEmpty() &&
                 newData.autoAttachingSet.isEmpty()) {
@@ -51,7 +49,7 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
 
         private boolean frozen;
 
-        private Mode mode;
+        private SaveMode mode;
 
         private Map<ImmutableType, Set<ImmutableProp>> keyPropMultiMap;
 
@@ -61,7 +59,7 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
 
         Data(SqlClient sqlClient) {
             this.sqlClient = sqlClient;
-            this.mode = Mode.UPSERT;
+            this.mode = SaveMode.UPSERT;
             this.keyPropMultiMap = new LinkedHashMap<>();
             this.autoAttachingSet = new LinkedHashSet<>();
             this.autoDetachingSet = new LinkedHashSet<>();
@@ -69,7 +67,7 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
 
         Data(Data base) {
             this.sqlClient = base.sqlClient;
-            this.mode = Mode.UPSERT;
+            this.mode = SaveMode.UPSERT;
             this.keyPropMultiMap = new LinkedHashMap<>(base.keyPropMultiMap);
             this.autoAttachingSet = new LinkedHashSet<>(base.autoAttachingSet);
             this.autoDetachingSet = new LinkedHashSet<>(base.autoDetachingSet);
@@ -79,7 +77,7 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
             return sqlClient;
         }
 
-        public Mode getMode() {
+        public SaveMode getMode() {
             return mode;
         }
 
@@ -96,7 +94,7 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
         }
 
         @Override
-        public Cfg setMode(Mode mode) {
+        public Cfg setMode(SaveMode mode) {
             validate();
             this.mode = Objects.requireNonNull(mode, "mode cannot be null");
             return this;
@@ -151,7 +149,7 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
                 Class<T> tableType,
                 Consumer<KeyPropCfg<T>> block
         ) {
-            KeyPropCfgImpl<T> keyPropCfg = new KeyPropCfgImpl<T>(sqlClient, tableType);
+            KeyPropCfgImpl<T> keyPropCfg = new KeyPropCfgImpl<T>(tableType);
             block.accept(keyPropCfg);
             return setKeyProps(
                     keyPropCfg.getProps().toArray(new ImmutableProp[0])
@@ -178,21 +176,11 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
         }
 
         @Override
-        public <T extends TableEx<?>> Cfg setAutoAttaching(
+        public <T extends Table<?>> Cfg setAutoAttaching(
                 Class<T> tableType,
                 Function<T, Table<?>> block
         ) {
-            ImmutableType immutableType = ImmutableType.get(tableType);
-            TableImplementor<?> tableImpl = TableImplementor.create(
-                    AbstractMutableStatementImpl.fake(sqlClient),
-                    immutableType
-            );
-            T table = TableWrappers.wrap(tableImpl);
-            TableImplementor<?> targetTableImpl = TableImplementor.unwrap(block.apply(table));
-            if (targetTableImpl.getParent() != tableImpl) {
-                throw new IllegalStateException("Lambda expression must return child table of specified table");
-            }
-            return setAutoAttaching(targetTableImpl.getJoinProp());
+            return setAutoAttaching(ImmutableProps.join(tableType, block));
         }
 
         @Override
@@ -216,17 +204,7 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
 
         @Override
         public <T extends TableEx<?>> Cfg setAutoDetaching(Class<T> tableType, Function<T, Table<?>> block) {
-            ImmutableType immutableType = ImmutableType.get(tableType);
-            TableImplementor<?> tableImpl = TableImplementor.create(
-                    AbstractMutableStatementImpl.fake(sqlClient),
-                    immutableType
-            );
-            T table = TableWrappers.wrap(tableImpl);
-            TableImplementor<?> targetTableImpl = TableImplementor.unwrap(block.apply(table));
-            if (targetTableImpl.getParent() != tableImpl) {
-                throw new IllegalStateException("Lambda expression must return child table of specified table");
-            }
-            return setAutoDetaching(targetTableImpl.getJoinProp());
+            return setAutoDetaching(ImmutableProps.join(tableType, block));
         }
 
         public Data freeze() {
@@ -248,19 +226,13 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
 
     private static class KeyPropCfgImpl<T extends Table<?>> implements KeyPropCfg<T> {
 
-        private T table;
-
-        private TableImplementor<?> tableImpl;
+        private Class<T> tableType;
 
         private List<ImmutableProp> props = new ArrayList<>();
 
         @SuppressWarnings("unchecked")
-        KeyPropCfgImpl(SqlClient sqlClient, Class<T> tableType) {
-            this.tableImpl = TableImplementor.create(
-                    AbstractMutableStatementImpl.fake(sqlClient),
-                    ImmutableType.get(tableType)
-            );
-            this.table = (T)TableWrappers.wrap(tableImpl);
+        KeyPropCfgImpl(Class<T> tableType) {
+            this.tableType = tableType;
         }
 
         public List<ImmutableProp> getProps() {
@@ -268,12 +240,9 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
         }
 
         @Override
-        public KeyPropCfg<T> addKeyProp(Function<T, PropExpression<?>> block) {
-            PropExpressionImpl<?> expr = (PropExpressionImpl<?>) block.apply(table);
-            if (expr.getTable() != tableImpl) {
-                throw new IllegalStateException("Lambda expression must return expression on specified table");
-            }
-            props.add(expr.getProp());
+        public KeyPropCfg<T> add(Function<T, PropExpression<?>> block) {
+            ImmutableProp prop = ImmutableProps.get(tableType, block);
+            props.add(prop);
             return this;
         }
     }

@@ -19,6 +19,8 @@ public interface TableImplementor<E> extends Table<E>, Ast {
 
     Collection<TableImplementor<?>> getChildren();
 
+    boolean isInverse();
+
     ImmutableProp getJoinProp();
 
     JoinType getJoinType();

@@ -1,8 +1,10 @@
 package org.babyfish.jimmer.sql.common;
 
-import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.ast.Executable;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
 import org.babyfish.jimmer.sql.ast.mutation.MutationResult;
+import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.junit.jupiter.api.Assertions;
 
 import javax.sql.DataSource;
@@ -141,6 +143,8 @@ public abstract class AbstractMutationTest extends AbstractTest {
 
         private MutationResult result;
 
+        private int entityCount;
+
         public ExpectDSLWithResult(
                 List<Execution> executions,
                 Throwable throwable,
@@ -156,14 +160,57 @@ public abstract class AbstractMutationTest extends AbstractTest {
             return this;
         }
 
-        public ExpectDSLWithResult rowCount(String tableName, int rowCount) {
+        public ExpectDSLWithResult rowCount(AffectedTable affectTable, int rowCount) {
             Assertions.assertNotNull(result);
             Assertions.assertEquals(
                     rowCount,
-                    result.getAffectedRowCount(tableName),
-                    "rowCountMap['" + tableName + "']"
+                    result.getAffectedRowCount(affectTable),
+                    "rowCountMap['" + affectTable + "']"
             );
             return this;
+        }
+
+        public ExpectDSLWithResult entity(Consumer<EntityDSL> block) {
+            if (throwable != null) {
+                rethrow(throwable);
+            }
+            return entity(entityCount++, block);
+        }
+
+        private ExpectDSLWithResult entity(
+                int index,
+                Consumer<EntityDSL> block
+        ) {
+            SimpleSaveResult<?> simpleSaveResult;
+            if (index == 0) {
+                if (result instanceof SimpleSaveResult<?>) {
+                    simpleSaveResult = (SimpleSaveResult<?>) result;
+                } else {
+                    simpleSaveResult = ((BatchSaveResult<?>) result).getSimpleResults().get(0);
+                }
+            } else {
+                simpleSaveResult = ((BatchSaveResult<?>) result).getSimpleResults().get(index);
+            }
+            block.accept(new EntityDSL(index, simpleSaveResult));
+            return this;
+        }
+
+        @Override
+        public void close() {
+            super.close();
+            int actualEntityCount;
+            if (result instanceof SimpleSaveResult<?>) {
+                actualEntityCount = 1;
+            } else if (result instanceof BatchSaveResult<?> ){
+                actualEntityCount = ((BatchSaveResult<?>) result).getSimpleResults().size();
+            } else {
+                actualEntityCount = 0;
+            }
+            Assertions.assertEquals(
+                    entityCount,
+                    actualEntityCount,
+                    "entity.count"
+            );
         }
     }
 
@@ -197,13 +244,13 @@ public abstract class AbstractMutationTest extends AbstractTest {
                 if (exp instanceof byte[]) {
                     Assertions.assertTrue(
                             Arrays.equals((byte[])exp, (byte[])act),
-                            "statements[" + index + "].variables[$" + i + "]."
+                            "statements[" + index + "].variables[" + i + "]."
                     );
                 } else {
                     Assertions.assertEquals(
                             exp,
                             act,
-                            "statements[" + index + "].variables[$" + i + "]."
+                            "statements[" + index + "].variables[" + i + "]."
                     );
                 }
             }
@@ -251,5 +298,33 @@ public abstract class AbstractMutationTest extends AbstractTest {
             throw (Error) throwable;
         }
         throw new RuntimeException(throwable);
+    }
+
+    protected static class EntityDSL {
+
+        private int index;
+
+        private SimpleSaveResult<?> result;
+
+        EntityDSL(int index, SimpleSaveResult<?> result) {
+            this.index = index;
+            this.result = result;
+        }
+
+        public void original(String json) {
+            Assertions.assertEquals(
+                    json,
+                    result.getOriginalEntity().toString(),
+                    "originalEntities[" + index + "]"
+            );
+        }
+
+        public void modified(String json) {
+            Assertions.assertEquals(
+                    json,
+                    result.getModifiedEntity().toString(),
+                    "modifiedEntities[" + index + "]"
+            );
+        }
     }
 }

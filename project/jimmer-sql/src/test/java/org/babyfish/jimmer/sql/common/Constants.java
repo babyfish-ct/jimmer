@@ -18,7 +18,7 @@ public class Constants {
 
     public static final UUID programmingTypeScriptId1 = UUID.fromString("914c8595-35cb-4f67-bbc7-8029e9e6245a");
     public static final UUID programmingTypeScriptId2 = UUID.fromString("058ecfd0-047b-4979-a7dc-46ee24d08f08");
-    public static final UUID programmingTypeScriptId3 = UUID.fromString("914c8595-35cb-4f67-bbc7-8029e9e6245a");
+    public static final UUID programmingTypeScriptId3 = UUID.fromString("782b9a9d-eac8-41c4-9f2d-74a5d047f45a");
 
     public static final UUID graphQLInActionId1 = UUID.fromString("a62f7aa3-9490-4612-98b5-98aae0e77120");
     public static final UUID graphQLInActionId2 = UUID.fromString("e37a8344-73bb-4b23-ba76-82eac11f03e6");

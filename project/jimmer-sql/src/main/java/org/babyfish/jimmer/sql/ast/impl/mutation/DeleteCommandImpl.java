@@ -2,11 +2,9 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.OnDeleteAction;
 import org.babyfish.jimmer.sql.SqlClient;
-import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -143,22 +141,7 @@ class DeleteCommandImpl implements DeleteCommand {
                 Function<T, Table<?>> block,
                 OnDeleteAction onDeleteAction
         ) {
-            T table = (T) TableWrappers.wrap(
-                    TableImplementor.create(
-                            AbstractMutableStatementImpl.fake(sqlClient),
-                            ImmutableType.get(tableType)
-                    )
-            );
-            TableImplementor<?> targetTable = TableImplementor.unwrap(
-                    block.apply(table)
-            );
-            if (targetTable.getParent() != TableImplementor.unwrap(table) ||
-                    targetTable.getParent().getParent() != null) {
-                throw new IllegalStateException(
-                        "The lambda must return a table which is level-1 child the specified root table"
-                );
-            }
-            return setOnDeleteAction(targetTable.getJoinProp(), onDeleteAction);
+            return setOnDeleteAction(ImmutableProps.join(tableType, block), onDeleteAction);
         }
     }
 }

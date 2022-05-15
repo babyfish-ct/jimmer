@@ -121,8 +121,9 @@ public class ImplGenerator {
             }
         }
         builder.addStatement(
-                "default: throw new IllegalArgumentException($S)",
-                "Illegal property name: \" + prop + \""
+                "default: throw new IllegalArgumentException($S + prop + $S)",
+                "Illegal property name: \"",
+                "\""
         );
         builder.endControlFlow();
         typeBuilder.addMethod(builder.build());

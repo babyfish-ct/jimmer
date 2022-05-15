@@ -42,7 +42,7 @@ public class PropExpressionImpl<T>
         this.prop = prop;
     }
 
-    public TableImplementor<?> getTable() {
+    public TableImplementor<?> getTableImplementor() {
         return table;
     }
 
@@ -90,8 +90,8 @@ public class PropExpressionImpl<T>
         }
 
         @Override
-        public TableImplementor<?> getTable() {
-            return super.getTable();
+        public TableImplementor<?> getTableImplementor() {
+            return super.getTableImplementor();
         }
     }
 

@@ -13,7 +13,7 @@ public class BatchSaveResult<E> extends AbstractMutationResult {
     }
 
     public BatchSaveResult(
-            Map<String, Integer> affectedRowMap,
+            Map<AffectedTable, Integer> affectedRowMap,
             List<SimpleSaveResult<E>> simpleResults
     ) {
         super(affectedRowMap);
@@ -47,7 +47,7 @@ public class BatchSaveResult<E> extends AbstractMutationResult {
                 '}';
     }
 
-    private static <E> Map<String, Integer> mergedAffectedRowCount(
+    private static <E> Map<AffectedTable, Integer> mergedAffectedRowCount(
             List<SimpleSaveResult<E>> simpleResults
     ) {
         if (simpleResults.isEmpty()) {
@@ -56,9 +56,9 @@ public class BatchSaveResult<E> extends AbstractMutationResult {
         if (simpleResults.size() == 1) {
             return simpleResults.get(0).getAffectedRowCountMap();
         }
-        Map<String, Integer> mergedMap = new HashMap<>();
+        Map<AffectedTable, Integer> mergedMap = new HashMap<>();
         for (SimpleSaveResult<?> result : simpleResults) {
-            for (Map.Entry<String, Integer> e : result.getAffectedRowCountMap().entrySet()) {
+            for (Map.Entry<AffectedTable, Integer> e : result.getAffectedRowCountMap().entrySet()) {
                 mergedMap.merge(e.getKey(), e.getValue(), Integer::sum);
             }
         }

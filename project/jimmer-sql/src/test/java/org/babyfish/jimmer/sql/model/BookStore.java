@@ -22,6 +22,6 @@ public interface BookStore {
     @Version
     int version();
 
-    @ManyToMany(mappedBy = "store")
+    @OneToMany(mappedBy = "store")
     List<Book> books();
 }

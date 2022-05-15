@@ -7,9 +7,9 @@ public class AbstractMutationResult implements MutationResult {
 
     protected int totalAffectedRowCount;
 
-    protected Map<String, Integer> affectedRowCountMap;
+    protected Map<AffectedTable, Integer> affectedRowCountMap;
 
-    public AbstractMutationResult(Map<String, Integer> affectedRowCountMap) {
+    public AbstractMutationResult(Map<AffectedTable, Integer> affectedRowCountMap) {
         this.affectedRowCountMap = Collections.unmodifiableMap(affectedRowCountMap);
         int totalAffectedRowCount = 0;
         for (Integer affectedRowCount : affectedRowCountMap.values()) {
@@ -24,13 +24,13 @@ public class AbstractMutationResult implements MutationResult {
     }
 
     @Override
-    public Map<String, Integer> getAffectedRowCountMap() {
+    public Map<AffectedTable, Integer> getAffectedRowCountMap() {
         return affectedRowCountMap;
     }
 
     @Override
-    public int getAffectedRowCount(String tableName) {
-        Integer affectedRowCount = affectedRowCountMap.get(tableName);
+    public int getAffectedRowCount(AffectedTable affectTable) {
+        Integer affectedRowCount = affectedRowCountMap.get(affectTable);
         return affectedRowCount != null ? affectedRowCount : 0;
     }
 }

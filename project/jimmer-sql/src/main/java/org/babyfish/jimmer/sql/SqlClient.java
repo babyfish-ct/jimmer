@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.sql.IdGenerator;
 import org.babyfish.jimmer.meta.sql.UserIdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;

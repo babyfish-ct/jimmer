@@ -3,6 +3,8 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
 
+import java.util.Objects;
+
 public class AbstractMutableStatementImpl {
 
     private TableAliasAllocator tableAliasAllocator;
@@ -16,7 +18,10 @@ public class AbstractMutableStatementImpl {
             SqlClient sqlClient
     ) {
         this.tableAliasAllocator = tableAliasAllocator;
-        this.sqlClient = sqlClient;
+        if (!(this instanceof Fake)) {
+            Objects.requireNonNull(sqlClient, "sqlClient cannot be null");
+            this.sqlClient = sqlClient;
+        }
     }
 
     public void freeze() {
@@ -36,11 +41,23 @@ public class AbstractMutableStatementImpl {
     }
 
     public SqlClient getSqlClient() {
-        return sqlClient;
+        SqlClient client = sqlClient;
+        if (client == null) {
+            throw new UnsupportedOperationException(
+                    "getSqlClient() is not supported by " + Fake.class.getName()
+            );
+        }
+        return client;
     }
 
-    public static AbstractMutableStatementImpl fake(SqlClient sqlClient) {
-        return new AbstractMutableStatementImpl(new TableAliasAllocator(), sqlClient) {
-        };
+    public static AbstractMutableStatementImpl fake() {
+        return new Fake();
+    }
+
+    private static class Fake extends AbstractMutableStatementImpl {
+
+        private Fake() {
+            super(new TableAliasAllocator(), null);
+        }
     }
 }

@@ -1,13 +1,11 @@
 package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.sql.OnDeleteAction;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
-import org.babyfish.jimmer.sql.model.Author;
-import org.babyfish.jimmer.sql.model.Book;
-import org.babyfish.jimmer.sql.model.BookStore;
-import org.babyfish.jimmer.sql.model.BookTable;
+import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.junit.jupiter.api.Test;
 
@@ -64,8 +62,8 @@ public class DeleteTest extends AbstractMutationTest {
                     });
                     ctx
                             .totalRowCount(4)
-                            .rowCount("BOOK", 3)
-                            .rowCount("BOOK_STORE", 1);
+                            .rowCount(AffectedTable.of(Book.class), 3)
+                            .rowCount(AffectedTable.of(BookStore.class), 1);
                 }
         );
     }
@@ -101,9 +99,9 @@ public class DeleteTest extends AbstractMutationTest {
                         it.variables(manningId);
                     });
                     ctx.totalRowCount(7);
-                    ctx.rowCount("BOOK_STORE", 1);
-                    ctx.rowCount("BOOK", 3);
-                    ctx.rowCount("BOOK_AUTHOR_MAPPING", 3);
+                    ctx.rowCount(AffectedTable.of(BookStore.class), 1);
+                    ctx.rowCount(AffectedTable.of(Book.class), 3);
+                    ctx.rowCount(AffectedTable.of(BookTable.Ex.class, BookTable.Ex::authors), 3);
                 }
         );
     }
@@ -128,8 +126,8 @@ public class DeleteTest extends AbstractMutationTest {
                         it.variables(learningGraphQLId1, learningGraphQLId2, nonExistingId);
                     });
                     ctx.totalRowCount(6);
-                    ctx.rowCount("BOOK_AUTHOR_MAPPING", 4);
-                    ctx.rowCount("BOOK", 2);
+                    ctx.rowCount(AffectedTable.of(BookTable.Ex.class, BookTable.Ex::authors), 4);
+                    ctx.rowCount(AffectedTable.of(Book.class), 2);
                 }
         );
     }
@@ -151,8 +149,8 @@ public class DeleteTest extends AbstractMutationTest {
                         it.variables(alexId);
                     });
                     ctx.totalRowCount(4);
-                    ctx.rowCount("AUTHOR", 1);
-                    ctx.rowCount("BOOK_AUTHOR_MAPPING", 3);
+                    ctx.rowCount(AffectedTable.of(Author.class), 1);
+                    ctx.rowCount(AffectedTable.of(AuthorTable.Ex.class, AuthorTable.Ex::books), 3);
                 }
         );
     }
