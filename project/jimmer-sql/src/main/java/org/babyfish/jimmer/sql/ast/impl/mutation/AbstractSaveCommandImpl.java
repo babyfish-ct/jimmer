@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.sql.Column;
+import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.PropExpression;
@@ -81,8 +81,12 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
             return mode;
         }
 
-        public Map<ImmutableType, Set<ImmutableProp>> getKeyPropMultiMap() {
-            return keyPropMultiMap;
+        public Set<ImmutableProp> getKeyProps(ImmutableType type) {
+            Set<ImmutableProp> keyProps = keyPropMultiMap.get(type);
+            if (keyProps != null) {
+                return keyProps;
+            }
+            return type.getKeyProps();
         }
 
         public Set<ImmutableProp> getAutoAttachingSet() {
@@ -117,13 +121,17 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
                         );
                     } else if (prop.isAssociation() || !(prop.getStorage() instanceof Column)) {
                         throw new IllegalArgumentException(
-                                "'" + prop + "' cannot be key property because it is not a scalar property with storagy"
+                                "'" + prop + "' cannot be key property because it is not a scalar property with storage"
+                        );
+                    } else if (prop.isNullable()) {
+                        throw new IllegalArgumentException(
+                                "'" + prop + "' cannot be key property because it is nullable"
                         );
                     }
                     if (type == null) {
                         type = prop.getDeclaringType();
                     } else if (type != prop.getDeclaringType()) {
-                        throw new IllegalArgumentException("key properties must belong to one type");
+                        throw new IllegalArgumentException("all key properties must belong to one type");
                     }
                     set.add(prop);
                 }

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.model;
 
-import org.babyfish.jimmer.meta.sql.UUIDIdGenerator;
+import org.babyfish.jimmer.sql.Key;
+import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 
 import javax.persistence.*;
 import javax.validation.constraints.Null;
@@ -14,6 +15,7 @@ public interface BookStore {
     @GeneratedValue(generator = UUIDIdGenerator.FULL_NAME)
     UUID id();
 
+    @Key
     String name();
 
     @Null

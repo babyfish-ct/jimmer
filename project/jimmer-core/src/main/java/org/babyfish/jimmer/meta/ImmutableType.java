@@ -3,10 +3,10 @@ package org.babyfish.jimmer.meta;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
-import org.babyfish.jimmer.meta.sql.Column;
-import org.babyfish.jimmer.meta.sql.IdGenerator;
-import org.babyfish.jimmer.meta.sql.IdentityIdGenerator;
-import org.babyfish.jimmer.meta.sql.SequenceIdGenerator;
+import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.IdGenerator;
+import org.babyfish.jimmer.sql.meta.IdentityIdGenerator;
+import org.babyfish.jimmer.sql.meta.SequenceIdGenerator;
 import org.babyfish.jimmer.runtime.DraftContext;
 
 import javax.persistence.*;
@@ -49,6 +49,8 @@ public class ImmutableType {
     private ImmutableProp idProp;
 
     private ImmutableProp versionProp;
+
+    private Set<ImmutableProp> keyProps = Collections.emptySet();
 
     private IdGenerator idGenerator;
 
@@ -234,6 +236,10 @@ public class ImmutableType {
         return versionProp;
     }
 
+    public Set<ImmutableProp> getKeyProps() {
+        return keyProps;
+    }
+
     public String getTableName() {
         return tableName;
     }
@@ -379,6 +385,10 @@ public class ImmutableType {
         this.versionProp = versionProp;
     }
 
+    void setKeyProps(Set<ImmutableProp> keyProps) {
+        this.keyProps = Collections.unmodifiableSet(keyProps);
+    }
+
     public IdGenerator getIdGenerator() {
         return idGenerator;
     }
@@ -398,6 +408,8 @@ public class ImmutableType {
 
         private String versionPropName;
 
+        private List<String> keyPropNames = new ArrayList<>();
+
         Builder(
                 Class<?> javaClass,
                 ImmutableType superType,
@@ -416,6 +428,15 @@ public class ImmutableType {
             idPropName = name;
             return add(name, ImmutablePropCategory.SCALAR, elementType, false);
         }
+
+        public Builder key(String name, Class<?> elementType) {
+            if (!type.javaClass.isAnnotationPresent(Entity.class)) {
+                throw new IllegalStateException("Cannot add key for type that is not entity");
+            }
+            keyPropNames.add(name);
+            return add(name, ImmutablePropCategory.SCALAR, elementType, false);
+        }
+
         public Builder version(String name) {
             if (!type.javaClass.isAnnotationPresent(Entity.class)) {
                 throw new IllegalStateException("Cannot set version for type that is not entity");
@@ -487,6 +508,13 @@ public class ImmutableType {
             } else if (type.superType != null) {
                 type.setVersionProp(type.superType.versionProp);
             }
+            Set<ImmutableProp> keyProps = type.superType != null ?
+                    new LinkedHashSet<>(type.superType.keyProps) :
+                    new LinkedHashSet<>();
+            for (String keyPropName : keyPropNames) {
+                keyProps.add(type.declaredProps.get(keyPropName));
+            }
+            type.setKeyProps(keyProps);
             this.type = null;
             return type;
         }

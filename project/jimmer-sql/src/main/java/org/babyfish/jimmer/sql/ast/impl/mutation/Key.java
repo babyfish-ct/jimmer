@@ -40,7 +40,7 @@ class Key {
             boolean force
     ) {
         ImmutableType type = spi.__type();
-        Set<ImmutableProp> keyProps = data.getKeyPropMultiMap().get(type);
+        Set<ImmutableProp> keyProps = data.getKeyProps(type);
         if (keyProps == null) {
             if (force) {
                 throw new ExecutionException(

@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql;
 
-import org.babyfish.jimmer.meta.sql.IdGenerator;
-import org.babyfish.jimmer.meta.sql.UserIdGenerator;
+import org.babyfish.jimmer.sql.meta.IdGenerator;
+import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;

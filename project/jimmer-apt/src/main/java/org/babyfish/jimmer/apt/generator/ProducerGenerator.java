@@ -6,6 +6,7 @@ import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ImmutablePropCategory;
 import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.sql.Key;
 
 import javax.lang.model.element.Modifier;
 
@@ -125,6 +126,12 @@ public class ProducerGenerator {
                 builder.add(
                         ".version($S)\n",
                         prop.getName()
+                );
+            } else if (prop.getAnnotation(Key.class) != null) {
+                builder.add(
+                        ".key($S, $T.class)\n",
+                        prop.getName(),
+                        prop.getElementTypeName()
                 );
             } else if (prop.getAssociationAnnotation() != null) {
                 builder.add(

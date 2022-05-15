@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.meta;
 
-import org.babyfish.jimmer.meta.sql.Storage;
+import org.babyfish.jimmer.sql.DeleteAction;
+import org.babyfish.jimmer.sql.OnDelete;
+import org.babyfish.jimmer.sql.meta.Storage;
 
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
@@ -26,6 +28,8 @@ public class ImmutableProp {
     private Annotation associationAnnotation;
 
     private boolean isTransient;
+
+    private DeleteAction deleteAction;
 
     private Storage storage;
 
@@ -85,6 +89,9 @@ public class ImmutableProp {
         if (associationType != null) {
             associationAnnotation = getAnnotation(associationType);
         }
+
+        OnDelete onDelete = getAnnotation(OnDelete.class);
+        deleteAction = onDelete != null ? onDelete.value() : DeleteAction.NONE;
     }
 
     public ImmutableType getDeclaringType() {
@@ -145,6 +152,10 @@ public class ImmutableProp {
 
     public boolean isTransient() {
         return isTransient;
+    }
+
+    public DeleteAction getDeleteAction() {
+        return deleteAction;
     }
 
     @SuppressWarnings("unchecked")

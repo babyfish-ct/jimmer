@@ -2,17 +2,16 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.sql.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.Converts;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -345,7 +344,7 @@ class Saver {
 
         Set<ImmutableProp> excludeProps = null;
         if (excludeKeyProps) {
-            excludeProps = data.getKeyPropMultiMap().get(type);
+            excludeProps = data.getKeyProps(type);
         }
         if (excludeProps == null) {
             excludeProps = Collections.emptySet();
@@ -488,7 +487,7 @@ class Saver {
         if (id != null) {
             return Collections.singleton(idProp);
         }
-        Set<ImmutableProp> keyProps = data.getKeyPropMultiMap().get(type);
+        Set<ImmutableProp> keyProps = data.getKeyProps(type);
         if (keyProps == null) {
             throw new ExecutionException(
                     "Cannot save \"" + type + "\" without id, " +
@@ -532,7 +531,7 @@ class Saver {
                 }
             }
             if (!idPropLoaded) {
-                Set<ImmutableProp> keyProps = data.getKeyPropMultiMap().get(spi.__type());
+                Set<ImmutableProp> keyProps = data.getKeyProps(spi.__type());
                 for (ImmutableProp keyProp : keyProps) {
                     throw new ExecutionException(
                             "Cannot save illegal entity object " +
