@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.common;
 
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.model.BookStore;
 import org.babyfish.jimmer.sql.model.Gender;
 import org.babyfish.jimmer.sql.runtime.DefaultExecutor;
 import org.babyfish.jimmer.sql.runtime.Executor;
@@ -9,6 +10,7 @@ import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.babyfish.jimmer.sql.runtime.SqlFunction;
 import org.h2.Driver;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
 import javax.sql.DataSource;
@@ -19,14 +21,20 @@ import java.io.Reader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class AbstractTest {
 
     private static final String JDBC_URL = "jdbc:h2:~/jdbc_test_db";
 
     private DynamicDialect dynamicDialect = new DynamicDialect();
+
+    private Map<Class<?>, AutoIds> autoIdMap = new HashMap<>();
+
+    @BeforeAll
+    public static void beforeAll() {
+        jdbc(AbstractTest::initDatabase);
+    }
 
     @BeforeEach
     public void beforeTest() {
@@ -44,6 +52,7 @@ public class AbstractTest {
                                 .map(Gender.FEMALE, "F");
                     })
             )
+            .setUserIdGenerator(this::autoId)
             .build();
 
     protected void using(Dialect dialect, Runnable block) {
@@ -158,6 +167,38 @@ public class AbstractTest {
                     Assertions.fail("Failed to initialize database", ex);
                 }
             }
+        }
+    }
+
+    protected void setAutoIds(Class<?> entityType, Object ... args) {
+        autoIdMap.put(entityType, new AutoIds(Arrays.asList(args.clone())));
+    }
+
+    private Object autoId(Class<?> entityType) {
+        AutoIds autoIds = autoIdMap.get(entityType);
+        if (autoIds == null) {
+            throw new IllegalStateException("No prepared auto ids for \"" + entityType.getName() + "\"");
+        }
+        return autoIds.get();
+    }
+
+
+    private static class AutoIds {
+
+        private List<Object> ids;
+
+        private int index;
+
+        public AutoIds(List<Object> ids) {
+            this.ids = ids;
+        }
+
+        public Object get() {
+            return ids.get(index++);
+        }
+
+        public void reset() {
+            index = 0;
         }
     }
 }

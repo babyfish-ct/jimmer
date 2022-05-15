@@ -89,6 +89,11 @@ class TableImpl<E> implements TableImplementor<E> {
     }
 
     @Override
+    public boolean isInverse() {
+        return isInverse;
+    }
+
+    @Override
     public ImmutableProp getJoinProp() {
         return joinProp;
     }

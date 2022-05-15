@@ -7,16 +7,16 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
-import org.babyfish.jimmer.sql.ast.mutation.AbstractSaveCommand;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.Converts;
-import org.babyfish.jimmer.sql.runtime.DbNull;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
-import javax.persistence.Id;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,7 +30,7 @@ class Saver {
 
     private ImmutableCache cache;
 
-    private Map<String, Integer> affectedRowCountMap;
+    private Map<AffectedTable, Integer> affectedRowCountMap;
 
     Saver(
             AbstractSaveCommandImpl.Data data,
@@ -43,7 +43,7 @@ class Saver {
             AbstractSaveCommandImpl.Data data,
             Connection con,
             ImmutableCache cache,
-            Map<String, Integer> affectedRowCountMap) {
+            Map<AffectedTable, Integer> affectedRowCountMap) {
         this.data = data;
         this.con = con;
         this.cache = cache;
@@ -79,10 +79,49 @@ class Saver {
                     prop.getStorage() instanceof Column == forParent &&
                     currentDraftSpi.__isLoaded(prop.getName())
             ) {
+                ImmutableType targetType = prop.getTargetType();
+                ImmutableType currentType = currentDraftSpi.__type();
+                String currentIdPropName = currentType.getIdProp().getName();
+                Object currentId = currentDraftSpi.__isLoaded(currentIdPropName) ?
+                        currentDraftSpi.__get(currentIdPropName) :
+                        null;
+
+                ImmutableProp mappedBy = prop.getMappedBy();
+                ChildTableOperator childTableOperator = null;
+                if (mappedBy != null && mappedBy.isReference()) {
+                    childTableOperator = new ChildTableOperator(
+                            data.getSqlClient(),
+                            con,
+                            mappedBy
+                    );
+                }
                 Object associatedValue = currentDraftSpi.__get(prop.getName());
                 Set<Object> associatedObjectIds = new LinkedHashSet<>();
                 if (associatedValue instanceof List<?>) {
                     List<DraftSpi> associatedObjects = (List<DraftSpi>) associatedValue;
+                    if (childTableOperator != null) {
+                        String targetIdPropName = prop.getTargetType().getIdProp().getName();
+                        Iterator<DraftSpi> itr = new ArrayList<>(associatedObjects).iterator();
+                        List<Object> updatingTargetIds = new ArrayList<>();
+                        while (itr.hasNext()) {
+                            DraftSpi associatedObject = itr.next();
+                            if (isNonIdPropLoaded(associatedObject)) {
+                                associatedObject.__set(
+                                        mappedBy.getName(),
+                                        Internal.produce(currentType, null, backRef -> {
+                                            ((DraftSpi) backRef).__set(currentIdPropName, currentId);
+                                        })
+                                );
+                            } else {
+                                updatingTargetIds.add(associatedObject.__get(targetIdPropName));
+                                itr.remove();
+                            }
+                        }
+                        if (!updatingTargetIds.isEmpty()) {
+                            int rowCount = childTableOperator.setParent(currentId, updatingTargetIds);
+                            addOutput(AffectedTable.of(targetType), rowCount);
+                        }
+                    }
                     for (DraftSpi associatedObject : associatedObjects) {
                         associatedObjectIds.add(saveAssociatedObjectAndGetId(prop, associatedObject));
                     }
@@ -90,13 +129,15 @@ class Saver {
                     DraftSpi associatedObject = (DraftSpi) associatedValue;
                     associatedObjectIds.add(saveAssociatedObjectAndGetId(prop, associatedObject));
                 }
+                ImmutableProp middleTableProp = null;
                 MiddleTable middleTable = null;
                 if (prop.getStorage() instanceof MiddleTable) {
-                    middleTable = prop.getStorage();
+                    middleTableProp = prop;
+                    middleTable = middleTableProp.getStorage();
                 } else {
-                    ImmutableProp mappedBy = prop.getMappedBy();
                     if (mappedBy != null && mappedBy.getStorage() instanceof MiddleTable) {
-                        middleTable = mappedBy.<MiddleTable>getStorage().getInverse();
+                        middleTableProp = mappedBy;
+                        middleTable = middleTableProp.<MiddleTable>getStorage().getInverse();
                     }
                 }
                 if (middleTable != null) {
@@ -107,33 +148,36 @@ class Saver {
                             prop.getTargetType().getIdProp().getElementClass()
                     );
                     int rowCount = middleTableOperator.setTargetIds(
-                            currentDraftSpi.__get(currentDraftSpi.__type().getIdProp().getName()),
+                            currentId,
                             associatedObjectIds
                     );
-                    addOutput(middleTable.getTableName(), rowCount);
-                }
-                if (data.getAutoDetachingSet().contains(prop)) {
-                    List<Object> targetIds = Queries.createQuery(data.getSqlClient(), prop.getTargetType(), (q, t) -> {
-                        q.where(t
-                                .join(prop.getMappedBy().getName())
-                                .<Expression<Object>>get(prop.getDeclaringType().getIdProp().getName())
-                                .notIn(associatedObjectIds)
+                    addOutput(AffectedTable.middle(middleTableProp), rowCount);
+                } else if (childTableOperator != null) {
+                    if (data.getAutoDetachingSet().contains(prop)) {
+                        List<Object> detachedTargetIds = childTableOperator.getDetachedChildIds(
+                                currentId,
+                                associatedObjectIds
                         );
-                        return q.select(
-                                t.<Expression<Object>>get(
-                                        prop.getTargetType().getIdProp().getName()
-                                )
+                        Deleter deleter = new Deleter(
+                                new DeleteCommandImpl.Data(data.getSqlClient()),
+                                con,
+                                affectedRowCountMap
                         );
-                    }).execute(con);
-                    Set<Object> removingTargetIds = new LinkedHashSet<>(targetIds);
-                    removingTargetIds.removeAll(associatedObjectIds);
-                    Deleter deleter = new Deleter(
-                            new DeleteCommandImpl.Data(data.getSqlClient()),
-                            con,
-                            affectedRowCountMap
-                    );
-                    deleter.addPreHandleInput(prop.getTargetType(), removingTargetIds);
-                    deleter.execute();
+                        deleter.addPreHandleInput(prop.getTargetType(), detachedTargetIds);
+                        deleter.execute();
+                    } else {
+                        if (!mappedBy.isNullable()) {
+                            throw new ExecutionException(
+                                    "Cannot disconnect child objects by the one-to-many property \"" +
+                                            prop +
+                                            "\" because this property is not nullable." +
+                                            "You can also configure SaveCommand to automatically detach " +
+                                            "disconnected child objects to resolve the problem."
+                            );
+                        }
+                        int rowCount = childTableOperator.unsetParent(currentId, associatedObjectIds);
+                        addOutput(AffectedTable.of(targetType), rowCount);
+                    }
                 }
             }
         }
@@ -145,8 +189,8 @@ class Saver {
                     new AbstractSaveCommandImpl.Data(data);
             associatedData.setMode(
                     data.getAutoAttachingSet().contains(prop) ?
-                            AbstractSaveCommand.Mode.UPSERT :
-                            AbstractSaveCommand.Mode.UPDATE_ONLY
+                            SaveMode.UPSERT :
+                            SaveMode.UPDATE_ONLY
             );
             Saver associatedSaver = new Saver(this, associatedData);
             associatedSaver.save(associatedDraftSpi);
@@ -155,16 +199,23 @@ class Saver {
     }
 
     private void saveSelf(DraftSpi draftSpi) {
-        if (data.getMode() == AbstractSaveCommand.Mode.INSERT_ONLY) {
+        if (data.getMode() == SaveMode.INSERT_ONLY) {
             insert(draftSpi);
-        } if (data.getMode() == AbstractSaveCommand.Mode.UPDATE_ONLY) {
-            update(draftSpi);
+        } else if (data.getMode() == SaveMode.UPDATE_ONLY &&
+                draftSpi.__isLoaded(draftSpi.__type().getIdProp().getName())) {
+            update(draftSpi, false);
         } else {
-            ImmutableSpi existingSpi = findAssociatedObject(draftSpi);
-            if (existingSpi == null) {
-                insert(draftSpi);
+            ImmutableSpi existingSpi = find(draftSpi);
+            if (existingSpi != null) {
+                String idPropName = draftSpi.__type().getIdProp().getName();
+                if (draftSpi.__isLoaded(idPropName)) {
+                    update(draftSpi, false);
+                } else {
+                    draftSpi.__set(idPropName, existingSpi.__get(idPropName));
+                    update(draftSpi, true);
+                }
             } else {
-                update(draftSpi);
+                insert(draftSpi);
             }
         }
     }
@@ -191,10 +242,10 @@ class Saver {
                         return rs.getObject(1);
                     }
                 });
-                draftSpi = setDraftId(draftSpi, id);
+                setDraftId(draftSpi, id);
             } else if (idGenerator instanceof UserIdGenerator) {
                 id = ((UserIdGenerator)idGenerator).generate(type.getJavaClass());
-                draftSpi = setDraftId(draftSpi, id);
+                setDraftId(draftSpi, id);
             } else if (!(idGenerator instanceof IdentityIdGenerator)) {
                 throw new ExecutionException(
                         "Illegal id generator type: \"" +
@@ -209,18 +260,21 @@ class Saver {
                 );
             }
         }
+        if (type.getVersionProp() != null && !draftSpi.__isLoaded(type.getVersionProp().getName())) {
+            draftSpi.__set(type.getVersionProp().getName(), 0);
+        }
 
         List<ImmutableProp> props = new ArrayList<>();
         List<Object> values = new ArrayList<>();
         for (ImmutableProp prop : draftSpi.__type().getProps().values()) {
             if (prop.getStorage() instanceof Column && draftSpi.__isLoaded(prop.getName())) {
                 props.add(prop);
-                values.add(draftSpi.__get(prop.getName()));
+                Object value = draftSpi.__get(prop.getName());
+                if (value != null && prop.isReference()) {
+                    value = ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getName());
+                }
+                values.add(value);
             }
-        }
-        if (type.getVersionProp() != null && !props.contains(type.getVersionProp())) {
-            props.add(type.getVersionProp());
-            values.add(0);
         }
         if (props.isEmpty()) {
             throw new ExecutionException("Cannot insert \"" + type + "\" without any properties");
@@ -253,7 +307,7 @@ class Saver {
             if (value != null) {
                 builder.variable(value);
             } else {
-                builder.nullVariables(props.get(i).getElementClass());
+                builder.nullVariable(props.get(i).getElementClass());
             }
         }
         builder.sql(")");
@@ -265,7 +319,7 @@ class Saver {
                 sqlResult._2(),
                 PreparedStatement::executeUpdate
         );
-        addOutput(type.getTableName(), rowCount);
+        addOutput(AffectedTable.of(type), rowCount);
 
         if (id == null) {
             id = data.getSqlClient().getExecutor().execute(
@@ -279,30 +333,22 @@ class Saver {
                         }
                     }
             );
-            draftSpi = setDraftId(draftSpi, id);
+            setDraftId(draftSpi, id);
         }
 
         cache.save(draftSpi, true);
     }
 
-    private void update(DraftSpi draftSpi) {
+    private void update(DraftSpi draftSpi, boolean excludeKeyProps) {
 
         ImmutableType type = draftSpi.__type();
 
-        List<ImmutableProp> keyProps = new ArrayList<>(actualKeyProps(draftSpi));
-        Key key = Key.of(data, draftSpi, false);
-        List<Object> keyValues;
-        if (key != null) {
-            keyValues = key.toList();
-        } else {
-            if (!draftSpi.__isLoaded(type.getIdProp().getName())) {
-                throw new ExecutionException(
-                        "Cannot update \"" +
-                                type +
-                                "\" with neither id property nor key properties"
-                );
-            }
-            keyValues = Collections.singletonList(draftSpi.__get(type.getIdProp().getName()));
+        Set<ImmutableProp> excludeProps = null;
+        if (excludeKeyProps) {
+            excludeProps = data.getKeyPropMultiMap().get(type);
+        }
+        if (excludeProps == null) {
+            excludeProps = Collections.emptySet();
         }
 
         List<ImmutableProp> updatedProps = new ArrayList<>();
@@ -313,9 +359,13 @@ class Saver {
             if (prop.getStorage() instanceof Column && draftSpi.__isLoaded(prop.getName())) {
                 if (prop.isVersion()) {
                     version = (Integer) draftSpi.__get(prop.getName());
-                } else if (!keyProps.contains(prop)) {
+                } else if (!prop.isId() && !excludeProps.contains(prop)) {
                     updatedProps.add(prop);
-                    updatedValues.add(draftSpi.__get(prop.getName()));
+                    Object value = draftSpi.__get(prop.getName());
+                    if (value != null && prop.isReference()) {
+                        value = ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getName());
+                    }
+                    updatedValues.add(value);
                 }
             }
         }
@@ -349,7 +399,7 @@ class Saver {
             if (updatedValue != null) {
                 builder.variable(updatedValue);
             } else {
-                builder.nullVariables(updatedProps.get(i).getElementClass());
+                builder.nullVariable(updatedProps.get(i).getElementClass());
             }
         }
         if (version != null) {
@@ -363,19 +413,13 @@ class Saver {
         }
         builder.sql(" where ");
 
-        separator = "";
-        int keyCount = keyProps.size();
-        for (int i = 0; i < keyCount; i++) {
-            builder.sql(separator);
-            separator = " and ";
-            builder.
-                    sql(keyProps.get(i).<Column>getStorage().getName())
-                    .sql(" = ")
-                    .variable(keyValues.get(i));
-        }
+        builder.
+                sql(type.getIdProp().<Column>getStorage().getName())
+                .sql(" = ")
+                .variable(draftSpi.__get(type.getIdProp().getName()));
         if (version != null) {
             builder
-                    .sql(separator)
+                    .sql(" and ")
                     .sql(type.getVersionProp().<Column>getStorage().getName())
                     .sql(" = ")
                     .variable(version);
@@ -389,16 +433,16 @@ class Saver {
                 PreparedStatement::executeUpdate
         );
         if (rowCount != 0) {
-            addOutput(type.getTableName(), rowCount);
+            addOutput(AffectedTable.of(type), rowCount);
+            if (version != null) {
+                increaseDraftVersion(draftSpi);
+            }
+            cache.save(draftSpi);
         }
-        if (version != null) {
-            draftSpi = increaseDraftVersion(draftSpi);
-        }
-        cache.save(draftSpi);
     }
 
     @SuppressWarnings("unchecked")
-    private ImmutableSpi findAssociatedObject(DraftSpi example) {
+    private ImmutableSpi find(DraftSpi example) {
 
         ImmutableSpi cached = cache.find(example);
         if (cached != null) {
@@ -419,6 +463,12 @@ class Saver {
             }
             return q.select(table);
         }).execute(con);
+
+        if (rows.size() > 1) {
+            throw new ExecutionException(
+                    "Key properties " + actualKeyProps + " cannot guarantee uniqueness"
+            );
+        }
 
         ImmutableSpi spi = rows.isEmpty() ? null : rows.get(0);
         if (spi != null) {
@@ -448,8 +498,10 @@ class Saver {
         return keyProps;
     }
 
-    private void addOutput(String tableName, int affectedRowCount) {
-        affectedRowCountMap.merge(tableName, affectedRowCount, Integer::sum);
+    private void addOutput(AffectedTable affectTable, int affectedRowCount) {
+        if (affectedRowCount != 0) {
+            affectedRowCountMap.merge(affectTable, affectedRowCount, Integer::sum);
+        }
     }
 
     private boolean isNonIdPropLoaded(ImmutableSpi spi) {
@@ -505,7 +557,7 @@ class Saver {
         return nonIdPropLoaded;
     }
 
-    private static DraftSpi setDraftId(DraftSpi spi, Object id) {
+    private static void setDraftId(DraftSpi spi, Object id) {
         ImmutableType type = spi.__type();
         ImmutableProp idProp = type.getIdProp();
         Object convertedId = Converts.tryConvert(id, idProp.getElementClass());
@@ -514,19 +566,15 @@ class Saver {
                     "The type of generated id does not match the property \"" + idProp + "\""
             );
         }
-        return (DraftSpi) Internal.produce(type, spi, draft -> {
-            ((DraftSpi)draft).__set(idProp.getName(), convertedId);
-        });
+        spi.__set(idProp.getName(), convertedId);
     }
 
-    private static DraftSpi increaseDraftVersion(DraftSpi spi) {
+    private static void increaseDraftVersion(DraftSpi spi) {
         ImmutableType type = spi.__type();
         ImmutableProp versionProp = type.getVersionProp();
-        return (DraftSpi) Internal.produce(type, spi, draft -> {
-            ((DraftSpi)draft).__set(
-                    versionProp.getName(),
-                    (Integer)((DraftSpi) draft).__get(versionProp.getName()) + 1
-            );
-        });
+        spi.__set(
+                versionProp.getName(),
+                (Integer)spi.__get(versionProp.getName()) + 1
+        );
     }
 }

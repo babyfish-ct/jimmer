@@ -2,21 +2,14 @@ package org.babyfish.jimmer.sql.common;
 
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class AbstractQueryTest extends AbstractTest {
 
     private List<?> rows;
-
-    @BeforeAll
-    public static void beforeAll() {
-        jdbc(AbstractTest::initDatabase);
-    }
 
     protected <R> void executeAndExpect(
             TypedRootQuery<R> query,

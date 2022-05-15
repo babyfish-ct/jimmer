@@ -14,7 +14,7 @@ public interface AbstractSaveCommand<C extends AbstractSaveCommand<C>> {
 
     interface Cfg {
 
-        Cfg setMode(Mode mode);
+        Cfg setMode(SaveMode mode);
 
         Cfg setKeyProps(ImmutableProp ... props);
 
@@ -29,7 +29,7 @@ public interface AbstractSaveCommand<C extends AbstractSaveCommand<C>> {
 
         Cfg setAutoAttaching(Class<?> entityType, String prop);
 
-        <T extends TableEx<?>> Cfg setAutoAttaching(
+        <T extends Table<?>> Cfg setAutoAttaching(
                 Class<T> tableType,
                 Function<T, Table<?>> block
         );
@@ -44,13 +44,7 @@ public interface AbstractSaveCommand<C extends AbstractSaveCommand<C>> {
         );
     }
 
-    enum Mode {
-        UPSERT,
-        INSERT_ONLY,
-        UPDATE_ONLY
-    }
-
     interface KeyPropCfg<T extends Table<?>> {
-        KeyPropCfg<T> addKeyProp(Function<T, PropExpression<?>> block);
+        KeyPropCfg<T> add(Function<T, PropExpression<?>> block);
     }
 }

@@ -144,7 +144,7 @@ class ResultMapper {
                     Object target =
                             targetId != null ?
                                     Internal.produce(targetType, null, targetDraft -> {
-                                        DraftSpi targetSpi = (DraftSpi) draft;
+                                        DraftSpi targetSpi = (DraftSpi) targetDraft;
                                         targetSpi.__set(targetType.getIdProp().getName(), targetId);
                                     }) :
                                     null;

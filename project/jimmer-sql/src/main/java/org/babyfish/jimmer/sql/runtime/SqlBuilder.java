@@ -50,6 +50,13 @@ public class SqlBuilder {
         return this;
     }
 
+    public <T> SqlBuilder variable(Class<T> type, T value) {
+        if (value != null) {
+            return variable(value);
+        }
+        return nullVariable(type);
+    }
+
     public SqlBuilder variable(Object value) {
         validate();
         if (value instanceof Tuple2<?,?>) {
@@ -199,7 +206,7 @@ public class SqlBuilder {
     }
 
     @SuppressWarnings("unchecked")
-    public SqlBuilder nullVariables(Class<?> type) {
+    public SqlBuilder nullVariable(Class<?> type) {
         validate();
         ScalarProvider<Object, Object> scalarProvider =
                 sqlClient.getScalarProvider((Class<Object>)type);

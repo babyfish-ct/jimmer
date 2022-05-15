@@ -59,17 +59,17 @@ public class ImmutableProp {
 
         try {
             getter = declaringType.getJavaClass().getDeclaredMethod(name);
-        } catch (NoSuchMethodException ex) {
+        } catch (NoSuchMethodException ignored) {
         }
         try {
             getter = declaringType.getJavaClass().getDeclaredMethod(
                     "get" + name.substring(0).toUpperCase() + name.substring(1));
-        } catch (NoSuchMethodException ex) {
+        } catch (NoSuchMethodException ignored) {
         }
         try {
             getter = declaringType.getJavaClass().getDeclaredMethod(
                     "is" + name.substring(0).toUpperCase() + name.substring(1));
-        } catch (NoSuchMethodException ex) {
+        } catch (NoSuchMethodException ignored) {
         }
         if (getter == null) {
             throw new AssertionError(
@@ -214,6 +214,31 @@ public class ImmutableProp {
                                     "\" for property \"" +
                                     this +
                                     "\""
+                    );
+                }
+                if (resolved.isReference() &&
+                        associationAnnotation.annotationType() != OneToOne.class &&
+                        associationAnnotation.annotationType() != OneToMany.class
+                ) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it must be one-to-one of one-to-many property " +
+                                    "because its mappedBy property \"" +
+                                    resolved +
+                                    "\" is reference"
+                    );
+                }
+                if (resolved.isEntityList() &&
+                        associationAnnotation.annotationType() != ManyToMany.class
+                ) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it must be many-to-many property " +
+                                    "because its mappedBy property \"" +
+                                    resolved +
+                                    "\" is list"
                     );
                 }
                 this.mappedBy = resolved;

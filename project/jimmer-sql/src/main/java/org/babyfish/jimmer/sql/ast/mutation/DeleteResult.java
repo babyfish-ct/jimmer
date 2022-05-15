@@ -4,7 +4,7 @@ import java.util.Map;
 
 public class DeleteResult extends AbstractMutationResult {
 
-    public DeleteResult(Map<String, Integer> affectedRowCountMap) {
+    public DeleteResult(Map<AffectedTable, Integer> affectedRowCountMap) {
         super(affectedRowCountMap);
     }
 

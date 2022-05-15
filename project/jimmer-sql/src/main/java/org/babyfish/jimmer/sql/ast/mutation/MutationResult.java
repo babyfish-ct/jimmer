@@ -6,7 +6,7 @@ public interface MutationResult {
 
     int getTotalAffectedRowCount();
 
-    Map<String, Integer> getAffectedRowCountMap();
+    Map<AffectedTable, Integer> getAffectedRowCountMap();
 
-    int getAffectedRowCount(String tableName);
+    int getAffectedRowCount(AffectedTable affectTable);
 }

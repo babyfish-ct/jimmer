@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
 import java.util.Map;
-import java.util.Objects;
 
 public class SimpleSaveResult<E> extends AbstractMutationResult {
 
@@ -10,7 +9,7 @@ public class SimpleSaveResult<E> extends AbstractMutationResult {
     private E modifiedEntity;
 
     public SimpleSaveResult(
-            Map<String, Integer> affectedRowCountMap,
+            Map<AffectedTable, Integer> affectedRowCountMap,
             E originalEntity,
             E modifiedEntity
     ) {

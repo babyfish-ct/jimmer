@@ -5,7 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.sql.Column;
 import org.babyfish.jimmer.meta.sql.MiddleTable;
 import org.babyfish.jimmer.sql.OnDeleteAction;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
@@ -22,7 +22,7 @@ public class Deleter {
 
     private Connection con;
 
-    private Map<String, Integer> affectedRowCountMap;
+    private Map<AffectedTable, Integer> affectedRowCountMap;
 
     private Map<ImmutableType, Set<Object>> preHandleIdInputMap =
             new LinkedHashMap<>();
@@ -40,7 +40,7 @@ public class Deleter {
     Deleter(
             DeleteCommandImpl.Data data,
             Connection con,
-            Map<String, Integer> affectedRowCountMap
+            Map<AffectedTable, Integer> affectedRowCountMap
     ) {
         this.data = data;
         this.con = con;
@@ -71,8 +71,8 @@ public class Deleter {
         }
     }
 
-    private void addOutput(String tableName, int affectedRowCount) {
-        affectedRowCountMap.merge(tableName, affectedRowCount, Integer::sum);
+    private void addOutput(AffectedTable affectTable, int affectedRowCount) {
+        affectedRowCountMap.merge(affectTable, affectedRowCount, Integer::sum);
     }
 
     public DeleteResult execute() {
@@ -99,16 +99,19 @@ public class Deleter {
         }
         for (ImmutableProp prop : immutableType.getProps().values()) {
             ImmutableProp mappedByProp = prop.getMappedBy();
+            ImmutableProp middleTableProp = null;
             MiddleTable middleTable = null;
             if (mappedByProp != null) {
                 if (mappedByProp.getStorage() instanceof MiddleTable) {
-                    middleTable = ((MiddleTable) mappedByProp.getStorage()).getInverse();
+                    middleTableProp = mappedByProp;
+                    middleTable = middleTableProp.<MiddleTable>getStorage().getInverse();
                 }
             } else if (prop.getStorage() instanceof MiddleTable) {
-                middleTable = (MiddleTable) prop.getStorage();
+                middleTableProp = prop;
+                middleTable = middleTableProp.getStorage();
             }
             if (middleTable != null) {
-                deleteFromMiddleTable(middleTable, ids);
+                deleteFromMiddleTable(middleTableProp, middleTable, ids);
             }
             if (prop.isEntityList() &&
                     mappedByProp != null &&
@@ -126,7 +129,11 @@ public class Deleter {
         addPostHandleInput(immutableType, ids);
     }
 
-    private void deleteFromMiddleTable(MiddleTable middleTable, Collection<Object> ids) {
+    private void deleteFromMiddleTable(
+            ImmutableProp middleTableProp,
+            MiddleTable middleTable,
+            Collection<Object> ids
+    ) {
         SqlBuilder builder = new SqlBuilder(data.getSqlClient());
         builder.sql("delete from ");
         builder.sql(middleTable.getTableName());
@@ -150,7 +157,7 @@ public class Deleter {
                         sqlResult._2(),
                         PreparedStatement::executeUpdate
                 );
-        addOutput(middleTable.getTableName(), affectedRowCount);
+        addOutput(AffectedTable.middle(middleTableProp), affectedRowCount);
     }
 
     private void updateChildTable(
@@ -185,7 +192,7 @@ public class Deleter {
                         sqlResult._2(),
                         PreparedStatement::executeUpdate
                 );
-        addOutput(childType.getTableName(), affectedRowCount);
+        addOutput(AffectedTable.of(childType), affectedRowCount);
     }
 
     private void tryDeleteFromChildTable(ImmutableProp manyToOneProp, Collection<?> ids) {
@@ -275,6 +282,6 @@ public class Deleter {
                         sqlResult._2(),
                         PreparedStatement::executeUpdate
                 );
-        addOutput(type.getTableName(), affectedRowCount);
+        addOutput(AffectedTable.of(type), affectedRowCount);
     }
 }

@@ -234,7 +234,7 @@ public class MutableUpdateImpl
 
         static Target of(PropExpression<?> expr) {
             PropExpressionImpl<?> exprImpl = (PropExpressionImpl<?>) expr;
-            TableImplementor<?> targetTable = TableImplementor.unwrap(exprImpl.getTable());
+            TableImplementor<?> targetTable = TableImplementor.unwrap(exprImpl.getTableImplementor());
             if (targetTable.getParent() != null && exprImpl.getProp().isId()) {
                 return new Target(targetTable.getParent(), targetTable.getJoinProp(), expr);
             } else {

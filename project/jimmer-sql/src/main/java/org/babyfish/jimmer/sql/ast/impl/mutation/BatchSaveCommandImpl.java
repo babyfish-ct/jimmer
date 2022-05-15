@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.BatchSaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
@@ -31,7 +32,7 @@ class BatchSaveCommandImpl<E>
     @Override
     public BatchSaveResult<E> execute(Connection con) {
         ImmutableCache cache = new ImmutableCache(data);
-        Map<String, Integer> affectedRowCountMap = new LinkedHashMap<>();
+        Map<AffectedTable, Integer> affectedRowCountMap = new LinkedHashMap<>();
         List<SimpleSaveResult<E>> simpleSaveResults = entities
                 .stream()
                 .map(it -> new Saver(data, con, cache, affectedRowCountMap).save(it))
