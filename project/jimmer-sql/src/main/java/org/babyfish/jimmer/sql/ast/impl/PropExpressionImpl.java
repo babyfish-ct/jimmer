@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.sql.Column;
+import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.ast.ComparableExpression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.PropExpression;

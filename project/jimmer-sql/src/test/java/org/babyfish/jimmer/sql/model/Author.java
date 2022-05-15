@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.model;
 
-import org.babyfish.jimmer.meta.sql.UUIDIdGenerator;
+import org.babyfish.jimmer.sql.Key;
+import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -16,8 +17,10 @@ public interface Author {
     @GeneratedValue(generator = UUIDIdGenerator.FULL_NAME)
     UUID id();
 
+    @Key
     String firstName();
 
+    @Key
     String lastName();
 
     Gender gender();

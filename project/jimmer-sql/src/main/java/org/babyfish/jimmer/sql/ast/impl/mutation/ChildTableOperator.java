@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.sql.Column;
+import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.Converts;

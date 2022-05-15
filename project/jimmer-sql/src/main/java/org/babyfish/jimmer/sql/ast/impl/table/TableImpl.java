@@ -2,8 +2,8 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.sql.Column;
-import org.babyfish.jimmer.meta.sql.MiddleTable;
+import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;

@@ -142,11 +142,7 @@ public class SaveTest extends AbstractMutationTest {
                         BookStoreDraft.$.produce(store -> {
                             store.setName("TURING");
                         })
-                ).configure(cfg -> {
-                    cfg.setKeyProps(BookStoreTable.class, it -> {
-                        it.add(BookStoreTable::name);
-                    });
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -179,11 +175,7 @@ public class SaveTest extends AbstractMutationTest {
                             store.setWebsite("http://www.oreilly.com");
                             store.setVersion(0);
                         })
-                ).configure(cfg -> {
-                    cfg.setKeyProps(BookStoreTable.class, it -> {
-                        it.add(BookStoreTable::name);
-                    });
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -224,11 +216,7 @@ public class SaveTest extends AbstractMutationTest {
                             book.setPrice(new BigDecimal(30));
                             book.store(true).setId(manningId);
                         })
-                ).configure(cfg -> {
-                    cfg.setKeyProps(BookTable.class, it -> {
-                        it.add(BookTable::name).add(BookTable::edition);
-                    });
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -272,11 +260,7 @@ public class SaveTest extends AbstractMutationTest {
                             book.setEdition(3);
                             book.store(true).setId(manningId);
                         })
-                ).configure(cfg -> {
-                    cfg.setKeyProps(BookTable.class, it -> {
-                        it.add(BookTable::name).add(BookTable::edition);
-                    });
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -325,9 +309,7 @@ public class SaveTest extends AbstractMutationTest {
                             store.addIntoBooks(book -> book.setId(learningGraphQLId1));
                             store.addIntoBooks(book -> book.setId(learningGraphQLId2));
                         })
-                ).configure(cfg -> {
-                    cfg.setKeyProps(BookStoreTable.class, it -> it.add(BookStoreTable::name));
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -385,9 +367,7 @@ public class SaveTest extends AbstractMutationTest {
                             store.addIntoBooks(book -> book.setId(learningGraphQLId2));
                             store.addIntoBooks(book -> book.setId(learningGraphQLId3));
                         })
-                ).configure(cfg -> {
-                    cfg.setKeyProps(BookStoreTable.class, it -> it.add(BookStoreTable::name));
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -448,10 +428,7 @@ public class SaveTest extends AbstractMutationTest {
                             store.addIntoBooks(book -> book.setId(learningGraphQLId2));
                             store.addIntoBooks(book -> book.setId(learningGraphQLId3));
                         })
-                ).configure(cfg -> {
-                    cfg.setKeyProps(BookStoreTable.class, it -> it.add(BookStoreTable::name));
-                    cfg.setAutoDetaching(BookStoreTable.Ex.class, BookStoreTable.Ex::books);
-                }),
+                ).configure(cfg -> cfg.setAutoDetaching(BookStoreTable.Ex.class, BookStoreTable.Ex::books)),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -529,11 +506,7 @@ public class SaveTest extends AbstractMutationTest {
                             book.addIntoAuthors(author -> author.setId(danId));
                             book.addIntoAuthors(author -> author.setId(borisId));
                         })
-                ).configure(cfg -> {
-                    cfg.setKeyProps(BookTable.class, it -> {
-                        it.add(BookTable::name).add(BookTable::edition);
-                    });
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
@@ -592,11 +565,7 @@ public class SaveTest extends AbstractMutationTest {
                             book.addIntoAuthors(author -> author.setId(danId));
                             book.addIntoAuthors(author -> author.setId(borisId));
                         })
-                ).configure(cfg -> {
-                    cfg.setKeyProps(BookTable.class, it -> {
-                        it.add(BookTable::name).add(BookTable::edition);
-                    });
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
@@ -657,11 +626,7 @@ public class SaveTest extends AbstractMutationTest {
                             author.addIntoBooks(book -> book.setId(effectiveTypeScriptId3));
                             author.addIntoBooks(book -> book.setId(programmingTypeScriptId3));
                         })
-                ).configure(cfg -> {
-                    cfg.setKeyProps(AuthorTable.class, it -> {
-                        it.add(AuthorTable::firstName).add(AuthorTable::lastName);
-                    });
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -723,11 +688,7 @@ public class SaveTest extends AbstractMutationTest {
                             author.addIntoBooks(book -> book.setId(effectiveTypeScriptId3));
                             author.addIntoBooks(book -> book.setId(programmingTypeScriptId3));
                         })
-                ).configure(cfg -> {
-                    cfg.setKeyProps(AuthorTable.class, it -> {
-                        it.add(AuthorTable::firstName).add(AuthorTable::lastName);
-                    });
-                }),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

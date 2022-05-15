@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ImmutableProps;
-import org.babyfish.jimmer.sql.OnDeleteAction;
+import org.babyfish.jimmer.sql.DeleteAction;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
@@ -52,7 +52,7 @@ class DeleteCommandImpl implements DeleteCommand {
     public DeleteCommand configure(Consumer<Cfg> block) {
         Data newData = new Data(this.data);
         block.accept(newData);
-        if (newData.onDeleteActionMap.isEmpty()) {
+        if (newData.deleteActionMap.isEmpty()) {
             return this;
         }
         return new DeleteCommandImpl(this, newData);
@@ -69,39 +69,39 @@ class DeleteCommandImpl implements DeleteCommand {
 
         private SqlClient sqlClient;
 
-        private Map<ImmutableProp, OnDeleteAction> onDeleteActionMap;
+        private Map<ImmutableProp, DeleteAction> deleteActionMap;
 
         private boolean frozen;
 
         Data(SqlClient sqlClient) {
             this.sqlClient = sqlClient;
-            this.onDeleteActionMap = new LinkedHashMap<>();
+            this.deleteActionMap = new LinkedHashMap<>();
         }
 
         Data(Data base) {
             this.sqlClient = base.sqlClient;
-            this.onDeleteActionMap = new LinkedHashMap<>(base.onDeleteActionMap);
+            this.deleteActionMap = new LinkedHashMap<>(base.deleteActionMap);
         }
 
         public SqlClient getSqlClient() {
             return sqlClient;
         }
 
-        public OnDeleteAction getOnDeleteAction(ImmutableProp prop) {
-            OnDeleteAction action = onDeleteActionMap.get(prop);
-            return action != null ? action : OnDeleteAction.NONE;
+        public DeleteAction getDeleteAction(ImmutableProp prop) {
+            DeleteAction action = deleteActionMap.get(prop);
+            return action != null ? action : prop.getDeleteAction();
         }
 
         public Data freeze() {
             if (!frozen) {
-                onDeleteActionMap = Collections.unmodifiableMap(onDeleteActionMap);
+                deleteActionMap = Collections.unmodifiableMap(deleteActionMap);
                 frozen = true;
             }
             return this;
         }
 
         @Override
-        public Cfg setOnDeleteAction(ImmutableProp prop, OnDeleteAction onDeleteAction) {
+        public Cfg setDeleteAction(ImmutableProp prop, DeleteAction deleteAction) {
             if (frozen) {
                 throw new IllegalStateException("The configuration is frozen");
             }
@@ -109,20 +109,20 @@ class DeleteCommandImpl implements DeleteCommand {
             if (!prop.isReference()) {
                 throw new IllegalArgumentException("'" + prop + "' is not reference property");
             }
-            if (onDeleteAction == OnDeleteAction.SET_NULL && !prop.isNullable()) {
+            if (deleteAction == DeleteAction.SET_NULL && !prop.isNullable()) {
                 throw new IllegalArgumentException(
                         "'" + prop + "' is not nullable so that it does not support 'on delete set null'"
                 );
             }
-            onDeleteActionMap.put(prop, onDeleteAction);
+            deleteActionMap.put(prop, deleteAction);
             return this;
         }
 
         @Override
-        public Cfg setOnDeleteAction(
+        public Cfg setDeleteAction(
                 Class<?> entityType,
                 String prop,
-                OnDeleteAction onDeleteAction
+                DeleteAction deleteAction
         ) {
             ImmutableType immutableType = ImmutableType.get(entityType);
             ImmutableProp immutableProp = immutableType.getProps().get(prop);
@@ -131,17 +131,17 @@ class DeleteCommandImpl implements DeleteCommand {
                         "'" + prop + "' is not reference property of \"" + entityType.getName() + "\""
                 );
             }
-            return setOnDeleteAction(immutableProp, onDeleteAction);
+            return setDeleteAction(immutableProp, deleteAction);
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public <T extends Table<?>> Cfg setOnDeleteAction(
+        public <T extends Table<?>> Cfg setDeleteAction(
                 Class<T> tableType,
                 Function<T, Table<?>> block,
-                OnDeleteAction onDeleteAction
+                DeleteAction deleteAction
         ) {
-            return setOnDeleteAction(ImmutableProps.join(tableType, block), onDeleteAction);
+            return setDeleteAction(ImmutableProps.join(tableType, block), deleteAction);
         }
     }
 }

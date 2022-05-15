@@ -1,9 +1,8 @@
 package org.babyfish.jimmer.sql;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.sql.IdGenerator;
-import org.babyfish.jimmer.meta.sql.UserIdGenerator;
+import org.babyfish.jimmer.sql.meta.IdGenerator;
+import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.impl.mutation.EntitiesImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
@@ -21,7 +20,6 @@ import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;

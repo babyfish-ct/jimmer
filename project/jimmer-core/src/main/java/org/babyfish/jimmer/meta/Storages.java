@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.meta;
 
-import org.babyfish.jimmer.meta.sql.Column;
-import org.babyfish.jimmer.meta.sql.MiddleTable;
-import org.babyfish.jimmer.meta.sql.Storage;
+import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.MiddleTable;
+import org.babyfish.jimmer.sql.meta.Storage;
 
 import javax.persistence.*;
 import java.lang.annotation.Annotation;

@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.meta.sql;
+package org.babyfish.jimmer.sql.meta;
 
 public interface UserIdGenerator extends IdGenerator {
 
