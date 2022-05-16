@@ -6,15 +6,89 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
+import org.babyfish.jimmer.sql.meta.MiddleTable;
+import org.babyfish.jimmer.util.StaticCache;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiFunction;
 
 public class AssociationType implements ImmutableType {
 
+    private static final StaticCache<ImmutableProp, AssociationType> CACHE =
+            new StaticCache<>(AssociationType::new, false);
 
+    private MiddleTable middleTable;
+
+    private ImmutableProp baseProp;
+
+    private ImmutableType sourceType;
+
+    private ImmutableType targetType;
+
+    private AssociationProp sourceProp;
+
+    private AssociationProp targetProp;
+
+    private Map<String, ImmutableProp> props;
+
+    public static AssociationType of(ImmutableProp prop) {
+        return CACHE.get(prop);
+    }
+
+    private AssociationType(ImmutableProp baseProp) {
+
+        this.baseProp = baseProp;
+
+        ImmutableProp mappedBy = baseProp.getMappedBy();
+
+        if (mappedBy != null && mappedBy.getStorage() instanceof MiddleTable) {
+            middleTable = mappedBy.<MiddleTable>getStorage().getInverse();
+        } else if (baseProp.getStorage() instanceof MiddleTable){
+            middleTable = baseProp.getStorage();
+        }
+
+        if (middleTable == null) {
+            throw new IllegalArgumentException(
+                    "\"" +
+                            baseProp +
+                            "\" is neither association bases on middle table nor " +
+                            "inverse association of that"
+            );
+        }
+        sourceType = baseProp.getDeclaringType();
+        targetType = baseProp.getTargetType();
+
+        sourceProp = new AssociationProp.Source(this);
+        targetProp = new AssociationProp.Target(this);
+        Map<String, ImmutableProp> map = new LinkedHashMap<>();
+        map.put(sourceProp.getName(), sourceProp);
+        map.put(targetProp.getName(), targetProp);
+        props = Collections.unmodifiableMap(map);
+    }
+
+    public ImmutableProp getBaseProp() {
+        return baseProp;
+    }
+
+    public MiddleTable getMiddleTable() {
+        return middleTable;
+    }
+
+    public ImmutableType getSourceType() {
+        return sourceType;
+    }
+
+    public ImmutableType getTargetType() {
+        return targetType;
+    }
+
+    public AssociationProp getSourceProp() {
+        return sourceProp;
+    }
+
+    public AssociationProp getTargetProp() {
+        return targetProp;
+    }
 
     @Override
     public Class<?> getJavaClass() {
@@ -22,8 +96,34 @@ public class AssociationType implements ImmutableType {
     }
 
     @Override
-    public ImmutableType getSuperType() {
-        return null;
+    public String getTableName() {
+        return middleTable.getTableName();
+    }
+
+    @Override
+    public Map<String, ImmutableProp> getDeclaredProps() {
+        return props;
+    }
+
+    @Override
+    public Map<String, ImmutableProp> getProps() {
+        return props;
+    }
+
+    @Override
+    public ImmutableProp getProp(String name) {
+        ImmutableProp prop = props.get(name);
+        if (prop == null) {
+            throw new IllegalArgumentException(
+                    "There is no property \"" + name + "\" in \"" + this + "\""
+            );
+        }
+        return prop;
+    }
+
+    @Override
+    public Map<String, ImmutableProp> getSelectableProps() {
+        return props;
     }
 
     @Override
@@ -32,13 +132,13 @@ public class AssociationType implements ImmutableType {
     }
 
     @Override
-    public Map<String, ImmutableProp> getDeclaredProps() {
+    public ImmutableType getSuperType() {
         return null;
     }
 
     @Override
     public ImmutableProp getIdProp() {
-        return null;
+        throw new UnsupportedOperationException("Id property is not supported by association type");
     }
 
     @Override
@@ -52,27 +152,12 @@ public class AssociationType implements ImmutableType {
     }
 
     @Override
-    public String getTableName() {
-        return null;
-    }
-
-    @Override
-    public Map<String, ImmutableProp> getProps() {
-        return null;
-    }
-
-    @Override
-    public ImmutableProp getProp(String name) {
-        return null;
-    }
-
-    @Override
-    public Map<String, ImmutableProp> getSelectableProps() {
-        return null;
-    }
-
-    @Override
     public IdGenerator getIdGenerator() {
         return null;
+    }
+
+    @Override
+    public String toString() {
+        return "MiddleTable(" + baseProp + ")";
     }
 }

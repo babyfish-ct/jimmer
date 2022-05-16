@@ -1,8 +1,9 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
+import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTableWrapper;
-import org.babyfish.jimmer.util.OptionalValueCache;
+import org.babyfish.jimmer.util.StaticCache;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -11,13 +12,16 @@ import java.util.Arrays;
 
 public class TableExWrappers {
 
-    private static final OptionalValueCache<Class<?>, Constructor<?>> CACHE =
-            new OptionalValueCache<>(TableExWrappers::createConstructor);
+    private static final StaticCache<Class<?>, Constructor<?>> CACHE =
+            new StaticCache<>(TableExWrappers::createConstructor);
 
     private TableExWrappers() {}
 
     @SuppressWarnings("unchecked")
     public static <T extends TableEx<?>> T wrap(TableImplementor<?> table) {
+        if (table.getImmutableType() instanceof AssociationType || table instanceof AbstractTableWrapper<?>) {
+            return (T)table;
+        }
         Class<?> javaClass = table.getImmutableType().getJavaClass();
         Constructor<?> constructor = CACHE.get(javaClass);
         if (constructor == null) {

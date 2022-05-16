@@ -5,6 +5,8 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.association.Association;
+import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
@@ -120,9 +122,34 @@ class ResultMapper {
 
     private Object map(Selection<?> selection) throws SQLException {
         if (selection instanceof Table<?>) {
-            return map(TableImplementor.unwrap((Table<?>)selection).getImmutableType());
+            ImmutableType immutableType = TableImplementor
+                    .unwrap((Table<?>)selection)
+                    .getImmutableType();
+            if (immutableType instanceof AssociationType) {
+                return map((AssociationType)immutableType);
+            }
+            return map(immutableType);
         }
         return read(((ExpressionImplementor<?>)selection).getType());
+    }
+
+    private Association<?, ?> map(AssociationType associationType) throws SQLException {
+
+        ImmutableType sourceType = associationType.getSourceType();
+        ImmutableType targetType = associationType.getTargetType();
+        ImmutableProp sourceIdProp = sourceType.getIdProp();
+        ImmutableProp targetIdProp = targetType.getIdProp();
+
+        Object sourceId = read(sourceIdProp.getElementClass());
+        Object targetId = read(targetIdProp.getElementClass());
+
+        Object source = Internal.produce(sourceType, null, srcDraft -> {
+            ((DraftSpi) srcDraft).__set(sourceIdProp.getName(), sourceId);
+        });
+        Object target = Internal.produce(targetType, null, tgtDraft -> {
+            ((DraftSpi) tgtDraft).__set(targetIdProp.getName(), targetId);
+        });
+        return new Association<>(source, target);
     }
 
     private Object map(ImmutableType immutableType) throws SQLException {

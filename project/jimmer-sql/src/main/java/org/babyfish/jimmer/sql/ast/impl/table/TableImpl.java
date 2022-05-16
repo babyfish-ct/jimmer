@@ -2,6 +2,8 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.association.meta.AssociationProp;
+import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -49,6 +51,13 @@ class TableImpl<E> implements TableImplementor<E> {
             ImmutableProp joinProp,
             JoinType joinType
     ) {
+        if (parent != null && immutableType instanceof AssociationType) {
+            throw new AssertionError("Internal bug: Bad constructor arguments for TableImpl");
+        }
+        if ((parent == null) != (joinProp == null)) {
+            throw new AssertionError("Internal bug: Bad constructor arguments for TableImpl");
+        }
+
         this.statement = statement;
         this.immutableType = immutableType;
         this.parent = parent;
@@ -56,9 +65,6 @@ class TableImpl<E> implements TableImplementor<E> {
         this.joinProp = joinProp;
         this.joinType = joinType;
 
-        if ((parent == null) != (joinProp == null)) {
-            throw new AssertionError("Internal bug: Bad constructor arguments for TableImpl");
-        }
         if (joinProp != null) {
             if (joinProp.getStorage() instanceof MiddleTable) {
                 middleTableAlias = statement.getTableAliasAllocator().allocate();
@@ -106,21 +112,6 @@ class TableImpl<E> implements TableImplementor<E> {
     @Override
     public String getAlias() {
         return alias;
-    }
-
-    protected TableImpl<?> createChildTable(
-            boolean isInverse,
-            ImmutableProp joinProp,
-            JoinType joinType
-    ) {
-        return new TableImpl<>(
-                statement,
-                isInverse ? joinProp.getDeclaringType() : joinProp.getTargetType(),
-                this,
-                isInverse,
-                joinProp,
-                joinType
-        );
     }
 
     @Override
@@ -224,6 +215,11 @@ class TableImpl<E> implements TableImplementor<E> {
                             "' because it's transient association"
             );
         }
+        if (isInverse && prop instanceof AssociationProp) {
+            throw new ExecutionException(
+                    "Cannot join to '" + prop + "' by inverse mode because it's property of association entity"
+            );
+        }
 
         statement.validateMutable();
 
@@ -255,7 +251,10 @@ class TableImpl<E> implements TableImplementor<E> {
             }
             return TableWrappers.wrap(existing);
         }
-        TableImpl<?> newTable = createChildTable(
+        TableImpl<?> newTable = new TableImpl<>(
+                statement,
+                isInverse ? prop.getDeclaringType() : prop.getTargetType(),
+                this,
                 isInverse,
                 prop,
                 joinType
@@ -311,7 +310,23 @@ class TableImpl<E> implements TableImplementor<E> {
         }
     }
 
-    private void renderJoin(SqlBuilder sqlBuilder, RenderMode mode) {
+    private void renderJoin(SqlBuilder builder, RenderMode mode) {
+
+        if (joinProp instanceof AssociationProp) {
+            if (builder.isTableUsed(this)) {
+                renderJoinImpl(
+                        builder,
+                        joinType,
+                        parent.alias,
+                        joinProp.<Column>getStorage().getName(),
+                        immutableType.getTableName(),
+                        alias,
+                        immutableType.getIdProp().<Column>getStorage().getName(),
+                        mode
+                );
+            }
+            return;
+        }
 
         TableImpl<?> parent = this.parent;
         JoinType joinType = this.joinType;
@@ -322,7 +337,7 @@ class TableImpl<E> implements TableImplementor<E> {
 
         if (middleTable != null) {
             renderJoinImpl(
-                    sqlBuilder,
+                    builder,
                     joinType,
                     parent.alias,
                     ((Column)parent.immutableType.getIdProp().getStorage()).getName(),
@@ -331,12 +346,12 @@ class TableImpl<E> implements TableImplementor<E> {
                     middleTable.getJoinColumnName(),
                     mode
             );
-            if (sqlBuilder.isTableUsed(this) && (
+            if (builder.isTableUsed(this) && (
                     mode == RenderMode.NORMAL ||
                             mode == RenderMode.DEEPER_JOIN_ONLY)
             ) {
                 renderJoinImpl(
-                        sqlBuilder,
+                        builder,
                         joinType,
                         middleTableAlias,
                         middleTable.getTargetJoinColumnName(),
@@ -346,9 +361,9 @@ class TableImpl<E> implements TableImplementor<E> {
                         RenderMode.NORMAL
                 );
             }
-        } else if (sqlBuilder.isTableUsed(this)) {
+        } else if (builder.isTableUsed(this)) {
             renderJoinImpl(
-                    sqlBuilder,
+                    builder,
                     joinType,
                     parent.alias,
                     ((Column)joinProp.getStorage()).getName(),

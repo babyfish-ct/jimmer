@@ -7,12 +7,10 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
-import org.babyfish.jimmer.sql.ast.impl.query.RootMutableQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
-import org.babyfish.jimmer.sql.ast.impl.table.TableExImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -20,17 +18,16 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.List;
-import java.util.Map;
 
 public class MutableDeleteImpl
         extends AbstractMutableStatementImpl
         implements MutableDelete, Executable<Integer> {
 
-    private DeleteQuery deleteQuery;
+    private MutableRootQueryImpl<TableEx<?>> deleteQuery;
 
     public MutableDeleteImpl(SqlClient sqlClient, ImmutableType immutableType) {
         super(new TableAliasAllocator(), sqlClient);
-        deleteQuery = new DeleteQuery(sqlClient, immutableType);
+        deleteQuery = new MutableRootQueryImpl<>(sqlClient, immutableType);
     }
 
     @SuppressWarnings("unchecked")
@@ -79,21 +76,6 @@ public class MutableDeleteImpl
             builder.sql(separator);
             separator = " and ";
             ((Ast) predicate).renderTo(builder);
-        }
-    }
-
-    private static class DeleteQuery extends RootMutableQueryImpl<TableEx<?>> {
-
-        public DeleteQuery(SqlClient sqlClient, ImmutableType immutableType) {
-            super(sqlClient, immutableType);
-        }
-
-        @Override
-        protected TableImplementor<?> createTableImpl(ImmutableType immutableType) {
-            return TableExImplementor.create(
-                    this,
-                    immutableType
-            );
         }
     }
 }

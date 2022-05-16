@@ -5,7 +5,7 @@ import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftContext;
-import org.babyfish.jimmer.util.OptionalValueCache;
+import org.babyfish.jimmer.util.StaticCache;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -19,8 +19,8 @@ public class Metadata {
 
     private static final Class<?> TABLE_CLASS;
 
-    private static OptionalValueCache<Class<?>, ImmutableTypeImpl> CACHE =
-            new OptionalValueCache<>(Metadata::create);
+    private static StaticCache<Class<?>, ImmutableTypeImpl> CACHE =
+            new StaticCache<>(Metadata::create);
 
     public static ImmutableTypeImpl get(Class<?> javaClass) {
         ImmutableTypeImpl immutableType = CACHE.get(javaClass);
