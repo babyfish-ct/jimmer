@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql;
 
+import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public interface SqlClient {
 
@@ -35,6 +37,17 @@ public interface SqlClient {
     <T extends Table<?>, R> ConfigurableTypedRootQuery<T, R> createQuery(
             Class<T> tableType,
             BiFunction<MutableRootQuery<T>, T, ConfigurableTypedRootQuery<T, R>> block
+    );
+
+    <SE, ST extends Table<SE>, TE, TT extends Table<TE>, R>
+    ConfigurableTypedRootQuery<AssociationTable<SE, ST, TE, TT>, R> createAssociationQuery(
+            Class<ST> sourceTableType,
+            Function<ST, TT> targetTableGetter,
+            BiFunction<
+                    MutableRootQuery<AssociationTable<SE, ST, TE, TT>>,
+                    AssociationTable<SE, ST, TE, TT>,
+                    ConfigurableTypedRootQuery<AssociationTable<SE, ST, TE, TT>, R>
+            > block
     );
 
     <T extends TableEx<?>> Executable<Integer> createUpdate(

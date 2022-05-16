@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.persistence.criteria.JoinType;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.UUID;
 
 public class PagingTest extends AbstractQueryTest {
@@ -257,7 +258,7 @@ public class PagingTest extends AbstractQueryTest {
                                         "limit ?, ?"
                         );
                         ctx.variables(1, 2);
-                        ctx.rows("GraphQL in Action", "Learning GraphQL");
+                        ctx.rows(Arrays.asList("GraphQL in Action", "Learning GraphQL"));
                     }
             );
         });
@@ -279,7 +280,7 @@ public class PagingTest extends AbstractQueryTest {
                                         "offset ? rows fetch next ? rows only"
                         );
                         ctx.variables(1, 2);
-                        ctx.rows("GraphQL in Action", "Learning GraphQL");
+                        ctx.rows(Arrays.asList("GraphQL in Action", "Learning GraphQL"));
                     }
             );
         });
@@ -305,7 +306,7 @@ public class PagingTest extends AbstractQueryTest {
                                         ") limited__ where rn__ > ?"
                         );
                         ctx.variables(3, 1);
-                        ctx.rows("GraphQL in Action", "Learning GraphQL");
+                        ctx.rows(Arrays.asList("GraphQL in Action", "Learning GraphQL"));
                     }
             );
         });
@@ -328,7 +329,7 @@ public class PagingTest extends AbstractQueryTest {
                                         ") core__ where rownum <= ?"
                         );
                         ctx.variables(2);
-                        ctx.rows("Effective TypeScript", "GraphQL in Action");
+                        ctx.rows(Arrays.asList("Effective TypeScript", "GraphQL in Action"));
                     }
             );
         });
