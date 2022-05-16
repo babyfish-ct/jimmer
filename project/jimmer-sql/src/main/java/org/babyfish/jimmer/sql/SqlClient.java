@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
@@ -61,6 +63,17 @@ public interface SqlClient {
     );
 
     Entities getEntities();
+
+    <ST extends Table<?>> Associations getAssociations(
+            Class<ST> sourceTableType,
+            Function<ST, ? extends Table<?>> block
+    );
+
+    Associations getAssociations(Class<?> entityType, String prop);
+
+    Associations getAssociations(ImmutableProp immutableProp);
+
+    Associations getAssociations(AssociationType associationType);
 
     class Builder {
 
