@@ -4,8 +4,8 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.ExistsPredicate;
-import org.babyfish.jimmer.sql.ast.impl.table.TableExImplementor;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedSubQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.NullOrderMode;
@@ -15,57 +15,52 @@ import org.babyfish.jimmer.sql.ast.tuple.*;
 import java.util.Arrays;
 import java.util.Collections;
 
-public class SubMutableQueryImpl
+public class MutableSubQueryImpl
         extends AbstractMutableQueryImpl
         implements MutableSubQuery {
 
-    private AbstractMutableQueryImpl parentQuery;
+    private AbstractMutableStatementImpl parent;
 
-    public SubMutableQueryImpl(
-            AbstractMutableQueryImpl parentQuery,
+    public MutableSubQueryImpl(
+            AbstractMutableStatementImpl parent,
             ImmutableType immutableType
     ) {
         super(
-                parentQuery.getTableAliasAllocator(),
-                parentQuery.getSqlClient(),
+                parent.getTableAliasAllocator(),
+                parent.getSqlClient(),
                 immutableType
         );
-        this.parentQuery = parentQuery;
+        this.parent = parent;
     }
 
     @Override
-    protected TableExImplementor<?> createTableImpl(ImmutableType immutableType) {
-        return TableExImplementor.create(this, immutableType);
+    public MutableSubQueryImpl where(Predicate... predicates) {
+        return (MutableSubQueryImpl) super.where(predicates);
     }
 
     @Override
-    public SubMutableQueryImpl where(Predicate... predicates) {
-        return (SubMutableQueryImpl) super.where(predicates);
+    public MutableSubQueryImpl groupBy(Expression<?>... expressions) {
+        return (MutableSubQueryImpl) super.groupBy(expressions);
     }
 
     @Override
-    public SubMutableQueryImpl groupBy(Expression<?>... expressions) {
-        return (SubMutableQueryImpl) super.groupBy(expressions);
+    public MutableSubQueryImpl having(Predicate... predicates) {
+        return (MutableSubQueryImpl) super.having(predicates);
     }
 
     @Override
-    public SubMutableQueryImpl having(Predicate... predicates) {
-        return (SubMutableQueryImpl) super.having(predicates);
+    public MutableSubQueryImpl orderBy(Expression<?> expression) {
+        return (MutableSubQueryImpl) super.orderBy(expression);
     }
 
     @Override
-    public SubMutableQueryImpl orderBy(Expression<?> expression) {
-        return (SubMutableQueryImpl) super.orderBy(expression);
+    public MutableSubQueryImpl orderBy(Expression<?> expression, OrderMode orderMode) {
+        return (MutableSubQueryImpl) super.orderBy(expression, orderMode);
     }
 
     @Override
-    public SubMutableQueryImpl orderBy(Expression<?> expression, OrderMode orderMode) {
-        return (SubMutableQueryImpl) super.orderBy(expression, orderMode);
-    }
-
-    @Override
-    public SubMutableQueryImpl orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
-        return (SubMutableQueryImpl) super.orderBy(expression, orderMode, nullOrderMode);
+    public MutableSubQueryImpl orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
+        return (MutableSubQueryImpl) super.orderBy(expression, orderMode, nullOrderMode);
     }
 
     @Override

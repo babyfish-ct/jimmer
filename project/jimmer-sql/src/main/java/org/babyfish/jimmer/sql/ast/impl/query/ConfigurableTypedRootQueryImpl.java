@@ -26,15 +26,15 @@ public class ConfigurableTypedRootQueryImpl<T extends Table<?>, R>
 
     public ConfigurableTypedRootQueryImpl(
             TypedQueryData data,
-            RootMutableQueryImpl<T> baseQuery
+            MutableRootQueryImpl<T> baseQuery
     ) {
         super(data, baseQuery);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public RootMutableQueryImpl<T> getBaseQuery() {
-        return (RootMutableQueryImpl<T>) super.getBaseQuery();
+    public MutableRootQueryImpl<T> getBaseQuery() {
+        return (MutableRootQueryImpl<T>) super.getBaseQuery();
     }
 
     @SuppressWarnings("unchecked")

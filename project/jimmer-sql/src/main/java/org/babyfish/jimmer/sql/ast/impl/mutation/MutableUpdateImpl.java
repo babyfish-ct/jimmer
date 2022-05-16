@@ -10,7 +10,6 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableExImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
@@ -40,7 +39,7 @@ public class MutableUpdateImpl
     public MutableUpdateImpl(SqlClient sqlClient, ImmutableType immutableType) {
         super(new TableAliasAllocator(), sqlClient);
         table = TableWrappers.wrap(
-                TableExImplementor.create(this, immutableType)
+                TableImplementor.create(this, immutableType)
         );
     }
 

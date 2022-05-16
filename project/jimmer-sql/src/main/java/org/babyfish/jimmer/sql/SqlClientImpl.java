@@ -98,7 +98,7 @@ class SqlClientImpl implements SqlClient {
                     ConfigurableTypedRootQuery<AssociationTable<SE, ST, TE, TT>, R>
             > block
     ) {
-        return null;
+        return Queries.createAssociationQuery(this, sourceTableType, targetTableGetter, block);
     }
 
     @Override

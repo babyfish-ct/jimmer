@@ -8,7 +8,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 
-public class OptionalValueCache<K, V> {
+public class StaticCache<K, V> {
 
     private Function<K, V> creator;
 
@@ -16,10 +16,17 @@ public class OptionalValueCache<K, V> {
     
     private Map<K, V> positiveCacheMap = new HashMap<>();
 
-    private Map<K, Void> negativeCacheMap = new LRUMap<>();
+    private Map<K, Void> negativeCacheMap;
 
-    public OptionalValueCache(Function<K, V> creator) {
+    public StaticCache(Function<K, V> creator) {
+        this(creator, true);
+    }
+
+    public StaticCache(Function<K, V> creator, boolean nullable) {
         this.creator = creator;
+        if (nullable) {
+             negativeCacheMap = new LRUMap<>();
+        }
     }
     
     public V get(K key) {
@@ -29,7 +36,7 @@ public class OptionalValueCache<K, V> {
 
         (lock = cacheLock.readLock()).lock();
         try {
-            if (negativeCacheMap.containsKey(key)) {
+            if (negativeCacheMap != null && negativeCacheMap.containsKey(key)) {
                 return null;
             }
             value = positiveCacheMap.get(key);
@@ -40,7 +47,7 @@ public class OptionalValueCache<K, V> {
         if (value == null) {
             (lock = cacheLock.writeLock()).lock();
             try {
-                if (negativeCacheMap.containsKey(key)) {
+                if (negativeCacheMap != null && negativeCacheMap.containsKey(key)) {
                     return null;
                 }
                 value = positiveCacheMap.get(key);
@@ -48,8 +55,12 @@ public class OptionalValueCache<K, V> {
                     value = creator.apply(key);
                     if (value != null) {
                         positiveCacheMap.put(key, value);
-                    } else {
+                    } else if (negativeCacheMap != null) {
                         negativeCacheMap.put(key, null);
+                    } else {
+                        throw new IllegalStateException(
+                                "The creator cannot return null because current static cache does not accept null values"
+                        );
                     }
                 }
             } finally {

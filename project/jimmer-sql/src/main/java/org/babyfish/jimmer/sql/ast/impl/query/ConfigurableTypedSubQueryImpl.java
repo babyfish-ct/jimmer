@@ -24,7 +24,7 @@ public class ConfigurableTypedSubQueryImpl<R>
     @SuppressWarnings("unchecked")
     ConfigurableTypedSubQueryImpl(
             TypedQueryData data,
-            SubMutableQueryImpl baseQuery
+            MutableSubQueryImpl baseQuery
     ) {
         super(data, baseQuery);
         List<Selection<?>> selections = data.getSelections();
@@ -72,8 +72,8 @@ public class ConfigurableTypedSubQueryImpl<R>
     }
 
     @Override
-    public SubMutableQueryImpl getBaseQuery() {
-        return (SubMutableQueryImpl) super.getBaseQuery();
+    public MutableSubQueryImpl getBaseQuery() {
+        return (MutableSubQueryImpl) super.getBaseQuery();
     }
 
     @Override

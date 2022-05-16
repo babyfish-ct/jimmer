@@ -16,11 +16,11 @@ import org.babyfish.jimmer.sql.ast.tuple.*;
 import java.util.Arrays;
 import java.util.Collections;
 
-public class RootMutableQueryImpl<T extends Table<?>>
+public class MutableRootQueryImpl<T extends Table<?>>
         extends AbstractMutableQueryImpl
         implements MutableRootQuery<T> {
 
-    public RootMutableQueryImpl(
+    public MutableRootQueryImpl(
             SqlClient sqlClient,
             ImmutableType immutableType
     ) {
@@ -163,32 +163,32 @@ public class RootMutableQueryImpl<T extends Table<?>>
     }
 
     @Override
-    public RootMutableQueryImpl where(Predicate... predicates) {
-        return (RootMutableQueryImpl) super.where(predicates);
+    public MutableRootQueryImpl where(Predicate... predicates) {
+        return (MutableRootQueryImpl) super.where(predicates);
     }
 
     @Override
-    public RootMutableQueryImpl groupBy(Expression<?>... expressions) {
-        return (RootMutableQueryImpl) super.groupBy(expressions);
+    public MutableRootQueryImpl groupBy(Expression<?>... expressions) {
+        return (MutableRootQueryImpl) super.groupBy(expressions);
     }
 
     @Override
-    public RootMutableQueryImpl having(Predicate... predicates) {
-        return (RootMutableQueryImpl) super.having(predicates);
+    public MutableRootQueryImpl having(Predicate... predicates) {
+        return (MutableRootQueryImpl) super.having(predicates);
     }
 
     @Override
-    public RootMutableQueryImpl orderBy(Expression<?> expression) {
-        return (RootMutableQueryImpl) super.orderBy(expression);
+    public MutableRootQueryImpl orderBy(Expression<?> expression) {
+        return (MutableRootQueryImpl) super.orderBy(expression);
     }
 
     @Override
-    public RootMutableQueryImpl orderBy(Expression<?> expression, OrderMode orderMode) {
-        return (RootMutableQueryImpl) super.orderBy(expression, orderMode);
+    public MutableRootQueryImpl orderBy(Expression<?> expression, OrderMode orderMode) {
+        return (MutableRootQueryImpl) super.orderBy(expression, orderMode);
     }
 
     @Override
-    public RootMutableQueryImpl orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
-        return (RootMutableQueryImpl) super.orderBy(expression, orderMode, nullOrderMode);
+    public MutableRootQueryImpl orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
+        return (MutableRootQueryImpl) super.orderBy(expression, orderMode, nullOrderMode);
     }
 }

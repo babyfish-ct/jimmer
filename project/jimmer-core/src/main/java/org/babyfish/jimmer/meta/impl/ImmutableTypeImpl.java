@@ -107,7 +107,7 @@ class ImmutableTypeImpl implements ImmutableType {
                     }
                 }
             }
-            this.props = props;
+            this.props = Collections.unmodifiableMap(props);
         }
         return props;
     }
@@ -132,7 +132,7 @@ class ImmutableTypeImpl implements ImmutableType {
                     selectableProps.put(prop.getName(), prop);
                 }
             }
-            this.selectableProps = selectableProps;
+            this.selectableProps = Collections.unmodifiableMap(selectableProps);
         }
         return selectableProps;
     }
