@@ -5,17 +5,12 @@ import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftContext;
+import org.babyfish.jimmer.util.OptionalValueCache;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.WeakHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
 
 public class Metadata {
@@ -24,17 +19,11 @@ public class Metadata {
 
     private static final Class<?> TABLE_CLASS;
 
-    private static Map<Class<?>, ImmutableTypeImpl> positiveCacheMap =
-            new WeakHashMap<Class<?>, ImmutableTypeImpl>();
-
-    private static Map<Class<?>, Void> negativeCacheMap =
-            new LRUMap<>();
-
-    private static ReadWriteLock cacheLock =
-            new ReentrantReadWriteLock();
+    private static OptionalValueCache<Class<?>, ImmutableTypeImpl> CACHE =
+            new OptionalValueCache<>(Metadata::create);
 
     public static ImmutableTypeImpl get(Class<?> javaClass) {
-        ImmutableTypeImpl immutableType = tryGet(javaClass);
+        ImmutableTypeImpl immutableType = CACHE.get(javaClass);
         if (immutableType == null) {
             throw new IllegalArgumentException(
                     "Cannot get immutable type for \"" + javaClass.getName() + "\""
@@ -44,40 +33,7 @@ public class Metadata {
     }
 
     public static ImmutableTypeImpl tryGet(Class<?> javaClass) {
-
-        ImmutableTypeImpl immutableType;
-        Lock lock;
-
-        (lock = cacheLock.readLock()).lock();
-        try {
-            if (negativeCacheMap.containsKey(javaClass)) {
-                return null;
-            }
-            immutableType = positiveCacheMap.get(javaClass);
-        } finally {
-            lock.unlock();
-        }
-
-        if (immutableType == null) {
-            (lock = cacheLock.writeLock()).lock();
-            try {
-                if (negativeCacheMap.containsKey(javaClass)) {
-                    return null;
-                }
-                immutableType = positiveCacheMap.get(javaClass);
-                if (immutableType == null) {
-                    immutableType = create(javaClass);
-                    if (immutableType != null) {
-                        positiveCacheMap.put(javaClass, immutableType);
-                    } else {
-                        negativeCacheMap.put(javaClass, null);
-                    }
-                }
-            } finally {
-                lock.unlock();
-            }
-        }
-        return immutableType;
+        return CACHE.get(javaClass);
     }
 
     private static ImmutableTypeImpl create(Class<?> javaClass) {
@@ -170,18 +126,6 @@ public class Metadata {
             }
         }
         return null;
-    }
-
-    private static class LRUMap<K, V> extends LinkedHashMap<K, V> {
-
-        LRUMap() {
-            super(200, .75F, true);
-        }
-
-        @Override
-        protected boolean removeEldestEntry(Map.Entry eldest) {
-            return true;
-        }
     }
 
     static {
