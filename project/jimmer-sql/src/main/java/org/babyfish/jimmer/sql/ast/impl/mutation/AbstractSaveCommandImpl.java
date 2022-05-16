@@ -167,11 +167,6 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
         @Override
         public Cfg setAutoAttaching(ImmutableProp prop) {
             validate();
-            if (!prop.isEntityList()) {
-                throw new IllegalArgumentException(
-                        "Cannot set auto attaching for '" + prop + "' because it is not list property"
-                );
-            }
             autoAttachingSet.add(prop);
             return this;
         }

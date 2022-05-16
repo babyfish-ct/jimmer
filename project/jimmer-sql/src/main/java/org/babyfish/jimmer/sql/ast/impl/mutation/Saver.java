@@ -31,6 +31,8 @@ class Saver {
 
     private Map<AffectedTable, Integer> affectedRowCountMap;
 
+    private String path;
+
     Saver(
             AbstractSaveCommandImpl.Data data,
             Connection con
@@ -47,13 +49,15 @@ class Saver {
         this.con = con;
         this.cache = cache;
         this.affectedRowCountMap = affectedRowCountMap;
+        this.path = "<root>";
     }
 
-    Saver(Saver base, AbstractSaveCommandImpl.Data data) {
+    Saver(Saver base, AbstractSaveCommandImpl.Data data, String subPath) {
         this.data = data;
         this.con = base.con;
         this.cache = base.cache;
         this.affectedRowCountMap = base.affectedRowCountMap;
+        this.path = base.path + '.' + subPath;
     }
 
     @SuppressWarnings("unchecked")
@@ -66,13 +70,13 @@ class Saver {
     }
 
     private void saveImpl(DraftSpi draftSpi) {
-        saveAssociations(draftSpi, true);
-        saveSelf(draftSpi);
-        saveAssociations(draftSpi, false);
+        saveAssociations(draftSpi, ObjectType.EXISTING, true);
+        ObjectType objectType = saveSelf(draftSpi);
+        saveAssociations(draftSpi, objectType, false);
     }
 
     @SuppressWarnings("unchecked")
-    private void saveAssociations(DraftSpi currentDraftSpi, boolean forParent) {
+    private void saveAssociations(DraftSpi currentDraftSpi, ObjectType currentObjectType, boolean forParent) {
         for (ImmutableProp prop : currentDraftSpi.__type().getProps().values()) {
             if (prop.isAssociation() &&
                     prop.getStorage() instanceof Column == forParent &&
@@ -87,7 +91,7 @@ class Saver {
 
                 ImmutableProp mappedBy = prop.getMappedBy();
                 ChildTableOperator childTableOperator = null;
-                if (mappedBy != null && mappedBy.isReference()) {
+                if (mappedBy != null && mappedBy.getStorage() instanceof Column) {
                     childTableOperator = new ChildTableOperator(
                             data.getSqlClient(),
                             con,
@@ -146,12 +150,20 @@ class Saver {
                             middleTable,
                             prop.getTargetType().getIdProp().getElementClass()
                     );
-                    int rowCount = middleTableOperator.setTargetIds(
-                            currentId,
-                            associatedObjectIds
-                    );
+                    int rowCount;
+                    if (currentObjectType == ObjectType.NEW) {
+                        rowCount = middleTableOperator.addTargetIds(
+                                currentId,
+                                associatedObjectIds
+                        );
+                    } else {
+                        rowCount = middleTableOperator.setTargetIds(
+                                currentId,
+                                associatedObjectIds
+                        );
+                    }
                     addOutput(AffectedTable.middle(middleTableProp), rowCount);
-                } else if (childTableOperator != null) {
+                } else if (childTableOperator != null && currentObjectType != ObjectType.NEW) {
                     if (data.getAutoDetachingSet().contains(prop)) {
                         List<Object> detachedTargetIds = childTableOperator.getDetachedChildIds(
                                 currentId,
@@ -167,9 +179,11 @@ class Saver {
                     } else {
                         if (!mappedBy.isNullable()) {
                             throw new ExecutionException(
-                                    "Cannot disconnect child objects by the one-to-many property \"" +
+                                    "Cannot disconnect child objects by the one-to-many association \"" +
+                                            path +
+                                            "\" because the property \"" +
                                             prop +
-                                            "\" because this property is not nullable." +
+                                            "\" is not nullable." +
                                             "You can also configure SaveCommand to automatically detach " +
                                             "disconnected child objects to resolve the problem."
                             );
@@ -191,32 +205,45 @@ class Saver {
                             SaveMode.UPSERT :
                             SaveMode.UPDATE_ONLY
             );
-            Saver associatedSaver = new Saver(this, associatedData);
-            associatedSaver.save(associatedDraftSpi);
+            Saver associatedSaver = new Saver(this, associatedData, prop.getName());
+            associatedSaver.saveImpl(associatedDraftSpi);
         }
         return associatedDraftSpi.__get(associatedDraftSpi.__type().getIdProp().getName());
     }
 
-    private void saveSelf(DraftSpi draftSpi) {
+    private ObjectType saveSelf(DraftSpi draftSpi) {
+
         if (data.getMode() == SaveMode.INSERT_ONLY) {
             insert(draftSpi);
-        } else if (data.getMode() == SaveMode.UPDATE_ONLY &&
+            return ObjectType.NEW;
+        }
+
+        if (data.getMode() == SaveMode.UPDATE_ONLY &&
                 draftSpi.__isLoaded(draftSpi.__type().getIdProp().getName())) {
             update(draftSpi, false);
-        } else {
-            ImmutableSpi existingSpi = find(draftSpi);
-            if (existingSpi != null) {
-                String idPropName = draftSpi.__type().getIdProp().getName();
-                if (draftSpi.__isLoaded(idPropName)) {
-                    update(draftSpi, false);
-                } else {
-                    draftSpi.__set(idPropName, existingSpi.__get(idPropName));
-                    update(draftSpi, true);
-                }
-            } else {
-                insert(draftSpi);
-            }
+            return ObjectType.EXISTING;
         }
+
+        ImmutableSpi existingSpi = find(draftSpi);
+        if (existingSpi != null) {
+            String idPropName = draftSpi.__type().getIdProp().getName();
+            if (draftSpi.__isLoaded(idPropName)) {
+                update(draftSpi, false);
+            } else {
+                draftSpi.__set(idPropName, existingSpi.__get(idPropName));
+                update(draftSpi, true);
+            }
+            return ObjectType.EXISTING;
+        }
+        if (data.getMode() == SaveMode.UPDATE_ONLY) {
+            throw new ExecutionException(
+                    "Cannot insert object into path \"" +
+                            path +
+                            "\" because insert operation for this path is disabled"
+            );
+        }
+        insert(draftSpi);
+        return ObjectType.NEW;
     }
 
     private void insert(DraftSpi draftSpi) {
@@ -229,7 +256,11 @@ class Saver {
         if (id == null) {
             if (idGenerator == null) {
                 throw new ExecutionException(
-                        "Cannot save \"" + type + "\" without id because id generator is not specified"
+                        "Cannot save \"" +
+                                type + "\" " +
+                                "without id into path \"" +
+                                path +
+                                "\" because id generator is not specified"
                 );
             } else if (idGenerator instanceof SequenceIdGenerator) {
                 String sql = data.getSqlClient().getDialect().getSelectIdFromSequenceSql(
@@ -276,7 +307,13 @@ class Saver {
             }
         }
         if (props.isEmpty()) {
-            throw new ExecutionException("Cannot insert \"" + type + "\" without any properties");
+            throw new ExecutionException(
+                    "Cannot insert \"" +
+                            type +
+                            "\" into path \"" +
+                            path +
+                            "\" without any properties"
+            );
         }
         SqlBuilder builder = new SqlBuilder(data.getSqlClient());
         builder
@@ -372,6 +409,8 @@ class Saver {
             throw new ExecutionException(
                     "Cannot update \"" +
                             type +
+                            "\" at the path \"" +
+                            path +
                             "\", the version property \"" +
                             type.getVersionProp() +
                             "\" is unloaded"
@@ -465,7 +504,11 @@ class Saver {
 
         if (rows.size() > 1) {
             throw new ExecutionException(
-                    "Key properties " + actualKeyProps + " cannot guarantee uniqueness"
+                    "Key properties " +
+                            actualKeyProps +
+                            " cannot guarantee uniqueness at the path \"" +
+                            path +
+                            "\""
             );
         }
 
@@ -490,7 +533,11 @@ class Saver {
         Set<ImmutableProp> keyProps = data.getKeyProps(type);
         if (keyProps == null) {
             throw new ExecutionException(
-                    "Cannot save \"" + type + "\" without id, " +
+                    "Cannot save \"" +
+                            type +
+                            "\" without id into the path \"" +
+                            path +
+                            "\", " +
                             "key properties is not configured"
             );
         }
@@ -515,29 +562,17 @@ class Saver {
                 }
             }
         }
-        if (nonIdPropLoaded) {
-            ImmutableProp versionProp = spi.__type().getVersionProp();
-            if (versionProp != null) {
-                if (spi.__isLoaded(versionProp.getName())) {
+        if (nonIdPropLoaded && !idPropLoaded) {
+            Set<ImmutableProp> keyProps = data.getKeyProps(spi.__type());
+            for (ImmutableProp keyProp : keyProps) {
+                if (!spi.__isLoaded(keyProp.getName())) {
                     throw new ExecutionException(
                             "Cannot save illegal entity object " +
                                     spi +
                                     " whose type is \"" +
                                     spi.__type() +
-                                    "\", its version property \"" +
-                                    versionProp.getName() +
-                                    "\" must be loaded when there are some loaded non-id properties"
-                    );
-                }
-            }
-            if (!idPropLoaded) {
-                Set<ImmutableProp> keyProps = data.getKeyProps(spi.__type());
-                for (ImmutableProp keyProp : keyProps) {
-                    throw new ExecutionException(
-                            "Cannot save illegal entity object " +
-                                    spi +
-                                    " whose type is \"" +
-                                    spi.__type() +
+                                    "\" into the path \"" +
+                                    path +
                                     "\", key property \"" +
                                     keyProp +
                                     "\" must be loaded when id is unloaded"
@@ -550,6 +585,8 @@ class Saver {
                             spi +
                             " whose type is \"" +
                             spi.__type() +
+                            "\" into the path \"" +
+                            path +
                             "\", no property is loaded"
             );
         }
@@ -575,5 +612,11 @@ class Saver {
                 versionProp.getName(),
                 (Integer)spi.__get(versionProp.getName()) + 1
         );
+    }
+
+    private enum ObjectType {
+        UNKNOWN,
+        NEW,
+        EXISTING
     }
 }

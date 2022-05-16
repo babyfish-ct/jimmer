@@ -1,0 +1,725 @@
+package org.babyfish.jimmer.sql.mutation;
+
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.common.AbstractMutationTest;
+import static org.babyfish.jimmer.sql.common.Constants.*;
+
+import org.babyfish.jimmer.sql.model.*;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.util.UUID;
+
+public class CascadeSaveTest extends AbstractMutationTest {
+
+    @Test
+    public void testCascadeInsertWithManyToOne() {
+        UUID newId = UUID.fromString("56506a3c-801b-4f7d-a41d-e889cdc3d67d");
+        UUID newStoreId = UUID.fromString("4749d255-2745-4f6b-99ae-61aa8fd463e0");
+        setAutoIds(Book.class, newId);
+        setAutoIds(BookStore.class, newStoreId);
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        BookDraft.$.produce(book -> {
+                            book.setName("Kotlin in Action").setEdition(1).setPrice(new BigDecimal(40));
+                            book.store(true).setName("TURING").setWebsite("http://www.turing.com");
+                        })
+                ).configure(cfg -> {
+                    cfg.setAutoAttaching(BookTable.class, BookTable::store);
+                }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                        "from BOOK_STORE as tb_1_ where tb_1_.NAME = ?"
+                        );
+                        it.variables("TURING");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into BOOK_STORE(ID, NAME, WEBSITE, VERSION) values(?, ?, ?, ?)");
+                        it.variables(newStoreId, "TURING", "http://www.turing.com", 0);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.NAME = ? " +
+                                        "and tb_1_.EDITION = ?"
+                        );
+                        it.variables("Kotlin in Action", 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) values(?, ?, ?, ?, ?)"
+                        );
+                        it.variables(newId, "Kotlin in Action", 1, new BigDecimal(40), newStoreId);
+                    });
+                    ctx.entity(it -> {
+                        it.original("{" +
+                                "\"name\":\"Kotlin in Action\"," +
+                                "\"edition\":1," +
+                                "\"price\":40," +
+                                "\"store\":{\"name\":\"TURING\",\"website\":\"http://www.turing.com\"}" +
+                                "}");
+                        it.modified("{" +
+                                "\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
+                                "\"name\":\"Kotlin in Action\"," +
+                                "\"edition\":1," +
+                                "\"price\":40," +
+                                "\"store\":{" +
+                                "\"id\":\"4749d255-2745-4f6b-99ae-61aa8fd463e0\"," +
+                                "\"name\":\"TURING\"," +
+                                "\"website\":\"http://www.turing.com\"," +
+                                "\"version\":0" +
+                                "}" +
+                                "}");
+                    });
+                    ctx.totalRowCount(2);
+                    ctx.rowCount(AffectedTable.of(Book.class), 1);
+                    ctx.rowCount(AffectedTable.of(BookStore.class), 1);
+                }
+        );
+    }
+
+    @Test
+    public void testCascadeUpdate() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        BookDraft.$.produce(book -> {
+                            book
+                                    .setId(learningGraphQLId1).setPrice(new BigDecimal(40))
+                                    .store(true)
+                                    .setId(oreillyId).setWebsite("http://www.oreilly.com").setVersion(0);
+                        })
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update BOOK_STORE " +
+                                        "set WEBSITE = ?, VERSION = VERSION + 1 " +
+                                        "where ID = ? and VERSION = ?"
+                        );
+                        it.variables("http://www.oreilly.com", oreillyId, 0);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK as tb_1_ where tb_1_.ID = ?"
+                        );
+                        it.variables(learningGraphQLId1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set PRICE = ?, STORE_ID = ? where ID = ?");
+                        it.variables(new BigDecimal(40), oreillyId, learningGraphQLId1);
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                                        "\"price\":40," +
+                                        "\"store\":{" +
+                                        "\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                                        "\"website\":\"http://www.oreilly.com\"," +
+                                        "\"version\":0}" +
+                                        "}"
+                        );
+                        it.modified(
+                                "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                                        "\"price\":40," +
+                                        "\"store\":{" +
+                                        "\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                                        "\"website\":\"http://www.oreilly.com\"," +
+                                        "\"version\":1}" +
+                                        "}"
+                        );
+                        ctx.totalRowCount(2);
+                        ctx.rowCount(AffectedTable.of(Book.class), 1);
+                        ctx.rowCount(AffectedTable.of(BookStore.class), 1);
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testCascadeInsertWithOneToMany() {
+        UUID newId = UUID.fromString("56506a3c-801b-4f7d-a41d-e889cdc3d67d");
+        UUID newBookId1 = UUID.fromString("4749d255-2745-4f6b-99ae-61aa8fd463e0");
+        UUID newBookId2 = UUID.fromString("4f351857-6cbc-4aad-ac3a-140a20034a3b");
+        setAutoIds(BookStore.class, newId);
+        setAutoIds(Book.class, newBookId1, newBookId2);
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        BookStoreDraft.$.produce(store -> {
+                            store.setName("TURING")
+                                    .addIntoBooks(book -> {
+                                        book.setName("SQL Cookbook").setEdition(1).setPrice(new BigDecimal(50));
+                                    })
+                                    .addIntoBooks(book -> {
+                                        book.setName("Learning SQL").setEdition(1).setPrice(new BigDecimal(40));
+                                    });
+                        })
+                ).configure(cfg -> {
+                    cfg.setAutoAttaching(BookStoreTable.Ex.class, BookStoreTable.Ex::books);
+                }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                        "from BOOK_STORE as tb_1_ " +
+                                        "where tb_1_.NAME = ?"
+                        );
+                        it.variables("TURING");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?)");
+                        it.variables(newId, "TURING", 0);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                        );
+                        it.variables("SQL Cookbook", 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) values(?, ?, ?, ?, ?)");
+                        it.variables(newBookId1, "SQL Cookbook", 1, new BigDecimal(50), newId);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                        );
+                        it.variables("Learning SQL", 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) values(?, ?, ?, ?, ?)");
+                        it.variables(newBookId2, "Learning SQL", 1, new BigDecimal(40), newId);
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{" +
+                                        "\"name\":\"TURING\"," +
+                                        "\"books\":[" +
+                                        "{\"name\":\"SQL Cookbook\",\"edition\":1,\"price\":50}," +
+                                        "{\"name\":\"Learning SQL\",\"edition\":1,\"price\":40}" +
+                                        "]" +
+                                        "}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
+                                        "\"name\":\"TURING\"," +
+                                        "\"version\":0," +
+                                        "\"books\":[" +
+                                        "{" +
+                                        "\"id\":\"4749d255-2745-4f6b-99ae-61aa8fd463e0\"," +
+                                        "\"name\":\"SQL Cookbook\"," +
+                                        "\"edition\":1," +
+                                        "\"price\":50," +
+                                        "\"store\":{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"}" +
+                                        "},{" +
+                                        "\"id\":\"4f351857-6cbc-4aad-ac3a-140a20034a3b\"," +
+                                        "\"name\":\"Learning SQL\"," +
+                                        "\"edition\":1," +
+                                        "\"price\":40," +
+                                        "\"store\":{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"}" +
+                                        "}" +
+                                        "]" +
+                                        "}"
+                        );
+                    });
+                    ctx.totalRowCount(3);
+                    ctx.rowCount(AffectedTable.of(Book.class), 2);
+                    ctx.rowCount(AffectedTable.of(BookStore.class), 1);
+                }
+        );
+    }
+
+    @Test
+    public void testCascadeUpdateWithOneToMany() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        BookStoreDraft.$.produce(store -> {
+                            store.setName("O'REILLY").setVersion(0)
+                                    .addIntoBooks(book -> {
+                                        book.setName("Learning GraphQL")
+                                                .setEdition(3).setPrice(new BigDecimal(45));
+                                    })
+                                    .addIntoBooks(book -> {
+                                        book.setName("GraphQL in Action")
+                                                .setEdition(3).setPrice(new BigDecimal(42));
+                                    });
+                        })
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                        "from BOOK_STORE as tb_1_ " +
+                                        "where tb_1_.NAME = ?"
+                        );
+                        it.variables("O'REILLY");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update BOOK_STORE set VERSION = VERSION + 1 where ID = ? and VERSION = ?");
+                        it.variables(oreillyId, 0);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                        );
+                        it.variables("Learning GraphQL", 3);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set PRICE = ?, STORE_ID = ? where ID = ?");
+                        it.variables(new BigDecimal(45), oreillyId, learningGraphQLId3);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                        );
+                        it.variables("GraphQL in Action", 3);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set PRICE = ?, STORE_ID = ? where ID = ?");
+                        it.variables(new BigDecimal(42), oreillyId, graphQLInActionId3);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set STORE_ID = null where STORE_ID = ? and ID not in(?, ?)");
+                        it.variables(oreillyId, learningGraphQLId3, graphQLInActionId3);
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{" +
+                                        "\"name\":\"O'REILLY\"," +
+                                        "\"version\":0," +
+                                        "\"books\":[" +
+                                        "{\"name\":\"Learning GraphQL\",\"edition\":3,\"price\":45}," +
+                                        "{\"name\":\"GraphQL in Action\",\"edition\":3,\"price\":42}" +
+                                        "]" +
+                                        "}"
+                        );
+                        it.modified(
+                                "{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                                        "\"name\":\"O'REILLY\"," +
+                                        "\"version\":1," +
+                                        "\"books\":[" +
+                                        "{" +
+                                        "\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                        "\"name\":\"Learning GraphQL\"," +
+                                        "\"edition\":3," +
+                                        "\"price\":45," +
+                                        "\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                        "},{" +
+                                        "\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                        "\"name\":\"GraphQL in Action\"," +
+                                        "\"edition\":3," +
+                                        "\"price\":42," +
+                                        "\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                        "}" +
+                                        "]" +
+                                        "}");
+                    });
+                    ctx.totalRowCount(11);
+                    ctx.rowCount(AffectedTable.of(Book.class), 10);
+                    ctx.rowCount(AffectedTable.of(BookStore.class), 1);
+                }
+        );
+    }
+
+    @Test
+    public void testCascadeInsertWithManyToMany() {
+
+        UUID newId = UUID.fromString("56506a3c-801b-4f7d-a41d-e889cdc3d67d");
+        UUID newAuthorId1 = UUID.fromString("4749d255-2745-4f6b-99ae-61aa8fd463e0");
+        UUID newAuthorId2 = UUID.fromString("4f351857-6cbc-4aad-ac3a-140a20034a3b");
+        setAutoIds(Book.class, newId);
+        setAutoIds(Author.class, newAuthorId1, newAuthorId2);
+
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        BookDraft.$.produce(book -> {
+                            book.setName("Kotlin in Action").setPrice(new BigDecimal(49)).setEdition(1)
+                                    .addIntoAuthors(author -> {
+                                        author.setFirstName("Andrey").setLastName("Breslav").setGender(Gender.MALE);
+                                    })
+                                    .addIntoAuthors(author -> {
+                                        author.setFirstName("Pierre-Yves").setLastName("Saumont").setGender(Gender.MALE);
+                                    });
+                        })
+                ).configure(cfg -> {
+                    cfg.setAutoAttaching(BookTable.Ex.class, BookTable.Ex::authors);
+                }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                        );
+                        it.variables("Kotlin in Action", 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)");
+                        it.variables(newId, "Kotlin in Action", 1, new BigDecimal(49));
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                        "from AUTHOR as tb_1_ " +
+                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
+                        );
+                        it.variables("Andrey", "Breslav");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) values(?, ?, ?, ?)");
+                        it.variables(newAuthorId1, "Andrey", "Breslav", "M");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                        "from AUTHOR as tb_1_ " +
+                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
+                        );
+                        it.variables("Pierre-Yves", "Saumont");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) values(?, ?, ?, ?)");
+                        it.variables(newAuthorId2, "Pierre-Yves", "Saumont", "M");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values (?, ?), (?, ?)");
+                        it.variables(newId, newAuthorId1, newId, newAuthorId2);
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{" +
+                                        "\"name\":\"Kotlin in Action\"," +
+                                        "\"edition\":1," +
+                                        "\"price\":49," +
+                                        "\"authors\":[" +
+                                        "{\"firstName\":\"Andrey\",\"lastName\":\"Breslav\",\"gender\":\"MALE\"}," +
+                                        "{\"firstName\":\"Pierre-Yves\",\"lastName\":\"Saumont\",\"gender\":\"MALE\"}" +
+                                        "]" +
+                                        "}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
+                                        "\"name\":\"Kotlin in Action\"," +
+                                        "\"edition\":1," +
+                                        "\"price\":49," +
+                                        "\"authors\":[" +
+                                        "{\"id\":\"4749d255-2745-4f6b-99ae-61aa8fd463e0\"," +
+                                        "\"firstName\":\"Andrey\",\"lastName\":\"Breslav\",\"gender\":\"MALE\"}," +
+                                        "{\"id\":\"4f351857-6cbc-4aad-ac3a-140a20034a3b\"," +
+                                        "\"firstName\":\"Pierre-Yves\",\"lastName\":\"Saumont\",\"gender\":\"MALE\"}" +
+                                        "]" +
+                                        "}"
+                        );
+                        ctx.totalRowCount(5);
+                        ctx.rowCount(AffectedTable.of(Book.class), 1);
+                        ctx.rowCount(AffectedTable.of(Author.class), 2);
+                        ctx.rowCount(AffectedTable.of(BookTable.Ex.class, BookTable.Ex::authors), 2);
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testCascadeUpdateWithManyToMany() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        BookDraft.$.produce(book -> {
+                            book.setName("Learning GraphQL").setPrice(new BigDecimal(49)).setEdition(3)
+                                    .addIntoAuthors(author -> {
+                                        author.setFirstName("Dan").setLastName("Vanderkam").setGender(Gender.FEMALE);
+                                    })
+                                    .addIntoAuthors(author -> {
+                                        author.setFirstName("Boris").setLastName("Cherny").setGender(Gender.FEMALE);
+                                    });
+                        })
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                        );
+                        it.variables("Learning GraphQL", 3);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set PRICE = ? where ID = ?");
+                        it.variables(new BigDecimal(49), learningGraphQLId3);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                        "from AUTHOR as tb_1_ " +
+                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
+                        );
+                        it.variables("Dan", "Vanderkam");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update AUTHOR set GENDER = ? where ID = ?");
+                        it.variables("F", danId);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                        "from AUTHOR as tb_1_ " +
+                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
+                        );
+                        it.variables("Boris", "Cherny");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update AUTHOR set GENDER = ? where ID = ?");
+                        it.variables("F", borisId);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID = ?");
+                        it.variables(learningGraphQLId3);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where (BOOK_ID, AUTHOR_ID) in ((?, ?), (?, ?))");
+                        it.variables(learningGraphQLId3, alexId, learningGraphQLId3, eveId);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values (?, ?), (?, ?)");
+                        it.variables(learningGraphQLId3, danId, learningGraphQLId3, borisId);
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{" +
+                                        "\"name\":\"Learning GraphQL\",\"edition\":3,\"price\":49," +
+                                        "\"authors\":[" +
+                                        "{\"firstName\":\"Dan\",\"lastName\":\"Vanderkam\",\"gender\":\"FEMALE\"}," +
+                                        "{\"firstName\":\"Boris\",\"lastName\":\"Cherny\",\"gender\":\"FEMALE\"}" +
+                                        "]" +
+                                        "}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                        "\"name\":\"Learning GraphQL\",\"edition\":3,\"price\":49," +
+                                        "\"authors\":[" +
+                                        "{\"id\":\"c14665c8-c689-4ac7-b8cc-6f065b8d835d\"," +
+                                        "\"firstName\":\"Dan\",\"lastName\":\"Vanderkam\",\"gender\":\"FEMALE\"}," +
+                                        "{\"id\":\"718795ad-77c1-4fcf-994a-fec6a5a11f0f\"," +
+                                        "\"firstName\":\"Boris\",\"lastName\":\"Cherny\",\"gender\":\"FEMALE\"}" +
+                                        "]" +
+                                        "}"
+                        );
+                    });
+                    ctx.totalRowCount(7);
+                    ctx.rowCount(AffectedTable.of(Book.class), 1);
+                    ctx.rowCount(AffectedTable.of(Author.class), 2);
+                    ctx.rowCount(AffectedTable.of(BookTable.Ex.class, BookTable.Ex::authors), 4);
+                }
+        );
+    }
+
+    @Test
+    public void testCascadeInsertWithInverseManyToMany() {
+
+        UUID newId = UUID.fromString("56506a3c-801b-4f7d-a41d-e889cdc3d67d");
+        UUID newBookId1 = UUID.fromString("4749d255-2745-4f6b-99ae-61aa8fd463e0");
+        UUID newBookId2 = UUID.fromString("4f351857-6cbc-4aad-ac3a-140a20034a3b");
+        setAutoIds(Author.class, newId);
+        setAutoIds(Book.class, newBookId1, newBookId2);
+
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        AuthorDraft.$.produce(author -> {
+                            author.setFirstName("Jim").setLastName("Green").setGender(Gender.MALE)
+                                    .addIntoBooks(book -> {
+                                        book.setName("Learning SQL").setEdition(1).setPrice(new BigDecimal(30));
+                                    })
+                                    .addIntoBooks(book -> {
+                                        book.setName("SQL Cookbook").setEdition(1).setPrice(new BigDecimal(40));
+                                    });
+                        })
+                ).configure(cfg -> {
+                    cfg.setAutoAttaching(AuthorTable.Ex.class, AuthorTable.Ex::books);
+                }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                        "from AUTHOR as tb_1_ " +
+                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
+                        );
+                        it.variables("Jim", "Green");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) values(?, ?, ?, ?)");
+                        it.variables(newId, "Jim", "Green", "M");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                        );
+                        it.variables("Learning SQL", 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)"
+                        );
+                        it.variables(newBookId1, "Learning SQL", 1, new BigDecimal(30));
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                        );
+                        it.variables("SQL Cookbook", 1);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)"
+                        );
+                        it.variables(newBookId2, "SQL Cookbook", 1, new BigDecimal(40));
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values (?, ?), (?, ?)");
+                        it.variables(newId, newBookId1, newId, newBookId2);
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{" +
+                                        "\"firstName\":\"Jim\",\"lastName\":\"Green\",\"gender\":\"MALE\"," +
+                                        "\"books\":[" +
+                                        "{\"name\":\"Learning SQL\",\"edition\":1,\"price\":30}," +
+                                        "{\"name\":\"SQL Cookbook\",\"edition\":1,\"price\":40}" +
+                                        "]" +
+                                        "}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
+                                        "\"firstName\":\"Jim\",\"lastName\":\"Green\",\"gender\":\"MALE\"," +
+                                        "\"books\":[" +
+                                        "{\"id\":\"4749d255-2745-4f6b-99ae-61aa8fd463e0\"," +
+                                        "\"name\":\"Learning SQL\",\"edition\":1,\"price\":30}," +
+                                        "{\"id\":\"4f351857-6cbc-4aad-ac3a-140a20034a3b\"," +
+                                        "\"name\":\"SQL Cookbook\",\"edition\":1,\"price\":40}" +
+                                        "]" +
+                                        "}"
+                        );
+                        ctx.totalRowCount(5);
+                        ctx.rowCount(AffectedTable.of(Book.class), 2);
+                        ctx.rowCount(AffectedTable.of(Author.class), 1);
+                        ctx.rowCount(AffectedTable.of(AuthorTable.Ex.class, AuthorTable.Ex::books), 2);
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testCascadeUpdateWithInverseManyToMany() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        AuthorDraft.$.produce(author ->{
+                            author.setFirstName("Eve").setLastName("Procello").setGender(Gender.FEMALE)
+                                    .addIntoBooks(book -> {
+                                        book.setName("Learning GraphQL").setEdition(3).setPrice(new BigDecimal(35));
+                                    })
+                                    .addIntoBooks(book -> {
+                                        book.setName("GraphQL in Action").setEdition(3).setPrice(new BigDecimal(28));
+                                    });
+                        })
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                        "from AUTHOR as tb_1_ " +
+                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
+                        );
+                        it.variables("Eve", "Procello");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update AUTHOR set GENDER = ? where ID = ?");
+                        it.variables("F", eveId);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                        );
+                        it.variables("Learning GraphQL", 3);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set PRICE = ? where ID = ?");
+                        it.variables(new BigDecimal(35), learningGraphQLId3);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                        );
+                        it.variables("GraphQL in Action", 3);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set PRICE = ? where ID = ?");
+                        it.variables(new BigDecimal(28), graphQLInActionId3);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select BOOK_ID from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ?");
+                        it.variables(eveId);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where (AUTHOR_ID, BOOK_ID) in ((?, ?), (?, ?))");
+                        it.variables(eveId, learningGraphQLId1, eveId, learningGraphQLId2);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values (?, ?)");
+                        it.variables(eveId, graphQLInActionId3);
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{" +
+                                        "\"firstName\":\"Eve\",\"lastName\":\"Procello\",\"gender\":\"FEMALE\"," +
+                                        "\"books\":[" +
+                                        "{\"name\":\"Learning GraphQL\",\"edition\":3,\"price\":35}," +
+                                        "{\"name\":\"GraphQL in Action\",\"edition\":3,\"price\":28}" +
+                                        "]" +
+                                        "}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
+                                        "\"firstName\":\"Eve\",\"lastName\":\"Procello\",\"gender\":\"FEMALE\"," +
+                                        "\"books\":[" +
+                                        "{\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                        "\"name\":\"Learning GraphQL\",\"edition\":3,\"price\":35" +
+                                        "},{" +
+                                        "\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                        "\"name\":\"GraphQL in Action\"," +
+                                        "\"edition\":3," +
+                                        "\"price\":28" +
+                                        "}" +
+                                        "]" +
+                                        "}"
+                        );
+                    });
+                    ctx.totalRowCount(6);
+                    ctx.rowCount(AffectedTable.of(Book.class), 2);
+                    ctx.rowCount(AffectedTable.of(Author.class), 1);
+                    ctx.rowCount(AffectedTable.of(AuthorTable.Ex.class, AuthorTable.Ex::books), 3);
+                }
+        );
+    }
+}

@@ -38,7 +38,15 @@ public class Internal {
             ImmutableType type,
             Object base,
             DraftConsumer<? extends Draft> block) {
-        Draft draft = type.getDraftFactory().apply(ctx, base);
+        Draft draft;
+        if (base instanceof Draft) {
+            if (((DraftSpi)base).__draftContext() != ctx) {
+                throw new IllegalArgumentException("base cannot be draft of another draft context");
+            }
+            draft = (Draft) base;
+        } else {
+            draft = type.getDraftFactory().apply(ctx, base);
+        }
         if (block != null) {
             try {
                 ((DraftConsumer<Draft>) block).accept(draft);

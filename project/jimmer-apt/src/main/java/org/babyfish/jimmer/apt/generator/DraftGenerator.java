@@ -115,6 +115,7 @@ public class DraftGenerator {
         builder.modifiers.add(Modifier.PUBLIC);
         builder.modifiers.add(Modifier.ABSTRACT);
         builder.addParameter(TypeName.get(prop.getReturnType()), prop.getName());
+        builder.returns(type.getDraftClassName());
         typeBuilder.addMethod(builder.build());
     }
 
@@ -128,7 +129,8 @@ public class DraftGenerator {
                                 prop.getAdderByName() :
                                 prop.getSetterName()
                 )
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .returns(type.getDraftClassName());
         if (withBase) {
             builder.addParameter(prop.getElementTypeName(), "base");
         }
