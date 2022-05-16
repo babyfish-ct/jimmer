@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.meta;
+package org.babyfish.jimmer.meta.impl;
 
 class Utils {
 

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.meta;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
+import org.babyfish.jimmer.meta.impl.Metadata;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.IdentityIdGenerator;
@@ -11,540 +12,75 @@ import org.babyfish.jimmer.runtime.DraftContext;
 
 import javax.persistence.*;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
 import java.util.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
 
-public class ImmutableType {
+public interface ImmutableType {
 
-    private static final Class<?> TABLE_CLASS;
-
-    private static Map<Class<?>, ImmutableType> positiveCacheMap =
-            new WeakHashMap<Class<?>, ImmutableType>();
-
-    private static Map<Class<?>, Void> negativeCacheMap =
-            new LRUMap<>();
-
-    private static ReadWriteLock cacheLock =
-            new ReentrantReadWriteLock();
-
-    private Class<?> javaClass;
-
-    private ImmutableType superType;
-
-    private BiFunction<DraftContext, Object, Draft> draftFactory;
-
-    private Map<String, ImmutableProp> declaredProps = new LinkedHashMap<>();
-
-    private Map<String, ImmutableProp> props;
-
-    private Map<String, ImmutableProp> selectableProps;
-
-    private ImmutableProp idProp;
-
-    private ImmutableProp versionProp;
-
-    private Set<ImmutableProp> keyProps = Collections.emptySet();
-
-    private IdGenerator idGenerator;
-
-    private String tableName;
-
-    ImmutableType(
-            Class<?> javaClass,
-            ImmutableType superType,
-            BiFunction<DraftContext, Object, Draft> draftFactory
-
-    ) {
-        this.javaClass = javaClass;
-        this.superType = superType;
-        this.draftFactory = draftFactory;
-
-        Table table = javaClass.getAnnotation(Table.class);
-        tableName = table != null ? table.name() : "";
-        if (tableName.isEmpty()) {
-            tableName = Utils.databaseIdentifier(javaClass.getSimpleName());
-        }
+    static ImmutableType get(Class<?> javaClass) {
+        return Metadata.get(javaClass);
     }
 
-    public static Builder newBuilder(
+    static ImmutableType tryGet(Class<?> javaClass) {
+        return Metadata.tryGet(javaClass);
+    }
+
+    static Builder newBuilder(
             Class<?> javaClass,
             ImmutableType superType,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
-        return new Builder(javaClass, superType, draftFactory);
+        return Metadata.newTypeBuilder(javaClass, superType, draftFactory);
     }
+    
+    Class<?> getJavaClass();
 
-    private static Class<?> getImmutableJavaClass(Class<?> javaClass) {
-        boolean matched = Arrays.stream(javaClass.getAnnotations()).anyMatch(
-                it -> it.annotationType() == Immutable.class ||
-                        it.annotationType().getName().equals("javax.persistence.Entity")
-        );
-        if (matched) {
-            return javaClass;
-        }
-        Class<?> superClass = javaClass.getSuperclass();
-        if (superClass != null && superClass != Object.class) {
-            Class<?> immutableJavaClass = getImmutableJavaClass(superClass);
-            if (immutableJavaClass != null) {
-                return immutableJavaClass;
-            }
-        }
-        for (Class<?> interfaceClass : javaClass.getInterfaces()) {
-            Class<?> immutableJavaClass = getImmutableJavaClass(interfaceClass);
-            if (immutableJavaClass != null) {
-                return immutableJavaClass;
-            }
-        }
-        return null;
-    }
+    ImmutableType getSuperType();
 
-    public static ImmutableType get(Class<?> javaClass) {
-        ImmutableType immutableType = tryGet(javaClass);
-        if (immutableType == null) {
-            throw new IllegalArgumentException(
-                    "Cannot get immutable type for \"" + javaClass.getName() + "\""
-            );
-        }
-        return immutableType;
-    }
+    BiFunction<DraftContext, Object, Draft> getDraftFactory();
 
-    public static ImmutableType tryGet(Class<?> javaClass) {
+    Map<String, ImmutableProp> getDeclaredProps();
 
-        ImmutableType immutableType;
-        Lock lock;
+    ImmutableProp getIdProp();
 
-        (lock = cacheLock.readLock()).lock();
-        try {
-            if (negativeCacheMap.containsKey(javaClass)) {
-                return null;
-            }
-            immutableType = positiveCacheMap.get(javaClass);
-        } finally {
-            lock.unlock();
-        }
+    ImmutableProp getVersionProp();
 
-        if (immutableType == null) {
-            (lock = cacheLock.writeLock()).lock();
-            try {
-                if (negativeCacheMap.containsKey(javaClass)) {
-                    return null;
-                }
-                immutableType = positiveCacheMap.get(javaClass);
-                if (immutableType == null) {
-                    immutableType = create(javaClass);
-                    if (immutableType != null) {
-                        positiveCacheMap.put(javaClass, immutableType);
-                    } else {
-                        negativeCacheMap.put(javaClass, null);
-                    }
-                }
-            } finally {
-                lock.unlock();
-            }
-        }
-        return immutableType;
-    }
+    Set<ImmutableProp> getKeyProps();
 
-    private static ImmutableType create(Class<?> javaClass) {
-        if (TABLE_CLASS != null && TABLE_CLASS.isAssignableFrom(javaClass)) {
-            if (javaClass.getTypeParameters().length != 0) {
-                return null;
-            }
-            Type type = TypeUtils
-                    .getTypeArguments(javaClass, TABLE_CLASS)
-                    .values()
-                    .iterator()
-                    .next();
-            if (!(type instanceof Class<?>)) {
-                return null;
-            }
-            javaClass = (Class<?>) type;
-        }
-        Class<?> immutableJavaClass = getImmutableJavaClass(javaClass);
-        if (immutableJavaClass == null) {
-            return null;
-        }
-        Class<?> draftClass;
-        try {
-            draftClass = Class.forName(immutableJavaClass.getName() + "Draft");
-        } catch (ClassNotFoundException ex) {
-            throw new IllegalArgumentException(
-                    "Cannot find draft type for \"" + immutableJavaClass.getName() + "\""
-            );
-        }
-        Class<?> producerClass = Arrays
-                .stream(draftClass.getDeclaredClasses())
-                .filter(it -> it.getSimpleName().equals("Producer"))
-                .findFirst()
-                .orElse(null);
-        if (producerClass == null) {
-            throw new IllegalArgumentException(
-                    "Cannot find producer type for \"" + draftClass.getName() + "\""
-            );
-        }
-        Field typeField;
-        try {
-            typeField = producerClass.getField("TYPE");
-        } catch (NoSuchFieldException ex) {
-            typeField = null;
-        }
-        if (typeField == null ||
-                !Modifier.isPublic(typeField.getModifiers()) ||
-                !Modifier.isStatic(typeField.getModifiers()) ||
-                !Modifier.isFinal(typeField.getModifiers()) ||
-                typeField.getType() != ImmutableType.class
-        ) {
-            throw new IllegalArgumentException(
-                    "Illegal producer type \"" + producerClass.getName() + "\""
-            );
-        }
-        try {
-            return (ImmutableType) typeField.get(null);
-        } catch (IllegalAccessException e) {
-            throw new AssertionError("Internal bug: Cannot access " + typeField);
-        }
-    }
+    String getTableName();
 
-    public Class<?> getJavaClass() {
-        return javaClass;
-    }
+    Map<String, ImmutableProp> getProps();
 
-    public ImmutableType getSuperType() {
-        return superType;
-    }
+    ImmutableProp getProp(String name);
 
-    public BiFunction<DraftContext, Object, Draft> getDraftFactory() {
-        return draftFactory;
-    }
+    Map<String, ImmutableProp> getSelectableProps();
 
-    public Map<String, ImmutableProp> getDeclaredProps() {
-        return declaredProps;
-    }
+    IdGenerator getIdGenerator();
 
-    public ImmutableProp getIdProp() {
-        return idProp;
-    }
+    interface Builder {
 
-    public ImmutableProp getVersionProp() {
-        return versionProp;
-    }
+        Builder id(String name, Class<?> elementType);
 
-    public Set<ImmutableProp> getKeyProps() {
-        return keyProps;
-    }
+        Builder key(String name, Class<?> elementType);
 
-    public String getTableName() {
-        return tableName;
-    }
+        Builder version(String name);
 
-    public Map<String, ImmutableProp> getProps() {
-        Map<String, ImmutableProp> props = this.props;
-        if (props == null) {
-            if (superType == null) {
-                props = declaredProps;
-            } else {
-                props = new LinkedHashMap<>(superType.getProps());
-                for (ImmutableProp declaredProp : declaredProps.values()) {
-                    if (props.put(declaredProp.getName(), declaredProp) != null) {
-                        throw new ModelException(
-                                "The property \"" +
-                                        declaredProp +
-                                        "\" overrides property of super type, this is not allowed"
-                        );
-                    }
-                }
-            }
-            this.props = props;
-        }
-        return props;
-    }
-
-    public ImmutableProp getProp(String name) {
-        ImmutableProp prop = getProps().get(name);
-        if (prop == null) {
-            throw new IllegalArgumentException(
-                    "There is no property \"" + name + "\" in \"" + this + "\""
-            );
-        }
-        return prop;
-    }
-
-    public Map<String, ImmutableProp> getSelectableProps() {
-        Map<String, ImmutableProp> selectableProps = this.selectableProps;
-        if (selectableProps == null) {
-            selectableProps = new LinkedHashMap<>();
-            selectableProps.put(getIdProp().getName(), getIdProp());
-            for (ImmutableProp prop : getProps().values()) {
-                if (!prop.isId() && prop.getStorage() instanceof Column) {
-                    selectableProps.put(prop.getName(), prop);
-                }
-            }
-            this.selectableProps = selectableProps;
-        }
-        return selectableProps;
-    }
-
-    void setIdProp(ImmutableProp idProp) {
-        this.idProp = idProp;
-        GeneratedValue generatedValue = idProp.getAnnotation(GeneratedValue.class);
-        if (generatedValue == null) {
-            return;
-        }
-        if (generatedValue.strategy() == GenerationType.AUTO) {
-            String generator = generatedValue.generator();
-            IdGenerator idGenerator = null;
-            String error = null;
-            Throwable errorCause = null;
-            if (generator.isEmpty()) {
-                error = "generator must be specified";
-            } else {
-                Class<?> idGeneratorType = null;
-                try {
-                    idGeneratorType = Class.forName(generator);
-                } catch (ClassNotFoundException ex) {
-                    error = "The class \"" + generator + "\" does not exists";
-                }
-                if (idGeneratorType != null) {
-                    if (!IdGenerator.class.isAssignableFrom(idGeneratorType)) {
-                        error = "the class \"" +
-                                generator +
-                                "\" does not implement \"" +
-                                IdGenerator.class.getName() +
-                                "\"";
-                    }
-                    try {
-                        idGenerator = (IdGenerator) idGeneratorType.getDeclaredConstructor().newInstance();
-                    } catch (InstantiationException | IllegalAccessException | NoSuchMethodException ex) {
-                        error = "cannot create the instance of \"" + generator + "\"";
-                        errorCause = ex;
-                    } catch (InvocationTargetException ex) {
-                        error = "cannot create the instance of \"" + generator + "\"";
-                        errorCause = ex.getTargetException();
-                    }
-                }
-            }
-            if (error != null) {
-                throw new ModelException(
-                        "Illegal property \"" + idProp + "\" with the annotation @GeneratedValue, " + error,
-                        errorCause
-                );
-            }
-            this.idGenerator = idGenerator;
-        } else if (generatedValue.strategy() == GenerationType.IDENTITY) {
-            this.idGenerator = IdentityIdGenerator.INSTANCE;
-        } else if (generatedValue.strategy() == GenerationType.SEQUENCE) {
-            String generator = generatedValue.generator();
-            String sequenceName;
-            if (generator.isEmpty()) {
-                sequenceName = tableName + "_ID_SEQ";
-            } else if (generator.startsWith(SEQUENCE_PREFIX)) {
-                sequenceName = generator.substring(SEQUENCE_PREFIX.length());
-            } else {
-                SequenceGenerator seqGenerator = Arrays.stream(idProp.getAnnotations(SequenceGenerator.class))
-                        .filter(it -> it.name().equals(generator))
-                        .findFirst()
-                        .orElseGet(null);
-                if (seqGenerator == null) {
-                    seqGenerator = Arrays.stream(javaClass.getAnnotationsByType(SequenceGenerator.class))
-                            .filter(it -> it.name().equals(generator))
-                            .findFirst()
-                            .orElse(null);
-                }
-                if (seqGenerator == null) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    idProp +
-                                    "\"with annotation @GeneratedValue, " +
-                                    "there is no sequence generator whose name is \"" +
-                                    generator +
-                                    "\""
-                    );
-                }
-                sequenceName = seqGenerator.sequenceName();
-            }
-            if (sequenceName.isEmpty()) {
-                sequenceName = tableName + "_ID_SEQ";
-            }
-            idGenerator = new SequenceIdGenerator(sequenceName);
-        } else {
-            throw new ModelException(
-                    "Illegal property \"" + idProp + "\" with annotation @GeneratedValue, " +
-                            "strategy \"" + generatedValue.strategy() + "\" is not supported"
-            );
-        }
-    }
-
-    void setVersionProp(ImmutableProp versionProp) {
-        this.versionProp = versionProp;
-    }
-
-    void setKeyProps(Set<ImmutableProp> keyProps) {
-        this.keyProps = Collections.unmodifiableSet(keyProps);
-    }
-
-    public IdGenerator getIdGenerator() {
-        return idGenerator;
-    }
-
-    @Override
-    public String toString() {
-        return javaClass.getName();
-    }
-
-    private static final String SEQUENCE_PREFIX = "sequence:";
-
-    public static class Builder {
-
-        private ImmutableType type;
-
-        private String idPropName;
-
-        private String versionPropName;
-
-        private List<String> keyPropNames = new ArrayList<>();
-
-        Builder(
-                Class<?> javaClass,
-                ImmutableType superType,
-                BiFunction<DraftContext, Object, Draft> draftFactory
-        ) {
-            this.type = new ImmutableType(javaClass, superType, draftFactory);
-        }
-
-        public Builder id(String name, Class<?> elementType) {
-            if (!type.javaClass.isAnnotationPresent(Entity.class)) {
-                throw new IllegalStateException("Cannot set id for type that is not entity");
-            }
-            if (idPropName != null) {
-                throw new IllegalStateException("id property has been set");
-            }
-            idPropName = name;
-            return add(name, ImmutablePropCategory.SCALAR, elementType, false);
-        }
-
-        public Builder key(String name, Class<?> elementType) {
-            if (!type.javaClass.isAnnotationPresent(Entity.class)) {
-                throw new IllegalStateException("Cannot add key for type that is not entity");
-            }
-            keyPropNames.add(name);
-            return add(name, ImmutablePropCategory.SCALAR, elementType, false);
-        }
-
-        public Builder version(String name) {
-            if (!type.javaClass.isAnnotationPresent(Entity.class)) {
-                throw new IllegalStateException("Cannot set version for type that is not entity");
-            }
-            if (versionPropName != null) {
-                throw new IllegalStateException("version property has been set");
-            }
-            versionPropName = name;
-            return add(name, ImmutablePropCategory.SCALAR, int.class, false);
-        }
-
-        public Builder add(
+        Builder add(
                 String name,
                 ImmutablePropCategory category,
                 Class<?> elementType,
                 boolean nullable
-        ) {
-            return add(
-                    name,
-                    category,
-                    elementType,
-                    nullable,
-                    null
-            );
-        }
+        );
 
-        public Builder add(
+        Builder add(
                 String name,
                 ImmutablePropCategory category,
                 Class<?> elementType,
                 boolean nullable,
                 Class<? extends Annotation> associationType
-        ) {
-            validate();
-            if (type.declaredProps.containsKey(name)) {
-                throw new IllegalArgumentException(
-                        "The property \"" +
-                                type.javaClass.getName() +
-                                "." +
-                                name +
-                                "\" is already exists"
-                );
-            }
-            type.declaredProps.put(
-                    name,
-                    new ImmutableProp(
-                            type,
-                            name,
-                            category,
-                            elementType,
-                            nullable,
-                            associationType
-                    )
-            );
-            return this;
-        }
+        );
 
-        public ImmutableType build() {
-            validate();
-            ImmutableType type = this.type;
-            type.declaredProps = Collections.unmodifiableMap(type.declaredProps);
-            if (idPropName != null) {
-                type.setIdProp(type.declaredProps.get(idPropName));
-            } else if (type.superType != null) {
-                type.setIdProp(type.superType.idProp);
-            }
-            if (versionPropName != null) {
-                type.setVersionProp(type.declaredProps.get(versionPropName));
-            } else if (type.superType != null) {
-                type.setVersionProp(type.superType.versionProp);
-            }
-            Set<ImmutableProp> keyProps = type.superType != null ?
-                    new LinkedHashSet<>(type.superType.keyProps) :
-                    new LinkedHashSet<>();
-            for (String keyPropName : keyPropNames) {
-                keyProps.add(type.declaredProps.get(keyPropName));
-            }
-            type.setKeyProps(keyProps);
-            this.type = null;
-            return type;
-        }
-
-        private void validate() {
-            if (type == null) {
-                throw new IllegalStateException("Current ImmutableType.Builder has been disposed");
-            }
-        }
-    }
-
-    private static class LRUMap<K, V> extends LinkedHashMap<K, V> {
-
-        LRUMap() {
-            super(200, .75F, true);
-        }
-
-        @Override
-        protected boolean removeEldestEntry(Map.Entry eldest) {
-            return true;
-        }
-    }
-
-    static {
-        Class<?> tableClass;
-        try {
-            tableClass = Class.forName("org.babyfish.jimmer.sql.ast.table.Table");
-        } catch (ClassNotFoundException ex) {
-            tableClass = null;
-        }
-        TABLE_CLASS = tableClass;
+        ImmutableType build();
     }
 }

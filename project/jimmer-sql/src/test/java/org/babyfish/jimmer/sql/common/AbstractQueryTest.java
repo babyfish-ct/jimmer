@@ -19,7 +19,7 @@ public class AbstractQueryTest extends AbstractTest {
         jdbc(con -> {
             rows = query.execute(con);
         });
-        block.accept(new QueryTestContext<R>());
+        block.accept(new QueryTestContext<>());
     }
 
     protected class QueryTestContext<R> {
@@ -61,9 +61,9 @@ public class AbstractQueryTest extends AbstractTest {
             block.accept((List<R>) rows);
         }
 
-        public void rows(R ... rows) {
+        public void rows(List<R> rows) {
             Assertions.assertEquals(
-                    Arrays.asList(rows),
+                    rows,
                     AbstractQueryTest.this.rows
             );
         }

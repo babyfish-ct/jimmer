@@ -1,5 +1,7 @@
-package org.babyfish.jimmer.meta;
+package org.babyfish.jimmer.meta.impl;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.meta.Storage;

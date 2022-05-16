@@ -1,11 +1,11 @@
 package org.babyfish.jimmer.sql.ast.table;
 
 public interface AssociationTable<
-        S,
-        ST extends Table<S>,
-        T,
-        TT extends Table<T>
-> extends Table<Association<S, T>> {
+        SE,
+        ST extends Table<SE>,
+        TE,
+        TT extends Table<TE>
+> extends Table<Association<SE, TE>> {
 
     @SuppressWarnings("unchecked")
     default ST source() {
