@@ -21,7 +21,7 @@ class MiddleTableOperator {
 
     private Expression<?> targetIdExpression;
 
-    public MiddleTableOperator(
+    MiddleTableOperator(
             SqlClient sqlClient,
             Connection con,
             MiddleTable middleTable,
@@ -33,7 +33,7 @@ class MiddleTableOperator {
         this.targetIdExpression = Expression.any().nullValue(targetIdType);
     }
 
-    public List<Object> getTargetIds(Object id) {
+    List<Object> getTargetIds(Object id) {
         SqlBuilder builder = new SqlBuilder(sqlClient);
         builder
                 .sql("select ")
@@ -54,13 +54,17 @@ class MiddleTableOperator {
         );
     }
 
-    public int addTargetIds(Object id, Collection<Object> targetIds) {
+    int addTargetIds(Object id, Collection<Object> targetIds) {
         if (targetIds.isEmpty()) {
             return 0;
         }
         Set<Object> set = targetIds instanceof Set<?> ?
                 (Set<Object>)targetIds :
                 new LinkedHashSet<>(targetIds);
+        return add(new OneToManyReader(id, set));
+    }
+
+    int add(IdPairReader reader) {
         SqlBuilder builder = new SqlBuilder(sqlClient);
         builder
                 .sql("insert into ")
@@ -71,14 +75,14 @@ class MiddleTableOperator {
                 .sql(middleTable.getTargetJoinColumnName())
                 .sql(") values ");
         String separator = "";
-        for (Object targetId : set) {
+        while (reader.read()) {
             builder.sql(separator);
             separator = ", ";
             builder
                     .sql("(")
-                    .variable(id)
+                    .variable(reader.sourceId())
                     .sql(", ")
-                    .variable(targetId)
+                    .variable(reader.targetId())
                     .sql(")");
         }
         Tuple2<String, List<Object>> sqlResult = builder.build();
@@ -90,13 +94,17 @@ class MiddleTableOperator {
         );
     }
 
-    public int removeTargetIds(Object id, Collection<Object> targetIds) {
+    int removeTargetIds(Object id, Collection<Object> targetIds) {
         if (targetIds.isEmpty()) {
             return 0;
         }
         Set<Object> set = targetIds instanceof Set<?> ?
                 (Set<Object>)targetIds :
                 new LinkedHashSet<>(targetIds);
+        return remove(new OneToManyReader(id, set));
+    }
+
+    int remove(IdPairReader reader) {
         SqlBuilder builder = new SqlBuilder(sqlClient);
         builder
                 .sql("delete from ")
@@ -107,14 +115,14 @@ class MiddleTableOperator {
                 .sql(middleTable.getTargetJoinColumnName())
                 .sql(") in (");
         String separator = "";
-        for (Object targetId : set) {
+        while (reader.read()) {
             builder.sql(separator);
             separator = ", ";
             builder
                     .sql("(")
-                    .variable(id)
+                    .variable(reader.sourceId())
                     .sql(", ")
-                    .variable(targetId)
+                    .variable(reader.targetId())
                     .sql(")");
         }
         builder.sql(")");
@@ -127,7 +135,7 @@ class MiddleTableOperator {
         );
     }
 
-    public int setTargetIds(Object id, Collection<Object> targetIds) {
+    int setTargetIds(Object id, Collection<Object> targetIds) {
 
         Set<Object> oldTargetIds = new LinkedHashSet<>(getTargetIds(id));
 
@@ -138,5 +146,46 @@ class MiddleTableOperator {
         removingTargetIds.removeAll(targetIds);
 
         return removeTargetIds(id, removingTargetIds) + addTargetIds(id, addingTargetIds);
+    }
+
+    interface IdPairReader {
+        boolean read();
+        Object sourceId();
+        Object targetId();
+    }
+
+    private static class OneToManyReader implements IdPairReader {
+
+        private Object sourceId;
+
+        private Iterator<Object> targetIdItr;
+
+        private Object currentTargetId;
+
+        private int index = -1;
+
+        OneToManyReader(Object sourceId, Collection<Object> targetIds) {
+            this.sourceId = sourceId;
+            this.targetIdItr = targetIds.iterator();
+        }
+
+        @Override
+        public boolean read() {
+            if (targetIdItr.hasNext()) {
+                currentTargetId = targetIdItr.next();
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public Object sourceId() {
+            return sourceId;
+        }
+
+        @Override
+        public Object targetId() {
+            return currentTargetId;
+        }
     }
 }

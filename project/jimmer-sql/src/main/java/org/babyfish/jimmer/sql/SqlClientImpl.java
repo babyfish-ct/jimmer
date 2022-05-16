@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.sql;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
@@ -122,4 +125,26 @@ class SqlClientImpl implements SqlClient {
         return entities;
     }
 
+    @Override
+    public <ST extends Table<?>> Associations getAssociations(
+            Class<ST> sourceTableType,
+            Function<ST, ? extends Table<?>> block
+    ) {
+        return getAssociations(ImmutableProps.join(sourceTableType, block));
+    }
+
+    @Override
+    public Associations getAssociations(Class<?> entityType, String prop) {
+        return getAssociations(ImmutableType.get(entityType).getProp(prop));
+    }
+
+    @Override
+    public Associations getAssociations(ImmutableProp immutableProp) {
+        return getAssociations(AssociationType.of(immutableProp));
+    }
+
+    @Override
+    public Associations getAssociations(AssociationType associationType) {
+        return new AssociationsImpl(this, associationType);
+    }
 }
