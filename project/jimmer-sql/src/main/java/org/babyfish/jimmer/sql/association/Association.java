@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.ast.table;
+package org.babyfish.jimmer.sql.association;
 
 import java.util.Objects;
 

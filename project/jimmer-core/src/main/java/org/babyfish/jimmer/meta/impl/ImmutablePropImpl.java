@@ -71,12 +71,12 @@ class ImmutablePropImpl implements ImmutableProp {
         }
         try {
             getter = declaringType.getJavaClass().getDeclaredMethod(
-                    "get" + name.substring(0).toUpperCase() + name.substring(1));
+                    "get" + name.substring(0, 1).toUpperCase() + name.substring(1));
         } catch (NoSuchMethodException ignored) {
         }
         try {
             getter = declaringType.getJavaClass().getDeclaredMethod(
-                    "is" + name.substring(0).toUpperCase() + name.substring(1));
+                    "is" + name.substring(0, 1).toUpperCase() + name.substring(1));
         } catch (NoSuchMethodException ignored) {
         }
         if (getter == null) {
