@@ -318,7 +318,8 @@ public class DraftImplGenerator {
                 .methodBuilder(prop.getSetterName())
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
-                .addParameter(prop.getTypeName(), prop.getName());
+                .addParameter(prop.getTypeName(), prop.getName())
+                .returns(type.getDraftClassName());
 
         new ValidationGenerator(prop, prop.getName(), builder).generate();
 
@@ -328,6 +329,7 @@ public class DraftImplGenerator {
         if (prop.isLoadedStateRequired()) {
             builder.addStatement("modified.$L = true", prop.getLoadedStateName());
         }
+        builder.addStatement("return this");
         typeBuilder.addMethod(builder.build());
     }
 
@@ -339,7 +341,8 @@ public class DraftImplGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(methodName)
                 .addModifiers(Modifier.PUBLIC)
-                .addAnnotation(Override.class);
+                .addAnnotation(Override.class)
+                .returns(type.getDraftClassName());
         if (withBase) {
             builder.addParameter(prop.getElementTypeName(), "base");
         }
@@ -372,6 +375,7 @@ public class DraftImplGenerator {
         } else {
             builder.addStatement("$L(null, $L)", methodName, "block");
         }
+        builder.addStatement("return this");
         typeBuilder.addMethod(builder.build());
     }
 

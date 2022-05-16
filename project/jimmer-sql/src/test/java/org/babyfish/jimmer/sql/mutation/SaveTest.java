@@ -327,10 +327,6 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql("update BOOK set STORE_ID = ? where ID in(?, ?)");
                         it.variables(newId, learningGraphQLId1, learningGraphQLId2);
                     });
-                    ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = null where STORE_ID = ? and ID not in(?, ?)");
-                        it.variables(newId, learningGraphQLId1, learningGraphQLId2);
-                    });
                     ctx.entity(it -> {
                         it.original("{" +
                                 "\"name\":\"TURING\"," +
@@ -418,82 +414,6 @@ public class SaveTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertMatchedWithOneToManyAndDetachMode() {
-        executeAndExpectResult(
-                getSqlClient().getEntities().saveCommand(
-                        BookStoreDraft.$.produce(store -> {
-                            store.setName("O'REILLY");
-                            store.setVersion(0);
-                            store.addIntoBooks(book -> book.setId(learningGraphQLId1));
-                            store.addIntoBooks(book -> book.setId(learningGraphQLId2));
-                            store.addIntoBooks(book -> book.setId(learningGraphQLId3));
-                        })
-                ).configure(cfg -> cfg.setAutoDetaching(BookStoreTable.Ex.class, BookStoreTable.Ex::books)),
-                ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                        "from BOOK_STORE as tb_1_ " +
-                                        "where tb_1_.NAME = ?"
-                        );
-                        it.variables("O'REILLY");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update BOOK_STORE set VERSION = VERSION + 1 where ID = ? and VERSION = ?");
-                        it.variables(oreillyId, 0);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID in(?, ?, ?)");
-                        it.variables(oreillyId, learningGraphQLId1, learningGraphQLId2, learningGraphQLId3);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("select ID from BOOK where STORE_ID = ? and ID not in(?, ?, ?)");
-                        it.variables(oreillyId, learningGraphQLId1, learningGraphQLId2, learningGraphQLId3);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID in(?, ?, ?, ?, ?, ?)");
-                        it.unorderedVariables(
-                                effectiveTypeScriptId1, effectiveTypeScriptId2, effectiveTypeScriptId3,
-                                programmingTypeScriptId1, programmingTypeScriptId2, programmingTypeScriptId3
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql("delete from BOOK where ID in(?, ?, ?, ?, ?, ?)");
-                        it.unorderedVariables(
-                                effectiveTypeScriptId1, effectiveTypeScriptId2, effectiveTypeScriptId3,
-                                programmingTypeScriptId1, programmingTypeScriptId2, programmingTypeScriptId3
-                        );
-                    });
-                    ctx.entity(it -> {
-                        it.original("{" +
-                                "\"name\":\"O'REILLY\"," +
-                                "\"version\":0," +
-                                "\"books\":[" +
-                                "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
-                                "{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}," +
-                                "{\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"}" +
-                                "]" +
-                                "}");
-                        it.modified("{" +
-                                "\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
-                                "\"name\":\"O'REILLY\"," +
-                                "\"version\":1," +
-                                "\"books\":[" +
-                                "{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
-                                "{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}," +
-                                "{\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"}" +
-                                "]" +
-                                "}");
-                    });
-                    ctx.totalRowCount(16);
-                    ctx.rowCount(AffectedTable.of(BookStore.class), 1);
-                    ctx.rowCount(AffectedTable.of(Book.class), 9);
-                    ctx.rowCount(AffectedTable.of(AuthorTable.Ex.class, AuthorTable.Ex::books), 6);
-                }
-        );
-    }
-
-    @Test
     public void testUpsertNotMatchedWithManyToMany() {
         UUID newId = UUID.fromString("56506a3c-801b-4f7d-a41d-e889cdc3d67d");
         setAutoIds(Book.class, newId);
@@ -518,10 +438,6 @@ public class SaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql("insert into BOOK(ID, NAME, EDITION, PRICE) values(?, ?, ?, ?)");
                         it.variables(newId, "Kotlin in Action", 1, new BigDecimal(30));
-                    });
-                    ctx.statement(it -> {
-                        it.sql("select AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID = ?");
-                        it.variables(newId);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values (?, ?), (?, ?)");
@@ -640,10 +556,6 @@ public class SaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql("insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) values(?, ?, ?, ?)");
                         it.variables(newId, "Jim", "Green", "M");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("select BOOK_ID from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ?");
-                        it.variables(newId);
                     });
                     ctx.statement(it -> {
                         it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values (?, ?), (?, ?)");

@@ -55,13 +55,16 @@ class Key {
         int index = 0;
         for (ImmutableProp keyProp : keyProps) {
             if (!spi.__isLoaded(keyProp.getName())) {
-                throw new ExecutionException(
-                        "The key property \"" +
-                                keyProp.getName() +
-                                "\" of \"" +
-                                type +
-                                "\" cannot be unloaded when the id is not specified"
-                );
+                if (force) {
+                    throw new ExecutionException(
+                            "The key property \"" +
+                                    keyProp.getName() +
+                                    "\" of \"" +
+                                    type +
+                                    "\" cannot be unloaded when the id is not specified"
+                    );
+                }
+                return null;
             }
             Object value = spi.__get(keyProp.getName());
             if (value == null) {
