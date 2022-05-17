@@ -13,8 +13,4 @@ public interface RecursiveLoader extends Loader {
     @OldChain
     @Override
     RecursiveLoader batch(int size);
-
-    @OldChain
-    @Override
-    RecursiveLoader limit(int limit);
 }

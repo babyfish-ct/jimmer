@@ -135,10 +135,22 @@ class Constants {
                     "Loader"
             );
 
+    public static final ClassName LIST_LOADER_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher",
+                    "ListLoader"
+            );
+
     public static final ClassName RECURSIVE_LOADER_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher",
                     "RecursiveLoader"
+            );
+
+    public static final ClassName RECURSIVE_LIST_LOADER_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher",
+                    "RecursiveListLoader"
             );
 
     public static final String DRAFT_FIELD_CTX =
