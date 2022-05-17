@@ -1,5 +1,6 @@
 plugins {
     java
+    antlr
     id("maven-publish")
     id("signing")
 }
@@ -20,6 +21,8 @@ dependencies {
     implementation(project(":jimmer-core"))
     implementation("javax.validation:validation-api:2.0.1.Final")
     implementation("javax.persistence:javax.persistence-api:2.2")
+
+    antlr("org.antlr:antlr4:4.10.1")
 
     testAnnotationProcessor(project(":jimmer-apt"))
 

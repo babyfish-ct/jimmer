@@ -1,30 +1,39 @@
 grammar Fetcher;
 
+@header {
+package org.babyfish.jimmer.sql.fetcher.impl.antlr;
+}
+
 fetcher
     :
-    '{' field+ '}'
+    '{' (fields += field)+ '}'
     ;
 
 field
     :
-    '*' |
-    '-' IDENTIFIER |
-    '+'? positiveField
+    (plus = '+')? (positiveField | SCALARS | SELECTABLE)
+    |
+    (minus = '-') IDENTIFIER
     ;
 
 positiveField
     :
-    IDENTIFIER arguments? fetcher?
-    ;
-
-arguments
-    :
-    ':' '{' argument (',' argument)* '}'
+    IDENTIFIER (':' '{' (arguments += argument) (',' (arguments += argument))* '}')? fetcher?
     ;
 
 argument
     :
     IDENTIFIER ':' INTEGER
+    ;
+
+SCALARS
+    :
+    '@scalars'
+    ;
+
+SELECTABLE
+    :
+    '@selectable'
     ;
 
 IDENTIFIER
