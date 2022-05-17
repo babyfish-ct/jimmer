@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.apt;
 
 import org.babyfish.jimmer.apt.generator.DraftGenerator;
+import org.babyfish.jimmer.apt.generator.FetcherGenerator;
 import org.babyfish.jimmer.apt.generator.TableGenerator;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.apt.meta.MetaException;
@@ -65,6 +66,11 @@ public class ImmutableProcessor extends AbstractProcessor {
                                     typeUtils,
                                     immutableType,
                                     true,
+                                    filer
+                            ).generate();
+                            new FetcherGenerator(
+                                    typeUtils,
+                                    immutableType,
                                     filer
                             ).generate();
                         }

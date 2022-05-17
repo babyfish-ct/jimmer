@@ -8,6 +8,7 @@ import org.babyfish.jimmer.runtime.DraftContext;
 
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 class Constants {
 
@@ -86,6 +87,9 @@ class Constants {
     public static final ClassName BI_CONSUMER_CLASS_NAME =
             ClassName.get(BiConsumer.class);
 
+    public static final ClassName CONSUMER_CLASS_NAME =
+            ClassName.get(Consumer.class);
+
     public static final ClassName EXPRESSION_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast",
@@ -111,6 +115,30 @@ class Constants {
                     "org.babyfish.jimmer.sql.ast",
                     "PropExpression",
                     "Cmp"
+            );
+
+    public static final ClassName ABSTRACT_TYPE_FETCHER_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher.spi",
+                    "AbstractTypedFetcher"
+            );
+
+    public static final ClassName FETCHER_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher",
+                    "Fetcher"
+            );
+
+    public static final ClassName LOADER_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher",
+                    "Loader"
+            );
+
+    public static final ClassName RECURSIVE_LOADER_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher",
+                    "RecursiveLoader"
             );
 
     public static final String DRAFT_FIELD_CTX =

@@ -79,6 +79,10 @@ public class TypeUtils {
         return element != null && element.toString().equals("java.util.List");
     }
 
+    public boolean isSubType(TypeMirror type, TypeMirror superType) {
+        return types.isSubtype(type, superType);
+    }
+
     public ImmutableType getImmutableType(TypeElement typeElement) {
         if (typeElement.getAnnotation(Immutable.class) != null || typeElement.getAnnotation(Entity.class) != null) {
             return immutableTypeMap.computeIfAbsent(typeElement, it -> new ImmutableType(this, it));
