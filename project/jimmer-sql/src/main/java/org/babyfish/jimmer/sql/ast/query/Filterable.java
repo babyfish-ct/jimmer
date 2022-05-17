@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.query;
 
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.table.AssociationTableEx;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 
 import java.util.function.BiConsumer;
@@ -12,12 +13,12 @@ public interface Filterable {
 
     Filterable where(Predicate...predicates);
 
-    <T extends TableEx<?>, R> ConfigurableTypedSubQuery<R> createSubQuery(
+    <T extends Table<?>, R> ConfigurableTypedSubQuery<R> createSubQuery(
             Class<T> tableType,
             BiFunction<MutableSubQuery, T, ConfigurableTypedSubQuery<R>> block
     );
 
-    <T extends TableEx<?>> MutableSubQuery createWildSubQuery(
+    <T extends Table<?>> MutableSubQuery createWildSubQuery(
             Class<T> tableType,
             BiConsumer<MutableSubQuery, T> block
     );

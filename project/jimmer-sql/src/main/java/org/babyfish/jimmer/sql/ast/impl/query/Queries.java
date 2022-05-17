@@ -39,7 +39,7 @@ public class Queries {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends TableEx<?>, R> ConfigurableTypedSubQuery<R> createSubQuery(
+    public static <T extends Table<?>, R> ConfigurableTypedSubQuery<R> createSubQuery(
             Filterable parent,
             Class<T> tableType,
             BiFunction<MutableSubQuery, T, ConfigurableTypedSubQuery<R>> block
@@ -55,7 +55,7 @@ public class Queries {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends TableEx<?>> MutableSubQuery createWildSubQuery(
+    public static <T extends Table<?>> MutableSubQuery createWildSubQuery(
             Filterable parent,
             Class<T> tableType,
             BiConsumer<MutableSubQuery, T> block

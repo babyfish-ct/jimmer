@@ -58,6 +58,13 @@ public class ImmutableProcessor extends AbstractProcessor {
                             new TableGenerator(
                                     typeUtils,
                                     immutableType,
+                                    false,
+                                    filer
+                            ).generate();
+                            new TableGenerator(
+                                    typeUtils,
+                                    immutableType,
+                                    true,
                                     filer
                             ).generate();
                         }

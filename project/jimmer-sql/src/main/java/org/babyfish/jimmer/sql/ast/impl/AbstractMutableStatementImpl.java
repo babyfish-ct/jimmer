@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedSubQuery;
 import org.babyfish.jimmer.sql.ast.query.Filterable;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.AssociationTableEx;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 
 import java.util.Objects;
@@ -61,14 +62,14 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
     }
 
     @Override
-    public <T extends TableEx<?>, R> ConfigurableTypedSubQuery<R> createSubQuery(
+    public <T extends Table<?>, R> ConfigurableTypedSubQuery<R> createSubQuery(
             Class<T> tableType, BiFunction<MutableSubQuery, T, ConfigurableTypedSubQuery<R>> block
     ) {
         return Queries.createSubQuery(this, tableType, block);
     }
 
     @Override
-    public <T extends TableEx<?>> MutableSubQuery createWildSubQuery(
+    public <T extends Table<?>> MutableSubQuery createWildSubQuery(
             Class<T> tableType, BiConsumer<MutableSubQuery, T> block
     ) {
         return Queries.createWildSubQuery(this, tableType, block);

@@ -18,6 +18,8 @@ public class TableGenerator {
     private TypeUtils typeUtils;
 
     private ImmutableType type;
+    
+    private boolean isTableEx;
 
     private Filer filer;
 
@@ -26,10 +28,12 @@ public class TableGenerator {
     public TableGenerator(
             TypeUtils typeUtils,
             ImmutableType type,
+            boolean isTableEx,
             Filer filer
     ) {
         this.typeUtils = typeUtils;
         this.type = type;
+        this.isTableEx = isTableEx;
         this.filer = filer;
     }
 
@@ -38,7 +42,7 @@ public class TableGenerator {
             JavaFile
                     .builder(
                             type.getPackageName(),
-                            generateTable(false)
+                            generateTable()
                     )
                     .indent("    ")
                     .build()
@@ -54,17 +58,16 @@ public class TableGenerator {
         }
     }
 
-    private TypeSpec generateTable(boolean subQueryTable) {
+    private TypeSpec generateTable() {
         TypeSpec.Builder oldTypeBuilder = typeBuilder;
         typeBuilder = TypeSpec
                 .classBuilder(
-                        subQueryTable ?
+                        isTableEx ?
                                 type.getTableExClassName().simpleName() :
                                 type.getTableClassName().simpleName()
                 )
                 .addModifiers(Modifier.PUBLIC);
-        if (subQueryTable) {
-            typeBuilder.addModifiers(Modifier.STATIC);
+        if (isTableEx) {
             typeBuilder.superclass(type.getTableClassName());
             typeBuilder.addSuperinterface(
                     ParameterizedTypeName.get(
@@ -79,20 +82,14 @@ public class TableGenerator {
                             type.getClassName()
                     )
             );
-            addCreateQuery();
-            addCreateSubQuery();
-            addCreateWildSubQuery();
         }
-        addConstructor(subQueryTable);
+        addConstructor();
         try {
             for (ImmutableProp prop : type.getProps().values()) {
-                if (subQueryTable || !prop.isList()){
-                    addProperty(prop, subQueryTable, false);
-                    addProperty(prop, subQueryTable, true);
+                if (prop.isList() == isTableEx) {
+                    addProperty(prop, false);
+                    addProperty(prop, true);
                 }
-            }
-            if (!subQueryTable) {
-                typeBuilder.addType(generateTable(true));
             }
             return typeBuilder.build();
         } finally {
@@ -100,97 +97,12 @@ public class TableGenerator {
         }
     }
 
-    private void addCreateQuery() {
-        TypeVariableName typeVariable = TypeVariableName.get("R");
-        MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("createQuery")
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .addTypeVariable(typeVariable)
-                .addParameter(SQL_CLIENT_CLASS_NAME, "sqlClient")
-                .addParameter(
-                        ParameterizedTypeName.get(
-                                BI_FUNCTION_CLASS_NAME,
-                                ParameterizedTypeName.get(
-                                        MUTABLE_ROOT_QUERY_CLASS_NAME,
-                                        type.getTableClassName()
-                                ),
-                                type.getTableClassName(),
-                                ParameterizedTypeName.get(
-                                        CONFIGURABLE_TYPED_ROOT_QUERY_CLASS_NAME,
-                                        type.getTableClassName(),
-                                        typeVariable
-                                )
-                        ),
-                        "block"
-                )
-                .returns(
-                        ParameterizedTypeName.get(
-                                CONFIGURABLE_TYPED_ROOT_QUERY_CLASS_NAME,
-                                type.getTableClassName(),
-                                typeVariable
-                        )
-                )
-                .addStatement(
-                        "return $T.createQuery(sqlClient, $T.class, block)",
-                        QUERIES_CLASS_NAME,
-                        type.getTableClassName()
-                );
-        typeBuilder.addMethod(builder.build());
-    }
-
-    private void addCreateSubQuery() {
-        TypeVariableName typeVariable = TypeVariableName.get("R");
-        MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("createSubQuery")
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .addTypeVariable(typeVariable)
-                .addParameter(Constants.FILTERABLE_CLASS_NAME, "parent")
-                .addParameter(
-                        ParameterizedTypeName.get(
-                                BI_FUNCTION_CLASS_NAME,
-                                MUTABLE_SUB_QUERY_CLASS_NAME,
-                                type.getTableExClassName(),
-                                ParameterizedTypeName.get(CONFIGURABLE_TYPED_SUB_QUERY_CLASS_NAME, typeVariable)
-                        ),
-                        "block"
-                )
-                .returns(ParameterizedTypeName.get(CONFIGURABLE_TYPED_SUB_QUERY_CLASS_NAME, typeVariable))
-                .addStatement(
-                        "return $T.createSubQuery(parent, $T.class, block)",
-                        QUERIES_CLASS_NAME,
-                        type.getTableExClassName()
-                );
-        typeBuilder.addMethod(builder.build());
-    }
-
-    private void addCreateWildSubQuery() {
-        MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("createWildSubQuery")
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .addParameter(Constants.FILTERABLE_CLASS_NAME, "parent")
-                .addParameter(
-                        ParameterizedTypeName.get(
-                                BI_CONSUMER_CLASS_NAME,
-                                MUTABLE_SUB_QUERY_CLASS_NAME,
-                                type.getTableExClassName()
-                        ),
-                        "block"
-                )
-                .returns(MUTABLE_SUB_QUERY_CLASS_NAME)
-                .addStatement(
-                        "return $T.createWildSubQuery(parent, $T.class, block)",
-                        QUERIES_CLASS_NAME,
-                        type.getTableExClassName()
-                );
-        typeBuilder.addMethod(builder.build());
-    }
-
-    private void addConstructor(boolean subQueryTable) {
+    private void addConstructor() {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
                 .addModifiers(Modifier.PUBLIC);
         TypeName tableTypeName;
-        if (subQueryTable) {
+        if (isTableEx) {
             tableTypeName = ParameterizedTypeName.get(
                     QUERY_TABLE_EX_CLASS_NAME,
                     type.getClassName()
@@ -209,7 +121,6 @@ public class TableGenerator {
 
     private void addProperty(
             ImmutableProp prop,
-            boolean subQueryTable,
             boolean withJoinType
     ) {
 
@@ -219,7 +130,7 @@ public class TableGenerator {
 
         TypeName returnType;
         if (prop.isAssociation()) {
-            if (subQueryTable) {
+            if (isTableEx) {
                 returnType = typeUtils
                         .getImmutableType(prop.getElementType())
                         .getTableExClassName();
@@ -258,7 +169,7 @@ public class TableGenerator {
                 .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)
                 .returns(returnType);
-        if (subQueryTable && !prop.isList()) {
+        if (isTableEx && !prop.isList()) {
             builder.addAnnotation(Override.class);
         }
         if (withJoinType) {

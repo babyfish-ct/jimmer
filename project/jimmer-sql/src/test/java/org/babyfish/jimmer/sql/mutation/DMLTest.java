@@ -6,9 +6,7 @@ import org.babyfish.jimmer.sql.common.NativeDatabases;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
-import org.babyfish.jimmer.sql.model.AuthorTable;
-import org.babyfish.jimmer.sql.model.BookStoreTable;
-import org.babyfish.jimmer.sql.model.BookTable;
+import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.junit.jupiter.api.Test;
 
@@ -19,7 +17,7 @@ public class DMLTest extends AbstractMutationTest {
     @Test
     public void testUpdate() {
         executeAndExpectRowCount(
-                getSqlClient().createUpdate(AuthorTable.Ex.class, (u, author) -> {
+                getSqlClient().createUpdate(AuthorTableEx.class, (u, author) -> {
                     u.set(author.firstName(), author.firstName().concat("*"));
                     u.where(author.firstName().eq("Dan"));
                 }),
@@ -40,7 +38,7 @@ public class DMLTest extends AbstractMutationTest {
     @Test
     public void testUpdateWithNullArgument() {
         executeAndExpectRowCount(
-                getSqlClient().createUpdate(BookStoreTable.Ex.class, (u, store) -> {
+                getSqlClient().createUpdate(BookStoreTableEx.class, (u, store) -> {
                     u.set(store.website(), Expression.nullValue(String.class));
                 }),
                 ctx -> {
@@ -60,7 +58,7 @@ public class DMLTest extends AbstractMutationTest {
         using(new MySqlDialect(), () -> {
             executeAndExpectRowCount(
                     NativeDatabases.MYSQL_DATA_SOURCE,
-                    getSqlClient().createUpdate(AuthorTable.Ex.class, (u, author) -> {
+                    getSqlClient().createUpdate(AuthorTableEx.class, (u, author) -> {
                         u.set(author.firstName(), author.firstName().concat("*"));
                         u.set(author.books().name(), author.books().name().concat("*"));
                         u.set(author.books().store().name(), author.books().store().name().concat("*"));
@@ -94,7 +92,7 @@ public class DMLTest extends AbstractMutationTest {
         using(new PostgresDialect(), () -> {
             executeAndExpectRowCount(
                     NativeDatabases.POSTGRES_DATA_SOURCE,
-                    getSqlClient().createUpdate(AuthorTable.Ex.class, (u, author) -> {
+                    getSqlClient().createUpdate(AuthorTableEx.class, (u, author) -> {
                         u.set(author.firstName(), author.firstName().concat("*"));
                         u.where(author.books().store().name().eq("MANNING"));
                     }),
@@ -127,7 +125,7 @@ public class DMLTest extends AbstractMutationTest {
         using(new PostgresDialect(), () -> {
             executeAndExpectRowCount(
                     NativeDatabases.POSTGRES_DATA_SOURCE,
-                    getSqlClient().createUpdate(AuthorTable.Ex.class, (u, author) -> {
+                    getSqlClient().createUpdate(AuthorTableEx.class, (u, author) -> {
                         u.set(author.firstName(), author.firstName().concat("*"));
                         u.where(author.books(JoinType.LEFT).store().name().eq("MANNING"));
                     }),
@@ -150,7 +148,7 @@ public class DMLTest extends AbstractMutationTest {
     @Test
     public void testDelete() {
         executeAndExpectRowCount(
-                getSqlClient().createDelete(BookTable.Ex.class, (d, book) -> {
+                getSqlClient().createDelete(BookTableEx.class, (d, book) -> {
                     d.where(book.name().eq("Learning GraphQL"));
                 }),
                 ctx -> {
@@ -166,7 +164,7 @@ public class DMLTest extends AbstractMutationTest {
     @Test
     public void testDeleteWithJoin() {
         executeAndExpectRowCount(
-                getSqlClient().createDelete(BookTable.Ex.class, (d, book) -> {
+                getSqlClient().createDelete(BookTableEx.class, (d, book) -> {
                     d.where(book.store().name().eq("MANNING"));
                 }),
                 ctx -> {

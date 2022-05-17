@@ -158,7 +158,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                     });
                         })
                 ).configure(cfg -> {
-                    cfg.setAutoAttaching(BookStoreTable.Ex.class, BookStoreTable.Ex::books);
+                    cfg.setAutoAttaching(BookStoreTableEx.class, BookStoreTableEx::books);
                 }),
                 ctx -> {
                     ctx.statement(it -> {
@@ -354,7 +354,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                     });
                         })
                 ).configure(cfg -> {
-                    cfg.setAutoAttaching(BookTable.Ex.class, BookTable.Ex::authors);
+                    cfg.setAutoAttaching(BookTableEx.class, BookTableEx::authors);
                 }),
                 ctx -> {
                     ctx.statement(it -> {
@@ -426,7 +426,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         ctx.totalRowCount(5);
                         ctx.rowCount(AffectedTable.of(Book.class), 1);
                         ctx.rowCount(AffectedTable.of(Author.class), 2);
-                        ctx.rowCount(AffectedTable.of(BookTable.Ex.class, BookTable.Ex::authors), 2);
+                        ctx.rowCount(AffectedTable.of(BookTableEx.class, BookTableEx::authors), 2);
                     });
                 }
         );
@@ -521,7 +521,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.totalRowCount(7);
                     ctx.rowCount(AffectedTable.of(Book.class), 1);
                     ctx.rowCount(AffectedTable.of(Author.class), 2);
-                    ctx.rowCount(AffectedTable.of(BookTable.Ex.class, BookTable.Ex::authors), 4);
+                    ctx.rowCount(AffectedTable.of(BookTableEx.class, BookTableEx::authors), 4);
                 }
         );
     }
@@ -547,7 +547,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                     });
                         })
                 ).configure(cfg -> {
-                    cfg.setAutoAttaching(AuthorTable.Ex.class, AuthorTable.Ex::books);
+                    cfg.setAutoAttaching(AuthorTableEx.class, AuthorTableEx::books);
                 }),
                 ctx -> {
                     ctx.statement(it -> {
@@ -619,7 +619,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         ctx.totalRowCount(5);
                         ctx.rowCount(AffectedTable.of(Book.class), 2);
                         ctx.rowCount(AffectedTable.of(Author.class), 1);
-                        ctx.rowCount(AffectedTable.of(AuthorTable.Ex.class, AuthorTable.Ex::books), 2);
+                        ctx.rowCount(AffectedTable.of(AuthorTableEx.class, AuthorTableEx::books), 2);
                     });
                 }
         );
@@ -718,7 +718,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.totalRowCount(6);
                     ctx.rowCount(AffectedTable.of(Book.class), 2);
                     ctx.rowCount(AffectedTable.of(Author.class), 1);
-                    ctx.rowCount(AffectedTable.of(AuthorTable.Ex.class, AuthorTable.Ex::books), 3);
+                    ctx.rowCount(AffectedTable.of(AuthorTableEx.class, AuthorTableEx::books), 3);
                 }
         );
     }

@@ -4,8 +4,8 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
-import org.babyfish.jimmer.sql.model.AuthorTable;
-import org.babyfish.jimmer.sql.model.BookTable;
+import org.babyfish.jimmer.sql.model.AuthorTableEx;
+import org.babyfish.jimmer.sql.model.BookTableEx;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -19,7 +19,7 @@ public class AssociationQueryTest extends AbstractQueryTest {
     public void test() {
 
         executeAndExpect(
-                getSqlClient().createAssociationQuery(BookTable.Ex.class, BookTable.Ex::authors, (q, t) -> {
+                getSqlClient().createAssociationQuery(BookTableEx.class, BookTableEx::authors, (q, t) -> {
                     q.where(t.source().name().eq("Learning GraphQL"));
                     q.where(t.target().firstName().eq("Alex"));
                     return q.select(t);
@@ -55,7 +55,7 @@ public class AssociationQueryTest extends AbstractQueryTest {
     @Test
     public void testInverse() {
         executeAndExpect(
-                getSqlClient().createAssociationQuery(AuthorTable.Ex.class, AuthorTable.Ex::books, (q, t) -> {
+                getSqlClient().createAssociationQuery(AuthorTableEx.class, AuthorTableEx::books, (q, t) -> {
                     q.where(t.source().firstName().eq("Alex"));
                     q.where(t.target().name().eq("Learning GraphQL"));
                     return q.select(t);
