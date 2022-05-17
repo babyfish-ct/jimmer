@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.example.model.AuthorTable;
+import org.babyfish.jimmer.sql.example.model.AuthorTableEx;
 import org.babyfish.jimmer.sql.example.model.Book;
 import org.babyfish.jimmer.sql.example.model.BookTable;
 
@@ -33,7 +34,7 @@ public class App {
             int pageSize
     ) {
         ConfigurableTypedRootQuery<BookTable, Tuple3<Book, Integer, Integer>> query =
-                BookTable.createQuery(SQL_CLIENT, (q, book) -> {
+                SQL_CLIENT.createQuery(BookTable.class, (q, book) -> {
                     if (name != null && !name.isEmpty()) {
                         q.where(book.name().ilike(name));
                     }
@@ -43,7 +44,7 @@ public class App {
                     if (authorName != null && !authorName.isEmpty()) {
                         q.where(
                                 book.id().in(
-                                        AuthorTable.createSubQuery(q, (sq, author) -> {
+                                        q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
                                             sq.where(
                                                     author.firstName().ilike(authorName).or(
                                                             author.lastName().ilike(authorName)
