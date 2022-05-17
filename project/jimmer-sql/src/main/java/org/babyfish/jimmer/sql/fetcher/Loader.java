@@ -6,7 +6,4 @@ public interface Loader {
 
     @OldChain
     Loader batch(int size);
-
-    @OldChain
-    Loader limit(int limit);
 }

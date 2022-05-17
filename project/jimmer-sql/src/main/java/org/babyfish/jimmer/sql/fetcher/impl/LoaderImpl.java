@@ -1,9 +1,14 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Loader;
+import org.babyfish.jimmer.sql.fetcher.RecursiveListLoader;
+import org.babyfish.jimmer.sql.fetcher.RecursiveLoader;
 
-class LoaderImpl implements Loader {
+class LoaderImpl implements RecursiveListLoader {
+
+    private ImmutableProp prop;
 
     private Fetcher<?> childFetcher;
 
@@ -11,12 +16,15 @@ class LoaderImpl implements Loader {
 
     private int limit = Integer.MAX_VALUE;
 
-    LoaderImpl(Fetcher<?> childFetcher) {
+    private int depth = 1;
+
+    LoaderImpl(ImmutableProp prop, Fetcher<?> childFetcher) {
+        this.prop = prop;
         this.childFetcher = childFetcher;
     }
 
     @Override
-    public Loader batch(int size) {
+    public RecursiveListLoader batch(int size) {
         if (size < 0) {
             throw new IllegalArgumentException("batchSize cannot be less than 0");
         }
@@ -25,8 +33,36 @@ class LoaderImpl implements Loader {
     }
 
     @Override
-    public Loader limit(int limit) {
+    public RecursiveListLoader limit(int limit) {
+        if (!prop.isEntityList()) {
+            throw new IllegalArgumentException(
+                    "Cannot set limit because current property \"" +
+                            prop +
+                            "\" is not list property"
+            );
+        }
         return this;
+    }
+
+    @Override
+    public RecursiveListLoader depth(int depth) {
+        if (!prop.getDeclaringType().getJavaClass().isAssignableFrom(prop.getTargetType().getJavaClass())) {
+            throw new IllegalArgumentException(
+                    "Cannot set depth because current property \"" +
+                            prop +
+                            "\" is not recursive property"
+            );
+        }
+        if (depth < 1) {
+            throw new IllegalArgumentException("depth cannot be less than 1");
+        }
+        this.depth = depth;
+        return this;
+    }
+
+    @Override
+    public RecursiveListLoader recursive() {
+        return depth(Integer.MAX_VALUE);
     }
 
     Fetcher<?> getChildFetcher() {
@@ -42,6 +78,6 @@ class LoaderImpl implements Loader {
     }
 
     int getDepth() {
-        return 1;
+        return depth;
     }
 }

@@ -170,12 +170,22 @@ public class FetcherGenerator {
                 prop.getElementType(),
                 type.getTypeElement().asType()
         );
+        TypeName loaderClassName;
+        if (recursive && prop.isList()) {
+            loaderClassName = Constants.RECURSIVE_LIST_LOADER_CLASS_NAME;
+        } else if (recursive) {
+            loaderClassName = Constants.RECURSIVE_LOADER_CLASS_NAME;
+        } else if (prop.isList()) {
+            loaderClassName = Constants.LIST_LOADER_CLASS_NAME;
+        } else {
+            loaderClassName = Constants.LOADER_CLASS_NAME;
+        }
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
                 .addParameter(
                         ParameterizedTypeName.get(
                                 Constants.CONSUMER_CLASS_NAME,
-                                recursive ? Constants.RECURSIVE_LOADER_CLASS_NAME : Constants.LOADER_CLASS_NAME
+                                loaderClassName
                         ),
                         "loader"
                 )

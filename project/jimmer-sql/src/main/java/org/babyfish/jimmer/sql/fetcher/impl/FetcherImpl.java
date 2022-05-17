@@ -176,19 +176,9 @@ public class FetcherImpl<E> implements Fetcher<E> {
                             "\", please call get function"
             );
         }
-        LoaderImpl loaderImpl;
+        LoaderImpl loaderImpl = loaderImpl = new LoaderImpl(immutableProp, childFetcher);
         if (loaderBlock != null) {
-            ImmutableType targetType = immutableProp.getTargetType();
-            loaderImpl = targetType != null &&
-                    immutableProp
-                            .getDeclaringType()
-                            .getJavaClass()
-                            .isAssignableFrom(targetType.getJavaClass()) ?
-                    new RecursiveLoaderImpl(childFetcher) :
-                    new LoaderImpl(childFetcher);
             ((Consumer<Loader>)loaderBlock).accept(loaderImpl);
-        } else {
-            loaderImpl = new LoaderImpl(childFetcher);
         }
         return addImpl(immutableProp, loaderImpl);
     }
