@@ -50,7 +50,9 @@ public class TableGenerator {
         } catch (IOException ex) {
             throw new GeneratorException(
                     String.format(
-                            "Cannot generate table class for '%s'",
+                            "Cannot generate " +
+                                    (isTableEx ? "tableEx" : "table") +
+                                    "class for '%s'",
                             type.getName()
                     ),
                     ex

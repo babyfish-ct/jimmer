@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.query;
 
+import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.table.AssociationTableEx;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -11,6 +12,7 @@ import java.util.function.Function;
 
 public interface Filterable {
 
+    @OldChain
     Filterable where(Predicate...predicates);
 
     <T extends Table<?>, R> ConfigurableTypedSubQuery<R> createSubQuery(

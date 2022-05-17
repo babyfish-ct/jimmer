@@ -164,7 +164,7 @@ class Saver {
                     }
                     addOutput(AffectedTable.middle(middleTableProp), rowCount);
                 } else if (childTableOperator != null && currentObjectType != ObjectType.NEW) {
-                    if (data.getAutoDetachingSet().contains(prop)) {
+                    if (data.isAutoDetachingProp(prop)) {
                         List<Object> detachedTargetIds = childTableOperator.getDetachedChildIds(
                                 currentId,
                                 associatedObjectIds
@@ -179,13 +179,19 @@ class Saver {
                     } else {
                         if (!mappedBy.isNullable()) {
                             throw new ExecutionException(
-                                    "Cannot disconnect child objects by the one-to-many association \"" +
+                                    "Cannot disconnect child objects at the path \"" +
                                             path +
-                                            "\" because the property \"" +
+                                            "\" by the one-to-many association \"" +
                                             prop +
+                                            "\" because the many-to-one property \"" +
+                                            mappedBy +
                                             "\" is not nullable." +
-                                            "You can also configure SaveCommand to automatically detach " +
-                                            "disconnected child objects to resolve the problem."
+                                            "There are two ways to resolve this issue, configure SaveCommand to automatically detach " +
+                                            "disconnected child objects of the one-to-many property \"" +
+                                            prop +
+                                            "\", or set the delete action of the many-to-one property \"" +
+                                            mappedBy +
+                                            "\" to be \"CASCADE\"."
                             );
                         }
                         int rowCount = childTableOperator.unsetParent(currentId, associatedObjectIds);
@@ -201,7 +207,7 @@ class Saver {
             AbstractSaveCommandImpl.Data associatedData =
                     new AbstractSaveCommandImpl.Data(data);
             associatedData.setMode(
-                    data.getAutoAttachingSet().contains(prop) ?
+                    data.isAutoAttachingProp(prop) ?
                             SaveMode.UPSERT :
                             SaveMode.UPDATE_ONLY
             );

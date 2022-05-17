@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
 
 public class ImmutableType {
 
+    private TypeElement typeElement;
+
     private boolean isEntity;
 
     private String packageName;
@@ -40,26 +42,29 @@ public class ImmutableType {
 
     private ImmutableProp versionProp;
 
-    private ClassName className;
+    private final ClassName className;
 
-    private ClassName draftClassName;
+    private final ClassName draftClassName;
 
-    private ClassName producerClassName;
+    private final ClassName producerClassName;
 
-    private ClassName implementorClassName;
+    private final ClassName implementorClassName;
 
-    private ClassName implClassName;
+    private final ClassName implClassName;
 
-    private ClassName draftImplClassName;
+    private final ClassName draftImplClassName;
 
-    private ClassName tableClassName;
+    private final ClassName tableClassName;
 
-    private ClassName tableExClassName;
+    private final ClassName tableExClassName;
+
+    private final ClassName fetcherClassName;
 
     public ImmutableType(
             TypeUtils typeUtils,
             TypeElement typeElement
     ) {
+        this.typeElement = typeElement;
         isEntity = typeElement.getAnnotation(Entity.class) != null;
         if (typeElement.getAnnotation(Embeddable.class) != null) {
             throw new MetaException(
@@ -219,6 +224,11 @@ public class ImmutableType {
         draftImplClassName = toClassName(name -> name + "Draft", "Producer", "DraftImpl");
         tableClassName = toClassName(name -> name + "Table");
         tableExClassName = toClassName(name -> name + "TableEx");
+        fetcherClassName = toClassName(name -> name + "Fetcher");
+    }
+
+    public TypeElement getTypeElement() {
+        return typeElement;
     }
 
     public boolean isEntity() {
@@ -309,6 +319,10 @@ public class ImmutableType {
 
     public ClassName getTableExClassName() {
         return tableExClassName;
+    }
+
+    public ClassName getFetcherClassName() {
+        return fetcherClassName;
     }
 
     private ClassName toClassName(
