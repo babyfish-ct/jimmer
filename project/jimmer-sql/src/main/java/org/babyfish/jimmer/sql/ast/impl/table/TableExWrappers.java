@@ -54,24 +54,15 @@ public class TableExWrappers {
     private static Constructor<?> createConstructor(Class<?> javaClass) {
         Class<?> tableClass;
         try {
-            tableClass = Class.forName(javaClass.getName() + "Table");
+            tableClass = Class.forName(javaClass.getName() + "TableEx");
         } catch (ClassNotFoundException ex) {
             return null;
         }
         if (!AbstractTableWrapper.class.isAssignableFrom(tableClass)) {
             return null;
         }
-        Class<?> sqtClass = Arrays.stream(tableClass.getClasses())
-                .filter(it -> it.getSimpleName().equals("Ex"))
-                .findFirst()
-                .orElse(null);
-        if (sqtClass == null ||
-                !Modifier.isStatic(sqtClass.getModifiers()) ||
-                !AbstractTableWrapper.class.isAssignableFrom(sqtClass)) {
-            return null;
-        }
         try {
-            return sqtClass.getConstructor(TableEx.class);
+            return tableClass.getConstructor(TableEx.class);
         } catch (NoSuchMethodException ex) {
             return null;
         }

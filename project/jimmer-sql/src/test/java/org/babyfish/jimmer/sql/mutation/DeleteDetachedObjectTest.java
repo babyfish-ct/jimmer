@@ -20,7 +20,7 @@ public class DeleteDetachedObjectTest extends AbstractMutationTest {
                             store.addIntoBooks(book -> book.setId(learningGraphQLId2));
                             store.addIntoBooks(book -> book.setId(learningGraphQLId3));
                         })
-                ).configure(cfg -> cfg.setAutoDetaching(BookStoreTable.Ex.class, BookStoreTable.Ex::books)),
+                ).configure(cfg -> cfg.setAutoDetaching(BookStoreTableEx.class, BookStoreTableEx::books)),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -80,7 +80,7 @@ public class DeleteDetachedObjectTest extends AbstractMutationTest {
                     ctx.totalRowCount(16);
                     ctx.rowCount(AffectedTable.of(BookStore.class), 1);
                     ctx.rowCount(AffectedTable.of(Book.class), 9);
-                    ctx.rowCount(AffectedTable.of(AuthorTable.Ex.class, AuthorTable.Ex::books), 6);
+                    ctx.rowCount(AffectedTable.of(AuthorTableEx.class, AuthorTableEx::books), 6);
                 }
         );
     }

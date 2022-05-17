@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.AuthorTable;
+import org.babyfish.jimmer.sql.model.AuthorTableEx;
 import org.babyfish.jimmer.sql.model.BookTable;
 import org.junit.jupiter.api.Test;
 
@@ -10,11 +11,11 @@ public class MergeTest extends AbstractQueryTest {
     @Test
     public void test() {
         executeAndExpect(
-                BookTable.createQuery(getSqlClient(), (q, book) -> {
+                getSqlClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(
                             book.name().ilike("G"),
                             book.id().in(
-                                    AuthorTable.createSubQuery(q, (sq, author) -> {
+                                    q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
                                         sq.where(author.firstName().like("A"));
                                         return sq.select(author.books().id());
                                     })
@@ -22,11 +23,11 @@ public class MergeTest extends AbstractQueryTest {
                     );
                     return q.select(book);
                 }).minus(
-                        BookTable.createQuery(getSqlClient(), (q, book) -> {
+                        getSqlClient().createQuery(BookTable.class, (q, book) -> {
                             q.where(
                                     book.name().ilike("F"),
                                     book.id().in(
-                                            AuthorTable.createSubQuery(q, (sq, author) -> {
+                                            q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
                                                 sq.where(author.firstName().like("C"));
                                                 return sq.select(author.books().id());
                                             })

@@ -218,7 +218,7 @@ public class ImmutableType {
         implClassName = toClassName(name -> name + "Draft", "Producer", "Impl");
         draftImplClassName = toClassName(name -> name + "Draft", "Producer", "DraftImpl");
         tableClassName = toClassName(name -> name + "Table");
-        tableExClassName = toClassName(name -> name + "Table", "Ex");
+        tableExClassName = toClassName(name -> name + "TableEx");
     }
 
     public boolean isEntity() {
