@@ -31,26 +31,34 @@ import java.util.function.Function;
 
 class SqlClientImpl implements SqlClient {
 
-    private Dialect dialect;
+    private final Dialect dialect;
 
-    private Executor executor;
+    private final Executor executor;
 
-    private Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap;
+    private final Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap;
 
-    private Map<Class<?>, UserIdGenerator> userIdGeneratorMap;
+    private final Map<Class<?>, UserIdGenerator> userIdGeneratorMap;
 
-    private Entities entities;
+    private final int defaultBatchSize;
+
+    private final int defaultListBatchSize;
+
+    private final Entities entities;
 
     SqlClientImpl(
             Dialect dialect,
             Executor executor,
             Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
-            Map<Class<?>, UserIdGenerator> userIdGeneratorMap
+            Map<Class<?>, UserIdGenerator> userIdGeneratorMap,
+            int defaultBatchSize,
+            int defaultListBatchSize
     ) {
         this.dialect = dialect != null ? dialect : DefaultDialect.INSTANCE;
         this.executor = executor != null ? executor : DefaultExecutor.INSTANCE;
         this.scalarProviderMap = new HashMap<>(scalarProviderMap);
         this.userIdGeneratorMap = new HashMap<>(userIdGeneratorMap);
+        this.defaultBatchSize = defaultBatchSize;
+        this.defaultListBatchSize = defaultListBatchSize;
         this.entities = new EntitiesImpl(this);
     }
 
@@ -80,6 +88,16 @@ class SqlClientImpl implements SqlClient {
             }
         }
         return userIdGenerator;
+    }
+
+    @Override
+    public int getDefaultBatchSize() {
+        return defaultBatchSize;
+    }
+
+    @Override
+    public int getDefaultListBatchSize() {
+        return defaultListBatchSize;
     }
 
     @Override

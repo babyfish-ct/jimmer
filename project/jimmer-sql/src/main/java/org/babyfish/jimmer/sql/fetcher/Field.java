@@ -13,4 +13,6 @@ public interface Field {
     int getDepth();
 
     Fetcher<?> getChildFetcher();
+
+    boolean isSimpleField();
 }

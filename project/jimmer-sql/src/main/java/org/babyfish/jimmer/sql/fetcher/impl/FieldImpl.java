@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
+import org.babyfish.jimmer.sql.meta.Column;
 
 import java.util.StringJoiner;
 
@@ -18,6 +19,8 @@ class FieldImpl implements Field {
 
     private FetcherImpl<?> childFetcher;
 
+    private boolean isSimpleField;
+
     FieldImpl(
             ImmutableProp prop,
             int batchSize,
@@ -30,11 +33,12 @@ class FieldImpl implements Field {
         this.limit = limit;
         this.depth = depth;
         this.childFetcher = childFetcher;
+        this.isSimpleField = determineIsSimpleField();
     }
 
     @Override
     public ImmutableProp getProp() {
-        return null;
+        return prop;
     }
 
     @Override
@@ -58,6 +62,11 @@ class FieldImpl implements Field {
     }
 
     @Override
+    public boolean isSimpleField() {
+        return isSimpleField;
+    }
+
+    @Override
     public String toString() {
         StringJoiner joiner = new StringJoiner(", ", "(", ")").setEmptyValue("");
         if (batchSize != 0) {
@@ -75,5 +84,12 @@ class FieldImpl implements Field {
             return prop.getName() + joiner;
         }
         return prop.getName() + joiner + childFetcher.toString(false);
+    }
+
+    private boolean determineIsSimpleField() {
+        if (prop.getStorage() instanceof Column) {
+            return childFetcher == null || childFetcher.getFieldMap().size() == 1;
+        }
+        return false;
     }
 }

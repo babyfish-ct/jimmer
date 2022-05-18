@@ -12,12 +12,15 @@ import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
+import org.babyfish.jimmer.sql.meta.Column;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 class ResultMapper {
 
@@ -128,7 +131,11 @@ class ResultMapper {
             if (immutableType instanceof AssociationType) {
                 return map((AssociationType)immutableType);
             }
-            return map(immutableType);
+            return map(immutableType, null);
+        }
+        if (selection instanceof FetcherSelection<?>) {
+            Fetcher<?> fetcher = ((FetcherSelection<?>) selection).getFetcher();
+            return map(fetcher.getImmutableType(), fetcher);
         }
         return read(((ExpressionImplementor<?>)selection).getType());
     }
@@ -152,16 +159,28 @@ class ResultMapper {
         return new Association<>(source, target);
     }
 
-    private Object map(ImmutableType immutableType) throws SQLException {
+    private Object map(ImmutableType immutableType, Fetcher<?> fetcher) throws SQLException {
         Object id = read(immutableType.getIdProp().getElementClass());
+        Collection<ImmutableProp> props;
+        if (fetcher != null) {
+            props = fetcher
+                    .getFieldMap()
+                    .values()
+                    .stream()
+                    .map(it -> it.getProp())
+                    .filter(it -> it.getStorage() instanceof Column)
+                    .collect(Collectors.toList());
+        } else {
+            props = immutableType.getSelectableProps().values();
+        }
         if (id == null) {
-            index += immutableType.getSelectableProps().size() - 1;
+            index += props.size() - 1;
             return null;
         }
         return Internal.produce(immutableType, null, draft -> {
             DraftSpi spi = (DraftSpi) draft;
             spi.__set(immutableType.getIdProp().getName(), id);
-            for (ImmutableProp prop : immutableType.getSelectableProps().values()) {
+            for (ImmutableProp prop : props) {
                 if (prop.isId()) {
                     continue;
                 }

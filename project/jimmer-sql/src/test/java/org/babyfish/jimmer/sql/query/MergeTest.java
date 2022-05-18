@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
-import org.babyfish.jimmer.sql.model.AuthorTable;
 import org.babyfish.jimmer.sql.model.AuthorTableEx;
 import org.babyfish.jimmer.sql.model.BookTable;
 import org.junit.jupiter.api.Test;

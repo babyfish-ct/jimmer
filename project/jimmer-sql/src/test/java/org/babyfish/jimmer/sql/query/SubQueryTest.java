@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-public class SubQueryTest extends AbstractQueryTest  {
+public class SubQueryTest extends AbstractQueryTest {
 
     @Test
     public void testColumnInSubQuery() {

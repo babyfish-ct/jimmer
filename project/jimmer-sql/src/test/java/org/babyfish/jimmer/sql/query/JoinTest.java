@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import javax.persistence.criteria.JoinType;
 import java.math.BigDecimal;
-import java.util.Arrays;
 
 public class JoinTest extends AbstractQueryTest {
 

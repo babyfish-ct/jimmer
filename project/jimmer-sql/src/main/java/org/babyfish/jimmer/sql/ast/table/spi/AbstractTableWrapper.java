@@ -3,7 +3,9 @@ package org.babyfish.jimmer.sql.ast.table.spi;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
 import javax.persistence.criteria.JoinType;
 
@@ -70,6 +72,11 @@ public abstract class AbstractTableWrapper<E> implements Table<E> {
             JoinType joinType
     ) {
         return raw.inverseJoinByTable(targetTableType, backProp, joinType);
+    }
+
+    @Override
+    public Selection<E> fetch(Fetcher<E> fetcher) {
+        return raw.fetch(fetcher);
     }
 
     public Table<E> __unwrap() {

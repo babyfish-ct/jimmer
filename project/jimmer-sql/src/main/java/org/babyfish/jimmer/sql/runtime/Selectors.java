@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.fetcher.impl.Fetchers;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -28,6 +29,7 @@ public class Selectors {
                     results.add((R)resultMapper.map());
                 }
             }
+            Fetchers.fetch(sqlClient, con, selections, results);
             return results;
         });
     }

@@ -6,6 +6,7 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.lang.OldChain;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
@@ -111,11 +112,12 @@ public class DraftGenerator {
     private void addSetter(
             ImmutableProp prop
     ) {
-        MethodSpec.Builder builder = MethodSpec.methodBuilder(prop.getSetterName());
-        builder.modifiers.add(Modifier.PUBLIC);
-        builder.modifiers.add(Modifier.ABSTRACT);
-        builder.addParameter(TypeName.get(prop.getReturnType()), prop.getName());
-        builder.returns(type.getDraftClassName());
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder(prop.getSetterName())
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .addAnnotation(OldChain.class)
+                .addParameter(TypeName.get(prop.getReturnType()), prop.getName())
+                .returns(type.getDraftClassName());
         typeBuilder.addMethod(builder.build());
     }
 
