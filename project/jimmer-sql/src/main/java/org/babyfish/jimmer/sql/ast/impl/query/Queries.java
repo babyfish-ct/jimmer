@@ -157,4 +157,24 @@ public class Queries {
         subQuery.freeze();
         return subQuery;
     }
+
+    public static <R>
+    ConfigurableTypedRootQuery<AssociationTable<?, ?, ?, ?>, R> createAssociationQuery(
+            SqlClient sqlClient,
+            AssociationType associationType,
+            BiFunction<
+                    MutableRootQuery<AssociationTable<?, ?, ?, ?>>,
+                    AssociationTable<?, ?, ?, ?>,
+                    ConfigurableTypedRootQuery<AssociationTable<?, ?, ?, ?>, R>
+                    > block
+    ) {
+        MutableRootQueryImpl<AssociationTable<?, ?, ?, ?>> query = new MutableRootQueryImpl<>(
+                sqlClient,
+                associationType
+        );
+        ConfigurableTypedRootQuery<AssociationTable<?, ?, ?, ?>, R> typedQuery =
+                block.apply(query, (AssociationTable<?, ?, ?, ?>)query.getTable());
+        query.freeze();
+        return typedQuery;
+    }
 }
