@@ -54,7 +54,7 @@ class FieldImpl implements Field {
 
     @Override
     public Fetcher<?> getChildFetcher() {
-        return null;
+        return childFetcher;
     }
 
     @Override
@@ -71,9 +71,9 @@ class FieldImpl implements Field {
         } else if (depth > 1) {
             joiner.add("depth: " + depth);
         }
-        if (childFetcher != null) {
-            joiner.add("childFetcher: " + childFetcher.toString(false));
+        if (childFetcher == null) {
+            return prop.getName() + joiner;
         }
-        return prop.getName() + joiner;
+        return prop.getName() + joiner + childFetcher.toString(false);
     }
 }

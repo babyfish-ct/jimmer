@@ -1,84 +1,85 @@
 package org.babyfish.jimmer.sql.fetcher.spi;
 
 import org.babyfish.jimmer.lang.NewChain;
-import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.Loader;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 
-import java.util.Map;
 import java.util.function.Consumer;
 
-public abstract class AbstractTypedFetcher<E> implements Fetcher<E> {
-
-    protected Fetcher<E> raw;
+public abstract class AbstractTypedFetcher<E, T extends AbstractTypedFetcher<E, T>> extends FetcherImpl<E> {
 
     protected AbstractTypedFetcher(Class<E> type) {
-        this.raw = new FetcherImpl<>(type);
+        super(type);
     }
 
-    protected AbstractTypedFetcher(Fetcher<E> raw) {
-        this.raw = raw;
+    protected AbstractTypedFetcher(
+            FetcherImpl<E> prev,
+            ImmutableProp prop,
+            boolean negative
+    ) {
+        super(prev, prop, negative);
     }
 
+    protected AbstractTypedFetcher(
+            FetcherImpl<E> prev,
+            ImmutableProp prop,
+            Loader loader
+    ) {
+        super(prev, prop, loader);
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
-    public Class<E> getJavaClass() {
-        return raw.getJavaClass();
+    public T allTableFields() {
+        return (T) super.allTableFields();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public ImmutableType getImmutableType() {
-        return raw.getImmutableType();
-    }
-
-    @Override
-    public Map<String, Field> getFieldMap() {
-        return raw.getFieldMap();
-    }
-
-    @Override
-    public Fetcher<E> addSelectable() {
-        return raw.addSelectable();
-    }
-
-    @Override
-    public Fetcher<E> addScalars() {
-        return raw.addScalars();
+    public T allScalarFields() {
+        return (T) super.allScalarFields();
     }
 
     @NewChain
+    @SuppressWarnings("unchecked")
     @Override
-    public Fetcher<E> add(String prop) {
-        return raw.add(prop);
+    public T add(String prop) {
+        return (T) super.add(prop);
     }
 
     @NewChain
+    @SuppressWarnings("unchecked")
     @Override
-    public Fetcher<E> remove(String prop) {
-        return raw.remove(prop);
+    public T remove(String prop) {
+        return (T) super.remove(prop);
     }
 
     @NewChain
+    @SuppressWarnings("unchecked")
     @Override
-    public Fetcher<E> add(
+    public T add(
             String prop,
             Fetcher<?> childFetcher
     ) {
-        return add(prop, null, childFetcher);
+        return (T) super.add(prop, childFetcher);
     }
 
     @NewChain
+    @SuppressWarnings("unchecked")
     @Override
-    public Fetcher<E> add(
+    public T add(
             String prop,
-            Consumer<? extends Loader> loaderBlock,
-            Fetcher<?> childFetcher
+            Fetcher<?> childFetcher,
+            Consumer<? extends Loader> loaderBlock
     ) {
-        return raw.add(prop, loaderBlock, childFetcher);
+        return (T) super.add(prop, childFetcher, loaderBlock);
     }
 
-    public Fetcher<E> __unwrap() {
-        return raw;
-    }
+    @Override
+    protected abstract T createChildFetcher(ImmutableProp prop, boolean negative);
+
+    @Override
+    protected abstract T createChildFetcher(ImmutableProp prop, Loader loader);
 }

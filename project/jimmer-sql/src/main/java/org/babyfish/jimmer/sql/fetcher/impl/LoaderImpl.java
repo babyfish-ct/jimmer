@@ -1,16 +1,13 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.Loader;
 import org.babyfish.jimmer.sql.fetcher.RecursiveListLoader;
-import org.babyfish.jimmer.sql.fetcher.RecursiveLoader;
 
 class LoaderImpl implements RecursiveListLoader {
 
     private ImmutableProp prop;
 
-    private Fetcher<?> childFetcher;
+    private FetcherImpl<?> childFetcher;
 
     private int batchSize;
 
@@ -18,7 +15,7 @@ class LoaderImpl implements RecursiveListLoader {
 
     private int depth = 1;
 
-    LoaderImpl(ImmutableProp prop, Fetcher<?> childFetcher) {
+    LoaderImpl(ImmutableProp prop, FetcherImpl<?> childFetcher) {
         this.prop = prop;
         this.childFetcher = childFetcher;
     }
@@ -41,6 +38,7 @@ class LoaderImpl implements RecursiveListLoader {
                             "\" is not list property"
             );
         }
+        this.limit = limit;
         return this;
     }
 
@@ -65,7 +63,7 @@ class LoaderImpl implements RecursiveListLoader {
         return depth(Integer.MAX_VALUE);
     }
 
-    Fetcher<?> getChildFetcher() {
+    FetcherImpl<?> getChildFetcher() {
         return childFetcher;
     }
 

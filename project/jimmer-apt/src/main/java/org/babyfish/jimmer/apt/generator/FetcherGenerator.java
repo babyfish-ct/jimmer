@@ -13,11 +13,11 @@ import java.io.IOException;
 
 public class FetcherGenerator {
 
-    private TypeUtils typeUtils;
+    private final TypeUtils typeUtils;
 
-    private ImmutableType type;
+    private final ImmutableType type;
 
-    private Filer filer;
+    private final Filer filer;
 
     private TypeSpec.Builder typeBuilder;
 
@@ -60,7 +60,8 @@ public class FetcherGenerator {
                 .superclass(
                         ParameterizedTypeName.get(
                                 Constants.ABSTRACT_TYPE_FETCHER_CLASS_NAME,
-                                type.getClassName()
+                                type.getClassName(),
+                                type.getFetcherClassName()
                         )
                 );
 
@@ -69,17 +70,20 @@ public class FetcherGenerator {
         try {
             add$();
             addConstructor();
-            addWrapConstructor();
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.getAnnotation(Id.class) == null) {
                     addProp(prop);
-                    addBooleanProp(prop);
+                    addPropByBoolean(prop);
                     if (prop.isAssociation()) {
                         addAssociationProp(prop);
-                        addAssociationPropWithLoader(prop);
+                        addAssociationPropByLoader(prop);
                     }
                 }
             }
+            addConstructorByBoolean();
+            addConstructorByLoader();
+            addCreatorByBoolean();
+            addCreatorByLoader();
         } finally {
             typeBuilder = oldBuilder;
         }
@@ -105,41 +109,26 @@ public class FetcherGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addWrapConstructor() {
-        MethodSpec.Builder builder = MethodSpec
-                .constructorBuilder()
-                .addModifiers(Modifier.PRIVATE)
-                .addParameter(
-                        ParameterizedTypeName.get(
-                                Constants.FETCHER_CLASS_NAME,
-                                type.getClassName()
-                        ),
-                        "raw"
-                )
-                .addStatement("super(raw)");
-        typeBuilder.addMethod(builder.build());
-    }
-
     private void addProp(ImmutableProp prop) {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
+                .addModifiers(Modifier.PUBLIC)
                 .returns(type.getFetcherClassName())
                 .addStatement(
-                        "return new $T(raw.add($S))",
-                        type.getFetcherClassName(),
+                        "return add($S)",
                         prop.getName()
                 );
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addBooleanProp(ImmutableProp prop) {
+    private void addPropByBoolean(ImmutableProp prop) {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
+                .addModifiers(Modifier.PUBLIC)
                 .addParameter(boolean.class, "enabled")
                 .returns(type.getFetcherClassName())
                 .addStatement(
-                        "return new $T(enabled ? raw.add($S) : raw.remove($S))",
-                        type.getFetcherClassName(),
+                        "return enabled ? add($S) : remove($S)",
                         prop.getName(),
                         prop.getName()
                 );
@@ -149,6 +138,7 @@ public class FetcherGenerator {
     private void addAssociationProp(ImmutableProp prop) {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
+                .addModifiers(Modifier.PUBLIC)
                 .addParameter(
                         ParameterizedTypeName.get(
                                 Constants.FETCHER_CLASS_NAME,
@@ -158,14 +148,13 @@ public class FetcherGenerator {
                 )
                 .returns(type.getFetcherClassName())
                 .addStatement(
-                        "return new $T(raw.add($S, childFetcher))",
-                        type.getFetcherClassName(),
+                        "return add($S, childFetcher)",
                         prop.getName()
                 );
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addAssociationPropWithLoader(ImmutableProp prop) {
+    private void addAssociationPropByLoader(ImmutableProp prop) {
         boolean recursive = typeUtils.isSubType(
                 prop.getElementType(),
                 type.getTypeElement().asType()
@@ -182,13 +171,7 @@ public class FetcherGenerator {
         }
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
-                .addParameter(
-                        ParameterizedTypeName.get(
-                                Constants.CONSUMER_CLASS_NAME,
-                                loaderClassName
-                        ),
-                        "loader"
-                )
+                .addModifiers(Modifier.PUBLIC)
                 .addParameter(
                         ParameterizedTypeName.get(
                                 Constants.FETCHER_CLASS_NAME,
@@ -196,12 +179,70 @@ public class FetcherGenerator {
                         ),
                         "childFetcher"
                 )
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.CONSUMER_CLASS_NAME,
+                                loaderClassName
+                        ),
+                        "loader"
+                )
                 .returns(type.getFetcherClassName())
                 .addStatement(
-                        "return new $T(raw.add($S, loader, childFetcher))",
-                        type.getFetcherClassName(),
+                        "return add($S, childFetcher, loader)",
                         prop.getName()
                 );
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addConstructorByBoolean() {
+        MethodSpec.Builder builder = MethodSpec
+                .constructorBuilder()
+                .addModifiers(Modifier.PRIVATE)
+                .addParameter(type.getFetcherClassName(), "prev")
+                .addParameter(org.babyfish.jimmer.meta.ImmutableProp.class, "prop")
+                .addParameter(boolean.class, "negative")
+                .addStatement("super(prev, prop, negative)");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addConstructorByLoader() {
+        MethodSpec.Builder builder = MethodSpec
+                .constructorBuilder()
+                .addModifiers(Modifier.PRIVATE)
+                .addParameter(type.getFetcherClassName(), "prev")
+                .addParameter(org.babyfish.jimmer.meta.ImmutableProp.class, "prop")
+                .addParameter(Constants.LOADER_CLASS_NAME, "loader")
+                .addStatement("super(prev, prop, loader)");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addCreatorByBoolean() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("createChildFetcher")
+                .addModifiers(Modifier.PROTECTED)
+                .addParameter(
+                        org.babyfish.jimmer.meta.ImmutableProp.class,
+                        "prop"
+                )
+                .addParameter(boolean.class, "negative")
+                .returns(type.getFetcherClassName())
+                .addAnnotation(Override.class)
+                .addStatement("return new $T(this, prop, negative)", type.getFetcherClassName());
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addCreatorByLoader() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("createChildFetcher")
+                .addModifiers(Modifier.PROTECTED)
+                .addParameter(
+                        org.babyfish.jimmer.meta.ImmutableProp.class,
+                        "prop"
+                )
+                .addParameter(Constants.LOADER_CLASS_NAME, "loader")
+                .returns(type.getFetcherClassName())
+                .addAnnotation(Override.class)
+                .addStatement("return new $T(this, prop, loader)", type.getFetcherClassName());
         typeBuilder.addMethod(builder.build());
     }
 }
