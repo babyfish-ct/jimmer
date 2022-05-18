@@ -43,7 +43,7 @@ class FieldImpl implements Field {
 
     @Override
     public int getBatchSize() {
-        return 0;
+        return batchSize;
     }
 
     @Override
@@ -53,7 +53,7 @@ class FieldImpl implements Field {
 
     @Override
     public int getDepth() {
-        return 0;
+        return depth;
     }
 
     @Override

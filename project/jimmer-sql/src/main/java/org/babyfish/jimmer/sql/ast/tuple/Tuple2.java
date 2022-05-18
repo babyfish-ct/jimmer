@@ -51,11 +51,11 @@ public class Tuple2<T1, T2> {
         return map;
     }
 
-    public static <K, V> Collection<Tuple2<K, V>> fromMap(Map<K, V> map) {
-        List<Tuple2<K, V>> list = new ArrayList<>(map.size());
-        for (Map.Entry<K, V> e : map.entrySet()) {
-            list.add(new Tuple2<>(e.getKey(), e.getValue()));
+    public static <K, V> Map<K, List<V>> toMultiMap(Collection<Tuple2<K, V>> tuples) {
+        Map<K, List<V>> map = new LinkedHashMap<>();
+        for (Tuple2<K, V> tuple : tuples) {
+            map.computeIfAbsent(tuple._1, it -> new ArrayList<>()).add(tuple._2);
         }
-        return list;
+        return map;
     }
 }
