@@ -44,7 +44,8 @@ public class FetcherTest {
     public void testTreeNodeFetcher() {
         Assertions.assertEquals(
                 "org.babyfish.jimmer.sql.model.TreeNode { " +
-                        "id, parent(depth: 5) { id, name }, " +
+                        "id, " +
+                        "parent(depth: 5) { id, name }, " +
                         "childNodes(depth: 10) { id, name } " +
                         "}",
                 TreeNodeFetcher.$
@@ -54,7 +55,8 @@ public class FetcherTest {
         );
         Assertions.assertEquals(
                 "org.babyfish.jimmer.sql.model.TreeNode { " +
-                        "id, parent(recursive: true) { id, name }, " +
+                        "id, " +
+                        "parent(recursive: true) { id, name }, " +
                         "childNodes(recursive: true) { id, name } " +
                         "}",
                 TreeNodeFetcher.$

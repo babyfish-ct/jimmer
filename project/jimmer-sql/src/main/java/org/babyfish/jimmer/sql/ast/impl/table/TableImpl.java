@@ -4,6 +4,8 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -138,7 +140,8 @@ class TableImpl<E> implements TableImplementor<E> {
     public <XE extends Expression<?>> XE get(String prop) {
         ImmutableProp immutableProp = immutableType.getProps().get(prop);
         if (immutableProp == null || !immutableProp.isScalar()) {
-            throw new IllegalArgumentException("'" + prop + "' is not scalar property");
+            throw new IllegalArgumentException(
+                    "\"" + prop + "\" is not scalar property of \"" + immutableType + "\"");
         }
         return (XE) PropExpressionImpl.of(this, immutableProp);
     }
@@ -153,7 +156,13 @@ class TableImpl<E> implements TableImplementor<E> {
     public <XT extends Table<?>> XT join(String prop, JoinType joinType) {
         ImmutableProp immutableProp = immutableType.getProps().get(prop);
         if (immutableProp == null || !immutableProp.isAssociation()) {
-            throw new IllegalArgumentException("'" + prop + "' is not association property");
+            throw new IllegalArgumentException(
+                    "\"" +
+                            prop +
+                            "\" is not association property of \"" +
+                            this.immutableType +
+                            "\""
+            );
         }
         return (XT)join0(false, immutableProp, joinType);
     }
@@ -264,6 +273,35 @@ class TableImpl<E> implements TableImplementor<E> {
     }
 
     @Override
+    public Selection<E> fetch(Fetcher<E> fetcher) {
+        if (fetcher == null) {
+            return this;
+        }
+        if (fetcher.isSimpleFetcher() &&
+                fetcher.getFieldMap().keySet().equals(
+                        immutableType.getSelectableProps().keySet()
+                )
+        ) {
+            return this;
+        }
+        if (immutableType != fetcher.getImmutableType()) {
+            throw new IllegalArgumentException(
+                    "Illegal fetcher type, current table is \"" +
+                            this +
+                            "\" but the fetcher type is \"" +
+                            fetcher.getImmutableType() +
+                            "\""
+            );
+        }
+        return new FetcherSelectionImpl<>(this, fetcher);
+    }
+
+    @Override
+    public void accept(AstVisitor visitor) {
+        visitor.visitTableReference(this, null);
+    }
+
+    @Override
     public void renderJoinAsFrom(SqlBuilder builder, RenderMode mode) {
         if (parent == null) {
             throw new IllegalStateException("Internal bug: renderJoinAsFrom can only be called base on joined tables");
@@ -279,11 +317,6 @@ class TableImpl<E> implements TableImplementor<E> {
                 }
             }
         }
-    }
-
-    @Override
-    public void accept(AstVisitor visitor) {
-        visitor.visitTableReference(this, null);
     }
 
     @Override

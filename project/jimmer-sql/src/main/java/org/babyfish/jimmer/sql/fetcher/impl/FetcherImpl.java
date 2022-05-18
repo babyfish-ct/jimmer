@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.Loader;
+import org.babyfish.jimmer.sql.meta.Column;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -30,7 +31,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
 
     private Map<String, Field> fieldMap;
 
-    private Boolean hasChildFetchers;
+    private Boolean isSimpleFetcher;
 
     public FetcherImpl(Class<E> javaClass) {
         this.immutableType = ImmutableType.get(javaClass);
@@ -66,7 +67,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
         if (loader != null) {
             LoaderImpl loaderImpl = (LoaderImpl) loader;
             this.batchSize = loaderImpl.getBatchSize();
-            this.limit = loaderImpl.getLimit();
+            this.limit = prop.isEntityList() ? loaderImpl.getLimit() : Integer.MAX_VALUE;
             this.depth = loaderImpl.getDepth();
             this.childFetcher = loaderImpl.getChildFetcher();
         } else {
@@ -190,9 +191,18 @@ public class FetcherImpl<E> implements Fetcher<E> {
                             "\", please call get function"
             );
         }
-        LoaderImpl loaderImpl = loaderImpl = new LoaderImpl(immutableProp, (FetcherImpl<?>) childFetcher);
+        if (immutableProp.getTargetType().getJavaClass() != childFetcher.getJavaClass()) {
+            throw new IllegalArgumentException("Illegal type of childFetcher");
+        }
+        LoaderImpl loaderImpl = new LoaderImpl(immutableProp, (FetcherImpl<?>) childFetcher);
         if (loaderBlock != null) {
             ((Consumer<Loader>)loaderBlock).accept(loaderImpl);
+            if (loaderImpl.getLimit() != Integer.MAX_VALUE && loaderImpl.getBatchSize() != 1) {
+                throw new IllegalArgumentException(
+                        "Fetcher field with limit does not support batch load, " +
+                                "the batchSize must be set to 1 when limit is set"
+                );
+            }
         }
         return addImpl(immutableProp, loaderImpl);
     }
@@ -222,19 +232,19 @@ public class FetcherImpl<E> implements Fetcher<E> {
     }
 
     @Override
-    public boolean hasChildFetchers() {
-        Boolean result = hasChildFetchers;
-        if (result == null) {
-            result = false;
+    public boolean isSimpleFetcher() {
+        Boolean isSimple = isSimpleFetcher;
+        if (isSimple == null) {
+            isSimple = true;
             for (Field field : getFieldMap().values()) {
-                if (field.getChildFetcher() != null) {
-                    result = true;
+                if (!field.isSimpleField()) {
+                    isSimple = false;
                     break;
                 }
             }
-            hasChildFetchers = result;
+            isSimpleFetcher = isSimple;
         }
-        return result;
+        return isSimple;
     }
 
     protected FetcherImpl<E> createChildFetcher(ImmutableProp prop, boolean negative) {

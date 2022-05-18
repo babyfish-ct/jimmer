@@ -36,6 +36,10 @@ public interface SqlClient {
 
     IdGenerator getIdGenerator(Class<?> entityType);
 
+    int getDefaultBatchSize();
+
+    int getDefaultListBatchSize();
+
     <T extends Table<?>, R> ConfigurableTypedRootQuery<T, R> createQuery(
             Class<T> tableType,
             BiFunction<MutableRootQuery<T>, T, ConfigurableTypedRootQuery<T, R>> block
@@ -81,9 +85,13 @@ public interface SqlClient {
 
         private Executor executor;
 
-        private Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap = new HashMap<>();
+        private final Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap = new HashMap<>();
 
-        private Map<Class<?>, UserIdGenerator> userIdGeneratorMap = new HashMap<>();
+        private final Map<Class<?>, UserIdGenerator> userIdGeneratorMap = new HashMap<>();
+
+        private int defaultBatchSize = 128;
+
+        private int defaultListBatchSize = 16;
 
         Builder() {}
 
@@ -118,12 +126,30 @@ public interface SqlClient {
             return this;
         }
 
+        public Builder setDefaultBatchSize(int size) {
+            if (size < 1) {
+                throw new IllegalStateException("size cannot be less than 1");
+            }
+            defaultBatchSize = size;
+            return this;
+        }
+
+        public Builder setDefaultListBatchSize(int size) {
+            if (size < 1) {
+                throw new IllegalStateException("size cannot be less than 1");
+            }
+            defaultListBatchSize = size;
+            return this;
+        }
+
         public SqlClient build() {
             return new SqlClientImpl(
                     dialect,
                     executor,
                     scalarProviderMap,
-                    userIdGeneratorMap
+                    userIdGeneratorMap,
+                    defaultBatchSize,
+                    defaultListBatchSize
             );
         }
     }

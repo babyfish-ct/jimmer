@@ -39,5 +39,5 @@ public interface Fetcher<E> {
             Consumer<? extends Loader> loaderBlock
     );
 
-    boolean hasChildFetchers();
+    boolean isSimpleFetcher();
 }

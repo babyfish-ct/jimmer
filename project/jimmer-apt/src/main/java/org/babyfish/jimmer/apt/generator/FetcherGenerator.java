@@ -5,6 +5,7 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.lang.NewChain;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
@@ -113,6 +114,7 @@ public class FetcherGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(NewChain.class)
                 .returns(type.getFetcherClassName())
                 .addStatement(
                         "return add($S)",
@@ -125,6 +127,7 @@ public class FetcherGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(NewChain.class)
                 .addParameter(boolean.class, "enabled")
                 .returns(type.getFetcherClassName())
                 .addStatement(
@@ -139,6 +142,7 @@ public class FetcherGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(NewChain.class)
                 .addParameter(
                         ParameterizedTypeName.get(
                                 Constants.FETCHER_CLASS_NAME,
@@ -172,6 +176,7 @@ public class FetcherGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(NewChain.class)
                 .addParameter(
                         ParameterizedTypeName.get(
                                 Constants.FETCHER_CLASS_NAME,

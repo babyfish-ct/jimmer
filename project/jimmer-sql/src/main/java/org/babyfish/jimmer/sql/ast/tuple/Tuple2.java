@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.tuple;
 
-import java.util.Objects;
+import java.util.*;
 
 public class Tuple2<T1, T2> {
 
@@ -41,5 +41,21 @@ public class Tuple2<T1, T2> {
                 "_1=" + _1 +
                 ", _2=" + _2 +
                 '}';
+    }
+
+    public static <K, V> Map<K, V> toMap(Collection<Tuple2<K, V>> tuples) {
+        Map<K, V> map = new LinkedHashMap<>((tuples.size() * 4 + 2) / 3);
+        for (Tuple2<K, V> tuple : tuples) {
+            map.put(tuple._1, tuple._2);
+        }
+        return map;
+    }
+
+    public static <K, V> Collection<Tuple2<K, V>> fromMap(Map<K, V> map) {
+        List<Tuple2<K, V>> list = new ArrayList<>(map.size());
+        for (Map.Entry<K, V> e : map.entrySet()) {
+            list.add(new Tuple2<>(e.getKey(), e.getValue()));
+        }
+        return list;
     }
 }

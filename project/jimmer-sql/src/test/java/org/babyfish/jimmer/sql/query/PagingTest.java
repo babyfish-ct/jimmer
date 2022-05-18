@@ -1,13 +1,11 @@
 package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
-import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.OracleDialect;
 import org.babyfish.jimmer.sql.dialect.SqlServerDialect;
-import org.babyfish.jimmer.sql.model.AuthorTable;
 import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.BookStore;
 import org.babyfish.jimmer.sql.model.BookTable;

@@ -2,7 +2,9 @@ package org.babyfish.jimmer.sql.common;
 
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
@@ -16,13 +18,26 @@ public class AbstractQueryTest extends AbstractTest {
             Consumer<QueryTestContext<R>> block
     ) {
         clearExecutions();
+        rows = null;
         jdbc(con -> {
-            rows = query.execute(con);
+            if (rows == null) {
+                rows = query.execute(con);
+            }
         });
-        block.accept(new QueryTestContext<>());
+        block.accept(new QueryTestContext<>(0));
     }
 
     protected class QueryTestContext<R> {
+
+        private int index;
+
+        QueryTestContext(int index) {
+            this.index = index;
+        }
+
+        public QueryTestContext<R> statement(int index) {
+            return new QueryTestContext<>(index);
+        }
 
         public void sql(String sql) {
             List<Execution> executions = getExecutions();
@@ -32,7 +47,8 @@ public class AbstractQueryTest extends AbstractTest {
             );
             Assertions.assertEquals(
                     sql,
-                    executions.get(executions.size() - 1).getSql()
+                    executions.get(index).getSql(),
+                    "statements[" + index + "].sql"
             );
         }
 
@@ -48,16 +64,13 @@ public class AbstractQueryTest extends AbstractTest {
             );
             Assertions.assertEquals(
                     variables,
-                    executions.get(executions.size() - 1).getVariables()
+                    executions.get(index).getVariables(),
+                    "statements[" + index + "].variables"
             );
         }
 
         @SuppressWarnings("unchecked")
         public void rows(Consumer<List<R>> block) {
-            Assertions.assertNotNull(
-                    rows,
-                    "rows is not recorded"
-            );
             block.accept((List<R>) rows);
         }
 
