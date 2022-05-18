@@ -6,7 +6,6 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.Loader;
-import org.babyfish.jimmer.sql.fetcher.spi.AbstractTypedFetcher;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -27,9 +26,11 @@ public class FetcherImpl<E> implements Fetcher<E> {
 
     private final int depth;
 
-    private final Fetcher<?> childFetcher;
+    private final FetcherImpl<?> childFetcher;
 
     private Map<String, Field> fieldMap;
+
+    private Boolean hasChildFetchers;
 
     public FetcherImpl(Class<E> javaClass) {
         this.immutableType = ImmutableType.get(javaClass);
@@ -42,29 +43,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
         this.childFetcher = null;
     }
 
-    private FetcherImpl(
-            FetcherImpl<E> prev,
-            ImmutableProp prop,
-            LoaderImpl loader
-    ) {
-        this.immutableType = prev.immutableType;
-        this.negative = false;
-        this.prop = prop;
-        this.prev = prev;
-        if (loader != null) {
-            this.batchSize = loader.getBatchSize();
-            this.limit = loader.getLimit();
-            this.depth = loader.getDepth();
-            this.childFetcher = loader.getChildFetcher();
-        } else {
-            this.batchSize = 0;
-            this.limit = Integer.MAX_VALUE;
-            this.depth = 1;
-            this.childFetcher = null;
-        }
-    }
-
-    private FetcherImpl(FetcherImpl<E> prev, ImmutableProp prop, boolean negative) {
+    protected FetcherImpl(FetcherImpl<E> prev, ImmutableProp prop, boolean negative) {
         this.immutableType = prev.immutableType;
         this.prev = prev;
         this.negative = negative;
@@ -73,6 +52,29 @@ public class FetcherImpl<E> implements Fetcher<E> {
         this.limit = Integer.MAX_VALUE;
         this.depth = 1;
         this.childFetcher = null;
+    }
+
+    protected FetcherImpl(
+            FetcherImpl<E> prev,
+            ImmutableProp prop,
+            Loader loader
+    ) {
+        this.immutableType = prev.immutableType;
+        this.negative = false;
+        this.prop = prop;
+        this.prev = prev;
+        if (loader != null) {
+            LoaderImpl loaderImpl = (LoaderImpl) loader;
+            this.batchSize = loaderImpl.getBatchSize();
+            this.limit = loaderImpl.getLimit();
+            this.depth = loaderImpl.getDepth();
+            this.childFetcher = loaderImpl.getChildFetcher();
+        } else {
+            this.batchSize = 0;
+            this.limit = Integer.MAX_VALUE;
+            this.depth = 1;
+            this.childFetcher = null;
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -90,7 +92,8 @@ public class FetcherImpl<E> implements Fetcher<E> {
     public Map<String, Field> getFieldMap() {
         Map<String, Field> map = fieldMap;
         if (map == null) {
-            map = new LinkedHashMap<>();
+            map = new HashMap<>();
+            LinkedList<String> orderedNames = new LinkedList<>();
             for (FetcherImpl<E> fetcher = this; fetcher != null; fetcher = fetcher.prev) {
                 String name = fetcher.prop.getName();
                 Field field = fetcher.negative ?
@@ -100,14 +103,21 @@ public class FetcherImpl<E> implements Fetcher<E> {
                                 fetcher.batchSize,
                                 fetcher.limit,
                                 fetcher.depth,
-                                unwrap(fetcher.childFetcher)
+                                fetcher.childFetcher
                         );
                 if (!map.containsKey(name)) {
                     map.putIfAbsent(name, field);
+                    orderedNames.add(0, name);
                 }
-                map.values().removeIf(Objects::isNull);
             }
-            map = Collections.unmodifiableMap(map);
+            Map<String, Field> orderedMap = new LinkedHashMap<>();
+            for (String name : orderedNames) {
+                Field field = map.get(name);
+                if (field != null) {
+                    orderedMap.put(name, field);
+                }
+            }
+            map = Collections.unmodifiableMap(orderedMap);
             fieldMap = map;
         }
         return map;
@@ -115,7 +125,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
 
     @NewChain
     @Override
-    public Fetcher<E> addSelectable() {
+    public Fetcher<E> allTableFields() {
         FetcherImpl<E> fetcher = this;
         for (ImmutableProp prop : immutableType.getSelectableProps().values()) {
             fetcher = fetcher.addImpl(prop, null);
@@ -125,7 +135,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
 
     @NewChain
     @Override
-    public Fetcher<E> addScalars() {
+    public Fetcher<E> allScalarFields() {
         FetcherImpl<E> fetcher = this;
         for (ImmutableProp prop : immutableType.getSelectableProps().values()) {
             if (!prop.isAssociation()) {
@@ -153,19 +163,23 @@ public class FetcherImpl<E> implements Fetcher<E> {
                             "\" cannot be removed"
             );
         }
-        return new FetcherImpl<>(this, immutableProp, true);
+        return createChildFetcher(immutableProp, true);
     }
 
     @NewChain
     @Override
     public Fetcher<E> add(String prop, Fetcher<?> childFetcher) {
-        return add(prop, null, childFetcher);
+        return add(prop, childFetcher, null);
     }
 
     @NewChain
     @SuppressWarnings("unchecked")
     @Override
-    public Fetcher<E> add(String prop, Consumer<? extends Loader> loaderBlock, Fetcher<?> childFetcher) {
+    public Fetcher<E> add(
+            String prop,
+            Fetcher<?> childFetcher,
+            Consumer<? extends Loader> loaderBlock
+    ) {
         Objects.requireNonNull(prop, "'prop' cannot be null");
         Objects.requireNonNull(childFetcher, "'childFetcher' cannot be null");
         ImmutableProp immutableProp = immutableType.getProp(prop);
@@ -176,7 +190,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
                             "\", please call get function"
             );
         }
-        LoaderImpl loaderImpl = loaderImpl = new LoaderImpl(immutableProp, childFetcher);
+        LoaderImpl loaderImpl = loaderImpl = new LoaderImpl(immutableProp, (FetcherImpl<?>) childFetcher);
         if (loaderBlock != null) {
             ((Consumer<Loader>)loaderBlock).accept(loaderImpl);
         }
@@ -188,7 +202,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
         if (prop.isId()) {
             return this;
         }
-        return new FetcherImpl<>(this, prop, loader);
+        return createChildFetcher(prop, loader);
     }
 
     @Override
@@ -197,20 +211,37 @@ public class FetcherImpl<E> implements Fetcher<E> {
     }
 
     String toString(boolean includeTypeName) {
-        StringJoiner joiner = new StringJoiner(", ", "{", "}");
-        if (includeTypeName) {
-            joiner.add("$type: " + getImmutableType());
-        }
+        StringJoiner joiner = new StringJoiner(", ", " { ", " }");
         for (Field field : getFieldMap().values()) {
             joiner.add(field.toString());
+        }
+        if (includeTypeName) {
+            return getJavaClass().getName() + joiner.toString();
         }
         return joiner.toString();
     }
 
-    static <E> FetcherImpl<E> unwrap(Fetcher<E> fetcher) {
-        if (fetcher instanceof AbstractTypedFetcher<?>) {
-            return (FetcherImpl<E>)((AbstractTypedFetcher<E>) fetcher).__unwrap();
+    @Override
+    public boolean hasChildFetchers() {
+        Boolean result = hasChildFetchers;
+        if (result == null) {
+            result = false;
+            for (Field field : getFieldMap().values()) {
+                if (field.getChildFetcher() != null) {
+                    result = true;
+                    break;
+                }
+            }
+            hasChildFetchers = result;
         }
-        return (FetcherImpl<E>) fetcher;
+        return result;
+    }
+
+    protected FetcherImpl<E> createChildFetcher(ImmutableProp prop, boolean negative) {
+        return new FetcherImpl<>(this, prop, negative);
+    }
+
+    protected FetcherImpl<E> createChildFetcher(ImmutableProp prop, Loader loader) {
+        return new FetcherImpl<>(this, prop, loader);
     }
 }

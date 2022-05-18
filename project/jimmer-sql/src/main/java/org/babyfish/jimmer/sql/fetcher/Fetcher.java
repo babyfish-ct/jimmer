@@ -15,10 +15,10 @@ public interface Fetcher<E> {
     Map<String, Field> getFieldMap();
 
     @NewChain
-    Fetcher<E> addSelectable();
+    Fetcher<E> allTableFields();
 
     @NewChain
-    Fetcher<E> addScalars();
+    Fetcher<E> allScalarFields();
 
     @NewChain
     Fetcher<E> add(String prop);
@@ -35,7 +35,9 @@ public interface Fetcher<E> {
     @NewChain
     Fetcher<E> add(
             String prop,
-            Consumer<? extends Loader> loaderBlock,
-            Fetcher<?> childFetcher
+            Fetcher<?> childFetcher,
+            Consumer<? extends Loader> loaderBlock
     );
+
+    boolean hasChildFetchers();
 }
