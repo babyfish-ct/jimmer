@@ -14,5 +14,10 @@ public interface ListLoader<E, T extends Table<E>> extends Loader<E, T> {
     ListLoader<E, T> batch(int size);
 
     @OldChain
-    ListLoader<E, T> limit(int limit);
+    default ListLoader<E, T> limit(int limit) {
+        return limit(limit, 0);
+    }
+
+    @OldChain
+    ListLoader<E, T> limit(int limit, int offset);
 }

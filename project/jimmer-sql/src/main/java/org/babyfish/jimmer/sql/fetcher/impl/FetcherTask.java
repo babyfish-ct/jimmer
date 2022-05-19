@@ -25,6 +25,8 @@ class FetcherTask {
 
     private Map<Object, TaskData> pendingMap = new LinkedHashMap<>();
 
+    private SingleDataLoader singleDataLoader;
+
     private BatchDataLoader batchDataLoader;
 
     public FetcherTask(
@@ -38,6 +40,7 @@ class FetcherTask {
         this.con = con;
         this.field = field;
         this.batchSize = determineBatchSize();
+        this.singleDataLoader = new SingleDataLoader(sqlClient, con, field);
         this.batchDataLoader = new BatchDataLoader(sqlClient, con, field);
     }
 
@@ -62,27 +65,36 @@ class FetcherTask {
         }
         Map<Object, TaskData> handledMap;
         if (pendingMap.size() > batchSize) {
-            handledMap = new LinkedHashMap<>((batchSize * 4 + 2) / 3);
             Iterator<Map.Entry<Object, TaskData>> itr =
                     pendingMap.entrySet().iterator();
-            for (int i = batchSize; i > 0; --i) {
+            if (batchSize == 1) {
                 Map.Entry<Object, TaskData> e = itr.next();
-                handledMap.put(e.getKey(), e.getValue());
+                handledMap = Collections.singletonMap(e.getKey(), e.getValue());
                 itr.remove();
+            } else {
+                handledMap = new LinkedHashMap<>((batchSize * 4 + 2) / 3);
+                for (int i = batchSize; i > 0; --i) {
+                    Map.Entry<Object, TaskData> e = itr.next();
+                    handledMap.put(e.getKey(), e.getValue());
+                    itr.remove();
+                }
             }
         } else {
             handledMap = this.pendingMap;
             pendingMap = new LinkedHashMap<>();
         }
         if (batchSize == 1) {
-            throw new UnsupportedOperationException();
+            Object key = handledMap.keySet().iterator().next();
+            Object value = singleDataLoader.load(key);
+            TaskData taskData = handledMap.get(key);
+            loaded(key, value, taskData);
         } else {
             Map<Object, ?> loadedMap = batchDataLoader.load(handledMap.keySet());
             for (Map.Entry<Object, TaskData> e : handledMap.entrySet()) {
                 Object key = e.getKey();
                 Object value = loadedMap.get(key);
                 TaskData taskData = e.getValue();
-                loaded(e.getKey(), value, taskData);
+                loaded(key, value, taskData);
             }
         }
         return pendingMap.isEmpty();

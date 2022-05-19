@@ -18,6 +18,8 @@ class LoaderImpl<E, T extends Table<E>> implements RecursiveListLoader<E, T> {
 
     private int limit = Integer.MAX_VALUE;
 
+    private int offset = 0;
+
     private RecursionStrategy<E> recursionStrategy;
 
     LoaderImpl(ImmutableProp prop, FetcherImpl<?> childFetcher) {
@@ -46,7 +48,7 @@ class LoaderImpl<E, T extends Table<E>> implements RecursiveListLoader<E, T> {
     }
 
     @Override
-    public RecursiveListLoader<E, T> limit(int limit) {
+    public RecursiveListLoader<E, T> limit(int limit, int offset) {
         if (!prop.isEntityList()) {
             throw new IllegalArgumentException(
                     "Cannot set limit because current property \"" +
@@ -54,7 +56,17 @@ class LoaderImpl<E, T extends Table<E>> implements RecursiveListLoader<E, T> {
                             "\" is not list property"
             );
         }
+        if (limit < 0) {
+            throw new IllegalArgumentException("'limit' can not be less than 0");
+        }
+        if (offset < 0) {
+            throw new IllegalArgumentException("'offset' can not be less than 0");
+        }
+        if (limit > Integer.MAX_VALUE - offset) {
+            throw new IllegalArgumentException("'limit' > Int.MAX_VALUE - offset");
+        }
         this.limit = limit;
+        this.offset = offset;
         return this;
     }
 
@@ -97,7 +109,11 @@ class LoaderImpl<E, T extends Table<E>> implements RecursiveListLoader<E, T> {
         return limit;
     }
 
-    public RecursionStrategy<E> getRecursionStrategy() {
+    int getOffset() {
+        return offset;
+    }
+
+    RecursionStrategy<E> getRecursionStrategy() {
         return recursionStrategy;
     }
 }

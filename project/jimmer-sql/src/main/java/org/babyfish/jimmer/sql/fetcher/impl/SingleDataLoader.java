@@ -9,7 +9,6 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.Filter;
@@ -18,7 +17,7 @@ import org.babyfish.jimmer.sql.meta.Column;
 import java.sql.Connection;
 import java.util.*;
 
-class BatchDataLoader {
+class SingleDataLoader {
 
     private final SqlClient sqlClient;
 
@@ -26,31 +25,28 @@ class BatchDataLoader {
 
     private final Field field;
 
-    public BatchDataLoader(SqlClient sqlClient, Connection con, Field field) {
+    public SingleDataLoader(SqlClient sqlClient, Connection con, Field field) {
         this.sqlClient = sqlClient;
         this.con = con;
         this.field = field;
     }
 
-    public Map<Object, ?> load(Collection<Object> keys) {
-        if (keys.isEmpty()) {
-            return Collections.emptyMap();
-        }
+    public Object load(Object key) {
         ImmutableProp prop = field.getProp();
         if (prop.getStorage() instanceof Column) {
-            return loadParents(keys);
+            return loadParent(key);
         }
         if (prop.isEntityList() && prop.getMappedBy() != null && prop.getMappedBy().isReference()) {
-            return loadChildren(keys);
+            return loadChildren(key);
         }
         if (field.getChildFetcher() == null || field.getChildFetcher().getFieldMap().size() == 1) {
-            return loadTargetsWithOnlyId(keys);
+            return loadTargetsWithOnlyId(key);
         }
-        return loadTargets(keys);
+        return loadTargets(key);
     }
 
     @SuppressWarnings("unchecked")
-    private Map<Object, ImmutableSpi> loadParents(Collection<Object> keys) {
+    private ImmutableSpi loadParent(Object key) {
         ImmutableProp prop = field.getProp();
         Filter<ImmutableSpi, Table<ImmutableSpi>> filter =
                 (Filter<ImmutableSpi, Table<ImmutableSpi>>) field.getFilter();
@@ -62,9 +58,9 @@ class BatchDataLoader {
                     Expression<Object> pk = table.get(
                             prop.getTargetType().getIdProp().getName()
                     );
-                    q.where(pk.in(keys));
+                    q.where(pk.eq(key));
                     if (filter != null) {
-                        filter.apply(FilterArgsImpl.batchLoaderArgs(q, table, keys));
+                        filter.apply(FilterArgsImpl.singleLoaderArgs(q, table, key));
                     }
                     return q.select(
                             table.fetch(
@@ -72,22 +68,16 @@ class BatchDataLoader {
                             )
                     );
                 }
-        ).execute(con);
-
-        Map<Object, ImmutableSpi> parentMap = new HashMap<>((parents.size() * 4 + 2) / 3);
-        String parentIdPropName = prop.getTargetType().getIdProp().getName();
-        for (ImmutableSpi parent : parents) {
-            parentMap.put(parent.__get(parentIdPropName), parent);
-        }
-        return parentMap;
+        ).limit(field.getLimit(), field.getOffset()).execute(con);
+        return parents.isEmpty() ? null : parents.get(0);
     }
 
     @SuppressWarnings("unchecked")
-    private Map<Object, List<ImmutableSpi>> loadChildren(Collection<Object> keys) {
+    private List<ImmutableSpi> loadChildren(Object key) {
         ImmutableProp prop = field.getProp();
         Filter<ImmutableSpi, Table<ImmutableSpi>> filter =
                 (Filter<ImmutableSpi, Table<ImmutableSpi>>) field.getFilter();
-        List<Tuple2<Object, ImmutableSpi>> tuples = Queries.createQuery(
+        return Queries.createQuery(
                 sqlClient,
                 prop.getTargetType(),
                 (q, t) -> {
@@ -95,79 +85,72 @@ class BatchDataLoader {
                     Expression<Object> fk = table
                             .join(prop.getMappedBy().getName())
                             .get(prop.getTargetType().getIdProp().getName());
-                    q.where(fk.in(keys));
+                    q.where(fk.eq(key));
                     if (filter != null) {
-                        filter.apply(FilterArgsImpl.batchLoaderArgs(q, table, keys));
+                        filter.apply(FilterArgsImpl.singleLoaderArgs(q, table, key));
                     }
                     return q.select(
-                            fk,
                             table.fetch(
                                     (Fetcher<ImmutableSpi>) field.getChildFetcher()
                             )
                     );
                 }
-        ).execute(con);
-        return Tuple2.toMultiMap(tuples);
+        ).limit(field.getLimit(), field.getOffset()).execute(con);
     }
 
     @SuppressWarnings("unchecked")
-    private Map<Object, List<ImmutableSpi>> loadTargetsWithOnlyId(Collection<Object> keys) {
+    private List<ImmutableSpi> loadTargetsWithOnlyId(Object key) {
         ImmutableProp prop = field.getProp();
         Filter<ImmutableSpi, Table<ImmutableSpi>> filter =
                 (Filter<ImmutableSpi, Table<ImmutableSpi>>) field.getFilter();
         AssociationType associationType = AssociationType.of(prop);
-        List<Tuple2<Object, Object>> tuples = Queries.createAssociationQuery(
+        List<Object> targetIds = Queries.createAssociationQuery(
                 sqlClient,
                 associationType,
                 (q, t) -> {
                     Expression<Object> sourceId = t.source().get(prop.getDeclaringType().getIdProp().getName());
-                    q.where(sourceId.in(keys));
+                    q.where(sourceId.eq(key));
                     if (filter != null) {
-                        filter.apply(FilterArgsImpl.batchLoaderArgs(q, (Table<ImmutableSpi>) t.target(), keys));
+                        filter.apply(FilterArgsImpl.singleLoaderArgs(q, (Table<ImmutableSpi>) t.target(), key));
                     }
                     return q.select(
-                            sourceId,
                             t.target().<Expression<Object>>get(prop.getTargetType().getIdProp().getName())
                     );
                 }
-        ).execute(con);
-        Map<Object, List<ImmutableSpi>> targetMap = new HashMap<>();
+        ).limit(field.getLimit(), field.getOffset()).execute(con);
+        List<ImmutableSpi> targets = new ArrayList<>(targetIds.size());
         String targetIdPropName = prop.getTargetType().getIdProp().getName();
-        for (Tuple2<Object, Object> tuple : tuples) {
-            targetMap
-                    .computeIfAbsent(tuple._1(), it -> new ArrayList<>())
-                    .add(
-                            (ImmutableSpi) Internal.produce(prop.getTargetType(), null, targetDraft -> {
-                                ((DraftSpi) targetDraft).__set(targetIdPropName, tuple._2());
-                            })
-                    );
+        for (Object targetId : targetIds) {
+            targets.add(
+                    (ImmutableSpi) Internal.produce(prop.getTargetType(), null, targetDraft -> {
+                        ((DraftSpi) targetDraft).__set(targetIdPropName, targetId);
+                    })
+            );
         }
-        return targetMap;
+        return targets;
     }
 
     @SuppressWarnings("unchecked")
-    private Map<Object, List<ImmutableSpi>> loadTargets(Collection<Object> keys) {
+    private List<ImmutableSpi> loadTargets(Object key) {
         ImmutableProp prop = field.getProp();
         Filter<ImmutableSpi, Table<ImmutableSpi>> filter =
                 (Filter<ImmutableSpi, Table<ImmutableSpi>>) field.getFilter();
         AssociationType associationType = AssociationType.of(prop);
-        List<Tuple2<Object, ImmutableSpi>> tuples = Queries.createAssociationQuery(
+        return Queries.createAssociationQuery(
                 sqlClient,
                 associationType,
                 (q, t) -> {
                     Expression<Object> sourceId = t.source().get(prop.getDeclaringType().getIdProp().getName());
-                    q.where(sourceId.in(keys));
+                    q.where(sourceId.eq(key));
                     if (filter != null) {
-                        filter.apply(FilterArgsImpl.batchLoaderArgs(q, (Table<ImmutableSpi>) t.target(), keys));
+                        filter.apply(FilterArgsImpl.singleLoaderArgs(q, (Table<ImmutableSpi>) t.target(), key));
                     }
                     return q.select(
-                            sourceId,
                             ((Table<ImmutableSpi>) t.target()).fetch(
                                     (Fetcher<ImmutableSpi>) field.getChildFetcher()
                             )
                     );
                 }
-        ).execute(con);
-        return Tuple2.toMultiMap(tuples);
+        ).limit(field.getLimit(), field.getOffset()).execute(con);
     }
 }

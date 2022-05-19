@@ -15,7 +15,13 @@ public interface RecursiveListLoader<E, T extends Table<E>> extends RecursiveLoa
 
     @OldChain
     @Override
-    RecursiveListLoader<E, T> limit(int limit);
+    default RecursiveListLoader<E, T> limit(int limit) {
+        return limit(limit, 0);
+    }
+
+    @OldChain
+    @Override
+    RecursiveListLoader<E, T> limit(int limit, int offset);
 
     @OldChain
     RecursiveListLoader<E, T> depth(int depth);
