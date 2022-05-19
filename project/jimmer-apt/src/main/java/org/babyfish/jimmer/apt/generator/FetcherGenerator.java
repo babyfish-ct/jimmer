@@ -189,8 +189,8 @@ public class FetcherGenerator {
                                 Constants.CONSUMER_CLASS_NAME,
                                 ParameterizedTypeName.get(
                                         loaderClassName,
-                                        type.getClassName(),
-                                        type.getTableClassName()
+                                        prop.getElementTypeName(),
+                                        typeUtils.getImmutableType(prop.getElementType()).getTableClassName()
                                 )
                         ),
                         "loader"

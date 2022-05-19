@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
+import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.meta.Column;
 
 import java.sql.Connection;
@@ -60,6 +61,10 @@ class BatchDataLoader {
                             prop.getTargetType().getIdProp().getName()
                     );
                     q.where(pk.in(keys));
+                    if (field.getFilter() != null) {
+                        ((Filter<ImmutableSpi, Table<ImmutableSpi>>) field.getFilter())
+                                .apply(FilterArgsImpl.batchLoaderArgs(q, table, keys));
+                    }
                     return q.select(
                             table.fetch(
                                     (Fetcher<ImmutableSpi>) field.getChildFetcher()
@@ -88,6 +93,8 @@ class BatchDataLoader {
                             .join(prop.getMappedBy().getName())
                             .get(prop.getTargetType().getIdProp().getName());
                     q.where(fk.in(keys));
+                    ((Filter<ImmutableSpi, Table<ImmutableSpi>>) field.getFilter())
+                            .apply(FilterArgsImpl.batchLoaderArgs(q, table, keys));
                     return q.select(
                             fk,
                             table.fetch(
@@ -99,6 +106,7 @@ class BatchDataLoader {
         return Tuple2.toMultiMap(tuples);
     }
 
+    @SuppressWarnings("unchecked")
     private Map<Object, List<ImmutableSpi>> loadTargetsWithOnlyId(Collection<Object> keys) {
         ImmutableProp prop = field.getProp();
         AssociationType associationType = AssociationType.of(prop);
@@ -108,6 +116,8 @@ class BatchDataLoader {
                 (q, t) -> {
                     Expression<Object> sourceId = t.source().get(prop.getDeclaringType().getIdProp().getName());
                     q.where(sourceId.in(keys));
+                    ((Filter<ImmutableSpi, Table<ImmutableSpi>>) field.getFilter())
+                            .apply(FilterArgsImpl.batchLoaderArgs(q, (Table<ImmutableSpi>)t.target(), keys));
                     return q.select(
                             sourceId,
                             t.target().<Expression<Object>>get(prop.getTargetType().getIdProp().getName())
@@ -138,6 +148,8 @@ class BatchDataLoader {
                 (q, t) -> {
                     Expression<Object> sourceId = t.source().get(prop.getDeclaringType().getIdProp().getName());
                     q.where(sourceId.in(keys));
+                    ((Filter<ImmutableSpi, Table<ImmutableSpi>>) field.getFilter())
+                            .apply(FilterArgsImpl.batchLoaderArgs(q, (Table<ImmutableSpi>)t.target(), keys));
                     return q.select(
                             sourceId,
                             ((Table<ImmutableSpi>) t.target()).fetch(

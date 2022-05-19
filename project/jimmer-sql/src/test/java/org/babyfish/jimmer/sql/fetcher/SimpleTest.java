@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class SimpleFetcherQueryTest extends AbstractQueryTest {
+public class SimpleTest extends AbstractQueryTest {
 
     @Test
     public void testFetchScalar() {

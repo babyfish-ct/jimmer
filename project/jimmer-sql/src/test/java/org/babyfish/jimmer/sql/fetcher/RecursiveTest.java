@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.model.TreeNodeFetcher;
 import org.babyfish.jimmer.sql.model.TreeNodeTable;
 import org.junit.jupiter.api.Test;
 
-public class RecursiveFetcherQueryTest extends AbstractQueryTest {
+public class RecursiveTest extends AbstractQueryTest {
 
     @Test
     public void testFindTwoLevel() {

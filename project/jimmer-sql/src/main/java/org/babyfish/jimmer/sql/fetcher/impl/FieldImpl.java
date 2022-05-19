@@ -1,8 +1,11 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.ast.query.Filterable;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
+import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
 import org.babyfish.jimmer.sql.meta.Column;
 
@@ -11,26 +14,30 @@ import java.util.function.BiConsumer;
 
 class FieldImpl implements Field {
 
-    private ImmutableProp prop;
+    private final ImmutableProp prop;
 
-    private int batchSize;
+    private final Filter<?, ?> filter;
 
-    private int limit;
+    private final int batchSize;
 
-    private RecursionStrategy<?> recursionStrategy;
+    private final int limit;
 
-    private FetcherImpl<?> childFetcher;
+    private final RecursionStrategy<?> recursionStrategy;
 
-    private boolean isSimpleField;
+    private final FetcherImpl<?> childFetcher;
+
+    private final boolean isSimpleField;
 
     FieldImpl(
             ImmutableProp prop,
+            Filter<?, ?> filter,
             int batchSize,
             int limit,
             RecursionStrategy<?> recursionStrategy,
             FetcherImpl<?> childFetcher
     ) {
         this.prop = prop;
+        this.filter = filter;
         this.batchSize = batchSize;
         this.limit = limit;
         this.recursionStrategy = recursionStrategy;
@@ -41,6 +48,11 @@ class FieldImpl implements Field {
     @Override
     public ImmutableProp getProp() {
         return prop;
+    }
+
+    @Override
+    public Filter<?, ?> getFilter() {
+        return filter;
     }
 
     @Override

@@ -1,17 +1,13 @@
 package org.babyfish.jimmer.sql.fetcher;
 
 import org.babyfish.jimmer.lang.OldChain;
-import org.babyfish.jimmer.sql.ast.query.Filterable;
 import org.babyfish.jimmer.sql.ast.table.Table;
-
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 
 public interface RecursiveLoader<E, T extends Table<E>> extends Loader<E, T> {
 
     @OldChain
     @Override
-    RecursiveLoader<E, T> filter(BiConsumer<Filterable, T> block);
+    RecursiveLoader<E, T> filter(Filter<E, T> filter);
 
     @OldChain
     @Override

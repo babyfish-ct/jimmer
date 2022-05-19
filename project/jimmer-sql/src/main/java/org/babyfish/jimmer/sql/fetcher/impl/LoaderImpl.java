@@ -1,13 +1,10 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.sql.ast.query.Filterable;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.fetcher.Loader;
+import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
 import org.babyfish.jimmer.sql.fetcher.RecursiveListLoader;
-
-import java.util.function.BiConsumer;
 
 class LoaderImpl<E, T extends Table<E>> implements RecursiveListLoader<E, T> {
 
@@ -15,7 +12,7 @@ class LoaderImpl<E, T extends Table<E>> implements RecursiveListLoader<E, T> {
 
     private FetcherImpl<?> childFetcher;
 
-    private BiConsumer<Filterable, T> filter;
+    private Filter<E, T> filter;
 
     private int batchSize;
 
@@ -29,7 +26,12 @@ class LoaderImpl<E, T extends Table<E>> implements RecursiveListLoader<E, T> {
     }
 
     @Override
-    public RecursiveListLoader<E, T> filter(BiConsumer<Filterable, T> filter) {
+    public RecursiveListLoader<E, T> filter(Filter<E, T> filter) {
+        if (filter != null && prop.isReference() && prop.isNullable()) {
+            throw new IllegalArgumentException(
+                    "Cannot set filter for non-null one-to-one/many-to-one property \"" + prop + "\""
+            );
+        }
         this.filter = filter;
         return this;
     }
@@ -83,7 +85,7 @@ class LoaderImpl<E, T extends Table<E>> implements RecursiveListLoader<E, T> {
         return childFetcher;
     }
 
-    BiConsumer<Filterable, T> getFilter() {
+    Filter<E, T> getFilter() {
         return filter;
     }
 
