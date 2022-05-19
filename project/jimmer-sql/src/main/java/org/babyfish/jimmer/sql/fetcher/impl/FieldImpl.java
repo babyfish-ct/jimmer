@@ -22,6 +22,8 @@ class FieldImpl implements Field {
 
     private final int limit;
 
+    private final int offset;
+
     private final RecursionStrategy<?> recursionStrategy;
 
     private final FetcherImpl<?> childFetcher;
@@ -33,6 +35,7 @@ class FieldImpl implements Field {
             Filter<?, ?> filter,
             int batchSize,
             int limit,
+            int offset,
             RecursionStrategy<?> recursionStrategy,
             FetcherImpl<?> childFetcher
     ) {
@@ -40,6 +43,7 @@ class FieldImpl implements Field {
         this.filter = filter;
         this.batchSize = batchSize;
         this.limit = limit;
+        this.offset = offset;
         this.recursionStrategy = recursionStrategy;
         this.childFetcher = childFetcher;
         this.isSimpleField = determineIsSimpleField();
@@ -63,6 +67,11 @@ class FieldImpl implements Field {
     @Override
     public int getLimit() {
         return limit;
+    }
+
+    @Override
+    public int getOffset() {
+        return offset;
     }
 
     @Override

@@ -6,11 +6,9 @@ public class DefaultDialect implements Dialect {
 
     @Override
     public void paginate(PaginationContext ctx) {
-        ctx
-                .origin()
-                .sql(" limit ")
-                .variable(ctx.getLimit())
-                .sql(" offset ")
-                .variable(ctx.getOffset());
+        ctx.origin().sql(" limit ").variable(ctx.getLimit());
+        if (ctx.getOffset() > 0) {
+            ctx.sql(" offset ").variable(ctx.getOffset());
+        }
     }
 }

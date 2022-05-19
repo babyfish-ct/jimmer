@@ -27,6 +27,8 @@ public class FetcherImpl<E> implements Fetcher<E> {
 
     private final int limit;
 
+    private final int offset;
+
     private final RecursionStrategy<?> recursionStrategy;
 
     private final FetcherImpl<?> childFetcher;
@@ -43,6 +45,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
         this.filter = null;
         this.batchSize = 0;
         this.limit = Integer.MAX_VALUE;
+        this.offset = 0;
         this.recursionStrategy = null;
         this.childFetcher = null;
     }
@@ -55,6 +58,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
         this.filter = null;
         this.batchSize = 0;
         this.limit = Integer.MAX_VALUE;
+        this.offset = 0;
         this.recursionStrategy = null;
         this.childFetcher = null;
     }
@@ -63,7 +67,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
     protected FetcherImpl(
             FetcherImpl<E> prev,
             ImmutableProp prop,
-            Loader loader
+            Loader<?, Table<?>> loader
     ) {
         this.prev = prev;
         this.immutableType = prev.immutableType;
@@ -74,12 +78,14 @@ public class FetcherImpl<E> implements Fetcher<E> {
             this.filter = (Filter<E, ?>) loaderImpl.getFilter();
             this.batchSize = loaderImpl.getBatchSize();
             this.limit = prop.isEntityList() ? loaderImpl.getLimit() : Integer.MAX_VALUE;
+            this.offset = prop.isAssociation() ? loaderImpl.getOffset() : 0;
             this.recursionStrategy = loaderImpl.getRecursionStrategy();
             this.childFetcher = loaderImpl.getChildFetcher();
         } else {
             this.filter = null;
             this.batchSize = 0;
             this.limit = Integer.MAX_VALUE;
+            this.offset = 0;
             this.recursionStrategy = null;
             this.childFetcher = null;
         }
@@ -111,6 +117,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
                                 fetcher.filter,
                                 fetcher.batchSize,
                                 fetcher.limit,
+                                fetcher.offset,
                                 fetcher.recursionStrategy,
                                 fetcher.childFetcher
                         );

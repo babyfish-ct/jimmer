@@ -12,6 +12,8 @@ public interface Field {
 
     int getLimit();
 
+    int getOffset();
+
     RecursionStrategy<?> getRecursionStrategy();
 
     Fetcher<?> getChildFetcher();
