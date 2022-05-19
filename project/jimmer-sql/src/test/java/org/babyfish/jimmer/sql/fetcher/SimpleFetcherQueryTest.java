@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.query;
+package org.babyfish.jimmer.sql.fetcher;
 
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class FetcherQuery extends AbstractQueryTest {
+public class SimpleFetcherQueryTest extends AbstractQueryTest {
 
     @Test
     public void testFetchScalar() {
@@ -188,6 +188,57 @@ public class FetcherQuery extends AbstractQueryTest {
                     ctx.rows(books -> {
                         System.out.println(books);
                     });
+                }
+        );
+    }
+
+    @Test
+    public void testLoadInverseManyToManyWithOnlyId() {
+        executeAndExpect(
+                getSqlClient().createQuery(AuthorTable.class, (q, author) -> {
+                    return q.select(
+                            author.fetch(
+                                    AuthorFetcher.$
+                                            .firstName()
+                                            .firstName()
+                                            .books()
+                            )
+                    );
+                }),
+                ctx -> {
+                    ctx.sql("select tb_1_.ID, tb_1_.FIRST_NAME from AUTHOR as tb_1_");
+                    ctx.statement(1).sql(
+                            "select tb_1_.AUTHOR_ID, tb_1_.BOOK_ID " +
+                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "where tb_1_.AUTHOR_ID in (?, ?, ?, ?, ?)"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testLoadInverseManyToMany() {
+        executeAndExpect(
+                getSqlClient().createQuery(AuthorTable.class, (q, author) -> {
+                    return q.select(
+                            author.fetch(
+                                    AuthorFetcher.$
+                                            .firstName()
+                                            .firstName()
+                                            .books(
+                                                    BookFetcher.$.name()
+                                            )
+                            )
+                    );
+                }),
+                ctx -> {
+                    ctx.sql("select tb_1_.ID, tb_1_.FIRST_NAME from AUTHOR as tb_1_");
+                    ctx.statement(1).sql(
+                            "select tb_1_.AUTHOR_ID, tb_3_.ID, tb_3_.NAME " +
+                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "inner join BOOK as tb_3_ on tb_1_.BOOK_ID = tb_3_.ID " +
+                                    "where tb_1_.AUTHOR_ID in (?, ?, ?, ?, ?)"
+                    );
                 }
         );
     }

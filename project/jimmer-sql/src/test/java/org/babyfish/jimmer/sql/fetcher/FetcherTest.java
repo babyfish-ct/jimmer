@@ -31,11 +31,11 @@ public class FetcherTest {
                 "org.babyfish.jimmer.sql.model.Book { " +
                         "id, " +
                         "store(batchSize: 128) { id, name }, " +
-                        "authors(batchSize: 16, limit: 100) { id, firstName, lastName } " +
+                        "authors(batchSize: 1, limit: 100) { id, firstName, lastName } " +
                         "}",
                 BookFetcher.$
                         .store(BookStoreFetcher.$.name(), it -> it.batch(128))
-                        .authors(AuthorFetcher.$.firstName().lastName(), it -> it.batch(16).limit(100))
+                        .authors(AuthorFetcher.$.firstName().lastName(), it -> it.batch(1).limit(100))
                         .toString()
         );
     }
