@@ -248,7 +248,19 @@ public class FetcherGenerator {
                         org.babyfish.jimmer.meta.ImmutableProp.class,
                         "prop"
                 )
-                .addParameter(Constants.LOADER_CLASS_NAME, "loader")
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.LOADER_CLASS_NAME,
+                                WildcardTypeName.subtypeOf(Object.class),
+                                WildcardTypeName.subtypeOf(
+                                        ParameterizedTypeName.get(
+                                                Constants.TABLE_CLASS_NAME,
+                                                WildcardTypeName.subtypeOf(Object.class)
+                                        )
+                                )
+                        ),
+                        "loader"
+                )
                 .returns(type.getFetcherClassName())
                 .addAnnotation(Override.class)
                 .addStatement("return new $T(this, prop, loader)", type.getFetcherClassName());

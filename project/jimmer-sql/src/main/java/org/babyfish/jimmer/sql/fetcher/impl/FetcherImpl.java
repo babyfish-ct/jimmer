@@ -3,12 +3,11 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.ast.query.Filterable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.*;
+import org.babyfish.jimmer.sql.meta.Column;
 
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class FetcherImpl<E> implements Fetcher<E> {
@@ -67,7 +66,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
     protected FetcherImpl(
             FetcherImpl<E> prev,
             ImmutableProp prop,
-            Loader<?, Table<?>> loader
+            Loader<?, ? extends Table<?>> loader
     ) {
         this.prev = prev;
         this.immutableType = prev.immutableType;
@@ -80,7 +79,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
             this.limit = prop.isEntityList() ? loaderImpl.getLimit() : Integer.MAX_VALUE;
             this.offset = prop.isAssociation() ? loaderImpl.getOffset() : 0;
             this.recursionStrategy = loaderImpl.getRecursionStrategy();
-            this.childFetcher = loaderImpl.getChildFetcher();
+            this.childFetcher = standardChildFetcher(loaderImpl);
         } else {
             this.filter = null;
             this.batchSize = 0;
@@ -165,7 +164,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
     @Override
     public Fetcher<E> add(String prop) {
         ImmutableProp immutableProp = immutableType.getProp(prop);
-        return addImpl(immutableProp, null);
+        return addImpl(immutableProp, false);
     }
 
     @NewChain
@@ -179,7 +178,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
                             "\" cannot be removed"
             );
         }
-        return createChildFetcher(immutableProp, true);
+        return addImpl(immutableProp, true);
     }
 
     @NewChain
@@ -197,7 +196,6 @@ public class FetcherImpl<E> implements Fetcher<E> {
             Consumer<? extends Loader<?, ? extends Table<?>>> loaderBlock
     ) {
         Objects.requireNonNull(prop, "'prop' cannot be null");
-        Objects.requireNonNull(childFetcher, "'childFetcher' cannot be null");
         ImmutableProp immutableProp = immutableType.getProp(prop);
         if (!immutableProp.isAssociation()) {
             throw new IllegalArgumentException(
@@ -206,7 +204,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
                             "\", please call get function"
             );
         }
-        if (immutableProp.getTargetType().getJavaClass() != childFetcher.getJavaClass()) {
+        if (childFetcher != null && immutableProp.getTargetType().getJavaClass() != childFetcher.getJavaClass()) {
             throw new IllegalArgumentException("Illegal type of childFetcher");
         }
         LoaderImpl<Object, Table<Object>> loaderImpl = new LoaderImpl<>(immutableProp, (FetcherImpl<?>) childFetcher);
@@ -223,7 +221,15 @@ public class FetcherImpl<E> implements Fetcher<E> {
     }
 
     @NewChain
-    private FetcherImpl<E> addImpl(ImmutableProp prop, LoaderImpl<?, ?> loader) {
+    private FetcherImpl<E> addImpl(ImmutableProp prop, boolean negative) {
+        if (prop.isId()) {
+            return this;
+        }
+        return createChildFetcher(prop, negative);
+    }
+
+    @NewChain
+    private FetcherImpl<E> addImpl(ImmutableProp prop, LoaderImpl<?, ? extends Table<?>> loader) {
         if (prop.isId()) {
             return this;
         }
@@ -241,7 +247,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
             joiner.add(field.toString());
         }
         if (includeTypeName) {
-            return getJavaClass().getName() + joiner.toString();
+            return getJavaClass().getName() + joiner;
         }
         return joiner.toString();
     }
@@ -266,7 +272,27 @@ public class FetcherImpl<E> implements Fetcher<E> {
         return new FetcherImpl<>(this, prop, negative);
     }
 
-    protected FetcherImpl<E> createChildFetcher(ImmutableProp prop, Loader loader) {
+    protected FetcherImpl<E> createChildFetcher(ImmutableProp prop, Loader<?, ? extends Table<?>> loader) {
         return new FetcherImpl<>(this, prop, loader);
+    }
+
+    private static FetcherImpl<?> standardChildFetcher(LoaderImpl<?, Table<?>> loaderImpl) {
+        FetcherImpl<?> childFetcher = loaderImpl.getChildFetcher();
+        if (!(loaderImpl.getProp().getStorage() instanceof Column)) {
+            return childFetcher;
+        }
+        RecursionStrategy<?> strategy = loaderImpl.getRecursionStrategy();
+        if (strategy == null) {
+            return childFetcher;
+        }
+        if (strategy instanceof DefaultRecursionStrategy<?> &&
+                ((DefaultRecursionStrategy<?>) strategy).getDepth() == 1) {
+            return childFetcher;
+        }
+        if (childFetcher == null) {
+            childFetcher = new FetcherImpl<>(loaderImpl.getProp().getElementClass());
+        }
+        childFetcher = (FetcherImpl<?>) childFetcher.add(loaderImpl.getProp().getName());
+        return childFetcher;
     }
 }

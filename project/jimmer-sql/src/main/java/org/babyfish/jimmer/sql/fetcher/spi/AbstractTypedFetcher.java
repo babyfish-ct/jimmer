@@ -82,5 +82,5 @@ public abstract class AbstractTypedFetcher<E, T extends AbstractTypedFetcher<E, 
     protected abstract T createChildFetcher(ImmutableProp prop, boolean negative);
 
     @Override
-    protected abstract T createChildFetcher(ImmutableProp prop, Loader loader);
+    protected abstract T createChildFetcher(ImmutableProp prop, Loader<?, ? extends Table<?>> loader);
 }

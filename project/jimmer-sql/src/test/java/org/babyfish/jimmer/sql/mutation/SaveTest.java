@@ -28,7 +28,7 @@ public class SaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                "select tb_1_.ID, tb_1_.NAME " +
                                         "from BOOK_STORE as tb_1_ where tb_1_.ID = ?"
                         );
                         it.variables(newId);
@@ -61,7 +61,7 @@ public class SaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                "select tb_1_.ID, tb_1_.NAME " +
                                         "from BOOK_STORE as tb_1_ where tb_1_.ID = ?"
                         );
                         it.variables(oreillyId);
@@ -146,7 +146,7 @@ public class SaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                "select tb_1_.ID, tb_1_.NAME " +
                                         "from BOOK_STORE as tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
@@ -179,7 +179,7 @@ public class SaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                "select tb_1_.ID, tb_1_.NAME " +
                                         "from BOOK_STORE as tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
@@ -220,7 +220,7 @@ public class SaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                         "from BOOK as tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
@@ -264,7 +264,7 @@ public class SaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                         "from BOOK as tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
@@ -313,7 +313,7 @@ public class SaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                "select tb_1_.ID, tb_1_.NAME " +
                                         "from BOOK_STORE as tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
@@ -367,7 +367,7 @@ public class SaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                "select tb_1_.ID, tb_1_.NAME " +
                                         "from BOOK_STORE as tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
@@ -429,7 +429,7 @@ public class SaveTest extends AbstractMutationTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                        it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                 "from BOOK as tb_1_ " +
                                 "where tb_1_.NAME = ? " +
                                 "and tb_1_.EDITION = ?");
@@ -484,7 +484,7 @@ public class SaveTest extends AbstractMutationTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                        it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                 "from BOOK as tb_1_ " +
                                 "where tb_1_.NAME = ? " +
                                 "and tb_1_.EDITION = ?");
@@ -546,7 +546,7 @@ public class SaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
                                         "from AUTHOR as tb_1_ " +
                                         "where tb_1_.FIRST_NAME = ? and " +
                                         "tb_1_.LAST_NAME = ?"
@@ -604,7 +604,7 @@ public class SaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
                                         "from AUTHOR as tb_1_ " +
                                         "where tb_1_.FIRST_NAME = ? and " +
                                         "tb_1_.LAST_NAME = ?"
