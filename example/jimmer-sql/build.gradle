@@ -3,16 +3,16 @@ plugins {
 }
 
 group 'org.babyfish.jimmer.example.sql'
-version '0.0.5'
+version '0.0.7'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation 'org.babyfish.jimmer:jimmer-core:0.0.6'
-    implementation 'org.babyfish.jimmer:jimmer-sql:0.0.6'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.6'
+    implementation 'org.babyfish.jimmer:jimmer-core:0.0.7'
+    implementation 'org.babyfish.jimmer:jimmer-sql:0.0.7'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.7'
 
     implementation 'javax.validation:validation-api:2.0.1.Final'
     implementation 'javax.persistence:javax.persistence-api:2.2'
