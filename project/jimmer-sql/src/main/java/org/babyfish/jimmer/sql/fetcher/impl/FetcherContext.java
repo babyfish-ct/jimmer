@@ -10,8 +10,11 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 class FetcherContext {
+
+    private static final ThreadLocal<FetcherContext> LOCAL = new ThreadLocal<>();
 
     private SqlClient sqlClient;
 
@@ -21,7 +24,26 @@ class FetcherContext {
 
     private Map<Field, FetcherTask> taskMap = new LinkedHashMap<>();
 
-    public FetcherContext(SqlClient sqlClient, Connection con) {
+    public static void using(
+            SqlClient sqlClient,
+            Connection con,
+            BiConsumer<FetcherContext, Boolean> block
+    ) {
+        FetcherContext ctx = LOCAL.get();
+        if (ctx != null) {
+            block.accept(ctx, false);
+        } else {
+            ctx = new FetcherContext(sqlClient, con);
+            LOCAL.set(ctx);
+            try {
+                block.accept(ctx, true);
+            } finally {
+                LOCAL.remove();
+            }
+        }
+    }
+
+    private FetcherContext(SqlClient sqlClient, Connection con) {
         this.sqlClient = sqlClient;
         this.con = con;
     }
@@ -50,10 +72,10 @@ class FetcherContext {
 
     public void execute() {
         while (!taskMap.isEmpty()) {
-            Iterator<FetcherTask> itr = taskMap.values().iterator();
-            FetcherTask task = itr.next();
-            if (task.execute()) {
-                itr.remove();
+            Iterator<Map.Entry<Field, FetcherTask>> itr = taskMap.entrySet().iterator();
+            Map.Entry<Field, FetcherTask> e = itr.next();
+            if (e.getValue().execute()) {
+                taskMap.remove(e.getKey());
             }
         }
     }

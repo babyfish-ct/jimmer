@@ -86,8 +86,11 @@ public class Fetchers {
             Fetcher<?> fetcher,
             List<DraftSpi> drafts
     ) {
-        FetcherContext ctx = new FetcherContext(sqlClient, con);
-        ctx.addAll(fetcher, drafts);
-        ctx.execute();
+        FetcherContext.using(sqlClient, con, (ctx, isRoot) -> {
+            ctx.addAll(fetcher, drafts);
+            if (isRoot) {
+                ctx.execute();
+            }
+        });
     }
 }
