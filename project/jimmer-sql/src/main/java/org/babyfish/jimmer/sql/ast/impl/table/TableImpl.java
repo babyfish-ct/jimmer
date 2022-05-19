@@ -126,6 +126,18 @@ class TableImpl<E> implements TableImplementor<E> {
     }
 
     @Override
+    public Predicate isNull() {
+        String idPropName = immutableType.getIdProp().getName();
+        return this.get(idPropName).isNull();
+    }
+
+    @Override
+    public Predicate isNotNull() {
+        String idPropName = immutableType.getIdProp().getName();
+        return this.get(idPropName).isNotNull();
+    }
+
+    @Override
     public NumericExpression<Long> count() {
         return count(false);
     }

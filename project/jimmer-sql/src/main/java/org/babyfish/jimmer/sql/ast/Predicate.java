@@ -1,29 +1,15 @@
 package org.babyfish.jimmer.sql.ast;
 
-import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
-import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
+import org.babyfish.jimmer.lang.NewChain;
 
 public interface Predicate extends Expression<Boolean> {
 
+    @NewChain
     Predicate and(Predicate other);
 
+    @NewChain
     Predicate or(Predicate other);
 
+    @NewChain
     Predicate not();
-
-    static Predicate exists(TypedSubQuery<?> subQuery) {
-        throw new RuntimeException();
-    }
-
-    static Predicate notExists(TypedSubQuery<?> subQuery) {
-        throw new RuntimeException();
-    }
-
-    static Predicate exists(MutableSubQuery subQuery) {
-        throw new RuntimeException();
-    }
-
-    static Predicate notExists(MutableSubQuery subQuery) {
-        throw new RuntimeException();
-    }
 }

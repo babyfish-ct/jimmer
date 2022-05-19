@@ -12,6 +12,10 @@ public interface Table<E> extends Selection<E> {
 
     Predicate eq(Table<E> other);
 
+    Predicate isNull();
+
+    Predicate isNotNull();
+
     NumericExpression<Long> count();
 
     NumericExpression<Long> count(boolean distinct);

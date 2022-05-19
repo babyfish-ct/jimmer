@@ -3,9 +3,11 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
+import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
 import org.babyfish.jimmer.sql.meta.Column;
 
 import java.util.StringJoiner;
+import java.util.function.BiConsumer;
 
 class FieldImpl implements Field {
 
@@ -15,7 +17,7 @@ class FieldImpl implements Field {
 
     private int limit;
 
-    private int depth;
+    private RecursionStrategy<?> recursionStrategy;
 
     private FetcherImpl<?> childFetcher;
 
@@ -25,13 +27,13 @@ class FieldImpl implements Field {
             ImmutableProp prop,
             int batchSize,
             int limit,
-            int depth,
+            RecursionStrategy<?> recursionStrategy,
             FetcherImpl<?> childFetcher
     ) {
         this.prop = prop;
         this.batchSize = batchSize;
         this.limit = limit;
-        this.depth = depth;
+        this.recursionStrategy = recursionStrategy;
         this.childFetcher = childFetcher;
         this.isSimpleField = determineIsSimpleField();
     }
@@ -52,8 +54,8 @@ class FieldImpl implements Field {
     }
 
     @Override
-    public int getDepth() {
-        return depth;
+    public RecursionStrategy<?> getRecursionStrategy() {
+        return recursionStrategy;
     }
 
     @Override
@@ -75,10 +77,15 @@ class FieldImpl implements Field {
         if (limit != Integer.MAX_VALUE) {
             joiner.add("limit: " + limit);
         }
-        if (depth == Integer.MAX_VALUE) {
-            joiner.add("recursive: true");
-        } else if (depth > 1) {
-            joiner.add("depth: " + depth);
+        if (recursionStrategy instanceof DefaultRecursionStrategy<?>) {
+            int depth = ((DefaultRecursionStrategy<?>) recursionStrategy).getDepth();
+            if (depth == Integer.MAX_VALUE) {
+                joiner.add("recursive: true");
+            } else if (depth > 1) {
+                joiner.add("depth: " + depth);
+            }
+        } else if (recursionStrategy != null) {
+            joiner.add("recursive: <java-code>");
         }
         if (childFetcher == null) {
             return prop.getName() + joiner;

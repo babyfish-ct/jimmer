@@ -54,6 +54,14 @@ public class Internal {
         });
     }
 
+    public static DraftContext currentDraftContext() {
+        DraftContext ctx = DRAFT_CONTEXT_LOCAL.get();
+        if (ctx == null) {
+            throw new IllegalStateException("No draft context");
+        }
+        return ctx;
+    }
+
     private static <T> T usingDraftContext(
             BiFunction<DraftContext, Boolean, T> block
     ) {

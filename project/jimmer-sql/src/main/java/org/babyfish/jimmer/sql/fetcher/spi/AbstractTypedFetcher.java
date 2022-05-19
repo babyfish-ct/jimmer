@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.fetcher.spi;
 
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Loader;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
@@ -72,7 +73,7 @@ public abstract class AbstractTypedFetcher<E, T extends AbstractTypedFetcher<E, 
     public T add(
             String prop,
             Fetcher<?> childFetcher,
-            Consumer<? extends Loader> loaderBlock
+            Consumer<? extends Loader<?, ? extends Table<?>>> loaderBlock
     ) {
         return (T) super.add(prop, childFetcher, loaderBlock);
     }

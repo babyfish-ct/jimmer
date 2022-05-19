@@ -23,6 +23,16 @@ public abstract class AbstractTableWrapper<E> implements Table<E> {
     }
 
     @Override
+    public Predicate isNull() {
+        return raw.isNull();
+    }
+
+    @Override
+    public Predicate isNotNull() {
+        return raw.isNotNull();
+    }
+
+    @Override
     public NumericExpression<Long> count() {
         return raw.count();
     }
