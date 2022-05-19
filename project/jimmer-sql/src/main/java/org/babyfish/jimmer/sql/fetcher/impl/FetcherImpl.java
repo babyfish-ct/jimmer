@@ -3,10 +3,11 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.Loader;
-import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -25,7 +26,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
 
     private final int limit;
 
-    private final int depth;
+    private final RecursionStrategy<?> recursionStrategy;
 
     private final FetcherImpl<?> childFetcher;
 
@@ -40,7 +41,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
         this.prev = null;
         this.batchSize = 0;
         this.limit = Integer.MAX_VALUE;
-        this.depth = 1;
+        this.recursionStrategy = null;
         this.childFetcher = null;
     }
 
@@ -51,7 +52,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
         this.prop = prop;
         this.batchSize = 0;
         this.limit = Integer.MAX_VALUE;
-        this.depth = 1;
+        this.recursionStrategy = null;
         this.childFetcher = null;
     }
 
@@ -68,12 +69,12 @@ public class FetcherImpl<E> implements Fetcher<E> {
             LoaderImpl loaderImpl = (LoaderImpl) loader;
             this.batchSize = loaderImpl.getBatchSize();
             this.limit = prop.isEntityList() ? loaderImpl.getLimit() : Integer.MAX_VALUE;
-            this.depth = loaderImpl.getDepth();
+            this.recursionStrategy = loaderImpl.getRecursionStrategy();
             this.childFetcher = loaderImpl.getChildFetcher();
         } else {
             this.batchSize = 0;
             this.limit = Integer.MAX_VALUE;
-            this.depth = 1;
+            this.recursionStrategy = null;
             this.childFetcher = null;
         }
     }
@@ -103,7 +104,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
                                 fetcher.prop,
                                 fetcher.batchSize,
                                 fetcher.limit,
-                                fetcher.depth,
+                                fetcher.recursionStrategy,
                                 fetcher.childFetcher
                         );
                 if (!map.containsKey(name)) {
@@ -179,7 +180,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
     public Fetcher<E> add(
             String prop,
             Fetcher<?> childFetcher,
-            Consumer<? extends Loader> loaderBlock
+            Consumer<? extends Loader<?, ? extends Table<?>>> loaderBlock
     ) {
         Objects.requireNonNull(prop, "'prop' cannot be null");
         Objects.requireNonNull(childFetcher, "'childFetcher' cannot be null");
@@ -194,9 +195,9 @@ public class FetcherImpl<E> implements Fetcher<E> {
         if (immutableProp.getTargetType().getJavaClass() != childFetcher.getJavaClass()) {
             throw new IllegalArgumentException("Illegal type of childFetcher");
         }
-        LoaderImpl loaderImpl = new LoaderImpl(immutableProp, (FetcherImpl<?>) childFetcher);
+        LoaderImpl<Object, Table<Object>> loaderImpl = new LoaderImpl<>(immutableProp, (FetcherImpl<?>) childFetcher);
         if (loaderBlock != null) {
-            ((Consumer<Loader>)loaderBlock).accept(loaderImpl);
+            ((Consumer<Loader<Object, Table<Object>>>)loaderBlock).accept(loaderImpl);
             if (loaderImpl.getLimit() != Integer.MAX_VALUE && loaderImpl.getBatchSize() != 1) {
                 throw new IllegalArgumentException(
                         "Fetcher field with limit does not support batch load, " +
@@ -208,7 +209,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
     }
 
     @NewChain
-    private FetcherImpl<E> addImpl(ImmutableProp prop, LoaderImpl loader) {
+    private FetcherImpl<E> addImpl(ImmutableProp prop, LoaderImpl<?, ?> loader) {
         if (prop.isId()) {
             return this;
         }

@@ -14,7 +14,7 @@ import java.util.function.BiConsumer;
 
 class FetcherContext {
 
-    private static final ThreadLocal<FetcherContext> LOCAL = new ThreadLocal<>();
+    private static final ThreadLocal<FetcherContext> FETCHER_CONTEXT_LOCAL = new ThreadLocal<>();
 
     private SqlClient sqlClient;
 
@@ -29,16 +29,16 @@ class FetcherContext {
             Connection con,
             BiConsumer<FetcherContext, Boolean> block
     ) {
-        FetcherContext ctx = LOCAL.get();
+        FetcherContext ctx = FETCHER_CONTEXT_LOCAL.get();
         if (ctx != null) {
             block.accept(ctx, false);
         } else {
             ctx = new FetcherContext(sqlClient, con);
-            LOCAL.set(ctx);
+            FETCHER_CONTEXT_LOCAL.set(ctx);
             try {
                 block.accept(ctx, true);
             } finally {
-                LOCAL.remove();
+                FETCHER_CONTEXT_LOCAL.remove();
             }
         }
     }

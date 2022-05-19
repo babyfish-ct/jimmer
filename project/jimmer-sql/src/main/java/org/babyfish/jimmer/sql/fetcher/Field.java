@@ -10,7 +10,7 @@ public interface Field {
 
     int getLimit();
 
-    int getDepth();
+    RecursionStrategy<?> getRecursionStrategy();
 
     Fetcher<?> getChildFetcher();
 

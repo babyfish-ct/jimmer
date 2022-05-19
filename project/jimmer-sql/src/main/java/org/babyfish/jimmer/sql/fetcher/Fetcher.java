@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.fetcher;
 
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.ast.table.Table;
 
 import java.util.Map;
 import java.util.function.Consumer;
@@ -36,7 +37,7 @@ public interface Fetcher<E> {
     Fetcher<E> add(
             String prop,
             Fetcher<?> childFetcher,
-            Consumer<? extends Loader> loaderBlock
+            Consumer<? extends Loader<?, ? extends Table<?>>> loaderBlock
     );
 
     boolean isSimpleFetcher();

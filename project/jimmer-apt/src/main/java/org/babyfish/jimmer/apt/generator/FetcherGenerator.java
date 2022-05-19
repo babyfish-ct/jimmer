@@ -163,7 +163,7 @@ public class FetcherGenerator {
                 prop.getElementType(),
                 type.getTypeElement().asType()
         );
-        TypeName loaderClassName;
+        ClassName loaderClassName;
         if (recursive && prop.isList()) {
             loaderClassName = Constants.RECURSIVE_LIST_LOADER_CLASS_NAME;
         } else if (recursive) {
@@ -187,7 +187,11 @@ public class FetcherGenerator {
                 .addParameter(
                         ParameterizedTypeName.get(
                                 Constants.CONSUMER_CLASS_NAME,
-                                loaderClassName
+                                ParameterizedTypeName.get(
+                                        loaderClassName,
+                                        type.getClassName(),
+                                        type.getTableClassName()
+                                )
                         ),
                         "loader"
                 )

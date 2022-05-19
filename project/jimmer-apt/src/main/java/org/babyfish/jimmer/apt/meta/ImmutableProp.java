@@ -623,7 +623,7 @@ public class ImmutableProp {
                             this +
                             "\", its nullity is conflict because it is marked by both " +
                             notNullAnnotationRef +
-                            " and @" +
+                            " and " +
                             nullAnnotationRef
             );
         }
