@@ -1,16 +1,13 @@
 package org.babyfish.jimmer.sql.fetcher;
 
 import org.babyfish.jimmer.lang.OldChain;
-import org.babyfish.jimmer.sql.ast.query.Filterable;
 import org.babyfish.jimmer.sql.ast.table.Table;
-
-import java.util.function.BiConsumer;
 
 public interface ListLoader<E, T extends Table<E>> extends Loader<E, T> {
 
     @OldChain
     @Override
-    ListLoader<E, T> filter(BiConsumer<Filterable, T> block);
+    ListLoader<E, T> filter(Filter<E, T> filter);
 
     @OldChain
     @Override

@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
 
-public class MultiLevelFetcherQueryTest extends AbstractQueryTest {
+public class MultiLevelTest extends AbstractQueryTest {
 
     @Test
     public void testFromBookStore() {

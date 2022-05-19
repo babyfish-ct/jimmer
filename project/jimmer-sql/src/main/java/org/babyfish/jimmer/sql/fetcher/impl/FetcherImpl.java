@@ -3,13 +3,12 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.ast.query.Filterable;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.Field;
-import org.babyfish.jimmer.sql.fetcher.Loader;
-import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
+import org.babyfish.jimmer.sql.fetcher.*;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class FetcherImpl<E> implements Fetcher<E> {
@@ -21,6 +20,8 @@ public class FetcherImpl<E> implements Fetcher<E> {
     private final boolean negative;
 
     private final ImmutableProp prop;
+
+    private final Filter<E, ?> filter;
 
     private final int batchSize;
 
@@ -35,10 +36,11 @@ public class FetcherImpl<E> implements Fetcher<E> {
     private Boolean isSimpleFetcher;
 
     public FetcherImpl(Class<E> javaClass) {
+        this.prev = null;
         this.immutableType = ImmutableType.get(javaClass);
         this.negative = false;
         this.prop = immutableType.getIdProp();
-        this.prev = null;
+        this.filter = null;
         this.batchSize = 0;
         this.limit = Integer.MAX_VALUE;
         this.recursionStrategy = null;
@@ -46,32 +48,36 @@ public class FetcherImpl<E> implements Fetcher<E> {
     }
 
     protected FetcherImpl(FetcherImpl<E> prev, ImmutableProp prop, boolean negative) {
-        this.immutableType = prev.immutableType;
         this.prev = prev;
+        this.immutableType = prev.immutableType;
         this.negative = negative;
         this.prop = prop;
+        this.filter = null;
         this.batchSize = 0;
         this.limit = Integer.MAX_VALUE;
         this.recursionStrategy = null;
         this.childFetcher = null;
     }
 
+    @SuppressWarnings("unchecked")
     protected FetcherImpl(
             FetcherImpl<E> prev,
             ImmutableProp prop,
             Loader loader
     ) {
+        this.prev = prev;
         this.immutableType = prev.immutableType;
         this.negative = false;
         this.prop = prop;
-        this.prev = prev;
         if (loader != null) {
-            LoaderImpl loaderImpl = (LoaderImpl) loader;
+            LoaderImpl<?, Table<?>> loaderImpl = (LoaderImpl<?, Table<?>>) loader;
+            this.filter = (Filter<E, ?>) loaderImpl.getFilter();
             this.batchSize = loaderImpl.getBatchSize();
             this.limit = prop.isEntityList() ? loaderImpl.getLimit() : Integer.MAX_VALUE;
             this.recursionStrategy = loaderImpl.getRecursionStrategy();
             this.childFetcher = loaderImpl.getChildFetcher();
         } else {
+            this.filter = null;
             this.batchSize = 0;
             this.limit = Integer.MAX_VALUE;
             this.recursionStrategy = null;
@@ -102,6 +108,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
                         null :
                         new FieldImpl(
                                 fetcher.prop,
+                                fetcher.filter,
                                 fetcher.batchSize,
                                 fetcher.limit,
                                 fetcher.recursionStrategy,

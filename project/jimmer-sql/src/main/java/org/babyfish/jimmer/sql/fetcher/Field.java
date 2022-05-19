@@ -6,6 +6,8 @@ public interface Field {
 
     ImmutableProp getProp();
 
+    Filter<?,?> getFilter();
+
     int getBatchSize();
 
     int getLimit();
