@@ -1,14 +1,11 @@
 package org.babyfish.jimmer.sql.fetcher;
 
-import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 public class SimpleTest extends AbstractQueryTest {
 
@@ -23,16 +20,15 @@ public class SimpleTest extends AbstractQueryTest {
                     );
                 }),
                 ctx -> {
-                    ctx.sql("select tb_1_.ID, tb_1_.NAME from BOOK as tb_1_");
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME from BOOK as tb_1_"
+                    );
                     ctx.rows(books -> {
                         Assertions.assertEquals(12, books.size());
-                        for (Book book : books) {
-                            Assertions.assertTrue(((ImmutableSpi) book).__isLoaded("name"));
-                            Assertions.assertFalse(((ImmutableSpi) book).__isLoaded("edition"));
-                            Assertions.assertFalse(((ImmutableSpi) book).__isLoaded("price"));
-                            Assertions.assertFalse(((ImmutableSpi) book).__isLoaded("store"));
-                            Assertions.assertFalse(((ImmutableSpi) book).__isLoaded("authors"));
-                        }
+                        assertLoadState(
+                                books,
+                                "id", "name"
+                        );
                     });
                 }
         );
@@ -42,38 +38,37 @@ public class SimpleTest extends AbstractQueryTest {
     public void testFetchManyToOne() {
         executeAndExpect(
                 getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                    q.orderBy(book.name()).orderBy(book.edition());
                     return q.select(
                             book.fetch(
                                     BookFetcher.$
                                             .name()
                                             .store(
-                                                    BookStoreFetcher.$.name()
+                                                    BookStoreFetcher.$.name(),
+                                                    it -> it.filter(args -> {
+                                                        args.orderBy(args.getTable().name());
+                                                    })
                                             )
                             )
                     );
                 }),
                 ctx -> {
-                    ctx.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.STORE_ID from BOOK as tb_1_");
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_ " +
+                                    "order by tb_1_.NAME asc, tb_1_.EDITION asc"
+                    );
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME " +
                                     "from BOOK_STORE as tb_1_ " +
-                                    "where tb_1_.ID in (?, ?)");
-                    ctx.statement(1).variables(oreillyId, manningId);
+                                    "where tb_1_.ID in (?, ?) " +
+                                    "order by tb_1_.NAME asc"
+                    ).variables(oreillyId, manningId);
                     ctx.rows(books -> {
                         Assertions.assertEquals(12, books.size());
+                        assertLoadState(books, "id", "name", "store");
                         for (Book book : books) {
-
-                            Assertions.assertTrue(((ImmutableSpi) book).__isLoaded("name"));
-                            Assertions.assertFalse(((ImmutableSpi) book).__isLoaded("edition"));
-                            Assertions.assertFalse(((ImmutableSpi) book).__isLoaded("price"));
-                            Assertions.assertTrue(((ImmutableSpi) book).__isLoaded("store"));
-                            Assertions.assertFalse(((ImmutableSpi) book).__isLoaded("authors"));
-
-                            BookStore store = book.store();
-                            Assertions.assertTrue(((ImmutableSpi) store).__isLoaded("name"));
-                            Assertions.assertFalse(((ImmutableSpi) store).__isLoaded("website"));
-                            Assertions.assertFalse(((ImmutableSpi) store).__isLoaded("version"));
-                            Assertions.assertFalse(((ImmutableSpi) store).__isLoaded("books"));
+                            assertLoadState(book.store(), "id", "name");
                         }
                     });
                 }
@@ -104,22 +99,14 @@ public class SimpleTest extends AbstractQueryTest {
                                     "where tb_1_.STORE_ID in (?, ?)"
                     );
                     ctx.rows(stores -> {
+                        Assertions.assertEquals(2, stores.size());
+                        assertLoadState(stores, "id", "name", "books");
                         for (BookStore store : stores) {
-
-                            Assertions.assertTrue(((ImmutableSpi) store).__isLoaded("name"));
-                            Assertions.assertFalse(((ImmutableSpi) store).__isLoaded("website"));
-                            Assertions.assertFalse(((ImmutableSpi) store).__isLoaded("version"));
-                            Assertions.assertTrue(((ImmutableSpi) store).__isLoaded("books"));
-
-                            List<Book> books = store.books();
-                            Assertions.assertFalse(books.isEmpty());
-                            for (Book book : books) {
-                                Assertions.assertTrue(((ImmutableSpi) book).__isLoaded("name"));
-                                Assertions.assertFalse(((ImmutableSpi) book).__isLoaded("edition"));
-                                Assertions.assertFalse(((ImmutableSpi) book).__isLoaded("price"));
-                                Assertions.assertFalse(((ImmutableSpi) book).__isLoaded("store"));
-                                Assertions.assertFalse(((ImmutableSpi) book).__isLoaded("authors"));
-                            }
+                            Assertions.assertEquals(
+                                    store.name().equals("MANNING") ? 3 : 9,
+                                    store.books().size()
+                            );
+                            assertLoadState(store.books(), "id", "name");
                         }
                     });
                 }
@@ -146,7 +133,12 @@ public class SimpleTest extends AbstractQueryTest {
                                     "where tb_1_.BOOK_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     );
                     ctx.rows(books -> {
-                        System.out.println(books);
+                        Assertions.assertEquals(12, books.size());
+                        assertLoadState(books, "id", "name", "authors");
+                        for (Book book : books) {
+                            Assertions.assertFalse(book.authors().isEmpty());
+                            assertLoadState(book.authors(), "id");
+                        }
                     });
                 }
         );
@@ -186,7 +178,12 @@ public class SimpleTest extends AbstractQueryTest {
                                     "where tb_1_.BOOK_ID in (?, ?, ?, ?, ?, ?)"
                     );
                     ctx.rows(books -> {
-                        System.out.println(books);
+                        Assertions.assertEquals(12, books.size());
+                        assertLoadState(books, "id", "name", "authors");
+                        for (Book book : books) {
+                            Assertions.assertFalse(book.authors().isEmpty());
+                            assertLoadState(book.authors(), "id", "firstName", "lastName");
+                        }
                     });
                 }
         );
@@ -200,18 +197,26 @@ public class SimpleTest extends AbstractQueryTest {
                             author.fetch(
                                     AuthorFetcher.$
                                             .firstName()
-                                            .firstName()
+                                            .lastName()
                                             .books()
                             )
                     );
                 }),
                 ctx -> {
-                    ctx.sql("select tb_1_.ID, tb_1_.FIRST_NAME from AUTHOR as tb_1_");
+                    ctx.sql("select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME from AUTHOR as tb_1_");
                     ctx.statement(1).sql(
                             "select tb_1_.AUTHOR_ID, tb_1_.BOOK_ID " +
                                     "from BOOK_AUTHOR_MAPPING as tb_1_ " +
                                     "where tb_1_.AUTHOR_ID in (?, ?, ?, ?, ?)"
                     );
+                    ctx.rows(authors -> {
+                        Assertions.assertEquals(5, authors.size());
+                        assertLoadState(authors, "id", "firstName", "lastName", "books");
+                        for (Author author : authors) {
+                            Assertions.assertFalse(author.books().isEmpty());
+                            assertLoadState(author.books(), "id");
+                        }
+                    });
                 }
         );
     }
@@ -224,7 +229,7 @@ public class SimpleTest extends AbstractQueryTest {
                             author.fetch(
                                     AuthorFetcher.$
                                             .firstName()
-                                            .firstName()
+                                            .lastName()
                                             .books(
                                                     BookFetcher.$.name()
                                             )
@@ -232,13 +237,21 @@ public class SimpleTest extends AbstractQueryTest {
                     );
                 }),
                 ctx -> {
-                    ctx.sql("select tb_1_.ID, tb_1_.FIRST_NAME from AUTHOR as tb_1_");
+                    ctx.sql("select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME from AUTHOR as tb_1_");
                     ctx.statement(1).sql(
                             "select tb_1_.AUTHOR_ID, tb_3_.ID, tb_3_.NAME " +
                                     "from BOOK_AUTHOR_MAPPING as tb_1_ " +
                                     "inner join BOOK as tb_3_ on tb_1_.BOOK_ID = tb_3_.ID " +
                                     "where tb_1_.AUTHOR_ID in (?, ?, ?, ?, ?)"
                     );
+                    ctx.rows(authors -> {
+                        Assertions.assertEquals(5, authors.size());
+                        assertLoadState(authors, "id", "firstName", "lastName", "books");
+                        for (Author author : authors) {
+                            Assertions.assertFalse(author.books().isEmpty());
+                            assertLoadState(author.books(), "id", "name");
+                        }
+                    });
                 }
         );
     }

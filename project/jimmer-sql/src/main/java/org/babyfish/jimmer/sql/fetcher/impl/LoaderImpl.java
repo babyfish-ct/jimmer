@@ -29,7 +29,7 @@ class LoaderImpl<E, T extends Table<E>> implements RecursiveListLoader<E, T> {
 
     @Override
     public RecursiveListLoader<E, T> filter(Filter<E, T> filter) {
-        if (filter != null && prop.isReference() && prop.isNullable()) {
+        if (filter != null && prop.isReference() && !prop.isNullable()) {
             throw new IllegalArgumentException(
                     "Cannot set filter for non-null one-to-one/many-to-one property \"" + prop + "\""
             );
@@ -91,6 +91,10 @@ class LoaderImpl<E, T extends Table<E>> implements RecursiveListLoader<E, T> {
         }
         this.recursionStrategy = strategy;
         return this;
+    }
+
+    ImmutableProp getProp() {
+        return prop;
     }
 
     FetcherImpl<?> getChildFetcher() {

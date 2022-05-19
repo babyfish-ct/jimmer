@@ -24,7 +24,7 @@ public class DeleteDetachedObjectTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                "select tb_1_.ID, tb_1_.NAME " +
                                         "from BOOK_STORE as tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );

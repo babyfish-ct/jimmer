@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
 import java.util.Map;
 import java.util.stream.IntStream;
 
-public class DefaultRecursionStrategy<E> implements RecursionStrategy<E> {
+class DefaultRecursionStrategy<E> implements RecursionStrategy<E> {
 
     private int depth;
 

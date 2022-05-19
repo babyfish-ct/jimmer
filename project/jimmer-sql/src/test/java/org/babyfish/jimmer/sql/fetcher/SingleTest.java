@@ -13,6 +13,7 @@ public class SingleTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(book.name().eq("GraphQL in Action"));
+                    q.orderBy(book.edition());
                     return q.select(
                             book.fetch(
                                     BookFetcher.$.name().store(
@@ -25,11 +26,15 @@ public class SingleTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ where tb_1_.NAME = ?"
-                    );
+                                    "from BOOK as tb_1_ " +
+                                    "where tb_1_.NAME = ? " +
+                                    "order by tb_1_.EDITION asc"
+                    ).variables("GraphQL in Action");
                     ctx.statement(1).sql(
-                            "select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_ where tb_1_.ID = ?"
-                    );
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from BOOK_STORE as tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    ).variables(manningId);
                     ctx.rows(System.out::println);
                 }
         );
@@ -38,34 +43,38 @@ public class SingleTest extends AbstractQueryTest {
     @Test
     public void testOneToMany() {
         executeAndExpect(
-                getSqlClient().createQuery(BookStoreTable.class, (q, store) ->
-                        q.select(
-                                store.fetch(
-                                        BookStoreFetcher.$.name().books(
-                                                BookFetcher.$.name().edition(),
-                                                it -> it.batch(1).limit(3, 1).filter(args -> {
-                                                    args
-                                                            .orderBy(args.getTable().name())
-                                                            .orderBy(args.getTable().edition(), OrderMode.DESC);
-                                                })
-                                        )
-                                )
-                        )
-                ),
+                getSqlClient().createQuery(BookStoreTable.class, (q, store) -> {
+                    q.orderBy(store.name());
+                    return q.select(
+                            store.fetch(
+                                    BookStoreFetcher.$.name().books(
+                                            BookFetcher.$.name().edition(),
+                                            it -> it.batch(1).limit(3, 1).filter(args -> {
+                                                args
+                                                        .orderBy(args.getTable().name())
+                                                        .orderBy(args.getTable().edition(), OrderMode.DESC);
+                                            })
+                                    )
+                            )
+                    );
+                }),
                 ctx -> {
-                    ctx.sql("select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_");
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from BOOK_STORE as tb_1_ " +
+                                    "order by tb_1_.NAME asc");
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                     "from BOOK as tb_1_ " +
                                     "where tb_1_.STORE_ID = ? " +
                                     "order by tb_1_.NAME asc, tb_1_.EDITION desc limit ? offset ?"
-                    );
+                    ).variables(manningId, 3, 1);
                     ctx.statement(2).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                     "from BOOK as tb_1_ " +
                                     "where tb_1_.STORE_ID = ? " +
                                     "order by tb_1_.NAME asc, tb_1_.EDITION desc limit ? offset ?"
-                    );
+                    ).variables(oreillyId, 3, 1);
                     ctx.rows(System.out::println);
                 }
         );
@@ -95,25 +104,25 @@ public class SingleTest extends AbstractQueryTest {
                                     "from BOOK as tb_1_ " +
                                     "where tb_1_.NAME = ? " +
                                     "order by tb_1_.EDITION asc"
-                    );
+                    ).variables("Learning GraphQL");
                     ctx.statement(1).sql(
                             "select tb_3_.ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
                                     "from BOOK_AUTHOR_MAPPING as tb_1_ " +
                                     "inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID " +
                                     "where tb_1_.BOOK_ID = ? order by tb_3_.FIRST_NAME asc limit ?"
-                    );
-                    ctx.statement(1).sql(
+                    ).variables(learningGraphQLId1, 1);
+                    ctx.statement(2).sql(
                             "select tb_3_.ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
                                     "from BOOK_AUTHOR_MAPPING as tb_1_ " +
                                     "inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID " +
                                     "where tb_1_.BOOK_ID = ? order by tb_3_.FIRST_NAME asc limit ?"
-                    );
-                    ctx.statement(1).sql(
+                    ).variables(learningGraphQLId2, 1);
+                    ctx.statement(3).sql(
                             "select tb_3_.ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
                                     "from BOOK_AUTHOR_MAPPING as tb_1_ " +
                                     "inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID " +
                                     "where tb_1_.BOOK_ID = ? order by tb_3_.FIRST_NAME asc limit ?"
-                    );
+                    ).variables(learningGraphQLId3, 1);
                 }
         );
     }
@@ -141,7 +150,7 @@ public class SingleTest extends AbstractQueryTest {
                                     "from AUTHOR as tb_1_ " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "order by tb_1_.FIRST_NAME asc"
-                    );
+                    ).variables(borisId, sammerId);
                     ctx.statement(1).sql(
                             "select tb_3_.ID, tb_3_.NAME, tb_3_.EDITION " +
                                     "from BOOK_AUTHOR_MAPPING as tb_1_ " +
@@ -149,7 +158,7 @@ public class SingleTest extends AbstractQueryTest {
                                     "where tb_1_.AUTHOR_ID = ? " +
                                     "order by tb_3_.EDITION desc " +
                                     "limit ?"
-                    );
+                    ).variables(borisId, 2);
                     ctx.statement(2).sql(
                             "select tb_3_.ID, tb_3_.NAME, tb_3_.EDITION " +
                                     "from BOOK_AUTHOR_MAPPING as tb_1_ " +
@@ -157,8 +166,7 @@ public class SingleTest extends AbstractQueryTest {
                                     "where tb_1_.AUTHOR_ID = ? " +
                                     "order by tb_3_.EDITION desc " +
                                     "limit ?"
-                    );
-                    ctx.rows(System.out::println);
+                    ).variables(sammerId, 2);
                 }
         );
     }

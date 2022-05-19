@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.model.TreeNodeFetcher;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class FetcherTest {
+public class StaticFetcherTest {
 
     @Test
     public void testBookFetcher() {
@@ -45,7 +45,7 @@ public class FetcherTest {
         Assertions.assertEquals(
                 "org.babyfish.jimmer.sql.model.TreeNode { " +
                         "id, " +
-                        "parent(depth: 5) { id, name }, " +
+                        "parent(depth: 5) { id, name, parent }, " +
                         "childNodes(depth: 10) { id, name } " +
                         "}",
                 TreeNodeFetcher.$
@@ -56,7 +56,7 @@ public class FetcherTest {
         Assertions.assertEquals(
                 "org.babyfish.jimmer.sql.model.TreeNode { " +
                         "id, " +
-                        "parent(recursive: true) { id, name }, " +
+                        "parent(recursive: true) { id, name, parent }, " +
                         "childNodes(recursive: true) { id, name } " +
                         "}",
                 TreeNodeFetcher.$

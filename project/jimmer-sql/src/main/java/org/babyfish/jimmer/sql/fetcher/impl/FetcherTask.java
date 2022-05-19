@@ -51,6 +51,9 @@ class FetcherTask {
     private void add(DraftSpi draft, int depth) {
         String propName = field.getProp().getName();
         Object key = cache.createKey(field, draft);
+        if (key == null) {
+            return;
+        }
         Object value = cache.get(field, key);
         if (value != null) {
             draft.__set(propName, DataCache.unwrap(value));

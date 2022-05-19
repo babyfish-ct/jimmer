@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.Converts;
@@ -505,7 +506,11 @@ class Saver {
                         )
                 );
             }
-            return q.select(table);
+            return q.select(
+                    ((Table<ImmutableSpi>)table).fetch(
+                            IdAndKeyFetchers.getFetcher(type)
+                    )
+            );
         }).execute(con);
 
         if (rows.size() > 1) {
