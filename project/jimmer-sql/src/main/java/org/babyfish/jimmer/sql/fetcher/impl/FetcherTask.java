@@ -95,7 +95,7 @@ class FetcherTask {
             if (value != null) {
                 value = DataCache.unwrap(value);
                 TaskData taskData = e.getValue();
-                afterLoad(key, value, taskData);
+                afterLoad(key, value, taskData, false);
                 handledEntryItr.remove();
             }
         }
@@ -104,14 +104,14 @@ class FetcherTask {
                 Object key = handledMap.keySet().iterator().next();
                 Object value = singleDataLoader.load(key);
                 TaskData taskData = handledMap.get(key);
-                afterLoad(key, value, taskData);
+                afterLoad(key, value, taskData, true);
             } else {
                 Map<Object, ?> loadedMap = batchDataLoader.load(handledMap.keySet());
                 for (Map.Entry<Object, TaskData> e : handledMap.entrySet()) {
                     Object key = e.getKey();
                     Object value = loadedMap.get(key);
                     TaskData taskData = e.getValue();
-                    afterLoad(key, value, taskData);
+                    afterLoad(key, value, taskData, true);
                 }
             }
         }
@@ -149,8 +149,10 @@ class FetcherTask {
     }
 
     @SuppressWarnings("unchecked")
-    private void afterLoad(Object key, Object value, TaskData taskData) {
-        cache.put(field, key, value);
+    private void afterLoad(Object key, Object value, TaskData taskData, boolean updateCache) {
+        if (updateCache) {
+            cache.put(field, key, value);
+        }
         for (DraftSpi draft : taskData.getDrafts()) {
             setDraftProp(draft, value);
         }
