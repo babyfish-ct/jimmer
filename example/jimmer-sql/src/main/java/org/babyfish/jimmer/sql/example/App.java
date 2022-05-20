@@ -5,10 +5,7 @@ import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
 import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
-import org.babyfish.jimmer.sql.example.model.AuthorTable;
-import org.babyfish.jimmer.sql.example.model.AuthorTableEx;
-import org.babyfish.jimmer.sql.example.model.Book;
-import org.babyfish.jimmer.sql.example.model.BookTable;
+import org.babyfish.jimmer.sql.example.model.*;
 
 import java.io.IOException;
 import java.util.List;
@@ -58,7 +55,12 @@ public class App {
                     q.orderBy(book.name());
                     q.orderBy(book.edition(), OrderMode.DESC);
                     return q.select(
-                            book,
+                            book.fetch(
+                                    BookFetcher.$
+                                            .allScalarFields()
+                                            .store(BookStoreFetcher.$.allScalarFields())
+                                            .authors(AuthorFetcher.$.allScalarFields())
+                            ),
                             Expression.numeric().sql(
                                     Integer.class,
                                     "rank() over(order by %e desc)",

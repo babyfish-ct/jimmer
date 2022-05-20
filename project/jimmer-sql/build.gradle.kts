@@ -1,6 +1,5 @@
 plugins {
     java
-    antlr
     id("maven-publish")
     id("signing")
 }
@@ -22,14 +21,12 @@ dependencies {
     implementation("javax.validation:validation-api:2.0.1.Final")
     implementation("javax.persistence:javax.persistence-api:2.2")
 
-    antlr("org.antlr:antlr4:4.10.1")
-
     testAnnotationProcessor(project(":jimmer-apt"))
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
-    testImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.2.3")
+    testImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.3")
     testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3")
 
     testImplementation("org.springframework:spring-jdbc:5.3.20")

@@ -5,6 +5,7 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
 
@@ -13,21 +14,19 @@ import java.util.*;
 
 class FetcherTask {
 
-    private DataCache cache;
+    private final DataCache cache;
 
-    private SqlClient sqlClient;
-
-    private Connection con;
+    private final SqlClient sqlClient;
 
     private Field field;
 
-    private int batchSize;
+    private final int batchSize;
+
+    private final SingleDataLoader singleDataLoader;
+
+    private final BatchDataLoader batchDataLoader;
 
     private Map<Object, TaskData> pendingMap = new LinkedHashMap<>();
-
-    private SingleDataLoader singleDataLoader;
-
-    private BatchDataLoader batchDataLoader;
 
     public FetcherTask(
             DataCache cache,
@@ -37,7 +36,6 @@ class FetcherTask {
     ) {
         this.cache = cache;
         this.sqlClient = sqlClient;
-        this.con = con;
         this.field = field;
         this.batchSize = determineBatchSize();
         this.singleDataLoader = new SingleDataLoader(sqlClient, con, field);
@@ -49,14 +47,16 @@ class FetcherTask {
     }
 
     private void add(DraftSpi draft, int depth) {
-        String propName = field.getProp().getName();
+        if (isLoaded(draft)) {
+            return;
+        }
         Object key = cache.createKey(field, draft);
         if (key == null) {
             return;
         }
         Object value = cache.get(field, key);
         if (value != null) {
-            draft.__set(propName, DataCache.unwrap(value));
+            setDraftProp(draft, DataCache.unwrap(value));
             return;
         }
         pendingMap.computeIfAbsent(key, it -> new TaskData(depth)).getDrafts().add(draft);
@@ -86,32 +86,73 @@ class FetcherTask {
             handledMap = this.pendingMap;
             pendingMap = new LinkedHashMap<>();
         }
-        if (batchSize == 1) {
-            Object key = handledMap.keySet().iterator().next();
-            Object value = singleDataLoader.load(key);
-            TaskData taskData = handledMap.get(key);
-            loaded(key, value, taskData);
-        } else {
-            Map<Object, ?> loadedMap = batchDataLoader.load(handledMap.keySet());
-            for (Map.Entry<Object, TaskData> e : handledMap.entrySet()) {
-                Object key = e.getKey();
-                Object value = loadedMap.get(key);
+        Iterator<Map.Entry<Object, TaskData>> handledEntryItr =
+                handledMap.entrySet().iterator();
+        while (handledEntryItr.hasNext()) {
+            Map.Entry<Object, TaskData> e = handledEntryItr.next();
+            Object key = e.getKey();
+            Object value = cache.get(field, key);
+            if (value != null) {
+                value = DataCache.unwrap(value);
                 TaskData taskData = e.getValue();
-                loaded(key, value, taskData);
+                afterLoad(key, value, taskData);
+                handledEntryItr.remove();
+            }
+        }
+        if (!handledMap.isEmpty()) {
+            if (batchSize == 1) {
+                Object key = handledMap.keySet().iterator().next();
+                Object value = singleDataLoader.load(key);
+                TaskData taskData = handledMap.get(key);
+                afterLoad(key, value, taskData);
+            } else {
+                Map<Object, ?> loadedMap = batchDataLoader.load(handledMap.keySet());
+                for (Map.Entry<Object, TaskData> e : handledMap.entrySet()) {
+                    Object key = e.getKey();
+                    Object value = loadedMap.get(key);
+                    TaskData taskData = e.getValue();
+                    afterLoad(key, value, taskData);
+                }
             }
         }
         return pendingMap.isEmpty();
     }
 
+    private boolean isLoaded(DraftSpi draft) {
+        if (!isLoaded(draft, field)) {
+            return false;
+        }
+        Fetcher<?> childFetcher = field.getChildFetcher();
+        Object childValue = draft.__get(field.getProp().getName());
+        if (childFetcher != null && childValue != null) {
+           for (Field childField : childFetcher.getFieldMap().values()) {
+               if (!isLoaded(childValue, childField)) {
+                   return false;
+               }
+           }
+        }
+        return true;
+    }
+
     @SuppressWarnings("unchecked")
-    private void loaded(Object key, Object value, TaskData taskData) {
+    private static boolean isLoaded(Object obj, Field field) {
+        if (obj instanceof List<?>) {
+            List<DraftSpi> drafts = (List<DraftSpi>) obj;
+            for (DraftSpi draft : drafts) {
+                if (!isLoaded(draft, field)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return ((DraftSpi) obj).__isLoaded(field.getProp().getName());
+    }
+
+    @SuppressWarnings("unchecked")
+    private void afterLoad(Object key, Object value, TaskData taskData) {
         cache.put(field, key, value);
         for (DraftSpi draft : taskData.getDrafts()) {
-            if (value == null && field.getProp().isEntityList()) {
-                draft.__set(field.getProp().getName(), Collections.emptyList());
-            } else {
-                draft.__set(field.getProp().getName(), value);
-            }
+            setDraftProp(draft, value);
         }
         RecursionStrategy<Object> recursionStrategy =
                 (RecursionStrategy<Object>) field.getRecursionStrategy();
@@ -143,6 +184,14 @@ class FetcherTask {
             return sqlClient.getDefaultBatchSize();
         }
         return size;
+    }
+
+    private void setDraftProp(DraftSpi draft, Object value) {
+        if (value == null && field.getProp().isEntityList()) {
+            draft.__set(field.getProp().getName(), Collections.emptyList());
+        } else {
+            draft.__set(field.getProp().getName(), value);
+        }
     }
 
     private static class TaskData {

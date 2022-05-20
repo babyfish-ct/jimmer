@@ -19,7 +19,7 @@ dependencies {
 
     implementation("javax.validation:validation-api:2.0.1.Final")
     implementation("javax.persistence:javax.persistence-api:2.2")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.2.3")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.3")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3")
     implementation("org.apache.commons:commons-lang3:3.12.0")
 
