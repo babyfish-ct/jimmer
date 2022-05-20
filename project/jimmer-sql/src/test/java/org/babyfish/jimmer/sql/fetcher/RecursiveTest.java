@@ -303,7 +303,7 @@ public class RecursiveTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testFindDynamically() {
+    public void testFindByDynamicalRecursionStrategy() {
         executeAndExpect(
                 getSqlClient().createQuery(TreeNodeTable.class, (q, node) -> {
                     q.where(node.parent().isNull());
