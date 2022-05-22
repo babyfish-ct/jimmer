@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -31,7 +32,7 @@ public class MutableDeleteImpl
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends TableEx<?>> T getTable() {
+    public <T extends Table<?>> T getTable() {
         return (T)deleteQuery.getTable();
     }
 

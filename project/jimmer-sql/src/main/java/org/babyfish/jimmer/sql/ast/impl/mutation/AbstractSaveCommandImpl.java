@@ -35,6 +35,7 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
         block.accept(newData);
         if (newData.mode == SaveMode.UPSERT &&
                 newData.keyPropMultiMap.isEmpty() &&
+                !newData.autoAttachingAll &&
                 newData.autoDetachingSet.isEmpty() &&
                 newData.autoAttachingSet.isEmpty()) {
             return (C)this;
@@ -72,6 +73,7 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
             this.sqlClient = base.sqlClient;
             this.mode = SaveMode.UPSERT;
             this.keyPropMultiMap = new LinkedHashMap<>(base.keyPropMultiMap);
+            this.autoAttachingAll = base.autoAttachingAll;
             this.autoAttachingSet = new LinkedHashSet<>(base.autoAttachingSet);
             this.autoDetachingSet = new LinkedHashSet<>(base.autoDetachingSet);
         }

@@ -56,12 +56,12 @@ public interface SqlClient {
             > block
     );
 
-    <T extends TableEx<?>> Executable<Integer> createUpdate(
+    <T extends Table<?>> Executable<Integer> createUpdate(
             Class<T> tableType,
             BiConsumer<MutableUpdate, T> block
     );
 
-    <T extends TableEx<?>> Executable<Integer> createDelete(
+    <T extends Table<?>> Executable<Integer> createDelete(
             Class<T> tableType,
             BiConsumer<MutableDelete, T> block
     );
