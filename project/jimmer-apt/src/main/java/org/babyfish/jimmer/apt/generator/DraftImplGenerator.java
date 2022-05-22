@@ -12,6 +12,7 @@ import javax.lang.model.element.Modifier;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.Pattern;
 
+import java.util.ArrayList;
 import java.util.Collections;
 
 import static org.babyfish.jimmer.apt.generator.Constants.*;
@@ -55,18 +56,6 @@ public class DraftImplGenerator {
     }
 
     private void addFields() {
-        typeBuilder.addField(
-                FieldSpec
-                        .builder(
-                                type.getImplementorClassName(),
-                                "DEFAULT_BASE",
-                                Modifier.PRIVATE,
-                                Modifier.STATIC,
-                                Modifier.FINAL
-                        )
-                        .initializer("new Impl(null)")
-                        .build()
-        );
         typeBuilder.addField(
                 FieldSpec
                         .builder(
@@ -163,7 +152,7 @@ public class DraftImplGenerator {
                 .addStatement("$L = (Implementor)base", DRAFT_FIELD_BASE)
                 .endControlFlow()
                 .beginControlFlow("else")
-                .addStatement("$L = DEFAULT_BASE", DRAFT_FIELD_BASE)
+                .addStatement("$L = new Impl(null)", DRAFT_FIELD_BASE)
                 .endControlFlow();
         typeBuilder.addMethod(builder.build());
     }
@@ -277,9 +266,9 @@ public class DraftImplGenerator {
         );
         if (prop.isList()) {
             builder.addStatement(
-                    "$L($T.emptyList())",
+                    "$L(new $T<>())",
                     prop.getSetterName(),
-                    Collections.class
+                    ArrayList.class
             );
         } else {
             builder.addStatement(
