@@ -78,6 +78,6 @@ public class App {
         );
 
         System.out.println("treeNode:" + treeNode);
-   //     System.out.println("newTreeNode:" + newTreeNode);
+        System.out.println("newTreeNode:" + newTreeNode);
     }
 }
