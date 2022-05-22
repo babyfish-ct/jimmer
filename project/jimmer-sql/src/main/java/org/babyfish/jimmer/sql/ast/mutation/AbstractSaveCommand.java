@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
+import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -14,30 +15,43 @@ public interface AbstractSaveCommand<C extends AbstractSaveCommand<C>> {
 
     interface Cfg {
 
+        @OldChain
         Cfg setMode(SaveMode mode);
 
+        @OldChain
         Cfg setKeyProps(ImmutableProp ... props);
 
+        @OldChain
         Cfg setKeyProps(Class<?> entityType, String ... props);
 
+        @OldChain
         <T extends Table<?>> Cfg setKeyProps(
                 Class<T> tableType,
                 Consumer<KeyPropCfg<T>> block
         );
 
+        @OldChain
+        Cfg setAutoAttachingAll();
+
+        @OldChain
         Cfg setAutoAttaching(ImmutableProp prop);
 
+        @OldChain
         Cfg setAutoAttaching(Class<?> entityType, String prop);
 
+        @OldChain
         <T extends Table<?>> Cfg setAutoAttaching(
                 Class<T> tableType,
                 Function<T, Table<?>> block
         );
 
+        @OldChain
         Cfg setAutoDetaching(ImmutableProp prop);
 
+        @OldChain
         Cfg setAutoDetaching(Class<?> entityType, String prop);
 
+        @OldChain
         <T extends TableEx<?>> Cfg setAutoDetaching(
                 Class<T> tableType,
                 Function<T, Table<?>> block
