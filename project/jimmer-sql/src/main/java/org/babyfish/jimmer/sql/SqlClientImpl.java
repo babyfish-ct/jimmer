@@ -123,7 +123,7 @@ class SqlClientImpl implements SqlClient {
     }
 
     @Override
-    public <T extends TableEx<?>> Executable<Integer> createUpdate(
+    public <T extends Table<?>> Executable<Integer> createUpdate(
             Class<T> tableType,
             BiConsumer<MutableUpdate, T> block
     ) {
@@ -131,7 +131,7 @@ class SqlClientImpl implements SqlClient {
     }
 
     @Override
-    public <T extends TableEx<?>> Executable<Integer> createDelete(
+    public <T extends Table<?>> Executable<Integer> createDelete(
             Class<T> tableType,
             BiConsumer<MutableDelete, T> block
     ) {

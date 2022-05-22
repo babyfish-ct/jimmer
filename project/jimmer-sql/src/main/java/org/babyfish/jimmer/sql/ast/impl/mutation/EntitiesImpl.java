@@ -34,6 +34,9 @@ public class EntitiesImpl implements Entities {
             Class<?> entityType,
             Object id
     ) {
+        if (id instanceof Collection<?>) {
+            throw new IllegalArgumentException("id is collection, do you want to call batchDeleteCommand?");
+        }
         return batchDeleteCommand(entityType, Collections.singleton(id));
     }
 

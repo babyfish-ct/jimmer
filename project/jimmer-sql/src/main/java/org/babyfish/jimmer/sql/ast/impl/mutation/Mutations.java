@@ -6,7 +6,6 @@ import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
 
 import java.util.function.BiConsumer;
 
@@ -14,7 +13,7 @@ public class Mutations {
 
     private Mutations() {}
 
-    public static <T extends TableEx<?>> Executable<Integer> createUpdate(
+    public static <T extends Table<?>> Executable<Integer> createUpdate(
             SqlClient sqlClient,
             Class<T> tableType,
             BiConsumer<MutableUpdate, T> block
@@ -28,7 +27,7 @@ public class Mutations {
         return update;
     }
 
-    public static <T extends TableEx<?>> Executable<Integer> createDelete(
+    public static <T extends Table<?>> Executable<Integer> createDelete(
             SqlClient sqlClient,
             Class<T> tableType,
             BiConsumer<MutableDelete, T> block
