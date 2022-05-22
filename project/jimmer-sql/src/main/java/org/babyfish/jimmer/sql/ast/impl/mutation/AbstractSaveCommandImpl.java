@@ -54,6 +54,8 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
 
         private Map<ImmutableType, Set<ImmutableProp>> keyPropMultiMap;
 
+        private boolean autoAttachingAll;
+
         private Set<ImmutableProp> autoAttachingSet;
 
         private Set<ImmutableProp> autoDetachingSet;
@@ -91,7 +93,7 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
         }
 
         public boolean isAutoAttachingProp(ImmutableProp prop) {
-            return autoAttachingSet.contains(prop);
+            return autoAttachingAll || autoAttachingSet.contains(prop);
         }
 
         public boolean isAutoDetachingProp(ImmutableProp prop) {
@@ -165,6 +167,12 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
             return setKeyProps(
                     keyPropCfg.getProps().toArray(new ImmutableProp[0])
             );
+        }
+
+        @Override
+        public Cfg setAutoAttachingAll() {
+            autoAttachingAll = true;
+            return this;
         }
 
         @Override
