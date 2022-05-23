@@ -604,14 +604,14 @@ public class ImmutableProp {
         }
         if (nullAnnotationRef == null) {
             nullAnnotationRef = Arrays.stream(getAnnotations(Column.class))
-                    .filter(it -> it.nullable())
+                    .filter(Column::nullable)
                     .findFirst()
                     .map(it -> new AnnotationRef(Column.class, "nullable", true))
                     .orElse(null);
         }
         if (nullAnnotationRef == null) {
             nullAnnotationRef = Arrays.stream(getAnnotations(JoinColumn.class))
-                    .filter(it -> it.nullable())
+                    .filter(JoinColumn::nullable)
                     .findFirst()
                     .map(it -> new AnnotationRef(JoinColumn.class, "nullable", true))
                     .orElse(null);
@@ -628,49 +628,64 @@ public class ImmutableProp {
             );
         }
 
-        Boolean implicitNullable = getImplicitNullable();
+        ImplicitNullable implicitNullable = getImplicitNullable();
 
         if (notNullAnnotationRef != null) {
-            if (Boolean.TRUE.equals(implicitNullable)) {
+            if (implicitNullable != null && implicitNullable.nullable) {
                 throw new MetaException(
                         "Illegal property \"" +
                                 this +
                                 "\", it is marked by" +
                                 notNullAnnotationRef +
-                                ", but its type is consider as nullable type"
+                                ", but it is considered as nullable because " +
+                                implicitNullable.reason
                 );
             }
             return false;
         }
         if (nullAnnotationRef != null) {
-            if (Boolean.FALSE.equals(implicitNullable)) {
+            if (implicitNullable != null && !implicitNullable.nullable) {
                 throw new MetaException(
                         "Illegal property \"" +
                                 this +
                                 "\", it is marked by @" +
                                 nullAnnotationRef +
-                                ", but its type is consider as non-null type"
+                                ", but it is considered as non-null because " +
+                                implicitNullable.reason
                 );
             }
             return true;
         }
         if (implicitNullable != null) {
-            return implicitNullable;
+            return implicitNullable.nullable;
         }
 
         Immutable immutable = declaringElement.getAnnotation(Immutable.class);
         return immutable != null && (immutable.value() == Immutable.Nullity.NULLABLE);
     }
 
-    private Boolean getImplicitNullable() {
+    private ImplicitNullable getImplicitNullable() {
         if (isList) {
-            return false;
+            return new ImplicitNullable(false, "it is list");
+        } else if (isAssociation) {
+            if (getAnnotation(JoinTable.class) != null) {
+                return new ImplicitNullable(
+                        true,
+                        "it's a many-to-one association base on middle table"
+                );
+            }
+            if (getAnnotation(OneToOne.class) != null) {
+                return new ImplicitNullable(
+                        true,
+                        "it's a one-to-one association"
+                );
+            }
         }
         if (typeName.isPrimitive()) {
-            return false;
+            return new ImplicitNullable(false, "its type is primitive");
         }
         if (typeName.isBoxedPrimitive()) {
-            return true;
+            return new ImplicitNullable(true, "its type is box type");
         }
         return null;
     }
@@ -731,6 +746,26 @@ public class ImmutableProp {
                 builder.append(')');
             }
             return builder.toString();
+        }
+    }
+
+    private static class ImplicitNullable {
+
+        final boolean nullable;
+
+        final String reason;
+
+        ImplicitNullable(boolean nullable, String reason) {
+            this.nullable = nullable;
+            this.reason = reason;
+        }
+
+        @Override
+        public String toString() {
+            return "ImplicitNullable{" +
+                    "nullable=" + nullable +
+                    ", reason='" + reason + '\'' +
+                    '}';
         }
     }
 }
