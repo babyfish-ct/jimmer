@@ -635,7 +635,7 @@ public class ImmutableProp {
                 throw new MetaException(
                         "Illegal property \"" +
                                 this +
-                                "\", it is marked by" +
+                                "\", it is marked by " +
                                 notNullAnnotationRef +
                                 ", but it is considered as nullable because " +
                                 implicitNullable.reason
@@ -648,7 +648,7 @@ public class ImmutableProp {
                 throw new MetaException(
                         "Illegal property \"" +
                                 this +
-                                "\", it is marked by @" +
+                                "\", it is marked by " +
                                 nullAnnotationRef +
                                 ", but it is considered as non-null because " +
                                 implicitNullable.reason
