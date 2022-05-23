@@ -186,12 +186,12 @@ class ImmutableTypeImpl implements ImmutableType {
         } else if (generatedValue.strategy() == GenerationType.IDENTITY) {
             this.idGenerator = IdentityIdGenerator.INSTANCE;
         } else if (generatedValue.strategy() == GenerationType.SEQUENCE) {
-            String generator = generatedValue.generator();
+            String generator = generatedValue.generator().trim();
             String sequenceName;
             if (generator.isEmpty()) {
                 sequenceName = tableName + "_ID_SEQ";
             } else if (generator.startsWith(SEQUENCE_PREFIX)) {
-                sequenceName = generator.substring(SEQUENCE_PREFIX.length());
+                sequenceName = generator.substring(SEQUENCE_PREFIX.length()).trim();
             } else {
                 SequenceGenerator seqGenerator = Arrays.stream(idProp.getAnnotations(SequenceGenerator.class))
                         .filter(it -> it.name().equals(generator))
