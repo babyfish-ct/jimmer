@@ -17,7 +17,7 @@ public class InverseJoinTest extends AbstractQueryTest {
                 getSqlClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(
                             book
-                                    .inverseJoinByTable(AuthorTable.class, "books")
+                                    .inverseJoin(AuthorTableEx.class, AuthorTableEx::books)
                                     .firstName()
                                     .eq("Alex")
                     );
@@ -42,7 +42,7 @@ public class InverseJoinTest extends AbstractQueryTest {
                 getSqlClient().createQuery(AuthorTable.class, (q, author) -> {
                     q.where(
                             author
-                                    .inverseJoinByTable(BookTable.class, "authors")
+                                    .inverseJoin(BookTableEx.class, BookTableEx::authors)
                                     .name()
                                     .eq("Learning GraphQL")
                     );
@@ -67,7 +67,7 @@ public class InverseJoinTest extends AbstractQueryTest {
                 getSqlClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(
                             book
-                                    .inverseJoinByTable(AuthorTable.class, "books")
+                                    .inverseJoin(AuthorTableEx.class, AuthorTableEx::books)
                                     .id()
                                     .in(alexId, danId)
                     );
@@ -91,7 +91,7 @@ public class InverseJoinTest extends AbstractQueryTest {
                 getSqlClient().createQuery(AuthorTable.class, (q, author) -> {
                     q.where(
                             author
-                                    .inverseJoinByTable(BookTable.class, "authors")
+                                    .inverseJoin(BookTableEx.class, BookTableEx::authors)
                                     .id()
                                     .in(learningGraphQLId1, learningGraphQLId2)
                     );
@@ -115,8 +115,8 @@ public class InverseJoinTest extends AbstractQueryTest {
                 getSqlClient().createQuery(BookStoreTable.class, (q, store) -> {
                     q.where(
                             store
-                                    .inverseJoinByTable(BookTable.class, "store", JoinType.LEFT)
-                                    .inverseJoinByTable(AuthorTable.class, "books", JoinType.LEFT)
+                                    .inverseJoin(BookTable.class, BookTable::store, JoinType.LEFT)
+                                    .inverseJoin(AuthorTableEx.class, AuthorTableEx::books, JoinType.LEFT)
                                     .firstName()
                                     .eq("Alex").or(
                                             store
@@ -148,8 +148,8 @@ public class InverseJoinTest extends AbstractQueryTest {
                 getSqlClient().createQuery(BookStoreTable.class, (q, store) -> {
                     q.where(
                             store
-                                    .inverseJoinByTable(BookTable.class, "store", JoinType.LEFT)
-                                    .inverseJoinByTable(AuthorTable.class, "books", JoinType.LEFT)
+                                    .inverseJoin(BookTable.class, BookTable::store, JoinType.LEFT)
+                                    .inverseJoin(AuthorTableEx.class, AuthorTableEx::books, JoinType.LEFT)
                                     .firstName()
                                     .eq("Alex").or(
                                             store

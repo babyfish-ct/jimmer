@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
 import javax.persistence.criteria.JoinType;
+import java.util.function.Function;
 
 public interface Table<E> extends Selection<E> {
 
@@ -37,14 +38,14 @@ public interface Table<E> extends Selection<E> {
             JoinType joinType
     );
 
-    <XT extends Table<?>> XT inverseJoinByTable(
+    <XT extends Table<?>> XT inverseJoin(
             Class<XT> targetTableType,
-            String backProp
+            Function<XT, ? extends Table<E>> backPropBlock
     );
 
-    <XT extends Table<?>> XT inverseJoinByTable(
+    <XT extends Table<?>> XT inverseJoin(
             Class<XT> targetTableType,
-            String backProp,
+            Function<XT, ? extends Table<E>> backPropBlock,
             JoinType joinType
     );
 
