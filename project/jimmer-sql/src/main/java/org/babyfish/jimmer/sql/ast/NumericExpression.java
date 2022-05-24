@@ -58,5 +58,8 @@ public interface NumericExpression<N extends Number> extends Expression<N> {
     NumericExpression<N> coalesce(N defaultValue);
 
     @Override
+    NumericExpression<N> coalesce(Expression<N> defaultExpr);
+
+    @Override
     CoalesceBuilder.Num<N> coalesceBuilder();
 }

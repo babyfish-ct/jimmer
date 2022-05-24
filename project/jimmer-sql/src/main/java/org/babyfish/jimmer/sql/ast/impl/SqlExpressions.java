@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.ArrayList;
@@ -8,10 +9,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-class SqlExpressions {
+public class SqlExpressions {
+
+    private SqlExpressions() {}
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    static <T, E extends Expression<T>> E of(
+    public static <T, E extends Expression<T>> E of(
             Class<T> type,
             String sql,
             Consumer<SqlExpressionContext> block
@@ -26,6 +29,9 @@ class SqlExpressions {
             block.accept(ctx);
             expressions = ctx.getExpressions();
             values = ctx.getValues();
+        }
+        if (Boolean.class.isAssignableFrom(type)) {
+            return (E)new Prd(sql, expressions, values);
         }
         if (String.class.isAssignableFrom(type)) {
             return (E)new Str(sql, expressions, values);
@@ -74,7 +80,7 @@ class SqlExpressions {
                         parts.add(expressions.get(usedExpressionCount++));
                         break;
                     case 'v':
-                        if (usedExpressionCount >= values.size()) {
+                        if (usedValueCount >= values.size()) {
                             throw new IllegalArgumentException("No enough values");
                         }
                         parts.add(Literals.any(values.get(usedValueCount++)));
@@ -96,7 +102,7 @@ class SqlExpressions {
             if (usedValueCount < values.size()) {
                 throw new IllegalArgumentException("Too many values");
             }
-            if (index + 1 < sqlLen) {
+            if (index < sqlLen) {
                 parts.add(sql.substring(index));
             }
             this.type = type;
@@ -152,6 +158,13 @@ class SqlExpressions {
 
         Cmp(Class<T> type, String sql, List<Expression<?>> expressions, List<Object> values) {
             super(type, sql, expressions, values);
+        }
+    }
+
+    private static class Prd extends Any<Boolean> implements PredicateImplementor {
+
+        Prd(String sql, List<Expression<?>> expressions, List<Object> values) {
+            super(Boolean.class, sql, expressions, values);
         }
     }
 }

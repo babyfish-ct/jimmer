@@ -28,5 +28,8 @@ public interface ComparableExpression<T extends Comparable<T>> extends Expressio
     ComparableExpression<T> coalesce(T defaultValue);
 
     @Override
+    ComparableExpression<T> coalesce(Expression<T> defaultExpr);
+
+    @Override
     CoalesceBuilder.Cmp<T> coalesceBuilder();
 }

@@ -56,6 +56,11 @@ interface StringExpressionImplementor extends StringExpression, ExpressionImplem
     }
 
     @Override
+    default StringExpression coalesce(Expression<String> defaultExpr) {
+        return coalesceBuilder().or(defaultExpr).build();
+    }
+
+    @Override
     default CoalesceBuilder.Str coalesceBuilder() {
         return new CoalesceBuilder.Str(this);
     }

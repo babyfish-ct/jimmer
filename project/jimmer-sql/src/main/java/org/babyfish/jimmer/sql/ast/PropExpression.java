@@ -10,6 +10,9 @@ public interface PropExpression<T> extends Expression<T> {
         StringExpression coalesce(String defaultValue);
 
         @Override
+        StringExpression coalesce(Expression<String> defaultExpr);
+
+        @Override
         CoalesceBuilder.Str coalesceBuilder();
     }
 
@@ -19,6 +22,9 @@ public interface PropExpression<T> extends Expression<T> {
         NumericExpression<N> coalesce(N defaultValue);
 
         @Override
+        NumericExpression<N> coalesce(Expression<N> defaultExpr);
+
+        @Override
         CoalesceBuilder.Num<N> coalesceBuilder();
     }
 
@@ -26,6 +32,9 @@ public interface PropExpression<T> extends Expression<T> {
 
         @Override
         ComparableExpression<T> coalesce(T defaultValue);
+
+        @Override
+        ComparableExpression<T> coalesce(Expression<T> defaultExpr);
 
         @Override
         CoalesceBuilder.Cmp<T> coalesceBuilder();

@@ -62,6 +62,11 @@ interface ComparableExpressionImplementor<T extends Comparable<T>> extends Compa
     }
 
     @Override
+    default ComparableExpression<T> coalesce(Expression<T> defaultExpr) {
+        return coalesceBuilder().or(defaultExpr).build();
+    }
+
+    @Override
     default CoalesceBuilder.Cmp<T> coalesceBuilder() {
         return new CoalesceBuilder.Cmp<>(this);
     }

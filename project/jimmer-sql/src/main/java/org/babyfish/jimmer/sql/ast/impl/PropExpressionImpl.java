@@ -1,11 +1,8 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.meta.Column;
-import org.babyfish.jimmer.sql.ast.ComparableExpression;
-import org.babyfish.jimmer.sql.ast.NumericExpression;
-import org.babyfish.jimmer.sql.ast.PropExpression;
-import org.babyfish.jimmer.sql.ast.StringExpression;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -85,6 +82,11 @@ public class PropExpressionImpl<T>
         }
 
         @Override
+        public StringExpression coalesce(Expression<String> defaultExpr) {
+            return StringExpressionImplementor.super.coalesce(defaultExpr);
+        }
+
+        @Override
         public CoalesceBuilder.Str coalesceBuilder() {
             return StringExpressionImplementor.super.coalesceBuilder();
         }
@@ -109,6 +111,11 @@ public class PropExpressionImpl<T>
         }
 
         @Override
+        public NumericExpression<N> coalesce(Expression<N> defaultExpr) {
+            return NumberExpressionImplementor.super.coalesce(defaultExpr);
+        }
+
+        @Override
         public CoalesceBuilder.Num<N> coalesceBuilder() {
             return NumberExpressionImplementor.super.coalesceBuilder();
         }
@@ -125,6 +132,11 @@ public class PropExpressionImpl<T>
         @Override
         public ComparableExpression<T> coalesce(T defaultValue) {
             return ComparableExpressionImplementor.super.coalesce(defaultValue);
+        }
+
+        @Override
+        public ComparableExpression<T> coalesce(Expression<T> defaultExpr) {
+            return ComparableExpressionImplementor.super.coalesce(defaultExpr);
         }
 
         @Override

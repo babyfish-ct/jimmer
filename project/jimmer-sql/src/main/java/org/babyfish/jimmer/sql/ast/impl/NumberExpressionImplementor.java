@@ -134,6 +134,11 @@ interface NumberExpressionImplementor<N extends Number> extends NumericExpressio
     }
 
     @Override
+    default NumericExpression<N> coalesce(Expression<N> defaultExpr) {
+        return coalesceBuilder().or(defaultExpr).build();
+    }
+
+    @Override
     default CoalesceBuilder.Num<N> coalesceBuilder() {
         return new CoalesceBuilder.Num<>(this);
     }
