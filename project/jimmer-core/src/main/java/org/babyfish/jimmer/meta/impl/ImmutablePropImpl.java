@@ -4,8 +4,8 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutablePropCategory;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
-import org.babyfish.jimmer.sql.DeleteAction;
-import org.babyfish.jimmer.sql.OnDelete;
+import org.babyfish.jimmer.sql.CascadeAction;
+import org.babyfish.jimmer.sql.OnCascade;
 import org.babyfish.jimmer.sql.meta.Storage;
 
 import javax.persistence.ManyToMany;
@@ -33,7 +33,7 @@ class ImmutablePropImpl implements ImmutableProp {
 
     private boolean isTransient;
 
-    private DeleteAction deleteAction;
+    private CascadeAction cascadeAction;
 
     private Storage storage;
 
@@ -94,8 +94,8 @@ class ImmutablePropImpl implements ImmutableProp {
             associationAnnotation = getAnnotation(associationType);
         }
 
-        OnDelete onDelete = getAnnotation(OnDelete.class);
-        deleteAction = onDelete != null ? onDelete.value() : DeleteAction.NONE;
+        OnCascade onCascade = getAnnotation(OnCascade.class);
+        cascadeAction = onCascade != null ? onCascade.value() : CascadeAction.NONE;
     }
 
     public ImmutableType getDeclaringType() {
@@ -158,8 +158,8 @@ class ImmutablePropImpl implements ImmutableProp {
         return isTransient;
     }
 
-    public DeleteAction getDeleteAction() {
-        return deleteAction;
+    public CascadeAction getDeleteAction() {
+        return cascadeAction;
     }
 
     @SuppressWarnings("unchecked")

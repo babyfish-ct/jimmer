@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.sql.DeleteAction;
+import org.babyfish.jimmer.sql.CascadeAction;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
@@ -14,21 +14,21 @@ public interface DeleteCommand extends Executable<DeleteResult> {
 
     interface Cfg {
 
-        Cfg setDeleteAction(
+        Cfg setCascadeAction(
                 ImmutableProp prop,
-                DeleteAction deleteAction
+                CascadeAction cascadeAction
         );
 
-        Cfg setDeleteAction(
+        Cfg setCascadeAction(
                 Class<?> entityType,
                 String prop,
-                DeleteAction deleteAction
+                CascadeAction cascadeAction
         );
 
-        <T extends Table<?>> Cfg setDeleteAction(
+        <T extends Table<?>> Cfg setCascadeAction(
                 Class<T> tableType,
                 Function<T, Table<?>> block,
-                DeleteAction deleteAction
+                CascadeAction cascadeAction
         );
     }
 }
