@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
 import javax.persistence.criteria.JoinType;
+import java.util.function.Function;
 
 public abstract class AbstractTableWrapper<E> implements Table<E> {
 
@@ -68,20 +69,20 @@ public abstract class AbstractTableWrapper<E> implements Table<E> {
     }
 
     @Override
-    public <XT extends Table<?>> XT inverseJoinByTable(
+    public <XT extends Table<?>> XT inverseJoin(
             Class<XT> targetTableType,
-            String backProp
+            Function<XT, ? extends Table<E>> backPropBlock
     ) {
-        return raw.inverseJoinByTable(targetTableType, backProp);
+        return raw.inverseJoin(targetTableType, backPropBlock);
     }
 
     @Override
-    public <XT extends Table<?>> XT inverseJoinByTable(
+    public <XT extends Table<?>> XT inverseJoin(
             Class<XT> targetTableType,
-            String backProp,
+            Function<XT, ? extends Table<E>> backPropBlock,
             JoinType joinType
     ) {
-        return raw.inverseJoinByTable(targetTableType, backProp, joinType);
+        return raw.inverseJoin(targetTableType, backPropBlock, joinType);
     }
 
     @Override
