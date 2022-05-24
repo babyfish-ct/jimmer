@@ -1,13 +1,8 @@
 package org.babyfish.jimmer.meta;
 
-import org.babyfish.jimmer.sql.DeleteAction;
-import org.babyfish.jimmer.sql.OnDelete;
+import org.babyfish.jimmer.sql.CascadeAction;
 import org.babyfish.jimmer.sql.meta.Storage;
 
-import javax.persistence.ManyToMany;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.Transient;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
@@ -43,7 +38,7 @@ public interface ImmutableProp {
 
     boolean isTransient();
 
-    DeleteAction getDeleteAction();
+    CascadeAction getDeleteAction();
 
     @SuppressWarnings("unchecked")
     <S extends Storage> S getStorage();

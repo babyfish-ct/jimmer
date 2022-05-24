@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.DeleteAction;
+import org.babyfish.jimmer.sql.CascadeAction;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.SqlClient;
@@ -100,7 +100,7 @@ abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> impleme
 
         public boolean isAutoDetachingProp(ImmutableProp prop) {
             return autoDetachingSet.contains(prop) || (
-                    prop.getMappedBy() != null && prop.getMappedBy().getDeleteAction() == DeleteAction.CASCADE
+                    prop.getMappedBy() != null && prop.getMappedBy().getDeleteAction() == CascadeAction.CASCADE
             );
         }
 

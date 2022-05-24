@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql;
 
-public enum DeleteAction {
+public enum CascadeAction {
 
     NONE,
     SET_NULL,

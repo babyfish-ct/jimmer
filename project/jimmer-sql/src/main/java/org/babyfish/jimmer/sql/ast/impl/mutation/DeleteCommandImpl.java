@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ImmutableProps;
-import org.babyfish.jimmer.sql.DeleteAction;
+import org.babyfish.jimmer.sql.CascadeAction;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
@@ -69,7 +69,7 @@ class DeleteCommandImpl implements DeleteCommand {
 
         private SqlClient sqlClient;
 
-        private Map<ImmutableProp, DeleteAction> deleteActionMap;
+        private Map<ImmutableProp, CascadeAction> deleteActionMap;
 
         private boolean frozen;
 
@@ -87,8 +87,8 @@ class DeleteCommandImpl implements DeleteCommand {
             return sqlClient;
         }
 
-        public DeleteAction getDeleteAction(ImmutableProp prop) {
-            DeleteAction action = deleteActionMap.get(prop);
+        public CascadeAction getDeleteAction(ImmutableProp prop) {
+            CascadeAction action = deleteActionMap.get(prop);
             return action != null ? action : prop.getDeleteAction();
         }
 
@@ -101,7 +101,7 @@ class DeleteCommandImpl implements DeleteCommand {
         }
 
         @Override
-        public Cfg setDeleteAction(ImmutableProp prop, DeleteAction deleteAction) {
+        public Cfg setCascadeAction(ImmutableProp prop, CascadeAction cascadeAction) {
             if (frozen) {
                 throw new IllegalStateException("The configuration is frozen");
             }
@@ -109,20 +109,20 @@ class DeleteCommandImpl implements DeleteCommand {
             if (!prop.isReference()) {
                 throw new IllegalArgumentException("'" + prop + "' is not reference property");
             }
-            if (deleteAction == DeleteAction.SET_NULL && !prop.isNullable()) {
+            if (cascadeAction == CascadeAction.SET_NULL && !prop.isNullable()) {
                 throw new IllegalArgumentException(
                         "'" + prop + "' is not nullable so that it does not support 'on delete set null'"
                 );
             }
-            deleteActionMap.put(prop, deleteAction);
+            deleteActionMap.put(prop, cascadeAction);
             return this;
         }
 
         @Override
-        public Cfg setDeleteAction(
+        public Cfg setCascadeAction(
                 Class<?> entityType,
                 String prop,
-                DeleteAction deleteAction
+                CascadeAction cascadeAction
         ) {
             ImmutableType immutableType = ImmutableType.get(entityType);
             ImmutableProp immutableProp = immutableType.getProps().get(prop);
@@ -131,17 +131,17 @@ class DeleteCommandImpl implements DeleteCommand {
                         "'" + prop + "' is not reference property of \"" + entityType.getName() + "\""
                 );
             }
-            return setDeleteAction(immutableProp, deleteAction);
+            return setCascadeAction(immutableProp, cascadeAction);
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public <T extends Table<?>> Cfg setDeleteAction(
+        public <T extends Table<?>> Cfg setCascadeAction(
                 Class<T> tableType,
                 Function<T, Table<?>> block,
-                DeleteAction deleteAction
+                CascadeAction cascadeAction
         ) {
-            return setDeleteAction(ImmutableProps.join(tableType, block), deleteAction);
+            return setCascadeAction(ImmutableProps.join(tableType, block), cascadeAction);
         }
     }
 }

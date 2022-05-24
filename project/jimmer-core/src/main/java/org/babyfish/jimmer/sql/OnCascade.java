@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface OnDelete {
+public @interface OnCascade {
 
-    DeleteAction value();
+    CascadeAction value();
 }
