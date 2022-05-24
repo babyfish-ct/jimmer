@@ -39,6 +39,8 @@ public interface Expression<T> extends Selection<T> {
 
     Expression<T> coalesce(T defaultValue);
 
+    Expression<T> coalesce(Expression<T> defaultExpr);
+
     CoalesceBuilder<T> coalesceBuilder();
 
     static <N extends Number> NumericExpression<N> constant(N value) {
@@ -56,6 +58,7 @@ public interface Expression<T> extends Selection<T> {
     static ComparableFactory comparable() {
         return ExpressionFactories.of(ComparableFactory.class);
     }
+
 
     static AnyFactory any() {
         return ExpressionFactories.of(AnyFactory.class);

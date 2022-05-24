@@ -118,6 +118,11 @@ public interface ExpressionImplementor<T> extends Expression<T> {
     }
 
     @Override
+    default Expression<T> coalesce(Expression<T> defaultExpr) {
+        return coalesceBuilder().or(defaultExpr).build();
+    }
+
+    @Override
     default CoalesceBuilder<T> coalesceBuilder() {
         return new CoalesceBuilder<>(this);
     }

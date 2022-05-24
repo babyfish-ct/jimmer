@@ -24,5 +24,8 @@ public interface StringExpression extends Expression<String> {
     StringExpression coalesce(String defaultValue);
 
     @Override
+    StringExpression coalesce(Expression<String> defaultExpr);
+
+    @Override
     CoalesceBuilder.Str coalesceBuilder();
 }

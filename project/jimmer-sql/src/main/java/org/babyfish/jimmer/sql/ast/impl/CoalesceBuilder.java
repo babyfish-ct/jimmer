@@ -32,7 +32,13 @@ public class CoalesceBuilder<T> {
 
     @SuppressWarnings("unchecked")
     public Expression<T> build() {
-        List<Expression<?>> clonedList = new ArrayList<>(expressions);
+        List<Expression<?>> clonedList;
+        if (expressions.get(0) instanceof Expr<?>) {
+            clonedList = new ArrayList<>(((Expr<?>)expressions.get(0)).expressions);
+            clonedList.addAll(expressions.subList(1, expressions.size()));
+        } else {
+            clonedList = new ArrayList<>(expressions);
+        }
         Class<?> javaClass = ((ExpressionImplementor<?>) expressions.get(0)).getType();
         if (String.class == javaClass) {
             return (Expression<T>) new StrExpr(clonedList);

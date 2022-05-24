@@ -1,12 +1,11 @@
 package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
-import org.babyfish.jimmer.sql.model.Book;
-import org.babyfish.jimmer.sql.model.BookStoreTable;
-import org.babyfish.jimmer.sql.model.BookTable;
+import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -61,6 +60,29 @@ public class ComplexExprTest extends AbstractQueryTest {
                         Assertions.assertEquals(12, rank12._2());
                         Assertions.assertEquals(9, rank12._3());
                     });
+                }
+        );
+    }
+
+    @Test
+    public void testSqlPredicate() {
+        executeAndExpect(
+                getSqlClient().createQuery(AuthorTable.class, (q, author) -> {
+                    q.where(
+                            Predicate.sql(
+                                    "regexp_like(%e, %v)",
+                                    it -> it
+                                            .expression(author.firstName())
+                                            .value("^Ste(v|ph)en$")
+                            )
+                    );
+                    return q.select(author);
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER from AUTHOR as tb_1_ where regexp_like(tb_1_.FIRST_NAME, ?)"
+                    );
+                    ctx.variables("^Ste(v|ph)en$");
                 }
         );
     }
