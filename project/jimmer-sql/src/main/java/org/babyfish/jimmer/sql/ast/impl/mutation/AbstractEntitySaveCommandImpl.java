@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.PropExpression;
-import org.babyfish.jimmer.sql.ast.mutation.AbstractSaveCommand;
+import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
@@ -17,13 +17,13 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-abstract class AbstractSaveCommandImpl<C extends AbstractSaveCommand<C>> implements AbstractSaveCommand<C> {
+abstract class AbstractEntitySaveCommandImpl<C extends AbstractEntitySaveCommand<C>> implements AbstractEntitySaveCommand<C> {
 
     SqlClient sqlClient;
 
     Data data;
 
-    AbstractSaveCommandImpl(SqlClient sqlClient, Data data) {
+    AbstractEntitySaveCommandImpl(SqlClient sqlClient, Data data) {
         this.sqlClient = sqlClient;
         this.data = data != null ? data.freeze() : new Data(sqlClient).freeze();
     }

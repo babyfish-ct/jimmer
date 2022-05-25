@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.Associations;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Executable;
+import org.babyfish.jimmer.sql.ast.mutation.AssociationSaveCommand;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 
 import java.util.*;
@@ -32,51 +33,57 @@ public class AssociationsImpl implements Associations {
     }
 
     @Override
-    public Executable<Integer> saveCommand(Object sourceId, Object targetId, boolean checkExistence) {
-        return saveCommandImpl(validateAndZip(sourceId, targetId), checkExistence);
+    public AssociationSaveCommand saveCommand(Object sourceId, Object targetId) {
+        return new AssociationSaveCommandImpl(
+                saveExecutable(validateAndZip(sourceId, targetId))
+        );
     }
 
     @Override
-    public Executable<Integer> saveCommand(Collection<Object> sourceIds, Collection<Object> targetIds, boolean checkExistence) {
-        return saveCommandImpl(validateAndZip(sourceIds, targetIds), checkExistence);
+    public AssociationSaveCommand saveCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
+        return new AssociationSaveCommandImpl(
+                saveExecutable(validateAndZip(sourceIds, targetIds))
+        );
     }
 
     @Override
-    public Executable<Integer> saveCommand(Collection<Tuple2<Object, Object>> idPairs, boolean checkExistence) {
-        return saveCommandImpl(validate(idPairs), checkExistence);
+    public AssociationSaveCommand saveCommand(Collection<Tuple2<Object, Object>> idPairs) {
+        return new AssociationSaveCommandImpl(
+                saveExecutable(validate(idPairs))
+        );
     }
 
     @Override
     public Executable<Integer> deleteCommand(Object sourceId, Object targetId) {
-        return deleteCommandImpl(validateAndZip(sourceId, targetId));
+        return deleteExecutable(validateAndZip(sourceId, targetId));
     }
 
     @Override
     public Executable<Integer> deleteCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
-        return deleteCommandImpl(validateAndZip(sourceIds, targetIds));
+        return deleteExecutable(validateAndZip(sourceIds, targetIds));
     }
 
     @Override
     public Executable<Integer> deleteCommand(Collection<Tuple2<Object, Object>> idPairs) {
-        return deleteCommandImpl(validate(idPairs));
+        return deleteExecutable(validate(idPairs));
     }
 
-    private Executable<Integer> saveCommandImpl(Collection<Tuple2<Object, Object>> idPairs, boolean checkExistence) {
-        return new AssociationCommand(
+    private AssociationExecutable saveExecutable(Collection<Tuple2<Object, Object>> idPairs) {
+        return new AssociationExecutable(
                 sqlClient,
                 associationType,
                 reversed,
-                checkExistence ? AssociationCommand.Mode.CHECK_AND_INSERT : AssociationCommand.Mode.INSERT,
+                AssociationExecutable.Mode.INSERT,
                 idPairs
         );
     }
 
-    private Executable<Integer> deleteCommandImpl(Collection<Tuple2<Object, Object>> idPairs) {
-        return new AssociationCommand(
+    private Executable<Integer> deleteExecutable(Collection<Tuple2<Object, Object>> idPairs) {
+        return new AssociationExecutable(
                 sqlClient,
                 associationType,
                 reversed,
-                AssociationCommand.Mode.DELETE,
+                AssociationExecutable.Mode.DELETE,
                 idPairs
         );
     }

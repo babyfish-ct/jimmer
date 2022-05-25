@@ -11,13 +11,13 @@ import java.util.Map;
 
 class ImmutableCache {
 
-    private AbstractSaveCommandImpl.Data data;
+    private AbstractEntitySaveCommandImpl.Data data;
 
     private Map<Object, ImmutableSpi> idObjMap = new HashMap<>();
 
     private Map<Key, ImmutableSpi> keyObjMap = new HashMap<>();
 
-    public ImmutableCache(AbstractSaveCommandImpl.Data data) {
+    public ImmutableCache(AbstractEntitySaveCommandImpl.Data data) {
         this.data = data;
     }
 

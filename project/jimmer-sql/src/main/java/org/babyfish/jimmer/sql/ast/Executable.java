@@ -4,5 +4,7 @@ import java.sql.Connection;
 
 public interface Executable<R> {
 
-    public R execute(Connection con);
+    R execute();
+
+    R execute(Connection con);
 }

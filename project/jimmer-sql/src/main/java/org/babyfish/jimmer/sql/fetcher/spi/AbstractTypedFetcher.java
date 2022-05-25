@@ -4,7 +4,7 @@ import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.Loader;
+import org.babyfish.jimmer.sql.fetcher.FieldConfig;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 
 import java.util.function.Consumer;
@@ -26,9 +26,9 @@ public abstract class AbstractTypedFetcher<E, T extends AbstractTypedFetcher<E, 
     protected AbstractTypedFetcher(
             FetcherImpl<E> prev,
             ImmutableProp prop,
-            Loader loader
+            FieldConfig<?, ? extends Table<?>> fieldConfig
     ) {
-        super(prev, prop, loader);
+        super(prev, prop, fieldConfig);
     }
 
     @SuppressWarnings("unchecked")
@@ -73,7 +73,7 @@ public abstract class AbstractTypedFetcher<E, T extends AbstractTypedFetcher<E, 
     public T add(
             String prop,
             Fetcher<?> childFetcher,
-            Consumer<? extends Loader<?, ? extends Table<?>>> loaderBlock
+            Consumer<? extends FieldConfig<?, ? extends Table<?>>> loaderBlock
     ) {
         return (T) super.add(prop, childFetcher, loaderBlock);
     }
@@ -82,5 +82,5 @@ public abstract class AbstractTypedFetcher<E, T extends AbstractTypedFetcher<E, 
     protected abstract T createChildFetcher(ImmutableProp prop, boolean negative);
 
     @Override
-    protected abstract T createChildFetcher(ImmutableProp prop, Loader<?, ? extends Table<?>> loader);
+    protected abstract T createChildFetcher(ImmutableProp prop, FieldConfig<?, ? extends Table<?>> fieldConfig);
 }

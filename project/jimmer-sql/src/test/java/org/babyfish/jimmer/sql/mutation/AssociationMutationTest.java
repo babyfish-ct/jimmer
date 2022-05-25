@@ -19,7 +19,7 @@ public class AssociationMutationTest extends AbstractMutationTest {
                         BookTableEx.class, BookTableEx::authors
                 ).saveCommand(
                        learningGraphQLId1, alexId
-                ),
+                ).checkExistence(),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -45,7 +45,7 @@ public class AssociationMutationTest extends AbstractMutationTest {
                             new Tuple2<>(learningGraphQLId2, borisId),
                             new Tuple2<>(learningGraphQLId3, borisId)
                         )
-                ),
+                ).checkExistence(),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -104,7 +104,7 @@ public class AssociationMutationTest extends AbstractMutationTest {
                         AuthorTableEx.class, AuthorTableEx::books
                 ).saveCommand(
                         alexId, learningGraphQLId1
-                ),
+                ).checkExistence(),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -130,7 +130,7 @@ public class AssociationMutationTest extends AbstractMutationTest {
                                 new Tuple2<>(borisId, learningGraphQLId2),
                                 new Tuple2<>(borisId, learningGraphQLId3)
                         )
-                ),
+                ).checkExistence(),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

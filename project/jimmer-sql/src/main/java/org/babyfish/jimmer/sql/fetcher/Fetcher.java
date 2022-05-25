@@ -37,7 +37,7 @@ public interface Fetcher<E> {
     Fetcher<E> add(
             String prop,
             Fetcher<?> childFetcher,
-            Consumer<? extends Loader<?, ? extends Table<?>>> loaderBlock
+            Consumer<? extends FieldConfig<?, ? extends Table<?>>> loaderBlock
     );
 
     boolean isSimpleFetcher();

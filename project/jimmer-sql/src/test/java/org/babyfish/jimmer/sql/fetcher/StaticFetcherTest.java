@@ -20,7 +20,7 @@ public class StaticFetcherTest {
                 BookFetcher.$.allTableFields().toString()
         );
         Assertions.assertEquals(
-                "org.babyfish.jimmer.sql.model.Book { id, name, edition, store }",
+                "org.babyfish.jimmer.sql.model.Book { id, name, edition, store { id } }",
                 BookFetcher.$
                         .allScalarFields()
                         .store().store(false).store()
@@ -45,7 +45,7 @@ public class StaticFetcherTest {
         Assertions.assertEquals(
                 "org.babyfish.jimmer.sql.model.TreeNode { " +
                         "id, " +
-                        "parent(depth: 5) { id, name, parent }, " +
+                        "parent(depth: 5) { id, name, parent { id } }, " +
                         "childNodes(depth: 10) { id, name } " +
                         "}",
                 TreeNodeFetcher.$
@@ -56,12 +56,12 @@ public class StaticFetcherTest {
         Assertions.assertEquals(
                 "org.babyfish.jimmer.sql.model.TreeNode { " +
                         "id, " +
-                        "parent(recursive: true) { id, name, parent }, " +
+                        "parent(recursive: true) { id, name, parent { id } }, " +
                         "childNodes(recursive: true) { id, name } " +
                         "}",
                 TreeNodeFetcher.$
-                        .parent(TreeNodeFetcher.$.name(), RecursiveLoader::recursive)
-                        .childNodes(TreeNodeFetcher.$.name(), RecursiveLoader::recursive)
+                        .parent(TreeNodeFetcher.$.name(), RecursiveFieldConfig::recursive)
+                        .childNodes(TreeNodeFetcher.$.name(), RecursiveFieldConfig::recursive)
                         .toString()
         );
     }

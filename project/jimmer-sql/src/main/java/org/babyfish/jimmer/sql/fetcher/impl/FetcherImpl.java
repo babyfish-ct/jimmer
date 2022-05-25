@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.*;
 import org.babyfish.jimmer.sql.meta.Column;
@@ -59,21 +60,25 @@ public class FetcherImpl<E> implements Fetcher<E> {
         this.limit = Integer.MAX_VALUE;
         this.offset = 0;
         this.recursionStrategy = null;
-        this.childFetcher = null;
+        if (negative || !prop.isAssociation()) {
+            this.childFetcher = null;
+        } else {
+            this.childFetcher = new FetcherImpl<>(prop.getTargetType().getJavaClass());
+        }
     }
 
     @SuppressWarnings("unchecked")
     protected FetcherImpl(
             FetcherImpl<E> prev,
             ImmutableProp prop,
-            Loader<?, ? extends Table<?>> loader
+            FieldConfig<?, ? extends Table<?>> fieldConfig
     ) {
         this.prev = prev;
         this.immutableType = prev.immutableType;
         this.negative = false;
         this.prop = prop;
-        if (loader != null) {
-            LoaderImpl<?, Table<?>> loaderImpl = (LoaderImpl<?, Table<?>>) loader;
+        if (fieldConfig != null) {
+            FieldConfigImpl<?, Table<?>> loaderImpl = (FieldConfigImpl<?, Table<?>>) fieldConfig;
             this.filter = (Filter<E, ?>) loaderImpl.getFilter();
             this.batchSize = loaderImpl.getBatchSize();
             this.limit = prop.isEntityList() ? loaderImpl.getLimit() : Integer.MAX_VALUE;
@@ -193,7 +198,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
     public Fetcher<E> add(
             String prop,
             Fetcher<?> childFetcher,
-            Consumer<? extends Loader<?, ? extends Table<?>>> loaderBlock
+            Consumer<? extends FieldConfig<?, ? extends Table<?>>> loaderBlock
     ) {
         Objects.requireNonNull(prop, "'prop' cannot be null");
         ImmutableProp immutableProp = immutableType.getProp(prop);
@@ -207,9 +212,9 @@ public class FetcherImpl<E> implements Fetcher<E> {
         if (childFetcher != null && immutableProp.getTargetType().getJavaClass() != childFetcher.getJavaClass()) {
             throw new IllegalArgumentException("Illegal type of childFetcher");
         }
-        LoaderImpl<Object, Table<Object>> loaderImpl = new LoaderImpl<>(immutableProp, (FetcherImpl<?>) childFetcher);
+        FieldConfigImpl<Object, Table<Object>> loaderImpl = new FieldConfigImpl<>(immutableProp, (FetcherImpl<?>) childFetcher);
         if (loaderBlock != null) {
-            ((Consumer<Loader<Object, Table<Object>>>)loaderBlock).accept(loaderImpl);
+            ((Consumer<FieldConfig<Object, Table<Object>>>)loaderBlock).accept(loaderImpl);
             if (loaderImpl.getLimit() != Integer.MAX_VALUE && loaderImpl.getBatchSize() != 1) {
                 throw new IllegalArgumentException(
                         "Fetcher field with limit does not support batch load, " +
@@ -229,7 +234,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
     }
 
     @NewChain
-    private FetcherImpl<E> addImpl(ImmutableProp prop, LoaderImpl<?, ? extends Table<?>> loader) {
+    private FetcherImpl<E> addImpl(ImmutableProp prop, FieldConfigImpl<?, ? extends Table<?>> loader) {
         if (prop.isId()) {
             return this;
         }
@@ -272,11 +277,11 @@ public class FetcherImpl<E> implements Fetcher<E> {
         return new FetcherImpl<>(this, prop, negative);
     }
 
-    protected FetcherImpl<E> createChildFetcher(ImmutableProp prop, Loader<?, ? extends Table<?>> loader) {
-        return new FetcherImpl<>(this, prop, loader);
+    protected FetcherImpl<E> createChildFetcher(ImmutableProp prop, FieldConfig<?, ? extends Table<?>> fieldConfig) {
+        return new FetcherImpl<>(this, prop, fieldConfig);
     }
 
-    private static FetcherImpl<?> standardChildFetcher(LoaderImpl<?, Table<?>> loaderImpl) {
+    private static FetcherImpl<?> standardChildFetcher(FieldConfigImpl<?, Table<?>> loaderImpl) {
         FetcherImpl<?> childFetcher = loaderImpl.getChildFetcher();
         if (!(loaderImpl.getProp().getStorage() instanceof Column)) {
             return childFetcher;

@@ -24,7 +24,7 @@ import java.util.*;
 
 class Saver {
 
-    private AbstractSaveCommandImpl.Data data;
+    private AbstractEntitySaveCommandImpl.Data data;
 
     private Connection con;
 
@@ -35,14 +35,14 @@ class Saver {
     private String path;
 
     Saver(
-            AbstractSaveCommandImpl.Data data,
+            AbstractEntitySaveCommandImpl.Data data,
             Connection con
     ) {
         this(data, con, new ImmutableCache(data), new LinkedHashMap<>());
     }
 
     Saver(
-            AbstractSaveCommandImpl.Data data,
+            AbstractEntitySaveCommandImpl.Data data,
             Connection con,
             ImmutableCache cache,
             Map<AffectedTable, Integer> affectedRowCountMap) {
@@ -53,7 +53,7 @@ class Saver {
         this.path = "<root>";
     }
 
-    Saver(Saver base, AbstractSaveCommandImpl.Data data, String subPath) {
+    Saver(Saver base, AbstractEntitySaveCommandImpl.Data data, String subPath) {
         this.data = data;
         this.con = base.con;
         this.cache = base.cache;
@@ -205,8 +205,8 @@ class Saver {
 
     private Object saveAssociatedObjectAndGetId(ImmutableProp prop, DraftSpi associatedDraftSpi) {
         if (isNonIdPropLoaded(associatedDraftSpi)) {
-            AbstractSaveCommandImpl.Data associatedData =
-                    new AbstractSaveCommandImpl.Data(data);
+            AbstractEntitySaveCommandImpl.Data associatedData =
+                    new AbstractEntitySaveCommandImpl.Data(data);
             associatedData.setMode(
                     data.isAutoAttachingProp(prop) ?
                             SaveMode.UPSERT :

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Executable;
@@ -12,19 +13,19 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import java.sql.Connection;
 import java.util.*;
 
-class AssociationCommand implements Executable<Integer> {
+class AssociationExecutable implements Executable<Integer> {
 
-    private SqlClient sqlClient;
+    SqlClient sqlClient;
 
-    private AssociationType associationType;
+    private final AssociationType associationType;
 
-    private boolean reversed;
+    private final boolean reversed;
 
-    private Mode mode;
+    private final Mode mode;
 
-    private Set<Tuple2<Object, Object>> idPairs;
+    private final Set<Tuple2<Object, Object>> idPairs;
 
-    public AssociationCommand(
+    public AssociationExecutable(
             SqlClient sqlClient,
             AssociationType associationType,
             boolean reversed,
@@ -38,6 +39,27 @@ class AssociationCommand implements Executable<Integer> {
         this.idPairs = idPairs instanceof Set<?> ?
                 (Set<Tuple2<Object, Object>>)idPairs :
                 new LinkedHashSet<>(idPairs);
+    }
+
+    @NewChain
+    public AssociationExecutable setMode(Mode mode) {
+        if (this.mode == mode) {
+            return this;
+        }
+        return new AssociationExecutable(
+                sqlClient,
+                associationType,
+                reversed,
+                mode,
+                idPairs
+        );
+    }
+
+    @Override
+    public Integer execute() {
+        return sqlClient
+                .getConnectionManager()
+                .execute(this::execute);
     }
 
     @Override
