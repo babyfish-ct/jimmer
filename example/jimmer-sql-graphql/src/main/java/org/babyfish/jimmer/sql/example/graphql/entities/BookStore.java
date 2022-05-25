@@ -2,16 +2,16 @@ package org.babyfish.jimmer.sql.example.graphql.entities;
 
 import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
+import org.springframework.lang.Nullable;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
 @Entity
-public interface Book {
+public interface BookStore {
 
     @Id
     @GeneratedValue(generator = UUIDIdGenerator.FULL_NAME)
@@ -21,21 +21,13 @@ public interface Book {
     @NotBlank
     String name();
 
-    @Key
-    @Positive
-    int edition();
+    @Nullable
+    @NotBlank
+    String website();
 
-    BigDecimal price();
+    @Transient
+    BigDecimal avgPrice();
 
-    @ManyToOne(optional = true)
-    BookStore store();
-
-    @ManyToMany
-    @JoinTable(
-            name = "BOOK_AUTHOR_MAPPING",
-            joinColumns = @JoinColumn(name = "BOOK_ID"),
-            inverseJoinColumns = @JoinColumn(name = "AUTHOR_ID")
-    )
-    List<Author> authors();
+    @OneToMany(mappedBy = "store")
+    List<Book> books();
 }
-

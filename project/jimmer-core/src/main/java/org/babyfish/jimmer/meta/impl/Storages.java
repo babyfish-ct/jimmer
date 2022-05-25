@@ -12,6 +12,9 @@ import java.lang.annotation.Annotation;
 public class Storages {
 
     static Storage of(ImmutableProp prop) {
+        if (prop.isTransient()) {
+            return null;
+        }
         Annotation annotation = prop.getAssociationAnnotation();
         if (annotation instanceof OneToOne ||
                 annotation instanceof OneToMany || (

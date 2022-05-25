@@ -312,9 +312,21 @@ public class DraftImplGenerator {
 
         new ValidationGenerator(prop, prop.getName(), builder).generate();
 
-        builder
-                .addStatement("$T modified = $L()", type.getImplClassName(), DRAFT_FIELD_MODIFIED)
-                .addStatement("modified.$L = $L", prop.getName(), prop.getName());
+        builder.addStatement("$T modified = $L()", type.getImplClassName(), DRAFT_FIELD_MODIFIED);
+        if (prop.isList()) {
+            builder.addComment("Cannot use the shared instance 'Collections.EMPTY_LIST' ")
+                    .addComment("because DraftContext depends on identities of list objects")
+                    .addStatement(
+                            "modified.$L = $L != $T.EMPTY_LIST ? $L : new $T<>()",
+                            prop.getName(),
+                            prop.getName(),
+                            Collections.class,
+                            prop.getName(),
+                            ArrayList.class
+                    );
+        } else {
+            builder.addStatement("modified.$L = $L", prop.getName(), prop.getName());
+        }
         if (prop.isLoadedStateRequired()) {
             builder.addStatement("modified.$L = true", prop.getLoadedStateName());
         }
