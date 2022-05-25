@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 
 import javax.persistence.*;
 import javax.validation.constraints.Null;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +24,9 @@ public interface BookStore {
 
     @Version
     int version();
+
+    @Transient
+    BigDecimal avgPrice();
 
     @OneToMany(mappedBy = "store")
     List<Book> books();

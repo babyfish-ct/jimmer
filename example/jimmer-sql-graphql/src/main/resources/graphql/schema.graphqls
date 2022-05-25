@@ -1,0 +1,43 @@
+scalar UUID
+scalar BigDecimal
+
+type Query {
+    bookStores(name: String): [BookStore!]!
+    books(name: String, storeName: String, authorName: String): [Book!]!
+    authors(name: String): [Author!]!
+}
+
+type Mutation {
+    saveBookStore(input: BookStoreInput!): BookStore!
+}
+
+type BookStore {
+    id: UUID!
+    name: String!
+    website: String
+    avgPrice: BigDecimal!
+    books(name: String): [Book!]!
+}
+
+type Book {
+    id: UUID!
+    name: String!
+    edition: Int!
+    price: BigDecimal!
+    store: BookStore
+    authors: [Author!]!
+}
+
+type Author {
+    id: UUID!
+    firstName: String!
+    lastName: String!
+    books(name: String): [Book!]!
+}
+
+input BookStoreInput {
+    id: UUID
+    name: String!
+    website: String
+}
+

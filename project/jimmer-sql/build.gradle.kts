@@ -1,5 +1,5 @@
 plugins {
-    java
+    `java-library`
     id("maven-publish")
     id("signing")
 }
@@ -17,17 +17,13 @@ java {
 
 dependencies {
 
-    implementation(project(":jimmer-core"))
-    implementation("javax.validation:validation-api:2.0.1.Final")
-    implementation("javax.persistence:javax.persistence-api:2.2")
+    api(project(":jimmer-core"))
+    api("javax.persistence:javax.persistence-api:2.2")
 
     testAnnotationProcessor(project(":jimmer-apt"))
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-
-    testImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.3")
-    testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3")
 
     testImplementation("org.springframework:spring-jdbc:5.3.20")
     testImplementation("com.fasterxml.uuid:java-uuid-generator:4.0.1")

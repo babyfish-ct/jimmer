@@ -1,0 +1,51 @@
+package org.babyfish.jimmer.sql.example.graphql.controller;
+
+import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.example.graphql.dal.AuthorRepository;
+import org.babyfish.jimmer.sql.example.graphql.entities.Author;
+import org.babyfish.jimmer.sql.example.graphql.entities.AuthorTableEx;
+import org.babyfish.jimmer.sql.example.graphql.entities.Book;
+import org.springframework.graphql.data.method.annotation.Argument;
+import org.springframework.graphql.data.method.annotation.BatchMapping;
+import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.lang.Nullable;
+import org.springframework.stereotype.Controller;
+
+import java.util.List;
+import java.util.Map;
+
+@Controller
+public class AuthorController {
+
+    private final SqlClient sqlClient;
+
+    private final AuthorRepository authorRepository;
+
+    public AuthorController(
+            SqlClient sqlClient,
+            AuthorRepository authorRepository
+    ) {
+        this.sqlClient = sqlClient;
+        this.authorRepository = authorRepository;
+    }
+
+    // --- Query ---
+
+    @QueryMapping
+    public List<Author> authors(@Argument @Nullable String name) {
+        return authorRepository.find(name);
+    }
+
+    // --- Association ---
+
+    @BatchMapping
+    public Map<Author, List<Book>> books(
+            List<Author> authors
+    ) {
+        return sqlClient.getListLoader(
+                AuthorTableEx.class,
+                AuthorTableEx::books,
+                (q, book) -> q.orderBy(book.name())
+        ).batchLoad(authors);
+    }
+}

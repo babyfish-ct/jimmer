@@ -6,9 +6,12 @@ import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.meta.Column;
 
 import java.sql.Connection;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -50,9 +53,14 @@ class BatchCommand<S, T> implements Executable<Map<S, T>> {
                 con,
                 prop,
                 filter
-        ).load(map.values());
+        ).load(
+                prop.getStorage() instanceof Column ?
+                        new LinkedHashSet<>(map.values()) :
+                        map.values()
+        );
         for (Map.Entry<ImmutableSpi, Object> e : map.entrySet()) {
-            e.setValue(targetMap.get(e.getValue()));
+            Object value = targetMap.get(e.getValue());
+            e.setValue(value == null && prop.isEntityList() ? Collections.emptyList() : value);
         }
         return (Map<S, T>) map;
     }
