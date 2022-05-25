@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
-import org.babyfish.jimmer.sql.ast.mutation.BatchSaveCommand;
+import org.babyfish.jimmer.sql.ast.mutation.BatchEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 
@@ -13,20 +13,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-class BatchSaveCommandImpl<E>
-        extends AbstractSaveCommandImpl<BatchSaveCommand<E>>
-        implements BatchSaveCommand<E> {
+class BatchEntitySaveCommandImpl<E>
+        extends AbstractEntitySaveCommandImpl<BatchEntitySaveCommand<E>>
+        implements BatchEntitySaveCommand<E> {
 
     private Collection<E> entities;
 
-    BatchSaveCommandImpl(SqlClient sqlClient, Collection<E> entities) {
+    BatchEntitySaveCommandImpl(SqlClient sqlClient, Collection<E> entities) {
         super(sqlClient, null);
         this.entities = entities;
     }
 
-    private BatchSaveCommandImpl(BatchSaveCommandImpl<E> base, Data data) {
+    private BatchEntitySaveCommandImpl(BatchEntitySaveCommandImpl<E> base, Data data) {
         super(base.sqlClient, data);
         this.entities = base.entities;
+    }
+
+    @Override
+    public BatchSaveResult<E> execute() {
+        return sqlClient
+                .getConnectionManager()
+                .execute(this::execute);
     }
 
     @Override
@@ -41,7 +48,7 @@ class BatchSaveCommandImpl<E>
     }
 
     @Override
-    BatchSaveCommand<E> create(Data data) {
-        return new BatchSaveCommandImpl<>(this, data);
+    BatchEntitySaveCommand<E> create(Data data) {
+        return new BatchEntitySaveCommandImpl<>(this, data);
     }
 }

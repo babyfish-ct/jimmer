@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
+import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.PropExpression;
@@ -9,8 +10,9 @@ import org.babyfish.jimmer.sql.ast.table.TableEx;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public interface AbstractSaveCommand<C extends AbstractSaveCommand<C>> {
+public interface AbstractEntitySaveCommand<C extends AbstractEntitySaveCommand<C>> {
 
+    @NewChain
     C configure(Consumer<Cfg> block);
 
     interface Cfg {
@@ -59,6 +61,8 @@ public interface AbstractSaveCommand<C extends AbstractSaveCommand<C>> {
     }
 
     interface KeyPropCfg<T extends Table<?>> {
+
+        @OldChain
         KeyPropCfg<T> add(Function<T, PropExpression<?>> block);
     }
 }

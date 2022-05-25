@@ -93,6 +93,13 @@ public class MutableUpdateImpl
     }
 
     @Override
+    public Integer execute() {
+        return getSqlClient()
+                .getConnectionManager()
+                .execute(this::execute);
+    }
+
+    @Override
     public Integer execute(Connection con) {
         if (assignmentMap.isEmpty()) {
             return 0;

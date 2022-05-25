@@ -107,8 +107,16 @@ public class ImmutableType {
 
         Map<String, ImmutableProp> map = new LinkedHashMap<>();
         for (ExecutableElement executableElement : ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
-            ImmutableProp prop = new ImmutableProp(typeUtils, executableElement);
-            map.put(prop.getName(), prop);
+            if (executableElement.getAnnotation(Id.class) != null) {
+                ImmutableProp prop = new ImmutableProp(typeUtils, executableElement);
+                map.put(prop.getName(), prop);
+            }
+        }
+        for (ExecutableElement executableElement : ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
+            if (executableElement.getAnnotation(Id.class) == null) {
+                ImmutableProp prop = new ImmutableProp(typeUtils, executableElement);
+                map.put(prop.getName(), prop);
+            }
         }
         declaredProps = Collections.unmodifiableMap(map);
         List<ImmutableProp> idProps = declaredProps

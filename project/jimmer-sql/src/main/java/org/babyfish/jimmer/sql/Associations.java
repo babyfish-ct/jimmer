@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.sql.ast.Executable;
+import org.babyfish.jimmer.sql.ast.mutation.AssociationSaveCommand;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 
 import java.util.Collection;
@@ -9,23 +10,31 @@ public interface Associations {
 
     Associations reverse();
 
-    default Executable<Integer> saveCommand(Object sourceId, Object targetId) {
-        return saveCommand(sourceId, targetId, true);
+    AssociationSaveCommand saveCommand(
+            Object sourceId,
+            Object targetId
+    );
+
+    AssociationSaveCommand saveCommand(
+            Collection<Object> sourceIds,
+            Collection<Object> targetIds
+    );
+
+    AssociationSaveCommand saveCommand(
+            Collection<Tuple2<Object, Object>> idPairs
+    );
+
+    default int delete(Object sourceId, Object targetId) {
+        return deleteCommand(sourceId, targetId).execute();
     }
 
-    default Executable<Integer> saveCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
-        return saveCommand(sourceIds, targetIds, true);
+    default int delete(Collection<Object> sourceIds, Collection<Object> targetIds) {
+        return deleteCommand(sourceIds, targetIds).execute();
     }
 
-    default Executable<Integer> saveCommand(Collection<Tuple2<Object, Object>> idPairs) {
-        return saveCommand(idPairs, true);
+    default int delete(Collection<Tuple2<Object, Object>> idPairs) {
+        return deleteCommand(idPairs).execute();
     }
-
-    Executable<Integer> saveCommand(Object sourceId, Object targetId, boolean checkExistence);
-
-    Executable<Integer> saveCommand(Collection<Object> sourceIds, Collection<Object> targetIds, boolean checkExistence);
-
-    Executable<Integer> saveCommand(Collection<Tuple2<Object, Object>> idPairs, boolean checkExistence);
 
     Executable<Integer> deleteCommand(Object sourceId, Object targetId);
 

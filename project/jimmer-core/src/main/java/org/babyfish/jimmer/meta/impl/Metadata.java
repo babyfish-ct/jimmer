@@ -19,7 +19,7 @@ public class Metadata {
 
     private static final Class<?> TABLE_CLASS;
 
-    private static StaticCache<Class<?>, ImmutableTypeImpl> CACHE =
+    private static final StaticCache<Class<?>, ImmutableTypeImpl> CACHE =
             new StaticCache<>(Metadata::create);
 
     public static ImmutableTypeImpl get(Class<?> javaClass) {

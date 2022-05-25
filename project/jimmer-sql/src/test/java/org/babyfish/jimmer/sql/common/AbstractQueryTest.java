@@ -6,15 +6,15 @@ import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.junit.jupiter.api.Assertions;
 import org.opentest4j.AssertionFailedError;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.sql.Connection;
+import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class AbstractQueryTest extends AbstractTest {
 
@@ -35,6 +35,26 @@ public class AbstractQueryTest extends AbstractTest {
         jdbc(con -> {
             if (rows == null) {
                 rows = query.execute(con);
+            }
+        });
+        block.accept(new QueryTestContext<>(0));
+        Assertions.assertEquals(
+                maxStatementIndex + 1,
+                getExecutions().size(),
+                "statement count"
+        );
+    }
+
+    protected <T> void callAnyAndExpect(
+            Executable<T> executable,
+            Consumer<QueryTestContext<T>> block
+    ) {
+        clearExecutions();
+        rows = null;
+        maxStatementIndex = -1;
+        jdbc(con -> {
+            if (rows == null) {
+                rows = Collections.singletonList(executable.execute(con));
             }
         });
         block.accept(new QueryTestContext<>(0));

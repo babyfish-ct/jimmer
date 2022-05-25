@@ -3,12 +3,10 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.SqlClient;
-import org.babyfish.jimmer.sql.ast.mutation.BatchSaveCommand;
+import org.babyfish.jimmer.sql.ast.mutation.BatchEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
-import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
-import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveCommand;
+import org.babyfish.jimmer.sql.ast.mutation.SimpleEntitySaveCommand;
 
-import java.sql.Connection;
 import java.util.*;
 
 public class EntitiesImpl implements Entities {
@@ -20,13 +18,13 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> SimpleSaveCommand<E> saveCommand(E entity) {
-        return new SimpleSaveCommandImpl<>(sqlClient, entity);
+    public <E> SimpleEntitySaveCommand<E> saveCommand(E entity) {
+        return new SimpleEntitySaveCommandImpl<>(sqlClient, entity);
     }
 
     @Override
-    public <E> BatchSaveCommand<E> batchSaveCommand(Collection<E> entities) {
-        return new BatchSaveCommandImpl<>(sqlClient, entities);
+    public <E> BatchEntitySaveCommand<E> batchSaveCommand(Collection<E> entities) {
+        return new BatchEntitySaveCommandImpl<>(sqlClient, entities);
     }
 
     @Override

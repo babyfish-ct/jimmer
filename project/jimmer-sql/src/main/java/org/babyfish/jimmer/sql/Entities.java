@@ -1,16 +1,16 @@
 package org.babyfish.jimmer.sql;
 
-import org.babyfish.jimmer.sql.ast.mutation.BatchSaveCommand;
+import org.babyfish.jimmer.sql.ast.mutation.BatchEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
-import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveCommand;
+import org.babyfish.jimmer.sql.ast.mutation.SimpleEntitySaveCommand;
 
 import java.util.Collection;
 
 public interface Entities {
 
-    <E> SimpleSaveCommand<E> saveCommand(E entity);
+    <E> SimpleEntitySaveCommand<E> saveCommand(E entity);
 
-    <E> BatchSaveCommand<E> batchSaveCommand(
+    <E> BatchEntitySaveCommand<E> batchSaveCommand(
             Collection<E> entities
     );
 

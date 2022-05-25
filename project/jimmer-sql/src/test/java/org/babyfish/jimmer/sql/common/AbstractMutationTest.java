@@ -8,8 +8,10 @@ import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.junit.jupiter.api.Assertions;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public abstract class AbstractMutationTest extends AbstractTest {
 

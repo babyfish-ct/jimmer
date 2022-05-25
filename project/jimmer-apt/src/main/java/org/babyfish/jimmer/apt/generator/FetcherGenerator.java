@@ -77,14 +77,14 @@ public class FetcherGenerator {
                     addPropByBoolean(prop);
                     if (prop.isAssociation()) {
                         addAssociationProp(prop);
-                        addAssociationPropByLoader(prop);
+                        addAssociationPropByFieldConfig(prop);
                     }
                 }
             }
             addConstructorByBoolean();
-            addConstructorByLoader();
+            addConstructorByFieldConfig();
             addCreatorByBoolean();
-            addCreatorByLoader();
+            addCreatorByFieldConfig();
         } finally {
             typeBuilder = oldBuilder;
         }
@@ -158,20 +158,20 @@ public class FetcherGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addAssociationPropByLoader(ImmutableProp prop) {
+    private void addAssociationPropByFieldConfig(ImmutableProp prop) {
         boolean recursive = typeUtils.isSubType(
                 prop.getElementType(),
                 type.getTypeElement().asType()
         );
-        ClassName loaderClassName;
+        ClassName fieldConfigClassName;
         if (recursive && prop.isList()) {
-            loaderClassName = Constants.RECURSIVE_LIST_LOADER_CLASS_NAME;
+            fieldConfigClassName = Constants.RECURSIVE_LIST_FIELD_CONFIG_CLASS_NAME;
         } else if (recursive) {
-            loaderClassName = Constants.RECURSIVE_LOADER_CLASS_NAME;
+            fieldConfigClassName = Constants.RECURSIVE_FIELD_CONFIG_CLASS_NAME;
         } else if (prop.isList()) {
-            loaderClassName = Constants.LIST_LOADER_CLASS_NAME;
+            fieldConfigClassName = Constants.LIST_FIELD_CONFIG_CLASS_NAME;
         } else {
-            loaderClassName = Constants.LOADER_CLASS_NAME;
+            fieldConfigClassName = Constants.FIELD_CONFIG_CLASS_NAME;
         }
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
@@ -188,16 +188,16 @@ public class FetcherGenerator {
                         ParameterizedTypeName.get(
                                 Constants.CONSUMER_CLASS_NAME,
                                 ParameterizedTypeName.get(
-                                        loaderClassName,
+                                        fieldConfigClassName,
                                         prop.getElementTypeName(),
                                         typeUtils.getImmutableType(prop.getElementType()).getTableClassName()
                                 )
                         ),
-                        "loader"
+                        "fieldConfig"
                 )
                 .returns(type.getFetcherClassName())
                 .addStatement(
-                        "return add($S, childFetcher, loader)",
+                        "return add($S, childFetcher, fieldConfig)",
                         prop.getName()
                 );
         typeBuilder.addMethod(builder.build());
@@ -214,14 +214,26 @@ public class FetcherGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addConstructorByLoader() {
+    private void addConstructorByFieldConfig() {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
                 .addModifiers(Modifier.PRIVATE)
                 .addParameter(type.getFetcherClassName(), "prev")
                 .addParameter(org.babyfish.jimmer.meta.ImmutableProp.class, "prop")
-                .addParameter(Constants.LOADER_CLASS_NAME, "loader")
-                .addStatement("super(prev, prop, loader)");
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.FIELD_CONFIG_CLASS_NAME,
+                                WildcardTypeName.subtypeOf(Object.class),
+                                WildcardTypeName.subtypeOf(
+                                        ParameterizedTypeName.get(
+                                                Constants.TABLE_CLASS_NAME,
+                                                WildcardTypeName.subtypeOf(Object.class)
+                                        )
+                                )
+                        ),
+                        "fieldConfig"
+                )
+                .addStatement("super(prev, prop, fieldConfig)");
         typeBuilder.addMethod(builder.build());
     }
 
@@ -240,7 +252,7 @@ public class FetcherGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addCreatorByLoader() {
+    private void addCreatorByFieldConfig() {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("createChildFetcher")
                 .addModifiers(Modifier.PROTECTED)
@@ -250,7 +262,7 @@ public class FetcherGenerator {
                 )
                 .addParameter(
                         ParameterizedTypeName.get(
-                                Constants.LOADER_CLASS_NAME,
+                                Constants.FIELD_CONFIG_CLASS_NAME,
                                 WildcardTypeName.subtypeOf(Object.class),
                                 WildcardTypeName.subtypeOf(
                                         ParameterizedTypeName.get(
@@ -259,11 +271,11 @@ public class FetcherGenerator {
                                         )
                                 )
                         ),
-                        "loader"
+                        "fieldConfig"
                 )
                 .returns(type.getFetcherClassName())
                 .addAnnotation(Override.class)
-                .addStatement("return new $T(this, prop, loader)", type.getFetcherClassName());
+                .addStatement("return new $T(this, prop, fieldConfig)", type.getFetcherClassName());
         typeBuilder.addMethod(builder.build());
     }
 }

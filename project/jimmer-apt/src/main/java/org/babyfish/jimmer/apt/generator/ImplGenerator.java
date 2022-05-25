@@ -9,6 +9,8 @@ import org.babyfish.jimmer.apt.meta.ImmutableType;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.PrimitiveType;
+import javax.persistence.Id;
+import java.util.Collection;
 import java.util.Objects;
 
 public class ImplGenerator {
@@ -129,7 +131,7 @@ public class ImplGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addHashCode(Boolean shallow) {
+    private void addHashCode(boolean shallow) {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(shallow ? "__shallowHashCode" : "hashCode")
                 .addModifiers(shallow ? Modifier.PRIVATE : Modifier.PUBLIC)
@@ -166,6 +168,10 @@ public class ImplGenerator {
                     );
                 }
                 builder.addStatement("hash = 31 * hash + $L.hashCode()", prop.getName());
+                if (prop.getAnnotation(Id.class) != null) {
+                    builder.addComment("If entity-id is loaded, return directly");
+                    builder.addStatement("return hash");
+                }
                 builder.endControlFlow();
             }
         }
@@ -173,7 +179,7 @@ public class ImplGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addEquals(Boolean shallow) {
+    private void addEquals(boolean shallow) {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(shallow ? "__shallowEquals" : "equals")
                 .addModifiers(shallow ? Modifier.PRIVATE : Modifier.PUBLIC)
@@ -211,10 +217,24 @@ public class ImplGenerator {
                         )
                         .addStatement("return false")
                         .endControlFlow();
+            } else if (prop.getAnnotation(Id.class) != null) {
+                builder
+                        .beginControlFlow(
+                                "if (__$LLoaded)",
+                                prop.getName()
+                        )
+                        .addComment("If entity-id is loaded, return directly")
+                        .addStatement(
+                                "return $T.equals($L, other.$L())",
+                                Objects.class,
+                                prop.getName(),
+                                prop.getGetterName()
+                        )
+                        .endControlFlow();
             } else {
                 builder
                         .beginControlFlow(
-                                "if (__$LLoaded && $T.equals($L, other.$L()))",
+                                "if (__$LLoaded && !$T.equals($L, other.$L()))",
                                 prop.getName(),
                                 Objects.class,
                                 prop.getName(),

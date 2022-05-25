@@ -2,8 +2,10 @@ package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.association.loader.Loaders;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
+import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
@@ -16,13 +18,11 @@ import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
-import org.babyfish.jimmer.sql.runtime.DefaultExecutor;
-import org.babyfish.jimmer.sql.runtime.Executor;
-import org.babyfish.jimmer.sql.runtime.ScalarProvider;
+import org.babyfish.jimmer.sql.runtime.*;
 
+import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -30,6 +30,15 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 class SqlClientImpl implements SqlClient {
+
+    private static final ConnectionManager ILLEGAL_CONNECTION_MANAGER = new ConnectionManager() {
+        @Override
+        public <R> R execute(Function<Connection, R> block) {
+            throw new ExecutionException("ConnectionManager of SqlClient is not configured");
+        }
+    };
+
+    private final ConnectionManager connectionManager;
 
     private final Dialect dialect;
 
@@ -46,6 +55,7 @@ class SqlClientImpl implements SqlClient {
     private final Entities entities;
 
     SqlClientImpl(
+            ConnectionManager connectionManager,
             Dialect dialect,
             Executor executor,
             Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
@@ -53,6 +63,10 @@ class SqlClientImpl implements SqlClient {
             int defaultBatchSize,
             int defaultListBatchSize
     ) {
+        this.connectionManager = connectionManager != null ?
+                connectionManager :
+                ILLEGAL_CONNECTION_MANAGER
+        ;
         this.dialect = dialect != null ? dialect : DefaultDialect.INSTANCE;
         this.executor = executor != null ? executor : DefaultExecutor.INSTANCE;
         this.scalarProviderMap = new HashMap<>(scalarProviderMap);
@@ -60,6 +74,11 @@ class SqlClientImpl implements SqlClient {
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
         this.entities = new EntitiesImpl(this);
+    }
+
+    @Override
+    public ConnectionManager getConnectionManager() {
+        return connectionManager;
     }
 
     @Override
@@ -164,5 +183,50 @@ class SqlClientImpl implements SqlClient {
     @Override
     public Associations getAssociations(AssociationType associationType) {
         return new AssociationsImpl(this, associationType);
+    }
+
+    @Override
+    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
+    ReferenceLoader<SE, TE> getReferenceLoader(
+            Class<ST> sourceTableType,
+            Function<ST, TT> block
+    ) {
+        return getReferenceLoader(sourceTableType, block, null);
+    }
+
+    @Override
+    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>> ReferenceLoader<SE, TE>
+    getReferenceLoader(
+            Class<ST> sourceTableType,
+            Function<ST, TT> block,
+            BiConsumer<Sortable, TT> filter
+    ) {
+        return Loaders.createReferenceLoader(
+                this,
+                ImmutableProps.join(sourceTableType, block),
+                filter
+        );
+    }
+
+    @Override
+    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
+    ListLoader<SE, TE> getListLoader(
+            Class<ST> sourceTableType,
+            Function<ST, TT> block
+    ) {
+        return getListLoader(sourceTableType, block, null);
+    }
+
+    @Override
+    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
+    ListLoader<SE, TE> getListLoader(
+            Class<ST> sourceTableType,
+            Function<ST, TT> block, BiConsumer<Sortable, TT> filter
+    ) {
+        return Loaders.createListLoader(
+                this,
+                ImmutableProps.join(sourceTableType, block),
+                filter
+        );
     }
 }

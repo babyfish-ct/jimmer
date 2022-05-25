@@ -43,6 +43,13 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQuery<R>, TypedQueryImplem
     }
 
     @Override
+    public List<R> execute() {
+        return sqlClient
+                .getConnectionManager()
+                .execute(this::execute);
+    }
+
+    @Override
     public List<R> execute(Connection con) {
         Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(sqlClient));
         return Selectors.select(sqlClient, con, sqlResult._1(), sqlResult._2(), selections);

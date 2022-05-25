@@ -4,9 +4,9 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
-import org.babyfish.jimmer.sql.fetcher.RecursiveListLoader;
+import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig;
 
-class LoaderImpl<E, T extends Table<E>> implements RecursiveListLoader<E, T> {
+class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig<E, T> {
 
     private ImmutableProp prop;
 
@@ -22,13 +22,13 @@ class LoaderImpl<E, T extends Table<E>> implements RecursiveListLoader<E, T> {
 
     private RecursionStrategy<E> recursionStrategy;
 
-    LoaderImpl(ImmutableProp prop, FetcherImpl<?> childFetcher) {
+    FieldConfigImpl(ImmutableProp prop, FetcherImpl<?> childFetcher) {
         this.prop = prop;
         this.childFetcher = childFetcher;
     }
 
     @Override
-    public RecursiveListLoader<E, T> filter(Filter<E, T> filter) {
+    public RecursiveListFieldConfig<E, T> filter(Filter<E, T> filter) {
         if (filter != null && prop.isReference() && !prop.isNullable()) {
             throw new IllegalArgumentException(
                     "Cannot set filter for non-null one-to-one/many-to-one property \"" + prop + "\""
@@ -39,7 +39,7 @@ class LoaderImpl<E, T extends Table<E>> implements RecursiveListLoader<E, T> {
     }
 
     @Override
-    public RecursiveListLoader<E, T> batch(int size) {
+    public RecursiveListFieldConfig<E, T> batch(int size) {
         if (size < 0) {
             throw new IllegalArgumentException("batchSize cannot be less than 0");
         }
@@ -48,7 +48,7 @@ class LoaderImpl<E, T extends Table<E>> implements RecursiveListLoader<E, T> {
     }
 
     @Override
-    public RecursiveListLoader<E, T> limit(int limit, int offset) {
+    public RecursiveListFieldConfig<E, T> limit(int limit, int offset) {
         if (!prop.isEntityList()) {
             throw new IllegalArgumentException(
                     "Cannot set limit because current property \"" +
@@ -71,17 +71,17 @@ class LoaderImpl<E, T extends Table<E>> implements RecursiveListLoader<E, T> {
     }
 
     @Override
-    public RecursiveListLoader<E, T> depth(int depth) {
+    public RecursiveListFieldConfig<E, T> depth(int depth) {
         return recursive(DefaultRecursionStrategy.of(depth));
     }
 
     @Override
-    public RecursiveListLoader<E, T> recursive() {
+    public RecursiveListFieldConfig<E, T> recursive() {
         return recursive(DefaultRecursionStrategy.of(Integer.MAX_VALUE));
     }
 
     @Override
-    public RecursiveListLoader<E, T> recursive(RecursionStrategy<E> strategy) {
+    public RecursiveListFieldConfig<E, T> recursive(RecursionStrategy<E> strategy) {
         if (!prop.getDeclaringType().getJavaClass().isAssignableFrom(prop.getTargetType().getJavaClass())) {
             throw new IllegalArgumentException(
                     "Cannot set recursive strategy because current property \"" +

@@ -35,7 +35,7 @@ class Key {
     }
 
     public static Key of(
-            AbstractSaveCommandImpl.Data data,
+            AbstractEntitySaveCommandImpl.Data data,
             ImmutableSpi spi,
             boolean force
     ) {

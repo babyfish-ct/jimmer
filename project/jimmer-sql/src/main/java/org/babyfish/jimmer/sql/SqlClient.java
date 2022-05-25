@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
@@ -11,8 +12,8 @@ import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
@@ -27,6 +28,8 @@ public interface SqlClient {
     static Builder newBuilder() {
         return new Builder();
     }
+
+    ConnectionManager getConnectionManager();
 
     Dialect getDialect();
 
@@ -79,7 +82,35 @@ public interface SqlClient {
 
     Associations getAssociations(AssociationType associationType);
 
+    <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
+    ReferenceLoader<SE, TE> getReferenceLoader(
+            Class<ST> sourceTableType,
+            Function<ST, TT> block
+    );
+
+    <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
+    ReferenceLoader<SE, TE> getReferenceLoader(
+            Class<ST> sourceTableType,
+            Function<ST, TT> block,
+            BiConsumer<Sortable, TT> filter
+    );
+
+    <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
+    ListLoader<SE, TE> getListLoader(
+            Class<ST> sourceTableType,
+            Function<ST, TT> block
+    );
+
+    <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
+    ListLoader<SE, TE> getListLoader(
+            Class<ST> sourceTableType,
+            Function<ST, TT> block,
+            BiConsumer<Sortable, TT> filter
+    );
+
     class Builder {
+
+        private ConnectionManager connectionManager;
 
         private Dialect dialect;
 
@@ -94,6 +125,11 @@ public interface SqlClient {
         private int defaultListBatchSize = 16;
 
         Builder() {}
+
+        public Builder setConnectionManager(ConnectionManager connectionManager) {
+            this.connectionManager = connectionManager;
+            return this;
+        }
 
         public Builder setDialect(Dialect dialect) {
             this.dialect = dialect;
@@ -144,6 +180,7 @@ public interface SqlClient {
 
         public SqlClient build() {
             return new SqlClientImpl(
+                    connectionManager,
                     dialect,
                     executor,
                     scalarProviderMap,

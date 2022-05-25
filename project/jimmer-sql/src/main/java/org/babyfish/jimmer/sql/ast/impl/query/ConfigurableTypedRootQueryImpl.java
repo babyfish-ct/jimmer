@@ -125,6 +125,14 @@ public class ConfigurableTypedRootQueryImpl<T extends Table<?>, R>
     }
 
     @Override
+    public List<R> execute() {
+        return getBaseQuery()
+                .getSqlClient()
+                .getConnectionManager()
+                .execute(this::execute);
+    }
+
+    @Override
     public List<R> execute(Connection con) {
         TypedQueryData data = getData();
         if (getData().getLimit() == 0) {

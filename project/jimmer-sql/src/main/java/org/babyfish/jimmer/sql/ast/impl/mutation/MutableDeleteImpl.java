@@ -42,6 +42,13 @@ public class MutableDeleteImpl
         return this;
     }
 
+    @Override
+    public Integer execute() {
+        return getSqlClient()
+                .getConnectionManager()
+                .execute(this::execute);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public Integer execute(Connection con) {
