@@ -5,5 +5,3 @@ spring:
   datasource:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:jimmer-sql-graphql
-  flyway:
-    baseline-on-migrate: true
