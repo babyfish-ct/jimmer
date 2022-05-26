@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.example;
 import com.zaxxer.hikari.HikariDataSource;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.dialect.DefaultDialect;
+import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.example.model.Gender;
 import org.babyfish.jimmer.sql.runtime.*;
 
@@ -37,7 +38,7 @@ public class AppContext {
                 .setConnectionManager(
                         ConnectionManager.simpleConnectionManager(DATA_SOURCE)
                 )
-                .setDialect(DefaultDialect.INSTANCE)
+                .setDialect(new H2Dialect())
                 .setExecutor(
                         new Executor() {
 
