@@ -12,7 +12,7 @@ public class GraphQLConfig {
     public RuntimeWiringConfigurer runtimeWiringConfigurer() {
 
         return wiringBuilder -> wiringBuilder
-                .scalar(ExtendedScalars.UUID)
+                .scalar(ExtendedScalars.GraphQLLong)
                 .scalar(ExtendedScalars.GraphQLBigDecimal);
     }
 }

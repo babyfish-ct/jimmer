@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.example.graphql.dal;
 
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.LikeMode;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.example.graphql.entities.AuthorTableEx;
 import org.babyfish.jimmer.sql.example.graphql.entities.Book;
@@ -14,7 +15,6 @@ import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Repository
 public class BookRepository {
@@ -42,8 +42,9 @@ public class BookRepository {
                         book.id().in(
                                 q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
                                     sq.where(
-                                            author.firstName().ilike(authorName, LikeMode.START).or(
-                                                    author.lastName().ilike(authorName, LikeMode.START)
+                                            Predicate.or(
+                                                author.firstName().ilike(authorName, LikeMode.START),
+                                                author.lastName().ilike(authorName, LikeMode.START)
                                             )
                                     );
                                     return sq.select(author.books().id());
@@ -57,8 +58,8 @@ public class BookRepository {
         }).execute();
     }
 
-    public Map<UUID, BigDecimal> findAvgPricesByStoreIds(
-            Collection<UUID> storeIds
+    public Map<Long, BigDecimal> findAvgPricesByStoreIds(
+            Collection<Long> storeIds
     ) {
         return Tuple2.toMap(
                 sqlClient.createQuery(BookTable.class, (q, book) -> {

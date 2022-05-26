@@ -44,7 +44,15 @@ public abstract class AbstractMutationTest extends AbstractTest {
             Executable<? extends MutationResult> executable,
             Consumer<ExpectDSLWithResult> block
     ) {
-        jdbc(null, true, con -> {
+        executeAndExpectResult(null, executable, block);
+    }
+
+    protected void executeAndExpectResult(
+            DataSource dataSource,
+            Executable<? extends MutationResult> executable,
+            Consumer<ExpectDSLWithResult> block
+    ) {
+        jdbc(dataSource, true, con -> {
             clearExecutions();
             MutationResult result;
             Throwable throwable = null;
@@ -323,7 +331,7 @@ public abstract class AbstractMutationTest extends AbstractTest {
 
         public void modified(String json) {
             Assertions.assertEquals(
-                    json,
+                    json.replace("--->", ""),
                     result.getModifiedEntity().toString(),
                     "modifiedEntities[" + index + "]"
             );

@@ -1,8 +1,7 @@
 package org.babyfish.jimmer.sql.common;
 
 import org.babyfish.jimmer.sql.SqlClient;
-import org.babyfish.jimmer.sql.dialect.Dialect;
-import org.babyfish.jimmer.sql.model.BookStore;
+import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.model.Gender;
 import org.babyfish.jimmer.sql.runtime.DefaultExecutor;
 import org.babyfish.jimmer.sql.runtime.Executor;
@@ -22,12 +21,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.function.Consumer;
 
 public class AbstractTest {
 
     private static final String JDBC_URL = "jdbc:h2:~/jdbc_test_db";
-
-    private DynamicDialect dynamicDialect = new DynamicDialect();
 
     private Map<Class<?>, AutoIds> autoIdMap = new HashMap<>();
 
@@ -41,29 +39,10 @@ public class AbstractTest {
         executions.clear();
     }
 
-    private SqlClient sqlClient = SqlClient
-            .newBuilder()
-            .setDialect(dynamicDialect)
-            .setExecutor(new ExecutorImpl())
-            .addScalarProvider(
-                    ScalarProvider.enumProviderByString(Gender.class, builder -> {
-                        builder
-                                .map(Gender.MALE, "M")
-                                .map(Gender.FEMALE, "F");
-                    })
-            )
-            .setUserIdGenerator(this::autoId)
-            .build();
-
-    protected void using(Dialect dialect, Runnable block) {
-        Dialect oldTargetDialect = dynamicDialect.targetDialect;
-        dynamicDialect.targetDialect = dialect;
-        try {
-            block.run();
-        } finally {
-            dynamicDialect.targetDialect = oldTargetDialect;
-        }
-    }
+    private SqlClient sqlClient = getSqlClient(it -> {
+        UserIdGenerator idGenerator = this::autoId;
+        it.setIdGenerator(idGenerator);
+    });
 
     private List<Execution> executions = new ArrayList<>();
 
@@ -83,6 +62,22 @@ public class AbstractTest {
 
     protected SqlClient getSqlClient() {
         return sqlClient;
+    }
+
+    protected SqlClient getSqlClient(Consumer<SqlClient.Builder> block) {
+        SqlClient.Builder builder = SqlClient.newBuilder()
+                .setExecutor(new ExecutorImpl())
+                .addScalarProvider(
+                        ScalarProvider.enumProviderByString(Gender.class, it -> {
+                            it
+                                    .map(Gender.MALE, "M")
+                                    .map(Gender.FEMALE, "F");
+                        })
+                );
+        if (block != null) {
+            block.accept(builder);
+        }
+        return builder.build();
     }
 
     protected List<Execution> getExecutions() {
@@ -137,7 +132,7 @@ public class AbstractTest {
     }
 
     protected interface SqlConsumer<T> {
-        void accept(T value);
+        void accept(T value) throws SQLException;
     }
 
     protected static void initDatabase(Connection con) {
@@ -147,26 +142,16 @@ public class AbstractTest {
             Assertions.fail("Failed to initialize database, cannot load 'database.sql'");
         }
 
-        StringBuilder builder = new StringBuilder();
         try (Reader reader = new InputStreamReader(stream)) {
+            StringBuilder builder = new StringBuilder();
             char[] buf = new char[1024];
             int len;
             while ((len = reader.read(buf)) != -1) {
                 builder.append(buf, 0, len);
             }
-        } catch (IOException ex) {
+            con.createStatement().execute(builder.toString());
+        } catch (IOException | SQLException ex) {
             Assertions.fail("Failed to initialize database", ex);
-        }
-
-        for (String part : builder.toString().split(";")) {
-            String sql = part.trim();
-            if (!sql.isEmpty()) {
-                try {
-                    con.createStatement().executeUpdate(sql);
-                } catch (SQLException ex) {
-                    Assertions.fail("Failed to initialize database", ex);
-                }
-            }
         }
     }
 

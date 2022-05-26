@@ -6,31 +6,30 @@ import org.springframework.lang.Nullable;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.UUID;
 
 public class BookInput {
 
     @Nullable
-    private UUID id;
+    private final Long id;
 
-    private String name;
+    private final String name;
 
-    private int edition;
+    private final int edition;
 
-    private BigDecimal price;
+    private final BigDecimal price;
 
     @Nullable
-    private UUID storeId;
+    private final Long storeId;
 
-    private List<UUID> authorIds;
+    private final List<Long> authorIds;
 
     public BookInput(
-            @Nullable UUID id,
+            @Nullable Long id,
             String name,
             int edition,
             BigDecimal price,
-            @Nullable UUID storeId,
-            List<UUID> authorIds
+            @Nullable Long storeId,
+            List<Long> authorIds
     ) {
         this.id = id;
         this.name = name;
@@ -52,7 +51,7 @@ public class BookInput {
                     .setName(name)
                     .setEdition(edition)
                     .setPrice(price);
-            for (UUID authorId : authorIds) {
+            for (Long authorId : authorIds) {
                 book.addIntoAuthors(author -> author.setId(authorId));
             }
         });

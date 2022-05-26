@@ -174,7 +174,7 @@ public class DraftImplGenerator {
                         .addModifiers(Modifier.PUBLIC)
                         .addAnnotation(Override.class)
                         .returns(int.class)
-                        .addCode("return $L.hashCode();", UNMODIFIED)
+                        .addCode("return $T.identityHashCode(this);", System.class)
                         .build()
         );
         typeBuilder.addMethod(
@@ -184,7 +184,7 @@ public class DraftImplGenerator {
                         .addAnnotation(Override.class)
                         .addParameter(boolean.class, "shallow")
                         .returns(int.class)
-                        .addCode("return $L.__hashCode(shallow);", UNMODIFIED)
+                        .addCode("return $T.identityHashCode(this);", System.class)
                         .build()
         );
         typeBuilder.addMethod(
@@ -194,7 +194,7 @@ public class DraftImplGenerator {
                         .addAnnotation(Override.class)
                         .addParameter(Object.class, "obj")
                         .returns(boolean.class)
-                        .addCode("return $L.equals(obj);", UNMODIFIED)
+                        .addCode("return this == obj;")
                         .build()
         );
         typeBuilder.addMethod(
@@ -205,16 +205,7 @@ public class DraftImplGenerator {
                         .addParameter(Object.class, "obj")
                         .addParameter(boolean.class, "shallow")
                         .returns(boolean.class)
-                        .addCode("return $L.__equals(obj, shallow);", UNMODIFIED)
-                        .build()
-        );
-        typeBuilder.addMethod(
-                MethodSpec
-                        .methodBuilder("toString")
-                        .addModifiers(Modifier.PUBLIC)
-                        .addAnnotation(Override.class)
-                        .returns(String.class)
-                        .addCode("return \"{\\\"$Ldraft: \\\"\" + $L.toString() + \"}\";", "$", UNMODIFIED)
+                        .addCode("return this == obj;")
                         .build()
         );
     }

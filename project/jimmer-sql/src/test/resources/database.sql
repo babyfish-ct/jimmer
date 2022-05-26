@@ -3,6 +3,7 @@ drop table book if exists;
 drop table author if exists;
 drop table book_store if exists;
 drop table tree_node if exists;
+drop sequence tree_node_id_seq if exists;
 
 create table book_store(
     id uuid not null,
@@ -150,6 +151,7 @@ alter table tree_node
     add constraint fk_tree_node__parent
         foreign key(parent_id)
             references tree_node(node_id);
+create sequence tree_node_id_seq as bigint start with 100;
 
 insert into tree_node(node_id, name, parent_id) values
     (1, 'Home', null),

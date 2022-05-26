@@ -3,14 +3,41 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
-abstract class CompositePredicate extends AbstractPredicate {
+import java.util.Arrays;
+import java.util.Objects;
+
+public abstract class CompositePredicate extends AbstractPredicate {
 
     private Predicate[] predicates;
 
-    public CompositePredicate(
+    CompositePredicate(
             Predicate[] predicates
     ) {
         this.predicates = predicates;
+    }
+
+    public static Predicate and(Predicate ... predicates) {
+        Predicate[] arr = Arrays
+                .stream(predicates)
+                .filter(Objects::nonNull)
+                .toArray(Predicate[]::new
+                );
+        if (arr.length == 0) {
+            return null;
+        }
+        return new And(arr);
+    }
+
+    public static Predicate or(Predicate ... predicates) {
+        Predicate[] arr = Arrays
+                .stream(predicates)
+                .filter(Objects::nonNull)
+                .toArray(Predicate[]::new
+                );
+        if (arr.length == 0) {
+            return null;
+        }
+        return new Or(arr);
     }
 
     @Override
@@ -36,7 +63,7 @@ abstract class CompositePredicate extends AbstractPredicate {
 
     static class And extends CompositePredicate {
 
-        public And(Predicate ... predicates) {
+        And(Predicate ... predicates) {
             super(predicates);
         }
 
@@ -53,7 +80,7 @@ abstract class CompositePredicate extends AbstractPredicate {
 
     static class Or extends CompositePredicate {
 
-        public Or(Predicate ... predicates) {
+        Or(Predicate ... predicates) {
             super(predicates);
         }
 

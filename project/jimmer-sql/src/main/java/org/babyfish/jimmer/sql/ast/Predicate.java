@@ -1,9 +1,12 @@
 package org.babyfish.jimmer.sql.ast;
 
 import org.babyfish.jimmer.lang.NewChain;
+import org.babyfish.jimmer.sql.ast.impl.CompositePredicate;
 import org.babyfish.jimmer.sql.ast.impl.SqlExpressionContext;
 import org.babyfish.jimmer.sql.ast.impl.SqlExpressions;
 
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public interface Predicate extends Expression<Boolean> {
@@ -16,6 +19,21 @@ public interface Predicate extends Expression<Boolean> {
 
     @NewChain
     Predicate not();
+
+    static Predicate and(Predicate ... predicates) {
+        return CompositePredicate.and(predicates);
+    }
+
+    static Predicate or(Predicate ... predicates) {
+        return CompositePredicate.or(predicates);
+    }
+
+    static Predicate not(Predicate predicate) {
+        if (predicate == null) {
+            return null;
+        }
+        return predicate.not();
+    }
 
     static Predicate sql(String sql) {
         return sql(sql, null);

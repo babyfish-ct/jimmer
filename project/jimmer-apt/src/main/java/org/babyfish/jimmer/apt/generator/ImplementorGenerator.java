@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.apt.generator;
 
 import com.squareup.javapoet.*;
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
@@ -30,6 +31,7 @@ public class ImplementorGenerator {
         typeBuilder.superinterfaces.add(spiClassName);
         addGet();
         addType();
+        addToString();
         parentBuilder.addType(typeBuilder.build());
     }
 
@@ -71,6 +73,16 @@ public class ImplementorGenerator {
                 .addAnnotation(Override.class)
                 .returns(Constants.RUNTIME_TYPE_CLASS_NAME)
                 .addStatement("return TYPE");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addToString() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("toString")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .returns(String.class)
+                .addStatement("return $T.toString(this)", ImmutableObjects.class);
         typeBuilder.addMethod(builder.build());
     }
 }

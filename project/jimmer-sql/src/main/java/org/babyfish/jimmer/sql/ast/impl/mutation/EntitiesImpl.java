@@ -46,12 +46,4 @@ public class EntitiesImpl implements Entities {
         ImmutableType immutableType = ImmutableType.get(entityType);
         return new DeleteCommandImpl(sqlClient, immutableType, ids);
     }
-
-    @Override
-    public DeleteCommand batchDeleteCommand(
-            Class<?> entityType,
-            Object... ids
-    ) {
-        return batchDeleteCommand(entityType, Arrays.asList(ids));
-    }
 }

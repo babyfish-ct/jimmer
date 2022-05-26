@@ -25,4 +25,9 @@ public class OracleDialect implements Dialect {
                 .sql(") core__ where rownum <= ")
                 .variable(offset + limit);
     }
+
+    @Override
+    public String getSelectIdFromSequenceSql(String sequenceName) {
+        return "select " + sequenceName + ".nextval from dual";
+    }
 }

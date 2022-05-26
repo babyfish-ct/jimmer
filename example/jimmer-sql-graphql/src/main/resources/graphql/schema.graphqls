@@ -1,4 +1,4 @@
-scalar UUID
+scalar Long
 scalar BigDecimal
 
 type Query {
@@ -9,10 +9,15 @@ type Query {
 
 type Mutation {
     saveBookStore(input: BookStoreInput!): BookStore!
+    deleteBookStore(id: Long): Int!
+    saveBook(input: BookInput!): Book!
+    deleteBook(id: Long): Int!
+    saveAuthor(input: AuthorInput!): Author!
+    deleteAuthor(id: Long): Int!
 }
 
 type BookStore {
-    id: UUID!
+    id: Long!
     name: String!
     website: String
     avgPrice: BigDecimal!
@@ -20,7 +25,7 @@ type BookStore {
 }
 
 type Book {
-    id: UUID!
+    id: Long!
     name: String!
     edition: Int!
     price: BigDecimal!
@@ -29,15 +34,34 @@ type Book {
 }
 
 type Author {
-    id: UUID!
+    id: Long!
     firstName: String!
     lastName: String!
+    gender: Gender!
     books(name: String): [Book!]!
 }
 
 input BookStoreInput {
-    id: UUID
+    id: Long
     name: String!
     website: String
 }
+
+input BookInput {
+    id: Long
+    name: String!
+    edition: Int
+    price: BigDecimal!
+    storeId: Long
+    authorIds: [Long!]!
+}
+
+input AuthorInput {
+    id: Long
+    firstName: String!
+    lastName: String!
+    gender: Gender!
+}
+
+enum Gender { MALE, FEMALE }
 

@@ -15,16 +15,13 @@ import java.util.Objects;
 
 public class ImplGenerator {
 
-    private TypeUtils typeUtils;
+    private final ImmutableType type;
 
-    private ImmutableType type;
+    private final ClassName unloadedExceptionClassName;
 
     private TypeSpec.Builder typeBuilder;
 
-    private ClassName unloadedExceptionClassName;
-
-    public ImplGenerator(TypeUtils typeUtils, ImmutableType type) {
-        this.typeUtils = typeUtils;
+    public ImplGenerator(ImmutableType type) {
         this.type = type;
         unloadedExceptionClassName = ClassName.get(UnloadedException.class);
     }
@@ -45,7 +42,6 @@ public class ImplGenerator {
         addEquals(false);
         addEquals(true);
         addParameterizedEquals();
-        addToString();
         parentBuilder.addType(typeBuilder.build());
     }
 
@@ -145,6 +141,12 @@ public class ImplGenerator {
             if (boxType != null) {
                 builder.beginControlFlow("if ($L)", prop.getLoadedStateName());
                 builder.addStatement("hash = 31 * hash + $T.hashCode($L)", boxType, prop.getName());
+                if (!shallow) {
+                    if (prop.getAnnotation(Id.class) != null) {
+                        builder.addComment("If entity-id is loaded, return directly");
+                        builder.addStatement("return hash");
+                    }
+                }
                 builder.endControlFlow();
             } else if (shallow) {
                 if (prop.isLoadedStateRequired()) {
@@ -208,15 +210,23 @@ public class ImplGenerator {
                     .addStatement("return false")
                     .endControlFlow();
             if (shallow || prop.getReturnType() instanceof PrimitiveType) {
-                builder
-                        .beginControlFlow(
-                                "if (__$LLoaded && $L != other.$L())",
-                                prop.getName(),
-                                prop.getName(),
-                                prop.getGetterName()
-                        )
-                        .addStatement("return false")
-                        .endControlFlow();
+                if (!shallow && prop.getAnnotation(Id.class) != null) {
+                    builder
+                            .beginControlFlow("if (__$LLoaded)", prop.getName())
+                            .addComment("If entity-id is loaded, return directly")
+                            .addStatement("return $L == other.$L()", prop.getName(), prop.getName())
+                            .endControlFlow();
+                } else {
+                    builder
+                            .beginControlFlow(
+                                    "if (__$LLoaded && $L != other.$L())",
+                                    prop.getName(),
+                                    prop.getName(),
+                                    prop.getGetterName()
+                            )
+                            .addStatement("return false")
+                            .endControlFlow();
+                }
             } else if (prop.getAnnotation(Id.class) != null) {
                 builder
                         .beginControlFlow(
@@ -268,16 +278,6 @@ public class ImplGenerator {
                 .addParameter(boolean.class, "shallow")
                 .returns(boolean.class)
                 .addCode("return shallow ? __shallowEquals(obj) : equals(obj);");
-        typeBuilder.addMethod(builder.build());
-    }
-
-    private void addToString() {
-        MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("toString")
-                .addModifiers(Modifier.PUBLIC)
-                .addAnnotation(Override.class)
-                .returns(String.class)
-                .addStatement("return $T.toString(this)", ImmutableObjects.class);
         typeBuilder.addMethod(builder.build());
     }
 }

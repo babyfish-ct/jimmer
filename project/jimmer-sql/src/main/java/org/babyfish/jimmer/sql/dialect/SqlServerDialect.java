@@ -12,4 +12,9 @@ public class SqlServerDialect implements Dialect {
                 .variable(ctx.getLimit())
                 .sql(" rows only");
     }
+
+    @Override
+    public String getLastIdentitySql() {
+        return "select @@identity";
+    }
 }

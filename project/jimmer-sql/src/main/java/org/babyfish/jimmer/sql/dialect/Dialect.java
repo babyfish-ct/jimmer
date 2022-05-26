@@ -10,7 +10,7 @@ public interface Dialect {
         return null;
     }
 
-    default String getSelectIdFromSequenceSql(String String) {
+    default String getSelectIdFromSequenceSql(String sequenceName) {
         throw new ExecutionException("Sequence is not supported by '" + getClass().getName() + "'");
     }
 

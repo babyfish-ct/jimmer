@@ -4,6 +4,7 @@ import org.babyfish.jimmer.Immutable;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Null;
+import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 import java.util.List;
 
@@ -17,6 +18,8 @@ public interface Book {
     @Null
     BookStore store();
 
+    // use "int" to test primitive type
+    @Positive
     int price();
 
     List<Author> authors();
