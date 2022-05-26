@@ -243,94 +243,94 @@ public class PagingTest extends AbstractQueryTest {
 
     @Test
     public void testMySqlDialect() {
-        using(new MySqlDialect(), () -> {
-            executeAndExpect(
-                    getSqlClient().createQuery(BookTable.class, (q, book) -> {
-                        q.orderBy(book.name());
-                        return q.select(book.name());
-                    }).distinct().limit(2, 1),
-                    ctx -> {
-                        ctx.sql(
-                                "select distinct tb_1_.NAME " +
-                                        "from BOOK as tb_1_ " +
-                                        "order by tb_1_.NAME asc " +
-                                        "limit ?, ?"
-                        );
-                        ctx.variables(1, 2);
-                        ctx.rows(Arrays.asList("GraphQL in Action", "Learning GraphQL"));
-                    }
-            );
-        });
+        executeAndExpect(
+                getSqlClient(
+                        it -> it.setDialect(new MySqlDialect())
+                ).createQuery(BookTable.class, (q, book) -> {
+                    q.orderBy(book.name());
+                    return q.select(book.name());
+                }).distinct().limit(2, 1),
+                ctx -> {
+                    ctx.sql(
+                            "select distinct tb_1_.NAME " +
+                                    "from BOOK as tb_1_ " +
+                                    "order by tb_1_.NAME asc " +
+                                    "limit ?, ?"
+                    );
+                    ctx.variables(1, 2);
+                    ctx.rows(Arrays.asList("GraphQL in Action", "Learning GraphQL"));
+                }
+        );
     }
 
     @Test
     public void testSqlServerDialect() {
-        using(new SqlServerDialect(), () -> {
-            executeAndExpect(
-                    getSqlClient().createQuery(BookTable.class, (q, book) -> {
-                        q.orderBy(book.name());
-                        return q.select(book.name());
-                    }).distinct().limit(2, 1),
-                    ctx -> {
-                        ctx.sql(
-                                "select distinct tb_1_.NAME " +
-                                        "from BOOK as tb_1_ " +
-                                        "order by tb_1_.NAME asc " +
-                                        "offset ? rows fetch next ? rows only"
-                        );
-                        ctx.variables(1, 2);
-                        ctx.rows(Arrays.asList("GraphQL in Action", "Learning GraphQL"));
-                    }
-            );
-        });
+        executeAndExpect(
+                getSqlClient(
+                        it -> it.setDialect(new SqlServerDialect())
+                ).createQuery(BookTable.class, (q, book) -> {
+                    q.orderBy(book.name());
+                    return q.select(book.name());
+                }).distinct().limit(2, 1),
+                ctx -> {
+                    ctx.sql(
+                            "select distinct tb_1_.NAME " +
+                                    "from BOOK as tb_1_ " +
+                                    "order by tb_1_.NAME asc " +
+                                    "offset ? rows fetch next ? rows only"
+                    );
+                    ctx.variables(1, 2);
+                    ctx.rows(Arrays.asList("GraphQL in Action", "Learning GraphQL"));
+                }
+        );
     }
 
     @Test
     public void testOracleDialect() {
-        using(new OracleDialect(), () -> {
-            executeAndExpect(
-                    getSqlClient().createQuery(BookTable.class, (q, book) -> {
-                        q.orderBy(book.name());
-                        return q.select(book.name());
-                    }).distinct().limit(2, 1),
-                    ctx -> {
-                        ctx.sql(
-                                "select * from (" +
-                                            "select core__.*, rownum rn__ " +
-                                            "from (" +
-                                                "select distinct tb_1_.NAME " +
-                                                "from BOOK as tb_1_ " +
-                                                "order by tb_1_.NAME asc" +
-                                            ") core__ where rownum <= ?" +
-                                        ") limited__ where rn__ > ?"
-                        );
-                        ctx.variables(3, 1);
-                        ctx.rows(Arrays.asList("GraphQL in Action", "Learning GraphQL"));
-                    }
-            );
-        });
-    }
-
-    @Test
-    public void testOracleDialectWithonlyLimit() {
-        using(new OracleDialect(), () -> {
-            executeAndExpect(
-                    getSqlClient().createQuery(BookTable.class, (q, book) -> {
-                        q.orderBy(book.name());
-                        return q.select(book.name());
-                    }).distinct().limit(2, 0),
-                    ctx -> {
-                        ctx.sql(
-                                "select core__.* from (" +
+        executeAndExpect(
+                getSqlClient(
+                        it -> it.setDialect(new OracleDialect())
+                ).createQuery(BookTable.class, (q, book) -> {
+                    q.orderBy(book.name());
+                    return q.select(book.name());
+                }).distinct().limit(2, 1),
+                ctx -> {
+                    ctx.sql(
+                            "select * from (" +
+                                        "select core__.*, rownum rn__ " +
+                                        "from (" +
                                             "select distinct tb_1_.NAME " +
                                             "from BOOK as tb_1_ " +
                                             "order by tb_1_.NAME asc" +
-                                        ") core__ where rownum <= ?"
-                        );
-                        ctx.variables(2);
-                        ctx.rows(Arrays.asList("Effective TypeScript", "GraphQL in Action"));
-                    }
-            );
-        });
+                                        ") core__ where rownum <= ?" +
+                                    ") limited__ where rn__ > ?"
+                    );
+                    ctx.variables(3, 1);
+                    ctx.rows(Arrays.asList("GraphQL in Action", "Learning GraphQL"));
+                }
+        );
+    }
+
+    @Test
+    public void testOracleDialectWithOnlyLimit() {
+        executeAndExpect(
+                getSqlClient(
+                        it -> it.setDialect(new OracleDialect())
+                ).createQuery(BookTable.class, (q, book) -> {
+                    q.orderBy(book.name());
+                    return q.select(book.name());
+                }).distinct().limit(2, 0),
+                ctx -> {
+                    ctx.sql(
+                            "select core__.* from (" +
+                                    "select distinct tb_1_.NAME " +
+                                    "from BOOK as tb_1_ " +
+                                    "order by tb_1_.NAME asc" +
+                                    ") core__ where rownum <= ?"
+                    );
+                    ctx.variables(2);
+                    ctx.rows(Arrays.asList("Effective TypeScript", "GraphQL in Action"));
+                }
+        );
     }
 }

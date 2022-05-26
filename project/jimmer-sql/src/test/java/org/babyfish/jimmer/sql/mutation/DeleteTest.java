@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.UUID;
 
 public class DeleteTest extends AbstractMutationTest {
@@ -112,9 +113,11 @@ public class DeleteTest extends AbstractMutationTest {
         executeAndExpectResult(
                 getSqlClient().getEntities().batchDeleteCommand(
                         Book.class,
-                        learningGraphQLId1,
-                        learningGraphQLId2,
-                        nonExistingId
+                        Arrays.asList(
+                            learningGraphQLId1,
+                            learningGraphQLId2,
+                            nonExistingId
+                        )
                 ),
                 ctx -> {
                     ctx.statement(it -> {

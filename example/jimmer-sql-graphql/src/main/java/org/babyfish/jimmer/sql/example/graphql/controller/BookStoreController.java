@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.example.graphql.controller;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.example.graphql.dal.BookRepository;
 import org.babyfish.jimmer.sql.example.graphql.dal.BookStoreRepository;
 import org.babyfish.jimmer.sql.example.graphql.entities.Book;
@@ -18,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -67,7 +68,7 @@ public class BookStoreController {
 
     @BatchMapping
     public Map<BookStore, BigDecimal> avgPrice(List<BookStore> stores) {
-        Map<UUID, BigDecimal> avgPriceMap =
+        Map<Long, BigDecimal> avgPriceMap =
                 bookRepository.findAvgPricesByStoreIds(
                         stores.stream().map(BookStore::id).collect(Collectors.toList())
                 );
@@ -87,10 +88,15 @@ public class BookStoreController {
     @MutationMapping
     @Transactional
     public BookStore saveBookStore(@Argument BookStoreInput input) {
+        return sqlClient.getEntities().save(input.toBookStore()).getModifiedEntity();
+    }
+
+    @MutationMapping
+    @Transactional
+    public int deleteBookStore(Long id) {
         return sqlClient
                 .getEntities()
-                .saveCommand(input.toBookStore())
-                .execute()
-                .getModifiedEntity();
+                .delete(BookStore.class, id)
+                .getAffectedRowCount(AffectedTable.of(BookStore.class));
     }
 }

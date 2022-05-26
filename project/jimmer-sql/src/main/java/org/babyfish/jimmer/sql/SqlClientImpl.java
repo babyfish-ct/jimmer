@@ -8,7 +8,6 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
-import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.impl.mutation.EntitiesImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
@@ -46,7 +45,7 @@ class SqlClientImpl implements SqlClient {
 
     private final Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap;
 
-    private final Map<Class<?>, UserIdGenerator> userIdGeneratorMap;
+    private final Map<Class<?>, IdGenerator> idGeneratorMap;
 
     private final int defaultBatchSize;
 
@@ -59,7 +58,7 @@ class SqlClientImpl implements SqlClient {
             Dialect dialect,
             Executor executor,
             Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
-            Map<Class<?>, UserIdGenerator> userIdGeneratorMap,
+            Map<Class<?>, IdGenerator> idGeneratorMap,
             int defaultBatchSize,
             int defaultListBatchSize
     ) {
@@ -70,7 +69,7 @@ class SqlClientImpl implements SqlClient {
         this.dialect = dialect != null ? dialect : DefaultDialect.INSTANCE;
         this.executor = executor != null ? executor : DefaultExecutor.INSTANCE;
         this.scalarProviderMap = new HashMap<>(scalarProviderMap);
-        this.userIdGeneratorMap = new HashMap<>(userIdGeneratorMap);
+        this.idGeneratorMap = new HashMap<>(idGeneratorMap);
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
         this.entities = new EntitiesImpl(this);
@@ -99,9 +98,9 @@ class SqlClientImpl implements SqlClient {
 
     @Override
     public IdGenerator getIdGenerator(Class<?> entityType) {
-        IdGenerator userIdGenerator = userIdGeneratorMap.get(entityType);
+        IdGenerator userIdGenerator = idGeneratorMap.get(entityType);
         if (userIdGenerator == null) {
-            userIdGenerator = userIdGeneratorMap.get(null);
+            userIdGenerator = idGeneratorMap.get(null);
             if (userIdGenerator == null) {
                 userIdGenerator = ImmutableType.get(entityType).getIdGenerator();
             }

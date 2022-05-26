@@ -36,7 +36,7 @@ public class ProducerGenerator {
         addProduce(false);
         addProduce(true);
         new ImplementorGenerator(type).generate(typeBuilder);
-        new ImplGenerator(typeUtils, type).generate(typeBuilder);
+        new ImplGenerator(type).generate(typeBuilder);
         new DraftImplGenerator(type).generate(typeBuilder);
         parentBuilder.addType(typeBuilder.build());
     }

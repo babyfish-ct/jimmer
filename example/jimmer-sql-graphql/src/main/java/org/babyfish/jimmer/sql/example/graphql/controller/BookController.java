@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.example.graphql.controller;
 
 import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.example.graphql.dal.BookRepository;
 import org.babyfish.jimmer.sql.example.graphql.entities.*;
 import org.babyfish.jimmer.sql.example.graphql.input.BookInput;
@@ -71,10 +72,15 @@ public class BookController {
     @MutationMapping
     @Transactional
     public Book saveBook(@Argument BookInput input) {
+        return sqlClient.getEntities().save(input.toBook()).getModifiedEntity();
+    }
+
+    @MutationMapping
+    @Transactional
+    public int deleteBook(long id) {
         return sqlClient
                 .getEntities()
-                .saveCommand(input.toBook())
-                .execute()
-                .getModifiedEntity();
+                .delete(Book.class, id)
+                .getAffectedRowCount(AffectedTable.of(Book.class));
     }
 }

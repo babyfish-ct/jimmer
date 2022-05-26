@@ -236,21 +236,10 @@ public class ValidationGenerator {
         }
         if (minValue != null) {
             final long finalValue = minValue;
-            validate(
-                    "$L < $L",
-                    new Object[] { valueName, finalValue },
-                    message,
-                    () -> "it cannot be less than " + finalValue
-            );
+            validateBound(minValue, "<", message);
         }
         if (maxValue != null) {
-            final long finalValue = maxValue;
-            validate(
-                    "$L > $L",
-                    new Object[] { valueName, finalValue },
-                    message,
-                    () -> "it cannot be greater than " + finalValue
-            );
+            validateBound(maxValue, ">", message);
         }
     }
 
@@ -352,5 +341,51 @@ public class ValidationGenerator {
         return className.packageName().equals(type.getPackage().getName()) &&
                 className.simpleNames().size() == 1 &&
                 className.simpleName().equals(type.getSimpleName());
+    }
+
+    private void validateBound(long bound, String cmp, String message) {
+        String bigNumLiteral;
+        if (prop.getTypeName().equals(ClassName.get(BigDecimal.class))) {
+            if (bound == 0) {
+                bigNumLiteral = "$T.ZERO";
+            } else if (bound == 1) {
+                bigNumLiteral = "$T.ONE";
+            } else if (bound == 2) {
+                bigNumLiteral = "$T.TWO";
+            } else if (bound == 10) {
+                bigNumLiteral = "$T.TEN";
+            } else {
+                bigNumLiteral = "$T.valueOf(" + bound + ")";
+            }
+        } else if (prop.getTypeName().equals(ClassName.get(BigInteger.class))) {
+            if (bound == -1) {
+                bigNumLiteral = "$T.NEGATIVE_ONE";
+            } else if (bound == 0) {
+                bigNumLiteral = "$T.ZERO";
+            } else if (bound == 1) {
+                bigNumLiteral = "$T.ONE";
+            } else if (bound == 2) {
+                bigNumLiteral = "$T.TWO";
+            } else if (bound == 10) {
+                bigNumLiteral = "$T.TEN";
+            } else {
+                bigNumLiteral = "$T.valueOf(" + bound + ", 0)";
+            }
+        } else {
+            bigNumLiteral = null;
+        }
+        validate(
+                bigNumLiteral != null ?
+                        "$L.compareTo(" + bigNumLiteral + ") $L 0" :
+                        "$L $L $L",
+                bigNumLiteral != null ?
+                        new Object[] { valueName, prop.getElementType(), cmp } :
+                        new Object[] { valueName, cmp, bound },
+                message,
+                () -> "it cannot be " +
+                        (cmp.equals("<") ? "less than" : "greater than") +
+                        " " +
+                        bound
+        );
     }
 }

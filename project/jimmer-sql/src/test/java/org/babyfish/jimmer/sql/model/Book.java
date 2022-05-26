@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 
 import javax.persistence.*;
+import javax.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -21,6 +22,7 @@ public interface Book {
     @Key
     int edition();
 
+    @Positive
     BigDecimal price();
 
     @ManyToOne

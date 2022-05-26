@@ -5,7 +5,6 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
-import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
@@ -118,7 +117,7 @@ public interface SqlClient {
 
         private final Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap = new HashMap<>();
 
-        private final Map<Class<?>, UserIdGenerator> userIdGeneratorMap = new HashMap<>();
+        private final Map<Class<?>, IdGenerator> idGeneratorMap = new HashMap<>();
 
         private int defaultBatchSize = 128;
 
@@ -141,12 +140,12 @@ public interface SqlClient {
             return this;
         }
 
-        public Builder setUserIdGenerator(UserIdGenerator userIdGenerator) {
-            return setUserIdGenerator(null, userIdGenerator);
+        public Builder setIdGenerator(IdGenerator idGenerator) {
+            return setIdGenerator(null, idGenerator);
         }
 
-        public Builder setUserIdGenerator(Class<?> entityType, UserIdGenerator userIdGenerator) {
-            userIdGeneratorMap.put(entityType, userIdGenerator);
+        public Builder setIdGenerator(Class<?> entityType, IdGenerator idGenerator) {
+            idGeneratorMap.put(entityType, idGenerator);
             return this;
         }
 
@@ -184,7 +183,7 @@ public interface SqlClient {
                     dialect,
                     executor,
                     scalarProviderMap,
-                    userIdGeneratorMap,
+                    idGeneratorMap,
                     defaultBatchSize,
                     defaultListBatchSize
             );

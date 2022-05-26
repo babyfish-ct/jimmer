@@ -31,7 +31,7 @@ public class AppContext {
 
         DATA_SOURCE = new HikariDataSource();
         DATA_SOURCE.setDriverClassName("org.h2.Driver");
-        DATA_SOURCE.setJdbcUrl("jdbc:h2:~/example");
+        DATA_SOURCE.setJdbcUrl("jdbc:h2:mem:jimmer-sql");
 
         SQL_CLIENT = SqlClient.newBuilder()
                 .setConnectionManager(
