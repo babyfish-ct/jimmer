@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.model.AuthorTableEx;
+import org.babyfish.jimmer.sql.model.BookTable;
 import org.babyfish.jimmer.sql.model.BookTableEx;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -84,6 +85,48 @@ public class AssociationQueryTest extends AbstractQueryTest {
                                 )
                         );
                     });
+                }
+        );
+    }
+
+    @Test
+    public void testSubQuery() {
+        executeAndExpect(
+                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                    q.where(
+                            book.id().in(
+                                    q.createAssociationSubQuery(
+                                            BookTableEx.class,
+                                            BookTableEx::authors,
+                                            (sq, association) -> {
+                                                sq.where(
+                                                        association
+                                                                .target()
+                                                                .firstName()
+                                                                .eq("Alex")
+                                                );
+                                                return sq.select(
+                                                        association.source().id()
+                                                );
+                                            }
+                                    )
+                            )
+                    );
+                    return q.select(book);
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_ " +
+                                    "where tb_1_.ID in (" +
+                                    "select tb_2_.BOOK_ID " +
+                                    "from BOOK_AUTHOR_MAPPING as tb_2_ " +
+                                    "inner join AUTHOR as tb_3_ " +
+                                    "on tb_2_.AUTHOR_ID = tb_3_.ID " +
+                                    "where tb_3_.FIRST_NAME = ?" +
+                                    ")"
+                    );
                 }
         );
     }

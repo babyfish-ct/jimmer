@@ -7,15 +7,7 @@ public interface AssociationTableEx<
         ST extends TableEx<SE>,
         TE,
         TT extends TableEx<TE>
-> extends TableEx<Association<SE, TE>> {
-
-    @SuppressWarnings("unchecked")
-    default ST source() {
-        return (ST)join("source");
-    }
-
-    @SuppressWarnings("unchecked")
-    default TT target() {
-        return (TT)join("target");
-    }
+> extends
+        TableEx<Association<SE, TE>>,
+        AssociationTable<SE,ST, TE, TT> {
 }
