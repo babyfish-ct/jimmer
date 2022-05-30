@@ -17,7 +17,7 @@ public class DMLTest extends AbstractMutationTest {
     @Test
     public void testUpdate() {
         executeAndExpectRowCount(
-                getSqlClient().createUpdate(AuthorTableEx.class, (u, author) -> {
+                getSqlClient().createUpdate(AuthorTable.class, (u, author) -> {
                     u.set(author.firstName(), author.firstName().concat("*"));
                     u.where(author.firstName().eq("Dan"));
                 }),
