@@ -10,7 +10,11 @@ import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @ShellComponent
 public class TreeQueryShell {
@@ -25,12 +29,22 @@ public class TreeQueryShell {
     }
 
     @ShellMethod(
-            "Find treeNodes, can optionally exclude child nodes of one node" +
-            "(Example: trees --no-recursive clothing)"
+            "Find treeNodes, can optionally exclude child nodes of some nodes" +
+            "(Example: trees --no-recursive clothing,drinks)"
     )
     public void trees(
             @ShellOption(defaultValue = "") String noRecursive
     ) throws JsonProcessingException {
+
+        Set<String> noRecursiveNames;
+        if (noRecursive.isEmpty()) {
+            noRecursiveNames = Collections.emptySet();
+        } else {
+            noRecursiveNames = Arrays
+                    .stream(noRecursive.trim().split("\\s*,\\s*"))
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+        }
 
         List<TreeNode> rootNodes = sqlClient
                 .createQuery(TreeNodeTable.class, (q, treeNode) -> {
@@ -46,9 +60,10 @@ public class TreeQueryShell {
                                                             .allScalarFields(),
                                                     it -> it
                                                             .filter(args -> args.orderBy(args.getTable().name()))
-                                                            .recursive((node, depth) ->
-                                                                    noRecursive.isEmpty() ||
-                                                                            !noRecursive.equalsIgnoreCase(node.name())
+                                                            .recursive(args ->
+                                                                    !noRecursiveNames.contains(
+                                                                            args.getEntity().name().toLowerCase()
+                                                                    )
                                                             )
                                             )
                             )

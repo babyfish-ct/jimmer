@@ -315,15 +315,22 @@ public class RecursiveTest extends AbstractQueryTest {
                                                     .filter(args -> {
                                                         args.orderBy(args.getTable().id());
                                                     })
-                                                    .recursive(
-                                                            (n, depth) -> !n.name().equals("Drinks")
+                                                    .recursive(args ->
+                                                            !args.getEntity().name().equals("Drinks")
                                                     )
                                     )
                             )
                     );
                 }),
                 ctx -> {
-                    ctx.sql("select tb_1_.NODE_ID, tb_1_.NAME from TREE_NODE as tb_1_ where tb_1_.PARENT_ID is null");
+                    ctx.sql(
+                            "select " +
+                                    "tb_1_.NODE_ID, " +
+                                    "tb_1_.NAME " +
+                                    "from TREE_NODE as tb_1_ " +
+                                    "where " +
+                                    "tb_1_.PARENT_ID is null"
+                    );
                     ctx.statement(1).sql(
                             "select " +
                                     "tb_1_.PARENT_ID, " +
@@ -433,6 +440,33 @@ public class RecursiveTest extends AbstractQueryTest {
                             "--->--->}" +
                             "--->]" +
                             "}]");
+                }
+        );
+    }
+
+    @Test
+    public void findOnlyRoot() {
+        executeAndExpect(
+                getSqlClient().createQuery(TreeNodeTable.class, (q, node) -> {
+                    q.where(node.parent().isNull());
+                    return q.select(
+                            node.fetch(
+                                    TreeNodeFetcher.$.name().childNodes(
+                                            TreeNodeFetcher.$.name(),
+                                            it -> it
+                                                    .filter(args -> {
+                                                        args.orderBy(args.getTable().id());
+                                                    })
+                                                    .recursive(args ->
+                                                            !args.getEntity().name().equals("Home")
+                                                    )
+                                    )
+                            )
+                    );
+                }),
+                ctx -> {
+                    ctx.sql("select tb_1_.NODE_ID, tb_1_.NAME from TREE_NODE as tb_1_ where tb_1_.PARENT_ID is null");
+                    ctx.rows("[{\"id\":1,\"name\":\"Home\"}]");
                 }
         );
     }

@@ -162,13 +162,20 @@ class FetcherTask {
             List<ImmutableSpi> targets = (List<ImmutableSpi>) value;
             for (ImmutableSpi target : targets) {
                 DraftContext draftContext = Internal.currentDraftContext();
-                if (recursionStrategy != null && recursionStrategy.isFetchable(target, taskData.depth)) {
+                if (recursionStrategy != null &&
+                        recursionStrategy.isRecursive(
+                                new RecursionStrategy.Args<>(target, taskData.depth)
+                        )
+                ) {
                     add(draftContext.toDraftObject(target), taskData.getDepth() + 1);
                 }
             }
         } else if (value != null &&
                 recursionStrategy != null &&
-                recursionStrategy.isFetchable(value, taskData.depth)) {
+                recursionStrategy.isRecursive(
+                        new RecursionStrategy.Args<>(value, taskData.depth)
+                )
+        ) {
             DraftContext draftContext = Internal.currentDraftContext();
             add(draftContext.toDraftObject(value), taskData.getDepth() + 1);
         }

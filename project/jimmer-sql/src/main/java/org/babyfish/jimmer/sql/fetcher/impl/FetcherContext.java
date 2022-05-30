@@ -4,6 +4,7 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
+import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
 
 import java.sql.Connection;
 import java.util.Collection;
@@ -48,9 +49,18 @@ class FetcherContext {
         this.con = con;
     }
 
+    @SuppressWarnings("unchecked")
     public void add(Fetcher<?> fetcher, DraftSpi draft) {
         for (Field field : fetcher.getFieldMap().values()) {
             if (!field.isSimpleField()) {
+                RecursionStrategy<?> recursionStrategy = field.getRecursionStrategy();
+                if (recursionStrategy != null &&
+                        !((RecursionStrategy<Object>)recursionStrategy).isRecursive(
+                                new RecursionStrategy.Args<>(draft, 0)
+                        )
+                ) {
+                    return;
+                }
                 FetcherTask task = taskMap.computeIfAbsent(field, it ->
                         new FetcherTask(
                                 cache,

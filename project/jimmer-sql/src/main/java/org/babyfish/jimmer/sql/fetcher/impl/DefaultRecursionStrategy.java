@@ -11,7 +11,7 @@ class DefaultRecursionStrategy<E> implements RecursionStrategy<E> {
 
     private static final DefaultRecursionStrategy<?>[] DEFAULTS =
             IntStream.range(0, 10)
-                    .mapToObj(it -> new DefaultRecursionStrategy<Object>(it + 1))
+                    .mapToObj(DefaultRecursionStrategy::new)
                     .toArray(DefaultRecursionStrategy[]::new);
 
     private static final DefaultRecursionStrategy<?> UNLIMITED =
@@ -22,11 +22,10 @@ class DefaultRecursionStrategy<E> implements RecursionStrategy<E> {
         if (depth == Integer.MAX_VALUE) {
             return (DefaultRecursionStrategy<E>) UNLIMITED;
         }
-        int defaultIndex = depth - 1;
-        if (defaultIndex < DEFAULTS.length) {
-            return (DefaultRecursionStrategy<E>) DEFAULTS[Math.max(defaultIndex, 0)];
+        if (depth < DEFAULTS.length) {
+            return (DefaultRecursionStrategy<E>) DEFAULTS[Math.max(depth, 0)];
         }
-        return new DefaultRecursionStrategy<E>(depth);
+        return new DefaultRecursionStrategy<>(depth);
     }
 
     private DefaultRecursionStrategy(int depth) {
@@ -38,7 +37,7 @@ class DefaultRecursionStrategy<E> implements RecursionStrategy<E> {
     }
 
     @Override
-    public boolean isFetchable(E entity, int depth) {
-        return depth < this.depth;
+    public boolean isRecursive(Args<E> args) {
+        return args.getDepth() < this.depth;
     }
 }
