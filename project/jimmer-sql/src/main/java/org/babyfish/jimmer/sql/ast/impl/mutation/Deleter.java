@@ -30,6 +30,9 @@ public class Deleter {
     private Map<ImmutableType, Set<Object>> postHandleIdInputMap =
             new LinkedHashMap<>();
 
+    private Map<String, Deleter> childDeleterMap =
+            new LinkedHashMap<>();
+
     Deleter(
             DeleteCommandImpl.Data data,
             Connection con
@@ -122,7 +125,7 @@ public class Deleter {
                         (cascadeAction == CascadeAction.AUTO && mappedByProp.isNullable())) {
                     updateChildTable(mappedByProp, ids);
                 } else {
-                    tryDeleteFromChildTable(mappedByProp, ids);
+                    tryDeleteFromChildTable(prop, ids);
                 }
             }
         }
@@ -195,13 +198,14 @@ public class Deleter {
         addOutput(AffectedTable.of(childType), affectedRowCount);
     }
 
-    private void tryDeleteFromChildTable(ImmutableProp manyToOneProp, Collection<?> ids) {
+    private void tryDeleteFromChildTable(ImmutableProp prop, Collection<?> ids) {
+        ImmutableProp manyToOneProp = prop.getMappedBy();
         ImmutableType childType = manyToOneProp.getDeclaringType();
         String fkColumnName = ((Column)manyToOneProp.getStorage()).getName();
         SqlBuilder builder = new SqlBuilder(data.getSqlClient());
         builder
                 .sql("select ")
-                .sql(childType.getIdProp().getName())
+                .sql(childType.getIdProp().<Column>getStorage().getName())
                 .sql(" from ")
                 .sql(childType.getTableName())
                 .sql(" where ")
@@ -233,7 +237,7 @@ public class Deleter {
                         }
                 );
         if (!childIds.isEmpty()) {
-            if (data.getDeleteAction(manyToOneProp) != CascadeAction.CASCADE) {
+            if (data.getDeleteAction(manyToOneProp) != CascadeAction.DELETE) {
                 throw new ExecutionException(
                         "Cannot delete entities whose type are \"" +
                                 manyToOneProp.getTargetType().getJavaClass().getName() +
@@ -244,12 +248,17 @@ public class Deleter {
                                 "\" to reference current entities."
                 );
             }
-            addPreHandleInput(childType, childIds);
-            preHandle();
+            Deleter childDeleter = childDeleterMap.computeIfAbsent(
+                    prop.getName(),
+                    it -> new Deleter(data, con, affectedRowCountMap)
+            );
+            childDeleter.addPreHandleInput(childType, childIds);
+            childDeleter.preHandle();
         }
     }
 
     private void postHandle() {
+        childDeleterMap.values().forEach(Deleter::postHandle);
         Map<ImmutableType, Set<Object>> idMultiMap = postHandleIdInputMap;
         postHandleIdInputMap = new LinkedHashMap<>();
         for (Map.Entry<ImmutableType, Set<Object>> e : idMultiMap.entrySet()) {

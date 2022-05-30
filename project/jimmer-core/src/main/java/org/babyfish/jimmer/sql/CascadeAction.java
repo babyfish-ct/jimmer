@@ -4,7 +4,7 @@ public enum CascadeAction {
 
     NONE,
     SET_NULL,
-    CASCADE,
+    DELETE,
 
     /**
      * If many-to-one property is nullable, means SET_NULL,

@@ -25,7 +25,7 @@ import java.util.function.Consumer;
 
 public class AbstractTest {
 
-    private static final String JDBC_URL = "jdbc:h2:~/jdbc_test_db";
+    private static final String JDBC_URL = "jdbc:h2:~/jdbc_test_db;database_to_upper=false";
 
     private Map<Class<?>, AutoIds> autoIdMap = new HashMap<>();
 
