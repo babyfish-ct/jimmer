@@ -23,7 +23,7 @@ public class DeleteTest extends AbstractMutationTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select id from BOOK where STORE_ID in(?)");
+                        it.sql("select ID from BOOK where STORE_ID in(?)");
                         it.variables(manningId);
                     });
                     ctx.throwable(it -> {
@@ -79,12 +79,12 @@ public class DeleteTest extends AbstractMutationTest {
                     cfg.setCascadeAction(
                             BookTable.class,
                             it -> it.store(),
-                            CascadeAction.CASCADE
+                            CascadeAction.DELETE
                     );
                 }),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select id from BOOK where STORE_ID in(?)");
+                        it.sql("select ID from BOOK where STORE_ID in(?)");
                         it.variables(manningId);
                     });
                     ctx.statement(it -> {
@@ -154,6 +154,49 @@ public class DeleteTest extends AbstractMutationTest {
                     ctx.totalRowCount(4);
                     ctx.rowCount(AffectedTable.of(Author.class), 1);
                     ctx.rowCount(AffectedTable.of(AuthorTableEx.class, AuthorTableEx::books), 3);
+                }
+        );
+    }
+
+    @Test
+    public void deleteTree() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().deleteCommand(
+                        TreeNode.class,
+                        1L
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in(?)");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in(?, ?)");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in(?, ?, ?, ?)");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in(?, ?, ?, ?, ?, ?, ?, ?)");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in(?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from TREE_NODE where NODE_ID in(?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from TREE_NODE where NODE_ID in(?, ?, ?, ?, ?, ?, ?, ?)");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from TREE_NODE where NODE_ID in(?, ?, ?, ?)");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from TREE_NODE where NODE_ID in(?, ?)");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from TREE_NODE where NODE_ID in(?)");
+                    });
+                    ctx.totalRowCount(24);
                 }
         );
     }

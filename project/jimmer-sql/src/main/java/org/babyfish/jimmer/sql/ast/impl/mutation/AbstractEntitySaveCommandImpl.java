@@ -100,7 +100,7 @@ abstract class AbstractEntitySaveCommandImpl<C extends AbstractEntitySaveCommand
 
         public boolean isAutoDetachingProp(ImmutableProp prop) {
             return autoDetachingSet.contains(prop) || (
-                    prop.getMappedBy() != null && prop.getMappedBy().getDeleteAction() == CascadeAction.CASCADE
+                    prop.getMappedBy() != null && prop.getMappedBy().getDeleteAction() == CascadeAction.DELETE
             );
         }
 
