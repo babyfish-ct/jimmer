@@ -75,18 +75,8 @@ public interface ExpressionImplementor<T> extends Expression<T> {
     }
 
     @Override
-    default Predicate in(T ... values) {
-        return in(Arrays.asList(values));
-    }
-
-    @Override
     default Predicate notIn(Collection<T> values) {
         return new InCollectionPredicate(this, values, true);
-    }
-
-    @Override
-    default Predicate notIn(T ... values) {
-        return notIn(Arrays.asList(values));
     }
 
     @Override

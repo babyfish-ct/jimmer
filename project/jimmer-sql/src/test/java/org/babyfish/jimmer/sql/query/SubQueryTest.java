@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 
 public class SubQueryTest extends AbstractQueryTest {
 
@@ -204,7 +205,7 @@ public class SubQueryTest extends AbstractQueryTest {
                     q.where(
                             book.id().eq(
                                     q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
-                                        sq.where(author.firstName().in("Alex", "Bill"));
+                                        sq.where(author.firstName().in(Arrays.asList("Alex", "Bill")));
                                         return sq.select(author.books().id());
                                     }).any()
                             )
@@ -234,7 +235,7 @@ public class SubQueryTest extends AbstractQueryTest {
                     q.where(
                             book.id().eq(
                                     q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
-                                        sq.where(author.firstName().in("Alex", "Bill"));
+                                        sq.where(author.firstName().in(Arrays.asList("Alex", "Bill")));
                                         return sq.select(author.books().id());
                                     }).all()
                             )

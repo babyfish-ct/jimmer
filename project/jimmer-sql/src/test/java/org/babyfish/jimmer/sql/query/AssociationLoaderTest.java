@@ -14,7 +14,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
 
     @Test
     public void loadManyToOne() {
-        callAnyAndExpect(
+        anyAndExpect(
                 getSqlClient()
                         .getReferenceLoader(BookTable.class, BookTable::store)
                         .loadCommand(
@@ -49,7 +49,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
 
     @Test
     public void batchLoadManyToOne() {
-        callAnyAndExpect(
+        anyAndExpect(
                 getSqlClient()
                         .getReferenceLoader(BookTable.class, BookTable::store)
                         .batchLoadCommand(
@@ -109,7 +109,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
 
     @Test
     public void testLoadOneToMany() {
-        callAnyAndExpect(
+        anyAndExpect(
                 getSqlClient()
                         .getListLoader(
                                 BookStoreTableEx.class,
@@ -134,37 +134,31 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                                     "limit ?"
                     );
                     ctx.variables(manningId, 2);
-                    ctx.rows(rows -> {
-                        Assertions.assertEquals(1, rows.size());
-                        String childList1Text =
-                                "[" +
-                                        "--->{" +
-                                        "--->--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
-                                        "--->--->\"name\":\"GraphQL in Action\"," +
-                                        "--->--->\"edition\":3," +
-                                        "--->--->\"price\":80.00," +
-                                        "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
-                                        "--->}, " +
-                                        "--->{" +
-                                        "--->--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"," +
-                                        "--->--->\"name\":\"GraphQL in Action\"," +
-                                        "--->--->\"edition\":2," +
-                                        "--->--->\"price\":81.00," +
-                                        "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
-                                        "--->}" +
-                                        "]";
-                        Assertions.assertEquals(
-                                childList1Text.replace("--->", ""),
-                                rows.get(0).toString()
-                        );
-                    });
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                    "--->--->\"name\":\"GraphQL in Action\"," +
+                                    "--->--->\"edition\":3," +
+                                    "--->--->\"price\":80.00," +
+                                    "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                                    "--->}," +
+                                    "--->{" +
+                                    "--->--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"," +
+                                    "--->--->\"name\":\"GraphQL in Action\"," +
+                                    "--->--->\"edition\":2," +
+                                    "--->--->\"price\":81.00," +
+                                    "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                                    "--->}" +
+                                    "]"
+                    );
                 }
         );
     }
 
     @Test
     public void testBatchLoadOneToMany() {
-        callAnyAndExpect(
+        anyAndExpect(
                 getSqlClient()
                         .getListLoader(
                                 BookStoreTableEx.class,
@@ -220,7 +214,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
 
     @Test
     public void loadManyToMany() {
-        callAnyAndExpect(
+        anyAndExpect(
                 getSqlClient()
                         .getListLoader(
                                 BookTableEx.class,
@@ -239,35 +233,29 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                                     "where tb_1_.BOOK_ID = ?"
                     );
                     ctx.variables(learningGraphQLId3);
-                    ctx.rows(rows -> {
-                        Assertions.assertEquals(1, rows.size());
-                        String authorListText =
-                                "[" +
-                                        "--->{" +
-                                        "--->--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
-                                        "--->--->\"firstName\":\"Alex\"," +
-                                        "--->--->\"lastName\":\"Banks\"," +
-                                        "--->--->\"gender\":\"MALE\"" +
-                                        "--->}, " +
-                                        "--->{" +
-                                        "--->--->\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
-                                        "--->--->\"firstName\":\"Eve\"," +
-                                        "--->--->\"lastName\":\"Procello\"," +
-                                        "--->--->\"gender\":\"MALE\"" +
-                                        "--->}" +
-                                        "]";
-                        Assertions.assertEquals(
-                                authorListText.replace("--->", ""),
-                                rows.get(0).toString()
-                        );
-                    });
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
+                                    "--->--->\"firstName\":\"Alex\"," +
+                                    "--->--->\"lastName\":\"Banks\"," +
+                                    "--->--->\"gender\":\"MALE\"" +
+                                    "--->}," +
+                                    "--->{" +
+                                    "--->--->\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
+                                    "--->--->\"firstName\":\"Eve\"," +
+                                    "--->--->\"lastName\":\"Procello\"," +
+                                    "--->--->\"gender\":\"MALE\"" +
+                                    "--->}" +
+                                    "]"
+                    );
                 }
         );
     }
 
     @Test
     public void batchLoadManyToMany() {
-        callAnyAndExpect(
+        anyAndExpect(
                 getSqlClient()
                         .getListLoader(
                                 BookTableEx.class,

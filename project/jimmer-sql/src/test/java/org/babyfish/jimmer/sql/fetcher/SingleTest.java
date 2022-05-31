@@ -6,6 +6,8 @@ import static org.babyfish.jimmer.sql.common.Constants.*;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+
 public class SingleTest extends AbstractQueryTest {
 
     @Test
@@ -131,7 +133,7 @@ public class SingleTest extends AbstractQueryTest {
     public void testInverseManyToMany() {
         executeAndExpect(
                 getSqlClient().createQuery(AuthorTable.class, (q, author) -> {
-                    q.where(author.id().in(borisId, sammerId));
+                    q.where(author.id().in(Arrays.asList(borisId, sammerId)));
                     q.orderBy(author.firstName());
                     return q.select(
                             author.fetch(

@@ -5,6 +5,8 @@ import org.babyfish.jimmer.sql.model.TreeNodeFetcher;
 import org.babyfish.jimmer.sql.model.TreeNodeTable;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+
 public class RecursiveTest extends AbstractQueryTest {
 
     @Test
@@ -476,7 +478,7 @@ public class RecursiveTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient().createQuery(TreeNodeTable.class, (q, treeNode) -> {
                     q.where(
-                            treeNode.id().in(12L, 13L, 14L, 16L, 17L)
+                            treeNode.id().in(Arrays.asList(12L, 13L, 14L, 16L, 17L))
                     );
                     q.orderBy(treeNode.id());
                     return q.select(
@@ -530,7 +532,7 @@ public class RecursiveTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient().createQuery(TreeNodeTable.class, (q, treeNode) -> {
                     q.where(
-                            treeNode.id().in(12L, 13L, 14L, 16L, 17L)
+                            treeNode.id().in(Arrays.asList(12L, 13L, 14L, 16L, 17L))
                     );
                     q.orderBy(treeNode.id());
                     return q.select(

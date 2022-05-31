@@ -46,7 +46,7 @@ public class App {
 
     private static void treeNodeDemo() {
 
-        // 第一步，从头构建全新的数据
+        // First step, create new object from scratch
         TreeNode treeNode = TreeNodeDraft.$.produce(root -> {
             root.setName("Root").addIntoChildNodes(food -> {
                 food
@@ -65,14 +65,14 @@ public class App {
             });
         });
 
-        // 第二步，基于现有数据对象，做某些“变更”，创建新的数据对象。
+        // Second step, make some "changes" based on the existing object to get a new object.
         TreeNode newTreeNode = TreeNodeDraft.$.produce(
-                // highlight-next-line
-                treeNode, // 现有的数据对象
+                treeNode, // existing object
                 root -> {
                     root
-                            .childNodes(true).get(0)
-                            .childNodes(true).get(0)
+                            .childNodes(true).get(0) // Food
+                            .childNodes(true).get(0) // Drink
+                            .childNodes(true).get(0) // Coco Cola
                             .setName("Coco Cola plus");
                 }
         );

@@ -10,17 +10,29 @@ public interface Associations {
 
     Associations reverse();
 
+    default int save(Object sourceId, Object targetId) {
+        return saveCommand(sourceId, targetId).execute();
+    }
+
+    default int batchSave(Collection<Object> sourceIds, Collection<Object> targetIds) {
+        return batchSaveCommand(sourceIds, targetIds).execute();
+    }
+
+    default int batchSave(Collection<Tuple2<Object, Object>> idPairs) {
+        return batchSaveCommand(idPairs).execute();
+    }
+
     AssociationSaveCommand saveCommand(
             Object sourceId,
             Object targetId
     );
 
-    AssociationSaveCommand saveCommand(
+    AssociationSaveCommand batchSaveCommand(
             Collection<Object> sourceIds,
             Collection<Object> targetIds
     );
 
-    AssociationSaveCommand saveCommand(
+    AssociationSaveCommand batchSaveCommand(
             Collection<Tuple2<Object, Object>> idPairs
     );
 
@@ -28,17 +40,17 @@ public interface Associations {
         return deleteCommand(sourceId, targetId).execute();
     }
 
-    default int delete(Collection<Object> sourceIds, Collection<Object> targetIds) {
-        return deleteCommand(sourceIds, targetIds).execute();
+    default int batchDelete(Collection<Object> sourceIds, Collection<Object> targetIds) {
+        return batchDeleteCommand(sourceIds, targetIds).execute();
     }
 
-    default int delete(Collection<Tuple2<Object, Object>> idPairs) {
-        return deleteCommand(idPairs).execute();
+    default int batchDelete(Collection<Tuple2<Object, Object>> idPairs) {
+        return batchDeleteCommand(idPairs).execute();
     }
 
     Executable<Integer> deleteCommand(Object sourceId, Object targetId);
 
-    Executable<Integer> deleteCommand(Collection<Object> sourceIds, Collection<Object> targetIds);
+    Executable<Integer> batchDeleteCommand(Collection<Object> sourceIds, Collection<Object> targetIds);
 
-    Executable<Integer> deleteCommand(Collection<Tuple2<Object, Object>> idPairs);
+    Executable<Integer> batchDeleteCommand(Collection<Tuple2<Object, Object>> idPairs);
 }
