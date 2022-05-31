@@ -148,7 +148,7 @@ public class DMLTest extends AbstractMutationTest {
     @Test
     public void testDelete() {
         executeAndExpectRowCount(
-                getSqlClient().createDelete(BookTableEx.class, (d, book) -> {
+                getSqlClient().createDelete(BookTable.class, (d, book) -> {
                     d.where(book.name().eq("Learning GraphQL"));
                 }),
                 ctx -> {

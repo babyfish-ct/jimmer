@@ -1,5 +1,8 @@
 package org.babyfish.jimmer.sql.example.model;
 
+import org.babyfish.jimmer.sql.Key;
+import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
+
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.util.List;
@@ -9,10 +12,13 @@ import java.util.UUID;
 public interface Book {
 
     @Id
+    @GeneratedValue(generator = UUIDIdGenerator.FULL_NAME)
     UUID id();
 
+    @Key
     String name();
 
+    @Key
     int edition();
 
     BigDecimal price();

@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.sql.OptimisticLockException;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
@@ -483,6 +484,13 @@ class Saver {
                 increaseDraftVersion(draftSpi);
             }
             cache.save(draftSpi);
+        } else if (version != null) {
+            throw new OptimisticLockException(
+                    type,
+                    draftSpi.__get(type.getIdProp().getName()),
+                    version,
+                    path
+            );
         }
     }
 
