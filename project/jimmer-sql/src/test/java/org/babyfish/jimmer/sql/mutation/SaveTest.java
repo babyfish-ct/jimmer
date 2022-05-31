@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.mutation;
 
+import org.babyfish.jimmer.sql.OptimisticLockException;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
@@ -7,6 +8,7 @@ import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.runtime.DbNull;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -643,6 +645,43 @@ public class SaveTest extends AbstractMutationTest {
                     });
                     ctx.totalRowCount(5);
                     ctx.rowCount(AffectedTable.of(AuthorTableEx.class, AuthorTableEx::books), 5);
+                }
+        );
+    }
+
+    @Test
+    public void test() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        BookStoreDraft.$.produce(store -> {
+                            store.setName("MANNING").setVersion(1);
+                        })
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from BOOK_STORE as tb_1_ " +
+                                        "where tb_1_.NAME = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update BOOK_STORE " +
+                                        "set VERSION = VERSION + 1 " +
+                                        "where ID = ? and VERSION = ?"
+                        );
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Cannot update the entity whose " +
+                                        "type is \"org.babyfish.jimmer.sql.model.BookStore\", " +
+                                        "id is \"2fa3955e-3e83-49b9-902e-0465c109c779\" and " +
+                                        "version is \"1\" at the path " +
+                                        "\"<root>\""
+                        );
+                        it.type(OptimisticLockException.class);
+                    });
                 }
         );
     }

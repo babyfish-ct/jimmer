@@ -2,6 +2,10 @@ package org.babyfish.jimmer.sql.runtime;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.*;
+import java.util.Date;
 
 public class Converts {
 
@@ -42,10 +46,68 @@ public class Converts {
             }
             if (expectedType == BigDecimal.class) {
                 if (value instanceof BigInteger) {
-                    return ((BigInteger)value).toString();
+                    return new BigDecimal(value.toString());
+                }
+                if (value instanceof Double || value instanceof Float) {
+                    return BigDecimal.valueOf(((Number) value).longValue());
                 }
                 return BigDecimal.valueOf(num.doubleValue());
             }
+        }
+        if (value instanceof Instant) {
+            return tryConvertInstant((Instant) value, expectedType);
+        }
+        if (value instanceof Date) {
+            return tryConvertInstant(((Date) value).toInstant(), expectedType);
+        }
+        if (value instanceof LocalDate) {
+            return tryConvertInstant(Instant.from((LocalDate) value), expectedType);
+        }
+        if (value instanceof LocalTime) {
+            return tryConvertInstant(Instant.from((LocalTime) value), expectedType);
+        }
+        if (value instanceof LocalDateTime) {
+            return tryConvertInstant(Instant.from((LocalDateTime) value), expectedType);
+        }
+        if (value instanceof OffsetDateTime) {
+            return tryConvertInstant(Instant.from((OffsetDateTime) value), expectedType);
+        }
+        if (value instanceof ZonedDateTime) {
+            return tryConvertInstant(Instant.from((ZonedDateTime) value), expectedType);
+        }
+        return null;
+    }
+
+    private static Object tryConvertInstant(Instant instant, Class<?> expectedType) {
+        if (expectedType == Instant.class) {
+            return instant;
+        }
+        if (expectedType == Date.class) {
+            return new Date(instant.toEpochMilli());
+        }
+        if (expectedType == java.sql.Date.class) {
+            return new java.sql.Date(instant.toEpochMilli());
+        }
+        if (expectedType == Time.class) {
+            return new Time(instant.toEpochMilli());
+        }
+        if (expectedType == Timestamp.class) {
+            return new Timestamp(instant.toEpochMilli());
+        }
+        if (expectedType == LocalDate.class) {
+            return instant.atZone(ZoneId.systemDefault()).toLocalDate();
+        }
+        if (expectedType == LocalTime.class) {
+            return instant.atZone(ZoneId.systemDefault()).toLocalTime();
+        }
+        if (expectedType == LocalDateTime.class) {
+            return instant.atZone(ZoneId.systemDefault()).toLocalDateTime();
+        }
+        if (expectedType == OffsetDateTime.class) {
+            return instant.atZone(ZoneId.systemDefault()).toOffsetDateTime();
+        }
+        if (expectedType == ZonedDateTime.class) {
+            return instant.atZone(ZoneId.systemDefault()).toOffsetDateTime().toZonedDateTime();
         }
         return null;
     }
