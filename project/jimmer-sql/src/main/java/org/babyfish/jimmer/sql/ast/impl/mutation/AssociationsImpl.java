@@ -34,20 +34,25 @@ public class AssociationsImpl implements Associations {
 
     @Override
     public AssociationSaveCommand saveCommand(Object sourceId, Object targetId) {
+        if (sourceId instanceof Collection<?> || targetId instanceof Collection<?>) {
+            throw new IllegalArgumentException(
+                    "sourceId or targetId cannot be collection, do you want to call 'batchSaveCommand'?"
+            );
+        }
         return new AssociationSaveCommandImpl(
                 saveExecutable(validateAndZip(sourceId, targetId))
         );
     }
 
     @Override
-    public AssociationSaveCommand saveCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
+    public AssociationSaveCommand batchSaveCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
         return new AssociationSaveCommandImpl(
                 saveExecutable(validateAndZip(sourceIds, targetIds))
         );
     }
 
     @Override
-    public AssociationSaveCommand saveCommand(Collection<Tuple2<Object, Object>> idPairs) {
+    public AssociationSaveCommand batchSaveCommand(Collection<Tuple2<Object, Object>> idPairs) {
         return new AssociationSaveCommandImpl(
                 saveExecutable(validate(idPairs))
         );
@@ -55,16 +60,21 @@ public class AssociationsImpl implements Associations {
 
     @Override
     public Executable<Integer> deleteCommand(Object sourceId, Object targetId) {
+        if (sourceId instanceof Collection<?> || targetId instanceof Collection<?>) {
+            throw new IllegalArgumentException(
+                    "sourceId or targetId cannot be collection, do you want to call 'batchDeleteCommand'?"
+            );
+        }
         return deleteExecutable(validateAndZip(sourceId, targetId));
     }
 
     @Override
-    public Executable<Integer> deleteCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
+    public Executable<Integer> batchDeleteCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
         return deleteExecutable(validateAndZip(sourceIds, targetIds));
     }
 
     @Override
-    public Executable<Integer> deleteCommand(Collection<Tuple2<Object, Object>> idPairs) {
+    public Executable<Integer> batchDeleteCommand(Collection<Tuple2<Object, Object>> idPairs) {
         return deleteExecutable(validate(idPairs));
     }
 
@@ -88,6 +98,7 @@ public class AssociationsImpl implements Associations {
         );
     }
 
+    @SuppressWarnings("unchecked")
     private static Collection<Tuple2<Object, Object>> validateAndZip(Object sourceId, Object targetId) {
         return Collections.singleton(
                 new Tuple2<>(

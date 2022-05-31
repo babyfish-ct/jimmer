@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
 
 import javax.persistence.criteria.JoinType;
+import java.util.Arrays;
 
 public class InverseJoinTest extends AbstractQueryTest {
 
@@ -69,7 +70,7 @@ public class InverseJoinTest extends AbstractQueryTest {
                             book
                                     .inverseJoin(AuthorTableEx.class, AuthorTableEx::books)
                                     .id()
-                                    .in(alexId, danId)
+                                    .in(Arrays.asList(alexId, danId))
                     );
                     return q.select(Expression.constant(1));
                 }),
@@ -93,7 +94,7 @@ public class InverseJoinTest extends AbstractQueryTest {
                             author
                                     .inverseJoin(BookTableEx.class, BookTableEx::authors)
                                     .id()
-                                    .in(learningGraphQLId1, learningGraphQLId2)
+                                    .in(Arrays.asList(learningGraphQLId1, learningGraphQLId2))
                     );
                     return q.select(Expression.constant(1));
                 }),

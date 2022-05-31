@@ -32,6 +32,11 @@ class ReferenceLoaderImpl<S, T> implements ReferenceLoader<S, T> {
 
     @Override
     public Executable<T> loadCommand(S source) {
+        if (source instanceof Collection<?>) {
+            throw new IllegalArgumentException(
+                    "source cannot be collection, do you want to call 'batchLoadCommand'?"
+            );
+        }
         return new SingleCommand<>(
                 sqlClient,
                 prop,

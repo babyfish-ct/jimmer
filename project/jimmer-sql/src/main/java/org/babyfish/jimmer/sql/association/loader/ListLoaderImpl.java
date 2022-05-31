@@ -29,6 +29,11 @@ class ListLoaderImpl<S, T> implements ListLoader<S, T> {
 
     @Override
     public Executable<List<T>> loadCommand(S source, int limit, int offset) {
+        if (source instanceof Collection<?>) {
+            throw new IllegalArgumentException(
+                    "source cannot be collection, do you want to call 'batchLoadCommand'?"
+            );
+        }
         return new SingleCommand<>(
                 sqlClient,
                 prop,

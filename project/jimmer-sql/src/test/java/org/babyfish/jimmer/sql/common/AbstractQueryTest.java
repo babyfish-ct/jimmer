@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.common;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.jackson.ImmutableModule;
-import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.Executable;
@@ -45,8 +44,15 @@ public class AbstractQueryTest extends AbstractTest {
         );
     }
 
-    protected <T> void callAnyAndExpect(
+    protected <T> void anyAndExpect(
             Executable<T> executable,
+            Consumer<QueryTestContext<T>> block
+    ) {
+        connectAndExpect(executable::execute, block);
+    }
+
+    protected <T> void connectAndExpect(
+            Function<Connection, T> func,
             Consumer<QueryTestContext<T>> block
     ) {
         clearExecutions();
@@ -54,7 +60,12 @@ public class AbstractQueryTest extends AbstractTest {
         maxStatementIndex = -1;
         jdbc(con -> {
             if (rows == null) {
-                rows = Collections.singletonList(executable.execute(con));
+                Object result = func.apply(con);
+                if (result instanceof List<?>) {
+                    rows = (List<?>) result;
+                } else {
+                    rows = Collections.singletonList(result);
+                }
             }
         });
         block.accept(new QueryTestContext<>(0));

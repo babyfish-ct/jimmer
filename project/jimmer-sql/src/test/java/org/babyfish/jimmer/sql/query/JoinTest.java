@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.persistence.criteria.JoinType;
 import java.math.BigDecimal;
+import java.util.Arrays;
 
 public class JoinTest extends AbstractQueryTest {
 
@@ -108,7 +109,7 @@ public class JoinTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(
-                            book.store().id().in(oreillyId, manningId)
+                            book.store().id().in(Arrays.asList(oreillyId, manningId))
                     );
                     return q.select(Expression.constant(1));
                 }),
@@ -128,7 +129,7 @@ public class JoinTest extends AbstractQueryTest {
                     q.where(
                             book.<AuthorTable>join("authors")
                                     .id()
-                                    .in(alexId, borisId)
+                                    .in(Arrays.asList(alexId, borisId))
                     );
                     return q.select(Expression.constant(1));
                 }),
@@ -152,7 +153,7 @@ public class JoinTest extends AbstractQueryTest {
                             author
                                     .<BookTable>join("books")
                                     .id()
-                                    .in(learningGraphQLId1, learningGraphQLId2)
+                                    .in(Arrays.asList(learningGraphQLId1, learningGraphQLId2))
                     );
                     return q.select(Expression.constant(1));
                 }),
@@ -176,7 +177,7 @@ public class JoinTest extends AbstractQueryTest {
                             store
                                     .<BookTable>join("books")
                                     .id()
-                                    .in(learningGraphQLId1, learningGraphQLId2)
+                                    .in(Arrays.asList(learningGraphQLId1, learningGraphQLId2))
                     );
                     return q.select(Expression.constant(1));
                 }),

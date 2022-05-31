@@ -23,11 +23,7 @@ public interface Expression<T> extends Selection<T> {
 
     Predicate in(Collection<T> values);
 
-    Predicate in(T ... values);
-
     Predicate notIn(Collection<T> values);
-
-    Predicate notIn(T ... values);
 
     Predicate in(TypedSubQuery<T> subQuery);
 

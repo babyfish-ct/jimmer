@@ -39,7 +39,7 @@ public class AssociationMutationTest extends AbstractMutationTest {
         executeAndExpectRowCount(
                 getSqlClient().getAssociations(
                         BookTableEx.class, BookTableEx::authors
-                ).saveCommand(
+                ).batchSaveCommand(
                         Arrays.asList(
                             new Tuple2<>(learningGraphQLId1, alexId),
                             new Tuple2<>(learningGraphQLId2, borisId),
@@ -76,7 +76,7 @@ public class AssociationMutationTest extends AbstractMutationTest {
         executeAndExpectRowCount(
                 getSqlClient().getAssociations(
                         BookTableEx.class, BookTableEx::authors
-                ).deleteCommand(
+                ).batchDeleteCommand(
                         Arrays.asList(learningGraphQLId1, learningGraphQLId2, learningGraphQLId3),
                         Arrays.asList(alexId, alexId, borisId)
                 ),
@@ -124,7 +124,7 @@ public class AssociationMutationTest extends AbstractMutationTest {
         executeAndExpectRowCount(
                 getSqlClient().getAssociations(
                         AuthorTableEx.class, AuthorTableEx::books
-                ).saveCommand(
+                ).batchSaveCommand(
                         Arrays.asList(
                                 new Tuple2<>(alexId, learningGraphQLId1),
                                 new Tuple2<>(borisId, learningGraphQLId2),
@@ -161,7 +161,7 @@ public class AssociationMutationTest extends AbstractMutationTest {
         executeAndExpectRowCount(
                 getSqlClient().getAssociations(
                         AuthorTableEx.class, AuthorTableEx::books
-                ).deleteCommand(
+                ).batchDeleteCommand(
                         Arrays.asList(alexId, alexId, borisId),
                         Arrays.asList(learningGraphQLId1, learningGraphQLId2, learningGraphQLId3)
                 ),
