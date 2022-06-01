@@ -51,7 +51,8 @@ public class BookController {
                 .getReferenceLoader(
                         BookTable.class,
                         BookTable::store
-                ).batchLoad(books);
+                )
+                .batchLoad(books);
     }
 
     @BatchMapping

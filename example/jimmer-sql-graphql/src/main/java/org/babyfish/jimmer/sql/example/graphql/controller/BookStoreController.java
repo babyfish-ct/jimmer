@@ -57,11 +57,13 @@ public class BookStoreController {
     public Map<BookStore, List<Book>> books(
             List<BookStore> bookStores
     ) {
-        return sqlClient.getListLoader(
-                BookStoreTableEx.class,
-                BookStoreTableEx::books,
-                (q, book) -> q.orderBy(book.name())
-        ).batchLoad(bookStores);
+        return sqlClient
+                .getListLoader(
+                        BookStoreTableEx.class,
+                        BookStoreTableEx::books,
+                        (q, book) -> q.orderBy(book.name())
+                )
+                .batchLoad(bookStores);
     }
 
     // --- Calculation ---
