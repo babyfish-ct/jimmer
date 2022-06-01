@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.mutation;
 
-import org.babyfish.jimmer.sql.CascadeAction;
+import org.babyfish.jimmer.sql.DeleteAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
@@ -46,10 +46,10 @@ public class DeleteTest extends AbstractMutationTest {
                         BookStore.class,
                         manningId
                 ).configure(cfg -> {
-                    cfg.setCascadeAction(
+                    cfg.setDeleteAction(
                             BookTable.class,
                             it -> it.store(),
-                            CascadeAction.SET_NULL
+                            DeleteAction.SET_NULL
                     );
                 }),
                 ctx -> {
@@ -76,10 +76,10 @@ public class DeleteTest extends AbstractMutationTest {
                         BookStore.class,
                         manningId
                 ).configure(cfg -> {
-                    cfg.setCascadeAction(
+                    cfg.setDeleteAction(
                             BookTable.class,
                             it -> it.store(),
-                            CascadeAction.DELETE
+                            DeleteAction.CASCADE
                     );
                 }),
                 ctx -> {

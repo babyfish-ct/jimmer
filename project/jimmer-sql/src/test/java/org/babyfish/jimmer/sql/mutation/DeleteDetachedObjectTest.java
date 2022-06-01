@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.mutation;
 
+import org.babyfish.jimmer.sql.DeleteAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.model.*;
@@ -20,7 +21,13 @@ public class DeleteDetachedObjectTest extends AbstractMutationTest {
                             store.addIntoBooks(book -> book.setId(learningGraphQLId2));
                             store.addIntoBooks(book -> book.setId(learningGraphQLId3));
                         })
-                ).configure(cfg -> cfg.setAutoDetaching(BookStoreTableEx.class, BookStoreTableEx::books)),
+                ).configure(cfg ->
+                        cfg.setDeleteAction(
+                                BookTable.class,
+                                BookTable::store,
+                                DeleteAction.CASCADE
+                        )
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

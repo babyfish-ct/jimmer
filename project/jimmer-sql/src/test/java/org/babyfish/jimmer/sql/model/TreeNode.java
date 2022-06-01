@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.model;
 
-import org.babyfish.jimmer.sql.CascadeAction;
-import org.babyfish.jimmer.sql.OnCascade;
+import org.babyfish.jimmer.sql.DeleteAction;
+import org.babyfish.jimmer.sql.OnDelete;
 
 import javax.persistence.*;
 import java.util.List;
@@ -12,7 +12,7 @@ public interface TreeNode {
     String name();
 
     @ManyToOne
-    @OnCascade(CascadeAction.DELETE)
+    @OnDelete(DeleteAction.CASCADE)
     TreeNode parent();
 
     @OneToMany(mappedBy = "parent")
