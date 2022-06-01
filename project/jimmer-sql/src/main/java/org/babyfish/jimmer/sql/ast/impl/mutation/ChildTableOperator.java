@@ -4,7 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.runtime.Converts;
+import org.babyfish.jimmer.sql.runtime.Converters;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -106,7 +106,7 @@ class ChildTableOperator {
                     try (ResultSet rs = stmt.executeQuery()) {
                         while (rs.next()) {
                             Object value = rs.getObject(1);
-                            Object id = Converts.tryConvert(value, idProp.getElementClass());
+                            Object id = Converters.tryConvert(value, idProp.getElementClass());
                             if (id == null) {
                                 throw new ExecutionException(
                                         "Cannot convert " + value + " to the type of " + idProp

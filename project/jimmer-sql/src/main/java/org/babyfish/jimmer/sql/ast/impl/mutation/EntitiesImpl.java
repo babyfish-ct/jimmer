@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.mutation.SimpleEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.runtime.Converters;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -98,6 +99,18 @@ public class EntitiesImpl implements Entities {
             return Collections.emptyList();
         }
         ImmutableType immutableType = ImmutableType.get(entityType);
+        Class<?> idClass = immutableType.getIdProp().getElementClass();
+        for (Object id : ids) {
+            if (Converters.tryConvert(id, idClass) == null) {
+                throw new IllegalArgumentException(
+                        "The type of \"" +
+                                immutableType.getIdProp() +
+                                "\" must be \"" +
+                                idClass.getName() +
+                                "\""
+                );
+            }
+        }
         return Queries
                 .createQuery(
                         sqlClient, immutableType, (q, table) -> {

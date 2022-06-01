@@ -212,7 +212,7 @@ class ResultMapper {
         if (value == null) {
             sqlValue = null;
         } else {
-            sqlValue = Converts.tryConvert(value, expectedType);
+            sqlValue = Converters.tryConvert(value, expectedType);
             if (sqlValue == null) {
                 throw new ExecutionException(
                         "Failed the convert the result value at column $" +

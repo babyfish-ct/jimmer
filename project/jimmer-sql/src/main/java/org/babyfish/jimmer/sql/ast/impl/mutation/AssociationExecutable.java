@@ -23,22 +23,22 @@ class AssociationExecutable implements Executable<Integer> {
 
     private final Mode mode;
 
-    private final Set<Tuple2<Object, Object>> idPairs;
+    private final Set<Tuple2<Object, Object>> idTuples;
 
     public AssociationExecutable(
             SqlClient sqlClient,
             AssociationType associationType,
             boolean reversed,
             Mode mode,
-            Collection<Tuple2<Object, Object>> idPairs
+            Collection<Tuple2<Object, Object>> idTuples
     ) {
         this.sqlClient = sqlClient;
         this.associationType = associationType;
         this.reversed = reversed;
         this.mode = mode;
-        this.idPairs = idPairs instanceof Set<?> ?
-                (Set<Tuple2<Object, Object>>)idPairs :
-                new LinkedHashSet<>(idPairs);
+        this.idTuples = idTuples instanceof Set<?> ?
+                (Set<Tuple2<Object, Object>>)idTuples :
+                new LinkedHashSet<>(idTuples);
     }
 
     @NewChain
@@ -51,7 +51,7 @@ class AssociationExecutable implements Executable<Integer> {
                 associationType,
                 reversed,
                 mode,
-                idPairs
+                idTuples
         );
     }
 
@@ -65,15 +65,15 @@ class AssociationExecutable implements Executable<Integer> {
     @Override
     public Integer execute(Connection con) {
 
-        if (idPairs.isEmpty()) {
+        if (idTuples.isEmpty()) {
             return 0;
         }
 
         if (mode == Mode.DELETE) {
-            return getMiddleTypeOperator(con).remove(new TupleReader(idPairs));
+            return getMiddleTypeOperator(con).remove(new TupleReader(idTuples));
         }
 
-        Set<Tuple2<Object, Object>> addingPairs = idPairs;
+        Set<Tuple2<Object, Object>> addingPairs = idTuples;
         if (mode == Mode.CHECK_AND_INSERT) {
             addingPairs = new LinkedHashSet<>(addingPairs);
             Set<Tuple2<Object, Object>> existingPairs = new HashSet<>(find(con));
@@ -112,13 +112,13 @@ class AssociationExecutable implements Executable<Integer> {
                 .sql(middleTable.getTargetJoinColumnName())
                 .sql(") in(");
         String separator = "";
-        for (Tuple2<Object, Object> idPair : idPairs) {
+        for (Tuple2<Object, Object> idTuple : idTuples) {
             builder
                     .sql(separator)
                     .sql("(")
-                    .variable(idPair._1())
+                    .variable(idTuple._1())
                     .sql(", ")
-                    .variable(idPair._2())
+                    .variable(idTuple._2())
                     .sql(")");
             separator = ", ";
         }
@@ -164,18 +164,18 @@ class AssociationExecutable implements Executable<Integer> {
 
     private static class TupleReader implements MiddleTableOperator.IdPairReader {
 
-        private Iterator<Tuple2<Object, Object>> idPairItr;
+        private Iterator<Tuple2<Object, Object>> idTupleItr;
 
         private Tuple2<Object, Object> currentIdPair;
 
-        TupleReader(Collection<Tuple2<Object, Object>> idPairs) {
-            idPairItr = idPairs.iterator();
+        TupleReader(Collection<Tuple2<Object, Object>> idTuples) {
+            idTupleItr = idTuples.iterator();
         }
 
         @Override
         public boolean read() {
-            if (idPairItr.hasNext()) {
-                currentIdPair = idPairItr.next();
+            if (idTupleItr.hasNext()) {
+                currentIdPair = idTupleItr.next();
                 return true;
             }
             return false;

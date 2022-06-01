@@ -6,16 +6,17 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.AssociationSaveCommand;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.runtime.Converters;
 
 import java.util.*;
 
 public class AssociationsImpl implements Associations {
 
-    private SqlClient sqlClient;
+    private final SqlClient sqlClient;
 
-    private AssociationType associationType;
+    private final AssociationType associationType;
 
-    private boolean reversed;
+    private final boolean reversed;
 
     public AssociationsImpl(SqlClient sqlClient, AssociationType associationType) {
         this(sqlClient, associationType, false);
@@ -40,21 +41,21 @@ public class AssociationsImpl implements Associations {
             );
         }
         return new AssociationSaveCommandImpl(
-                saveExecutable(validateAndZip(sourceId, targetId))
+                saveExecutable(Collections.singleton(new Tuple2<>(sourceId, targetId)))
         );
     }
 
     @Override
     public AssociationSaveCommand batchSaveCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
         return new AssociationSaveCommandImpl(
-                saveExecutable(validateAndZip(sourceIds, targetIds))
+                saveExecutable(cartesianProduct(sourceIds, targetIds))
         );
     }
 
     @Override
-    public AssociationSaveCommand batchSaveCommand(Collection<Tuple2<Object, Object>> idPairs) {
+    public AssociationSaveCommand batchSaveCommand(Collection<Tuple2<Object, Object>> idTuples) {
         return new AssociationSaveCommandImpl(
-                saveExecutable(validate(idPairs))
+                saveExecutable(idTuples)
         );
     }
 
@@ -65,85 +66,84 @@ public class AssociationsImpl implements Associations {
                     "sourceId or targetId cannot be collection, do you want to call 'batchDeleteCommand'?"
             );
         }
-        return deleteExecutable(validateAndZip(sourceId, targetId));
+        return deleteExecutable(Collections.singleton(new Tuple2<>(sourceId, targetId)));
     }
 
     @Override
     public Executable<Integer> batchDeleteCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
-        return deleteExecutable(validateAndZip(sourceIds, targetIds));
+        return deleteExecutable(cartesianProduct(sourceIds, targetIds));
     }
 
     @Override
-    public Executable<Integer> batchDeleteCommand(Collection<Tuple2<Object, Object>> idPairs) {
-        return deleteExecutable(validate(idPairs));
+    public Executable<Integer> batchDeleteCommand(Collection<Tuple2<Object, Object>> idTuples) {
+        return deleteExecutable(idTuples);
     }
 
-    private AssociationExecutable saveExecutable(Collection<Tuple2<Object, Object>> idPairs) {
+    private AssociationExecutable saveExecutable(Collection<Tuple2<Object, Object>> idTuples) {
+        validate(idTuples);
         return new AssociationExecutable(
                 sqlClient,
                 associationType,
                 reversed,
                 AssociationExecutable.Mode.INSERT,
-                idPairs
+                idTuples
         );
     }
 
-    private Executable<Integer> deleteExecutable(Collection<Tuple2<Object, Object>> idPairs) {
+    private Executable<Integer> deleteExecutable(Collection<Tuple2<Object, Object>> idTuples) {
+        validate(idTuples);
         return new AssociationExecutable(
                 sqlClient,
                 associationType,
                 reversed,
                 AssociationExecutable.Mode.DELETE,
-                idPairs
+                idTuples
         );
     }
 
-    @SuppressWarnings("unchecked")
-    private static Collection<Tuple2<Object, Object>> validateAndZip(Object sourceId, Object targetId) {
-        return Collections.singleton(
-                new Tuple2<>(
-                        Objects.requireNonNull(sourceId, "sourceId cannot be null"),
-                        Objects.requireNonNull(targetId, "targetId cannot be null")
-                )
-        );
-    }
-
-    private static Collection<Tuple2<Object, Object>> validateAndZip(
+    private Collection<Tuple2<Object, Object>> cartesianProduct(
             Collection<Object> sourceIds,
             Collection<Object> targetIds
     ) {
-        if (sourceIds.size() != targetIds.size()) {
-            throw new IllegalArgumentException("sourceIds.size must equal to targetIds.size");
-        }
-        Iterator<Object> sourceItr = sourceIds.iterator();
-        Iterator<Object> targetItr = targetIds.iterator();
-
-        // Set is better choice for deeper code
-        Set<Tuple2<Object, Object>> zipped = new LinkedHashSet<>((sourceIds.size() * 4 + 2) / 3);
-
-        while (sourceItr.hasNext() && targetItr.hasNext()) {
-            Object sourceId = sourceItr.next();
-            Object targetId = targetItr.next();
-            if (sourceId == null) {
-                throw new IllegalArgumentException("sourceIds cannot contains null");
+        Set<Tuple2<Object, Object>> idTuples = new LinkedHashSet<>(
+                (sourceIds.size() * targetIds.size() * 4 + 2) / 3
+        );
+        for (Object sourceId : sourceIds) {
+            for (Object targetId : targetIds) {
+                idTuples.add(new Tuple2<>(sourceId, targetId));
             }
-            if (targetId == null) {
-                throw new IllegalArgumentException("targetIds cannot contains null");
-            }
-            zipped.add(new Tuple2<>(sourceId, targetId));
         }
-        return zipped;
+        return idTuples;
     }
 
-    private static Collection<Tuple2<Object, Object>> validate(Collection<Tuple2<Object, Object>> idPairs) {
-        for (Tuple2<Object, Object> idPair : idPairs) {
-            if (idPair._1() == null) {
-                throw new IllegalArgumentException("Id pair with null source id is not acceptable");
+    private Collection<Tuple2<Object, Object>> validate(Collection<Tuple2<Object, Object>> idTuples) {
+        Class<?> sourceIdType = associationType.getSourceType().getIdProp().getElementClass();
+        Class<?> targetIdType = associationType.getTargetType().getIdProp().getElementClass();
+        if (reversed) {
+            Class<?> tmp = sourceIdType;
+            sourceIdType = targetIdType;
+            targetIdType = tmp;
+        }
+        for (Tuple2<Object, Object> idTuple : idTuples) {
+            if (Converters.tryConvert(idTuple._1(), sourceIdType) == null) {
+                throw new IllegalArgumentException(
+                        "sourceId \"" +
+                                idTuple._1() +
+                                "\" does not match the type \"" +
+                                sourceIdType.getName() +
+                                "\""
+                );
             }
-            if (idPair._2() == null) {
-                throw new IllegalArgumentException("Id pair with null target id is not acceptable");
+            if (Converters.tryConvert(idTuple._2(), targetIdType) == null) {
+                throw new IllegalArgumentException(
+                        "targetId \"" +
+                                idTuple._2() +
+                                "\" does not match the type \"" +
+                                targetIdType.getName() +
+                                "\""
+                );
             }
         }
-        return idPairs;
+        return idTuples;
     }
 }

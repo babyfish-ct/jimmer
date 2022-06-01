@@ -18,8 +18,8 @@ public interface Associations {
         return batchSaveCommand(sourceIds, targetIds).execute();
     }
 
-    default int batchSave(Collection<Tuple2<Object, Object>> idPairs) {
-        return batchSaveCommand(idPairs).execute();
+    default int batchSave(Collection<Tuple2<Object, Object>> idTuples) {
+        return batchSaveCommand(idTuples).execute();
     }
 
     AssociationSaveCommand saveCommand(
@@ -33,7 +33,7 @@ public interface Associations {
     );
 
     AssociationSaveCommand batchSaveCommand(
-            Collection<Tuple2<Object, Object>> idPairs
+            Collection<Tuple2<Object, Object>> idTuples
     );
 
     default int delete(Object sourceId, Object targetId) {
@@ -44,13 +44,13 @@ public interface Associations {
         return batchDeleteCommand(sourceIds, targetIds).execute();
     }
 
-    default int batchDelete(Collection<Tuple2<Object, Object>> idPairs) {
-        return batchDeleteCommand(idPairs).execute();
+    default int batchDelete(Collection<Tuple2<Object, Object>> idTuples) {
+        return batchDeleteCommand(idTuples).execute();
     }
 
     Executable<Integer> deleteCommand(Object sourceId, Object targetId);
 
     Executable<Integer> batchDeleteCommand(Collection<Object> sourceIds, Collection<Object> targetIds);
 
-    Executable<Integer> batchDeleteCommand(Collection<Tuple2<Object, Object>> idPairs);
+    Executable<Integer> batchDeleteCommand(Collection<Tuple2<Object, Object>> idTuples);
 }

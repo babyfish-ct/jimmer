@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.runtime.Converters;
 
 import java.sql.Connection;
 import java.util.Collection;
@@ -32,6 +33,18 @@ class DeleteCommandImpl implements DeleteCommand {
             ImmutableType immutableType,
             Collection<?> ids
     ) {
+        Class<?> idClass = immutableType.getIdProp().getElementClass();
+        for (Object id : ids) {
+            if (Converters.tryConvert(id, idClass) == null) {
+                throw new IllegalArgumentException(
+                        "The type of \"" +
+                                immutableType.getIdProp() +
+                                "\" must be \"" +
+                                idClass.getName() +
+                                "\""
+                );
+            }
+        }
         this.sqlClient = sqlClient;
         this.immutableType = immutableType;
         this.ids = ids;

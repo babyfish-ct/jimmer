@@ -14,7 +14,7 @@ import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.*;
-import org.babyfish.jimmer.sql.runtime.Converts;
+import org.babyfish.jimmer.sql.runtime.Converters;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -615,7 +615,7 @@ class Saver {
     private static void setDraftId(DraftSpi spi, Object id) {
         ImmutableType type = spi.__type();
         ImmutableProp idProp = type.getIdProp();
-        Object convertedId = Converts.tryConvert(id, idProp.getElementClass());
+        Object convertedId = Converters.tryConvert(id, idProp.getElementClass());
         if (convertedId == null) {
             throw new ExecutionException(
                     "The type of generated id does not match the property \"" + idProp + "\""
