@@ -48,7 +48,7 @@ public abstract class AbstractBatchDataLoader {
         if (prop.getStorage() instanceof Column) {
             return loadParents(keys);
         }
-        if (prop.isEntityList() && prop.getMappedBy() != null && prop.getMappedBy().isReference()) {
+        if (prop.getMappedBy() != null && prop.getMappedBy().getStorage() instanceof Column) {
             return loadChildren(keys);
         }
         Fetcher<?> childFetcher = getChildFetcher();
@@ -88,7 +88,7 @@ public abstract class AbstractBatchDataLoader {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<Object, List<ImmutableSpi>> loadChildren(Collection<Object> keys) {
+    private Map<Object, ?> loadChildren(Collection<Object> keys) {
         ImmutableProp prop = getProp();
         List<Tuple2<Object, ImmutableSpi>> tuples = Queries.createQuery(
                 sqlClient,
@@ -108,11 +108,11 @@ public abstract class AbstractBatchDataLoader {
                     );
                 }
         ).execute(con);
-        return Tuple2.toMultiMap(tuples);
+        return prop.isEntityList() ? Tuple2.toMultiMap(tuples) : Tuple2.toMap(tuples);
     }
 
     @SuppressWarnings("unchecked")
-    private Map<Object, List<ImmutableSpi>> loadTargetsWithOnlyId(Collection<Object> keys) {
+    private Map<Object, ?> loadTargetsWithOnlyId(Collection<Object> keys) {
         ImmutableProp prop = getProp();
         AssociationType associationType = AssociationType.of(prop);
         List<Tuple2<Object, Object>> tuples = Queries.createAssociationQuery(
@@ -128,22 +128,38 @@ public abstract class AbstractBatchDataLoader {
                     );
                 }
         ).execute(con);
-        Map<Object, List<ImmutableSpi>> targetMap = new LinkedHashMap<>();
-        String targetIdPropName = prop.getTargetType().getIdProp().getName();
-        for (Tuple2<Object, Object> tuple : tuples) {
-            targetMap
-                    .computeIfAbsent(tuple._1(), it -> new ArrayList<>())
-                    .add(
-                            (ImmutableSpi) Internal.produce(prop.getTargetType(), null, targetDraft -> {
-                                ((DraftSpi) targetDraft).__set(targetIdPropName, tuple._2());
-                            })
-                    );
+        if (prop.isEntityList()) {
+            Map<Object, List<ImmutableSpi>> targetMap = new LinkedHashMap<>();
+            String targetIdPropName = prop.getTargetType().getIdProp().getName();
+            for (Tuple2<Object, Object> tuple : tuples) {
+                targetMap
+                        .computeIfAbsent(tuple._1(), it -> new ArrayList<>())
+                        .add(
+                                (ImmutableSpi) Internal.produce(prop.getTargetType(), null, targetDraft -> {
+                                    ((DraftSpi) targetDraft).__set(targetIdPropName, tuple._2());
+                                })
+                        );
+            }
+            return targetMap;
+        } else {
+            Map<Object, ImmutableSpi> targetMap = new LinkedHashMap<>();
+            String targetIdPropName = prop.getTargetType().getIdProp().getName();
+            for (Tuple2<Object, Object> tuple : tuples) {
+                targetMap
+                        .put(
+                                tuple._1(),
+                                (ImmutableSpi) Internal.produce(prop.getTargetType(), null, targetDraft -> {
+                                    ((DraftSpi) targetDraft).__set(targetIdPropName, tuple._2());
+                                })
+                        );
+            }
+            return targetMap;
         }
-        return targetMap;
+
     }
 
     @SuppressWarnings("unchecked")
-    private Map<Object, List<ImmutableSpi>> loadTargets(Collection<Object> keys) {
+    private Map<Object, ?> loadTargets(Collection<Object> keys) {
         ImmutableProp prop = getProp();
         AssociationType associationType = AssociationType.of(prop);
         List<Tuple2<Object, ImmutableSpi>> tuples = Queries.createAssociationQuery(
@@ -161,6 +177,6 @@ public abstract class AbstractBatchDataLoader {
                     );
                 }
         ).execute(con);
-        return Tuple2.toMultiMap(tuples);
+        return prop.isEntityList() ? Tuple2.toMultiMap(tuples) : Tuple2.toMap(tuples);
     }
 }
