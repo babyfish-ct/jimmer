@@ -45,11 +45,13 @@ public class AuthorController {
     public Map<Author, List<Book>> books(
             List<Author> authors
     ) {
-        return sqlClient.getListLoader(
-                AuthorTableEx.class,
-                AuthorTableEx::books,
-                (q, book) -> q.orderBy(book.name())
-        ).batchLoad(authors);
+        return sqlClient
+                .getListLoader(
+                        AuthorTableEx.class,
+                        AuthorTableEx::books,
+                        (q, book) -> q.orderBy(book.name())
+                )
+                .batchLoad(authors);
     }
 
     // --- Mutation ---
