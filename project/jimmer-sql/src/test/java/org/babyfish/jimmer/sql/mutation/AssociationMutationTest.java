@@ -77,8 +77,11 @@ public class AssociationMutationTest extends AbstractMutationTest {
                 getSqlClient().getAssociations(
                         BookTableEx.class, BookTableEx::authors
                 ).batchDeleteCommand(
-                        Arrays.asList(learningGraphQLId1, learningGraphQLId2, learningGraphQLId3),
-                        Arrays.asList(alexId, alexId, borisId)
+                        Arrays.asList(
+                            new Tuple2<>(learningGraphQLId1, alexId),
+                            new Tuple2<>(learningGraphQLId2, alexId),
+                            new Tuple2<>(learningGraphQLId3, borisId)
+                        )
                 ),
                 ctx -> {
                     ctx.statement(it -> {
@@ -162,8 +165,11 @@ public class AssociationMutationTest extends AbstractMutationTest {
                 getSqlClient().getAssociations(
                         AuthorTableEx.class, AuthorTableEx::books
                 ).batchDeleteCommand(
-                        Arrays.asList(alexId, alexId, borisId),
-                        Arrays.asList(learningGraphQLId1, learningGraphQLId2, learningGraphQLId3)
+                        Arrays.asList(
+                                new Tuple2<>(alexId, learningGraphQLId1),
+                                new Tuple2<>(alexId, learningGraphQLId2),
+                                new Tuple2<>(borisId, learningGraphQLId3)
+                        )
                 ),
                 ctx -> {
                     ctx.statement(it -> {

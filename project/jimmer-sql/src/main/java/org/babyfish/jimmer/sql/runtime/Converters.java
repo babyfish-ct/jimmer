@@ -7,9 +7,9 @@ import java.sql.Timestamp;
 import java.time.*;
 import java.util.Date;
 
-public class Converts {
+public class Converters {
 
-    private Converts() {}
+    private Converters() {}
 
     public static Object tryConvert(Object value, Class<?> expectedType) {
         if (value == null || value.getClass() == expectedType) {

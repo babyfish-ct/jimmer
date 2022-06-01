@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'org.babyfish.jimmer.sql.example'
-version = '0.0.20'
+version = '0.0.21'
 sourceCompatibility = '1.8'
 
 repositories {
@@ -14,8 +14,8 @@ repositories {
 
 dependencies {
 
-	implementation 'org.babyfish.jimmer:jimmer-sql:0.0.20'
-	annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.20'
+	implementation 'org.babyfish.jimmer:jimmer-sql:0.0.21'
+	annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.21'
 
 	implementation 'org.springframework.boot:spring-boot-starter-graphql'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -26,7 +26,6 @@ dependencies {
 	implementation 'com.graphql-java:graphql-java-extended-scalars:18.1'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework:spring-webflux'
 	testImplementation 'org.springframework.graphql:spring-graphql-test'
 }
 

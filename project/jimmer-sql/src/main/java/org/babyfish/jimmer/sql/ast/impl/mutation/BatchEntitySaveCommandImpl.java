@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.BatchEntitySaveCommand;
@@ -21,6 +22,13 @@ class BatchEntitySaveCommandImpl<E>
 
     BatchEntitySaveCommandImpl(SqlClient sqlClient, Collection<E> entities) {
         super(sqlClient, null);
+        for (E entity : entities) {
+            if (!(entity instanceof ImmutableSpi)) {
+                throw new IllegalArgumentException(
+                        "All the elements of entities must be an immutable object"
+                );
+            }
+        }
         this.entities = entities;
     }
 
