@@ -4,7 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
-import org.babyfish.jimmer.sql.CascadeAction;
+import org.babyfish.jimmer.sql.DeleteAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -120,9 +120,8 @@ public class Deleter {
                     mappedByProp != null &&
                     mappedByProp.isReference()
             ) {
-                CascadeAction cascadeAction = data.getDeleteAction(mappedByProp);
-                if (cascadeAction == CascadeAction.SET_NULL ||
-                        (cascadeAction == CascadeAction.AUTO && mappedByProp.isNullable())) {
+                DeleteAction deleteAction = data.getDeleteAction(mappedByProp);
+                if (deleteAction == DeleteAction.SET_NULL) {
                     updateChildTable(mappedByProp, ids);
                 } else {
                     tryDeleteFromChildTable(prop, ids);
@@ -237,7 +236,7 @@ public class Deleter {
                         }
                 );
         if (!childIds.isEmpty()) {
-            if (data.getDeleteAction(manyToOneProp) != CascadeAction.DELETE) {
+            if (data.getDeleteAction(manyToOneProp) != DeleteAction.CASCADE) {
                 throw new ExecutionException(
                         "Cannot delete entities whose type are \"" +
                                 manyToOneProp.getTargetType().getJavaClass().getName() +

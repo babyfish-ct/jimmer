@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.mutation;
 
+import org.babyfish.jimmer.sql.DeleteAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
@@ -252,6 +253,12 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                                 .setEdition(3).setPrice(new BigDecimal(42));
                                     });
                         })
+                ).configure(it ->
+                        it.setDeleteAction(
+                                BookTable.class,
+                                BookTable::store,
+                                DeleteAction.SET_NULL
+                        )
                 ),
                 ctx -> {
                     ctx.statement(it -> {

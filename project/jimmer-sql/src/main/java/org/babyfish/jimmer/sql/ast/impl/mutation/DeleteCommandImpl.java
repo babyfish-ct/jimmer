@@ -3,11 +3,12 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ImmutableProps;
-import org.babyfish.jimmer.sql.CascadeAction;
+import org.babyfish.jimmer.sql.DeleteAction;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.runtime.Converters;
 
 import java.sql.Connection;
@@ -89,13 +90,22 @@ class DeleteCommandImpl implements DeleteCommand {
 
         private SqlClient sqlClient;
 
-        private Map<ImmutableProp, CascadeAction> deleteActionMap;
+        private Map<ImmutableProp, DeleteAction> deleteActionMap;
 
         private boolean frozen;
 
         Data(SqlClient sqlClient) {
             this.sqlClient = sqlClient;
             this.deleteActionMap = new LinkedHashMap<>();
+        }
+
+        Data(SqlClient sqlClient, Map<ImmutableProp, DeleteAction> deleteActionMap) {
+            this.sqlClient = sqlClient;
+            if (deleteActionMap != null) {
+                this.deleteActionMap = new LinkedHashMap<>(deleteActionMap);
+            } else {
+                this.deleteActionMap = new LinkedHashMap<>();
+            }
         }
 
         Data(Data base) {
@@ -107,8 +117,8 @@ class DeleteCommandImpl implements DeleteCommand {
             return sqlClient;
         }
 
-        public CascadeAction getDeleteAction(ImmutableProp prop) {
-            CascadeAction action = deleteActionMap.get(prop);
+        public DeleteAction getDeleteAction(ImmutableProp prop) {
+            DeleteAction action = deleteActionMap.get(prop);
             return action != null ? action : prop.getDeleteAction();
         }
 
@@ -121,28 +131,28 @@ class DeleteCommandImpl implements DeleteCommand {
         }
 
         @Override
-        public Cfg setCascadeAction(ImmutableProp prop, CascadeAction cascadeAction) {
+        public Cfg setDeleteAction(ImmutableProp prop, DeleteAction deleteAction) {
             if (frozen) {
                 throw new IllegalStateException("The configuration is frozen");
             }
 
-            if (!prop.isReference()) {
-                throw new IllegalArgumentException("'" + prop + "' is not reference property");
+            if (!prop.isReference() || !(prop.getStorage() instanceof Column)) {
+                throw new IllegalArgumentException("'" + prop + "' must be an reference property bases on foreign key");
             }
-            if (cascadeAction == CascadeAction.SET_NULL && !prop.isNullable()) {
+            if (deleteAction == DeleteAction.SET_NULL && !prop.isNullable()) {
                 throw new IllegalArgumentException(
                         "'" + prop + "' is not nullable so that it does not support 'on delete set null'"
                 );
             }
-            deleteActionMap.put(prop, cascadeAction);
+            deleteActionMap.put(prop, deleteAction);
             return this;
         }
 
         @Override
-        public Cfg setCascadeAction(
+        public Cfg setDeleteAction(
                 Class<?> entityType,
                 String prop,
-                CascadeAction cascadeAction
+                DeleteAction deleteAction
         ) {
             ImmutableType immutableType = ImmutableType.get(entityType);
             ImmutableProp immutableProp = immutableType.getProps().get(prop);
@@ -151,17 +161,17 @@ class DeleteCommandImpl implements DeleteCommand {
                         "'" + prop + "' is not reference property of \"" + entityType.getName() + "\""
                 );
             }
-            return setCascadeAction(immutableProp, cascadeAction);
+            return setDeleteAction(immutableProp, deleteAction);
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public <T extends Table<?>> Cfg setCascadeAction(
+        public <T extends Table<?>> Cfg setDeleteAction(
                 Class<T> tableType,
                 Function<T, Table<?>> block,
-                CascadeAction cascadeAction
+                DeleteAction deleteAction
         ) {
-            return setCascadeAction(ImmutableProps.join(tableType, block), cascadeAction);
+            return setDeleteAction(ImmutableProps.join(tableType, block), deleteAction);
         }
     }
 }

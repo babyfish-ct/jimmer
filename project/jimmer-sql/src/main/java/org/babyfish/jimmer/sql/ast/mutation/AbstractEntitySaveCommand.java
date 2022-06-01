@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.mutation;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.DeleteAction;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
@@ -48,15 +49,23 @@ public interface AbstractEntitySaveCommand<C extends AbstractEntitySaveCommand<C
         );
 
         @OldChain
-        Cfg setAutoDetaching(ImmutableProp prop);
+        Cfg setDeleteAction(
+                ImmutableProp prop,
+                DeleteAction deleteAction
+        );
 
         @OldChain
-        Cfg setAutoDetaching(Class<?> entityType, String prop);
+        Cfg setDeleteAction(
+                Class<?> entityType,
+                String prop,
+                DeleteAction deleteAction
+        );
 
         @OldChain
-        <T extends TableEx<?>> Cfg setAutoDetaching(
+        <T extends Table<?>> Cfg setDeleteAction(
                 Class<T> tableType,
-                Function<T, Table<?>> block
+                Function<T, Table<?>> block,
+                DeleteAction deleteAction
         );
     }
 

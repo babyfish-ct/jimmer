@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.mutation;
 
+import org.babyfish.jimmer.sql.DeleteAction;
 import org.babyfish.jimmer.sql.OptimisticLockException;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
@@ -365,6 +366,12 @@ public class SaveTest extends AbstractMutationTest {
                             store.addIntoBooks(book -> book.setId(learningGraphQLId2));
                             store.addIntoBooks(book -> book.setId(learningGraphQLId3));
                         })
+                ).configure(it ->
+                        it.setDeleteAction(
+                                BookTable.class,
+                                BookTable::store,
+                                DeleteAction.SET_NULL
+                        )
                 ),
                 ctx -> {
                     ctx.statement(it -> {

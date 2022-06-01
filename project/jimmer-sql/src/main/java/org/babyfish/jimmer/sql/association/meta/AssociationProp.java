@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.association.meta;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutablePropCategory;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.CascadeAction;
+import org.babyfish.jimmer.sql.DeleteAction;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.Storage;
@@ -30,8 +30,8 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
-    public CascadeAction getDeleteAction() {
-        return CascadeAction.NONE;
+    public DeleteAction getDeleteAction() {
+        return DeleteAction.NONE;
     }
 
     @Override

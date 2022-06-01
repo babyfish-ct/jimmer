@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.CascadeAction;
+import org.babyfish.jimmer.sql.DeleteAction;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.SqlClient;
@@ -12,7 +12,6 @@ import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 
-import javax.persistence.OneToMany;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -36,7 +35,7 @@ abstract class AbstractEntitySaveCommandImpl<C extends AbstractEntitySaveCommand
         if (newData.mode == SaveMode.UPSERT &&
                 newData.keyPropMultiMap.isEmpty() &&
                 !newData.autoAttachingAll &&
-                newData.autoDetachingSet.isEmpty() &&
+                newData.deleteActionMap.isEmpty() &&
                 newData.autoAttachingSet.isEmpty()) {
             return (C)this;
         }
@@ -59,14 +58,14 @@ abstract class AbstractEntitySaveCommandImpl<C extends AbstractEntitySaveCommand
 
         private Set<ImmutableProp> autoAttachingSet;
 
-        private Set<ImmutableProp> autoDetachingSet;
+        private Map<ImmutableProp, DeleteAction> deleteActionMap;
 
         Data(SqlClient sqlClient) {
             this.sqlClient = sqlClient;
             this.mode = SaveMode.UPSERT;
             this.keyPropMultiMap = new LinkedHashMap<>();
             this.autoAttachingSet = new LinkedHashSet<>();
-            this.autoDetachingSet = new LinkedHashSet<>();
+            this.deleteActionMap = new LinkedHashMap<>();
         }
 
         Data(Data base) {
@@ -75,7 +74,7 @@ abstract class AbstractEntitySaveCommandImpl<C extends AbstractEntitySaveCommand
             this.keyPropMultiMap = new LinkedHashMap<>(base.keyPropMultiMap);
             this.autoAttachingAll = base.autoAttachingAll;
             this.autoAttachingSet = new LinkedHashSet<>(base.autoAttachingSet);
-            this.autoDetachingSet = new LinkedHashSet<>(base.autoDetachingSet);
+            this.deleteActionMap = new LinkedHashMap<>(base.deleteActionMap);
         }
 
         public SqlClient getSqlClient() {
@@ -98,10 +97,13 @@ abstract class AbstractEntitySaveCommandImpl<C extends AbstractEntitySaveCommand
             return autoAttachingAll || autoAttachingSet.contains(prop);
         }
 
-        public boolean isAutoDetachingProp(ImmutableProp prop) {
-            return autoDetachingSet.contains(prop) || (
-                    prop.getMappedBy() != null && prop.getMappedBy().getDeleteAction() == CascadeAction.DELETE
-            );
+        public DeleteAction getDeleteAction(ImmutableProp prop) {
+            DeleteAction action = deleteActionMap.get(prop);
+            return action != null ? action : prop.getDeleteAction();
+        }
+
+        Map<ImmutableProp, DeleteAction> deleteActionMap() {
+            return deleteActionMap;
         }
 
         @Override
@@ -200,34 +202,49 @@ abstract class AbstractEntitySaveCommandImpl<C extends AbstractEntitySaveCommand
         }
 
         @Override
-        public Cfg setAutoDetaching(ImmutableProp prop) {
+        public Cfg setDeleteAction(ImmutableProp prop, DeleteAction deleteAction) {
             validate();
-            if (!prop.isEntityList() || prop.getAssociationAnnotation().annotationType() != OneToMany.class) {
+
+            if (!prop.isReference() || !(prop.getStorage() instanceof Column)) {
+                throw new IllegalArgumentException("'" + prop + "' must be an reference property bases on foreign key");
+            }
+            if (deleteAction == DeleteAction.SET_NULL && !prop.isNullable()) {
                 throw new IllegalArgumentException(
-                        "Cannot set auto detaching for '" + prop + "' because it is not one-to-many property"
+                        "'" + prop + "' is not nullable so that it does not support 'on delete set null'"
                 );
             }
-            autoDetachingSet.add(prop);
+            deleteActionMap.put(prop, deleteAction);
             return this;
         }
 
         @Override
-        public Cfg setAutoDetaching(Class<?> entityType, String prop) {
+        public Cfg setDeleteAction(
+                Class<?> entityType,
+                String prop,
+                DeleteAction deleteAction
+        ) {
             ImmutableType immutableType = ImmutableType.get(entityType);
             ImmutableProp immutableProp = immutableType.getProp(prop);
-            return setAutoDetaching(immutableProp);
+            return setDeleteAction(immutableProp, deleteAction);
         }
 
         @Override
-        public <T extends TableEx<?>> Cfg setAutoDetaching(Class<T> tableType, Function<T, Table<?>> block) {
-            return setAutoDetaching(ImmutableProps.join(tableType, block));
+        public <T extends Table<?>> Cfg setDeleteAction(
+                Class<T> tableType,
+                Function<T, Table<?>> block,
+                DeleteAction deleteAction
+        ) {
+            return setDeleteAction(
+                    ImmutableProps.join(tableType, block),
+                    deleteAction
+            );
         }
 
         public Data freeze() {
             if (!frozen) {
                 keyPropMultiMap = Collections.unmodifiableMap(keyPropMultiMap);
                 autoAttachingSet = Collections.unmodifiableSet(autoAttachingSet);
-                autoDetachingSet = Collections.unmodifiableSet(autoDetachingSet);
+                deleteActionMap = Collections.unmodifiableMap(deleteActionMap);
                 frozen = true;
             }
             return this;

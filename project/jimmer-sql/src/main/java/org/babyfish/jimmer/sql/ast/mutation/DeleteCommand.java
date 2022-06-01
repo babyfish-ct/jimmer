@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
+import org.babyfish.jimmer.lang.NewChain;
+import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.sql.CascadeAction;
+import org.babyfish.jimmer.sql.DeleteAction;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
@@ -10,25 +12,29 @@ import java.util.function.Function;
 
 public interface DeleteCommand extends Executable<DeleteResult> {
 
+    @NewChain
     DeleteCommand configure(Consumer<Cfg> block);
 
     interface Cfg {
 
-        Cfg setCascadeAction(
+        @OldChain
+        Cfg setDeleteAction(
                 ImmutableProp prop,
-                CascadeAction cascadeAction
+                DeleteAction deleteAction
         );
 
-        Cfg setCascadeAction(
+        @OldChain
+        Cfg setDeleteAction(
                 Class<?> entityType,
                 String prop,
-                CascadeAction cascadeAction
+                DeleteAction deleteAction
         );
 
-        <T extends Table<?>> Cfg setCascadeAction(
+        @OldChain
+        <T extends Table<?>> Cfg setDeleteAction(
                 Class<T> tableType,
                 Function<T, Table<?>> block,
-                CascadeAction cascadeAction
+                DeleteAction deleteAction
         );
     }
 }
