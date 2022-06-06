@@ -35,7 +35,7 @@ public class App {
         Book book2 = BookDraft.$.produce(book, b -> {
             b.setName(b.name() + "!");
             b.store().setName(b.store().name() + "!");
-            for (AuthorDraft author : b.authors(true)) {
+            for (AuthorDraft author : b.authors(false)) {
                 author.setName(author.name() + "!");
             }
         });
@@ -70,14 +70,15 @@ public class App {
                 treeNode, // existing object
                 root -> {
                     root
-                            .childNodes(true).get(0) // Food
-                            .childNodes(true).get(0) // Drink
-                            .childNodes(true).get(0) // Coco Cola
+                            .childNodes(false).get(0) // Food
+                            .childNodes(false).get(0) // Drink
+                            .childNodes(false).get(0) // Coco Cola
                             .setName("Coco Cola plus");
                 }
         );
 
         System.out.println("treeNode:" + treeNode);
         System.out.println("newTreeNode:" + newTreeNode);
+
     }
 }
