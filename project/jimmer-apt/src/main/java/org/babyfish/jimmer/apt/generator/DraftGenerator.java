@@ -96,6 +96,9 @@ public class DraftGenerator {
             ImmutableProp prop,
             boolean autoCreate
     ) {
+        if (!autoCreate && (!prop.isAssociation() || prop.isList())) {
+            return;
+        }
         if (autoCreate && !prop.isAssociation() && !prop.isList()) {
             return;
         }
@@ -131,6 +134,7 @@ public class DraftGenerator {
                                 prop.getAdderByName() :
                                 prop.getSetterName()
                 )
+                .addAnnotation(OldChain.class)
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                 .returns(type.getDraftClassName());
         if (withBase) {
