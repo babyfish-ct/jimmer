@@ -52,7 +52,7 @@ public class CoalesceBuilder<T> {
         return new Expr<>(clonedList);
     }
 
-    public static class Str extends CoalesceBuilder<String> {
+    public static class Str extends Cmp<String> {
 
         Str(Expression<String> expression) {
             super(expression);

@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.ast;
 
 import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
 
-public interface StringExpression extends Expression<String> {
+public interface StringExpression extends ComparableExpression<String> {
 
     default Predicate like(String pattern) {
         return like(pattern, LikeMode.ANYWHERE);
