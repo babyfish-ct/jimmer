@@ -2,7 +2,7 @@
 
 ## Documentation
 
-The project provides complete documentation, please view [jimmer documentation]([http://localhost:3000/jimmer-doc/](https://babyfish-ct.github.io/jimmer-doc/) to know everything.
+The project provides complete documentation, please view [jimmer documentation](https://babyfish-ct.github.io/jimmer-doc/) to know everything.
 
 ## Examples:
 
