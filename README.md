@@ -2,7 +2,7 @@
 
 ## Documentation
 
-The project provides complete documentation, please click [here](http://localhost:3000/jimmer-doc/)
+The project provides complete documentation, please view [jimmer documentation](http://localhost:3000/jimmer-doc/) to know everything.
 
 ## Examples:
 
