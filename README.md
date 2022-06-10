@@ -1,10 +1,10 @@
 # A powerful java framework for immutable data and ORM based on immutable data
 
-## Documentation
+## 1. Documentation
 
 The project provides complete documentation, please view [jimmer documentation](https://babyfish-ct.github.io/jimmer-doc/) to know everything.
 
-## Examples:
+## 2. Examples:
 
 This framework provides three examples
 
