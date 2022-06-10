@@ -1,3 +1,5 @@
+<img src="logo.png" align="right"/>
+
 # A powerful java framework for immutable data and ORM based on immutable data
 
 ## 1. Documentation
