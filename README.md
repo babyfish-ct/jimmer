@@ -5,7 +5,8 @@
 
 ## 1. Documentation
 
-The project provides complete documentation, please view [jimmer documentation](https://babyfish-ct.github.io/jimmer-doc/) to know everything.
+The project provides complete documentation, 
+please view [**jimmer documentation**](https://babyfish-ct.github.io/jimmer-doc/) to know everything.
 
 ## 2. Examples:
 
