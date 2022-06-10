@@ -1,5 +1,5 @@
 
-![logo](logo.png)
+[![logo](logo.png)](https://babyfish-ct.github.io/jimmer-doc/)
 
 # A powerful java framework for immutable data and ORM based on immutable data
 
