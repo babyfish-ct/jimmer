@@ -196,7 +196,7 @@ class ImmutableTypeImpl implements ImmutableType {
                 SequenceGenerator seqGenerator = Arrays.stream(idProp.getAnnotations(SequenceGenerator.class))
                         .filter(it -> it.name().equals(generator))
                         .findFirst()
-                        .orElseGet(null);
+                        .orElse(null);
                 if (seqGenerator == null) {
                     seqGenerator = Arrays.stream(javaClass.getAnnotationsByType(SequenceGenerator.class))
                             .filter(it -> it.name().equals(generator))
