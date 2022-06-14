@@ -141,7 +141,7 @@ class ChildTableOperator {
                 separator = ", ";
                 builder.variable(retainedChildId);
             }
+            builder.sql(")");
         }
-        builder.sql(")");
     }
 }
