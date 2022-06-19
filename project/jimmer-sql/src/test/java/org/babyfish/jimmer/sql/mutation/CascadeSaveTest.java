@@ -1,11 +1,13 @@
 package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.sql.DeleteAction;
+import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.runtime.DbNull;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -726,6 +728,96 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.rowCount(AffectedTable.of(Book.class), 2);
                     ctx.rowCount(AffectedTable.of(Author.class), 1);
                     ctx.rowCount(AffectedTable.of(AuthorTableEx.class, AuthorTableEx::books), 3);
+                }
+        );
+    }
+
+    @Test
+    public void saveTree() {
+        setAutoIds(TreeNode.class, 100L, 101L, 102L);
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        TreeNodeDraft.$.produce(treeNode ->
+                                treeNode
+                                        .setName("Parent")
+                                        .setParent((TreeNode) null)
+                                        .addIntoChildNodes(child ->
+                                                child.setName("Child-1")
+                                        )
+                                        .addIntoChildNodes(child ->
+                                                child.setName("Child-2")
+                                        )
+                        )
+                ).configure(
+                        AbstractEntitySaveCommand.Cfg::setAutoAttachingAll
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                        "from TREE_NODE as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null"
+                        );
+                        it.variables("Parent");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
+                        it.variables(100L, "Parent", new DbNull(long.class));
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                        "from TREE_NODE as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ?"
+                        );
+                        it.variables("Child-1", 100L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
+                        it.variables(101L, "Child-1", 100L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                        "from TREE_NODE as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ?"
+                        );
+                        it.variables("Child-2", 100L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
+                        it.variables(102L, "Child-2", 100L);
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{" +
+                                        "--->\"name\":\"Parent\"," +
+                                        "--->\"parent\":null," +
+                                        "--->\"childNodes\":[" +
+                                        "--->--->{\"name\":\"Child-1\"}," +
+                                        "--->--->{\"name\":\"Child-2\"}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":100,\"name\":" +
+                                        "--->\"Parent\",\"" +
+                                        "--->parent\":null," +
+                                        "--->\"childNodes\":[" +
+                                        "--->--->{" +
+                                        "--->--->--->\"id\":101," +
+                                        "--->--->--->\"name\":\"Child-1\"," +
+                                        "--->--->--->\"parent\":{\"id\":100}" +
+                                        "--->--->},{" +
+                                        "--->--->--->\"id\":102," +
+                                        "--->--->--->\"name\":\"Child-2\"," +
+                                        "--->--->--->\"parent\":{\"id\":100}" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                    });
                 }
         );
     }

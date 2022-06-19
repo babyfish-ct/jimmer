@@ -1,5 +1,8 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
@@ -203,6 +206,15 @@ public class SqlBuilder {
         builder.append('?');
         variables.add(finalValue);
         return this;
+    }
+
+    public SqlBuilder nullVariable(ImmutableProp prop) {
+        validate();
+        ImmutableType targetType = prop.getTargetType();
+        if (targetType == null) {
+            return nullVariable(prop.getElementClass());
+        }
+        return nullVariable(targetType.getIdProp().getElementClass());
     }
 
     @SuppressWarnings("unchecked")

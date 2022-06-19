@@ -67,15 +67,6 @@ class Key {
                 return null;
             }
             Object value = spi.__get(keyProp.getName());
-            if (value == null) {
-                throw new ExecutionException(
-                        "The key property \"" +
-                                keyProp.getName() +
-                                "\" of \"" +
-                                type +
-                                "\" cannot be null"
-                );
-            }
             arr[index++] = value;
         }
         return new Key(arr);

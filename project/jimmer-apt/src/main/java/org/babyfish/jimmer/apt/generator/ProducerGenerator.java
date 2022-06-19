@@ -127,11 +127,18 @@ public class ProducerGenerator {
                         ".version($S)\n",
                         prop.getName()
                 );
-            } else if (prop.getAnnotation(Key.class) != null) {
+            } else if (prop.getAnnotation(Key.class) != null && !prop.isAssociation()) {
                 builder.add(
                         ".key($S, $T.class)\n",
                         prop.getName(),
                         prop.getElementTypeName()
+                );
+            } else if (prop.getAnnotation(Key.class) != null && prop.isAssociation()) {
+                builder.add(
+                        ".keyReference($S, $T.class, $L)\n",
+                        prop.getName(),
+                        prop.getElementTypeName(),
+                        prop.isNullable() ? "true" : "false"
                 );
             } else if (prop.getAssociationAnnotation() != null) {
                 builder.add(

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.model;
 
 import org.babyfish.jimmer.sql.DeleteAction;
+import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.OnDelete;
 
 import javax.persistence.*;
@@ -9,9 +10,11 @@ import java.util.List;
 @Entity
 public interface TreeNode {
 
+    @Key
     String name();
 
     @ManyToOne
+    @Key
     @OnDelete(DeleteAction.CASCADE)
     TreeNode parent();
 

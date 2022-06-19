@@ -301,7 +301,7 @@ public class ImmutableProp {
         Version version = getAnnotation(Version.class);
         Key key = getAnnotation(Key.class);
         Annotation[] scalarAnnotations = Arrays.stream(
-                new Annotation[] { id, version, key }
+                new Annotation[] { id, version }
         ).filter(Objects::nonNull).toArray(Annotation[]::new);
 
         OneToOne oneToOne = getAnnotation(OneToOne.class);
@@ -531,6 +531,39 @@ public class ImmutableProp {
                                     Version.class.getName() +
                                     " but its type is not int"
                     );
+                }
+            }
+            if (key != null) {
+                if (scalarAnnotations.length != 0) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it marked by both \"@" +
+                                    Key.class.getName() +
+                                    "\" and \"@" +
+                                    scalarAnnotations[0].annotationType().getName() +
+                                    "\""
+                    );
+                }
+                if (associationAnnotation != null) {
+                    if (associationAnnotation.annotationType() != ManyToOne.class) {
+                        throw new MetaException(
+                                "Illegal property \"" +
+                                        this +
+                                        "\", association property marked by both \"@" +
+                                        Key.class.getName() +
+                                        "\" must be many-to-one association"
+                        );
+                    }
+                    if (joinTable != null) {
+                        throw new MetaException(
+                                "Illegal property \"" +
+                                        this +
+                                        "\", many-to-one property marked by both \"@" +
+                                        Key.class.getName() +
+                                        "\" must base on foreign key"
+                        );
+                    }
                 }
             }
         }
