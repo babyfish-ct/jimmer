@@ -323,7 +323,7 @@ public abstract class AbstractMutationTest extends AbstractTest {
 
         public void original(String json) {
             Assertions.assertEquals(
-                    json,
+                    json.replace("--->", ""),
                     result.getOriginalEntity().toString(),
                     "originalEntities[" + index + "]"
             );

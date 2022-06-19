@@ -28,7 +28,7 @@ public class TreeMutationShell {
             @ShellOption(defaultValue = "2") int breadth
     ) throws JsonProcessingException {
         TreeNode rootNode = TreeNodeDraft.$.produce(rootDraft -> {
-            rootDraft.setName(rootName);
+            rootDraft.setName(rootName).setParent((TreeNode) null);
             createChildNodes(
                     rootDraft,
                     0,

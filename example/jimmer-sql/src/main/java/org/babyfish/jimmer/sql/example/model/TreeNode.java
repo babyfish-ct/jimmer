@@ -21,6 +21,7 @@ public interface TreeNode {
     @Key
     String name();
 
+    @Key
     @ManyToOne
     @OnDelete(DeleteAction.CASCADE)
     TreeNode parent();

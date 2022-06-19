@@ -64,6 +64,12 @@ public interface ImmutableType {
 
         Builder key(String name, Class<?> elementType);
 
+        Builder keyReference(
+                String name,
+                Class<?> elementType,
+                boolean nullable
+        );
+
         Builder version(String name);
 
         Builder add(

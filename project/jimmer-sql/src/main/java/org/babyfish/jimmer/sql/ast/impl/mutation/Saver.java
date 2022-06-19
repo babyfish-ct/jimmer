@@ -111,7 +111,7 @@ class Saver {
                         List<Object> updatingTargetIds = new ArrayList<>();
                         while (itr.hasNext()) {
                             DraftSpi associatedObject = itr.next();
-                            if (isNonIdPropLoaded(associatedObject)) {
+                            if (isNonIdPropLoaded(associatedObject, false)) {
                                 associatedObject.__set(
                                         mappedBy.getName(),
                                         Internal.produce(currentType, null, backRef -> {
@@ -131,7 +131,7 @@ class Saver {
                     for (DraftSpi associatedObject : associatedObjects) {
                         associatedObjectIds.add(saveAssociatedObjectAndGetId(prop, associatedObject));
                     }
-                } else {
+                } else if (associatedValue != null) {
                     DraftSpi associatedObject = (DraftSpi) associatedValue;
                     associatedObjectIds.add(saveAssociatedObjectAndGetId(prop, associatedObject));
                 }
@@ -206,7 +206,7 @@ class Saver {
     }
 
     private Object saveAssociatedObjectAndGetId(ImmutableProp prop, DraftSpi associatedDraftSpi) {
-        if (isNonIdPropLoaded(associatedDraftSpi)) {
+        if (isNonIdPropLoaded(associatedDraftSpi, true)) {
             AbstractEntitySaveCommandImpl.Data associatedData =
                     new AbstractEntitySaveCommandImpl.Data(data);
             associatedData.setMode(
@@ -352,7 +352,7 @@ class Saver {
             if (value != null) {
                 builder.variable(value);
             } else {
-                builder.nullVariable(props.get(i).getElementClass());
+                builder.nullVariable(props.get(i));
             }
         }
         builder.sql(")");
@@ -446,7 +446,7 @@ class Saver {
             if (updatedValue != null) {
                 builder.variable(updatedValue);
             } else {
-                builder.nullVariable(updatedProps.get(i).getElementClass());
+                builder.nullVariable(updatedProps.get(i));
             }
         }
         if (version != null) {
@@ -507,13 +507,28 @@ class Saver {
 
         Collection<ImmutableProp> actualKeyProps = actualKeyProps(example);
 
-        List<ImmutableSpi> rows = (List<ImmutableSpi>)Queries.createQuery(data.getSqlClient(), type, (q, table) -> {
+        List<ImmutableSpi> rows = Queries.createQuery(data.getSqlClient(), type, (q, table) -> {
             for (ImmutableProp keyProp : actualKeyProps) {
-                q.where(
-                        table.<Expression<Object>>get(keyProp.getName()).eq(
-                                example.__get(keyProp.getName())
-                        )
-                );
+                if (keyProp.isReference()) {
+                    String targetIdPropName = keyProp.getTargetType().getIdProp().getName();
+                    Expression<Object> targetIdExpression =
+                            table
+                                    .<Table<?>>join(keyProp.getName())
+                                    .<Expression<Object>>get(targetIdPropName);
+                    ImmutableSpi target = (ImmutableSpi) example.__get(keyProp.getName());
+                    if (target != null) {
+                        q.where(targetIdExpression.eq(target.__get(targetIdPropName)));
+                    } else {
+                        q.where(targetIdExpression.isNull());
+                    }
+                } else {
+                    Object value = example.__get(keyProp.getName());
+                    if (value != null) {
+                        q.where(table.<Expression<Object>>get(keyProp.getName()).eq(value));
+                    } else {
+                        q.where(table.<Expression<Object>>get(keyProp.getName()).isNull());
+                    }
+                }
             }
             return q.select(
                     ((Table<ImmutableSpi>)table).fetch(
@@ -570,7 +585,7 @@ class Saver {
         }
     }
 
-    private boolean isNonIdPropLoaded(ImmutableSpi spi) {
+    private boolean isNonIdPropLoaded(ImmutableSpi spi, boolean validate) {
         boolean idPropLoaded = false;
         boolean nonIdPropLoaded = false;
         for (ImmutableProp prop : spi.__type().getProps().values()) {
@@ -585,7 +600,7 @@ class Saver {
         if (nonIdPropLoaded && !idPropLoaded) {
             Set<ImmutableProp> keyProps = data.getKeyProps(spi.__type());
             for (ImmutableProp keyProp : keyProps) {
-                if (!spi.__isLoaded(keyProp.getName())) {
+                if (validate && !spi.__isLoaded(keyProp.getName())) {
                     throw new ExecutionException(
                             "Cannot save illegal entity object " +
                                     spi +
@@ -599,7 +614,7 @@ class Saver {
                     );
                 }
             }
-        } else if (!idPropLoaded) {
+        } else if (validate && !idPropLoaded) {
             throw new ExecutionException(
                     "Cannot save illegal entity object " +
                             spi +

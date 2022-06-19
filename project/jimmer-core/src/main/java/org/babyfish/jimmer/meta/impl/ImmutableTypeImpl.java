@@ -264,6 +264,7 @@ class ImmutableTypeImpl implements ImmutableType {
             this.type = new ImmutableTypeImpl(javaClass, superType, draftFactory);
         }
 
+        @Override
         public Builder id(String name, Class<?> elementType) {
             if (!type.javaClass.isAnnotationPresent(Entity.class)) {
                 throw new IllegalStateException("Cannot set id for type that is not entity");
@@ -275,6 +276,7 @@ class ImmutableTypeImpl implements ImmutableType {
             return add(name, ImmutablePropCategory.SCALAR, elementType, false);
         }
 
+        @Override
         public Builder key(String name, Class<?> elementType) {
             if (!type.javaClass.isAnnotationPresent(Entity.class)) {
                 throw new IllegalStateException("Cannot add key for type that is not entity");
@@ -283,6 +285,17 @@ class ImmutableTypeImpl implements ImmutableType {
             return add(name, ImmutablePropCategory.SCALAR, elementType, false);
         }
 
+        @Override
+        public Builder keyReference(
+                String name,
+                Class<?> elementType,
+                boolean nullable
+        ) {
+            keyPropNames.add(name);
+            return add(name, ImmutablePropCategory.REFERENCE, elementType, nullable, ManyToOne.class);
+        }
+
+        @Override
         public Builder version(String name) {
             if (!type.javaClass.isAnnotationPresent(Entity.class)) {
                 throw new IllegalStateException("Cannot set version for type that is not entity");
@@ -294,6 +307,7 @@ class ImmutableTypeImpl implements ImmutableType {
             return add(name, ImmutablePropCategory.SCALAR, int.class, false);
         }
 
+        @Override
         public Builder add(
                 String name,
                 ImmutablePropCategory category,
@@ -309,6 +323,7 @@ class ImmutableTypeImpl implements ImmutableType {
             );
         }
 
+        @Override
         public Builder add(
                 String name,
                 ImmutablePropCategory category,
@@ -340,6 +355,7 @@ class ImmutableTypeImpl implements ImmutableType {
             return this;
         }
 
+        @Override
         public ImmutableTypeImpl build() {
             validate();
             ImmutableTypeImpl type = this.type;
