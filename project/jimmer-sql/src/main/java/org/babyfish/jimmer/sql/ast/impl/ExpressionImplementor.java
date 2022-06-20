@@ -41,6 +41,9 @@ public interface ExpressionImplementor<T> extends Expression<T> {
 
     @Override
     default Predicate eq(T other) {
+        if (other == null) {
+            return isNull();
+        }
         return eq(Literals.any(other));
     }
 
@@ -56,6 +59,9 @@ public interface ExpressionImplementor<T> extends Expression<T> {
 
     @Override
     default Predicate ne(T other) {
+        if (other == null) {
+            return isNotNull();
+        }
         return ne(Literals.any(other));
     }
 
