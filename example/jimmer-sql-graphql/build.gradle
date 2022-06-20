@@ -5,8 +5,12 @@ plugins {
 }
 
 group = 'org.babyfish.jimmer.sql.example'
-version = '0.0.27'
-sourceCompatibility = '1.8'
+version = '0.0.29'
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_1_8
+	targetCompatibility = JavaVersion.VERSION_1_8
+}
 
 repositories {
 	mavenCentral()
@@ -14,8 +18,8 @@ repositories {
 
 dependencies {
 
-	implementation 'org.babyfish.jimmer:jimmer-sql:0.0.27'
-	annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.27'
+	implementation 'org.babyfish.jimmer:jimmer-sql:0.0.29'
+	annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.29'
 
 	implementation 'org.springframework.boot:spring-boot-starter-graphql'
 	implementation 'org.springframework.boot:spring-boot-starter-web'

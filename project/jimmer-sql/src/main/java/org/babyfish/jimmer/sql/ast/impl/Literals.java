@@ -39,6 +39,9 @@ class Literals {
         private T value;
 
         public Any(T value) {
+            if (value == null) {
+                throw new IllegalArgumentException("The value of literal expression cannot be null");
+            }
             this.value = value;
         }
 
