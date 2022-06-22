@@ -103,13 +103,7 @@ public class Internal {
             try {
                 ((DraftConsumer<Object>) block).accept(draft);
             } catch (Throwable ex) {
-                if (ex instanceof RuntimeException) {
-                    throw (RuntimeException)ex;
-                }
-                if (ex instanceof Error) {
-                    throw (Error)ex;
-                }
-                throw new DraftConsumerUncheckedException(ex);
+                DraftConsumerUncheckedException.rethrow(ex);
             }
         }
     }
