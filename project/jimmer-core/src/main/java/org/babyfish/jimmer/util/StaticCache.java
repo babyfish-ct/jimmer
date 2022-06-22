@@ -8,6 +8,12 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 
+/**
+ * Internal until class, it should not be used by programmer directly.
+ *
+ * @param <K>
+ * @param <V>
+ */
 public class StaticCache<K, V> {
 
     private Function<K, V> creator;

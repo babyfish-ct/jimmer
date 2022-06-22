@@ -9,12 +9,52 @@ import java.util.function.Consumer;
 
 public interface Expression<T> extends Selection<T> {
 
+    /**
+     * Check if two expressions are equal.
+     *
+     * <ul>
+     *     <li>If {@code this} is null literal, returns {@code other.isNull()}</li>
+     *     <li>{@code other} is null literal, returns {@code this.isNull()}</li>
+     * </ul>
+     *
+     * @param other Right operand of expression
+     * @return A predicate
+     */
     Predicate eq(Expression<T> other);
 
+    /**
+     * Check if two expressions are equal.
+     *
+     * <ul>
+     *     <li>If {@code other} is null, returns {@code this.isNull()}</li>
+     * </ul>
+     * @param other Right operand of expression
+     * @return A predicate
+     */
     Predicate eq(T other);
 
+    /**
+     * Check if two expressions are not equal.
+     *
+     * <ul>
+     *     <li>If {@code this} is null literal, returns {@code other.isNotNull()}</li>
+     *     <li>{@code other} is null literal, returns {@code this.isNotNull()}</li>
+     * </ul>
+     *
+     * @param other Right operand of expression
+     * @return A predicate
+     */
     Predicate ne(Expression<T> other);
 
+    /**
+     * Check if two expressions are not equal.
+     *
+     * <ul>
+     *     <li>If {@code other} is null, returns {@code this.isNotNull()}</li>
+     * </ul>
+     * @param other Right operand of expression
+     * @return A predicate
+     */
     Predicate ne(T other);
 
     Predicate isNull();

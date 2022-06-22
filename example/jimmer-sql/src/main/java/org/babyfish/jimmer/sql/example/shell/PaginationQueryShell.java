@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
 import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
@@ -51,7 +52,8 @@ public class PaginationQueryShell {
                                 book.id().in(
                                         q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
                                             sq.where(
-                                                    author.firstName().ilike(authorName).or(
+                                                    Predicate.or(
+                                                            author.firstName().ilike(authorName),
                                                             author.lastName().ilike(authorName)
                                                     )
                                             );
