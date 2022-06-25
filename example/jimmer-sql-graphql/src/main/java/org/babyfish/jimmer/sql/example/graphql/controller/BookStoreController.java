@@ -61,7 +61,7 @@ public class BookStoreController {
                 .getListLoader(
                         BookStoreTableEx.class,
                         BookStoreTableEx::books,
-                        (q, book) -> q.orderBy(book.name())
+                        args -> args.orderBy(args.getTable().name())
                 )
                 .batchLoad(bookStores);
     }

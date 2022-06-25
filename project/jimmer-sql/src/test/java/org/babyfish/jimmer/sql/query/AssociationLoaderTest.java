@@ -114,8 +114,8 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                         .getListLoader(
                                 BookStoreTableEx.class,
                                 BookStoreTableEx::books,
-                                (q, t) -> {
-                                    q.orderBy(t.edition(), OrderMode.DESC);
+                                args -> {
+                                    args.orderBy(args.getTable().edition(), OrderMode.DESC);
                                 }
                         )
                         .loadCommand(
@@ -163,8 +163,8 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                         .getListLoader(
                                 BookStoreTableEx.class,
                                 BookStoreTableEx::books,
-                                (q, t) -> {
-                                    q.where(t.edition().eq(3));
+                                args -> {
+                                    args.where(args.getTable().edition().eq(3));
                                 }
                         )
                         .batchLoadCommand(
@@ -260,7 +260,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                         .getListLoader(
                                 BookTableEx.class,
                                 BookTableEx::authors,
-                                (q, t) -> q.orderBy(t.firstName())
+                                args -> args.orderBy(args.getTable().firstName())
                         )
                         .batchLoadCommand(
                                 Arrays.asList(

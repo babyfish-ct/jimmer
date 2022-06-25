@@ -2,8 +2,10 @@ package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
+import org.babyfish.jimmer.sql.cache.Cache;
+import org.babyfish.jimmer.sql.cache.CacheConfig;
+import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
@@ -20,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public interface SqlClient {
@@ -91,7 +94,7 @@ public interface SqlClient {
     ReferenceLoader<SE, TE> getReferenceLoader(
             Class<ST> sourceTableType,
             Function<ST, TT> block,
-            BiConsumer<Sortable, TT> filter
+            Filter<TT> filter
     );
 
     <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
@@ -104,8 +107,18 @@ public interface SqlClient {
     ListLoader<SE, TE> getListLoader(
             Class<ST> sourceTableType,
             Function<ST, TT> block,
-            BiConsumer<Sortable, TT> filter
+            Filter<TT> filter
     );
+
+//    <K, E> Cache<K, E> getCache(Class<E> entityType);
+//
+//    <K, SE, ST extends Table<SE>, TE, TT extends Table<TE>>
+//    Cache<K, TE> getCache(
+//            Class<ST> sourceTableType,
+//            Function<ST, TT> block
+//    );
+//
+//    SqlClient setCaches(Consumer<CacheConfig> block);
 
     class Builder {
 
@@ -176,6 +189,10 @@ public interface SqlClient {
             defaultListBatchSize = size;
             return this;
         }
+
+//        public Builder setCaches(Consumer<CacheConfig> block) {
+//            return this;
+//        }
 
         public SqlClient build() {
             return new SqlClientImpl(

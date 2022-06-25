@@ -5,8 +5,8 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.association.loader.Loaders;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
-import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
+import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.impl.mutation.EntitiesImpl;
@@ -198,7 +198,7 @@ class SqlClientImpl implements SqlClient {
     getReferenceLoader(
             Class<ST> sourceTableType,
             Function<ST, TT> block,
-            BiConsumer<Sortable, TT> filter
+            Filter<TT> filter
     ) {
         return Loaders.createReferenceLoader(
                 this,
@@ -220,7 +220,8 @@ class SqlClientImpl implements SqlClient {
     public <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
     ListLoader<SE, TE> getListLoader(
             Class<ST> sourceTableType,
-            Function<ST, TT> block, BiConsumer<Sortable, TT> filter
+            Function<ST, TT> block,
+            Filter<TT> filter
     ) {
         return Loaders.createListLoader(
                 this,
@@ -228,4 +229,19 @@ class SqlClientImpl implements SqlClient {
                 filter
         );
     }
+
+//    @Override
+//    public <K, E> Cache<K, E> getCache(Class<E> entityType) {
+//        return null;
+//    }
+//
+//    @Override
+//    public <K, SE, ST extends Table<SE>, TE, TT extends Table<TE>> Cache<K, TE> getCache(Class<ST> sourceTableType, Function<ST, TT> block) {
+//        return null;
+//    }
+//
+//    @Override
+//    public SqlClient setCaches(Consumer<CacheConfig> block) {
+//        return null;
+//    }
 }

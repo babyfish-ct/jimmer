@@ -16,7 +16,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-class FilterArgsImpl<E, T extends Table<E>> implements FilterArgs<E, T> {
+public class FilterArgsImpl<T extends Table<?>> implements FilterArgs<T> {
 
     private Sortable sortable;
 
@@ -26,7 +26,7 @@ class FilterArgsImpl<E, T extends Table<E>> implements FilterArgs<E, T> {
 
     private Collection<Object> keys;
 
-    static <E, T extends Table<E>> FilterArgs<E, T> singleLoaderArgs(
+    public static <T extends Table<?>> FilterArgs<T> singleLoaderArgs(
             Sortable sortable,
             T table,
             Object key
@@ -39,7 +39,7 @@ class FilterArgsImpl<E, T extends Table<E>> implements FilterArgs<E, T> {
         );
     }
 
-    static <E, T extends Table<E>> FilterArgs<E, T> batchLoaderArgs(
+    public static <T extends Table<?>> FilterArgs<T> batchLoaderArgs(
             Sortable sortable,
             T table,
             Collection<Object> keys

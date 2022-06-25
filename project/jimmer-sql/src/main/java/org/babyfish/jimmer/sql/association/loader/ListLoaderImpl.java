@@ -5,13 +5,12 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ListLoader;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
-import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.fetcher.Filter;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
 
 class ListLoaderImpl<S, T> implements ListLoader<S, T> {
 
@@ -19,14 +18,15 @@ class ListLoaderImpl<S, T> implements ListLoader<S, T> {
 
     private ImmutableProp prop;
 
-    private BiConsumer<Sortable, Table<?>> filter;
+    private Filter<?> filter;
 
-    public ListLoaderImpl(SqlClient sqlClient, ImmutableProp prop, BiConsumer<Sortable, Table<?>> filter) {
+    public ListLoaderImpl(SqlClient sqlClient, ImmutableProp prop, Filter<?> filter) {
         this.sqlClient = sqlClient;
         this.prop = prop;
         this.filter = filter;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Executable<List<T>> loadCommand(S source, int limit, int offset) {
         if (source instanceof Collection<?>) {
@@ -37,7 +37,7 @@ class ListLoaderImpl<S, T> implements ListLoader<S, T> {
         return new SingleCommand<>(
                 sqlClient,
                 prop,
-                filter,
+                (Filter<Table<ImmutableSpi>>) filter,
                 limit,
                 offset,
                 (ImmutableSpi) source
@@ -50,7 +50,7 @@ class ListLoaderImpl<S, T> implements ListLoader<S, T> {
         return new BatchCommand<>(
                 sqlClient,
                 prop,
-                filter,
+                (Filter<Table<ImmutableSpi>>) filter,
                 (Collection<ImmutableSpi>) sources
         );
     }

@@ -13,7 +13,7 @@ class FieldImpl implements Field {
 
     private final ImmutableProp prop;
 
-    private final Filter<?, ?> filter;
+    private final Filter<?> filter;
 
     private final int batchSize;
 
@@ -29,7 +29,7 @@ class FieldImpl implements Field {
 
     FieldImpl(
             ImmutableProp prop,
-            Filter<?, ?> filter,
+            Filter<?> filter,
             int batchSize,
             int limit,
             int offset,
@@ -52,7 +52,7 @@ class FieldImpl implements Field {
     }
 
     @Override
-    public Filter<?, ?> getFilter() {
+    public Filter<?> getFilter() {
         return filter;
     }
 

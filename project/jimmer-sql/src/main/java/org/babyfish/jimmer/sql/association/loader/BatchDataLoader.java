@@ -6,22 +6,23 @@ import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.association.spi.AbstractBatchDataLoader;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.fetcher.Filter;
+import org.babyfish.jimmer.sql.fetcher.impl.FilterArgsImpl;
 
 import java.sql.Connection;
 import java.util.Collection;
-import java.util.function.BiConsumer;
 
 class BatchDataLoader extends AbstractBatchDataLoader {
 
     private ImmutableProp prop;
 
-    private BiConsumer<Sortable, Table<?>> filter;
+    private Filter<Table<ImmutableSpi>> filter;
 
     public BatchDataLoader(
             SqlClient sqlClient,
             Connection con,
             ImmutableProp prop,
-            BiConsumer<Sortable, Table<?>> filter
+            Filter<Table<ImmutableSpi>> filter
     ) {
         super(sqlClient, con);
         this.prop = prop;
@@ -36,7 +37,7 @@ class BatchDataLoader extends AbstractBatchDataLoader {
     @Override
     protected void applyFilter(Sortable sortable, Table<ImmutableSpi> table, Collection<Object> keys) {
         if (filter != null) {
-            filter.accept(sortable, table);
+            filter.apply(FilterArgsImpl.batchLoaderArgs(sortable, table, keys));
         }
     }
 }

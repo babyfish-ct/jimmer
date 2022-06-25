@@ -16,7 +16,6 @@ import org.babyfish.jimmer.sql.meta.Column;
 
 import java.sql.Connection;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public abstract class AbstractSingleDataLoader {
@@ -25,7 +24,10 @@ public abstract class AbstractSingleDataLoader {
 
     private final Connection con;
 
-    public AbstractSingleDataLoader(SqlClient sqlClient, Connection con) {
+    public AbstractSingleDataLoader(
+            SqlClient sqlClient,
+            Connection con
+    ) {
         this.sqlClient = sqlClient;
         this.con = con;
     }

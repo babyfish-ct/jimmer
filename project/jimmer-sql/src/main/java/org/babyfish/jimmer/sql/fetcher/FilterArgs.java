@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 
 import java.util.Collection;
 
-public interface FilterArgs<E, T extends Table<E>> extends Sortable {
+public interface FilterArgs<T extends Table<?>> extends Sortable {
 
     T getTable();
 

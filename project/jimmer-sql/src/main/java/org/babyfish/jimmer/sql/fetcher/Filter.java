@@ -7,24 +7,40 @@ import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.query.NullOrderMode;
 import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.cache.CacheFilter;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
-public interface Filter<E, T extends Table<E>> {
+public interface Filter<T extends Table<?>> extends CacheFilter {
 
-    void apply(FilterArgs<E, T> args);
+    void apply(FilterArgs<T> args);
 
-    static <E, T extends Table<E>> Filter<E, T> sortingFilter(
+    static <T extends Table<?>> Filter<T> parameterized(
+            Map<String, Object> cacheArgs,
+            Consumer<FilterArgs<T>> block
+    ) {
+        return new Filter<T>() {
+            @Override
+            public void apply(FilterArgs<T> args) {
+                block.accept(args);
+            }
+            @Override
+            public Map<String, Object> toCacheArgs() {
+                return cacheArgs;
+            }
+        };
+    }
+
+    static <E, T extends Table<E>> Filter<T> sortingFilter(
             Class<T> tableType,
             Function<T, PropExpression<?>> block
     ) {
         return sortingFilter(tableType, block, OrderMode.ASC, NullOrderMode.UNSPECIFIED);
     }
 
-    static <E, T extends Table<E>> Filter<E, T> sortingFilter(
+    static <E, T extends Table<E>> Filter<T> sortingFilter(
             Class<T> tableType,
             Function<T, PropExpression<?>> block,
             OrderMode orderMode
@@ -32,7 +48,7 @@ public interface Filter<E, T extends Table<E>> {
         return sortingFilter(tableType, block, orderMode, NullOrderMode.UNSPECIFIED);
     }
 
-    static <E, T extends Table<E>> Filter<E, T> sortingFilter(
+    static <T extends Table<?>> Filter<T> sortingFilter(
             Class<T> tableType,
             Function<T, PropExpression<?>> block,
             OrderMode orderMode,
@@ -43,13 +59,13 @@ public interface Filter<E, T extends Table<E>> {
                 .build();
     }
 
-    static <E, T extends Table<E>> SortingFilterBuilder<E, T> sortingFilterBuilder(
+    static <T extends Table<?>> SortingFilterBuilder<T> sortingFilterBuilder(
             Class<T> tableType
     ) {
         return new SortingFilterBuilder<>(tableType);
     }
 
-    class SortingFilterBuilder<E, T extends Table<E>> {
+    class SortingFilterBuilder<T extends Table<?>> {
 
         private Class<T> tableType;
 
@@ -60,14 +76,14 @@ public interface Filter<E, T extends Table<E>> {
         }
 
         @OldChain
-        public SortingFilterBuilder<E, T> add(
+        public SortingFilterBuilder<T> add(
                 Function<T, PropExpression<?>> block
         ) {
             return add(block, OrderMode.ASC, NullOrderMode.UNSPECIFIED);
         }
 
         @OldChain
-        public SortingFilterBuilder<E, T> add(
+        public SortingFilterBuilder<T> add(
                 Function<T, PropExpression<?>> block,
                 OrderMode orderMode
         ) {
@@ -75,7 +91,7 @@ public interface Filter<E, T extends Table<E>> {
         }
 
         @OldChain
-        public SortingFilterBuilder<E, T> add(
+        public SortingFilterBuilder<T> add(
                 Function<T, PropExpression<?>> block,
                 OrderMode orderMode,
                 NullOrderMode nullOrderMode
@@ -90,7 +106,7 @@ public interface Filter<E, T extends Table<E>> {
             return this;
         }
 
-        public Filter<E, T> build() {
+        public Filter<T> build() {
             return new FilterImpl<>(sortedFields);
         }
 
@@ -131,7 +147,7 @@ public interface Filter<E, T extends Table<E>> {
             }
         }
 
-        private static class FilterImpl<E, T extends Table<E>> implements Filter<E, T> {
+        private static class FilterImpl<T extends Table<?>> implements Filter<T> {
 
             private List<SortedField> sortedFields;
 
@@ -140,7 +156,7 @@ public interface Filter<E, T extends Table<E>> {
             }
 
             @Override
-            public void apply(FilterArgs<E, T> args) {
+            public void apply(FilterArgs<T> args) {
                 for (SortedField sortedField : sortedFields) {
                     args.orderBy(
                             args.getTable().get(sortedField.prop),
@@ -159,7 +175,7 @@ public interface Filter<E, T extends Table<E>> {
             public boolean equals(Object o) {
                 if (this == o) return true;
                 if (o == null || getClass() != o.getClass()) return false;
-                FilterImpl<?, ?> filter = (FilterImpl<?, ?>) o;
+                FilterImpl<?> filter = (FilterImpl<?>) o;
                 return sortedFields.equals(filter.sortedFields);
             }
 

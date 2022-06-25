@@ -11,8 +11,8 @@ import java.util.function.Function;
 /**
  * Internal until class, it should not be used by programmer directly.
  *
- * @param <K>
- * @param <V>
+ * @param <K> Key Type
+ * @param <V> Value Type
  */
 public class StaticCache<K, V> {
 

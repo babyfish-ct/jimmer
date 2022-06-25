@@ -5,12 +5,11 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ReferenceLoader;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
-import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.fetcher.Filter;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.function.BiConsumer;
 
 class ReferenceLoaderImpl<S, T> implements ReferenceLoader<S, T> {
 
@@ -18,12 +17,12 @@ class ReferenceLoaderImpl<S, T> implements ReferenceLoader<S, T> {
 
     private ImmutableProp prop;
 
-    private BiConsumer<Sortable, Table<?>> filter;
+    private Filter<?> filter;
 
     public ReferenceLoaderImpl(
             SqlClient sqlClient,
             ImmutableProp prop,
-            BiConsumer<Sortable, Table<?>> filter
+            Filter<?> filter
     ) {
         this.sqlClient = sqlClient;
         this.prop = prop;
@@ -31,6 +30,7 @@ class ReferenceLoaderImpl<S, T> implements ReferenceLoader<S, T> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Executable<T> loadCommand(S source) {
         if (source instanceof Collection<?>) {
             throw new IllegalArgumentException(
@@ -40,7 +40,7 @@ class ReferenceLoaderImpl<S, T> implements ReferenceLoader<S, T> {
         return new SingleCommand<>(
                 sqlClient,
                 prop,
-                filter,
+                (Filter<Table<ImmutableSpi>>) filter,
                 Integer.MAX_VALUE,
                 0,
                 (ImmutableSpi) source
@@ -53,7 +53,7 @@ class ReferenceLoaderImpl<S, T> implements ReferenceLoader<S, T> {
         return new BatchCommand<>(
                 sqlClient,
                 prop,
-                filter,
+                (Filter<Table<ImmutableSpi>>) filter,
                 (Collection<ImmutableSpi>) sources
         );
     }

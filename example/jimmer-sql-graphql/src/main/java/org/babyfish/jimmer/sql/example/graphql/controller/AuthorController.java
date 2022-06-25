@@ -49,7 +49,7 @@ public class AuthorController {
                 .getListLoader(
                         AuthorTableEx.class,
                         AuthorTableEx::books,
-                        (q, book) -> q.orderBy(book.name())
+                        args -> args.orderBy(args.getTable().name())
                 )
                 .batchLoad(authors);
     }
