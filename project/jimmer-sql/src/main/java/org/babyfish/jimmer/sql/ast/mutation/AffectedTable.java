@@ -27,7 +27,7 @@ public interface AffectedTable {
         return new Middle(ImmutableProps.join(tableType, block));
     }
 
-    static Middle middle(ImmutableProp prop) {
+    static Middle of(ImmutableProp prop) {
         return new Middle(prop);
     }
 

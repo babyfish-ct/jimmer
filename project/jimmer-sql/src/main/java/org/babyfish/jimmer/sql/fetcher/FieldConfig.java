@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 public interface FieldConfig<E, T extends Table<E>> {
 
     @OldChain
-    FieldConfig<E, T> filter(Filter<E, T> filter);
+    FieldConfig<E, T> filter(Filter<T> filter);
 
     @OldChain
     FieldConfig<E, T> batch(int size);

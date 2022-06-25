@@ -48,7 +48,7 @@ public class DataCache {
 
         private ImmutableProp prop;
 
-        private Filter<?, ?> filter;
+        private Filter<?> filter;
 
         private int limit;
 
@@ -58,7 +58,7 @@ public class DataCache {
             this(field.getProp(), field.getFilter(), field.getLimit(), field.getOffset());
         }
 
-        FieldKey(ImmutableProp prop, Filter<?, ?> filter, int limit, int offset) {
+        FieldKey(ImmutableProp prop, Filter<?> filter, int limit, int offset) {
             this.prop = prop;
             this.filter = filter;
             this.limit = limit;

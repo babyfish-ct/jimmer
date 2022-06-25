@@ -159,7 +159,7 @@ public class Deleter {
                         sqlResult._2(),
                         PreparedStatement::executeUpdate
                 );
-        addOutput(AffectedTable.middle(middleTableProp), affectedRowCount);
+        addOutput(AffectedTable.of(middleTableProp), affectedRowCount);
     }
 
     private void updateChildTable(

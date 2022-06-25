@@ -12,7 +12,7 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
 
     private FetcherImpl<?> childFetcher;
 
-    private Filter<E, T> filter;
+    private Filter<T> filter;
 
     private int batchSize;
 
@@ -28,7 +28,7 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
     }
 
     @Override
-    public RecursiveListFieldConfig<E, T> filter(Filter<E, T> filter) {
+    public RecursiveListFieldConfig<E, T> filter(Filter<T> filter) {
         if (filter != null && prop.isReference() && !prop.isNullable()) {
             throw new IllegalArgumentException(
                     "Cannot set filter for non-null one-to-one/many-to-one property \"" + prop + "\""
@@ -101,7 +101,7 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
         return childFetcher;
     }
 
-    Filter<E, T> getFilter() {
+    Filter<T> getFilter() {
         return filter;
     }
 

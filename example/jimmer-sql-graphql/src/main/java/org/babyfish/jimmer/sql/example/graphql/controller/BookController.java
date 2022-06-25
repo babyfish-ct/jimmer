@@ -61,9 +61,9 @@ public class BookController {
                 .getListLoader(
                         BookTableEx.class,
                         BookTableEx::authors,
-                        (q, author) -> q
-                                .orderBy(author.firstName())
-                                .orderBy(author.lastName())
+                        args -> args
+                                .orderBy(args.getTable().firstName())
+                                .orderBy(args.getTable().lastName())
                 )
                 .batchLoad(books);
     }

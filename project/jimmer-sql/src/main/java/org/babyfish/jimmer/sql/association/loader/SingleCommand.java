@@ -4,11 +4,10 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
-import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.fetcher.Filter;
 
 import java.sql.Connection;
-import java.util.function.BiConsumer;
 
 class SingleCommand<T> implements Executable<T> {
 
@@ -16,7 +15,7 @@ class SingleCommand<T> implements Executable<T> {
 
     private ImmutableProp prop;
 
-    private BiConsumer<Sortable, Table<?>> filter;
+    private Filter<Table<ImmutableSpi>> filter;
 
     private int limit;
 
@@ -27,7 +26,7 @@ class SingleCommand<T> implements Executable<T> {
     public SingleCommand(
             SqlClient sqlClient,
             ImmutableProp prop,
-            BiConsumer<Sortable, Table<?>> filter,
+            Filter<Table<ImmutableSpi>> filter,
             int limit,
             int offset,
             ImmutableSpi source

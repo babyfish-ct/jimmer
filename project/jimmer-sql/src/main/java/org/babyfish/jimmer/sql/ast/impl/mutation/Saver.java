@@ -165,7 +165,7 @@ class Saver {
                                 associatedObjectIds
                         );
                     }
-                    addOutput(AffectedTable.middle(middleTableProp), rowCount);
+                    addOutput(AffectedTable.of(middleTableProp), rowCount);
                 } else if (childTableOperator != null && currentObjectType != ObjectType.NEW) {
                     DeleteAction deleteAction = data.getDeleteAction(prop.getMappedBy());
                     if (deleteAction == DeleteAction.CASCADE) {

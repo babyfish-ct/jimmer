@@ -1,23 +1,16 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.SqlClient;
-import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.association.spi.AbstractSingleDataLoader;
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.Filter;
-import org.babyfish.jimmer.sql.meta.Column;
 
 import java.sql.Connection;
-import java.util.*;
 
 class SingleDataLoader extends AbstractSingleDataLoader {
 
@@ -45,8 +38,8 @@ class SingleDataLoader extends AbstractSingleDataLoader {
             Table<ImmutableSpi> table,
             Object key
     ) {
-        Filter<ImmutableSpi, Table<ImmutableSpi>> filter =
-                (Filter<ImmutableSpi, Table<ImmutableSpi>>) field.getFilter();
+        Filter<Table<ImmutableSpi>> filter =
+                (Filter<Table<ImmutableSpi>>) field.getFilter();
         if (filter != null) {
             filter.apply(FilterArgsImpl.singleLoaderArgs(sortable, table, key));
         }

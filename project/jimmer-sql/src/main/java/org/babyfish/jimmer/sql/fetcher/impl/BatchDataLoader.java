@@ -39,8 +39,8 @@ class BatchDataLoader extends AbstractBatchDataLoader {
             Table<ImmutableSpi> table,
             Collection<Object> keys
     ) {
-        Filter<ImmutableSpi, Table<ImmutableSpi>> filter =
-                (Filter<ImmutableSpi, Table<ImmutableSpi>>) field.getFilter();
+        Filter<Table<ImmutableSpi>> filter =
+                (Filter<Table<ImmutableSpi>>) field.getFilter();
         if (filter != null) {
             filter.apply(FilterArgsImpl.batchLoaderArgs(sortable, table, keys));
         }

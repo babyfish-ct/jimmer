@@ -21,7 +21,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
 
     private final ImmutableProp prop;
 
-    private final Filter<E, ?> filter;
+    private final Filter<?> filter;
 
     private final int batchSize;
 
@@ -79,7 +79,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
         this.prop = prop;
         if (fieldConfig != null) {
             FieldConfigImpl<?, Table<?>> loaderImpl = (FieldConfigImpl<?, Table<?>>) fieldConfig;
-            this.filter = (Filter<E, ?>) loaderImpl.getFilter();
+            this.filter = loaderImpl.getFilter();
             this.batchSize = loaderImpl.getBatchSize();
             this.limit = prop.isEntityList() ? loaderImpl.getLimit() : Integer.MAX_VALUE;
             this.offset = prop.isAssociation() ? loaderImpl.getOffset() : 0;

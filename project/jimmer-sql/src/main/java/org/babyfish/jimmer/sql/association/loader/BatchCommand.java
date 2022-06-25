@@ -4,8 +4,8 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
-import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.meta.Column;
 
 import java.sql.Connection;
@@ -13,7 +13,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.function.BiConsumer;
 
 class BatchCommand<S, T> implements Executable<Map<S, T>> {
 
@@ -21,14 +20,14 @@ class BatchCommand<S, T> implements Executable<Map<S, T>> {
 
     private ImmutableProp prop;
 
-    private BiConsumer<Sortable, Table<?>> filter;
+    private Filter<Table<ImmutableSpi>> filter;
 
     private Collection<ImmutableSpi> sources;
 
     public BatchCommand(
             SqlClient sqlClient,
             ImmutableProp prop,
-            BiConsumer<Sortable, Table<?>> filter,
+            Filter<Table<ImmutableSpi>> filter,
             Collection<ImmutableSpi> sources
     ) {
         this.sqlClient = sqlClient;
