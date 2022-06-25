@@ -18,17 +18,23 @@ public interface Filter<T extends Table<?>> extends CacheFilter {
     void apply(FilterArgs<T> args);
 
     static <T extends Table<?>> Filter<T> parameterized(
-            Map<String, Object> cacheArgs,
+            Map<String, Object> args,
             Consumer<FilterArgs<T>> block
     ) {
+        NavigableMap<String, Object> sortedArgs;
+        if (args == null || args.isEmpty()) {
+            sortedArgs = Collections.emptyNavigableMap();
+        } else {
+            sortedArgs = new TreeMap<>(args);
+        }
         return new Filter<T>() {
             @Override
             public void apply(FilterArgs<T> args) {
                 block.accept(args);
             }
             @Override
-            public Map<String, Object> toCacheArgs() {
-                return cacheArgs;
+            public NavigableMap<String, Object> toCacheArgs() {
+                return sortedArgs;
             }
         };
     }

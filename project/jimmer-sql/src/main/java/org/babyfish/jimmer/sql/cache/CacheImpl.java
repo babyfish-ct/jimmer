@@ -24,6 +24,9 @@ public class CacheImpl<K, V> implements Cache<K, V> {
             CacheLoader<K, V> loader,
             CacheLocker locker
     ) {
+        Objects.requireNonNull(keyPrefix, "keyPrefix cannot be null");
+        Objects.requireNonNull(binder, "binder cannot be null");
+        Objects.requireNonNull(loader, "loader cannot be null");
         this.keyPrefix = keyPrefix;
         this.implementations = CacheBinder.toImplementations(binder);
         this.loader = loader;
@@ -83,7 +86,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
         }
     }
 
-    private <K> Map<String, K> tokeyMap(Collection<K> keys, CacheFilter filter) {
+    private Map<String, K> tokeyMap(Collection<K> keys, CacheFilter filter) {
         String suffix = null;
         if (filter != null) {
             Map<String, Object> args = filter.toCacheArgs();
@@ -113,6 +116,9 @@ public class CacheImpl<K, V> implements Cache<K, V> {
         private Map<String, V> map =
                 new LinkedHashMap<>();
 
+        private List<CacheImplementation<V>> changedImplementations =
+                new ArrayList<>();
+
         private Map<CacheImplementation<V>, Map<String, V>> writeMapMap =
                 new IdentityHashMap<>();
 
@@ -126,10 +132,12 @@ public class CacheImpl<K, V> implements Cache<K, V> {
             read();
             loadAndWrite();
             Map<K, V> finalMap = new LinkedHashMap<>();
-            for (K originalKey : keyMap.values()) {
-                V value = map.get(originalKey);
+            for (Map.Entry<String, K> keyPair : keyMap.entrySet()) {
+                String loaderKey = keyPair.getKey();
+                K key = keyPair.getValue();
+                V value = map.get(loaderKey);
                 if (value != null) {
-                    finalMap.put(originalKey, value);
+                    finalMap.put(key, value);
                 }
             }
             return finalMap;
@@ -147,19 +155,22 @@ public class CacheImpl<K, V> implements Cache<K, V> {
                 for (String missedLoaderKey : missedLoaderKeys) {
                     writeMap.put(missedLoaderKey, null);
                 }
+                changedImplementations.add(implementation);
                 writeMapMap.put(implementation, writeMap);
             }
         }
 
         private void loadAndWrite() {
-            if (locker == null) {
-                loadAndWriteImpl();
-            } else {
-                locker.lockAll(missedLoaderKeys);
-                try {
+            if (!missedLoaderKeys.isEmpty()) {
+                if (locker == null) {
                     loadAndWriteImpl();
-                } finally {
-                    locker.unlockAll(missedLoaderKeys);
+                } else {
+                    locker.lockAll(missedLoaderKeys);
+                    try {
+                        loadAndWriteImpl();
+                    } finally {
+                        locker.unlockAll(missedLoaderKeys);
+                    }
                 }
             }
         }
@@ -180,9 +191,8 @@ public class CacheImpl<K, V> implements Cache<K, V> {
         }
 
         private void write() {
-            for (Map.Entry<CacheImplementation<V>, Map<String, V>> e : writeMapMap.entrySet()) {
-                CacheImplementation<V> implementation = e.getKey();
-                Map<String, V> writeMap = e.getValue();
+            for (CacheImplementation<V> implementation : changedImplementations) {
+                Map<String, V> writeMap = writeMapMap.get(implementation);
                 for (Map.Entry<String, V> nestedEntry : writeMap.entrySet()) {
                     nestedEntry.setValue(map.get(nestedEntry.getKey()));
                 }
