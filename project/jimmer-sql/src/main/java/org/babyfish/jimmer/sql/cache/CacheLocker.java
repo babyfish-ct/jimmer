@@ -1,10 +1,10 @@
 package org.babyfish.jimmer.sql.cache;
 
-import java.util.Set;
+import java.util.NavigableSet;
 
 public interface CacheLocker {
 
-    void lockAll(Set<String> keys);
+    void lockAll(NavigableSet<String> keys);
 
-    void unlockAll(Set<String> keys);
+    void unlockAll(NavigableSet<String> keys);
 }

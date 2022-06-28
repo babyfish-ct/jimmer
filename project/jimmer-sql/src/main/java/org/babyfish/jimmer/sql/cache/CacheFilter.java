@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.cache.impl.CacheFilterImpl;
 
 import java.util.*;
 
