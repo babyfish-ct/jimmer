@@ -9,17 +9,17 @@ public class CacheConfig {
         return this;
     }
 
-    public CacheConfig setCache(CacheBinder binder, CacheLoader<?, ?> loader) {
-        return setCache(binder, loader, null);
+    public CacheConfig setCache(CacheProvider<?> provider, CacheLoader<?, ?> loader) {
+        return setCache(provider, loader, null);
     }
 
-    public CacheConfig setCache(CacheBinder binder, CacheLoader<?, ?> loader, CacheLocker locker) {
+    public CacheConfig setCache(CacheProvider<?> provider, CacheLoader<?, ?> loader, CacheLocker locker) {
         return this;
     }
 
     public CacheConfig setCache(
             ImmutableType immutableType,
-            CacheBinder binder,
+            CacheProvider<?> binder,
             CacheLoader<?, ?> loader
     ) {
         return this.setCache(immutableType, binder, loader, null);
@@ -27,7 +27,7 @@ public class CacheConfig {
 
     public CacheConfig setCache(
             ImmutableType immutableType,
-            CacheBinder binder,
+            CacheProvider<?> provider,
             CacheLoader<?, ?> loader,
             CacheLocker locker
     ) {
@@ -36,15 +36,15 @@ public class CacheConfig {
 
     public CacheConfig setCache(
             ImmutableProp prop,
-            CacheBinder binder,
+            CacheProvider<?> provider,
             CacheLoader<?, ?> loader
     ) {
-        return this.setCache(prop, binder, loader, null);
+        return this.setCache(prop, provider, loader, null);
     }
 
     public CacheConfig setCache(
             ImmutableProp prop,
-            CacheBinder binder,
+            CacheProvider<?> provider,
             CacheLoader<?, ?> loader,
             CacheLocker locker
     ) {

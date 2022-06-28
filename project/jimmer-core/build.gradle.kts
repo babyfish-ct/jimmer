@@ -9,6 +9,7 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
     withSourcesJar()
     withJavadocJar()
+
 }
 
 repositories {
@@ -27,6 +28,10 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
     testAnnotationProcessor(project(":jimmer-apt"))
+}
+
+tasks.withType(JavaCompile::class) {
+    options.compilerArgs.add("-Ajimmer.source.excludes=org.babyfish.jimmer.invalid")
 }
 
 tasks.getByName<Test>("test") {

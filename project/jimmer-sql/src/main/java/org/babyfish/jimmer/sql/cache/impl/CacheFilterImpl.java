@@ -1,6 +1,7 @@
-package org.babyfish.jimmer.sql.cache;
+package org.babyfish.jimmer.sql.cache.impl;
 
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.cache.CacheFilter;
 
 import java.util.*;
 
@@ -8,7 +9,7 @@ public class CacheFilterImpl implements CacheFilter {
 
     private final NavigableMap<String, Object> args;
 
-    CacheFilterImpl(Map<String, Object> args) {
+    public CacheFilterImpl(Map<String, Object> args) {
         if (args == null || args.isEmpty()) {
             this.args = Collections.emptyNavigableMap();
         } else {
@@ -16,7 +17,7 @@ public class CacheFilterImpl implements CacheFilter {
         }
     }
 
-    CacheFilterImpl(List<Tuple2<String, Object>> tuples) {
+    public CacheFilterImpl(List<Tuple2<String, Object>> tuples) {
         NavigableMap<String, Object> map = new TreeMap<>();
         for (Tuple2<String, Object> tuple : tuples) {
             map.put(tuple._1(), tuple._2());

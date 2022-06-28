@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.cache.impl.CacheImpl;
+import org.babyfish.jimmer.sql.cache.spi.AbstractSimpleCacheProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +47,7 @@ public class CacheTest {
         );
         cache = new CacheImpl<>(
                 "memory-",
-                CacheBinder.of(impl1, impl2),
+                CacheProvider.of(impl1, impl2),
                 new Loader(
                         histories,
                         Arrays.asList(
@@ -70,8 +72,8 @@ public class CacheTest {
                 "[" +
                         "History{action='lockAll', data=[memory-3, memory-4, memory-7, memory-8]}, " +
                         "History{action='loadAll', data=[[3, 4, 7, 8], null]}, " +
-                        "History{action='setAll:impl-1', data={memory-3=Three, memory-4=Four, memory-2=Two}}, " +
                         "History{action='setAll:impl-2', data={memory-3=Three, memory-4=Four, memory-7=null, memory-8=null}}, " +
+                        "History{action='setAll:impl-1', data={memory-3=Three, memory-4=Four, memory-2=Two}}, " +
                         "History{action='unlockAll', data=[memory-3, memory-4, memory-7, memory-8]}" +
                         "]",
                 histories.toString()
@@ -94,6 +96,7 @@ public class CacheTest {
                                 "--->History{" +
                                 "--->--->action='lockAll', " +
                                 "--->--->data=[" +
+                                "--->--->--->memory-2:{mode=odd}, " +
                                 "--->--->--->memory-3:{mode=odd}, " +
                                 "--->--->--->memory-4:{mode=odd}, " +
                                 "--->--->--->memory-7:{mode=odd}, " +
@@ -103,26 +106,30 @@ public class CacheTest {
                                 "--->History{" +
                                 "--->--->action='loadAll', " +
                                 "--->--->data=[" +
-                                "--->--->--->[3, 4, 7, 8], " +
+                                "--->--->--->[3, 4, 2, 7, 8], " +
                                 "--->--->--->CacheFilterImpl{args={mode=odd}}" +
                                 "--->--->]" +
-                                "--->}, " +
-                                "--->History{" +
-                                "--->--->action='setAll:impl-1', " +
-                                "--->--->data={memory-3:{mode=odd}=Three}" +
                                 "--->}, " +
                                 "--->History{" +
                                 "--->--->action='setAll:impl-2', " +
                                 "--->--->data={" +
                                 "--->--->--->memory-3:{mode=odd}=Three, " +
                                 "--->--->--->memory-4:{mode=odd}=null, " +
+                                "--->--->--->memory-2:{mode=odd}=null, " +
                                 "--->--->--->memory-7:{mode=odd}=null, " +
                                 "--->--->--->memory-8:{mode=odd}=null" +
                                 "--->--->}" +
                                 "--->}, " +
                                 "--->History{" +
+                                "--->--->action='setAll:impl-1', " +
+                                "--->--->data={" +
+                                "--->--->--->memory-3:{mode=odd}=Three" +
+                                "--->--->}" +
+                                "--->}, " +
+                                "--->History{" +
                                 "--->--->action='unlockAll', " +
                                 "--->--->data=[" +
+                                "--->--->--->memory-2:{mode=odd}, " +
                                 "--->--->--->memory-3:{mode=odd}, " +
                                 "--->--->--->memory-4:{mode=odd}, " +
                                 "--->--->--->memory-7:{mode=odd}, " +
@@ -151,6 +158,7 @@ public class CacheTest {
                                 "--->History{" +
                                 "--->--->action='lockAll', " +
                                 "--->--->data=[" +
+                                "--->--->--->memory-1:{mode=even}, " +
                                 "--->--->--->memory-3:{mode=even}, " +
                                 "--->--->--->memory-4:{mode=even}, " +
                                 "--->--->--->memory-7:{mode=even}, " +
@@ -160,26 +168,28 @@ public class CacheTest {
                                 "--->History{" +
                                 "--->--->action='loadAll', " +
                                 "--->--->data=[" +
-                                "--->--->--->[3, 4, 7, 8], " +
+                                "--->--->--->[3, 1, 4, 7, 8], " +
                                 "--->--->--->CacheFilterImpl{args={mode=even}}" +
                                 "--->--->]" +
-                                "--->}, " +
-                                "--->History{" +
-                                "--->--->action='setAll:impl-1', " +
-                                "--->--->data={memory-4:{mode=even}=Four, memory-2:{mode=even}=Two}" +
                                 "--->}, " +
                                 "--->History{" +
                                 "--->--->action='setAll:impl-2', " +
                                 "--->--->data={" +
                                 "--->--->--->memory-3:{mode=even}=null, " +
+                                "--->--->--->memory-1:{mode=even}=null, " +
                                 "--->--->--->memory-4:{mode=even}=Four, " +
                                 "--->--->--->memory-7:{mode=even}=null, " +
                                 "--->--->--->memory-8:{mode=even}=null" +
                                 "--->--->}" +
                                 "--->}, " +
                                 "--->History{" +
+                                "--->--->action='setAll:impl-1', " +
+                                "--->--->data={memory-4:{mode=even}=Four, memory-2:{mode=even}=Two}" +
+                                "--->}, " +
+                                "--->History{" +
                                 "--->--->action='unlockAll', " +
                                 "--->--->data=[" +
+                                "--->--->--->memory-1:{mode=even}, " +
                                 "--->--->--->memory-3:{mode=even}, " +
                                 "--->--->--->memory-4:{mode=even}, " +
                                 "--->--->--->memory-7:{mode=even}, " +
@@ -192,7 +202,7 @@ public class CacheTest {
         );
     }
 
-    private static class Impl implements CacheImplementation<String> {
+    private static class Impl extends AbstractSimpleCacheProvider<String> {
 
         private String name;
 
@@ -219,24 +229,22 @@ public class CacheTest {
         }
 
         @Override
-        public boolean isNullSavable() {
-            return isNullSavable;
-        }
-
-        @Override
-        public Map<String, String> getAll(Set<String> keys) {
+        protected Map<String, String> read(Set<String> storageKeys) {
             Map<String, String> cachedMap = new LinkedHashMap<>();
-            for (String key : keys) {
-                String value = valueMap.get(key);
-                if (value != null || valueMap.containsKey(key)) {
-                    cachedMap.put(key, value);
+            for (String storageKey : storageKeys) {
+                String value = valueMap.get(storageKey);
+                if (value != null) {
+                    cachedMap.put(storageKey, value);
                 }
             }
             return cachedMap;
         }
 
         @Override
-        public void setAll(Map<String, String> map) {
+        protected void write(Map<String, String> map) {
+            if (!isNullSavable) {
+                map.values().removeIf(Objects::isNull);
+            }
             histories.add(
                     new History(
                             "setAll:" + name,
@@ -244,6 +252,11 @@ public class CacheTest {
                     )
             );
             valueMap.putAll(map);
+        }
+
+        @Override
+        protected boolean isNullSavable() {
+            return isNullSavable;
         }
 
         @Override
@@ -302,12 +315,12 @@ public class CacheTest {
         }
 
         @Override
-        public void lockAll(Set<String> keys) {
+        public void lockAll(NavigableSet<String> keys) {
             histories.add(new History("lockAll", keys));
         }
 
         @Override
-        public void unlockAll(Set<String> keys) {
+        public void unlockAll(NavigableSet<String> keys) {
             histories.add(new History("unlockAll", keys));
         }
     }
