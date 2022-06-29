@@ -334,7 +334,8 @@ public class ImmutableProp {
             return;
         }
 
-        if (declaringElement.getAnnotation(Entity.class) == null) {
+        if (declaringElement.getAnnotation(Entity.class) == null &&
+                declaringElement.getAnnotation(MappedSuperclass.class) == null) {
             if (firstSqlAnnotation != null) {
                 throw new MetaException(
                         "Illegal property \"" +

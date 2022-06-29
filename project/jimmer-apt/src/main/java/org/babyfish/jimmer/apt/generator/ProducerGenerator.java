@@ -90,7 +90,7 @@ public class ProducerGenerator {
                 .add("$T.class,\n", type.getClassName());
         if (type.getSuperType() != null) {
             builder.add(
-                    "$T.TYPE,\n",
+                    "$T.Producer.TYPE,\n",
                     type.getSuperType().getDraftClassName()
             );
         } else {

@@ -25,13 +25,7 @@ public class Storages {
             return null;
         }
         if (annotation == null) {
-            ImmutableProp idProp = prop.getDeclaringType().getIdProp();
-            javax.persistence.Column column;
-            if (prop.getName().equals(idProp.getName())) {
-                column = idProp.getAnnotation(javax.persistence.Column.class);
-            } else {
-                column = prop.getAnnotation(javax.persistence.Column.class);
-            }
+            javax.persistence.Column column = prop.getAnnotation(javax.persistence.Column.class);
             String columnName = column != null ? column.name() : "";
             if (columnName.isEmpty()) {
                 columnName = Utils.databaseIdentifier(prop.getName());

@@ -266,7 +266,8 @@ class ImmutableTypeImpl implements ImmutableType {
 
         @Override
         public Builder id(String name, Class<?> elementType) {
-            if (!type.javaClass.isAnnotationPresent(Entity.class)) {
+            if (!type.javaClass.isAnnotationPresent(Entity.class)
+                && !type.javaClass.isAnnotationPresent(MappedSuperclass.class)) {
                 throw new IllegalStateException("Cannot set id for type that is not entity");
             }
             if (idPropName != null) {
@@ -278,7 +279,8 @@ class ImmutableTypeImpl implements ImmutableType {
 
         @Override
         public Builder key(String name, Class<?> elementType) {
-            if (!type.javaClass.isAnnotationPresent(Entity.class)) {
+            if (!type.javaClass.isAnnotationPresent(Entity.class) &&
+                !type.javaClass.isAnnotationPresent(MappedSuperclass.class)) {
                 throw new IllegalStateException("Cannot add key for type that is not entity");
             }
             keyPropNames.add(name);
@@ -297,7 +299,8 @@ class ImmutableTypeImpl implements ImmutableType {
 
         @Override
         public Builder version(String name) {
-            if (!type.javaClass.isAnnotationPresent(Entity.class)) {
+            if (!type.javaClass.isAnnotationPresent(Entity.class) &&
+                !type.javaClass.isAnnotationPresent(MappedSuperclass.class)) {
                 throw new IllegalStateException("Cannot set version for type that is not entity");
             }
             if (versionPropName != null) {
