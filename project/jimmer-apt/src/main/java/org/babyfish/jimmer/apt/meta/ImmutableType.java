@@ -10,10 +10,7 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
-import javax.persistence.Embeddable;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Version;
+import javax.persistence.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -22,19 +19,21 @@ public class ImmutableType {
 
     private TypeElement typeElement;
 
-    private boolean isEntity;
+    private final boolean isEntity;
 
-    private String packageName;
+    private final boolean isMappedSuperClass;
 
-    private String name;
+    private final String packageName;
 
-    private String qualifiedName;
+    private final String name;
 
-    private Set<Modifier> modifiers;
+    private final String qualifiedName;
 
-    private ImmutableType superType;
+    private final Set<Modifier> modifiers;
 
-    private Map<String, ImmutableProp> declaredProps;
+    private final ImmutableType superType;
+
+    private final Map<String, ImmutableProp> declaredProps;
 
     private Map<String, ImmutableProp> props;
 
@@ -65,12 +64,20 @@ public class ImmutableType {
             TypeElement typeElement
     ) {
         this.typeElement = typeElement;
-        isEntity = typeElement.getAnnotation(Entity.class) != null;
         if (typeElement.getAnnotation(Embeddable.class) != null) {
             throw new MetaException(
                     "Illegal type \"" +
                             typeElement.getQualifiedName() +
-                            "\"@Embeddable is not supported"
+                            "\", @Embeddable is not supported"
+            );
+        }
+        isEntity = typeElement.getAnnotation(Entity.class) != null;
+        isMappedSuperClass = typeElement.getAnnotation(MappedSuperclass.class) != null;
+        if (isEntity && isMappedSuperClass) {
+            throw new MetaException(
+                    "Illegal type \"" +
+                            typeElement.getQualifiedName() +
+                            "\", it cannot be decorated by both @Entity and @isMappedSuperClass"
             );
         }
 
@@ -95,14 +102,41 @@ public class ImmutableType {
         }
         if (superTypeMirror != null) {
             superType = typeUtils.getImmutableType(superTypeMirror);
+        } else {
+            superType = null;
         }
 
-        if (superType != null && superType.isEntity() && !isEntity) {
-            throw new MetaException(
-                    "Illegal type \"" +
-                            typeElement.getQualifiedName() +
-                            "\", it must be entity because its super type is entity"
-            );
+        if (superType != null) {
+            if (this.isEntity || this.isMappedSuperClass) {
+                if (superType.isEntity()) {
+                    throw new MetaException(
+                            "Illegal type \"" +
+                                    typeElement.getQualifiedName() +
+                                    "\", it super type \"" +
+                                    superType.qualifiedName +
+                                    "\" is entity. " +
+                                    "Super entity is not supported temporarily, " +
+                                    "please use an interface decorated by @MappedSuperClass to be the super type"
+                    );
+                }
+                if (!superType.isMappedSuperClass) {
+                    throw new MetaException(
+                            "Illegal type \"" +
+                                    typeElement.getQualifiedName() +
+                                    "\", it super type \"" +
+                                    superType.qualifiedName +
+                                    "\" is entity is not decorated by @MappedSuperClass"
+                    );
+                }
+            } else if (superType.isEntity || superType.isMappedSuperClass) {
+                throw new MetaException(
+                        "Illegal type \"" +
+                                typeElement.getQualifiedName() +
+                                "\", it super type \"" +
+                                superType.qualifiedName +
+                                "\" cannot be decorated by @Entity or @MappedSuperClass"
+                );
+            }
         }
 
         Map<String, ImmutableProp> map = new LinkedHashMap<>();
@@ -130,7 +164,7 @@ public class ImmutableType {
                 .filter(it -> it.getAnnotation(Version.class) != null)
                 .collect(Collectors.toList());
         if (superType != null) {
-            if (!idProps.isEmpty()) {
+            if (superType.getIdProp() != null && !idProps.isEmpty()) {
                 throw new MetaException(
                         "Illegal type \"" +
                                 typeElement.getQualifiedName() +
@@ -139,7 +173,7 @@ public class ImmutableType {
                                 "\" cannot be marked by @Id because id has been declared in super type"
                 );
             }
-            if (!versionProps.isEmpty()) {
+            if (superType.getVersionProp() != null && !versionProps.isEmpty()) {
                 throw new MetaException(
                         "Illegal type \"" +
                                 typeElement.getQualifiedName() +
@@ -151,7 +185,7 @@ public class ImmutableType {
             idProp = superType.idProp;
             versionProp = superType.versionProp;
         }
-        if (!isEntity) {
+        if (!isEntity && !isMappedSuperClass) {
             if (!idProps.isEmpty()) {
                 throw new MetaException(
                         "Illegal type \"" +
@@ -196,16 +230,18 @@ public class ImmutableType {
                 );
             }
             if (idProp == null) {
-                if (idProps.isEmpty()) {
+                if (isEntity && idProps.isEmpty()) {
                     throw new MetaException(
                             "Illegal type \"" +
                                     typeElement.getQualifiedName() +
                                     "\", entity type must have an id property"
                     );
                 }
-                idProp = idProps.get(0);
+                if (!idProps.isEmpty()) {
+                    idProp = idProps.get(0);
+                }
             }
-            if (idProp.isAssociation()) {
+            if (idProp != null && idProp.isAssociation()) {
                 throw new MetaException(
                         "Illegal property \"" +
                                 idProp +
@@ -241,6 +277,10 @@ public class ImmutableType {
 
     public boolean isEntity() {
         return isEntity;
+    }
+
+    public boolean isMappedSuperClass() {
+        return isMappedSuperClass;
     }
 
     public String getPackageName() {

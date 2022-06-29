@@ -1,22 +1,20 @@
 package org.babyfish.jimmer.apt;
 
-import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 
 import javax.lang.model.element.Element;
-import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.persistence.Entity;
+import javax.persistence.MappedSuperclass;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 
 public class TypeUtils {
 
@@ -54,14 +52,16 @@ public class TypeUtils {
 
     public boolean isImmutable(TypeElement typeElement) {
         return typeElement.getAnnotation(Immutable.class) != null ||
-                typeElement.getAnnotation(Entity.class) != null;
+                typeElement.getAnnotation(Entity.class) != null ||
+                typeElement.getAnnotation(MappedSuperclass.class) != null;
     }
 
     public boolean isImmutable(TypeMirror type) {
         Element element = types.asElement(type);
         return element != null && (
                 element.getAnnotation(Immutable.class) != null ||
-                        element.getAnnotation(Entity.class) != null
+                        element.getAnnotation(Entity.class) != null ||
+                        element.getAnnotation(MappedSuperclass.class) != null
         );
     }
 
@@ -84,8 +84,15 @@ public class TypeUtils {
     }
 
     public ImmutableType getImmutableType(TypeElement typeElement) {
-        if (typeElement.getAnnotation(Immutable.class) != null || typeElement.getAnnotation(Entity.class) != null) {
-            return immutableTypeMap.computeIfAbsent(typeElement, it -> new ImmutableType(this, it));
+        if (typeElement.getAnnotation(Immutable.class) != null ||
+                typeElement.getAnnotation(Entity.class) != null ||
+                typeElement.getAnnotation(MappedSuperclass.class) != null) {
+            ImmutableType type = immutableTypeMap.get(typeElement);
+            if (type == null) {
+                type = new ImmutableType(this, typeElement);
+                immutableTypeMap.put(typeElement, type);
+            }
+            return type;
         }
         return null;
     }

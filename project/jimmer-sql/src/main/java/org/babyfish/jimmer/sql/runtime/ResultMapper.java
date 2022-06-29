@@ -217,8 +217,12 @@ class ResultMapper {
                 throw new ExecutionException(
                         "Failed the convert the result value at column $" +
                                 (index - 1) +
-                                ", the expected type is '${type.qualifiedName}', " +
-                                "but the actual type is '${value::class.qualifiedName}'"
+                                ", the expected type is '" +
+                                type.getName() +
+                                "', " +
+                                "but the actual type is '" +
+                                value.getClass().getName() +
+                                "'"
                 );
             }
         }
