@@ -21,7 +21,7 @@ class CachesImpl implements Caches {
     private final Map<ImmutableProp, Cache<?, List<?>>> associatedIdListCacheMap;
 
     // ConcurrentHashMap.computeIfAbsent does not accept null value,
-    // So use read write lock here.
+    // So read write lock is used here.
     private final ReadWriteLock rwl = new ReentrantReadWriteLock();
 
     CachesImpl(
@@ -36,9 +36,23 @@ class CachesImpl implements Caches {
         this.associatedIdListCacheMap = new HashMap<>(associatedIdListCacheMap);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <K, V> Cache<K, V> getObjectCache(ImmutableType type) {
+        return ReentrantCache.reentrant(getObjectCacheImpl(type));
+    }
+
+    @Override
+    public <K, V> Cache<K, V> getAssociatedIdCache(ImmutableProp prop) {
+        return ReentrantCache.reentrant(getAssociatedIdCacheImpl(prop));
+    }
+
+    @Override
+    public <K, V> Cache<K, List<V>> getAssociatedIdListCache(ImmutableProp prop) {
+        return ReentrantCache.reentrant(getAssociatedIdListCacheImpl(prop));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <K, V> Cache<K, V> getObjectCacheImpl(ImmutableType type) {
 
         Lock lock;
 
@@ -69,8 +83,7 @@ class CachesImpl implements Caches {
     }
 
     @SuppressWarnings("unchecked")
-    @Override
-    public <K, V> Cache<K, V> getAssociatedIdCache(ImmutableProp prop) {
+    private <K, V> Cache<K, V> getAssociatedIdCacheImpl(ImmutableProp prop) {
 
         Lock lock;
 
@@ -100,8 +113,9 @@ class CachesImpl implements Caches {
         }
     }
 
-    @Override
-    public <K, V> Cache<K, List<V>> getAssociatedIdListCache(ImmutableProp prop) {
+    @SuppressWarnings("unchecked")
+    private <K, V> Cache<K, List<V>> getAssociatedIdListCacheImpl(ImmutableProp prop) {
+
         Lock lock;
 
         (lock = rwl.readLock()).lock();
@@ -151,4 +165,6 @@ class CachesImpl implements Caches {
             );
         }
     }
+
+    private static final Object DISABLED = new Object();
 }

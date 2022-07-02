@@ -10,7 +10,11 @@ import org.babyfish.jimmer.sql.ast.mutation.BatchEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.cache.Cache;
+import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
+import org.babyfish.jimmer.sql.fetcher.impl.Fetchers;
 import org.babyfish.jimmer.sql.runtime.Converters;
 
 import java.sql.Connection;
@@ -135,12 +139,20 @@ public class EntitiesImpl implements Entities {
             Collection<?> ids,
             Connection con
     ) {
-        if (ids.isEmpty()) {
+        if (ids == null || ids.isEmpty()) {
             return Collections.emptyList();
         }
+
+        Set<Object> distinctIds;
+        if (ids instanceof Set<?>) {
+            distinctIds = (Set<Object>) ids;
+        } else {
+            distinctIds = new LinkedHashSet<>(ids);
+        }
+
         ImmutableType immutableType = ImmutableType.get(entityType);
         Class<?> idClass = immutableType.getIdProp().getElementClass();
-        for (Object id : ids) {
+        for (Object id : distinctIds) {
             if (Converters.tryConvert(id, idClass) == null) {
                 throw new IllegalArgumentException(
                         "The type of \"" +
@@ -151,14 +163,36 @@ public class EntitiesImpl implements Entities {
                 );
             }
         }
+        Cache<Object, E> cache = sqlClient.getCaches().getObjectCache(immutableType);
+        if (cache != null) {
+            List<E> entities = new ArrayList<>(
+                    cache.getAll(distinctIds, new CacheEnvironment(sqlClient, con)).values()
+            );
+            if (fetcher != null) {
+                Fetchers.fetch(
+                        sqlClient,
+                        con,
+                        Collections.singletonList(
+                                new FetcherSelection<E>() {
+                                    @Override
+                                    public Fetcher<E> getFetcher() {
+                                        return fetcher;
+                                    }
+                                }
+                        ),
+                        entities
+                );
+            }
+            return entities;
+        }
         return Queries
                 .createQuery(
                         sqlClient, immutableType, (q, table) -> {
                             Expression<Object> idProp = table.get(immutableType.getIdProp().getName());
-                            if (ids.size() == 1) {
-                                q.where(idProp.eq(ids.iterator().next()));
+                            if (distinctIds.size() == 1) {
+                                q.where(idProp.eq(distinctIds.iterator().next()));
                             } else {
-                                q.where(idProp.in((Collection<Object>) ids));
+                                q.where(idProp.in((Collection<Object>) distinctIds));
                             }
                             return q.select(((Table<E>) table).fetch(fetcher));
                         }
