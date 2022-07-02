@@ -26,4 +26,8 @@ public interface CacheFilter {
     static CacheFilter of(Tuple2<String, Object> ... tuples) {
         return new CacheFilterImpl(Arrays.asList(tuples));
     }
+
+    static boolean isEmpty(CacheFilter cacheFilter) {
+        return cacheFilter == null || cacheFilter.toCacheArgs().isEmpty();
+    }
 }

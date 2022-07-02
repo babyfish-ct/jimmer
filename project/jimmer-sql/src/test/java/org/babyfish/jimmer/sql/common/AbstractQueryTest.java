@@ -82,7 +82,6 @@ public class AbstractQueryTest extends AbstractTest {
 
         QueryTestContext(int index) {
             this.index = index;
-            maxStatementIndex = Math.max(maxStatementIndex, index);
         }
 
         public QueryTestContext<R> statement(int index) {
@@ -90,6 +89,7 @@ public class AbstractQueryTest extends AbstractTest {
         }
 
         public QueryTestContext<R> sql(String sql) {
+            maxStatementIndex = Math.max(maxStatementIndex, index);
             List<Execution> executions = getExecutions();
             Assertions.assertFalse(
                     executions.isEmpty(),
