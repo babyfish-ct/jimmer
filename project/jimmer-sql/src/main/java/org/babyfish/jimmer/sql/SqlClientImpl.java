@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.association.loader.Loaders;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
+import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
@@ -53,6 +54,8 @@ class SqlClientImpl implements SqlClient {
 
     private final Entities entities;
 
+    private final Caches caches;
+
     SqlClientImpl(
             ConnectionManager connectionManager,
             Dialect dialect,
@@ -60,7 +63,8 @@ class SqlClientImpl implements SqlClient {
             Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
             Map<Class<?>, IdGenerator> idGeneratorMap,
             int defaultBatchSize,
-            int defaultListBatchSize
+            int defaultListBatchSize,
+            Caches caches
     ) {
         this.connectionManager = connectionManager != null ?
                 connectionManager :
@@ -73,6 +77,7 @@ class SqlClientImpl implements SqlClient {
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
         this.entities = new EntitiesImpl(this);
+        this.caches = caches;
     }
 
     @Override
@@ -230,18 +235,8 @@ class SqlClientImpl implements SqlClient {
         );
     }
 
-//    @Override
-//    public <K, E> Cache<K, E> getCache(Class<E> entityType) {
-//        return null;
-//    }
-//
-//    @Override
-//    public <K, SE, ST extends Table<SE>, TE, TT extends Table<TE>> Cache<K, TE> getCache(Class<ST> sourceTableType, Function<ST, TT> block) {
-//        return null;
-//    }
-//
-//    @Override
-//    public SqlClient setCaches(Consumer<CacheConfig> block) {
-//        return null;
-//    }
+    @Override
+    public Caches getCaches() {
+        return caches;
+    }
 }

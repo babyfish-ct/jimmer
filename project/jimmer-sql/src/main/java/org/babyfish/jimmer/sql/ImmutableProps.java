@@ -38,15 +38,15 @@ public class ImmutableProps {
         return propExpr.getProp();
     }
 
-    public static <T extends Table<?>> ImmutableProp join(
-            Class<T> tableType,
-            Function<T, ? extends Table<?>> block
+    public static <ST extends Table<?>> ImmutableProp join(
+            Class<ST> sourceTableType,
+            Function<ST, ? extends Table<?>> block
     ) {
         TableImplementor<?> tableImpl = TableImplementor.create(
                 AbstractMutableStatementImpl.fake(),
-                ImmutableType.get(tableType)
+                ImmutableType.get(sourceTableType)
         );
-        T table = TableWrappers.wrap(tableImpl);
+        ST table = TableWrappers.wrap(tableImpl);
         Table<?> joinedTable = block.apply(table);
         if (joinedTable == null) {
             throw new IllegalStateException(

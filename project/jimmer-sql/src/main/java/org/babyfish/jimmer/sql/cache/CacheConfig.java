@@ -1,53 +1,75 @@
 package org.babyfish.jimmer.sql.cache;
 
+import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.ImmutableProps;
+import org.babyfish.jimmer.sql.ast.table.Table;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 public class CacheConfig {
 
-    public CacheConfig setTypeName(ImmutableType immutableType, String typeName) {
+    private CacheFactory cacheFactory;
+
+    private final Map<ImmutableType, Cache<?, ?>> objectCacheMap =
+            new HashMap<>();
+
+    private final Map<ImmutableProp, Cache<?, ?>> associatedIdCacheMap =
+            new HashMap<>();
+
+    private final Map<ImmutableProp, Cache<?, List<?>>> associatedIdListCacheMap =
+            new HashMap<>();
+
+    @OldChain
+    public CacheConfig setCacheFactory(CacheFactory cacheFactory) {
+        this.cacheFactory = cacheFactory;
         return this;
     }
 
-    public CacheConfig setCache(CacheProvider<?> provider, CacheLoader<?, ?> loader) {
-        return setCache(provider, loader, null);
-    }
-
-    public CacheConfig setCache(CacheProvider<?> provider, CacheLoader<?, ?> loader, CacheLocker locker) {
+    @OldChain
+    public <T> CacheConfig setObjectCache(
+            Class<T> type,
+            Cache<?, T> cache
+    ) {
+        ImmutableType immutableType = ImmutableType.get(type);
+        objectCacheMap.put(immutableType, cache);
         return this;
     }
 
-    public CacheConfig setCache(
-            ImmutableType immutableType,
-            CacheProvider<?> binder,
-            CacheLoader<?, ?> loader
+    @OldChain
+    public <ST extends Table<?>> CacheConfig setAssociatedIdCache(
+            Class<ST> sourceTableType,
+            Function<ST, Table<?>> targetTableGetter,
+            Cache<?, ?> cache
     ) {
-        return this.setCache(immutableType, binder, loader, null);
-    }
-
-    public CacheConfig setCache(
-            ImmutableType immutableType,
-            CacheProvider<?> provider,
-            CacheLoader<?, ?> loader,
-            CacheLocker locker
-    ) {
+        ImmutableProp prop = ImmutableProps.join(sourceTableType, targetTableGetter);
+        CachesImpl.validateForAssociatedTargetId(prop);
+        associatedIdCacheMap.put(prop, cache);
         return this;
     }
 
-    public CacheConfig setCache(
-            ImmutableProp prop,
-            CacheProvider<?> provider,
-            CacheLoader<?, ?> loader
+    @OldChain
+    public <T, ST extends Table<?>, TT extends Table<T>> CacheConfig setAssociatedIdListCache(
+            Class<ST> sourceTableType,
+            Function<ST, Table<?>> targetTableGetter,
+            Cache<?, List<?>> cache
     ) {
-        return this.setCache(prop, provider, loader, null);
+        ImmutableProp prop = ImmutableProps.join(sourceTableType, targetTableGetter);
+        CachesImpl.validateForAssociationTargetIdList(prop);
+        associatedIdListCacheMap.put(prop, cache);
+        return this;
     }
 
-    public CacheConfig setCache(
-            ImmutableProp prop,
-            CacheProvider<?> provider,
-            CacheLoader<?, ?> loader,
-            CacheLocker locker
-    ) {
-        return this;
+    Caches build() {
+        return new CachesImpl(
+                cacheFactory,
+                objectCacheMap,
+                associatedIdCacheMap,
+                associatedIdListCacheMap
+        );
     }
 }
