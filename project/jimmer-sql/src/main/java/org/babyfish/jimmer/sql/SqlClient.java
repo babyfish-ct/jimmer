@@ -1,10 +1,12 @@
 package org.babyfish.jimmer.sql;
 
+import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheConfig;
+import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
@@ -110,15 +112,7 @@ public interface SqlClient {
             Filter<TT> filter
     );
 
-//    <K, E> Cache<K, E> getCache(Class<E> entityType);
-//
-//    <K, SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-//    Cache<K, TE> getCache(
-//            Class<ST> sourceTableType,
-//            Function<ST, TT> block
-//    );
-//
-//    SqlClient setCaches(Consumer<CacheConfig> block);
+    Caches getCaches();
 
     class Builder {
 
@@ -136,23 +130,29 @@ public interface SqlClient {
 
         private int defaultListBatchSize = 16;
 
+        private Caches caches;
+
         Builder() {}
 
+        @OldChain
         public Builder setConnectionManager(ConnectionManager connectionManager) {
             this.connectionManager = connectionManager;
             return this;
         }
 
+        @OldChain
         public Builder setDialect(Dialect dialect) {
             this.dialect = dialect;
             return this;
         }
 
+        @OldChain
         public Builder setExecutor(Executor executor) {
             this.executor = executor;
             return this;
         }
 
+        @OldChain
         public Builder setIdGenerator(IdGenerator idGenerator) {
             return setIdGenerator(null, idGenerator);
         }
@@ -162,6 +162,7 @@ public interface SqlClient {
             return this;
         }
 
+        @OldChain
         public Builder addScalarProvider(ScalarProvider<?, ?> scalarProvider) {
             if (scalarProviderMap.containsKey(scalarProvider.getScalarType())) {
                 throw new IllegalStateException(
@@ -174,6 +175,7 @@ public interface SqlClient {
             return this;
         }
 
+        @OldChain
         public Builder setDefaultBatchSize(int size) {
             if (size < 1) {
                 throw new IllegalStateException("size cannot be less than 1");
@@ -182,6 +184,7 @@ public interface SqlClient {
             return this;
         }
 
+        @OldChain
         public Builder setDefaultListBatchSize(int size) {
             if (size < 1) {
                 throw new IllegalStateException("size cannot be less than 1");
@@ -190,9 +193,11 @@ public interface SqlClient {
             return this;
         }
 
-//        public Builder setCaches(Consumer<CacheConfig> block) {
-//            return this;
-//        }
+        @OldChain
+        public Builder setCaches(Consumer<CacheConfig> block) {
+            caches = Caches.of(block);
+            return this;
+        }
 
         public SqlClient build() {
             return new SqlClientImpl(
@@ -202,7 +207,8 @@ public interface SqlClient {
                     scalarProviderMap,
                     idGeneratorMap,
                     defaultBatchSize,
-                    defaultListBatchSize
+                    defaultListBatchSize,
+                    caches
             );
         }
     }

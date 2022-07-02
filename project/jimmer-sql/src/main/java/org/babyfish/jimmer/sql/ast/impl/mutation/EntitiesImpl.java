@@ -5,19 +5,16 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.BatchEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleEntitySaveCommand;
-import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.Converters;
 
+import java.sql.Connection;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -31,25 +28,67 @@ public class EntitiesImpl implements Entities {
 
     @Override
     public <E> E findById(Class<E> entityType, Object id) {
+        return sqlClient.getConnectionManager().execute(con ->
+                findById(entityType, id, con)
+        );
+    }
+
+    @Override
+    public <E> List<E> findByIds(Class<E> entityType, Collection<Object> ids) {
+        return sqlClient.getConnectionManager().execute(con ->
+                findByIds(entityType, ids, con)
+        );
+    }
+
+    @Override
+    public <ID, E> Map<ID, E> findMapByIds(Class<E> entityType, Collection<ID> ids) {
+        return sqlClient.getConnectionManager().execute(con ->
+                findMapByIds(entityType, ids, con)
+        );
+    }
+
+    @Override
+    public <E> E findById(Fetcher<E> fetcher, Object id) {
+        return sqlClient.getConnectionManager().execute(con ->
+                findById(fetcher, id, con)
+        );
+    }
+
+    @Override
+    public <E> List<E> findByIds(Fetcher<E> fetcher, Collection<Object> ids) {
+        return sqlClient.getConnectionManager().execute(con ->
+                findByIds(fetcher, ids, con)
+        );
+    }
+
+    @Override
+    public <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids) {
+        return sqlClient.getConnectionManager().execute(con ->
+                findMapByIds(fetcher, ids, con)
+        );
+    }
+
+    @Override
+    public <E> E findById(Class<E> entityType, Object id, Connection con) {
         if (id instanceof Collection<?>) {
             throw new IllegalArgumentException(
                     "id cannot be collection, do you want to call 'findByIds'?"
             );
         }
-        List<E> rows = findByIds(entityType, null, Collections.singleton(id));
+        List<E> rows = findByIds(entityType, null, Collections.singleton(id), con);
         return rows.isEmpty() ? null : rows.get(0);
     }
 
     @Override
-    public <E> List<E> findByIds(Class<E> entityType, Collection<Object> ids) {
-        return findByIds(entityType, null, ids);
+    public <E> List<E> findByIds(Class<E> entityType, Collection<Object> ids, Connection con) {
+        return findByIds(entityType, null, ids, con);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <ID, E> Map<ID, E> findMapByIds(Class<E> entityType, Collection<ID> ids) {
+    public <ID, E> Map<ID, E> findMapByIds(Class<E> entityType, Collection<ID> ids, Connection con) {
         String idPropName = ImmutableType.get(entityType).getIdProp().getName();
-        return this.findByIds(entityType, null, ids).stream().collect(
+        return this.findByIds(entityType, null, ids, con).stream().collect(
                 Collectors.toMap(
                         it -> (ID)((ImmutableSpi) it).__get(idPropName),
                         Function.identity(),
@@ -60,26 +99,26 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> E findById(Fetcher<E> fetcher, Object id) {
+    public <E> E findById(Fetcher<E> fetcher, Object id, Connection con) {
         if (id instanceof Collection<?>) {
             throw new IllegalArgumentException(
                     "id cannot be collection, do you want to call 'findByIds'?"
             );
         }
-        List<E> rows = findByIds(fetcher.getJavaClass(), fetcher, Collections.singleton(id));
+        List<E> rows = findByIds(fetcher.getJavaClass(), fetcher, Collections.singleton(id), con);
         return rows.isEmpty() ? null : rows.get(0);
     }
 
     @Override
-    public <E> List<E> findByIds(Fetcher<E> fetcher, Collection<Object> ids) {
-        return findByIds(fetcher.getJavaClass(), fetcher, ids);
+    public <E> List<E> findByIds(Fetcher<E> fetcher, Collection<Object> ids, Connection con) {
+        return findByIds(fetcher.getJavaClass(), fetcher, ids, con);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids) {
+    public <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids, Connection con) {
         String idPropName = ImmutableType.get(fetcher.getJavaClass()).getIdProp().getName();
-        return this.findByIds(fetcher.getJavaClass(), fetcher, ids).stream().collect(
+        return this.findByIds(fetcher.getJavaClass(), fetcher, ids, con).stream().collect(
                 Collectors.toMap(
                         it -> (ID)((ImmutableSpi) it).__get(idPropName),
                         Function.identity(),
@@ -93,7 +132,8 @@ public class EntitiesImpl implements Entities {
     private <E> List<E> findByIds(
             Class<E> entityType,
             Fetcher<E> fetcher,
-            Collection<?> ids
+            Collection<?> ids,
+            Connection con
     ) {
         if (ids.isEmpty()) {
             return Collections.emptyList();
@@ -123,7 +163,7 @@ public class EntitiesImpl implements Entities {
                             return q.select(((Table<E>) table).fetch(fetcher));
                         }
                 )
-                .execute();
+                .execute(con);
     }
 
     @Override

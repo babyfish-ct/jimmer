@@ -1,15 +1,14 @@
-package org.babyfish.jimmer.sql.cache.impl;
+package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.cache.CacheFilter;
 
 import java.util.*;
 
-public class CacheFilterImpl implements CacheFilter {
+class CacheFilterImpl implements CacheFilter {
 
     private final NavigableMap<String, Object> args;
 
-    public CacheFilterImpl(Map<String, Object> args) {
+    CacheFilterImpl(Map<String, Object> args) {
         if (args == null || args.isEmpty()) {
             this.args = Collections.emptyNavigableMap();
         } else {
