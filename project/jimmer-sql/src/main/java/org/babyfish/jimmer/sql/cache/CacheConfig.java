@@ -36,7 +36,7 @@ public class CacheConfig {
             Cache<?, T> cache
     ) {
         ImmutableType immutableType = ImmutableType.get(type);
-        objectCacheMap.put(immutableType, cache);
+        objectCacheMap.put(immutableType, CacheWrapper.unwrap(cache));
         return this;
     }
 
@@ -48,7 +48,7 @@ public class CacheConfig {
     ) {
         ImmutableProp prop = ImmutableProps.join(sourceTableType, targetTableGetter);
         CachesImpl.validateForAssociatedTargetId(prop);
-        associatedIdCacheMap.put(prop, cache);
+        associatedIdCacheMap.put(prop, CacheWrapper.unwrap(cache));
         return this;
     }
 
@@ -60,7 +60,7 @@ public class CacheConfig {
     ) {
         ImmutableProp prop = ImmutableProps.join(sourceTableType, targetTableGetter);
         CachesImpl.validateForAssociationTargetIdList(prop);
-        associatedIdListCacheMap.put(prop, cache);
+        associatedIdListCacheMap.put(prop, CacheWrapper.unwrap(cache));
         return this;
     }
 

@@ -18,7 +18,7 @@ public class ObjectCacheTest extends AbstractQueryTest {
                             new CacheFactory() {
                                 @Override
                                 public Cache<?, ?> createObjectCache(ImmutableType type) {
-                                    return new ObjectCache<>(type.getJavaClass());
+                                    return new CacheImpl<>();
                                 }
                             }
                     )

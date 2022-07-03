@@ -12,25 +12,25 @@ public interface Entities {
 
     <E> E findById(Class<E> entityType, Object id);
 
-    <E> List<E> findByIds(Class<E> entityType, Collection<Object> ids);
+    <E> List<E> findByIds(Class<E> entityType, Collection<?> ids);
 
     <ID, E> Map<ID, E> findMapByIds(Class<E> entityType, Collection<ID> ids);
 
     <E> E findById(Fetcher<E> fetcher, Object id);
 
-    <E> List<E> findByIds(Fetcher<E> fetcher, Collection<Object> ids);
+    <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids);
 
     <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids);
 
     <E> E findById(Class<E> entityType, Object id, Connection con);
 
-    <E> List<E> findByIds(Class<E> entityType, Collection<Object> ids, Connection con);
+    <E> List<E> findByIds(Class<E> entityType, Collection<?> ids, Connection con);
 
     <ID, E> Map<ID, E> findMapByIds(Class<E> entityType, Collection<ID> ids, Connection con);
 
     <E> E findById(Fetcher<E> fetcher, Object id, Connection con);
 
-    <E> List<E> findByIds(Fetcher<E> fetcher, Collection<Object> ids, Connection con);
+    <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids, Connection con);
 
     <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids, Connection con);
 
