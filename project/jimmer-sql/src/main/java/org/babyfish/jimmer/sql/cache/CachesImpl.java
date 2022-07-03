@@ -38,17 +38,17 @@ class CachesImpl implements Caches {
 
     @Override
     public <K, V> Cache<K, V> getObjectCache(ImmutableType type) {
-        return ReentrantCache.reentrant(getObjectCacheImpl(type));
+        return CacheWrapper.wrap(getObjectCacheImpl(type), CacheWrapper.Type.OBJECT);
     }
 
     @Override
     public <K, V> Cache<K, V> getAssociatedIdCache(ImmutableProp prop) {
-        return ReentrantCache.reentrant(getAssociatedIdCacheImpl(prop));
+        return CacheWrapper.wrap(getAssociatedIdCacheImpl(prop), CacheWrapper.Type.ASSOCIATED_ID);
     }
 
     @Override
     public <K, V> Cache<K, List<V>> getAssociatedIdListCache(ImmutableProp prop) {
-        return ReentrantCache.reentrant(getAssociatedIdListCacheImpl(prop));
+        return CacheWrapper.wrap(getAssociatedIdListCacheImpl(prop), CacheWrapper.Type.ASSOCIATED_ID_LIST);
     }
 
     @SuppressWarnings("unchecked")

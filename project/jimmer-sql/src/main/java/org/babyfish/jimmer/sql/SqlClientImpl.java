@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 class SqlClientImpl implements SqlClient {
@@ -77,7 +78,7 @@ class SqlClientImpl implements SqlClient {
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
         this.entities = new EntitiesImpl(this);
-        this.caches = caches;
+        this.caches = caches != null ? caches: Caches.of(cfg -> {});
     }
 
     @Override

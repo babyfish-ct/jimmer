@@ -6,12 +6,12 @@ import java.util.Map;
 
 public interface Cache<K, V> {
     
-    default V get(K key, CacheEnvironment env) {
+    default V get(K key, QueryCacheEnvironment<K, V> env) {
         Map<K, V> map = getAll(Collections.singleton(key), env);
         return map.get(key);
     }
 
-    Map<K, V> getAll(Collection<K> keys, CacheEnvironment env);
+    Map<K, V> getAll(Collection<K> keys, QueryCacheEnvironment<K, V> env);
 
     default void delete(K key, CacheEnvironment env) {
         deleteAll(Collections.singleton(key), env);

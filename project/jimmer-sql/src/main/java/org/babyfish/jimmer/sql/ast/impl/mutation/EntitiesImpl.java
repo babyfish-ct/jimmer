@@ -12,6 +12,8 @@ import org.babyfish.jimmer.sql.ast.mutation.SimpleEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
+import org.babyfish.jimmer.sql.cache.CacheLoader;
+import org.babyfish.jimmer.sql.cache.QueryCacheEnvironment;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.fetcher.impl.Fetchers;
@@ -38,7 +40,7 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> List<E> findByIds(Class<E> entityType, Collection<Object> ids) {
+    public <E> List<E> findByIds(Class<E> entityType, Collection<?> ids) {
         return sqlClient.getConnectionManager().execute(con ->
                 findByIds(entityType, ids, con)
         );
@@ -59,7 +61,7 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> List<E> findByIds(Fetcher<E> fetcher, Collection<Object> ids) {
+    public <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids) {
         return sqlClient.getConnectionManager().execute(con ->
                 findByIds(fetcher, ids, con)
         );
@@ -84,7 +86,7 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> List<E> findByIds(Class<E> entityType, Collection<Object> ids, Connection con) {
+    public <E> List<E> findByIds(Class<E> entityType, Collection<?> ids, Connection con) {
         return findByIds(entityType, null, ids, con);
     }
 
@@ -114,7 +116,7 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> List<E> findByIds(Fetcher<E> fetcher, Collection<Object> ids, Connection con) {
+    public <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids, Connection con) {
         return findByIds(fetcher.getJavaClass(), fetcher, ids, con);
     }
 
@@ -166,7 +168,19 @@ public class EntitiesImpl implements Entities {
         Cache<Object, E> cache = sqlClient.getCaches().getObjectCache(immutableType);
         if (cache != null) {
             List<E> entities = new ArrayList<>(
-                    cache.getAll(distinctIds, new CacheEnvironment(sqlClient, con)).values()
+                    cache.getAll(
+                            distinctIds,
+                            new QueryCacheEnvironment<Object, E>(
+                                    sqlClient,
+                                    con,
+                                    null,
+                                    CacheLoader.objectLoader(
+                                            sqlClient,
+                                            con,
+                                            (Class<E>) immutableType.getJavaClass()
+                                    )
+                            )
+                    ).values()
             );
             if (fetcher != null) {
                 Fetchers.fetch(
@@ -192,7 +206,7 @@ public class EntitiesImpl implements Entities {
                             if (distinctIds.size() == 1) {
                                 q.where(idProp.eq(distinctIds.iterator().next()));
                             } else {
-                                q.where(idProp.in((Collection<Object>) distinctIds));
+                                q.where(idProp.in(distinctIds));
                             }
                             return q.select(((Table<E>) table).fetch(fetcher));
                         }
