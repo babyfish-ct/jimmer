@@ -144,4 +144,53 @@ public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void loadParentDetailWithFilter() {
+        Fetcher<Book> fetcher = BookFetcher.$.store(
+                BookStoreFetcher.$.name(),
+                it -> it.filter(
+                        args -> args
+                                .where(args.getTable().name().like("M", LikeMode.START))
+                )
+        );
+        connectAndExpect(
+                con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("store"))
+                        .load(Entities.BOOKS_WITH_MANY_TO_ONE),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_2_.ID, tb_1_.ID, tb_1_.NAME " +
+                                    "from BOOK_STORE as tb_1_ " +
+                                    "inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                                    "where tb_2_.ID in (?, ?, ?, ?) " +
+                                    "and tb_1_.NAME like ?"
+                    ).variables(learningGraphQLId1, learningGraphQLId2, graphQLInActionId1, graphQLInActionId2, "M%");
+                    ctx.rows(1);
+                    ctx.row(0, map -> {
+                        expect(
+                                null,
+                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(0))
+                        );
+                        expect(
+                                null,
+                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(1))
+                        );
+                        expect(
+                                "{" +
+                                        "--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
+                                        "--->\"name\":\"MANNING\"" +
+                                        "}",
+                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(2))
+                        );
+                        expect(
+                                "{" +
+                                        "--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
+                                        "--->\"name\":\"MANNING\"" +
+                                        "}",
+                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(3))
+                        );
+                    });
+                }
+        );
+    }
 }
