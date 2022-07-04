@@ -68,7 +68,7 @@ public abstract class AbstractDataLoader {
             return (Map<ImmutableSpi, Object>)(Map<?, ?>) loadParents(sources);
         }
         if (prop.isEntityList()) {
-            return (Map<ImmutableSpi, Object>)(Map<?, ?>) loadTargetMapDirectly(sources);
+            return (Map<ImmutableSpi, Object>)(Map<?, ?>) loadTargetMultiMap(sources);
         }
         return (Map<ImmutableSpi, Object>)(Map<?, ?>) loadTargetMap(sources);
     }
@@ -176,8 +176,16 @@ public abstract class AbstractDataLoader {
             return loadTargetMapDirectly(sources);
         }
         List<Object> sourceIds = toSourceIds(sources);
-        Map<Object, Object> idMap = Tuple2.toMap(
-                querySourceTargetIdPairs(sourceIds)
+        Map<Object, Object> idMap = cache.getAll(
+                sourceIds,
+                new QueryCacheEnvironment<>(
+                        sqlClient,
+                        con,
+                        filter,
+                        it -> Tuple2.toMap(
+                                querySourceTargetIdPairs(it)
+                        )
+                )
         );
         Map<Object, ImmutableSpi> targetMap = Utils.toMap(
                 this::toTargetId,
@@ -203,22 +211,34 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<ImmutableSpi, List<ImmutableSpi>> loadTargetMultiMap(Collection<ImmutableSpi> sources) {
-        Cache<Object, Object> cache = sqlClient.getCaches().getAssociatedIdCache(prop);
+        Cache<Object, List<Object>> cache = sqlClient.getCaches().getAssociatedIdListCache(prop);
         if (cache == null) {
             return loadTargetMultiMapDirectly(sources);
         }
         List<Object> sourceIds = toSourceIds(sources);
-        Map<Object, Object> idMap = Tuple2.toMap(
-                querySourceTargetIdPairs(sourceIds)
+        Map<Object, List<Object>> idMultiMap = cache.getAll(
+                sourceIds,
+                new QueryCacheEnvironment<>(
+                        sqlClient,
+                        con,
+                        filter,
+                        it -> Tuple2.toMultiMap(
+                                querySourceTargetIdPairs(it)
+                        )
+                )
         );
-        Map<Object, List<ImmutableSpi>> targetMap = Utils.toMultiMap(
+        Map<Object, ImmutableSpi> targetMap = Utils.toMap(
                 this::toTargetId,
-                findTargets(idMap.values())
+                findTargets(
+                        idMultiMap.values().stream().flatMap(
+                                it -> it.stream()
+                        ).collect(Collectors.toList())
+                )
         );
         return Utils.joinCollectionAndMap(
                 sources,
                 this::toSourceId,
-                Utils.joinMaps(idMap, targetMap)
+                Utils.joinMultiMapAndMap(idMultiMap, targetMap)
         );
     }
 
