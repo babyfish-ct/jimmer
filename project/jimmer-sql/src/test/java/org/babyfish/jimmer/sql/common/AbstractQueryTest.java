@@ -200,7 +200,7 @@ public class AbstractQueryTest extends AbstractTest {
     }
 
     protected static void expect(String json, Object o) {
-        Assertions.assertEquals(json == null, o == null);
+        Assertions.assertEquals(json == null, o == null, "The nullity of json and o must be same");
         if (o != null) {
             Assertions.assertEquals(
                     json.replace("--->", ""),

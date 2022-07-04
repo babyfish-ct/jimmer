@@ -33,7 +33,9 @@ public class CacheImpl<T> implements Cache<Object, T> {
                 e.setValue(loadedMap.get(e.getKey()));
             }
         }
-        map.putAll(loadedMap);
+        for (Object missedKey : missedKeys) {
+            map.put(missedKey, loadedMap.get(missedKey));
+        }
         return resultMap;
     }
 
