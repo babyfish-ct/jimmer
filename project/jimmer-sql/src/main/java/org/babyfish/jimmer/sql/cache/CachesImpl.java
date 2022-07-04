@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.meta.Column;
 
 import java.util.HashMap;
 import java.util.List;
@@ -107,6 +108,7 @@ class CachesImpl implements Caches {
             if (cacheFactory != null) {
                 cache = cacheFactory.createAssociatedIdCache(prop);
             }
+            associatedIdCacheMap.put(prop, cache);
             return (Cache<K, V>) cache;
         } finally {
             lock.unlock();
@@ -138,6 +140,7 @@ class CachesImpl implements Caches {
             if (cacheFactory != null) {
                 cache = cacheFactory.createAssociatedIdListCache(prop);
             }
+            associatedIdListCacheMap.put(prop, (Cache<?, List<?>>)cache);
             return (Cache<K, List<V>>) cache;
         } finally {
             lock.unlock();
@@ -145,12 +148,12 @@ class CachesImpl implements Caches {
     }
 
     public static void validateForAssociatedTargetId(ImmutableProp prop) {
-        if (prop.isReference()) {
+        if (!prop.isReference()) {
             throw new IllegalArgumentException(
                     "\"" + prop + "\" is not reference association"
             );
         }
-        if (prop.getStorage() != null) {
+        if (!(prop.getStorage() instanceof Column)) {
             throw new IllegalArgumentException(
                     "\"" + prop + "\" is association based on foreign key, " +
                             "it's unnecessary to specify the associated id cache for it"
@@ -159,7 +162,7 @@ class CachesImpl implements Caches {
     }
 
     public static void validateForAssociationTargetIdList(ImmutableProp prop) {
-        if (prop.isReference()) {
+        if (!prop.isEntityList()) {
             throw new IllegalArgumentException(
                     "\"" + prop + "\" is not list association"
             );

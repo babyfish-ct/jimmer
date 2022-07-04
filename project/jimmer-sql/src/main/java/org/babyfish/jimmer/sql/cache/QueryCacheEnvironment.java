@@ -16,7 +16,9 @@ public class QueryCacheEnvironment<K, V> extends CacheEnvironment {
             CacheLoader<K, V> loader
     ) {
         super(sqlClient, connection, filter);
-        this.loader = Objects.requireNonNull(loader, "loader cannot be null");
+        this.loader = CacheLoaderWrapper.wrap(
+                Objects.requireNonNull(loader, "loader cannot be null")
+        );
     }
 
     public CacheLoader<K, V> getLoader() {

@@ -34,11 +34,7 @@ class InCollectionPredicate extends AbstractPredicate {
     public void renderTo(SqlBuilder builder) {
         if (values.isEmpty()) {
             builder.sql(negative ? "1 = 1" : "1 = 0");
-        } /*else if (values.size() == 1) {
-            renderChild((Ast) expression, builder);
-            builder.sql(negative ? " <> " : " = ");
-            builder.variable(values.iterator().next());
-        }*/ else {
+        } else {
             renderChild((Ast) expression, builder);
             builder.sql(negative ? " not in " : " in ");
             builder.sql("(");

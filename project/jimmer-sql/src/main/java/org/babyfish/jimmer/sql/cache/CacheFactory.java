@@ -4,6 +4,8 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.SqlClient;
 
+import java.util.List;
+
 public interface CacheFactory {
 
     default Cache<?, ?> createObjectCache(ImmutableType type) {
@@ -14,7 +16,7 @@ public interface CacheFactory {
         return null;
     }
 
-    default Cache<?, ?> createAssociatedIdListCache(ImmutableProp type) {
+    default Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp type) {
         return null;
     }
 }
