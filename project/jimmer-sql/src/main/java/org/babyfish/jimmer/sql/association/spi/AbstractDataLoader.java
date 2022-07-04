@@ -68,29 +68,29 @@ public abstract class AbstractDataLoader {
             return (Map<ImmutableSpi, Object>)(Map<?, ?>) loadParents(sources);
         }
         if (prop.isEntityList()) {
-
+            return (Map<ImmutableSpi, Object>)(Map<?, ?>) loadTargetMapDirectly(sources);
         }
-        return (Map<ImmutableSpi, Object>)(Map<?, ?>)loadTargetMap(sources);
+        return (Map<ImmutableSpi, Object>)(Map<?, ?>) loadTargetMap(sources);
     }
 
     @SuppressWarnings("unchecked")
     private Map<ImmutableSpi, ImmutableSpi> loadParents(Collection<ImmutableSpi> sources) {
-        Map<ImmutableSpi, Object> sourceFkMap = new LinkedHashMap<>(
+        Map<Object, Object> fkMap = new LinkedHashMap<>(
                 (sources.size() * 4 + 2) / 3
         );
-        Collection<ImmutableSpi> missedFkSources;
+        Collection<Object> missedFkSourceIds;
         if (filter != null) {
-            missedFkSources = sources;
+            missedFkSourceIds = toSourceIds(sources);
         } else {
-            missedFkSources = new ArrayList<>();
+            missedFkSourceIds = new ArrayList<>();
             for (ImmutableSpi source : sources) {
                 if (source.__isLoaded(prop.getName())) {
                     ImmutableSpi target = (ImmutableSpi) source.__get(prop.getName());
                     if (target != null) {
-                        sourceFkMap.put(source, target.__get(targetIdProp.getName()));
+                        fkMap.put(toSourceId(source), toTargetId(target));
                     }
                 } else {
-                    missedFkSources.add(source);
+                    missedFkSourceIds.add(toSourceId(source));
                 }
             }
         }
@@ -98,11 +98,15 @@ public abstract class AbstractDataLoader {
                 .getCaches()
                 .getAssociatedIdCache(prop);
         if (fkCache == null) {
-            return loadParentsDirectly(sourceFkMap, missedFkSources);
+            return loadParentsDirectly(
+                    sources,
+                    fkMap,
+                    missedFkSourceIds
+            );
         }
-        if (!missedFkSources.isEmpty()) {
-            Map<Object, Object> fkMap = fkCache.getAll(
-                    toSourceIds(missedFkSources),
+        if (!missedFkSourceIds.isEmpty()) {
+            Map<Object, Object> cachedFkMap = fkCache.getAll(
+                    missedFkSourceIds,
                     new QueryCacheEnvironment<>(
                             sqlClient,
                             con,
@@ -110,61 +114,60 @@ public abstract class AbstractDataLoader {
                             this::queryForeignKeyMap
                     )
             );
-            for (ImmutableSpi missedFkSource : missedFkSources) {
-                Object fk = fkMap.get(toSourceId(missedFkSource));
+            for (Object sourceId : missedFkSourceIds) {
+                Object fk = cachedFkMap.get(sourceId);
                 if (fk != null) {
-                    sourceFkMap.put(missedFkSource, fk);
+                    fkMap.put(sourceId, fk);
                 }
             }
         }
-        Map<Object, ImmutableSpi> targetMap = Utils.toMap(
-                this::toTargetId,
-                findTargets(
-                        toSourceIds(sourceFkMap.keySet()),
-                        new LinkedHashSet<>(sourceFkMap.values())
-                )
-        );
-        return Utils.joinMaps(sourceFkMap, targetMap);
+        Map<Object, ImmutableSpi> targetMap =
+                Utils.joinMaps(
+                        fkMap,
+                        Utils.toMap(
+                                this::toTargetId,
+                                findTargets(new LinkedHashSet<>(fkMap.values()))
+                        )
+                );
+        return Utils.joinCollectionAndMap(sources, this::toSourceId, targetMap);
     }
 
     private Map<ImmutableSpi, ImmutableSpi> loadParentsDirectly(
-            Map<ImmutableSpi, Object> sourceFkMap,
-            Collection<ImmutableSpi> missedFkSources
+            Collection<ImmutableSpi> sources,
+            Map<Object, Object> fkMap,
+            Collection<Object> missedFkSourceIds
     ) {
-        Map<ImmutableSpi, ImmutableSpi> map1 = null;
-        if (!sourceFkMap.isEmpty()) {
+        Map<Object, ImmutableSpi> map1 = null;
+        if (!fkMap.isEmpty()) {
             map1 = Utils.joinMaps(
-                    sourceFkMap,
+                    fkMap,
                     Utils.toMap(
                             this::toTargetId,
-                            findTargets(
-                                    toSourceIds(sourceFkMap.keySet()),
-                                    sourceFkMap.values()
-                            )
+                            findTargets(fkMap.values())
                     )
             );
         }
-        Map<ImmutableSpi, ImmutableSpi> map2 = null;
-        if (!missedFkSources.isEmpty()) {
+        Map<Object, ImmutableSpi> map2 = null;
+        if (!missedFkSourceIds.isEmpty()) {
             if (filter != null || (fetcher != null && fetcher.getFieldMap().size() > 1)) {
-                map2 = Utils.joinCollectionAndMap(
-                        missedFkSources,
-                        this::toSourceId,
-                        Tuple2.toMap(
-                                querySourceTargetPairs(toSourceIds(missedFkSources))
-                        )
+                map2 = Tuple2.toMap(
+                        querySourceTargetPairs(missedFkSourceIds)
                 );
             } else {
-                Map<Object, Object> fkMap =
-                        queryForeignKeyMap(toSourceIds(missedFkSources));
-                map2 = new LinkedHashMap<>((missedFkSources.size() * 4 + 2) / 3);
-                for (ImmutableSpi missedFkSource : missedFkSources) {
-                    ImmutableSpi target = makeIdOnlyTarget(fkMap.get(toSourceId(missedFkSource)));
-                    map2.put(missedFkSource, target);
+                Map<Object, Object> loadedFkMap =
+                        queryForeignKeyMap(missedFkSourceIds);
+                map2 = new LinkedHashMap<>((missedFkSourceIds.size() * 4 + 2) / 3);
+                for (Object sourceId : missedFkSourceIds) {
+                    Object targetId = loadedFkMap.get(sourceId);
+                    map2.put(sourceId, makeIdOnlyTarget(targetId));
                 }
             }
         }
-        return Utils.mergeMap(map1, map2);
+        return Utils.joinCollectionAndMap(
+                sources,
+                this::toTargetId,
+                Utils.mergeMap(map1, map2)
+        );
     }
 
     private Map<ImmutableSpi, ImmutableSpi> loadTargetMap(Collection<ImmutableSpi> sources) {
@@ -178,7 +181,7 @@ public abstract class AbstractDataLoader {
         );
         Map<Object, ImmutableSpi> targetMap = Utils.toMap(
                 this::toTargetId,
-                findTargets(sourceIds, idMap.values())
+                findTargets(idMap.values())
         );
         return Utils.joinCollectionAndMap(
                 sources,
@@ -210,7 +213,7 @@ public abstract class AbstractDataLoader {
         );
         Map<Object, List<ImmutableSpi>> targetMap = Utils.toMultiMap(
                 this::toTargetId,
-                findTargets(sourceIds, idMap.values())
+                findTargets(idMap.values())
         );
         return Utils.joinCollectionAndMap(
                 sources,
@@ -306,10 +309,7 @@ public abstract class AbstractDataLoader {
     }
 
     @SuppressWarnings("unchecked")
-    private List<ImmutableSpi> findTargets(
-            Collection<Object> sourceIdsForFilter,
-            Collection<Object> targetIds
-    ) {
+    private List<ImmutableSpi> findTargets(Collection<Object> targetIds) {
         if (fetcher != null && fetcher.getFieldMap().size() > 1) {
             return sqlClient.getEntities().findByIds(
                     fetcher,

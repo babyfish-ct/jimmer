@@ -31,7 +31,7 @@ dependencies {
 
     testImplementation("com.h2database:h2:2.1.212")
     testImplementation("mysql:mysql-connector-java:8.0.29")
-    testImplementation("org.postgresql:postgresql:42.3.4")
+    testImplementation("org.postgresql:postgresql:42.3.6")
 }
 
 tasks.getByName<Test>("test") {
