@@ -19,7 +19,7 @@ class Utils {
             return nonNullMaps.get(0);
         }
         int totalCount = nonNullMaps.stream().mapToInt(Map::size).sum();
-        Map<K, V> finalMap = new HashMap<>((totalCount * 4 + 2) / 3);
+        Map<K, V> finalMap = new LinkedHashMap<>((totalCount * 4 + 2) / 3);
         for (Map<K, V> map : nonNullMaps) {
             finalMap.putAll(map);
         }
@@ -27,7 +27,7 @@ class Utils {
     }
 
     static <K, T, V> Map<K, V> joinMaps(Map<K, T> map1, Map<T, V> map2) {
-        Map<K, V> map = new HashMap<>((map1.size() * 4 + 2) / 3);
+        Map<K, V> map = new LinkedHashMap<>((map1.size() * 4 + 2) / 3);
         for (Map.Entry<K, T> e : map1.entrySet()) {
             V v = map2.get(e.getValue());
             if (v != null) {
@@ -42,7 +42,7 @@ class Utils {
             Function<K, T> middleKeyExtractor,
             Map<T, V> map
     ) {
-        Map<K, V> resultMap = new HashMap<>((list.size() * 4 + 2) / 3);
+        Map<K, V> resultMap = new LinkedHashMap<>((list.size() * 4 + 2) / 3);
         for (K k : list) {
             T t = middleKeyExtractor.apply(k);
             V v = map.get(t);

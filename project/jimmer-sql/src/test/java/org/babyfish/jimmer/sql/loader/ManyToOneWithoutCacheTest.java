@@ -1,0 +1,92 @@
+package org.babyfish.jimmer.sql.loader;
+
+import org.babyfish.jimmer.sql.ast.LikeMode;
+import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.impl.DataLoader;
+import org.babyfish.jimmer.sql.model.Book;
+import org.babyfish.jimmer.sql.model.BookFetcher;
+import org.babyfish.jimmer.sql.model.BookStoreFetcher;
+import org.junit.jupiter.api.Test;
+
+import static org.babyfish.jimmer.sql.common.Constants.*;
+
+public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
+    
+    @Test
+    public void loadParentId() {
+        Fetcher<Book> fetcher = BookFetcher.$.store();
+        connectAndExpect(
+            con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("store"))
+                    .load(Entities.BOOKS_WITH_MANY_TO_ONE),
+            ctx -> {
+                ctx.sql(
+                        "select tb_1_.ID, tb_1_.STORE_ID " +
+                                "from BOOK as tb_1_ " +
+                                "where tb_1_.ID in (?, ?) and tb_1_.STORE_ID is not null"
+                ).variables(learningGraphQLId2, graphQLInActionId2);
+                ctx.rows(1);
+                ctx.row(0, map -> {
+                    expect(
+                            "{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}",
+                            map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(0))
+                    );
+                    expect(
+                            "{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}",
+                            map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(1))
+                    );
+                    expect(
+                            "{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}",
+                            map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(2))
+                    );
+                    expect(
+                            "{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}",
+                            map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(3))
+                    );
+                });
+            }
+        );
+    }
+    
+    @Test
+    public void loadParentIdWithFilter() {
+        Fetcher<Book> fetcher = BookFetcher.$.store(
+                BookStoreFetcher.$,
+                it -> it.filter(
+                        args -> args
+                                .where(args.getTable().name().like("M", LikeMode.START))
+                )
+        );
+        connectAndExpect(
+                con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("store"))
+                        .load(Entities.BOOKS_WITH_MANY_TO_ONE),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_2_.ID, tb_1_.ID " +
+                                    "from BOOK_STORE as tb_1_ " +
+                                    "inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                                    "where tb_2_.ID in (?, ?, ?, ?) and tb_1_.NAME like ?"
+                    ).variables(learningGraphQLId1, learningGraphQLId2, graphQLInActionId1, graphQLInActionId2, "M%");
+                    ctx.rows(1);
+                    ctx.row(0, map -> {
+                        expect(
+                                null,
+                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(0))
+                        );
+                        expect(
+                                null,
+                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(1))
+                        );
+                        expect(
+                                "{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}",
+                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(2))
+                        );
+                        expect(
+                                "{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}",
+                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(3))
+                        );
+                    });
+                }
+        );
+    }
+}

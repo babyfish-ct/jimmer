@@ -75,18 +75,23 @@ public abstract class AbstractDataLoader {
 
     @SuppressWarnings("unchecked")
     private Map<ImmutableSpi, ImmutableSpi> loadParents(Collection<ImmutableSpi> sources) {
-        Map<ImmutableSpi, Object> sourceFkMap = new IdentityHashMap<>(
+        Map<ImmutableSpi, Object> sourceFkMap = new LinkedHashMap<>(
                 (sources.size() * 4 + 2) / 3
         );
-        List<ImmutableSpi> missedFkSources = new ArrayList<>();
-        for (ImmutableSpi source : sources) {
-            if (source.__isLoaded(prop.getName())) {
-                ImmutableSpi target = (ImmutableSpi) source.__get(prop.getName());
-                if (target != null) {
-                    sourceFkMap.put(source, target.__get(targetIdProp.getName()));
+        Collection<ImmutableSpi> missedFkSources;
+        if (filter != null) {
+            missedFkSources = sources;
+        } else {
+            missedFkSources = new ArrayList<>();
+            for (ImmutableSpi source : sources) {
+                if (source.__isLoaded(prop.getName())) {
+                    ImmutableSpi target = (ImmutableSpi) source.__get(prop.getName());
+                    if (target != null) {
+                        sourceFkMap.put(source, target.__get(targetIdProp.getName()));
+                    }
+                } else {
+                    missedFkSources.add(source);
                 }
-            } else {
-                missedFkSources.add(source);
             }
         }
         Cache<Object, Object> fkCache = sqlClient
@@ -116,7 +121,7 @@ public abstract class AbstractDataLoader {
                 this::toTargetId,
                 findTargets(
                         toSourceIds(sourceFkMap.keySet()),
-                        new HashSet<>(sourceFkMap.values())
+                        new LinkedHashSet<>(sourceFkMap.values())
                 )
         );
         return Utils.joinMaps(sourceFkMap, targetMap);
@@ -124,7 +129,7 @@ public abstract class AbstractDataLoader {
 
     private Map<ImmutableSpi, ImmutableSpi> loadParentsDirectly(
             Map<ImmutableSpi, Object> sourceFkMap,
-            List<ImmutableSpi> missedFkSources
+            Collection<ImmutableSpi> missedFkSources
     ) {
         Map<ImmutableSpi, ImmutableSpi> map1 = null;
         if (!sourceFkMap.isEmpty()) {
@@ -152,7 +157,7 @@ public abstract class AbstractDataLoader {
             } else {
                 Map<Object, Object> fkMap =
                         queryForeignKeyMap(toSourceIds(missedFkSources));
-                map2 = new HashMap<>((missedFkSources.size() * 4 + 2) / 3);
+                map2 = new LinkedHashMap<>((missedFkSources.size() * 4 + 2) / 3);
                 for (ImmutableSpi missedFkSource : missedFkSources) {
                     ImmutableSpi target = makeIdOnlyTarget(fkMap.get(toSourceId(missedFkSource)));
                     map2.put(missedFkSource, target);
@@ -231,9 +236,11 @@ public abstract class AbstractDataLoader {
         List<Tuple2<Object, Object>> tuples = Queries
                 .createQuery(sqlClient, prop.getDeclaringType(), (q, source) -> {
                     Expression<Object> pkExpr = source.get(thisIdProp.getName());
-                    Expression<Object> fkExpr = source.join(prop.getName()).get(targetIdProp.getName());
+                    Table<?> targetTable = source.join(prop.getName());
+                    Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
                     q.where(pkExpr.in(sourceIds));
                     q.where(fkExpr.isNotNull());
+                    applyFilter(q, targetTable, sourceIds);
                     return q.select(pkExpr,fkExpr);
                 }).execute(con);
         return Tuple2.toMap(tuples);
@@ -303,14 +310,6 @@ public abstract class AbstractDataLoader {
             Collection<Object> sourceIdsForFilter,
             Collection<Object> targetIds
     ) {
-        if (filter != null) {
-            return Queries.createQuery(sqlClient, prop.getTargetType(), (q, target) -> {
-                Expression<Object> targetIdExpr = target.get(targetIdProp.getName());
-                q.where(targetIdExpr.in(targetIds));
-                applyFilter(q, target, sourceIdsForFilter);
-                return q.select(((Table<ImmutableSpi>)target).fetch(fetcher));
-            }).execute(con);
-        }
         if (fetcher != null && fetcher.getFieldMap().size() > 1) {
             return sqlClient.getEntities().findByIds(
                     fetcher,
