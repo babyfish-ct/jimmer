@@ -19,7 +19,6 @@ import org.babyfish.jimmer.sql.meta.Column;
 
 import java.sql.Connection;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public abstract class AbstractDataLoader {
@@ -38,12 +37,13 @@ public abstract class AbstractDataLoader {
 
     private final ImmutableProp targetIdProp;
 
+    @SuppressWarnings("unchecked")
     protected AbstractDataLoader(
             SqlClient sqlClient,
             Connection con,
             ImmutableProp prop,
-            Fetcher<ImmutableSpi> fetcher,
-            Filter<Table<ImmutableSpi>> filter
+            Fetcher<?> fetcher,
+            Filter<?> filter
     ) {
         if (!prop.isAssociation()) {
             throw new IllegalArgumentException(
@@ -53,8 +53,8 @@ public abstract class AbstractDataLoader {
         this.sqlClient = sqlClient;
         this.con = con;
         this.prop = prop;
-        this.fetcher = fetcher;
-        this.filter = filter;
+        this.fetcher = (Fetcher<ImmutableSpi>) fetcher;
+        this.filter = (Filter<Table<ImmutableSpi>>) filter;
         this.thisIdProp = prop.getDeclaringType().getIdProp();
         this.targetIdProp = prop.getTargetType().getIdProp();
     }
@@ -97,7 +97,7 @@ public abstract class AbstractDataLoader {
         }
         if (!missedFkSources.isEmpty()) {
             Map<Object, Object> fkMap = fkCache.getAll(
-                    toSourceIds(sources),
+                    toSourceIds(missedFkSources),
                     new QueryCacheEnvironment<>(
                             sqlClient,
                             con,
@@ -107,14 +107,16 @@ public abstract class AbstractDataLoader {
             );
             for (ImmutableSpi missedFkSource : missedFkSources) {
                 Object fk = fkMap.get(toSourceId(missedFkSource));
-                sourceFkMap.put(missedFkSource, fk);
+                if (fk != null) {
+                    sourceFkMap.put(missedFkSource, fk);
+                }
             }
         }
         Map<Object, ImmutableSpi> targetMap = Utils.toMap(
                 this::toTargetId,
                 findTargets(
                         toSourceIds(sourceFkMap.keySet()),
-                        sourceFkMap.values()
+                        new HashSet<>(sourceFkMap.values())
                 )
         );
         return Utils.joinMaps(sourceFkMap, targetMap);
@@ -139,13 +141,23 @@ public abstract class AbstractDataLoader {
         }
         Map<ImmutableSpi, ImmutableSpi> map2 = null;
         if (!missedFkSources.isEmpty()) {
-             map2 = Utils.joinCollectionAndMap(
-                     missedFkSources,
-                     this::toSourceId,
-                     Tuple2.toMap(
-                             querySourceTargetPairs(toSourceIds(missedFkSources))
-                     )
-             );
+            if (filter != null || (fetcher != null && fetcher.getFieldMap().size() > 1)) {
+                map2 = Utils.joinCollectionAndMap(
+                        missedFkSources,
+                        this::toSourceId,
+                        Tuple2.toMap(
+                                querySourceTargetPairs(toSourceIds(missedFkSources))
+                        )
+                );
+            } else {
+                Map<Object, Object> fkMap =
+                        queryForeignKeyMap(toSourceIds(missedFkSources));
+                map2 = new HashMap<>((missedFkSources.size() * 4 + 2) / 3);
+                for (ImmutableSpi missedFkSource : missedFkSources) {
+                    ImmutableSpi target = makeIdOnlyTarget(fkMap.get(toSourceId(missedFkSource)));
+                    map2.put(missedFkSource, target);
+                }
+            }
         }
         return Utils.mergeMap(map1, map2);
     }
@@ -286,6 +298,7 @@ public abstract class AbstractDataLoader {
         return target.__get(targetIdProp.getName());
     }
 
+    @SuppressWarnings("unchecked")
     private List<ImmutableSpi> findTargets(
             Collection<Object> sourceIdsForFilter,
             Collection<Object> targetIds

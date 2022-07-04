@@ -1,4 +1,9 @@
-package org.babyfish.jimmer.sql.cache;
+package org.babyfish.jimmer.sql.common;
+
+import org.babyfish.jimmer.sql.cache.Cache;
+import org.babyfish.jimmer.sql.cache.CacheEnvironment;
+import org.babyfish.jimmer.sql.cache.CacheFilter;
+import org.babyfish.jimmer.sql.cache.QueryCacheEnvironment;
 
 import java.util.*;
 

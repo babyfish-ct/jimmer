@@ -136,6 +136,12 @@ public class AbstractQueryTest extends AbstractTest {
             return this;
         }
 
+        @SuppressWarnings("unchecked")
+        public QueryTestContext<R> row(int index, Consumer<R> consumer) {
+            consumer.accept((R)rows.get(index));
+            return this;
+        }
+
         public QueryTestContext<R> rows(String json) {
             try {
                 Assertions.assertEquals(
@@ -145,6 +151,11 @@ public class AbstractQueryTest extends AbstractTest {
             } catch (JsonProcessingException ex) {
                 throw new RuntimeException(ex);
             }
+            return this;
+        }
+
+        public QueryTestContext<R> rows(int count) {
+            Assertions.assertEquals(count, rows.size());
             return this;
         }
     }
@@ -185,6 +196,16 @@ public class AbstractQueryTest extends AbstractTest {
                         "Bad load state of prop \"" + prop + "\""
                 );
             }
+        }
+    }
+
+    protected static void expect(String json, Object o) {
+        Assertions.assertEquals(json == null, o == null);
+        if (o != null) {
+            Assertions.assertEquals(
+                    json.replace("--->", ""),
+                    o.toString()
+            );
         }
     }
 }
