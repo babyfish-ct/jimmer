@@ -7,7 +7,7 @@ import java.util.function.Supplier;
 
 class CacheWrapper<K, V> implements Cache<K, V> {
 
-    private static final ThreadLocal<Set<Cache<?, ?>>> DISABLED_CACHES_LOCAL =
+    private static final ThreadLocal<Set<Cache<?, ?>>> LOADING_CACHES_LOCAL =
         new ThreadLocal<>();
 
     private final Cache<K, V> raw;
@@ -28,7 +28,7 @@ class CacheWrapper<K, V> implements Cache<K, V> {
                 throw new AssertionError("");
             }
         }
-        Set<Cache<?, ?>> disabledCaches = DISABLED_CACHES_LOCAL.get();
+        Set<Cache<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
         if (disabledCaches != null && disabledCaches.contains(cache)) {
             return null;
         }
@@ -71,16 +71,16 @@ class CacheWrapper<K, V> implements Cache<K, V> {
     }
 
     private <R> R execute(Supplier<R> block) {
-        Set<Cache<?, ?>> disabledCaches = DISABLED_CACHES_LOCAL.get();
+        Set<Cache<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
         if (disabledCaches == null) {
             disabledCaches = Collections.singleton(raw);
-            DISABLED_CACHES_LOCAL.set(disabledCaches);
+            LOADING_CACHES_LOCAL.set(disabledCaches);
         } else if (disabledCaches.size() == 1) {
             Cache<?, ?> oldRaw = disabledCaches.iterator().next();
             disabledCaches = new HashSet<>();
             disabledCaches.add(oldRaw);
             disabledCaches.add(raw);
-            DISABLED_CACHES_LOCAL.set(disabledCaches);
+            LOADING_CACHES_LOCAL.set(disabledCaches);
         } else {
             disabledCaches.add(raw);
         }
@@ -88,7 +88,7 @@ class CacheWrapper<K, V> implements Cache<K, V> {
             return block.get();
         } finally {
             if (disabledCaches.size() < 2) {
-                DISABLED_CACHES_LOCAL.remove();
+                LOADING_CACHES_LOCAL.remove();
             } else {
                 disabledCaches.remove(raw);
             }

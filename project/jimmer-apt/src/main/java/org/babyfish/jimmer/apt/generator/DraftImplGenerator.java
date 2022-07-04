@@ -416,7 +416,7 @@ public class DraftImplGenerator {
         for (ImmutableProp prop : type.getProps().values()) {
             if (prop.isLoadedStateRequired()) {
                 builder.addStatement(
-                        "case $S: $L().$L = false",
+                        "case $S: $L().$L = false;break",
                         prop.getGetterName(),
                         DRAFT_FIELD_MODIFIED,
                         prop.getLoadedStateName()

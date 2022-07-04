@@ -1,7 +1,10 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -170,7 +173,7 @@ public class EntitiesImpl implements Entities {
             List<E> entities = new ArrayList<>(
                     cache.getAll(
                             distinctIds,
-                            new QueryCacheEnvironment<Object, E>(
+                            new QueryCacheEnvironment<>(
                                     sqlClient,
                                     con,
                                     null,
@@ -182,7 +185,31 @@ public class EntitiesImpl implements Entities {
                             )
                     ).values()
             );
-            if (fetcher != null) {
+            if (fetcher != null && !entities.isEmpty()) {
+                boolean needUnload = false;
+                for (ImmutableSpi spi : (List<ImmutableSpi>) entities) {
+                    for (ImmutableProp prop : immutableType.getProps().values()) {
+                        if (spi.__isLoaded(prop.getName()) && !fetcher.getFieldMap().containsKey(prop.getName())) {
+                            needUnload = true;
+                            break;
+                        }
+                    }
+                }
+                if (needUnload) {
+                    ListIterator<ImmutableSpi> itr = (ListIterator<ImmutableSpi>) entities.listIterator();
+                    while (itr.hasNext()) {
+                        ImmutableSpi spi = itr.next();
+                        itr.set(
+                                (ImmutableSpi) Internal.produce(immutableType, spi, draft -> {
+                                    for (ImmutableProp prop : immutableType.getProps().values()) {
+                                        if (spi.__isLoaded(prop.getName()) && !fetcher.getFieldMap().containsKey(prop.getName())) {
+                                            ((DraftSpi) draft).__unload(prop.getName());
+                                        }
+                                    }
+                                })
+                        );
+                    }
+                }
                 Fetchers.fetch(
                         sqlClient,
                         con,
