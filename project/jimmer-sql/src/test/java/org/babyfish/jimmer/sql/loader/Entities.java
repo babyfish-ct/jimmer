@@ -15,7 +15,7 @@ public class Entities {
     private Entities() {}
 
     @SuppressWarnings("unchecked")
-    public static final List<ImmutableSpi> BOOKS_WITH_MANY_TO_ONE =
+    public static final List<ImmutableSpi> BOOKS_FOR_MANY_TO_ONE =
             Collections.unmodifiableList(
                 (List<ImmutableSpi>) (List<?>) Arrays.asList(
                     BookDraft.$.produce(book ->
@@ -38,7 +38,7 @@ public class Entities {
         );
 
     @SuppressWarnings("unchecked")
-    public static final List<ImmutableSpi> BOOK_STORES_WITH_ONE_TO_MANY =
+    public static final List<ImmutableSpi> BOOK_STORES_FOR_ONE_TO_MANY =
             Collections.unmodifiableList(
                     (List<ImmutableSpi>) (List<?>) Arrays.asList(
                             BookStoreDraft.$.produce(store ->
@@ -46,6 +46,19 @@ public class Entities {
                             ),
                             BookStoreDraft.$.produce(store ->
                                     store.setId(manningId)
+                            )
+                    )
+            );
+
+    @SuppressWarnings("unchecked")
+    public static final List<ImmutableSpi> BOOKS_FOR_MANY_TO_MANY =
+            Collections.unmodifiableList(
+                    (List<ImmutableSpi>) (List<?>) Arrays.asList(
+                            BookDraft.$.produce(
+                                    book -> book.setId(learningGraphQLId3)
+                            ),
+                            BookDraft.$.produce(
+                                    book -> book.setId(graphQLInActionId3)
                             )
                     )
             );

@@ -5,6 +5,7 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
@@ -16,6 +17,8 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.fetcher.impl.FilterArgsImpl;
 import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.MiddleTable;
+import org.babyfish.jimmer.sql.meta.Storage;
 
 import java.sql.Connection;
 import java.util.*;
@@ -189,7 +192,7 @@ public abstract class AbstractDataLoader {
         );
         Map<Object, ImmutableSpi> targetMap = Utils.toMap(
                 this::toTargetId,
-                findTargets(idMap.values())
+                findTargets(new LinkedHashSet<>(idMap.values()))
         );
         return Utils.joinCollectionAndMap(
                 sources,
@@ -230,9 +233,13 @@ public abstract class AbstractDataLoader {
         Map<Object, ImmutableSpi> targetMap = Utils.toMap(
                 this::toTargetId,
                 findTargets(
-                        idMultiMap.values().stream().flatMap(
-                                it -> it.stream()
-                        ).collect(Collectors.toList())
+                        idMultiMap
+                                .values()
+                                .stream()
+                                .filter(Objects::nonNull)
+                                .flatMap(Collection::stream)
+                                .distinct()
+                                .collect(Collectors.toList())
                 )
         );
         return Utils.joinCollectionAndMap(
@@ -270,6 +277,26 @@ public abstract class AbstractDataLoader {
     }
 
     private List<Tuple2<Object, Object>> querySourceTargetIdPairs(Collection<Object> sourceIds) {
+        if (filter == null) {
+            boolean useMiddleTable = false;
+            Storage storage = prop.getStorage();
+            if (storage != null) {
+                useMiddleTable = storage instanceof MiddleTable;
+            } else {
+                ImmutableProp mappedBy = prop.getMappedBy();
+                if (mappedBy != null && mappedBy.getStorage() instanceof MiddleTable) {
+                    useMiddleTable = true;
+                }
+            }
+            if (useMiddleTable) {
+                return Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), (q, association) -> {
+                    Expression<Object> sourceIdExpr = association.source().get(thisIdProp.getName());
+                    Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
+                    q.where(sourceIdExpr.in(sourceIds));
+                    return q.select(sourceIdExpr, targetIdExpr);
+                }).execute(con);
+            }
+        }
         return Queries
                 .createQuery(sqlClient, prop.getTargetType(), (q, target) -> {
                     Expression<Object> sourceIdExpr = target

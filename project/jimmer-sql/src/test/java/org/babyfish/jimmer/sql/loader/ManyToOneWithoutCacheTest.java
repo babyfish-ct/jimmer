@@ -18,7 +18,7 @@ public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
         Fetcher<Book> fetcher = BookFetcher.$.store();
         connectAndExpect(
             con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("store"))
-                    .load(Entities.BOOKS_WITH_MANY_TO_ONE),
+                    .load(Entities.BOOKS_FOR_MANY_TO_ONE),
             ctx -> {
                 ctx.sql(
                         "select tb_1_.ID, tb_1_.STORE_ID " +
@@ -29,19 +29,19 @@ public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
                 ctx.row(0, map -> {
                     expect(
                             "{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}",
-                            map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(0))
+                            map.get(Entities.BOOKS_FOR_MANY_TO_ONE.get(0))
                     );
                     expect(
                             "{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}",
-                            map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(1))
+                            map.get(Entities.BOOKS_FOR_MANY_TO_ONE.get(1))
                     );
                     expect(
                             "{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}",
-                            map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(2))
+                            map.get(Entities.BOOKS_FOR_MANY_TO_ONE.get(2))
                     );
                     expect(
                             "{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}",
-                            map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(3))
+                            map.get(Entities.BOOKS_FOR_MANY_TO_ONE.get(3))
                     );
                 });
             }
@@ -59,7 +59,7 @@ public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
         );
         connectAndExpect(
                 con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("store"))
-                        .load(Entities.BOOKS_WITH_MANY_TO_ONE),
+                        .load(Entities.BOOKS_FOR_MANY_TO_ONE),
                 ctx -> {
                     ctx.sql(
                             "select tb_2_.ID, tb_1_.ID " +
@@ -71,19 +71,19 @@ public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
                     ctx.row(0, map -> {
                         expect(
                                 null,
-                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(0))
+                                map.get(Entities.BOOKS_FOR_MANY_TO_ONE.get(0))
                         );
                         expect(
                                 null,
-                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(1))
+                                map.get(Entities.BOOKS_FOR_MANY_TO_ONE.get(1))
                         );
                         expect(
                                 "{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}",
-                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(2))
+                                map.get(Entities.BOOKS_FOR_MANY_TO_ONE.get(2))
                         );
                         expect(
                                 "{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}",
-                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(3))
+                                map.get(Entities.BOOKS_FOR_MANY_TO_ONE.get(3))
                         );
                     });
                 }
@@ -97,7 +97,7 @@ public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
         );
         connectAndExpect(
                 con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("store"))
-                        .load(Entities.BOOKS_WITH_MANY_TO_ONE),
+                        .load(Entities.BOOKS_FOR_MANY_TO_ONE),
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME " +
@@ -117,28 +117,28 @@ public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
                                         "--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
                                         "--->\"name\":\"O'REILLY\"" +
                                         "}",
-                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(0))
+                                map.get(Entities.BOOKS_FOR_MANY_TO_ONE.get(0))
                         );
                         expect(
                                 "{" +
                                         "--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
                                         "--->\"name\":\"O'REILLY\"" +
                                         "}",
-                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(1))
+                                map.get(Entities.BOOKS_FOR_MANY_TO_ONE.get(1))
                         );
                         expect(
                                 "{" +
                                         "--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
                                         "--->\"name\":\"MANNING\"" +
                                         "}",
-                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(2))
+                                map.get(Entities.BOOKS_FOR_MANY_TO_ONE.get(2))
                         );
                         expect(
                                 "{" +
                                         "--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
                                         "--->\"name\":\"MANNING\"" +
                                         "}",
-                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(3))
+                                map.get(Entities.BOOKS_FOR_MANY_TO_ONE.get(3))
                         );
                     });
                 }
@@ -156,7 +156,7 @@ public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
         );
         connectAndExpect(
                 con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("store"))
-                        .load(Entities.BOOKS_WITH_MANY_TO_ONE),
+                        .load(Entities.BOOKS_FOR_MANY_TO_ONE),
                 ctx -> {
                     ctx.sql(
                             "select tb_2_.ID, tb_1_.ID, tb_1_.NAME " +
@@ -169,25 +169,25 @@ public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
                     ctx.row(0, map -> {
                         expect(
                                 null,
-                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(0))
+                                map.get(Entities.BOOKS_FOR_MANY_TO_ONE.get(0))
                         );
                         expect(
                                 null,
-                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(1))
+                                map.get(Entities.BOOKS_FOR_MANY_TO_ONE.get(1))
                         );
                         expect(
                                 "{" +
                                         "--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
                                         "--->\"name\":\"MANNING\"" +
                                         "}",
-                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(2))
+                                map.get(Entities.BOOKS_FOR_MANY_TO_ONE.get(2))
                         );
                         expect(
                                 "{" +
                                         "--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
                                         "--->\"name\":\"MANNING\"" +
                                         "}",
-                                map.get(Entities.BOOKS_WITH_MANY_TO_ONE.get(3))
+                                map.get(Entities.BOOKS_FOR_MANY_TO_ONE.get(3))
                         );
                     });
                 }

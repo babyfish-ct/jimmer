@@ -105,8 +105,10 @@ class CacheWrapper<K, V> implements Cache<K, V> {
                 break;
             case ASSOCIATED_ID_LIST:
                 for (List<Object> list : ((Map<?, List<Object>>)result).values()) {
-                    for (Object value : list) {
-                        validateValue(value);
+                    if (list != null) {
+                        for (Object value : list) {
+                            validateValue(value);
+                        }
                     }
                 }
                 break;
