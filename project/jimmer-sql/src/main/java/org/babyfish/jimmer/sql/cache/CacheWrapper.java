@@ -99,11 +99,12 @@ class CacheWrapper<K, V> implements Cache<K, V> {
     private <R> R validateResult(R result) {
         switch (type) {
             case ASSOCIATED_ID:
-                validateValue(result);
+                for (Object value : ((Map<?, Object>)result).values()) {
+                    validateValue(value);
+                }
                 break;
             case ASSOCIATED_ID_LIST:
-                if (result != null) {
-                    List<Object> list = (List<Object>) result;
+                for (List<Object> list : ((Map<?, List<Object>>)result).values()) {
                     for (Object value : list) {
                         validateValue(value);
                     }
