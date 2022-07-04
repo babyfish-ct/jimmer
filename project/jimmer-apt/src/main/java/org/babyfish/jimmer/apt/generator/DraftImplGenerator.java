@@ -423,7 +423,7 @@ public class DraftImplGenerator {
                 );
             } else {
                 builder.addStatement(
-                        "case $S: $L().$L = null",
+                        "case $S: $L().$L = null;break",
                         prop.getGetterName(),
                         DRAFT_FIELD_MODIFIED,
                         prop.getName()

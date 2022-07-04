@@ -37,14 +37,20 @@ class Utils {
         return map;
     }
 
-    static <K, T, V> Map<K, List<V>> joinMultiMapAndMap(Map<K, List<T>> map1, Map<T, V> map2) {
+    static <K, T, V> Map<K, List<V>> joinMultiMapAndMap(
+            Map<K, List<T>> map1,
+            Map<T, V> map2
+    ) {
         Map<K, List<V>> map = new LinkedHashMap<>((map1.size() * 4 + 2) / 3);
         for (Map.Entry<K, List<T>> e : map1.entrySet()) {
-            List<V> values = new ArrayList<>(e.getValue().size());
-            for (T t : e.getValue()) {
-                values.add(map2.get(t));
+            List<T> originalValues = e.getValue();
+            if (originalValues != null && !originalValues.isEmpty()) {
+                List<V> values = new ArrayList<>();
+                for (T t : originalValues) {
+                    values.add(map2.get(t));
+                }
+                map.put(e.getKey(), values);
             }
-            map.put(e.getKey(), values);
         }
         return map;
     }

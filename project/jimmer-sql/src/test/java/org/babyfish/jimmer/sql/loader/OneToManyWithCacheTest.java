@@ -18,7 +18,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
             boolean useSql = i == 0;
             connectAndExpect(
                     con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
-                            .load(Entities.BOOK_STORES_WITH_ONE_TO_MANY),
+                            .load(Entities.BOOK_STORES_FOR_ONE_TO_MANY),
                     ctx -> {
                         if (useSql) {
                             ctx.sql(
@@ -43,7 +43,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
                                                     "--->{\"id\":\"058ecfd0-047b-4979-a7dc-46ee24d08f08\"}, " +
                                                     "--->{\"id\":\"782b9a9d-eac8-41c4-9f2d-74a5d047f45a\"}" +
                                                     "]",
-                                            map.get(Entities.BOOK_STORES_WITH_ONE_TO_MANY.get(0))
+                                            map.get(Entities.BOOK_STORES_FOR_ONE_TO_MANY.get(0))
                                     );
                                     expect(
                                             "[" +
@@ -51,7 +51,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
                                                     "--->{\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"}, " +
                                                     "--->{\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"}" +
                                                     "]",
-                                            map.get(Entities.BOOK_STORES_WITH_ONE_TO_MANY.get(1))
+                                            map.get(Entities.BOOK_STORES_FOR_ONE_TO_MANY.get(1))
                                     );
                                 }
                         );
@@ -72,7 +72,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
             boolean useSql = i == 0;
             connectAndExpect(
                     con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
-                            .load(Entities.BOOK_STORES_WITH_ONE_TO_MANY),
+                            .load(Entities.BOOK_STORES_FOR_ONE_TO_MANY),
                     ctx -> {
                         if (useSql) {
                             ctx.sql(
@@ -92,13 +92,13 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
                                                     "--->{\"id\":\"9eded40f-6d2e-41de-b4e7-33a28b11c8b6\"}, " +
                                                     "--->{\"id\":\"782b9a9d-eac8-41c4-9f2d-74a5d047f45a\"}" +
                                                     "]",
-                                            map.get(Entities.BOOK_STORES_WITH_ONE_TO_MANY.get(0))
+                                            map.get(Entities.BOOK_STORES_FOR_ONE_TO_MANY.get(0))
                                     );
                                     expect(
                                             "[" +
                                                     "--->{\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"}" +
                                                     "]",
-                                            map.get(Entities.BOOK_STORES_WITH_ONE_TO_MANY.get(1))
+                                            map.get(Entities.BOOK_STORES_FOR_ONE_TO_MANY.get(1))
                                     );
                                 }
                         );
@@ -116,7 +116,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
             boolean useSql = i == 0;
             connectAndExpect(
                     con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
-                            .load(Entities.BOOK_STORES_WITH_ONE_TO_MANY),
+                            .load(Entities.BOOK_STORES_FOR_ONE_TO_MANY),
                     ctx -> {
                         if (useSql) {
                             ctx.sql(
@@ -179,7 +179,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
                                                     "--->--->\"edition\":3" +
                                                     "--->}" +
                                                     "]",
-                                            map.get(Entities.BOOK_STORES_WITH_ONE_TO_MANY.get(0))
+                                            map.get(Entities.BOOK_STORES_FOR_ONE_TO_MANY.get(0))
                                     );
                                     expect(
                                             "[" +
@@ -197,7 +197,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
                                                     "--->--->\"edition\":3" +
                                                     "--->}" +
                                                     "]",
-                                            map.get(Entities.BOOK_STORES_WITH_ONE_TO_MANY.get(1))
+                                            map.get(Entities.BOOK_STORES_FOR_ONE_TO_MANY.get(1))
                                     );
                                 }
                         );
@@ -218,7 +218,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
             boolean useSql = i == 0;
             connectAndExpect(
                     con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
-                            .load(Entities.BOOK_STORES_WITH_ONE_TO_MANY),
+                            .load(Entities.BOOK_STORES_FOR_ONE_TO_MANY),
                     ctx -> {
                         if (useSql) {
                             ctx.sql(
@@ -258,7 +258,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
                                                     "--->--->\"edition\":3" +
                                                     "--->}" +
                                                     "]",
-                                            map.get(Entities.BOOK_STORES_WITH_ONE_TO_MANY.get(0))
+                                            map.get(Entities.BOOK_STORES_FOR_ONE_TO_MANY.get(0))
                                     );
                                     expect(
                                             "[" +
@@ -268,7 +268,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
                                                     "--->--->\"edition\":3" +
                                                     "--->}" +
                                                     "]",
-                                            map.get(Entities.BOOK_STORES_WITH_ONE_TO_MANY.get(1))
+                                            map.get(Entities.BOOK_STORES_FOR_ONE_TO_MANY.get(1))
                                     );
                                 }
                         );
