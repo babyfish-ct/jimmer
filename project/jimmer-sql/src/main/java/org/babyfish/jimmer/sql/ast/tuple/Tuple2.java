@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.tuple;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class Tuple2<T1, T2> {
 
@@ -51,10 +52,32 @@ public class Tuple2<T1, T2> {
         return map;
     }
 
+    public static <K, T, V> Map<K, V> toMap(
+            Collection<Tuple2<K, T>> tuples,
+            Function<T, V> valueMapper
+    ) {
+        Map<K, V> map = new LinkedHashMap<>((tuples.size() * 4 + 2) / 3);
+        for (Tuple2<K, T> tuple : tuples) {
+            map.put(tuple._1, valueMapper.apply(tuple._2));
+        }
+        return map;
+    }
+
     public static <K, V> Map<K, List<V>> toMultiMap(Collection<Tuple2<K, V>> tuples) {
         Map<K, List<V>> map = new LinkedHashMap<>();
         for (Tuple2<K, V> tuple : tuples) {
             map.computeIfAbsent(tuple._1, it -> new ArrayList<>()).add(tuple._2);
+        }
+        return map;
+    }
+
+    public static <K, T, V> Map<K, List<V>> toMultiMap(
+            Collection<Tuple2<K, T>> tuples,
+            Function<T, V> valueMapper
+    ) {
+        Map<K, List<V>> map = new LinkedHashMap<>();
+        for (Tuple2<K, T> tuple : tuples) {
+            map.computeIfAbsent(tuple._1, it -> new ArrayList<>()).add(valueMapper.apply(tuple._2));
         }
         return map;
     }

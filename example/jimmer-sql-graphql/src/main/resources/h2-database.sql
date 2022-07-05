@@ -109,7 +109,7 @@ insert into book(id, name, edition, price, store_id) values
 ;
 
 insert into author(id, first_name, last_name, gender) values
-    (1, 'Eve', 'Procello', 'M'),
+    (1, 'Eve', 'Procello', 'F'),
     (2, 'Alex', 'Banks', 'M'),
     (3, 'Dan', 'Vanderkam', 'M'),
     (4, 'Boris', 'Cherny', 'M'),

@@ -153,12 +153,6 @@ class CachesImpl implements Caches {
                     "\"" + prop + "\" is not reference association"
             );
         }
-        if (!(prop.getStorage() instanceof Column)) {
-            throw new IllegalArgumentException(
-                    "\"" + prop + "\" is association based on foreign key, " +
-                            "it's unnecessary to specify the associated id cache for it"
-            );
-        }
     }
 
     public static void validateForAssociationTargetIdList(ImmutableProp prop) {

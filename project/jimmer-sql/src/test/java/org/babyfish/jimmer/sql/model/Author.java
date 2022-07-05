@@ -3,10 +3,7 @@ package org.babyfish.jimmer.sql.model;
 import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.ManyToMany;
+import javax.persistence.*;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,4 +24,12 @@ public interface Author {
 
     @ManyToMany(mappedBy = "authors")
     List<Book> books();
+
+    @ManyToOne
+    @JoinTable(
+            name = "AUTHOR_COUNTRY_MAPPING",
+            joinColumns = @JoinColumn(name = "AUTHOR_ID"),
+            inverseJoinColumns = @JoinColumn(name = "COUNTRY_CODE")
+    )
+    Country country();
 }

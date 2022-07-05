@@ -203,9 +203,17 @@ public abstract class AbstractDataLoader {
 
     private Map<ImmutableSpi, ImmutableSpi> loadTargetMapDirectly(Collection<ImmutableSpi> sources) {
         List<Object> sourceIds = toSourceIds(sources);
-        Map<Object, ImmutableSpi> targetMap = Tuple2.toMap(
-                querySourceTargetPairs(sourceIds)
-        );
+        Map<Object, ImmutableSpi> targetMap;
+        if (fetcher != null && fetcher.getFieldMap().size() > 1) {
+            targetMap = Tuple2.toMap(
+                    querySourceTargetPairs(sourceIds)
+            );
+        } else {
+            targetMap = Tuple2.toMap(
+                    querySourceTargetIdPairs(sourceIds),
+                    this::makeIdOnlyTarget
+            );
+        }
         return Utils.joinCollectionAndMap(
                 sources,
                 this::toSourceId,
@@ -251,9 +259,17 @@ public abstract class AbstractDataLoader {
 
     private Map<ImmutableSpi, List<ImmutableSpi>> loadTargetMultiMapDirectly(Collection<ImmutableSpi> sources) {
         List<Object> sourceIds = toSourceIds(sources);
-        Map<Object, List<ImmutableSpi>> targetMap = Tuple2.toMultiMap(
-                querySourceTargetPairs(sourceIds)
-        );
+        Map<Object, List<ImmutableSpi>> targetMap;
+        if (fetcher != null && fetcher.getFieldMap().size() > 1) {
+            targetMap = Tuple2.toMultiMap(
+                    querySourceTargetPairs(sourceIds)
+            );
+        } else {
+            targetMap = Tuple2.toMultiMap(
+                    querySourceTargetIdPairs(sourceIds),
+                    this::makeIdOnlyTarget
+            );
+        }
         return Utils.joinCollectionAndMap(
                 sources,
                 this::toSourceId,
@@ -352,6 +368,9 @@ public abstract class AbstractDataLoader {
     }
 
     private Object toTargetId(ImmutableSpi target) {
+        if (target == null) {
+            return null;
+        }
         return target.__get(targetIdProp.getName());
     }
 

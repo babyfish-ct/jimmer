@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.loader;
 
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.model.AuthorDraft;
 import org.babyfish.jimmer.sql.model.BookDraft;
 import org.babyfish.jimmer.sql.model.BookStoreDraft;
 
@@ -62,4 +63,20 @@ public class Entities {
                             )
                     )
             );
+
+    @SuppressWarnings("unchecked")
+    public static final List<ImmutableSpi> AUTHORS_FOR_MANY_TO_MANY =
+            Collections.unmodifiableList(
+                    (List<ImmutableSpi>) (List<?>) Arrays.asList(
+                            AuthorDraft.$.produce(
+                                    author -> author.setId(alexId)
+                            ),
+                            AuthorDraft.$.produce(
+                                    author -> author.setId(danId)
+                            )
+                    )
+            );
+
+    public static final List<ImmutableSpi> AUTHORS_FOR_MANY_TO_ONE =
+            AUTHORS_FOR_MANY_TO_MANY;
 }

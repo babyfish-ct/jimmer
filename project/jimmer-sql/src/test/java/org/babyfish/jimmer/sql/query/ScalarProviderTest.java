@@ -22,7 +22,7 @@ public class ScalarProviderTest extends AbstractQueryTest {
                                     "where tb_1_.GENDER = ?"
                     );
                     ctx.variables("M");
-                    ctx.rows(it -> Assertions.assertEquals(5, it.size()));
+                    ctx.rows(it -> Assertions.assertEquals(4, it.size()));
                 }
         );
     }
