@@ -96,7 +96,7 @@ public class AbstractQueryTest extends AbstractTest {
                     "Not sql history"
             );
             Assertions.assertEquals(
-                    sql,
+                    sql.replace("--->", ""),
                     executions.get(index).getSql(),
                     "statements[" + index + "].sql"
             );
