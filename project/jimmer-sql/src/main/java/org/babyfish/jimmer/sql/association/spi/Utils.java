@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.association.spi;
 
+import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -58,9 +60,15 @@ class Utils {
     static <K, T, V> Map<K, V> joinCollectionAndMap(
             Collection<K> list,
             Function<K, T> middleKeyExtractor,
-            Map<T, V> map
+            Map<T, V> map,
+            boolean useIdentityMap
     ) {
-        Map<K, V> resultMap = new LinkedHashMap<>((list.size() * 4 + 2) / 3);
+        Map<K, V> resultMap;
+        if (useIdentityMap) {
+            resultMap = new IdentityHashMap<>((list.size() * 4 + 2) / 3);
+        } else {
+            resultMap = new LinkedHashMap<>((list.size() * 4 + 2) / 3);
+        }
         for (K k : list) {
             T t = middleKeyExtractor.apply(k);
             V v = map.get(t);
@@ -93,5 +101,16 @@ class Utils {
                         Collectors.toList()
                 )
         );
+    }
+
+    static <K, V> List<Tuple2<K, V>> toTuples(K key, Collection<V> values) {
+        if (values.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Tuple2<K, V>> tuples = new ArrayList<>(values.size());
+        for (V value : values) {
+            tuples.add(new Tuple2<>(key, value));
+        }
+        return tuples;
     }
 }

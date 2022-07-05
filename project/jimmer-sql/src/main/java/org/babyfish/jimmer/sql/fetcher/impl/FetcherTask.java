@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -8,9 +9,11 @@ import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
+import org.babyfish.jimmer.sql.meta.Column;
 
 import java.sql.Connection;
 import java.util.*;
+import java.util.function.Consumer;
 
 class FetcherTask {
 
@@ -22,9 +25,7 @@ class FetcherTask {
 
     private final int batchSize;
 
-    private final SingleDataLoader singleDataLoader;
-
-    private final BatchDataLoader batchDataLoader;
+    private final DataLoader dataLoader;
 
     private Map<Object, TaskData> pendingMap = new LinkedHashMap<>();
 
@@ -38,8 +39,7 @@ class FetcherTask {
         this.sqlClient = sqlClient;
         this.field = field;
         this.batchSize = determineBatchSize();
-        this.singleDataLoader = new SingleDataLoader(sqlClient, con, field);
-        this.batchDataLoader = new BatchDataLoader(sqlClient, con, field);
+        this.dataLoader = new DataLoader(sqlClient, con, field);
     }
 
     public void add(DraftSpi draft) {
@@ -50,16 +50,13 @@ class FetcherTask {
         if (isLoaded(draft)) {
             return;
         }
-        Object key = cache.createKey(field, draft);
-        if (key == null) {
-            return;
-        }
+        Object key = DataCache.createKey(field, draft);
         Object value = cache.get(field, key);
         if (value != null) {
             setDraftProp(draft, DataCache.unwrap(value));
             return;
         }
-        pendingMap.computeIfAbsent(key, it -> new TaskData(depth)).getDrafts().add(draft);
+        pendingMap.computeIfAbsent(key, it -> new TaskData(key, depth)).getDrafts().add(draft);
     }
 
     public boolean execute() {
@@ -95,24 +92,21 @@ class FetcherTask {
             if (value != null) {
                 value = DataCache.unwrap(value);
                 TaskData taskData = e.getValue();
-                afterLoad(key, value, taskData, false);
+                afterLoad(taskData, value, false);
                 handledEntryItr.remove();
             }
         }
         if (!handledMap.isEmpty()) {
-            if (batchSize == 1) {
-                Object key = handledMap.keySet().iterator().next();
-                Object value = singleDataLoader.load(key);
-                TaskData taskData = handledMap.get(key);
-                afterLoad(key, value, taskData, true);
-            } else {
-                Map<Object, ?> loadedMap = batchDataLoader.load(handledMap.keySet());
-                for (Map.Entry<Object, TaskData> e : handledMap.entrySet()) {
-                    Object key = e.getKey();
-                    Object value = loadedMap.get(key);
-                    TaskData taskData = e.getValue();
-                    afterLoad(key, value, taskData, true);
-                }
+            Map<TaskData, ImmutableSpi> sourceMap =
+                    new LinkedHashMap<>((handledMap.size() * 4 + 2) / 3);
+            for (TaskData taskData : handledMap.values()) {
+                sourceMap.put(taskData, taskData.getDrafts().get(0));
+            }
+            Map<ImmutableSpi, Object> loadedMap = dataLoader.load(sourceMap.values());
+            for (Map.Entry<TaskData, ImmutableSpi> e : sourceMap.entrySet()) {
+                TaskData taskData = e.getKey();
+                Object value = loadedMap.get(e.getValue());
+                afterLoad(taskData, value, true);
             }
         }
         return pendingMap.isEmpty();
@@ -149,9 +143,9 @@ class FetcherTask {
     }
 
     @SuppressWarnings("unchecked")
-    private void afterLoad(Object key, Object value, TaskData taskData, boolean updateCache) {
+    private void afterLoad(TaskData taskData, Object value, boolean updateCache) {
         if (updateCache) {
-            cache.put(field, key, value);
+            cache.put(field, taskData.getKey(), value);
         }
         for (DraftSpi draft : taskData.getDrafts()) {
             setDraftProp(draft, value);
@@ -203,22 +197,42 @@ class FetcherTask {
         }
     }
 
-    private static class TaskData {
+    private class TaskData {
+
+        private Object key;
 
         private int depth;
 
-        private Collection<DraftSpi> drafts = new ArrayList<>();
+        private List<DraftSpi> drafts = new ArrayList<>();
 
-        public TaskData(int depth) {
+        public TaskData(Object key, int depth) {
+            this.key = key;
             this.depth = depth;
+        }
+
+        public Object getKey() {
+            return key;
         }
 
         public int getDepth() {
             return depth;
         }
 
-        public Collection<DraftSpi> getDrafts() {
+        public List<DraftSpi> getDrafts() {
             return drafts;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(key);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            TaskData taskData = (TaskData) o;
+            return Objects.equals(key, taskData.key);
         }
 
         @Override

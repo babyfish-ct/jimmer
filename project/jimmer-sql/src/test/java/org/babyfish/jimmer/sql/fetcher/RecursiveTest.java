@@ -29,10 +29,9 @@ public class RecursiveTest extends AbstractQueryTest {
                     ctx.sql("select tb_1_.NODE_ID, tb_1_.NAME from TREE_NODE as tb_1_ where tb_1_.PARENT_ID is null");
                     ctx.statement(1).sql(
                             "select " +
-                                    "tb_1_.PARENT_ID, " +
                                     "tb_1_.NODE_ID, tb_1_.NAME " +
                                     "from TREE_NODE as tb_1_ " +
-                                    "where tb_1_.PARENT_ID in (?) " +
+                                    "where tb_1_.PARENT_ID = ? " +
                                     "order by tb_1_.NODE_ID asc"
                     ).variables(1L);
                     ctx.statement(2).sql(
@@ -89,10 +88,9 @@ public class RecursiveTest extends AbstractQueryTest {
                     ctx.sql("select tb_1_.NODE_ID, tb_1_.NAME from TREE_NODE as tb_1_ where tb_1_.PARENT_ID is null");
                     ctx.statement(1).sql(
                             "select " +
-                                    "tb_1_.PARENT_ID, " +
                                     "tb_1_.NODE_ID, tb_1_.NAME " +
                                     "from TREE_NODE as tb_1_ " +
-                                    "where tb_1_.PARENT_ID in (?) " +
+                                    "where tb_1_.PARENT_ID = ? " +
                                     "order by tb_1_.NODE_ID asc"
                     ).variables(1L);
                     ctx.statement(2).sql(
