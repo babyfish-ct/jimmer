@@ -20,7 +20,7 @@ public interface AffectedTable {
         return new Entity(type);
     }
 
-    static <T extends TableEx<?>> Middle of(
+    static <T extends Table<?>> Middle of(
             Class<T> tableType,
             Function<T, Table<?>> block
     ) {

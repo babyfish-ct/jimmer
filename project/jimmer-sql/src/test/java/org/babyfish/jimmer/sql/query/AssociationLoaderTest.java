@@ -245,7 +245,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                                     "--->--->\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
                                     "--->--->\"firstName\":\"Eve\"," +
                                     "--->--->\"lastName\":\"Procello\"," +
-                                    "--->--->\"gender\":\"MALE\"" +
+                                    "--->--->\"gender\":\"FEMALE\"" +
                                     "--->}" +
                                     "]"
                     );
@@ -297,7 +297,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                                         "--->--->\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
                                         "--->--->\"firstName\":\"Eve\"," +
                                         "--->--->\"lastName\":\"Procello\"," +
-                                        "--->--->\"gender\":\"MALE\"" +
+                                        "--->--->\"gender\":\"FEMALE\"" +
                                         "--->}" +
                                         "]";
                         String authorList2Text =

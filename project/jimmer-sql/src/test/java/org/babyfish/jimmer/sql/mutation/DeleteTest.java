@@ -148,11 +148,16 @@ public class DeleteTest extends AbstractMutationTest {
                         it.variables(alexId);
                     });
                     ctx.statement(it -> {
+                        it.sql("delete from AUTHOR_COUNTRY_MAPPING where AUTHOR_ID in(?)");
+                        it.variables(alexId);
+                    });
+                    ctx.statement(it -> {
                         it.sql("delete from AUTHOR where ID in(?)");
                         it.variables(alexId);
                     });
-                    ctx.totalRowCount(4);
+                    ctx.totalRowCount(5);
                     ctx.rowCount(AffectedTable.of(Author.class), 1);
+                    ctx.rowCount(AffectedTable.of(AuthorTable.class, AuthorTable::country), 1);
                     ctx.rowCount(AffectedTable.of(AuthorTableEx.class, AuthorTableEx::books), 3);
                 }
         );

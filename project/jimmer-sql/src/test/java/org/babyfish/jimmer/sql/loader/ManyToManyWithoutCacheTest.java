@@ -21,10 +21,9 @@ public class ManyToManyWithoutCacheTest extends AbstractQueryTest {
                         .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(
-                            "select tb_2_.BOOK_ID, tb_1_.ID " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
-                                    "where tb_2_.BOOK_ID in (?, ?)"
+                            "select tb_1_.BOOK_ID, tb_1_.AUTHOR_ID " +
+                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "where tb_1_.BOOK_ID in (?, ?)"
                     ).variables(learningGraphQLId3, graphQLInActionId3);
                     ctx.rows(1);
                     ctx.row(0, map -> {

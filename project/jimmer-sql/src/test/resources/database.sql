@@ -1,6 +1,8 @@
 drop table book_author_mapping if exists;
+drop table author_country_mapping if exists;
 drop table book if exists;
 drop table author if exists;
+drop table country if exists;
 drop table book_store if exists;
 drop table tree_node if exists;
 drop sequence tree_node_id_seq if exists;
@@ -59,6 +61,17 @@ alter table author
     add constraint ck_author_gender
         check gender in ('M', 'F');
 
+create table country(
+    code varchar(10) not null,
+    name varchar(50) not null
+);
+alter table country
+    add constraint pk_country
+        primary key(code);
+alter table country
+    add constraint uq_country
+        unique(code);
+
 create table book_author_mapping(
     book_id uuid not null,
     author_id uuid not null
@@ -79,6 +92,25 @@ alter table book_author_mapping
             references author(id)
                 on delete cascade
 ;
+
+create table author_country_mapping(
+    author_id uuid not null,
+    country_code varchar(10) not null
+);
+
+alter table author_country_mapping
+    add constraint pk_author_country_mapping
+        primary key(author_id, country_code);
+alter table author_country_mapping
+    add constraint fk_author_country_mapping__author
+        foreign key(author_id)
+            references author(id)
+                on delete cascade;
+alter table author_country_mapping
+    add constraint fk_author_country_mapping__country
+        foreign key(country_code)
+            references country(code)
+                on delete cascade;
 
 insert into book_store(id, name, version) values
     ('d38c10da-6be8-4924-b9b9-5e81899612a0', 'O''REILLY', 0),
@@ -104,11 +136,15 @@ insert into book(id, name, edition, price, store_id) values
 ;
 
 insert into author(id, first_name, last_name, gender) values
-    ('fd6bb6cf-336d-416c-8005-1ae11a6694b5', 'Eve', 'Procello', 'M'),
+    ('fd6bb6cf-336d-416c-8005-1ae11a6694b5', 'Eve', 'Procello', 'F'),
     ('1e93da94-af84-44f4-82d1-d8a9fd52ea94', 'Alex', 'Banks', 'M'),
     ('c14665c8-c689-4ac7-b8cc-6f065b8d835d', 'Dan', 'Vanderkam', 'M'),
     ('718795ad-77c1-4fcf-994a-fec6a5a11f0f', 'Boris', 'Cherny', 'M'),
     ('eb4963fd-5223-43e8-b06b-81e6172ee7ae', 'Samer', 'Buna', 'M')
+;
+
+insert into country(code, name) values
+    ('USA', 'The United States of America')
 ;
 
 insert into book_author_mapping(book_id, author_id) values
@@ -133,8 +169,12 @@ insert into book_author_mapping(book_id, author_id) values
     ('780bdf07-05af-48bf-9be9-f8c65236fecc', 'eb4963fd-5223-43e8-b06b-81e6172ee7ae')
 ;
 
-
-
+insert into author_country_mapping(author_id, country_code) values
+    ('fd6bb6cf-336d-416c-8005-1ae11a6694b5', 'USA'),
+    ('1e93da94-af84-44f4-82d1-d8a9fd52ea94', 'USA'),
+    ('c14665c8-c689-4ac7-b8cc-6f065b8d835d', 'USA'),
+    ('718795ad-77c1-4fcf-994a-fec6a5a11f0f', 'USA'),
+    ('eb4963fd-5223-43e8-b06b-81e6172ee7ae', 'USA');
 
 create table tree_node(
     node_id bigint not null,

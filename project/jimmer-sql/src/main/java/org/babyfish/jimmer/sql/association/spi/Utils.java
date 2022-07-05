@@ -75,7 +75,7 @@ class Utils {
             Function<V, K> keyExtractor,
             Collection<V> values
     ) {
-        return values.stream().collect(
+        return values.stream().filter(Objects::nonNull).collect(
                 Collectors.toMap(
                         keyExtractor,
                         Function.identity()
