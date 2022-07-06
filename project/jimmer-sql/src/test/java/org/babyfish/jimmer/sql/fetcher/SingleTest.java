@@ -108,22 +108,28 @@ public class SingleTest extends AbstractQueryTest {
                                     "order by tb_1_.EDITION asc"
                     ).variables("Learning GraphQL");
                     ctx.statement(1).sql(
-                            "select tb_3_.ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
-                                    "inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID " +
-                                    "where tb_1_.BOOK_ID = ? order by tb_3_.FIRST_NAME asc limit ?"
+                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
+                                    "from AUTHOR as tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "where tb_2_.BOOK_ID = ? " +
+                                    "order by tb_1_.FIRST_NAME asc " +
+                                    "limit ?"
                     ).variables(learningGraphQLId1, 1);
                     ctx.statement(2).sql(
-                            "select tb_3_.ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
-                                    "inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID " +
-                                    "where tb_1_.BOOK_ID = ? order by tb_3_.FIRST_NAME asc limit ?"
+                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
+                                    "from AUTHOR as tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "where tb_2_.BOOK_ID = ? " +
+                                    "order by tb_1_.FIRST_NAME asc " +
+                                    "limit ?"
                     ).variables(learningGraphQLId2, 1);
                     ctx.statement(3).sql(
-                            "select tb_3_.ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
-                                    "inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID " +
-                                    "where tb_1_.BOOK_ID = ? order by tb_3_.FIRST_NAME asc limit ?"
+                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
+                                    "from AUTHOR as tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "where tb_2_.BOOK_ID = ? " +
+                                    "order by tb_1_.FIRST_NAME asc " +
+                                    "limit ?"
                     ).variables(learningGraphQLId3, 1);
                 }
         );
@@ -154,20 +160,20 @@ public class SingleTest extends AbstractQueryTest {
                                     "order by tb_1_.FIRST_NAME asc"
                     ).variables(borisId, sammerId);
                     ctx.statement(1).sql(
-                            "select tb_3_.ID, tb_3_.NAME, tb_3_.EDITION " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
-                                    "inner join BOOK as tb_3_ on tb_1_.BOOK_ID = tb_3_.ID " +
-                                    "where tb_1_.AUTHOR_ID = ? " +
-                                    "order by tb_3_.EDITION desc " +
-                                    "limit ?"
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                    "from BOOK as tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                    "where tb_2_.AUTHOR_ID = ? " +
+                                    "order by tb_1_.EDITION " +
+                                    "desc limit ?"
                     ).variables(borisId, 2);
                     ctx.statement(2).sql(
-                            "select tb_3_.ID, tb_3_.NAME, tb_3_.EDITION " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
-                                    "inner join BOOK as tb_3_ on tb_1_.BOOK_ID = tb_3_.ID " +
-                                    "where tb_1_.AUTHOR_ID = ? " +
-                                    "order by tb_3_.EDITION desc " +
-                                    "limit ?"
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                    "from BOOK as tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                    "where tb_2_.AUTHOR_ID = ? " +
+                                    "order by tb_1_.EDITION " +
+                                    "desc limit ?"
                     ).variables(sammerId, 2);
                 }
         );

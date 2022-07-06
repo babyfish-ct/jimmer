@@ -43,13 +43,19 @@ public abstract class AbstractDataLoader {
 
     private final ImmutableProp targetIdProp;
 
+    private final int limit;
+
+    private final int offset;
+
     @SuppressWarnings("unchecked")
     protected AbstractDataLoader(
             SqlClient sqlClient,
             Connection con,
             ImmutableProp prop,
             Fetcher<?> fetcher,
-            Filter<?> filter
+            Filter<?> filter,
+            int limit,
+            int offset
     ) {
         if (!prop.isAssociation()) {
             throw new IllegalArgumentException(
@@ -65,12 +71,17 @@ public abstract class AbstractDataLoader {
         this.filter = (Filter<Table<ImmutableSpi>>) filter;
         this.thisIdProp = prop.getDeclaringType().getIdProp();
         this.targetIdProp = prop.getTargetType().getIdProp();
+        this.limit = limit;
+        this.offset = offset;
     }
 
     @SuppressWarnings("unchecked")
     public Map<ImmutableSpi, Object> load(Collection<ImmutableSpi> sources) {
         if (sources.isEmpty()) {
             return Collections.emptyMap();
+        }
+        if (sources.size() > 1 && (limit != Integer.MAX_VALUE || offset != 0)) {
+            throw new IllegalArgumentException("Pagination data loader does not support batch loading");
         }
         if (prop.getStorage() instanceof Column) {
             return (Map<ImmutableSpi, Object>)(Map<?, ?>) loadParents(sources);
@@ -157,17 +168,12 @@ public abstract class AbstractDataLoader {
         Map<Object, ImmutableSpi> map1 = null;
         if (!fkMap.isEmpty()) {
             if (filter != null) {
-                List<ImmutableSpi> list = Queries.createQuery(sqlClient, prop.getTargetType(), (q, target) -> {
-                    Expression<Object> idExpr = target.get(targetIdProp.getName());
-                    q.where(idExpr.in(fkMap.values()));
-                    applyFilter(q, target, fkMap.values());
-                    return q.select(
-                            ((Table<ImmutableSpi>)target).fetch(fetcher)
-                    );
-                }).execute(con);
                 map1 = Utils.joinMaps(
                         fkMap,
-                        Utils.toMap(this::toTargetId, list)
+                        Utils.toMap(
+                                this::toTargetId,
+                                queryTargets(fkMap.values())
+                        )
                 );
             } else {
                 map1 = Utils.joinMaps(
@@ -311,8 +317,20 @@ public abstract class AbstractDataLoader {
         );
     }
 
-    @SuppressWarnings("unchecked")
     private Map<Object, Object> queryForeignKeyMap(Collection<Object> sourceIds) {
+        if (sourceIds.size() == 1) {
+            Object sourceId = sourceIds.iterator().next();
+            List<Object> targetIds = Queries.createQuery(sqlClient, prop.getDeclaringType(), (q, source) -> {
+                Expression<Object> pkExpr = source.get(thisIdProp.getName());
+                Table<?> targetTable = source.join(prop.getName());
+                Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
+                q.where(pkExpr.eq(sourceId));
+                q.where(fkExpr.isNotNull());
+                applyFilter(q, targetTable, sourceIds);
+                return q.select(fkExpr);
+            }).limit(limit, offset).execute(con);
+            return Utils.toMap(sourceId, targetIds);
+        }
         List<Tuple2<Object, Object>> tuples = Queries
                 .createQuery(sqlClient, prop.getDeclaringType(), (q, source) -> {
                     Expression<Object> pkExpr = source.get(thisIdProp.getName());
@@ -346,7 +364,7 @@ public abstract class AbstractDataLoader {
                         Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
                         q.where(sourceIdExpr.eq(sourceId));
                         return q.select(targetIdExpr);
-                    }).execute(con);
+                    }).limit(limit, offset).execute(con);
                     return Utils.toTuples(sourceId, targetIds);
                 }
                 return Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), (q, association) -> {
@@ -357,18 +375,30 @@ public abstract class AbstractDataLoader {
                 }).execute(con);
             }
         }
-        return queryTuples(sourceIds, target -> target.get(targetIdProp.getName()));
+        return executeTupleQuery(sourceIds, target -> target.get(targetIdProp.getName()));
     }
 
     @SuppressWarnings("unchecked")
     private List<Tuple2<Object, ImmutableSpi>> querySourceTargetPairs(
             Collection<Object> sourceIds
     ) {
-        return queryTuples(sourceIds, target -> target.fetch(fetcher));
+        return executeTupleQuery(sourceIds, target -> target.fetch(fetcher));
     }
 
     @SuppressWarnings("unchecked")
-    private <R> List<Tuple2<Object, R>> queryTuples(
+    private List<ImmutableSpi> queryTargets(Collection<Object> targetIds) {
+        return Queries.createQuery(sqlClient, prop.getTargetType(), (q, target) -> {
+            Expression<Object> idExpr = target.get(targetIdProp.getName());
+            q.where(idExpr.in(targetIds));
+            applyFilter(q, target, targetIds);
+            return q.select(
+                    ((Table<ImmutableSpi>)target).fetch(fetcher)
+            );
+        }).execute(con);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <R> List<Tuple2<Object, R>> executeTupleQuery(
             Collection<Object> sourceIds,
             Function<Table<ImmutableSpi>, Selection<?>> valueExpressionGetter) {
         if (sourceIds.size() == 1) {
@@ -380,10 +410,8 @@ public abstract class AbstractDataLoader {
                 q.where(sourceIdExpr.eq(sourceId));
                 applyFilter(q, target, sourceIds);
                 return q.select((Selection<R>) valueExpressionGetter.apply((Table<ImmutableSpi>) target));
-            }).execute(con);
-            return Collections.singletonList(
-                    new Tuple2<>(sourceId, results.isEmpty() ? null : results.get(0))
-            );
+            }).limit(limit, offset).execute(con);
+            return Utils.toTuples(sourceId, results);
         }
         return Queries.createQuery(sqlClient, prop.getTargetType(), (q, target) -> {
             Expression<Object> sourceIdExpr = target
