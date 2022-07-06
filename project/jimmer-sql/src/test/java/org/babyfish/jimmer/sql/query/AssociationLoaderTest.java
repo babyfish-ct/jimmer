@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.query;
 
+import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
@@ -9,19 +10,21 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class AssociationLoaderTest extends AbstractQueryTest {
 
     @Test
     public void loadManyToOne() {
+        Book book = BookDraft.$.produce(bookDraft -> {
+            bookDraft
+                    .setId(graphQLInActionId1)
+                    .setStore(store -> store.setId(manningId));
+        });
         anyAndExpect(
                 getSqlClient()
                         .getReferenceLoader(BookTable.class, BookTable::store)
-                        .loadCommand(
-                                BookDraft.$.produce(book -> {
-                                    book.setStore(store -> store.setId(manningId));
-                                })
-                        ),
+                        .loadCommand(book),
                 ctx -> {
                     ctx.sql(
                             "select " +
@@ -30,17 +33,16 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                                     "where tb_1_.ID = ?"
                     );
                     ctx.variables(manningId);
-                    ctx.rows(rows -> {
-                        Assertions.assertEquals(1, rows.size());
-                        String parentText = "{" +
-                                "--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
-                                "--->\"name\":\"MANNING\"," +
-                                "--->\"website\":null," +
-                                "--->\"version\":0" +
-                                "}";
-                        Assertions.assertEquals(
-                                parentText.replace("--->", ""),
-                                rows.get(0).toString()
+                    ctx.rows(1);
+                    ctx.row(0, store -> {
+                        expect(
+                                "{" +
+                                        "--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
+                                        "--->\"name\":\"MANNING\"," +
+                                        "--->\"website\":null," +
+                                        "--->\"version\":0" +
+                                        "}",
+                                store
                         );
                     });
                 }
@@ -49,19 +51,22 @@ public class AssociationLoaderTest extends AbstractQueryTest {
 
     @Test
     public void batchLoadManyToOne() {
+        List<Book> books = Arrays.asList(
+                BookDraft.$.produce(book -> {
+                    book
+                            .setId(graphQLInActionId1)
+                            .setStore(store -> store.setId(manningId));
+                }),
+                BookDraft.$.produce(book -> {
+                    book
+                            .setId(learningGraphQLId1)
+                            .setStore(store -> store.setId(oreillyId));
+                })
+        );
         anyAndExpect(
                 getSqlClient()
                         .getReferenceLoader(BookTable.class, BookTable::store)
-                        .batchLoadCommand(
-                                Arrays.asList(
-                                    BookDraft.$.produce(book -> {
-                                        book.setStore(store -> store.setId(manningId));
-                                    }),
-                                    BookDraft.$.produce(book -> {
-                                        book.setStore(store -> store.setId(oreillyId));
-                                    })
-                                )
-                        ),
+                        .batchLoadCommand(books),
                 ctx -> {
                     ctx.sql(
                             "select " +
@@ -70,37 +75,25 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                                     "where tb_1_.ID in (?, ?)"
                     );
                     ctx.variables(manningId, oreillyId);
-                    ctx.rows(rows -> {
-                        Assertions.assertEquals(1, rows.size());
-                        String paren1Text =
-                                "{" +
-                                "--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
-                                "--->\"name\":\"MANNING\"," +
-                                "--->\"website\":null," +
-                                "--->\"version\":0" +
-                                "}";
-                        String paren2Text =
-                                "{" +
-                                "--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
-                                "--->\"name\":\"O'REILLY\"," +
-                                "--->\"website\":null," +
-                                "--->\"version\":0" +
-                                "}";
-                        Assertions.assertEquals(
-                                paren1Text.replace("--->", ""),
-                                rows.get(0).get(
-                                        BookDraft.$.produce(book -> {
-                                            book.store(true).setId(manningId);
-                                        })
-                                ).toString()
+                    ctx.rows(1);
+                    ctx.row(0, map -> {
+                        expect(
+                               "{" +
+                                       "--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
+                                       "--->\"name\":\"MANNING\"," +
+                                       "--->\"website\":null," +
+                                       "--->\"version\":0" +
+                                       "}",
+                               map.get(books.get(0))
                         );
-                        Assertions.assertEquals(
-                                paren2Text.replace("--->", ""),
-                                rows.get(0).get(
-                                        BookDraft.$.produce(book -> {
-                                            book.store(true).setId(oreillyId);
-                                        })
-                                ).toString()
+                        expect(
+                                "{" +
+                                        "--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                                        "--->\"name\":\"O'REILLY\"," +
+                                        "--->\"website\":null," +
+                                        "--->\"version\":0" +
+                                        "}",
+                                map.get(books.get(1))
                         );
                     });
                 }
@@ -158,6 +151,14 @@ public class AssociationLoaderTest extends AbstractQueryTest {
 
     @Test
     public void testBatchLoadOneToMany() {
+        List<BookStore> bookStores = Arrays.asList(
+                BookStoreDraft.$.produce(store -> {
+                    store.setId(oreillyId);
+                }),
+                BookStoreDraft.$.produce(store -> {
+                    store.setId(manningId);
+                })
+        );
         anyAndExpect(
                 getSqlClient()
                         .getListLoader(
@@ -167,16 +168,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                                     args.where(args.getTable().edition().eq(3));
                                 }
                         )
-                        .batchLoadCommand(
-                                Arrays.asList(
-                                        BookStoreDraft.$.produce(store -> {
-                                            store.setId(oreillyId);
-                                        }),
-                                        BookStoreDraft.$.produce(store -> {
-                                            store.setId(manningId);
-                                        })
-                                )
-                        ),
+                        .batchLoadCommand(bookStores),
                 ctx -> {
                     ctx.sql(
                             "select " +
@@ -187,9 +179,33 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                                     "and tb_1_.EDITION = ?"
                     );
                     ctx.variables(oreillyId, manningId, 3);
-                    ctx.rows(rows -> {
-                        Assertions.assertEquals(1, rows.size());
-                        String manningBookListText =
+                    ctx.rows(1);
+                    ctx.row(0, map -> {
+                        expect(
+                                "[" +
+                                        "--->{" +
+                                        "--->--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                        "--->--->\"name\":\"Learning GraphQL\"," +
+                                        "--->--->\"edition\":3," +
+                                        "--->--->\"price\":51.00," +
+                                        "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                        "--->}, {" +
+                                        "--->--->\"id\":\"9eded40f-6d2e-41de-b4e7-33a28b11c8b6\"," +
+                                        "--->--->\"name\":\"Effective TypeScript\"," +
+                                        "--->--->\"edition\":3," +
+                                        "--->--->\"price\":88.00," +
+                                        "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                        "--->}, {" +
+                                        "--->--->\"id\":\"782b9a9d-eac8-41c4-9f2d-74a5d047f45a\"," +
+                                        "--->--->\"name\":\"Programming TypeScript\"," +
+                                        "--->--->\"edition\":3," +
+                                        "--->--->\"price\":48.00," +
+                                        "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                        "--->}" +
+                                        "]",
+                                map.get(bookStores.get(0))
+                        );
+                        expect(
                                 "[" +
                                         "--->{" +
                                         "--->--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
@@ -198,14 +214,8 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                                         "--->--->\"price\":80.00," +
                                         "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
                                         "--->}" +
-                                        "]";
-                        Assertions.assertEquals(
-                                manningBookListText.replace("--->", ""),
-                                rows.get(0).get(
-                                        BookStoreDraft.$.produce(store -> {
-                                            store.setId(manningId);
-                                        })
-                                ).toString()
+                                        "]",
+                                map.get(bookStores.get(1))
                         );
                     });
                 }
@@ -227,10 +237,10 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.AUTHOR_ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME, tb_3_.GENDER " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
-                                    "inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID " +
-                                    "where tb_1_.BOOK_ID = ?"
+                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                    "from AUTHOR as tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "where tb_2_.BOOK_ID = ?"
                     );
                     ctx.variables(learningGraphQLId3);
                     ctx.rows(
@@ -255,6 +265,14 @@ public class AssociationLoaderTest extends AbstractQueryTest {
 
     @Test
     public void batchLoadManyToMany() {
+        List<Book> books = Arrays.asList(
+                BookDraft.$.produce(book -> {
+                    book.setId(learningGraphQLId3);
+                }),
+                BookDraft.$.produce(book -> {
+                    book.setId(graphQLInActionId3);
+                })
+        );
         anyAndExpect(
                 getSqlClient()
                         .getListLoader(
@@ -262,69 +280,53 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                                 BookTableEx::authors,
                                 args -> args.orderBy(args.getTable().firstName())
                         )
-                        .batchLoadCommand(
-                                Arrays.asList(
-                                        BookDraft.$.produce(book -> {
-                                            book.setId(learningGraphQLId3);
-                                        }),
-                                        BookDraft.$.produce(book -> {
-                                            book.setId(graphQLInActionId3);
-                                        })
-                                )
-                        ),
+                        .batchLoadCommand(books),
                 ctx -> {
                     ctx.sql(
                             "select " +
-                                    "tb_1_.BOOK_ID, " +
-                                    "tb_1_.AUTHOR_ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME, tb_3_.GENDER " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
-                                    "inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID " +
-                                    "where tb_1_.BOOK_ID in (?, ?) " +
-                                    "order by tb_3_.FIRST_NAME asc"
+                                    "tb_2_.BOOK_ID, " +
+                                    "tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                    "from AUTHOR as tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "where tb_2_.BOOK_ID in (?, ?) " +
+                                    "order by tb_1_.FIRST_NAME asc"
                     );
                     ctx.variables(learningGraphQLId3, graphQLInActionId3);
                     ctx.rows(rows -> {
                         Assertions.assertEquals(1, rows.size());
-                        String authorList1Text =
-                                "[" +
-                                        "--->{" +
-                                        "--->--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
-                                        "--->--->\"firstName\":\"Alex\"," +
-                                        "--->--->\"lastName\":\"Banks\"," +
-                                        "--->--->\"gender\":\"MALE\"" +
-                                        "--->}, " +
-                                        "--->{" +
-                                        "--->--->\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
-                                        "--->--->\"firstName\":\"Eve\"," +
-                                        "--->--->\"lastName\":\"Procello\"," +
-                                        "--->--->\"gender\":\"FEMALE\"" +
-                                        "--->}" +
-                                        "]";
-                        String authorList2Text =
-                                "[" +
-                                        "--->{" +
-                                        "--->--->\"id\":\"eb4963fd-5223-43e8-b06b-81e6172ee7ae\"," +
-                                        "--->--->\"firstName\":\"Samer\"," +
-                                        "--->--->\"lastName\":\"Buna\"," +
-                                        "--->--->\"gender\":\"MALE\"" +
-                                        "--->}" +
-                                        "]";
-                        Assertions.assertEquals(
-                                authorList1Text.replace("--->", ""),
-                                rows.get(0).get(
-                                        BookDraft.$.produce(book -> {
-                                            book.setId(learningGraphQLId3);
-                                        })
-                                ).toString()
-                        );
-                        Assertions.assertEquals(
-                                authorList2Text.replace("--->", ""),
-                                rows.get(0).get(
-                                        BookDraft.$.produce(book -> {
-                                            book.setId(graphQLInActionId3);
-                                        })
-                                ).toString()
-                        );
+                        ctx.rows(1);
+                        ctx.row(0, map -> {
+                            expect(
+                                    "[" +
+                                            "--->{" +
+                                            "--->--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
+                                            "--->--->\"firstName\":\"Alex\"," +
+                                            "--->--->\"lastName\":\"Banks\"," +
+                                            "--->--->\"gender\":\"MALE\"" +
+                                            "--->}, " +
+                                            "--->{" +
+                                            "--->--->\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
+                                            "--->--->\"firstName\":\"Eve\"," +
+                                            "--->--->\"lastName\":\"Procello\"," +
+                                            "--->--->\"gender\":\"FEMALE\"" +
+                                            "--->}" +
+                                            "]",
+                                    map.get(books.get(0))
+                            );
+                        });
+                        ctx.row(0, map -> {
+                            expect(
+                                    "[" +
+                                            "--->{" +
+                                            "--->--->\"id\":\"eb4963fd-5223-43e8-b06b-81e6172ee7ae\"," +
+                                            "--->--->\"firstName\":\"Samer\"," +
+                                            "--->--->\"lastName\":\"Buna\"," +
+                                            "--->--->\"gender\":\"MALE\"" +
+                                            "--->}" +
+                                            "]",
+                                    map.get(books.get(1))
+                            );
+                        });
                     });
                 }
         );

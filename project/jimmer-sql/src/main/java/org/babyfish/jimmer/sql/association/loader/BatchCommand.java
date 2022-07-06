@@ -46,21 +46,11 @@ class BatchCommand<S, T> implements Executable<Map<S, T>> {
     @SuppressWarnings("unchecked")
     @Override
     public Map<S, T> execute(Connection con) {
-        Map<ImmutableSpi, Object> map = Keys.keyMap(prop, sources);
-        Map<Object, Object> targetMap = (Map<Object, Object>) new BatchDataLoader(
+        return (Map<S, T>) new DataLoader(
                 sqlClient,
                 con,
                 prop,
                 filter
-        ).load(
-                prop.getStorage() instanceof Column ?
-                        new LinkedHashSet<>(map.values()) :
-                        map.values()
-        );
-        for (Map.Entry<ImmutableSpi, Object> e : map.entrySet()) {
-            Object value = targetMap.get(e.getValue());
-            e.setValue(value == null && prop.isEntityList() ? Collections.emptyList() : value);
-        }
-        return (Map<S, T>) map;
+        ).load(sources);
     }
 }

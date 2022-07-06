@@ -8,6 +8,8 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Filter;
 
 import java.sql.Connection;
+import java.util.Collection;
+import java.util.Collections;
 
 class SingleCommand<T> implements Executable<T> {
 
@@ -49,13 +51,13 @@ class SingleCommand<T> implements Executable<T> {
     @SuppressWarnings("unchecked")
     @Override
     public T execute(Connection con) {
-        return (T) new SingleDataLoader(
+        return (T) new DataLoader(
                 sqlClient,
                 con,
                 prop,
                 filter,
                 limit,
                 offset
-        ).load(Keys.key(prop, source));
+        ).load(Collections.singleton(source)).get(source);
     }
 }
