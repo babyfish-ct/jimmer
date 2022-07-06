@@ -14,7 +14,11 @@ import java.util.List;
 @Repository
 public class AuthorRepository {
 
-    private SqlClient sqlClient;
+    private final SqlClient sqlClient;
+
+    public AuthorRepository(SqlClient sqlClient) {
+        this.sqlClient = sqlClient;
+    }
 
     public List<Author> find(@Nullable String name) {
         return sqlClient.createQuery(AuthorTable.class, (q, author) -> {
