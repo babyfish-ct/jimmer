@@ -142,15 +142,14 @@ public class EntityTest extends AbstractQueryTest {
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
                                     "from BOOK_STORE as tb_1_ " +
-                                    "where tb_1_.ID in (?)"
+                                    "where tb_1_.ID = ?"
                     ).variables(manningId);
                     ctx.statement(2).sql(
-                            "select tb_1_.BOOK_ID, " +
-                                    "tb_1_.AUTHOR_ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME, tb_3_.GENDER " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
-                                    "inner join AUTHOR as tb_3_ " +
-                                    "on tb_1_.AUTHOR_ID = tb_3_.ID " +
-                                    "where tb_1_.BOOK_ID in (?)"
+                            "select " +
+                                    "tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                    "from AUTHOR as tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "where tb_2_.BOOK_ID = ?"
                     ).variables(graphQLInActionId3);
                     ctx.rows(
                             "[" +
@@ -202,12 +201,12 @@ public class EntityTest extends AbstractQueryTest {
                                     "where tb_1_.ID in (?, ?)"
                     ).variables(manningId, oreillyId);
                     ctx.statement(2).sql(
-                            "select tb_1_.BOOK_ID, " +
-                                    "tb_1_.AUTHOR_ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME, tb_3_.GENDER " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
-                                    "inner join AUTHOR as tb_3_ " +
-                                    "on tb_1_.AUTHOR_ID = tb_3_.ID " +
-                                    "where tb_1_.BOOK_ID in (?, ?)"
+                            "select " +
+                                    "tb_2_.BOOK_ID, " +
+                                    "tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                    "from AUTHOR as tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "where tb_2_.BOOK_ID in (?, ?)"
                     ).variables(graphQLInActionId3, effectiveTypeScriptId3);
                     ctx.rows(
                             "[" +
@@ -279,12 +278,12 @@ public class EntityTest extends AbstractQueryTest {
                                     "where tb_1_.ID in (?, ?)"
                     ).variables(manningId, oreillyId);
                     ctx.statement(2).sql(
-                            "select tb_1_.BOOK_ID, " +
-                                    "tb_1_.AUTHOR_ID, tb_3_.FIRST_NAME, tb_3_.LAST_NAME, tb_3_.GENDER " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
-                                    "inner join AUTHOR as tb_3_ " +
-                                    "on tb_1_.AUTHOR_ID = tb_3_.ID " +
-                                    "where tb_1_.BOOK_ID in (?, ?)"
+                            "select " +
+                                    "tb_2_.BOOK_ID, " +
+                                    "tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                    "from AUTHOR as tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "where tb_2_.BOOK_ID in (?, ?)"
                     ).variables(graphQLInActionId3, effectiveTypeScriptId3);
                     ctx.rows(
                             "[" +
