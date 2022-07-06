@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.example.graphql.controller;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.example.graphql.dal.BookRepository;
@@ -26,7 +25,7 @@ import java.util.stream.Collectors;
 @Controller
 public class BookStoreController {
 
-    private SqlClient sqlClient;
+    private final SqlClient sqlClient;
 
     private final BookStoreRepository bookStoreRepository;
 
