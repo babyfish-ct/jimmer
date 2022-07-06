@@ -113,4 +113,15 @@ class Utils {
         }
         return tuples;
     }
+
+    static <K, V> Map<K, V> toMap(K key, Collection<V> values) {
+        if (values.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<K, V> map = new LinkedHashMap<>((values.size() * 4 + 2) / 3);
+        for (V value : values) {
+            map.put(key, value);
+        }
+        return map;
+    }
 }

@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -9,11 +8,10 @@ import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
-import org.babyfish.jimmer.sql.meta.Column;
 
 import java.sql.Connection;
 import java.util.*;
-import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 class FetcherTask {
 
@@ -50,7 +48,10 @@ class FetcherTask {
         if (isLoaded(draft)) {
             return;
         }
-        Object key = DataCache.createKey(field, draft);
+        Object key = cache.createKey(field, draft);
+        if (key == null) {
+            return;
+        }
         Object value = cache.get(field, key);
         if (value != null) {
             setDraftProp(draft, DataCache.unwrap(value));
@@ -92,20 +93,21 @@ class FetcherTask {
             if (value != null) {
                 value = DataCache.unwrap(value);
                 TaskData taskData = e.getValue();
-                afterLoad(taskData, value, false);
+                afterLoad(taskData, value,false);
                 handledEntryItr.remove();
             }
         }
         if (!handledMap.isEmpty()) {
-            Map<TaskData, ImmutableSpi> sourceMap =
-                    new LinkedHashMap<>((handledMap.size() * 4 + 2) / 3);
-            for (TaskData taskData : handledMap.values()) {
-                sourceMap.put(taskData, taskData.getDrafts().get(0));
-            }
-            Map<ImmutableSpi, Object> loadedMap = dataLoader.load(sourceMap.values());
-            for (Map.Entry<TaskData, ImmutableSpi> e : sourceMap.entrySet()) {
-                TaskData taskData = e.getKey();
-                Object value = loadedMap.get(e.getValue());
+            Map<ImmutableSpi, ?> loadedMap = dataLoader.load(
+                    handledMap
+                            .values()
+                            .stream()
+                            .map(it -> it.getDrafts().get(0))
+                            .collect(Collectors.toList())
+            );
+            for (Map.Entry<Object, TaskData> e : handledMap.entrySet()) {
+                TaskData taskData = e.getValue();
+                Object value = loadedMap.get(taskData.getDrafts().get(0));
                 afterLoad(taskData, value, true);
             }
         }
@@ -119,11 +121,11 @@ class FetcherTask {
         Fetcher<?> childFetcher = field.getChildFetcher();
         Object childValue = draft.__get(field.getProp().getName());
         if (childFetcher != null && childValue != null) {
-           for (Field childField : childFetcher.getFieldMap().values()) {
-               if (!isLoaded(childValue, childField)) {
-                   return false;
-               }
-           }
+            for (Field childField : childFetcher.getFieldMap().values()) {
+                if (!isLoaded(childValue, childField)) {
+                    return false;
+                }
+            }
         }
         return true;
     }
@@ -197,13 +199,13 @@ class FetcherTask {
         }
     }
 
-    private class TaskData {
+    private static class TaskData {
 
-        private Object key;
+        private final Object key;
 
-        private int depth;
+        private final int depth;
 
-        private List<DraftSpi> drafts = new ArrayList<>();
+        private final List<DraftSpi> drafts = new ArrayList<>();
 
         public TaskData(Object key, int depth) {
             this.key = key;
@@ -220,19 +222,6 @@ class FetcherTask {
 
         public List<DraftSpi> getDrafts() {
             return drafts;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(key);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            TaskData taskData = (TaskData) o;
-            return Objects.equals(key, taskData.key);
         }
 
         @Override

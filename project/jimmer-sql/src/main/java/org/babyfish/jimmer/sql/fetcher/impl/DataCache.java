@@ -16,13 +16,11 @@ public class DataCache {
 
     private Map<FieldKey, Map<Object, Object>> map = new HashMap<>();
 
-    public static Object createKey(Field field, ImmutableSpi owner) {
+    public Object createKey(Field field, ImmutableSpi owner) {
         ImmutableProp prop = field.getProp();
         if (prop.getStorage() instanceof Column) {
-            String propName = prop.getName();
-            if (owner.__isLoaded(propName)) {
-                return new ForeignKey(Ids.idOf((ImmutableSpi) owner.__get(propName)));
-            }
+            Object fk = Ids.idOf((ImmutableSpi) owner.__get(prop.getName()));
+            return new ForeignKey(fk);
         }
         return Ids.idOf(owner);
     }
@@ -49,13 +47,13 @@ public class DataCache {
 
     private static class FieldKey {
 
-        private ImmutableProp prop;
+        private final ImmutableProp prop;
 
-        private Filter<?> filter;
+        private final Filter<?> filter;
 
-        private int limit;
+        private final int limit;
 
-        private int offset;
+        private final int offset;
 
         FieldKey(Field field) {
             this(field.getProp(), field.getFilter(), field.getLimit(), field.getOffset());
@@ -104,6 +102,11 @@ public class DataCache {
         }
 
         @Override
+        public int hashCode() {
+            return Objects.hashCode(raw);
+        }
+
+        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -112,14 +115,9 @@ public class DataCache {
         }
 
         @Override
-        public int hashCode() {
-            return Objects.hash(raw);
-        }
-
-        @Override
         public String toString() {
             return "ForeignKey{" +
-                    "value=" + raw +
+                    "raw=" + raw +
                     '}';
         }
     }

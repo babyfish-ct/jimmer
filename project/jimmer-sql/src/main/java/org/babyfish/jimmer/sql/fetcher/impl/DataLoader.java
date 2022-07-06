@@ -9,6 +9,14 @@ import java.sql.Connection;
 public class DataLoader extends AbstractDataLoader {
 
     public DataLoader(SqlClient sqlClient, Connection con, Field field) {
-        super(sqlClient, con, field.getProp(), field.getChildFetcher(), field.getFilter());
+        super(
+                sqlClient,
+                con,
+                field.getProp(),
+                field.getChildFetcher(),
+                field.getFilter(),
+                field.getLimit(),
+                field.getOffset()
+        );
     }
 }
