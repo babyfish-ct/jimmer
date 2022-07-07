@@ -1,15 +1,12 @@
 package org.babyfish.jimmer.sql;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.AssociationListener;
-import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.event.EntityListener;
 
-import java.lang.reflect.Type;
 import java.util.function.Function;
 
 public interface Triggers {
@@ -20,7 +17,7 @@ public interface Triggers {
     }
 
     @SuppressWarnings("unchecked")
-    default <E> void removeEntityListener(Class<?> entityType, EntityListener<E> listener) {
+    default <E> void removeEntityListener(Class<E> entityType, EntityListener<E> listener) {
         removeEntityListener(ImmutableType.get(entityType), (EntityListener<ImmutableSpi>) listener);
     }
 

@@ -41,9 +41,6 @@ public class TriggersImpl implements Triggers {
 
     @Override
     public void addAssociationListener(ImmutableProp prop, AssociationListener listener) {
-        if (!prop.isAssociation()) {
-            throw new IllegalArgumentException("\"" + prop + "\" is not association property");
-        }
         ImmutableProp primaryAssociationProp = Utils.primaryAssociationProp(prop);
         if (primaryAssociationProp.getStorage() instanceof MiddleTable) {
             addMiddleTableListener(primaryAssociationProp, new MiddleTableAssociationListenerProxy(prop, listener));
@@ -54,9 +51,6 @@ public class TriggersImpl implements Triggers {
 
     @Override
     public void removeAssociationListener(ImmutableProp prop, AssociationListener listener) {
-        if (!prop.isAssociation()) {
-            throw new IllegalArgumentException("\"" + prop + "\" is not association property");
-        }
         ImmutableProp primaryAssociationProp = Utils.primaryAssociationProp(prop);
         if (primaryAssociationProp.getStorage() instanceof MiddleTable) {
             removeMiddleTableListener(primaryAssociationProp, new MiddleTableAssociationListenerProxy(prop, listener));
@@ -77,6 +71,41 @@ public class TriggersImpl implements Triggers {
                 listener.onChange(event);
             }
         }
+    }
+
+    public boolean hasListeners(ImmutableType type) {
+        List<EntityListener<ImmutableSpi>> listeners = entityTableListenerMultiMap.get(type);
+        return listeners != null && !listeners.isEmpty();
+    }
+
+    public boolean hasListeners(ImmutableProp prop) {
+        ImmutableProp primaryAssociationProp = Utils.primaryAssociationProp(prop);
+        if (primaryAssociationProp.getStorage() instanceof MiddleTable) {
+            List<MiddleTableListener> listeners =
+                    middleTableListenerMultiMap.get(primaryAssociationProp);
+            return listeners != null && !listeners.isEmpty();
+        }
+        List<EntityListener<ImmutableSpi>> listeners =
+                entityTableListenerMultiMap.get(primaryAssociationProp.getDeclaringType());
+        return listeners != null && !listeners.isEmpty();
+    }
+
+    private void addMiddleTableListener(ImmutableProp primaryAssociationProp, MiddleTableListener listener) {
+        middleTableListenerMultiMap
+                .computeIfAbsent(
+                        primaryAssociationProp,
+                        it -> new CopyOnWriteArrayList<>()
+                )
+                .add(listener);
+    }
+
+    private void removeMiddleTableListener(ImmutableProp primaryAssociationProp, MiddleTableListener listener) {
+        middleTableListenerMultiMap
+                .computeIfAbsent(
+                        primaryAssociationProp,
+                        it -> new CopyOnWriteArrayList<>()
+                )
+                .remove(listener);
     }
 
     public void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId) {
@@ -109,23 +138,5 @@ public class TriggersImpl implements Triggers {
                 }
             }
         }
-    }
-
-    private void addMiddleTableListener(ImmutableProp primaryAssociationProp, MiddleTableListener listener) {
-        middleTableListenerMultiMap
-                .computeIfAbsent(
-                        primaryAssociationProp,
-                        it -> new CopyOnWriteArrayList<>()
-                )
-                .add(listener);
-    }
-
-    private void removeMiddleTableListener(ImmutableProp primaryAssociationProp, MiddleTableListener listener) {
-        middleTableListenerMultiMap
-                .computeIfAbsent(
-                        primaryAssociationProp,
-                        it -> new CopyOnWriteArrayList<>()
-                )
-                .remove(listener);
     }
 }
