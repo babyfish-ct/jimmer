@@ -1,9 +1,11 @@
 package org.babyfish.jimmer.sql.event;
 
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.common.TestUtils;
 import org.babyfish.jimmer.sql.model.*;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -26,19 +28,82 @@ public class TriggersTest {
 
     private List<AssociationEvent> authorBookListEvents;
 
+    private EntityListener<Book> bookHandler;
+
+    private AssociationListener bookStoreHandler;
+
+    private AssociationListener storeBookListHandler;
+
+    private AssociationListener bookAuthorListHandler;
+
+    private AssociationListener authorBookListHandler;
+
     @BeforeEach
     public void initialize() {
+
         triggers = new TriggersImpl();
         bookEvents = new ArrayList<>();
         bookStoreEvents = new ArrayList<>();
         storeBookListEvents = new ArrayList<>();
         bookAuthorListEvents = new ArrayList<>();
         authorBookListEvents = new ArrayList<>();
-        triggers.addEntityListener(Book.class, bookEvents::add);
-        triggers.addAssociationListener(BookTable.class, BookTable::store, bookStoreEvents::add);
-        triggers.addAssociationListener(BookStoreTableEx.class, BookStoreTableEx::books, storeBookListEvents::add);
-        triggers.addAssociationListener(BookTableEx.class, BookTableEx::authors, bookAuthorListEvents::add);
-        triggers.addAssociationListener(AuthorTableEx.class, AuthorTableEx::books, authorBookListEvents::add);
+
+        bookHandler = bookEvents::add;
+        bookStoreHandler = bookStoreEvents::add;
+        storeBookListHandler = storeBookListEvents::add;
+        bookAuthorListHandler = bookAuthorListEvents::add;
+        authorBookListHandler = authorBookListEvents::add;
+
+        triggers.addEntityListener(Book.class, bookHandler);
+        triggers.addAssociationListener(BookTable.class, BookTable::store, bookStoreHandler);
+        triggers.addAssociationListener(BookStoreTableEx.class, BookStoreTableEx::books, storeBookListHandler);
+        triggers.addAssociationListener(BookTableEx.class, BookTableEx::authors, bookAuthorListHandler);
+        triggers.addAssociationListener(AuthorTableEx.class, AuthorTableEx::books, authorBookListHandler);
+    }
+
+    @Test
+    public void testRemoveListener() {
+
+        Assertions.assertTrue(triggers.hasListeners(ImmutableType.get(Book.class)));
+        Assertions.assertTrue(triggers.hasListeners(ImmutableProps.join(BookTable.class, BookTable::store)));
+        Assertions.assertTrue(triggers.hasListeners(ImmutableProps.join(BookStoreTableEx.class, BookStoreTableEx::books)));
+        Assertions.assertTrue(triggers.hasListeners(ImmutableProps.join(BookTableEx.class, BookTableEx::authors)));
+        Assertions.assertTrue(triggers.hasListeners(ImmutableProps.join(AuthorTableEx.class, AuthorTableEx::books)));
+
+        triggers.removeEntityListener(Book.class, bookHandler);
+        Assertions.assertTrue(triggers.hasListeners(ImmutableType.get(Book.class)));
+        Assertions.assertTrue(triggers.hasListeners(ImmutableProps.join(BookTable.class, BookTable::store)));
+        Assertions.assertTrue(triggers.hasListeners(ImmutableProps.join(BookStoreTableEx.class, BookStoreTableEx::books)));
+        Assertions.assertTrue(triggers.hasListeners(ImmutableProps.join(BookTableEx.class, BookTableEx::authors)));
+        Assertions.assertTrue(triggers.hasListeners(ImmutableProps.join(AuthorTableEx.class, AuthorTableEx::books)));
+
+        triggers.removeAssociationListener(BookTable.class, BookTable::store, bookStoreHandler);
+        Assertions.assertTrue(triggers.hasListeners(ImmutableType.get(Book.class)));
+        Assertions.assertTrue(triggers.hasListeners(ImmutableProps.join(BookTable.class, BookTable::store)));
+        Assertions.assertTrue(triggers.hasListeners(ImmutableProps.join(BookStoreTableEx.class, BookStoreTableEx::books)));
+        Assertions.assertTrue(triggers.hasListeners(ImmutableProps.join(BookTableEx.class, BookTableEx::authors)));
+        Assertions.assertTrue(triggers.hasListeners(ImmutableProps.join(AuthorTableEx.class, AuthorTableEx::books)));
+
+        triggers.removeAssociationListener(BookStoreTableEx.class, BookStoreTableEx::books, storeBookListHandler);
+        Assertions.assertFalse(triggers.hasListeners(ImmutableType.get(Book.class)));
+        Assertions.assertFalse(triggers.hasListeners(ImmutableProps.join(BookTable.class, BookTable::store)));
+        Assertions.assertFalse(triggers.hasListeners(ImmutableProps.join(BookStoreTableEx.class, BookStoreTableEx::books)));
+        Assertions.assertTrue(triggers.hasListeners(ImmutableProps.join(BookTableEx.class, BookTableEx::authors)));
+        Assertions.assertTrue(triggers.hasListeners(ImmutableProps.join(AuthorTableEx.class, AuthorTableEx::books)));
+
+        triggers.removeAssociationListener(BookTableEx.class, BookTableEx::authors, bookAuthorListHandler);
+        Assertions.assertFalse(triggers.hasListeners(ImmutableType.get(Book.class)));
+        Assertions.assertFalse(triggers.hasListeners(ImmutableProps.join(BookTable.class, BookTable::store)));
+        Assertions.assertFalse(triggers.hasListeners(ImmutableProps.join(BookStoreTableEx.class, BookStoreTableEx::books)));
+        Assertions.assertTrue(triggers.hasListeners(ImmutableProps.join(BookTableEx.class, BookTableEx::authors)));
+        Assertions.assertTrue(triggers.hasListeners(ImmutableProps.join(AuthorTableEx.class, AuthorTableEx::books)));
+
+        triggers.removeAssociationListener(AuthorTableEx.class, AuthorTableEx::books, authorBookListHandler);
+        Assertions.assertFalse(triggers.hasListeners(ImmutableType.get(Book.class)));
+        Assertions.assertFalse(triggers.hasListeners(ImmutableProps.join(BookTable.class, BookTable::store)));
+        Assertions.assertFalse(triggers.hasListeners(ImmutableProps.join(BookStoreTableEx.class, BookStoreTableEx::books)));
+        Assertions.assertFalse(triggers.hasListeners(ImmutableProps.join(BookTableEx.class, BookTableEx::authors)));
+        Assertions.assertFalse(triggers.hasListeners(ImmutableProps.join(AuthorTableEx.class, AuthorTableEx::books)));
     }
 
     @Test
