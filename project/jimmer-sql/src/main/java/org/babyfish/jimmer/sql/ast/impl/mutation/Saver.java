@@ -30,7 +30,7 @@ class Saver {
 
     private Connection con;
 
-    private ImmutableCache cache;
+    private SaverCache cache;
 
     private Map<AffectedTable, Integer> affectedRowCountMap;
 
@@ -40,13 +40,13 @@ class Saver {
             AbstractEntitySaveCommandImpl.Data data,
             Connection con
     ) {
-        this(data, con, new ImmutableCache(data), new LinkedHashMap<>());
+        this(data, con, new SaverCache(data), new LinkedHashMap<>());
     }
 
     Saver(
             AbstractEntitySaveCommandImpl.Data data,
             Connection con,
-            ImmutableCache cache,
+            SaverCache cache,
             Map<AffectedTable, Integer> affectedRowCountMap) {
         this.data = data;
         this.con = con;

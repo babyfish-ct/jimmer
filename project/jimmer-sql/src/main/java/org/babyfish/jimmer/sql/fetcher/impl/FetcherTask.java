@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 class FetcherTask {
 
-    private final DataCache cache;
+    private final FetchingCache cache;
 
     private final SqlClient sqlClient;
 
@@ -28,7 +28,7 @@ class FetcherTask {
     private Map<Object, TaskData> pendingMap = new LinkedHashMap<>();
 
     public FetcherTask(
-            DataCache cache,
+            FetchingCache cache,
             SqlClient sqlClient,
             Connection con,
             Field field
@@ -54,7 +54,7 @@ class FetcherTask {
         }
         Object value = cache.get(field, key);
         if (value != null) {
-            setDraftProp(draft, DataCache.unwrap(value));
+            setDraftProp(draft, FetchingCache.unwrap(value));
             return;
         }
         pendingMap.computeIfAbsent(key, it -> new TaskData(key, depth)).getDrafts().add(draft);
@@ -91,7 +91,7 @@ class FetcherTask {
             Object key = e.getKey();
             Object value = cache.get(field, key);
             if (value != null) {
-                value = DataCache.unwrap(value);
+                value = FetchingCache.unwrap(value);
                 TaskData taskData = e.getValue();
                 afterLoad(taskData, value,false);
                 handledEntryItr.remove();

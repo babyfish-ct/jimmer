@@ -46,7 +46,7 @@ class BatchEntitySaveCommandImpl<E>
 
     @Override
     public BatchSaveResult<E> execute(Connection con) {
-        ImmutableCache cache = new ImmutableCache(data);
+        SaverCache cache = new SaverCache(data);
         Map<AffectedTable, Integer> affectedRowCountMap = new LinkedHashMap<>();
         List<SimpleSaveResult<E>> simpleSaveResults = entities
                 .stream()

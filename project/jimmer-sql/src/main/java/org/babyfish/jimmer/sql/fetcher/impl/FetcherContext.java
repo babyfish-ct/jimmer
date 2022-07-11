@@ -21,7 +21,7 @@ class FetcherContext {
 
     private Connection con;
 
-    private DataCache cache = new DataCache();
+    private FetchingCache cache = new FetchingCache();
 
     private Map<Field, FetcherTask> taskMap = new LinkedHashMap<>();
 

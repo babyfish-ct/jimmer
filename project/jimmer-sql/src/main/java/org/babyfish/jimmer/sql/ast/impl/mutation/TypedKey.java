@@ -6,42 +6,39 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 
-class Key {
+class TypedKey {
 
-    private Object[] arr;
+    private final ImmutableType type;
 
-    private Key(Object[] arr) {
+    private final Object[] arr;
+
+    private TypedKey(ImmutableType type, Object[] arr) {
+        this.type = type;
         this.arr = arr;
-    }
-
-    public List<Object> toList() {
-        return Arrays.asList(arr.clone());
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Key key = (Key) o;
-        return Arrays.equals(arr, key.arr);
+        TypedKey key = (TypedKey) o;
+        return type == key.type && Arrays.equals(arr, key.arr);
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(arr);
+        return type.hashCode() ^ Arrays.hashCode(arr);
     }
 
-    public static Key of(
-            AbstractEntitySaveCommandImpl.Data data,
+    public static TypedKey of(
             ImmutableSpi spi,
+            Set<ImmutableProp> keyProps,
             boolean force
     ) {
         ImmutableType type = spi.__type();
-        Set<ImmutableProp> keyProps = data.getKeyProps(type);
-        if (keyProps == null) {
+        if (keyProps == null || keyProps.isEmpty()) {
             if (force) {
                 throw new ExecutionException(
                         "Requires key properties configuration for \"" +
@@ -69,6 +66,6 @@ class Key {
             Object value = spi.__get(keyProp.getName());
             arr[index++] = value;
         }
-        return new Key(arr);
+        return new TypedKey(type, arr);
     }
 }
