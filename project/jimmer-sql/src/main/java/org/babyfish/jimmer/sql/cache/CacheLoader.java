@@ -18,6 +18,7 @@ public interface CacheLoader<K, V> {
     ) {
         return keys -> sqlClient
                 .getEntities()
-                .findMapByIds(entityType, keys, con);
+                .forConnection(con)
+                .findMapByIds(entityType, keys);
     }
 }

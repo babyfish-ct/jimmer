@@ -31,7 +31,8 @@ public class ObjectCacheTest extends AbstractQueryTest {
                     con -> {
                         return sqlClient
                                 .getEntities()
-                                .findById(BookStore.class, oreillyId, con);
+                                .forConnection(con)
+                                .findById(BookStore.class, oreillyId);
                     }, ctx -> {
                         if (useSql) {
                             ctx.sql(

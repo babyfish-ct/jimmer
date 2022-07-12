@@ -461,10 +461,9 @@ public abstract class AbstractDataLoader {
     @SuppressWarnings("unchecked")
     private List<ImmutableSpi> findTargets(Collection<Object> targetIds) {
         if (fetcher.getFieldMap().size() > 1) {
-            return sqlClient.getEntities().findByIds(
+            return sqlClient.getEntities().forConnection(con).findByIds(
                     fetcher,
-                    targetIds,
-                    con
+                    targetIds
             );
         }
         return makeIdOnlyTargets(targetIds);

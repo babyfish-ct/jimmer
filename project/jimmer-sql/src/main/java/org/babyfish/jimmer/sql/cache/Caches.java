@@ -45,7 +45,9 @@ public interface Caches {
 
     static Caches of(Consumer<CacheConfig> block) {
         CacheConfig cfg = new CacheConfig();
-        block.accept(cfg);
+        if (block != null) {
+            block.accept(cfg);
+        }
         return cfg.build();
     }
 }

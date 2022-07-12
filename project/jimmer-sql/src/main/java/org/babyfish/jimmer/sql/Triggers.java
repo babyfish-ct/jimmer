@@ -50,4 +50,8 @@ public interface Triggers {
     void addAssociationListener(ImmutableProp prop, AssociationListener listener);
 
     void removeAssociationListener(ImmutableProp prop, AssociationListener listener);
+
+    boolean hasListeners(ImmutableType type);
+
+    boolean hasListeners(ImmutableProp prop);
 }
