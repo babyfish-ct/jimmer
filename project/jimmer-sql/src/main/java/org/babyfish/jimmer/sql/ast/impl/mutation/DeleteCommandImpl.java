@@ -21,13 +21,13 @@ import java.util.function.Function;
 
 class DeleteCommandImpl implements DeleteCommand {
 
-    private SqlClient sqlClient;
+    private final SqlClient sqlClient;
 
-    private ImmutableType immutableType;
+    private final ImmutableType immutableType;
 
-    private Collection<?> ids;
+    private final Collection<?> ids;
 
-    private Data data;
+    private final Data data;
 
     public DeleteCommandImpl(
             SqlClient sqlClient,

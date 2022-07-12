@@ -4,7 +4,6 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
-import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheConfig;
 import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.fetcher.Filter;
@@ -113,6 +112,8 @@ public interface SqlClient {
     );
 
     Caches getCaches();
+
+    SqlClient caches(Consumer<CacheConfig> block);
 
     class Builder {
 

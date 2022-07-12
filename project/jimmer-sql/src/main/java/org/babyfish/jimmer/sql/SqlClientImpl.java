@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.association.loader.Loaders;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
+import org.babyfish.jimmer.sql.cache.CacheConfig;
 import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
@@ -239,5 +240,19 @@ class SqlClientImpl implements SqlClient {
     @Override
     public Caches getCaches() {
         return caches;
+    }
+
+    @Override
+    public SqlClient caches(Consumer<CacheConfig> block) {
+        return new SqlClientImpl(
+                connectionManager,
+                dialect,
+                executor,
+                scalarProviderMap,
+                idGeneratorMap,
+                defaultBatchSize,
+                defaultListBatchSize,
+                Caches.of(block)
+        );
     }
 }

@@ -9,12 +9,10 @@ import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
-import org.babyfish.jimmer.sql.ast.mutation.BatchEntitySaveCommand;
-import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
-import org.babyfish.jimmer.sql.ast.mutation.SimpleEntitySaveCommand;
+import org.babyfish.jimmer.sql.ast.mutation.*;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.Cache;
-import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.cache.CacheLoader;
 import org.babyfish.jimmer.sql.cache.QueryCacheEnvironment;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -29,14 +27,43 @@ import java.util.stream.Collectors;
 
 public class EntitiesImpl implements Entities {
 
-    private SqlClient sqlClient;
+    private final SqlClient sqlClient;
+
+    private final boolean forUpdate;
+
+    private final Connection con;
 
     public EntitiesImpl(SqlClient sqlClient) {
+        this(sqlClient, false, null);
+    }
+
+    public EntitiesImpl(SqlClient sqlClient, boolean forUpdate, Connection con) {
         this.sqlClient = sqlClient;
+        this.forUpdate = forUpdate;
+        this.con = con;
+    }
+
+    @Override
+    public Entities forUpdate() {
+        if (forUpdate) {
+            return this;
+        }
+        return new EntitiesImpl(sqlClient, true, con);
+    }
+
+    @Override
+    public Entities forConnection(Connection con) {
+        if (this.con == con) {
+            return this;
+        }
+        return new EntitiesImpl(sqlClient, forUpdate, con);
     }
 
     @Override
     public <E> E findById(Class<E> entityType, Object id) {
+        if (con != null) {
+            return findById(entityType, id, con);
+        }
         return sqlClient.getConnectionManager().execute(con ->
                 findById(entityType, id, con)
         );
@@ -44,6 +71,9 @@ public class EntitiesImpl implements Entities {
 
     @Override
     public <E> List<E> findByIds(Class<E> entityType, Collection<?> ids) {
+        if (con != null) {
+            return findByIds(entityType, ids, con);
+        }
         return sqlClient.getConnectionManager().execute(con ->
                 findByIds(entityType, ids, con)
         );
@@ -51,6 +81,9 @@ public class EntitiesImpl implements Entities {
 
     @Override
     public <ID, E> Map<ID, E> findMapByIds(Class<E> entityType, Collection<ID> ids) {
+        if (con != null) {
+            return findMapByIds(entityType, ids, con);
+        }
         return sqlClient.getConnectionManager().execute(con ->
                 findMapByIds(entityType, ids, con)
         );
@@ -58,6 +91,9 @@ public class EntitiesImpl implements Entities {
 
     @Override
     public <E> E findById(Fetcher<E> fetcher, Object id) {
+        if (con != null) {
+            return findById(fetcher, id, con);
+        }
         return sqlClient.getConnectionManager().execute(con ->
                 findById(fetcher, id, con)
         );
@@ -65,6 +101,9 @@ public class EntitiesImpl implements Entities {
 
     @Override
     public <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids) {
+        if (con != null) {
+            return findByIds(fetcher, ids, con);
+        }
         return sqlClient.getConnectionManager().execute(con ->
                 findByIds(fetcher, ids, con)
         );
@@ -72,13 +111,15 @@ public class EntitiesImpl implements Entities {
 
     @Override
     public <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids) {
+        if (con != null) {
+            return findMapByIds(fetcher, ids, con);
+        }
         return sqlClient.getConnectionManager().execute(con ->
                 findMapByIds(fetcher, ids, con)
         );
     }
 
-    @Override
-    public <E> E findById(Class<E> entityType, Object id, Connection con) {
+    private <E> E findById(Class<E> entityType, Object id, Connection con) {
         if (id instanceof Collection<?>) {
             throw new IllegalArgumentException(
                     "id cannot be collection, do you want to call 'findByIds'?"
@@ -88,14 +129,12 @@ public class EntitiesImpl implements Entities {
         return rows.isEmpty() ? null : rows.get(0);
     }
 
-    @Override
-    public <E> List<E> findByIds(Class<E> entityType, Collection<?> ids, Connection con) {
+    private <E> List<E> findByIds(Class<E> entityType, Collection<?> ids, Connection con) {
         return findByIds(entityType, null, ids, con);
     }
 
     @SuppressWarnings("unchecked")
-    @Override
-    public <ID, E> Map<ID, E> findMapByIds(Class<E> entityType, Collection<ID> ids, Connection con) {
+    private <ID, E> Map<ID, E> findMapByIds(Class<E> entityType, Collection<ID> ids, Connection con) {
         String idPropName = ImmutableType.get(entityType).getIdProp().getName();
         return this.findByIds(entityType, null, ids, con).stream().collect(
                 Collectors.toMap(
@@ -107,8 +146,7 @@ public class EntitiesImpl implements Entities {
         );
     }
 
-    @Override
-    public <E> E findById(Fetcher<E> fetcher, Object id, Connection con) {
+    private <E> E findById(Fetcher<E> fetcher, Object id, Connection con) {
         if (id instanceof Collection<?>) {
             throw new IllegalArgumentException(
                     "id cannot be collection, do you want to call 'findByIds'?"
@@ -118,14 +156,12 @@ public class EntitiesImpl implements Entities {
         return rows.isEmpty() ? null : rows.get(0);
     }
 
-    @Override
-    public <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids, Connection con) {
+    private <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids, Connection con) {
         return findByIds(fetcher.getJavaClass(), fetcher, ids, con);
     }
 
     @SuppressWarnings("unchecked")
-    @Override
-    public <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids, Connection con) {
+    private <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids, Connection con) {
         String idPropName = ImmutableType.get(fetcher.getJavaClass()).getIdProp().getName();
         return this.findByIds(fetcher.getJavaClass(), fetcher, ids, con).stream().collect(
                 Collectors.toMap(
@@ -226,19 +262,30 @@ public class EntitiesImpl implements Entities {
             }
             return entities;
         }
-        return Queries
-                .createQuery(
-                        sqlClient, immutableType, (q, table) -> {
-                            Expression<Object> idProp = table.get(immutableType.getIdProp().getName());
-                            if (distinctIds.size() == 1) {
-                                q.where(idProp.eq(distinctIds.iterator().next()));
-                            } else {
-                                q.where(idProp.in(distinctIds));
-                            }
-                            return q.select(((Table<E>) table).fetch(fetcher));
-                        }
-                )
-                .execute(con);
+        ConfigurableTypedRootQuery<?, E> query = Queries.createQuery(
+                sqlClient, immutableType, (q, table) -> {
+                    Expression<Object> idProp = table.get(immutableType.getIdProp().getName());
+                    if (distinctIds.size() == 1) {
+                        q.where(idProp.eq(distinctIds.iterator().next()));
+                    } else {
+                        q.where(idProp.in(distinctIds));
+                    }
+                    return q.select(((Table<E>) table).fetch(fetcher));
+                }
+        );
+        if (forUpdate) {
+            query = query.forUpdate();
+        }
+        return query.execute(con);
+    }
+
+    @Override
+    public <E> SimpleSaveResult<E> save(E entity) {
+        SimpleEntitySaveCommand<E> command = saveCommand(entity);
+        if (con != null) {
+            return command.execute(con);
+        }
+        return command.execute();
     }
 
     @Override
@@ -250,8 +297,26 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
+    public <E> BatchSaveResult<E> batchSave(Collection<E> entities) {
+        BatchEntitySaveCommand<E> command = batchSaveCommand(entities);
+        if (con != null) {
+            return command.execute(con);
+        }
+        return command.execute();
+    }
+
+    @Override
     public <E> BatchEntitySaveCommand<E> batchSaveCommand(Collection<E> entities) {
         return new BatchEntitySaveCommandImpl<>(sqlClient, entities);
+    }
+
+    @Override
+    public DeleteResult delete(Class<?> entityType, Object id) {
+        DeleteCommand command = deleteCommand(entityType, id);
+        if (con != null) {
+            return command.execute(con);
+        }
+        return command.execute();
     }
 
     @Override
@@ -263,6 +328,15 @@ public class EntitiesImpl implements Entities {
             throw new IllegalArgumentException("id cannot be collection, do you want to call 'batchDeleteCommand'?");
         }
         return batchDeleteCommand(entityType, Collections.singleton(id));
+    }
+
+    @Override
+    public DeleteResult batchDelete(Class<?> entityType, Collection<?> ids) {
+        DeleteCommand command = batchDeleteCommand(entityType, ids);
+        if (con != null) {
+            return command.execute(con);
+        }
+        return command.execute();
     }
 
     @Override
