@@ -1,15 +1,31 @@
 
 [![logo](logo.png)](https://babyfish-ct.github.io/jimmer-doc/)
 
-# A powerful java framework for immutable data and ORM based on immutable data
+A powerful java framework for 
+- Immutable data model
+- ORM based on immutable data model
 
-## 1. Documentation
+## 1. Bechmark
+
+The [source code for benchmark](./benchmark) can be found in the project. Using H2's in-memory database, it can run directly without any environment preparation.
+
+The following two figures: the abscissa represents the count of data objects queried from the database, and the ordinate represents the consumption time.
+
+1. Linear scale
+
+   ![linear-scale](liner.png)
+
+2. Logarithmic scale
+
+   ![logarithmic](logarithmic.png)
+
+## 2. Documentation
 
 The project provides complete documentation.
 
 Please view [**jimmer documentation**](https://babyfish-ct.github.io/jimmer-doc/) to know everything.
 
-## 2. Examples:
+## 3. Examples:
 
 This framework provides three examples
 
@@ -17,530 +33,62 @@ This framework provides three examples
 - [example/jimmer-sql](example/jimmer-sql): How to use ORM framework
 - [example/jimmer-sql-graphql](example/jimmer-sql-graphql): How to quickly develop [Spring GraphQL](https://spring.io/projects/spring-graphql) services based on jimmer.
 
-## Introduce
+## 4. Introduce
 
-Introduction
+### Purpose
+- Powerful immutable data model
+- Revolutionary ORM based on immutable data model
 
-This introduction is very simple and introduces the project features with minimal space. For complete features, please refer to the [documentation](https://babyfish-ct.github.io/jimmer-doc/).
+### Part 1: Powerful immutable data model
 
-Now, there are many ORM frameworks to choose, such as: JPA, myBatis, JOOQ, Exposed, KtOrm. Why develop a whole new ORM?
+Porting a well-known project [immer](https://github.com/immerjs/immer) for Java, modifying immutable objects in the way of mutable objects.
 
-The answer is to introduce huge improvement, provide some powerful functionalities that cannot be imaged by traditional ORMs.
+Jimmer can be used in any context where immutable data structures are required to replace java records. Immutable data structures allow for (effective) change detection: if the reference to the object hasn't changed, then neither has the object itself. Also, it makes cloning relatively cheap: unchanged parts of the data tree do not need to be copied and are shared in memory with older versions of the same state.
 
-The traditional ORM uses a simple User Bean as an entity object, and the function of the entity object is very limited.
+In general, these benefits are achieved by ensuring that you never change any properties of an object or list, but always create a changed copy. In practice, this can lead to very cumbersome code to write, and it is easy to accidentally violate these constraints. Jimmer will help you follow the immutable data paradigm by addressing the following pain points:
 
-Taking Hibernate, a well-known implementation of JPA, as an example, in order to support lazy loading for many-to-one associations, a dynamic proxy that inherits from User Bean is created to express the parent object with only the id attribute. Hibernate will expand User Bean because the function of User Bean is not powerful enough.
+1. Jimmer will detect an unexpected mutation and throw an error.
+2. Jimmer will eliminate the need to create the typical boilerplate code required when doing deep updates to immutable objects: without Jimmer, you would need to manually make copies of objects at each level. Usually by using a lot of copy construction.
+3. When using JImmer, changes are made to the draft object, which records the changes and takes care of creating the necessary copies without affecting the original.
 
-As this idea continues, as long as we find a way to make User Bean powerful enough, we can develop a powerful ORM based on it.
+When using Jimmer, you don't need to learn specialized APIs or data structures to benefit from paradigms.
 
-### 1. Make User Bean powerful enough
+In addition, to support ORM, Jimmer adds object dynamics to immer. Any property of an object is allowed to be missing.
+- Missing properties cause exceptions when accessed directly by code
+- Missing properties are automatically ignored during Jackson serialization and will not cause an exception
 
-#### 1.1  Use immutable data, but support temporary mutable proxies.
+### Part 2: A revolutionary ORM based on immutable data model
 
-```java
-@Immutable
-public interface TreeNode {
-    String name();
-    TreeNode parent();
-    List<TreeNode> childNodes();
-}
-```
-The annotation processor supporting the framework will generate a mutable derived interface for the user: `TreeNodeDraft`. User can use it like this
+1. Like JPA Criteria, QueryDSL and JOOQ, strongly typed SQL SDL strives to find SQL errors at compile time, not runtime, debugging, and testing.
 
-```java
-// Step1: Create object from scratch
-TreeNode oldTreeNode = TreeNodeDraft.$.produce(root ->  
-    root
-        .setName("Root")
-        .addIntoChildNodes(child ->
-            child.setName("Drinks")        
-        )
-        .addIntoChildNodes(child ->
-            child.setName("Breads")        
-        )
-);
+2. Strongly typed SQL DSL and Native SQL can be freely mixed, encouraging the use of database-specific functions.
 
-// Step2: Create object based on existing object
-TreeNode newTreeNode = TreeNodeDraft.$.produce(
-    oldTreeNode, // existing object
-    root ->
-      root.childNodes(false).get(0) // Get child proxy
-          .setName("Dranks+"); // Change child proxy
-);
+3. Always use high performance [ResultSet.getObject(int)](https://docs.oracle.com/javase/7/docs/api/java/sql/ResultSet.html#getObject(int)); instead of Relatively inefficient [ResultSet.getObject(String)](https://docs.oracle.com/javase/7/docs/api/java/sql/ResultSet.html#getObject(java.lang.String))
 
-System.out.println("Old tree node: ");
-System.out.println(oldTreeNode);
+4. Implicit dynamic table joins, in the implementation of complex dynamic queries, automatically merge conflicting table joins in different code logic branches * (Even with the highly controllable myBatis, it is difficult to achieve this function)*
 
-System.out.println("New tree node: ");
-System.out.println(newTreeNode);
-```
+5. A general paging query requires two SQLs, one for data and one for row count. Developers are responsible for the former, and the latter are automatically generated and optimized by the framework.
 
-The final print result is as follows
+6. **Object fetcher**: Extend the ability of SQL, if a column in the query is an object type, it can be specified as the query format of the object, accept any association depth and breadth, and even recursively query self-association attributes. It can be considered that SQL has been extended to a sufficiently powerful form, with capabilities comparable to GraphQL.
 
-```
-Old tree node: 
-{"name": "Root", childNodes: [{"name": "Drinks"}, {"name": "Breads"}]}
-New tree node: 
-{"name": "Root", childNodes: [{"name": "`Drinks+`"}, {"name": "Breads"}]}
-```
-#### 1.2 Dynamic object.
+7. **Sava instruction**: The data to be saved (inserted or modified) is no longer a simple object, but an arbitrarily complex object tree. No matter how complex the tree is, the framework takes care of all the internal details, and the developer can complete the whole operation in just one sentence. This function is the inverse of the object fetcher.
 
-Any property of the data object can be unspecified.
+8. Any external cache system can be connected. By default, there is no cache, it is just a very lightweight and powerful SQL generator; but users can attach any cache, ** and consistent with the business system's own cache technology**. Unlike other ORMs, it supports not only object caching, but also associative caching, and is effective for object grabbers, especially when recursively querying self-associative properties. *(new features, not yet in documentation and examples)*
 
-1. Direct access to unspecified properties causes an exception.
-2. Using Jackson serialization, Unspecified properties will be ignored without exception.
+9. Very lightweight, the internal implementation is lighter than myBatis, without any reflection behavior, without any dynamic bytecode generation behavior, ensuring graal friendliness
 
-```java
-TreeNode current = TreeNodeDraft.$.produce(current ->
-    node
-        .setName("Current")
-        .setParent(parent -> parent.setName("Father"))
-        .addIntoChildNodes(child -> child.setName("Son"))
-);
+### Other Features
 
-// You can access specified properties
-System.out.println(current.name());
-System.out.println(current.parent());
-System.out.println(current.childNodes());
+1. Spring Boot 2.7 introduces Spring GraphQL to provide rapid development support for it.
 
-/*
- * But you cannot access unspecified fields, like this
- *
- * System.out.println(current.parent().parent());
- * System.out.println(
- *     current.childNodes().get(0).childNodes()
- * );
- *
- * , because direct access to unspecified 
- * properties causes an exception.
- */
+2. The dynamism of immutable objects brings beneficial side effects and a new design philosophy to users
 
-/*
- * Finally You will get JSON string like this
- * 
- * {
- *     "name": "Current", 
- *     parent: {"name": "Father"},
- *     childNodes:[
- *         {"name": "Son"}
- *     ]
- * }
- *
- * , because unspecified will be ignored by 
- * jackson serialization without exception.
- */
-String json = new ObjectMapper()
-    .registerModule(new ImmutableModule())
-    .writeValueAsString(current);
+   In the development process of information management software, HTTP APIs often interact with object trees that only contain one-way associations. Even if the dependent JSON serialization technology has a certain ability to handle bidirectional associations, people will not use it.
 
-System.out.println(json);
-```
+   Therefore, DTOs are important when designing module APIs, because the DTOs required by each business clearly define the aggregate root. DTO design becomes a prerequisite for business design and development.
 
-Because entity objects are dynamic, users can build arbitrarily complex data structures. There are countless possibilities, such as
+   Jimmer's immutable objects are dynamic. Although bidirectional associations can be defined in the design of ORM entity types; when creating objects for specific business scenarios, Jimmer ensures that there is only a unidirectional association between object instances, and any attempt to establish a bidirectional association between object instances will result in an exception.
 
-1.  Lonely object, for example
+   That is, the design of the aggregate root, from the time of system API design, is deferred to when the object is created for a specific business scenario. Naturally, it is no longer necessary to design and develop based on DTO, and it is possible to completely use entity objects as the basis for development, and the development process is very natural.
 
-    ```java
-    TreeNode lonelyObject = TreeNodeDraft.$.produce(draft ->
-        draft.setName("Lonely object")
-    );
-    ```
-
-2.  Shallow object tree, for example
-    ```java
-    TreeNode shallowTree = TreeNodeDraft.$.produce(draft ->
-        draft
-            .setName("Shallow Tree")
-            .setParent(parent -> parent.setName("Father"))
-            .addIntoChildNodes(child -> parent.setName("Son"))
-    );
-    ```
-
-3. Deep object tree, for example
-    ```java
-    TreeNode deepTree = TreeNodeDraft.$.produce(draft ->
-        draft
-            .setName("Deep Tree")
-            .setParent(parent -> 
-                 parent
-                     .setName("Father")
-                     .setParent(deeperParent ->
-                         deeperParent.setName("Grandfather")
-                     )
-            )
-            .addIntoChildNodes(child -> 
-                child
-                    .setName("Son")
-                    .addIntoChildNodes(deeperChild -> 
-                        deeperChild.setName("Grandson");
-                    )
-            )
-    );
-    ```
-
-> **This object dynamism, which includes countless possibilities, is the fundamental reason why jimmer's ORM can provide more powerful features.**
-
-### 2. ORM base on immutable object.
-
-In jimmer's ORM, entities are also immutable interfaces
-
-```java
-@Entity
-public interface TreeNode {
-    
-    @Id
-    @GeneratedValue(
-        strategy = GenerationType.SEQUENCE,
-        generator = "sequence:TREE_NODE_ID_SEQ"
-    )
-    long id();
-    
-    @Key // jimmer annotation, `name()` is business key,
-    // business key will be used when `id` property is not specified
-    String name();
-
-    @ManyToOne
-    @OnDelete(DeleteAction.DELETE)
-    TreeNode parent();
-
-    @OneToMany(mappedBy = "parent")
-    List<TreeNode> childNodes();
-}
-```
-
-> Note!
-> 
-> Although jimmer uses some JPA annotations to complete the mapping between entities and tables, jimmer is not JPA.
-
-#### 2.1 Save arbitrarily complex object tree into database
-
-1.  Save lonely entity
-    ```java
-    sqlClient.getEntities().save(
-        TreeNode lonelyObject = TreeNodeDraft.$.produce(draft ->
-            draft
-                .setName("RootNode")
-                .setParent((TreeNode)null)
-        )
-    );
-    ```
-
-2. Save shallow entity tree
-
-    ```java
-    sqlClient.getEntities().save(
-        TreeNode lonelyObject = TreeNodeDraft.$.produce(draft ->
-            draft
-                .setName("RootNode")
-                .setParent(parent ->
-                    parent.setId(100L)
-                )
-                .addIntoChildNodes(child ->
-                    child.setId(101L)
-                )
-                .addIntoChildNodes(child ->
-                    child.setId(102L)
-                )
-        )
-    );
-    ```
-
-3. Save deep entity tree
-
-    ```java
-    sqlClient.getEntities().saveCommand(
-        TreeNode lonelyObject = TreeNodeDraft.$.produce(draft ->
-            draft
-                .setName("RootNode")
-                .setParent(parent ->
-                    parent
-                        .setName("Parent")
-                        .setParent(grandParent ->
-                            grandParent.setName("Grand parent")
-                        )
-                )
-                .addIntoChildNodes(child ->
-                    child
-                        .setName("Child-1")
-                        .addIntoChildNodes(grandChild ->
-                            grandChild.setName("Child-1-1")
-                        )
-                       .addIntoChildNodes(grandChild ->
-                            grandChild.setName("Child-1-2")
-                        )
-                )
-                .addIntoChildNodes(child ->
-                    child
-                        .setName("Child-2")
-                        .addIntoChildNodes(grandChild ->
-                            grandChild.setName("Child-2-1")
-                        )
-                        .addIntoChildNodes(grandChild ->
-                            grandChild.setName("Child-2-2")
-                        )
-                )
-        )
-    ).configure(it ->
-        // Auto insert associated objects 
-        // if they do not exists in database
-        it.setAutoAttachingAll()
-    ).execute();
-    ```
-
-#### 2.2 Query arbitrarily complex object trees from a database
-
-1.  Select root nodes from database *(`TreeNodeTable` is a java class generated by annotation processor)*
-
-    ```java
-    List<TreeNode> rootNodes = sqlClient
-        .createQuery(TreeNodeTable.class, (q, treeNode) -> {
-            q.where(treeNode.parent().isNull()) // filter roots
-            return q.select(treeNode);
-        })
-        .execute();
-    ```
-
-2. Select root nodes and their child nodes from database *(`TreeNodeFetcher` is a java class generated by annotation processor)*
-
-    ```java
-    List<TreeNode> rootNodes = sqlClient
-        .createQuery(TreeNodeTable.class, (q, treeNode) -> {
-            q.where(treeNode.parent().isNull()) // filter roots
-            return q.select(
-                treeNode.fetch(
-                    TreeNodeFetcher.$
-                        .allScalarFields()
-                        .childNodes(
-                            TreeNodeFetcher.$
-                                .allScalarFields()
-                        )
-                )
-            );
-        })
-        .execute();
-    ```
-
-3.  Query the root nodes, with two levels of child nodes
-
-    You have two ways to complete a function
-
-    -   Specify a deeper tree format
-
-        ```java
-        List<TreeNode> rootNodes = sqlClient
-        .createQuery(TreeNodeTable.class, (q, treeNode) -> {
-            q.where(treeNode.parent().isNull()) // filter roots
-            return q.select(
-                treeNode.fetch(
-                    TreeNodeFetcher.$
-                        .allScalarFields()
-                        .childNodes( // level-1 child nodes
-                            TreeNodeFetcher.$
-                                .allScalarFields()
-                                .childNodes( // level-2 child nodes
-                                    TreeNodeFetcher.$
-                                        .allScalarFields()
-                                )
-                        )
-                )
-            );
-        })
-        .execute();
-        ```
-
-    -   You can also specify depth for self-associative property, this is better way
-
-        ```java
-        List<TreeNode> rootNodes = sqlClient
-        .createQuery(TreeNodeTable.class, (q, treeNode) -> {
-            q.where(treeNode.parent().isNull()) // filter roots
-            return q.select(
-                treeNode.fetch(
-                    TreeNodeFetcher.$
-                        .allScalarFields()
-                        .childNodes(
-                            TreeNodeFetcher.$
-                                .allScalarFields(),
-                            it -> it.depth(2) // Fetch 2 levels
-                        )
-                )
-            );
-        })
-        .execute();
-        ```
-4. Query all root nodes, recursively get all child nodes, no matter how deep
-
-    ```java
-    List<TreeNode> rootNodes = sqlClient
-    .createQuery(TreeNodeTable.class, (q, treeNode) -> {
-        q.where(treeNode.parent().isNull()) // filter roots
-        return q.select(
-            treeNode.fetch(
-                TreeNodeFetcher.$
-                    .allScalarFields()
-                    .childNodes(
-                        TreeNodeFetcher.$
-                            .allScalarFields(),
-
-                        // Recursively fetch all, 
-                        // no matter how deep
-                        it -> it.recursive() 
-                    )
-            )
-        );
-    })
-    .execute();
-    ```
-
-5. Query all root nodes, it is up to the developer to control whether each node needs to recursively query child nodes
-
-    ```java
-    List<TreeNode> rootNodes = sqlClient
-    .createQuery(TreeNodeTable.class, (q, treeNode) -> {
-        q.where(treeNode.parent().isNull()) // filter roots
-        return q.select(
-            treeNode.fetch(
-                TreeNodeFetcher.$
-                    .allScalarFields()
-                    .childNodes(
-                        TreeNodeFetcher.$
-                            .allScalarFields(),
-                        it -> it.recursive(args ->
-                            // - If the node name starts with `Tmp_`, 
-                            // do not recursively query child nodes.
-                            //
-                            // - Otherwise, 
-                            // recursively query child nodes.
-                            !args.getEntity().name().startsWith("Tmp_")
-                        )
-                    )
-            )
-        );
-    })
-    .execute();
-    ```
-
-#### 2.3 Dynamic table joins.
-
-In order to develop powerful dynamic queries, it is not enough to support dynamic where predicates, but dynamic table joins are required.
-
-```java
-@Repository
-public class TreeNodeRepository {
-    
-    private final SqlClient sqlClient;
-
-    public TreeNodeRepository(SqlClient sqlClient) {
-        this.sqlClient = sqlClient;
-    }
-
-    public List<TreeNode> findTreeNodes(
-        @Nullable String name,
-        @Nullable String parentName,
-        @Nullable String grandParentName
-    ) {
-        return sqlClient
-            .createQuery(TreeNodeTable.class, (q, treeNode) -> {
-               if (name != null && !name.isEmpty()) {
-                   q.where(treeNode.name().eq(name));
-               }
-               if (parentName != null && !parentName.isEmpty()) {
-                   q.where(
-                       treeNode
-                       .parent() // Join: current -> parent
-                       .name()
-                       .eq(parentName)
-                   );
-               }
-               if (grandParentName != null && !grandParentName.isEmpty()) {
-                   q.where(
-                       treeNode
-                           .parent() // Join: current -> parent
-                           .parent() // Join: parent -> grand parent
-                           .name()
-                           .eq(grandParentName)
-                   );
-               }
-               return q.select(treeNode);
-            })
-            .execute();
-    }
-}
-```
-
-This dynamic query supports three nullable parameters.
-
-1. When the parameter `parentName` is not null, the table join `current -> parent` is required
-2. When the parameter `grandParentName` is not null, you need to join `current -> parent -> grandParent`
-
-When the parameters `parentName` and `grandParent` are both specified, the table join paths `current -> parent` and `current -> parent -> grandParent` are both added to the query conditions. Among them, `current->parent` appears twice, jimmer will automatically merge the duplicate table joins. 
-
-This means
-
-```
-`current -> parent` 
-+ 
-`current -> parent -> grandParent` 
-= 
---+-current
-  |
-  \--+-parent
-     |
-     \----grandParent
-```
-In the process of merging different table join paths into a join tree, duplicate table joins are removed.
-
-The final SQL is
-
-```sql
-select 
-    tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID
-from TREE_NODE as tb_1_
-
-/* Two java joins are merged to one sql join*/
-inner join TREE_NODE as tb_2_ 
-    on tb_1_.PARENT_ID = tb_2_.ID
-
-inner join TREE_NODE as tb_3_ 
-    on tb_2_.PARENT_ID = tb_3_.ID
-where
-    tb_2_.NAME = ? /* parentName */
-and
-    tb_3_.NAME = ? /* grandParentName */
-```
-
-#### 2.4 Automatically generate count-query by data-query.
-
-Pagination query requires two SQL statements, one for querying the total row count of data, and the other one for querying data in one page, let's call them count-query and data-query. 
-
-Developers only need to focus on data-count, and count-query can be generated automatically.
-
-```java
-
-// Developer create data-query
-ConfigurableTypedRootQuery<TreeNodeTable, TreeNode> dataQuery = 
-    sqlClient
-        .createQuery(TreeNodeTable.class, (q, treeNode) -> {
-            q
-                .where(treeNode.parent().isNull())
-                .orderBy(treeNode.name());
-            return q.select(book);
-        });
-
-// Framework generates count-query
-TypedRootQuery<Long> countQuery = dataQuery
-    .reselect((oldQuery, book) ->
-        oldQuery.select(book.count())
-    )
-    .withoutSortingAndPaging();
-
-// Execute count-query
-int rowCount = countQuery.execute().get(0).intValue();
-
-// Execute data-query
-List<TreeNode> someRootNodes = 
-    dataQuery
-        // limit(limit, offset), from 1/3 to 2/3
-        .limit(rowCount / 3, rowCount / 3)
-        .execute();
-``` 
+   Of course, this design concept is not to completely deny the value of DTOs. If you think that it is safer and clearer to design external APIs with static DTOs than with dynamic entities, you can still choose to use DTOs as a final encapsulation. However, it's a icing on the cake, rather than a must-have option.
