@@ -27,6 +27,20 @@ public class Mutations {
         return update;
     }
 
+    public static Executable<Integer> createUpdate(
+            SqlClient sqlClient,
+            ImmutableType type,
+            BiConsumer<MutableUpdate, Table<?>> block
+    ) {
+        MutableUpdateImpl update = new MutableUpdateImpl(
+                sqlClient,
+                type
+        );
+        block.accept(update, update.getTable());
+        update.freeze();
+        return update;
+    }
+
     public static <T extends Table<?>> Executable<Integer> createDelete(
             SqlClient sqlClient,
             Class<T> tableType,

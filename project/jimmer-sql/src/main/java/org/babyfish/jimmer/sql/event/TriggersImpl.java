@@ -13,10 +13,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TriggersImpl implements Triggers {
 
-    private ConcurrentMap<ImmutableType, CopyOnWriteArrayList<EntityListener<ImmutableSpi>>> entityTableListenerMultiMap =
+    private final ConcurrentMap<ImmutableType, CopyOnWriteArrayList<EntityListener<ImmutableSpi>>> entityTableListenerMultiMap =
             new ConcurrentHashMap<>();
 
-    private ConcurrentMap<ImmutableProp, CopyOnWriteArrayList<MiddleTableListener>> middleTableListenerMultiMap =
+    private final ConcurrentMap<ImmutableProp, CopyOnWriteArrayList<MiddleTableListener>> middleTableListenerMultiMap =
             new ConcurrentHashMap<>();
 
     @Override
@@ -59,20 +59,6 @@ public class TriggersImpl implements Triggers {
         }
     }
 
-    public void fireEntityTableChange(ImmutableSpi oldRow, ImmutableSpi newRow) {
-        if (oldRow == null && newRow == null) {
-            return;
-        }
-        EntityEvent<ImmutableSpi> event = new EntityEvent<>(oldRow, newRow);
-        List<EntityListener<ImmutableSpi>> listeners =
-                entityTableListenerMultiMap.get(event.getImmutableType());
-        if (listeners != null && !listeners.isEmpty()) {
-            for (EntityListener<ImmutableSpi> listener : listeners) {
-                listener.onChange(event);
-            }
-        }
-    }
-
     @Override
     public boolean hasListeners(ImmutableType type) {
         List<EntityListener<ImmutableSpi>> listeners = entityTableListenerMultiMap.get(type);
@@ -110,6 +96,22 @@ public class TriggersImpl implements Triggers {
                 .remove(listener);
     }
 
+    @Override
+    public void fireEntityTableChange(ImmutableSpi oldRow, ImmutableSpi newRow) {
+        if (oldRow == null && newRow == null) {
+            return;
+        }
+        EntityEvent<ImmutableSpi> event = new EntityEvent<>(oldRow, newRow);
+        List<EntityListener<ImmutableSpi>> listeners =
+                entityTableListenerMultiMap.get(event.getImmutableType());
+        if (listeners != null && !listeners.isEmpty()) {
+            for (EntityListener<ImmutableSpi> listener : listeners) {
+                listener.onChange(event);
+            }
+        }
+    }
+
+    @Override
     public void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId) {
         ImmutableProp primaryAssociationProp = Utils.primaryAssociationProp(prop);
         List<MiddleTableListener> listeners = middleTableListenerMultiMap.get(primaryAssociationProp);

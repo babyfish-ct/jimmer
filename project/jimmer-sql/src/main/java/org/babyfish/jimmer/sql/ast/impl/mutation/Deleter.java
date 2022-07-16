@@ -2,6 +2,13 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.runtime.DraftSpi;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.DeleteAction;
@@ -18,11 +25,13 @@ import java.util.*;
 
 public class Deleter {
 
-    private DeleteCommandImpl.Data data;
+    private final DeleteCommandImpl.Data data;
 
-    private Connection con;
+    private final Connection con;
 
-    private Map<AffectedTable, Integer> affectedRowCountMap;
+    private final MutationCache cache;
+
+    private final Map<AffectedTable, Integer> affectedRowCountMap;
 
     private Map<ImmutableType, Set<Object>> preHandleIdInputMap =
             new LinkedHashMap<>();
@@ -30,14 +39,14 @@ public class Deleter {
     private Map<ImmutableType, Set<Object>> postHandleIdInputMap =
             new LinkedHashMap<>();
 
-    private Map<String, Deleter> childDeleterMap =
+    private final Map<String, Deleter> childDeleterMap =
             new LinkedHashMap<>();
 
     Deleter(
             DeleteCommandImpl.Data data,
             Connection con
     ) {
-        this(data, con, new LinkedHashMap<>());
+        this(data, con, new MutationCache(data.getSqlClient()), new LinkedHashMap<>());
     }
 
     Deleter(
@@ -45,8 +54,26 @@ public class Deleter {
             Connection con,
             Map<AffectedTable, Integer> affectedRowCountMap
     ) {
+        this(data, con, new MutationCache(data.getSqlClient()), affectedRowCountMap);
+    }
+
+    Deleter(
+            DeleteCommandImpl.Data data,
+            Connection con,
+            MutationCache cache
+    ) {
+        this(data, con, cache, new LinkedHashMap<>());
+    }
+
+    Deleter(
+            DeleteCommandImpl.Data data,
+            Connection con,
+            MutationCache cache,
+            Map<AffectedTable, Integer> affectedRowCountMap
+    ) {
         this.data = data;
         this.con = con;
+        this.cache = cache;
         this.affectedRowCountMap = affectedRowCountMap;
     }
 
@@ -166,35 +193,68 @@ public class Deleter {
             ImmutableProp manyToOneProp,
             Collection<Object> ids
     ) {
+        SqlClient sqlClient = data.getSqlClient();
         ImmutableType childType = manyToOneProp.getDeclaringType();
-        String fkColumnName = ((Column)manyToOneProp.getStorage()).getName();
-        SqlBuilder builder = new SqlBuilder(data.getSqlClient());
-        builder
-                .sql("update ")
-                .sql(childType.getTableName())
-                .sql(" set ")
-                .sql(fkColumnName)
-                .sql(" = null where ")
-                .sql(fkColumnName)
-                .sql(" in(");
-        String separator = "";
-        for (Object id : ids) {
-            builder.sql(separator);
-            separator = ", ";
-            builder.variable(id);
+        if (sqlClient.getTriggers().hasListeners(manyToOneProp)) {
+            List<Object> childIds =
+                    Queries.createQuery(sqlClient, childType, (q, child) -> {
+                        Expression<Object> fkExpr = child
+                                .join(manyToOneProp.getName())
+                                .get(manyToOneProp.getTargetType().getIdProp().getName());
+                        q.where(fkExpr.in(ids));
+                        return q.select(child.<Expression<Object>>get(childType.getIdProp().getName()));
+                    }).execute(con);
+            if (!childIds.isEmpty()) {
+                Map<Object, ImmutableSpi> oldMap = cache.findByIds(childType, childIds, con);
+                int affectedRowCount = Mutations
+                        .createUpdate(sqlClient, childType, (u, child) -> {
+                            PropExpression<Object> fkExpr = child
+                                    .join(manyToOneProp.getName())
+                                    .get(manyToOneProp.getTargetType().getIdProp().getName());
+                            u.set(fkExpr, (Object) null);
+                            u.where(child.<Expression<Object>>get(childType.getIdProp().getName()).in(ids));
+                        }).execute(con);
+                addOutput(AffectedTable.of(childType), affectedRowCount);
+                for (Object childId : childIds) {
+                    ImmutableSpi oldChild = oldMap.get(childId);
+                    ImmutableSpi newChild = (ImmutableSpi) Internal.produce(childType, oldChild, draft -> {
+                        ((DraftSpi)draft).__set(childType.getIdProp().getName(), childId);
+                        ((DraftSpi)draft).__set(manyToOneProp.getName(), null);
+                    });
+                    sqlClient.getTriggers().fireEntityTableChange(oldChild, newChild);
+                    cache.save(newChild, false);
+                }
+            }
+        } else {
+            String fkColumnName = ((Column)manyToOneProp.getStorage()).getName();
+            SqlBuilder builder = new SqlBuilder(data.getSqlClient());
+            builder
+                    .sql("update ")
+                    .sql(childType.getTableName())
+                    .sql(" set ")
+                    .sql(fkColumnName)
+                    .sql(" = null where ")
+                    .sql(fkColumnName)
+                    .sql(" in(");
+            String separator = "";
+            for (Object id : ids) {
+                builder.sql(separator);
+                separator = ", ";
+                builder.variable(id);
+            }
+            builder.sql(")");
+            Tuple2<String, List<Object>> sqlResult = builder.build();
+            int affectedRowCount = data
+                    .getSqlClient()
+                    .getExecutor()
+                    .execute(
+                            con,
+                            sqlResult._1(),
+                            sqlResult._2(),
+                            PreparedStatement::executeUpdate
+                    );
+            addOutput(AffectedTable.of(childType), affectedRowCount);
         }
-        builder.sql(")");
-        Tuple2<String, List<Object>> sqlResult = builder.build();
-        int affectedRowCount = data
-                .getSqlClient()
-                .getExecutor()
-                .execute(
-                        con,
-                        sqlResult._1(),
-                        sqlResult._2(),
-                        PreparedStatement::executeUpdate
-                );
-        addOutput(AffectedTable.of(childType), affectedRowCount);
     }
 
     private void tryDeleteFromChildTable(ImmutableProp prop, Collection<?> ids) {
