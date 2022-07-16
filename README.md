@@ -9,7 +9,10 @@ A powerful java framework for
 
 The [source code for benchmark](./benchmark) can be found in the project. Using H2's in-memory database, it can run directly without any environment preparation.
 
-The following two figures: the abscissa represents the count of data objects queried from the database, and the ordinate represents the consumption time.
+The following two figures: 
+
+- The abscissa represents the count of data objects queried from the database.
+- The ordinate represents the consumption time.
 
 ### i. Linear scale
 
