@@ -1,16 +1,29 @@
 
 [![logo](logo.png)](https://babyfish-ct.github.io/jimmer-doc/)
 
-# A powerful java framework for immutable data and ORM based on immutable data
+A powerful java framework for 
+- Immutable data model
+- ORM based on immutable data model
 
+## 1. Bechmark
 
-## 1. Documentation
+The source code for benchmark can be found in the project. Using H2's in-memory database, it can run directly without any environment preparation.
+
+The following two figures: the abscissa represents the count of data objects queried from the database, and the ordinate represents the consumption time.
+
+1. Linear scale
+   ![linear-scale](liner.png)
+
+2. Logarithmic scale
+   ![logarithmic](logarithmic.png)
+
+## 2. Documentation
 
 The project provides complete documentation.
 
 Please view [**jimmer documentation**](https://babyfish-ct.github.io/jimmer-doc/) to know everything.
 
-## 2. Examples:
+## 3. Examples:
 
 This framework provides three examples
 
@@ -18,7 +31,7 @@ This framework provides three examples
 - [example/jimmer-sql](example/jimmer-sql): How to use ORM framework
 - [example/jimmer-sql-graphql](example/jimmer-sql-graphql): How to quickly develop [Spring GraphQL](https://spring.io/projects/spring-graphql) services based on jimmer.
 
-## Introduce
+## 4. Introduce
 
 ### Purpose
 - Powerful immutable data model
@@ -54,9 +67,9 @@ In addition, to support ORM, Jimmer adds object dynamics to immer. Any property 
 
 5. A general paging query requires two SQLs, one for data and one for row count. Developers are responsible for the former, and the latter are automatically generated and optimized by the framework.
 
-6. **Object grabber**: Extend the ability of SQL, if a column in the query is an object type, it can be specified as the query format of the object, accept any association depth and breadth, and even recursively query self-association attributes. It can be considered that SQL has been extended to a sufficiently powerful form, with capabilities comparable to GraphQL.
+6. **Object fetcher**: Extend the ability of SQL, if a column in the query is an object type, it can be specified as the query format of the object, accept any association depth and breadth, and even recursively query self-association attributes. It can be considered that SQL has been extended to a sufficiently powerful form, with capabilities comparable to GraphQL.
 
-7. **Sava instruction**: The data to be saved (inserted or modified) is no longer a simple object, but an arbitrarily complex object tree. No matter how complex the tree is, the framework takes care of all the internal details, and the developer can complete the whole operation in just one sentence. This function is the inverse of the object grabber.
+7. **Sava instruction**: The data to be saved (inserted or modified) is no longer a simple object, but an arbitrarily complex object tree. No matter how complex the tree is, the framework takes care of all the internal details, and the developer can complete the whole operation in just one sentence. This function is the inverse of the object fetcher.
 
 8. Any external cache system can be connected. By default, there is no cache, it is just a very lightweight and powerful SQL generator; but users can attach any cache, ** and consistent with the business system's own cache technology**. Unlike other ORMs, it supports not only object caching, but also associative caching, and is effective for object grabbers, especially when recursively querying self-associative properties. *(new features, not yet in documentation and examples)*
 
