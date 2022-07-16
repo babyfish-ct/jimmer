@@ -24,7 +24,7 @@ public class BenchmarkRunner implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         databaseInitializer.initialize();
-        Map<String, Long> map = new LinkedHashMap<>();
+        Map<String, Long> map = new TreeMap<>();
         for (BenchmarkExecutor executor : executors) {
             long time = executor.execute();
             map.put(executor.name(), time);
