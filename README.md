@@ -13,11 +13,11 @@ The following two figures: the abscissa represents the count of data objects que
 
 1. Linear scale
 
-   ![linear-scale](liner.png)
+   ![linear-scale](liner.jpeg)
 
 2. Logarithmic scale
 
-   ![logarithmic](logarithmic.png)
+   ![logarithmic](logarithmic.jpeg)
 
 ## 2. Documentation
 
