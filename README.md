@@ -11,7 +11,7 @@ The [source code for benchmark](./benchmark) can be found in the project. Using 
 
 The following two figures: the abscissa represents the count of data objects queried from the database, and the ordinate represents the consumption time.
 
-### Linear scale**
+### Linear scale
 
 <kbd>
    <img src="linear.jpeg"/>
@@ -19,7 +19,9 @@ The following two figures: the abscissa represents the count of data objects que
 
 ### Logarithmic scale
 
-![logarithmic](logarithmic.jpeg)
+<kbd>
+   <img src="logarithmic.jpeg"/>
+</kbd>
 
 ## 2. Documentation
 
