@@ -54,4 +54,8 @@ public interface Triggers {
     boolean hasListeners(ImmutableType type);
 
     boolean hasListeners(ImmutableProp prop);
+
+    void fireEntityTableChange(ImmutableSpi oldRow, ImmutableSpi newRow);
+
+    void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId);
 }

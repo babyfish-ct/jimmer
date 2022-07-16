@@ -74,6 +74,8 @@ public interface SqlClient {
 
     Entities getEntities();
 
+    Triggers getTriggers();
+
     <ST extends Table<?>> Associations getAssociations(
             Class<ST> sourceTableType,
             Function<ST, ? extends Table<?>> block

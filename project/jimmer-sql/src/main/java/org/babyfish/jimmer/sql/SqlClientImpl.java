@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.cache.CacheConfig;
 import org.babyfish.jimmer.sql.cache.Caches;
+import org.babyfish.jimmer.sql.event.TriggersImpl;
 import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
@@ -56,6 +57,8 @@ class SqlClientImpl implements SqlClient {
 
     private final Entities entities;
 
+    private final Triggers triggers;
+
     private final Caches caches;
 
     SqlClientImpl(
@@ -68,18 +71,44 @@ class SqlClientImpl implements SqlClient {
             int defaultListBatchSize,
             Caches caches
     ) {
-        this.connectionManager = connectionManager != null ?
-                connectionManager :
-                ILLEGAL_CONNECTION_MANAGER
-        ;
-        this.dialect = dialect != null ? dialect : DefaultDialect.INSTANCE;
-        this.executor = executor != null ? executor : DefaultExecutor.INSTANCE;
-        this.scalarProviderMap = new HashMap<>(scalarProviderMap);
-        this.idGeneratorMap = new HashMap<>(idGeneratorMap);
+        this(
+                connectionManager != null ?
+                        connectionManager :
+                        ILLEGAL_CONNECTION_MANAGER,
+                dialect != null ? dialect : DefaultDialect.INSTANCE,
+                executor != null ? executor : DefaultExecutor.INSTANCE,
+                new HashMap<>(scalarProviderMap),
+                new HashMap<>(idGeneratorMap),
+                defaultBatchSize,
+                defaultListBatchSize,
+                null,
+                null,
+                caches
+        );
+    }
+
+    private SqlClientImpl(
+            ConnectionManager connectionManager,
+            Dialect dialect,
+            Executor executor,
+            Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
+            Map<Class<?>, IdGenerator> idGeneratorMap,
+            int defaultBatchSize,
+            int defaultListBatchSize,
+            Entities entities,
+            Triggers triggers,
+            Caches caches
+    ) {
+        this.connectionManager = connectionManager;
+        this.dialect = dialect;
+        this.executor = executor;
+        this.scalarProviderMap = scalarProviderMap;
+        this.idGeneratorMap = idGeneratorMap;
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
-        this.entities = new EntitiesImpl(this);
-        this.caches = caches != null ? caches: Caches.of(cfg -> {});
+        this.entities = entities != null ? entities : new EntitiesImpl(this);
+        this.triggers = triggers != null ? triggers : new TriggersImpl();
+        this.caches = caches != null ? caches : Caches.of(null);
     }
 
     @Override
@@ -169,6 +198,11 @@ class SqlClientImpl implements SqlClient {
     }
 
     @Override
+    public Triggers getTriggers() {
+        return triggers;
+    }
+
+    @Override
     public <ST extends Table<?>> Associations getAssociations(
             Class<ST> sourceTableType,
             Function<ST, ? extends Table<?>> block
@@ -252,6 +286,8 @@ class SqlClientImpl implements SqlClient {
                 idGeneratorMap,
                 defaultBatchSize,
                 defaultListBatchSize,
+                entities,
+                triggers,
                 Caches.of(block)
         );
     }

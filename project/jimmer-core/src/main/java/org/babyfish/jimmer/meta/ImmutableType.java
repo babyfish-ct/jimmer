@@ -1,18 +1,11 @@
 package org.babyfish.jimmer.meta;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Draft;
-import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.meta.impl.Metadata;
-import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
-import org.babyfish.jimmer.sql.meta.IdentityIdGenerator;
-import org.babyfish.jimmer.sql.meta.SequenceIdGenerator;
 import org.babyfish.jimmer.runtime.DraftContext;
 
-import javax.persistence.*;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.function.BiFunction;
 

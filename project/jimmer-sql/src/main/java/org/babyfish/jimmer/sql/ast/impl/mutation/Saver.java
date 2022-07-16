@@ -381,7 +381,7 @@ class Saver {
             setDraftId(draftSpi, id);
         }
 
-        cache.save(draftSpi, true);
+        cache.save(draftSpi);
     }
 
     private void update(DraftSpi draftSpi, boolean excludeKeyProps) {
@@ -549,7 +549,7 @@ class Saver {
 
         ImmutableSpi spi = rows.isEmpty() ? null : rows.get(0);
         if (spi != null) {
-            cache.save(spi, true);
+            cache.save(spi);
         }
         return spi;
     }

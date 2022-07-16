@@ -35,8 +35,8 @@ class MutationCache {
         return keyObjMap.get(key);
     }
 
-    public ImmutableSpi findById(Class<?> type, Object id, Connection con) {
-        TypedId typedId = new TypedId(ImmutableType.get(type), id);
+    public ImmutableSpi findById(ImmutableType type, Object id, Connection con) {
+        TypedId typedId = new TypedId(type, id);
         ImmutableSpi spi = idObjMap.get(typedId);
         if (spi != null || idObjMap.containsKey(typedId)) {
             return spi;
@@ -45,20 +45,19 @@ class MutationCache {
                 .getEntities()
                 .forUpdate()
                 .forConnection(con)
-                .findById(type, id);
+                .findById(type.getJavaClass(), id);
         idObjMap.put(typedId, spi);
         return spi;
     }
 
     @SuppressWarnings("unchecked")
-    public Map<Object, ImmutableSpi> findByIds(Class<?> type, Collection<?> ids, Connection con) {
+    public Map<Object, ImmutableSpi> findByIds(ImmutableType type, Collection<?> ids, Connection con) {
         if (ids.isEmpty()) {
             return Collections.emptyMap();
         }
-        ImmutableType immutableType = ImmutableType.get(type);
         Map<Object, ImmutableSpi> resultMap = new LinkedHashMap<>((ids.size() * 4 + 2) / 3);
         for (Object id : ids) {
-            TypedId typedId = new TypedId(immutableType, id);
+            TypedId typedId = new TypedId(type, id);
             ImmutableSpi spi = idObjMap.get(typedId);
             if (spi != null || idObjMap.containsKey(typedId)) {
                 resultMap.put(id, spi);
@@ -74,30 +73,30 @@ class MutationCache {
             if (!missedIds.isEmpty()) { // "ids" is not Set
                 Map<Object, ImmutableSpi> loadedMap =
                         sqlClientWithoutCache.getEntities().findMapByIds(
-                                (Class<ImmutableSpi>) type,
+                                (Class<ImmutableSpi>) type.getJavaClass(),
                                 missedIds
                         );
                 for (Object id : missedIds) {
                     ImmutableSpi spi = loadedMap.get(id);
                     resultMap.put(id, spi);
-                    idObjMap.put(new TypedId(immutableType, id), spi);
+                    idObjMap.put(new TypedId(type, id), spi);
                 }
             }
         }
         return resultMap;
     }
 
-    public void save(ImmutableSpi spi) {
-        save(spi, false);
+    public ImmutableSpi save(ImmutableSpi spi) {
+        return save(spi, true);
     }
 
-    public void save(ImmutableSpi spi, boolean insertOnly) {
+    public ImmutableSpi save(ImmutableSpi spi, boolean merge) {
 
         ImmutableType type = spi.__type();
         ImmutableProp idProp = type.getIdProp();
         Set<ImmutableProp> keyProps = keyProps(type);
 
-        if (!insertOnly) {
+        if (merge) {
 
             ImmutableSpi oldSpi = find(spi);
             if (oldSpi != null) {
@@ -132,6 +131,8 @@ class MutationCache {
                 keyObjMap.put(key, spi);
             }
         }
+
+        return spi;
     }
 
     protected Set<ImmutableProp> keyProps(ImmutableType type) {

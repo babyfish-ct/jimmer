@@ -48,6 +48,7 @@ public class MutableUpdateImpl
         return (T)table;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <X> MutableUpdate set(PropExpression<X> path, X value) {
         if (value != null) {
