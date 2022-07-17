@@ -1,18 +1,16 @@
 package org.babyfish.jimmer.benchmark.jooq;
 
-import org.jooq.DataType;
-import org.jooq.Name;
 import org.jooq.Record;
 import org.jooq.TableField;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
-public class DataTable extends TableImpl<Record> {
+public class JooqDataTable extends TableImpl<Record> {
 
-    public static final DataTable DATA = new DataTable();
+    public static final JooqDataTable DATA = new JooqDataTable();
 
-    public DataTable() {
+    public JooqDataTable() {
         super(DSL.name("DATA"));
     }
 

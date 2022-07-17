@@ -1,14 +1,37 @@
 package org.babyfish.jimmer.benchmark;
 
-import org.springframework.boot.SpringApplication;
+import org.openjdk.jmh.results.format.ResultFormatType;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.Options;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
+import org.openjdk.jmh.runner.options.TimeValue;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @SpringBootApplication
-@EnableConfigurationProperties(BenchmarkProperties.class)
 public class BenchmarkApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(BenchmarkApplication.class, args);
+    private static final int WARMUP_ITERATIONS = 5;
+
+    private static final int MEASUREMENT_ITERATIONS = 5;
+
+    public static void main(String[] args) throws RunnerException {
+
+        // SpringApplication.run will be called in forked process, not here.
+
+        Options opt = new OptionsBuilder()
+                // set the class name regex for benchmarks to search for to the current class
+                .include("\\." + BenchmarkBootstrap.class.getSimpleName() + "\\.")
+                .warmupIterations(WARMUP_ITERATIONS)
+                .warmupTime(TimeValue.seconds(1))
+                .measurementIterations(MEASUREMENT_ITERATIONS)
+                .measurementTime(TimeValue.seconds(1))
+                .resultFormat(ResultFormatType.JSON)
+                .forks(1)
+                .result("benchmark-report.json") // set this to a valid filename if you want reports
+                .shouldFailOnError(true)
+                .jvmArgs("-server")
+                .build();
+        new Runner(opt).run();
     }
 }
