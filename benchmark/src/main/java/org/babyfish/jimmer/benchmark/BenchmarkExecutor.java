@@ -13,7 +13,7 @@ public abstract class BenchmarkExecutor {
 
     public long execute() {
 
-        query(); // Load & compile all necessary classes(like '@Warmup' of JMH, I don't know JMH before)
+        query(); // Load & compile all necessary classes(like '@Warmup' of JMH, I don't know JMH before, so I did it manually)
 
         long millis = System.currentTimeMillis();
         for (int i = props.getRepeatCount(); i > 0; --i) {
