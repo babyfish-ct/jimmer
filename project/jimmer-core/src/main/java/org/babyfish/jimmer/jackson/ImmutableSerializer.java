@@ -46,8 +46,8 @@ public class ImmutableSerializer extends StdSerializer<ImmutableSpi> {
 
     private void serializeFields(ImmutableSpi immutable, JsonGenerator gen, SerializerProvider provider) throws IOException {
         for (ImmutableProp prop : immutableType.getProps().values()) {
-            if (immutable.__isLoaded(prop.getName())) {
-                Object value = immutable.__get(prop.getName());
+            if (immutable.__isLoaded(prop.getId())) {
+                Object value = immutable.__get(prop.getId());
                 if ((prop.isAssociation() || prop.isScalarList()) && value != null) {
                     gen.writeFieldName(prop.getName());
                     TypeSerializer typeSer = null;

@@ -218,8 +218,8 @@ public class Deleter {
                 for (Object childId : childIds) {
                     ImmutableSpi oldChild = oldMap.get(childId);
                     ImmutableSpi newChild = (ImmutableSpi) Internal.produce(childType, oldChild, draft -> {
-                        ((DraftSpi)draft).__set(childType.getIdProp().getName(), childId);
-                        ((DraftSpi)draft).__set(manyToOneProp.getName(), null);
+                        ((DraftSpi)draft).__set(childType.getIdProp().getId(), childId);
+                        ((DraftSpi)draft).__set(manyToOneProp.getId(), null);
                     });
                     sqlClient.getTriggers().fireEntityTableChange(oldChild, newChild);
                     cache.save(newChild, false);

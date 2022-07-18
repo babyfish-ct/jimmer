@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.benchmark.jooq;
 
+// Use pojo, don't use jooq record.
+// jooq record do not pass values immediately.
 public class JooqData {
 
     private long id;

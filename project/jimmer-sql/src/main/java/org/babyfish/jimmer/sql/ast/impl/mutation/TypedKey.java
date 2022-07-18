@@ -51,7 +51,7 @@ class TypedKey {
         Object[] arr = new Object[keyProps.size()];
         int index = 0;
         for (ImmutableProp keyProp : keyProps) {
-            if (!spi.__isLoaded(keyProp.getName())) {
+            if (!spi.__isLoaded(keyProp.getId())) {
                 if (force) {
                     throw new ExecutionException(
                             "The key property \"" +
@@ -63,7 +63,7 @@ class TypedKey {
                 }
                 return null;
             }
-            Object value = spi.__get(keyProp.getName());
+            Object value = spi.__get(keyProp.getId());
             arr[index++] = value;
         }
         return new TypedKey(type, arr);

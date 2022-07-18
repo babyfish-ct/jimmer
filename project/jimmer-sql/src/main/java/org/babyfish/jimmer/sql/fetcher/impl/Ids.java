@@ -10,6 +10,6 @@ public class Ids {
         if (spi == null) {
             return null;
         }
-        return spi.__get(spi.__type().getIdProp().getName());
+        return spi.__get(spi.__type().getIdProp().getId());
     }
 }

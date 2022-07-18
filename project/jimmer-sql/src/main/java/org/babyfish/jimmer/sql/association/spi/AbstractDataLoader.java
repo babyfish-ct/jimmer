@@ -109,8 +109,8 @@ public abstract class AbstractDataLoader {
         } else {
             missedFkSourceIds = new ArrayList<>();
             for (ImmutableSpi source : sources) {
-                if (source.__isLoaded(prop.getName())) {
-                    ImmutableSpi target = (ImmutableSpi) source.__get(prop.getName());
+                if (source.__isLoaded(prop.getId())) {
+                    ImmutableSpi target = (ImmutableSpi) source.__get(prop.getId());
                     if (target != null) {
                         fkMap.put(toSourceId(source), toTargetId(target));
                     }
@@ -156,8 +156,8 @@ public abstract class AbstractDataLoader {
         );
         Collection<Object> missedFkSourceIds = new ArrayList<>();
         for (ImmutableSpi source : sources) {
-            if (source.__isLoaded(prop.getName())) {
-                ImmutableSpi target = (ImmutableSpi) source.__get(prop.getName());
+            if (source.__isLoaded(prop.getId())) {
+                ImmutableSpi target = (ImmutableSpi) source.__get(prop.getId());
                 if (target != null) {
                     fkMap.put(toSourceId(source), toTargetId(target));
                 }
@@ -441,7 +441,7 @@ public abstract class AbstractDataLoader {
     }
 
     private Object toSourceId(ImmutableSpi source) {
-        return source.__get(thisIdProp.getName());
+        return source.__get(thisIdProp.getId());
     }
 
     private List<Object> toSourceIds(Collection<ImmutableSpi> sources) {
@@ -455,7 +455,7 @@ public abstract class AbstractDataLoader {
         if (target == null) {
             return null;
         }
-        return target.__get(targetIdProp.getName());
+        return target.__get(targetIdProp.getId());
     }
 
     @SuppressWarnings("unchecked")
@@ -486,7 +486,7 @@ public abstract class AbstractDataLoader {
         }
         return (ImmutableSpi) Internal.produce(prop.getTargetType(), null, draft -> {
             DraftSpi targetDraft = (DraftSpi) draft;
-            targetDraft.__set(targetIdProp.getName(), id);
+            targetDraft.__set(targetIdProp.getId(), id);
         });
     }
 }

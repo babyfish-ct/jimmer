@@ -121,6 +121,11 @@ public abstract class AssociationProp implements ImmutableProp {
         }
 
         @Override
+        public int getId() {
+            return 0;
+        }
+
+        @Override
         public String getName() {
             return "source";
         }
@@ -164,6 +169,11 @@ public abstract class AssociationProp implements ImmutableProp {
         Target(AssociationType declaringType) {
             super(declaringType);
             column = new Column(declaringType.getMiddleTable().getTargetJoinColumnName());
+        }
+
+        @Override
+        public int getId() {
+            return 1;
         }
 
         @Override

@@ -192,7 +192,7 @@ public class AbstractQueryTest extends AbstractTest {
             for (ImmutableProp prop : spi.__type().getProps().values()) {
                 Assertions.assertEquals(
                         propNameList.contains(prop.getName()),
-                        spi.__isLoaded(prop.getName()),
+                        spi.__isLoaded(prop.getId()),
                         "Bad load state of prop \"" + prop + "\""
                 );
             }

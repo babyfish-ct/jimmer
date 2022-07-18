@@ -29,38 +29,41 @@ public class ImplementorGenerator {
         typeBuilder.modifiers.add(Modifier.ABSTRACT);
         typeBuilder.superinterfaces.add(type.getClassName());
         typeBuilder.superinterfaces.add(spiClassName);
-        addGet();
+        addGet(int.class);
+        addGet(String.class);
         addType();
         addToString();
         parentBuilder.addType(typeBuilder.build());
     }
 
-    private void addGet() {
+    private void addGet(Class<?> argType) {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("__get")
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
-                .addParameter(String.class, "prop")
+                .addParameter(argType, "prop")
                 .returns(Object.class);
         builder.beginControlFlow("switch (prop)");
         for (ImmutableProp prop : type.getProps().values()) {
             if (prop.getBoxType() != null) {
-                builder.addStatement("case $S: return ($T)$L()",
-                        prop.getName(),
+                builder.addStatement("case $L: return ($T)$L()",
+                        argType == int.class ? prop.getId() : '"' + prop.getName() + '"',
                         prop.getBoxType(),
                         prop.getGetterName()
                 );
             } else {
-                builder.addStatement("case $S: return $L()",
-                        prop.getName(),
+                builder.addStatement("case $L: return $L()",
+                        argType == int.class ? prop.getId() : '"' + prop.getName() + '"',
                         prop.getGetterName()
                 );
             }
         }
         builder.addStatement(
                 "default: throw new IllegalArgumentException($S + prop + $S)",
-                "Illegal property name: \"",
-                "\""
+                "Illegal property " +
+                        (argType == int.class ? "id" : "name") +
+                        ": \"",
+                        "\""
         );
         builder.endControlFlow();
         typeBuilder.addMethod(builder.build());

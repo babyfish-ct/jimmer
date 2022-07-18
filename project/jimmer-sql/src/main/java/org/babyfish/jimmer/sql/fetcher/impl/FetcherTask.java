@@ -119,7 +119,7 @@ class FetcherTask {
             return false;
         }
         Fetcher<?> childFetcher = field.getChildFetcher();
-        Object childValue = draft.__get(field.getProp().getName());
+        Object childValue = draft.__get(field.getProp().getId());
         if (childFetcher != null && childValue != null) {
             for (Field childField : childFetcher.getFieldMap().values()) {
                 if (!isLoaded(childValue, childField)) {
@@ -141,7 +141,7 @@ class FetcherTask {
             }
             return true;
         }
-        return ((DraftSpi) obj).__isLoaded(field.getProp().getName());
+        return ((DraftSpi) obj).__isLoaded(field.getProp().getId());
     }
 
     @SuppressWarnings("unchecked")
@@ -193,9 +193,9 @@ class FetcherTask {
 
     private void setDraftProp(DraftSpi draft, Object value) {
         if (value == null && field.getProp().isEntityList()) {
-            draft.__set(field.getProp().getName(), Collections.emptyList());
+            draft.__set(field.getProp().getId(), Collections.emptyList());
         } else {
-            draft.__set(field.getProp().getName(), value);
+            draft.__set(field.getProp().getId(), value);
         }
     }
 

@@ -139,16 +139,17 @@ public class ImmutableType {
             }
         }
 
+        int idSequence = superType != null ? superType.getDeclaredProps().size() : 0;
         Map<String, ImmutableProp> map = new LinkedHashMap<>();
         for (ExecutableElement executableElement : ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
             if (executableElement.getAnnotation(Id.class) != null) {
-                ImmutableProp prop = new ImmutableProp(typeUtils, executableElement);
+                ImmutableProp prop = new ImmutableProp(typeUtils, executableElement, ++idSequence);
                 map.put(prop.getName(), prop);
             }
         }
         for (ExecutableElement executableElement : ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
             if (executableElement.getAnnotation(Id.class) == null) {
-                ImmutableProp prop = new ImmutableProp(typeUtils, executableElement);
+                ImmutableProp prop = new ImmutableProp(typeUtils, executableElement, ++idSequence);
                 map.put(prop.getName(), prop);
             }
         }

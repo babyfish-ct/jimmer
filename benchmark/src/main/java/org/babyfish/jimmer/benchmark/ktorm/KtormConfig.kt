@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration
 import javax.sql.DataSource
 
 @Configuration
-open class KtormConfiguration {
+open class KtormConfig {
 
     @Bean
     open fun database(dataSource: DataSource): Database =

@@ -25,7 +25,6 @@ public class ImmutableDeserializer extends StdDeserializer<Object> {
             JsonParser jp,
             DeserializationContext ctx
     ) throws IOException {
-        Class<?> rawClass = handledType();
         JsonNode node = jp.getCodec().readTree(jp);
 
         return Internal.produce(immutableType, null, draft -> {
@@ -35,7 +34,7 @@ public class ImmutableDeserializer extends StdDeserializer<Object> {
                             node.get(prop.getName()),
                             Utils.getJacksonType(prop)
                     );
-                    ((DraftSpi)draft).__set(prop.getName(), value);
+                    ((DraftSpi)draft).__set(prop.getId(), value);
                 }
             }
         });

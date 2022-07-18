@@ -83,13 +83,13 @@ class Saver {
         for (ImmutableProp prop : currentDraftSpi.__type().getProps().values()) {
             if (prop.isAssociation() &&
                     prop.getStorage() instanceof Column == forParent &&
-                    currentDraftSpi.__isLoaded(prop.getName())
+                    currentDraftSpi.__isLoaded(prop.getId())
             ) {
                 ImmutableType targetType = prop.getTargetType();
                 ImmutableType currentType = currentDraftSpi.__type();
-                String currentIdPropName = currentType.getIdProp().getName();
-                Object currentId = currentDraftSpi.__isLoaded(currentIdPropName) ?
-                        currentDraftSpi.__get(currentIdPropName) :
+                int currentIdPropId = currentType.getIdProp().getId();
+                Object currentId = currentDraftSpi.__isLoaded(currentIdPropId) ?
+                        currentDraftSpi.__get(currentIdPropId) :
                         null;
 
                 ImmutableProp mappedBy = prop.getMappedBy();
@@ -101,25 +101,25 @@ class Saver {
                             mappedBy
                     );
                 }
-                Object associatedValue = currentDraftSpi.__get(prop.getName());
+                Object associatedValue = currentDraftSpi.__get(prop.getId());
                 Set<Object> associatedObjectIds = new LinkedHashSet<>();
                 if (associatedValue instanceof List<?>) {
                     List<DraftSpi> associatedObjects = (List<DraftSpi>) associatedValue;
                     if (childTableOperator != null) {
-                        String targetIdPropName = prop.getTargetType().getIdProp().getName();
+                        int targetIdPropId = prop.getTargetType().getIdProp().getId();
                         Iterator<DraftSpi> itr = new ArrayList<>(associatedObjects).iterator();
                         List<Object> updatingTargetIds = new ArrayList<>();
                         while (itr.hasNext()) {
                             DraftSpi associatedObject = itr.next();
                             if (isNonIdPropLoaded(associatedObject, false)) {
                                 associatedObject.__set(
-                                        mappedBy.getName(),
+                                        mappedBy.getId(),
                                         Internal.produce(currentType, null, backRef -> {
-                                            ((DraftSpi) backRef).__set(currentIdPropName, currentId);
+                                            ((DraftSpi) backRef).__set(currentIdPropId, currentId);
                                         })
                                 );
                             } else {
-                                updatingTargetIds.add(associatedObject.__get(targetIdPropName));
+                                updatingTargetIds.add(associatedObject.__get(targetIdPropId));
                                 itr.remove();
                             }
                         }
@@ -217,7 +217,7 @@ class Saver {
             Saver associatedSaver = new Saver(this, associatedData, prop.getName());
             associatedSaver.saveImpl(associatedDraftSpi);
         }
-        return associatedDraftSpi.__get(associatedDraftSpi.__type().getIdProp().getName());
+        return associatedDraftSpi.__get(associatedDraftSpi.__type().getIdProp().getId());
     }
 
     private ObjectType saveSelf(DraftSpi draftSpi) {
@@ -228,18 +228,18 @@ class Saver {
         }
 
         if (data.getMode() == SaveMode.UPDATE_ONLY &&
-                draftSpi.__isLoaded(draftSpi.__type().getIdProp().getName())) {
+                draftSpi.__isLoaded(draftSpi.__type().getIdProp().getId())) {
             update(draftSpi, false);
             return ObjectType.EXISTING;
         }
 
         ImmutableSpi existingSpi = find(draftSpi);
         if (existingSpi != null) {
-            String idPropName = draftSpi.__type().getIdProp().getName();
-            if (draftSpi.__isLoaded(idPropName)) {
+            int idPropId = draftSpi.__type().getIdProp().getId();
+            if (draftSpi.__isLoaded(idPropId)) {
                 update(draftSpi, false);
             } else {
-                draftSpi.__set(idPropName, existingSpi.__get(idPropName));
+                draftSpi.__set(idPropId, existingSpi.__get(idPropId));
                 update(draftSpi, true);
             }
             return ObjectType.EXISTING;
@@ -259,8 +259,8 @@ class Saver {
 
         ImmutableType type = draftSpi.__type();
         IdGenerator idGenerator = data.getSqlClient().getIdGenerator(type.getJavaClass());
-        Object id = draftSpi.__isLoaded(type.getIdProp().getName()) ?
-                draftSpi.__get(type.getIdProp().getName()) :
+        Object id = draftSpi.__isLoaded(type.getIdProp().getId()) ?
+                draftSpi.__get(type.getIdProp().getId()) :
                 null;
         if (id == null) {
             if (idGenerator == null) {
@@ -299,18 +299,18 @@ class Saver {
                 );
             }
         }
-        if (type.getVersionProp() != null && !draftSpi.__isLoaded(type.getVersionProp().getName())) {
-            draftSpi.__set(type.getVersionProp().getName(), 0);
+        if (type.getVersionProp() != null && !draftSpi.__isLoaded(type.getVersionProp().getId())) {
+            draftSpi.__set(type.getVersionProp().getId(), 0);
         }
 
         List<ImmutableProp> props = new ArrayList<>();
         List<Object> values = new ArrayList<>();
         for (ImmutableProp prop : draftSpi.__type().getProps().values()) {
-            if (prop.getStorage() instanceof Column && draftSpi.__isLoaded(prop.getName())) {
+            if (prop.getStorage() instanceof Column && draftSpi.__isLoaded(prop.getId())) {
                 props.add(prop);
-                Object value = draftSpi.__get(prop.getName());
+                Object value = draftSpi.__get(prop.getId());
                 if (value != null && prop.isReference()) {
-                    value = ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getName());
+                    value = ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getId());
                 }
                 values.add(value);
             }
@@ -401,14 +401,14 @@ class Saver {
         Integer version = null;
 
         for (ImmutableProp prop : type.getProps().values()) {
-            if (prop.getStorage() instanceof Column && draftSpi.__isLoaded(prop.getName())) {
+            if (prop.getStorage() instanceof Column && draftSpi.__isLoaded(prop.getId())) {
                 if (prop.isVersion()) {
-                    version = (Integer) draftSpi.__get(prop.getName());
+                    version = (Integer) draftSpi.__get(prop.getId());
                 } else if (!prop.isId() && !excludeProps.contains(prop)) {
                     updatedProps.add(prop);
-                    Object value = draftSpi.__get(prop.getName());
+                    Object value = draftSpi.__get(prop.getId());
                     if (value != null && prop.isReference()) {
-                        value = ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getName());
+                        value = ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getId());
                     }
                     updatedValues.add(value);
                 }
@@ -463,7 +463,7 @@ class Saver {
         builder.
                 sql(type.getIdProp().<Column>getStorage().getName())
                 .sql(" = ")
-                .variable(draftSpi.__get(type.getIdProp().getName()));
+                .variable(draftSpi.__get(type.getIdProp().getId()));
         if (version != null) {
             builder
                     .sql(" and ")
@@ -488,7 +488,7 @@ class Saver {
         } else if (version != null) {
             throw new OptimisticLockException(
                     type,
-                    draftSpi.__get(type.getIdProp().getName()),
+                    draftSpi.__get(type.getIdProp().getId()),
                     version,
                     path
             );
@@ -510,19 +510,19 @@ class Saver {
         List<ImmutableSpi> rows = Queries.createQuery(data.getSqlClient(), type, (q, table) -> {
             for (ImmutableProp keyProp : actualKeyProps) {
                 if (keyProp.isReference()) {
-                    String targetIdPropName = keyProp.getTargetType().getIdProp().getName();
+                    ImmutableProp targetIdProp = keyProp.getTargetType().getIdProp();
                     Expression<Object> targetIdExpression =
                             table
                                     .<Table<?>>join(keyProp.getName())
-                                    .<Expression<Object>>get(targetIdPropName);
-                    ImmutableSpi target = (ImmutableSpi) example.__get(keyProp.getName());
+                                    .get(targetIdProp.getName());
+                    ImmutableSpi target = (ImmutableSpi) example.__get(keyProp.getId());
                     if (target != null) {
-                        q.where(targetIdExpression.eq(target.__get(targetIdPropName)));
+                        q.where(targetIdExpression.eq(target.__get(targetIdProp.getId())));
                     } else {
                         q.where(targetIdExpression.isNull());
                     }
                 } else {
-                    Object value = example.__get(keyProp.getName());
+                    Object value = example.__get(keyProp.getId());
                     if (value != null) {
                         q.where(table.<Expression<Object>>get(keyProp.getName()).eq(value));
                     } else {
@@ -558,8 +558,8 @@ class Saver {
 
         ImmutableType type = spi.__type();
         ImmutableProp idProp = type.getIdProp();
-        Object id = spi.__isLoaded(idProp.getName()) ?
-                spi.__get(idProp.getName()) :
+        Object id = spi.__isLoaded(idProp.getId()) ?
+                spi.__get(idProp.getId()) :
                 null;
 
         if (id != null) {
@@ -589,7 +589,7 @@ class Saver {
         boolean idPropLoaded = false;
         boolean nonIdPropLoaded = false;
         for (ImmutableProp prop : spi.__type().getProps().values()) {
-            if (spi.__isLoaded(prop.getName())) {
+            if (spi.__isLoaded(prop.getId())) {
                 if (prop.isId()) {
                     idPropLoaded = true;
                 } else {
@@ -600,7 +600,7 @@ class Saver {
         if (nonIdPropLoaded && !idPropLoaded) {
             Set<ImmutableProp> keyProps = data.getKeyProps(spi.__type());
             for (ImmutableProp keyProp : keyProps) {
-                if (validate && !spi.__isLoaded(keyProp.getName())) {
+                if (validate && !spi.__isLoaded(keyProp.getId())) {
                     throw new ExecutionException(
                             "Cannot save illegal entity object " +
                                     spi +
@@ -637,15 +637,15 @@ class Saver {
                     "The type of generated id does not match the property \"" + idProp + "\""
             );
         }
-        spi.__set(idProp.getName(), convertedId);
+        spi.__set(idProp.getId(), convertedId);
     }
 
     private static void increaseDraftVersion(DraftSpi spi) {
         ImmutableType type = spi.__type();
         ImmutableProp versionProp = type.getVersionProp();
         spi.__set(
-                versionProp.getName(),
-                (Integer)spi.__get(versionProp.getName()) + 1
+                versionProp.getId(),
+                (Integer)spi.__get(versionProp.getId()) + 1
         );
     }
 

@@ -151,10 +151,10 @@ class ResultMapper {
         Object targetId = read(targetIdProp.getElementClass());
 
         Object source = Internal.produce(sourceType, null, srcDraft -> {
-            ((DraftSpi) srcDraft).__set(sourceIdProp.getName(), sourceId);
+            ((DraftSpi) srcDraft).__set(sourceIdProp.getId(), sourceId);
         });
         Object target = Internal.produce(targetType, null, tgtDraft -> {
-            ((DraftSpi) tgtDraft).__set(targetIdProp.getName(), targetId);
+            ((DraftSpi) tgtDraft).__set(targetIdProp.getId(), targetId);
         });
         return new Association<>(source, target);
     }
@@ -179,7 +179,7 @@ class ResultMapper {
         }
         return Internal.produce(immutableType, null, draft -> {
             DraftSpi spi = (DraftSpi) draft;
-            spi.__set(immutableType.getIdProp().getName(), id);
+            spi.__set(immutableType.getIdProp().getId(), id);
             for (ImmutableProp prop : props) {
                 if (prop.isId()) {
                     continue;
@@ -191,12 +191,12 @@ class ResultMapper {
                             targetId != null ?
                                     Internal.produce(targetType, null, targetDraft -> {
                                         DraftSpi targetSpi = (DraftSpi) targetDraft;
-                                        targetSpi.__set(targetType.getIdProp().getName(), targetId);
+                                        targetSpi.__set(targetType.getIdProp().getId(), targetId);
                                     }) :
                                     null;
-                    spi.__set(prop.getName(), target);
+                    spi.__set(prop.getId(), target);
                 } else {
-                    spi.__set(prop.getName(), read(prop.getElementClass()));
+                    spi.__set(prop.getId(), read(prop.getElementClass()));
                 }
             }
         });
