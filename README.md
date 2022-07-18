@@ -14,6 +14,8 @@ A powerful java framework for
    <img src="benchmark.png"/>
 </kbd>
 
+
+
 > Click [here](https://babyfish-ct.github.io/jimmer-doc/docs/benchmark) to view full benchmark report.
 > 
 > If you want to run the benchmark, run the project under the sub directory [benchmark](./benchmark)
