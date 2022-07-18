@@ -18,7 +18,7 @@ A powerful java framework for
 > 
 > - If you want to view full benchmark report, click [here](https://babyfish-ct.github.io/jimmer-doc/docs/benchmark) please.
 > 
-> - If you want to run the benchmark, run the project under the sub directory [benchmark](./benchmark).
+> - If you want to run the benchmark, run the project under the sub directory [benchmark](./benchmark) please.
 
 ## 2. Documentation
 
@@ -74,7 +74,7 @@ In addition, to support ORM, Jimmer adds object dynamics to immer. Any property 
 
 7. **Sava instruction**: The data to be saved (inserted or modified) is no longer a simple object, but an arbitrarily complex object tree. No matter how complex the tree is, the framework takes care of all the internal details, and the developer can complete the whole operation in just one sentence. This function is the inverse of the object fetcher.
 
-8. Any external cache system can be connected. By default, there is no cache, it is just a very lightweight and powerful SQL generator; but users can attach any cache, ** and consistent with the business system's own cache technology**. Unlike other ORMs, it supports not only object caching, but also associative caching, and is effective for object grabbers, especially when recursively querying self-associative properties. 
+8. Any external cache system can be connected. By default, there is no cache, it is just a very lightweight and powerful SQL generator; but users can attach any cache, **and consistent with the business system's own cache technology**. Unlike other ORMs, it supports not only object caching, but also associative caching, and is effective for object grabbers, especially when recursively querying self-associative properties. 
 
 > New feature, detail documentation is not ready temporarily.
 
