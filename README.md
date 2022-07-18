@@ -66,7 +66,7 @@ In addition, to support ORM, Jimmer adds object dynamics to immer. Any property 
 
 3. Always use high performance [ResultSet.getObject(int)](https://docs.oracle.com/javase/7/docs/api/java/sql/ResultSet.html#getObject(int)); instead of Relatively inefficient [ResultSet.getObject(String)](https://docs.oracle.com/javase/7/docs/api/java/sql/ResultSet.html#getObject(java.lang.String))
 
-4. Implicit dynamic table joins, in the implementation of complex dynamic queries, automatically merge conflicting table joins in different code logic branches * (Even with the highly controllable myBatis, it is difficult to achieve this function)*
+4. Implicit dynamic table joins, in the implementation of complex dynamic queries, automatically merge conflicting table joins in different code logic branches *(Even with the highly controllable myBatis, it is difficult to achieve this function)*
 
 5. A general paging query requires two SQLs, one for data and one for row count. Developers are responsible for the former, and the latter are automatically generated and optimized by the framework.
 
