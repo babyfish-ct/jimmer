@@ -18,23 +18,36 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 @State(Scope.Benchmark)
-public class BenchmarkBootstrap {
+public class JavaBenchmarkExecutor {
 
-    @Param({"1", "10", "20", "50", "100", "200", "500", "1000"})
+    // "1", "10", "20", "50", "100", "200", "500",
+    @Param({"1000"})
     private int dataCount;
 
-    private ApplicationContext ctx;
+    private SqlClient sqlClient;
+
+    private MyBatisDataMapper myBatisDataMapper;
+
+    private EntityManagerFactory entityManagerFactory;
+
+    private DSLContext dslContext;
+
+    private JdbcDataRepository jdbcDataRepository;
 
     @Setup
     public void initialize() throws SQLException, IOException {
-        ctx = SpringApplication.run(BenchmarkApplication.class);
+        ApplicationContext ctx = SpringApplication.run(BenchmarkApplication.class);
         DatabaseInitializer databaseInitializer = ctx.getBean(DatabaseInitializer.class);
         databaseInitializer.initialize(dataCount);
+        sqlClient = ctx.getBean(SqlClient.class);
+        myBatisDataMapper = ctx.getBean(MyBatisDataMapper.class);
+        entityManagerFactory = ctx.getBean(EntityManagerFactory.class);
+        dslContext = ctx.getBean(DSLContext.class);
+        jdbcDataRepository = ctx.getBean(JdbcDataRepository.class);
     }
 
     @Benchmark
     public void runJimmer() {
-        SqlClient sqlClient = ctx.getBean(SqlClient.class);
         sqlClient
                 .createQuery(JimmerDataTable.class, RootSelectable::select)
                 .execute();
@@ -42,14 +55,12 @@ public class BenchmarkBootstrap {
 
     @Benchmark
     public void runMybatis() {
-        MyBatisDataMapper myBatisDataMapper = ctx.getBean(MyBatisDataMapper.class);
         myBatisDataMapper.findAll();
     }
 
     @Benchmark
     public void runJpa() {
-        EntityManagerFactory emf = ctx.getBean(EntityManagerFactory.class);
-        EntityManager em = emf.createEntityManager();
+        EntityManager em = entityManagerFactory.createEntityManager();
         try {
             em.createQuery("from JpaData").getResultList();
         } finally {
@@ -59,13 +70,11 @@ public class BenchmarkBootstrap {
 
     @Benchmark
     public void runJooq() {
-        DSLContext dslContext = ctx.getBean(DSLContext.class);
         dslContext.selectFrom(JooqDataTable.DATA).getQuery().fetchInto(JooqData.class);
     }
 
     @Benchmark
     public void runSpringDataJdbc() {
-        JdbcDataRepository repository = ctx.getBean(JdbcDataRepository.class);
-        repository.findAll();
+        jdbcDataRepository.findAll();
     }
 }
