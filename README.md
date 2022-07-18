@@ -7,16 +7,16 @@ A powerful java framework for
 
 ## 1. Bechmark
 
-The [source code for benchmark](./benchmark) can be found in the project. Using H2's in-memory database, it can run directly without any environment preparation.
-
-The following two figures: 
-
 - The abscissa represents the count of data objects queried from the database.
 - The ordinate represents the operation count per second.
 
 <kbd>
-   <img src="benchmark.jpeg"/>
+   <img src="benchmark.png"/>
 </kbd>
+
+Click [here](https://babyfish-ct.github.io/jimmer-doc/docs/benchmark) to view full benchmark report.
+
+If you want to run the benchmark, run the project under the sub directory [benchmark](./benchmark)
 
 ## 2. Documentation
 
