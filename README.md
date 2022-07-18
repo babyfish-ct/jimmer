@@ -16,9 +16,9 @@ A powerful java framework for
 
 
 > 
-> - Click [here](https://babyfish-ct.github.io/jimmer-doc/docs/benchmark) to view full benchmark report.
+> - If you want to view full benchmark report, click [here](https://babyfish-ct.github.io/jimmer-doc/docs/benchmark) please.
 > 
-> - If you want to run the benchmark, run the project under the sub directory [benchmark](./benchmark)
+> - If you want to run the benchmark, run the project under the sub directory [benchmark](./benchmark).
 
 ## 2. Documentation
 
