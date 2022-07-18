@@ -22,44 +22,48 @@ import java.util.*;
 
 public class ImmutableProp {
 
-    private TypeElement declaringElement;
+    private final TypeElement declaringElement;
 
-    private ExecutableElement executableElement;
+    private final ExecutableElement executableElement;
 
-    private String name;
+    private final String name;
 
-    private String getterName;
+    private final int id;
 
-    private String setterName;
+    private final String getterName;
 
-    private String adderByName;
+    private final String setterName;
 
-    private String loadedStateName;
+    private final String adderByName;
 
-    private TypeMirror returnType;
+    private final String loadedStateName;
 
-    private TypeName typeName;
+    private final TypeMirror returnType;
 
-    private TypeName draftTypeName;
+    private final TypeName typeName;
 
-    private TypeName elementTypeName;
+    private final TypeName draftTypeName;
 
-    private TypeName draftElementTypeName;
+    private final TypeName elementTypeName;
 
-    private TypeMirror elementType;
+    private final TypeName draftElementTypeName;
 
-    private boolean isList;
+    private final TypeMirror elementType;
 
-    private boolean isAssociation;
+    private final boolean isList;
 
-    private boolean isNullable;
+    private final boolean isAssociation;
+
+    private final boolean isNullable;
 
     private Annotation associationAnnotation;
 
     public ImmutableProp(
             TypeUtils typeUtils,
-            ExecutableElement executableElement
+            ExecutableElement executableElement,
+            int id
     ) {
+        this.id = id;
         this.declaringElement = (TypeElement) executableElement.getEnclosingElement();
         this.executableElement = executableElement;
         getterName = executableElement.getSimpleName().toString();
@@ -120,7 +124,6 @@ public class ImmutableProp {
                         )
                 );
             }
-            isList = true;
             List<? extends TypeMirror> typeArguments = ((DeclaredType)returnType).getTypeArguments();
             if (typeArguments.isEmpty()) {
                 throw new MetaException(
@@ -130,8 +133,10 @@ public class ImmutableProp {
                         )
                 );
             }
+            isList = true;
             elementType = typeArguments.get(0);
         } else {
+            isList = false;
             elementType = returnType;
         }
 
@@ -160,12 +165,13 @@ public class ImmutableProp {
             typeName = elementTypeName;
         }
 
-        draftElementTypeName = elementTypeName;
         if (isAssociation) {
             draftElementTypeName = ClassName.get(
-                    ((ClassName)draftElementTypeName).packageName(),
-                    ((ClassName)draftElementTypeName).simpleName() + "Draft"
+                    ((ClassName)elementTypeName).packageName(),
+                    ((ClassName)elementTypeName).simpleName() + "Draft"
             );
+        } else {
+            draftElementTypeName = elementTypeName;
         }
         if (isList) {
             draftTypeName = ParameterizedTypeName.get(
@@ -177,6 +183,10 @@ public class ImmutableProp {
         }
 
         this.isNullable = determineNullable();
+    }
+
+    public int getId() {
+        return id;
     }
 
     public String getName() {

@@ -21,26 +21,26 @@ class ForeignKeyAssociationListenerProxy implements EntityListener<ImmutableSpi>
         ImmutableProp fkProp = Utils.primaryAssociationProp(prop);
         Object detachedTargetId = null;
         Object attachedTargetId = null;
-        String fkPropName = fkProp.getName();
-        String parentIdPropName = fkProp.getTargetType().getIdProp().getName();
+        int fkPropId = fkProp.getId();
+        int parentIdPropId = fkProp.getTargetType().getIdProp().getId();
         ImmutableSpi oldEntity = e.getOldEntity();
         ImmutableSpi newEntity = e.getNewEntity();
         if (oldEntity != null) {
-            if (!oldEntity.__isLoaded(fkPropName)) {
+            if (!oldEntity.__isLoaded(fkPropId)) {
                 return;
             }
-            ImmutableSpi detachedTarget = (ImmutableSpi) oldEntity.__get(fkPropName);
+            ImmutableSpi detachedTarget = (ImmutableSpi) oldEntity.__get(fkPropId);
             if (detachedTarget != null) {
-                detachedTargetId = detachedTarget.__get(parentIdPropName);
+                detachedTargetId = detachedTarget.__get(parentIdPropId);
             }
         }
         if (newEntity != null) {
-            if (!newEntity.__isLoaded(fkPropName)) {
+            if (!newEntity.__isLoaded(fkPropId)) {
                 return;
             }
-            ImmutableSpi attachedTarget = (ImmutableSpi) newEntity.__get(fkPropName);
+            ImmutableSpi attachedTarget = (ImmutableSpi) newEntity.__get(fkPropId);
             if (attachedTarget != null) {
-                attachedTargetId = attachedTarget.__get(parentIdPropName);
+                attachedTargetId = attachedTarget.__get(parentIdPropId);
             }
         }
         if (detachedTargetId == attachedTargetId) {

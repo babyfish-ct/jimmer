@@ -4,7 +4,11 @@ import org.babyfish.jimmer.meta.ImmutableType;
 
 public interface ImmutableSpi {
 
+    boolean __isLoaded(int prop);
+
     boolean __isLoaded(String prop);
+
+    Object __get(int prop);
 
     Object __get(String prop);
 

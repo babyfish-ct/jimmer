@@ -35,7 +35,8 @@ public class ImplGenerator {
         for (ImmutableProp prop : type.getProps().values()) {
             addGetter(prop);
         }
-        addIsLoaded();
+        addIsLoaded(int.class);
+        addIsLoaded(String.class);
         addHashCode(false);
         addHashCode(true);
         addParameterizedHashCode();
@@ -69,10 +70,10 @@ public class ImplGenerator {
         builder.addStatement("Implementor from = (Implementor)base");
         for (ImmutableProp prop : type.getProps().values()) {
             if (prop.isLoadedStateRequired()) {
-                builder.addStatement("$L = from.__isLoaded($S)", prop.getLoadedStateName(), prop.getName());
+                builder.addStatement("$L = from.__isLoaded($L)", prop.getLoadedStateName(), prop.getId());
                 builder.beginControlFlow("if ($L)", prop.getLoadedStateName());
             } else {
-                builder.beginControlFlow("if (from.__isLoaded($S))", prop.getName());
+                builder.beginControlFlow("if (from.__isLoaded($L))", prop.getId());
             }
             builder.addStatement("$L = from.$L()", prop.getName(), prop.getGetterName());
             builder.endControlFlow();
@@ -103,25 +104,28 @@ public class ImplGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addIsLoaded() {
+    private void addIsLoaded(Class<?> argType) {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("__isLoaded")
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
-                .addParameter(String.class, "prop")
+                .addParameter(argType, "prop")
                 .returns(boolean.class);
         builder.beginControlFlow("switch (prop)");
         for (ImmutableProp prop : type.getProps().values()) {
+            Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
             if (prop.isLoadedStateRequired()) {
-                builder.addStatement("case $S: return $L", prop.getName(), prop.getLoadedStateName());
+                builder.addStatement("case $L: return $L", arg, prop.getLoadedStateName());
             } else {
-                builder.addStatement("case $S: return $L != null", prop.getName(), prop.getName());
+                builder.addStatement("case $L: return $L != null", arg, prop.getName());
             }
         }
         builder.addStatement(
                 "default: throw new IllegalArgumentException($S + prop + $S)",
-                "Illegal property name: \"",
-                "\""
+                "Illegal property " +
+                        (argType == int.class ? "id" : "name") +
+                        ": \"",
+                        "\""
         );
         builder.endControlFlow();
         typeBuilder.addMethod(builder.build());
@@ -203,9 +207,9 @@ public class ImplGenerator {
             }
             builder
                     .beginControlFlow(
-                            "if (__$LLoaded != other.__isLoaded($S))",
+                            "if (__$LLoaded != other.__isLoaded($L))",
                             prop.getName(),
-                            prop.getName()
+                            prop.getId()
                     )
                     .addStatement("return false")
                     .endControlFlow();

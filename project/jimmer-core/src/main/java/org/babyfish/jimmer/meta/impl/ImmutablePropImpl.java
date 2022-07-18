@@ -17,23 +17,25 @@ import java.lang.reflect.Method;
 
 class ImmutablePropImpl implements ImmutableProp {
 
-    private ImmutableTypeImpl declaringType;
+    private final ImmutableTypeImpl declaringType;
 
-    private String name;
+    private final int id;
 
-    private ImmutablePropCategory category;
+    private final String name;
 
-    private Class<?> elementClass;
+    private final ImmutablePropCategory category;
 
-    private boolean nullable;
+    private final Class<?> elementClass;
+
+    private final boolean nullable;
 
     private Method getter;
 
     private Annotation associationAnnotation;
 
-    private boolean isTransient;
+    private final boolean isTransient;
 
-    private DeleteAction deleteAction;
+    private final DeleteAction deleteAction;
 
     private Storage storage;
 
@@ -53,6 +55,7 @@ class ImmutablePropImpl implements ImmutableProp {
 
     ImmutablePropImpl(
             ImmutableTypeImpl declaringType,
+            int id,
             String name,
             ImmutablePropCategory category,
             Class<?> elementClass,
@@ -60,6 +63,7 @@ class ImmutablePropImpl implements ImmutableProp {
             Class<? extends Annotation> associationType
     ) {
         this.declaringType = declaringType;
+        this.id = id;
         this.name = name;
         this.category = category;
         this.elementClass = elementClass;
@@ -100,6 +104,10 @@ class ImmutablePropImpl implements ImmutableProp {
 
     public ImmutableType getDeclaringType() {
         return declaringType;
+    }
+
+    public int getId() {
+        return id;
     }
 
     public String getName() {

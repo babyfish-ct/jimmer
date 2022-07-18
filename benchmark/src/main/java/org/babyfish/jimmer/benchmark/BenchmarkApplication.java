@@ -21,13 +21,14 @@ public class BenchmarkApplication {
 
         Options opt = new OptionsBuilder()
                 // set the class name regex for benchmarks to search for to the current class
-                .include("\\." + BenchmarkBootstrap.class.getSimpleName() + "\\.")
+                .include("\\." + OrmBenchmark.class.getSimpleName() + "\\.")
                 .warmupIterations(WARMUP_ITERATIONS)
                 .warmupTime(TimeValue.seconds(1))
                 .measurementIterations(MEASUREMENT_ITERATIONS)
                 .measurementTime(TimeValue.seconds(1))
                 .resultFormat(ResultFormatType.JSON)
                 .forks(1)
+                .shouldDoGC(true)
                 .result("benchmark-report.json") // set this to a valid filename if you want reports
                 .shouldFailOnError(true)
                 .jvmArgs("-server")

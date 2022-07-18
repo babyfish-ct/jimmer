@@ -19,9 +19,9 @@ import static org.babyfish.jimmer.apt.generator.Constants.*;
 
 public class DraftImplGenerator {
 
-    private ImmutableType type;
+    private final ImmutableType type;
 
-    private ClassName draftSpiClassName;
+    private final ClassName draftSpiClassName;
 
     private TypeSpec.Builder typeBuilder;
 
@@ -47,8 +47,10 @@ public class DraftImplGenerator {
             addUtilMethod(prop, false);
             addUtilMethod(prop, true);
         }
-        addSet();
-        addUnload();
+        addSet(int.class);
+        addSet(String.class);
+        addUnload(int.class);
+        addUnload(String.class);
         addDraftContext();
         addResolve();
         addModified();
@@ -163,6 +165,16 @@ public class DraftImplGenerator {
                         .methodBuilder("__isLoaded")
                         .addModifiers(Modifier.PUBLIC)
                         .addAnnotation(Override.class)
+                        .addParameter(int.class, "prop")
+                        .returns(boolean.class)
+                        .addCode("return $L.__isLoaded(prop);", UNMODIFIED)
+                        .build()
+        );
+        typeBuilder.addMethod(
+                MethodSpec
+                        .methodBuilder("__isLoaded")
+                        .addModifiers(Modifier.PUBLIC)
+                        .addAnnotation(Override.class)
                         .addParameter(String.class, "prop")
                         .returns(boolean.class)
                         .addCode("return $L.__isLoaded(prop);", UNMODIFIED)
@@ -251,8 +263,8 @@ public class DraftImplGenerator {
                 .addParameter(boolean.class, "autoCreate")
                 .returns(prop.getDraftTypeName(true));
         builder.beginControlFlow(
-                "if (autoCreate && (!__isLoaded($S) || $L() == null))",
-                prop.getName(),
+                "if (autoCreate && (!__isLoaded($L) || $L() == null))",
+                prop.getId(),
                 prop.getGetterName()
         );
         if (prop.isList()) {
@@ -371,7 +383,7 @@ public class DraftImplGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addSet() {
+    private void addSet(Class<?> argType) {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("__set")
                 .addModifiers(Modifier.PUBLIC)
@@ -382,49 +394,53 @@ public class DraftImplGenerator {
                                 .build()
                 )
                 .addAnnotation(Override.class)
-                .addParameter(String.class, "prop")
+                .addParameter(argType, "prop")
                 .addParameter(Object.class, "value");
         builder.beginControlFlow("switch (prop)");
         for (ImmutableProp prop : type.getProps().values()) {
+            Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
             Object castTo = prop.getBoxType();
             if (castTo == null) {
                 castTo = prop.getTypeName();
             }
             builder.addStatement(
-                    "case $S: $L(($T)value);break",
-                    prop.getName(),
+                    "case $L: $L(($T)value);break",
+                    arg,
                     prop.getSetterName(),
                     castTo
             );
         }
         builder.addStatement(
                 "default: throw new IllegalArgumentException($S + prop + $S)",
-                "Illegal property name: \"",
-                "\""
+                "Illegal property " +
+                        (argType == int.class ? "name" : "id") +
+                        ": \"",
+                        "\""
         );
         builder.endControlFlow();
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addUnload() {
+    private void addUnload(Class<?> argType) {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("__unload")
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
-                .addParameter(String.class, "prop");
+                .addParameter(argType, "prop");
         builder.beginControlFlow("switch (prop)");
         for (ImmutableProp prop : type.getProps().values()) {
+            Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
             if (prop.isLoadedStateRequired()) {
                 builder.addStatement(
-                        "case $S: $L().$L = false;break",
-                        prop.getGetterName(),
+                        "case $L: $L().$L = false;break",
+                        arg,
                         DRAFT_FIELD_MODIFIED,
                         prop.getLoadedStateName()
                 );
             } else {
                 builder.addStatement(
-                        "case $S: $L().$L = null;break",
-                        prop.getGetterName(),
+                        "case $L: $L().$L = null;break",
+                        arg,
                         DRAFT_FIELD_MODIFIED,
                         prop.getName()
                 );
@@ -432,8 +448,10 @@ public class DraftImplGenerator {
         }
         builder.addStatement(
                 "default: throw new IllegalArgumentException($S + prop + $S)",
-                "Illegal property name: \"",
-                "\""
+                "Illegal property " +
+                        (argType == int.class ? "name" : "id") +
+                        ": \"",
+                        "\""
         );
         builder.endControlFlow();
         typeBuilder.addMethod(builder.build());
@@ -482,7 +500,7 @@ public class DraftImplGenerator {
             builder.beginControlFlow("if (modified == null)");
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.isAssociation() || prop.isList()) {
-                    builder.beginControlFlow("if (base.__isLoaded($S))", prop.getName());
+                    builder.beginControlFlow("if (base.__isLoaded($L))", prop.getId());
                     builder.addStatement(
                             "$T oldValue = base.$L()",
                             prop.getTypeName(),

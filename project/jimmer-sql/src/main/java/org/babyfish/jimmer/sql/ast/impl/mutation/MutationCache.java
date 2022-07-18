@@ -25,8 +25,9 @@ class MutationCache {
     public ImmutableSpi find(ImmutableSpi example) {
         ImmutableType type = example.__type();
         ImmutableProp idProp = type.getIdProp();
-        if (example.__isLoaded(idProp.getName())) {
-            Object id = example.__get(idProp.getName());
+        int idPropId = idProp.getId();
+        if (example.__isLoaded(idPropId)) {
+            Object id = example.__get(idPropId);
             if (id != null) {
                 return idObjMap.get(new TypedId(type, id));
             }
@@ -101,7 +102,7 @@ class MutationCache {
             ImmutableSpi oldSpi = find(spi);
             if (oldSpi != null) {
 
-                TypedId oldTypedId = new TypedId(type, oldSpi.__get(idProp.getName()));
+                TypedId oldTypedId = new TypedId(type, oldSpi.__get(idProp.getId()));
                 idObjMap.remove(oldTypedId);
 
                 if (keyProps != null && !keyProps.isEmpty()) {
@@ -114,15 +115,16 @@ class MutationCache {
                 ImmutableSpi newSpi = spi;
                 spi = (ImmutableSpi) Internal.produce(spi.__type(), oldSpi, draft -> {
                     for (ImmutableProp prop : type.getProps().values()) {
-                        if (newSpi.__isLoaded(prop.getName())) {
-                            ((DraftSpi) draft).__set(prop.getName(), newSpi.__get(prop.getName()));
+                        int propId = prop.getId();
+                        if (newSpi.__isLoaded(propId)) {
+                            ((DraftSpi) draft).__set(propId, newSpi.__get(prop.getId()));
                         }
                     }
                 });
             }
         }
 
-        TypedId typedId = new TypedId(type, spi.__get(idProp.getName()));
+        TypedId typedId = new TypedId(type, spi.__get(idProp.getId()));
         idObjMap.put(typedId, spi);
 
         if (keyProps != null && !keyProps.isEmpty()) {

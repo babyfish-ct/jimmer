@@ -10,6 +10,8 @@ public interface ImmutableProp {
 
     ImmutableType getDeclaringType();
 
+    int getId();
+
     String getName();
 
     ImmutablePropCategory getCategory();

@@ -344,10 +344,22 @@ class ImmutableTypeImpl implements ImmutableType {
                                 "\" is already exists"
                 );
             }
+            if (type.superType != null && type.getProps().containsKey(name)) {
+                throw new IllegalArgumentException(
+                        "The property \"" +
+                                type.javaClass.getName() +
+                                "." +
+                                name +
+                                "\" is already exists in super type"
+                );
+            }
             type.declaredProps.put(
                     name,
                     new ImmutablePropImpl(
                             type,
+                            (type.superType != null ? type.superType.getProps().size() : 0) +
+                                    type.declaredProps.size() +
+                                    1,
                             name,
                             category,
                             elementType,

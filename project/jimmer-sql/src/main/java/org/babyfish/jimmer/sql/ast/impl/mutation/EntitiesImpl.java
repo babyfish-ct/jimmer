@@ -135,10 +135,10 @@ public class EntitiesImpl implements Entities {
 
     @SuppressWarnings("unchecked")
     private <ID, E> Map<ID, E> findMapByIds(Class<E> entityType, Collection<ID> ids, Connection con) {
-        String idPropName = ImmutableType.get(entityType).getIdProp().getName();
+        ImmutableProp idProp = ImmutableType.get(entityType).getIdProp();
         return this.findByIds(entityType, null, ids, con).stream().collect(
                 Collectors.toMap(
-                        it -> (ID)((ImmutableSpi) it).__get(idPropName),
+                        it -> (ID)((ImmutableSpi) it).__get(idProp.getId()),
                         Function.identity(),
                         (a, b) -> { throw new IllegalStateException("Objects with same id"); },
                         LinkedHashMap::new
@@ -162,10 +162,10 @@ public class EntitiesImpl implements Entities {
 
     @SuppressWarnings("unchecked")
     private <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids, Connection con) {
-        String idPropName = ImmutableType.get(fetcher.getJavaClass()).getIdProp().getName();
+        ImmutableProp idProp = ImmutableType.get(fetcher.getJavaClass()).getIdProp();
         return this.findByIds(fetcher.getJavaClass(), fetcher, ids, con).stream().collect(
                 Collectors.toMap(
-                        it -> (ID)((ImmutableSpi) it).__get(idPropName),
+                        it -> (ID)((ImmutableSpi) it).__get(idProp.getId()),
                         Function.identity(),
                         (a, b) -> { throw new IllegalStateException("Objects with same id"); },
                         LinkedHashMap::new
@@ -225,7 +225,7 @@ public class EntitiesImpl implements Entities {
                 boolean needUnload = false;
                 for (ImmutableSpi spi : (List<ImmutableSpi>) entities) {
                     for (ImmutableProp prop : immutableType.getProps().values()) {
-                        if (spi.__isLoaded(prop.getName()) && !fetcher.getFieldMap().containsKey(prop.getName())) {
+                        if (spi.__isLoaded(prop.getId()) && !fetcher.getFieldMap().containsKey(prop.getName())) {
                             needUnload = true;
                             break;
                         }
@@ -238,8 +238,8 @@ public class EntitiesImpl implements Entities {
                         itr.set(
                                 (ImmutableSpi) Internal.produce(immutableType, spi, draft -> {
                                     for (ImmutableProp prop : immutableType.getProps().values()) {
-                                        if (spi.__isLoaded(prop.getName()) && !fetcher.getFieldMap().containsKey(prop.getName())) {
-                                            ((DraftSpi) draft).__unload(prop.getName());
+                                        if (spi.__isLoaded(prop.getId()) && !fetcher.getFieldMap().containsKey(prop.getName())) {
+                                            ((DraftSpi) draft).__unload(prop.getId());
                                         }
                                     }
                                 })

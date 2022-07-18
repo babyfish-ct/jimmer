@@ -19,7 +19,7 @@ public class FetchingCache {
     public Object createKey(Field field, ImmutableSpi owner) {
         ImmutableProp prop = field.getProp();
         if (prop.getStorage() instanceof Column) {
-            Object fk = Ids.idOf((ImmutableSpi) owner.__get(prop.getName()));
+            Object fk = Ids.idOf((ImmutableSpi) owner.__get(prop.getId()));
             return new ForeignKey(fk);
         }
         return Ids.idOf(owner);

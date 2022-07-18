@@ -18,6 +18,23 @@ public class ImmutableObjects {
      * This method can ask whether a property of the object is specified.
      *
      * @param immutable Object instance
+     * @param prop Property id
+     * @return Whether the property of the object is specified.
+     * @exception IllegalArgumentException The first argument is immutable object created by jimmer
+     */
+    public static boolean isLoaded(Object immutable, int prop) {
+        if (immutable instanceof ImmutableSpi) {
+            return ((ImmutableSpi) immutable).__isLoaded(prop);
+        }
+        throw new IllegalArgumentException("The first argument is immutable object created by jimmer");
+    }
+
+    /**
+     * Jimmer object is dynamic, none properties are mandatory.
+     *
+     * This method can ask whether a property of the object is specified.
+     *
+     * @param immutable Object instance
      * @param prop Property name
      * @return Whether the property of the object is specified.
      * @exception IllegalArgumentException The first argument is immutable object created by jimmer
@@ -25,6 +42,27 @@ public class ImmutableObjects {
     public static boolean isLoaded(Object immutable, String prop) {
         if (immutable instanceof ImmutableSpi) {
             return ((ImmutableSpi) immutable).__isLoaded(prop);
+        }
+        throw new IllegalArgumentException("The first argument is immutable object created by jimmer");
+    }
+
+    /**
+     * Get the property value of immutable object,
+     * if the property is not loaded, exception will be thrown.
+     *
+     * @param immutable Object instance
+     * @param prop Property id
+     * @return Whether the property of the object is specified.
+     * @exception IllegalArgumentException There are two possibilities
+     *      <ul>
+     *          <li>The first argument is immutable object created by jimmer</li>
+     *          <li>The second argument is not a valid property name of immutable object</li>
+     *      </ul>
+     * @exception UnloadedException The property is not loaded
+     */
+    public static Object get(Object immutable, int prop) {
+        if (immutable instanceof ImmutableSpi) {
+            return ((ImmutableSpi) immutable).__get(prop);
         }
         throw new IllegalArgumentException("The first argument is immutable object created by jimmer");
     }

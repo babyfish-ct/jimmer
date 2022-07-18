@@ -27,8 +27,8 @@ public class EntityEvent<E> {
             if (oe.__type() != ne.__type()) {
                 throw new IllegalArgumentException("oldEntity and newEntity must belong to same type");
             }
-            String idPropName = oe.__type().getIdProp().getName();
-            if (!oe.__get(idPropName).equals(ne.__get(idPropName))) {
+            int idPropId = oe.__type().getIdProp().getId();
+            if (!oe.__get(idPropId).equals(ne.__get(idPropId))) {
                 throw new IllegalArgumentException("oldEntity and newEntity must have same id");
             }
         }
@@ -46,11 +46,11 @@ public class EntityEvent<E> {
 
     public Object getId() {
         E oe = this.oldEntity;
-        String idPropName = getImmutableType().getIdProp().getName();
+        int idPropId = getImmutableType().getIdProp().getId();
         if (oe != null) {
-            return ((ImmutableSpi) oe).__get(idPropName);
+            return ((ImmutableSpi) oe).__get(idPropId);
         }
-        return ((ImmutableSpi) newEntity).__get(idPropName);
+        return ((ImmutableSpi) newEntity).__get(idPropId);
     }
 
     public ImmutableType getImmutableType() {
