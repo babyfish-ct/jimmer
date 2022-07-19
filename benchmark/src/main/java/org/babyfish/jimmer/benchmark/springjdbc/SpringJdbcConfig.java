@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.benchmark.jdbc;
+package org.babyfish.jimmer.benchmark.springjdbc;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,7 +9,7 @@ import org.springframework.transaction.TransactionManager;
 import javax.sql.DataSource;
 
 @Configuration
-public class JdbcConfig {
+public class SpringJdbcConfig {
 
     // exposed-spring-boot-starter hides transaction manage of spring-data-jdbc,
     // declare it explicitly and use @Primary
