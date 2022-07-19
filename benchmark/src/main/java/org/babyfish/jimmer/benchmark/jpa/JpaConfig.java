@@ -3,6 +3,7 @@ package org.babyfish.jimmer.benchmark.jpa;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.EclipseLinkJpaVendorAdapter;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
@@ -14,6 +15,8 @@ import java.util.Properties;
 @EntityScan(basePackageClasses = JpaData.class)
 public class JpaConfig {
 
+    // Without the @Primary, SpringJdbcRepository will not be created by spring data
+    @Primary
     @Bean
     public LocalContainerEntityManagerFactoryBean hibernateEntityManagerFactory(DataSource dataSource) {
         LocalContainerEntityManagerFactoryBean bean =
