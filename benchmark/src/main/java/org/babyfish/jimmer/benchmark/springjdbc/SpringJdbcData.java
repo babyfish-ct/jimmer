@@ -1,11 +1,11 @@
-package org.babyfish.jimmer.benchmark.jdbc;
+package org.babyfish.jimmer.benchmark.springjdbc;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Table("DATA")
-public class JdbcData {
+public class SpringJdbcData {
 
     @Id
     private Long id;
