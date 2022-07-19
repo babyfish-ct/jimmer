@@ -7,16 +7,18 @@ A powerful java framework for
 
 ## 1. Bechmark
 
-The [source code for benchmark](./benchmark) can be found in the project. Using H2's in-memory database, it can run directly without any environment preparation.
-
-The following two figures: 
-
 - The abscissa represents the count of data objects queried from the database.
 - The ordinate represents the operation count per second.
 
 <kbd>
-   <img src="benchmark.jpeg"/>
+   <img src="benchmark.png"/>
 </kbd>
+
+
+> 
+> - If you want to view full benchmark report, click [here](https://babyfish-ct.github.io/jimmer-doc/docs/benchmark) please.
+> 
+> - If you want to run the benchmark, run the project under the sub directory [benchmark](./benchmark) please.
 
 ## 2. Documentation
 
@@ -64,7 +66,7 @@ In addition, to support ORM, Jimmer adds object dynamics to immer. Any property 
 
 3. Always use high performance [ResultSet.getObject(int)](https://docs.oracle.com/javase/7/docs/api/java/sql/ResultSet.html#getObject(int)); instead of Relatively inefficient [ResultSet.getObject(String)](https://docs.oracle.com/javase/7/docs/api/java/sql/ResultSet.html#getObject(java.lang.String))
 
-4. Implicit dynamic table joins, in the implementation of complex dynamic queries, automatically merge conflicting table joins in different code logic branches * (Even with the highly controllable myBatis, it is difficult to achieve this function)*
+4. Implicit dynamic table joins, in the implementation of complex dynamic queries, automatically merge conflicting table joins in different code logic branches *(Even with the highly controllable myBatis, it is difficult to achieve this function)*
 
 5. A general paging query requires two SQLs, one for data and one for row count. Developers are responsible for the former, and the latter are automatically generated and optimized by the framework.
 
@@ -72,7 +74,7 @@ In addition, to support ORM, Jimmer adds object dynamics to immer. Any property 
 
 7. **Sava instruction**: The data to be saved (inserted or modified) is no longer a simple object, but an arbitrarily complex object tree. No matter how complex the tree is, the framework takes care of all the internal details, and the developer can complete the whole operation in just one sentence. This function is the inverse of the object fetcher.
 
-8. Any external cache system can be connected. By default, there is no cache, it is just a very lightweight and powerful SQL generator; but users can attach any cache, ** and consistent with the business system's own cache technology**. Unlike other ORMs, it supports not only object caching, but also associative caching, and is effective for object grabbers, especially when recursively querying self-associative properties. 
+8. Any external cache system can be connected. By default, there is no cache, it is just a very lightweight and powerful SQL generator; but users can attach any cache, **and consistent with the business system's own cache technology**. Unlike other ORMs, it supports not only object caching, but also associative caching, and is effective for object grabbers, especially when recursively querying self-associative properties. 
 
 > New feature, detail documentation is not ready temporarily.
 
