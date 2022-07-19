@@ -2,6 +2,7 @@ package org.babyfish.jimmer.benchmark;
 
 import org.babyfish.jimmer.benchmark.exposed.ExposedDataTable;
 import org.babyfish.jimmer.benchmark.exposed.ExposedJavaHelperKt;
+import org.babyfish.jimmer.benchmark.jdbc.JdbcDao;
 import org.babyfish.jimmer.benchmark.jooq.JooqData;
 import org.babyfish.jimmer.benchmark.jooq.JooqDataTable;
 import org.babyfish.jimmer.benchmark.ktorm.KtormDataTable;
@@ -55,6 +56,8 @@ public class OrmBenchmark {
 
     private NutDao nutDao;
 
+    private JdbcDao jdbcDao;
+
     @Setup
     public void initialize() throws SQLException, IOException {
         ApplicationContext ctx = SpringApplication.run(BenchmarkApplication.class);
@@ -69,16 +72,29 @@ public class OrmBenchmark {
         springJdbcDataRepository = ctx.getBean(SpringJdbcDataRepository.class);
         database = ctx.getBean(Database.class);
 
-        // For Exposed and Nutz
         TransactionAwareDataSourceProxy transactionAwareDataSource = new TransactionAwareDataSourceProxy(ctx.getBean(DataSource.class));
         ExposedJavaHelperKt.connect(transactionAwareDataSource);
         nutDao = new NutDao(transactionAwareDataSource);
+        jdbcDao = new JdbcDao(transactionAwareDataSource);
 
         FakeObjSqlLoggerFactory.init();
     }
 
+    /*
+     * All benchmark methods open/close the connection each time they are executed
+     */
+
     @Benchmark
     public void runJimmer() {
+        /*
+         * For jimmer:
+         *
+         * `execute(Connection)` represents execution based on an existing connection.
+         * `execute()` represents execution based on temporarily connection.
+         *
+         * So, this method will open/close connection by itself,
+         * this is equivalent to the behavior of JPA tests
+         */
         sqlClient
                 .createQuery(JimmerDataTable.class, RootSelectable::select)
                 .execute();
@@ -93,9 +109,7 @@ public class OrmBenchmark {
     public void runJpaByHibernate() {
         EntityManager em = hibernateEntityManagerFactory.createEntityManager();
         try {
-            em.getTransaction().begin();
             em.createQuery("from JpaData").getResultList();
-            em.getTransaction().commit();
         } finally {
             em.close();
         }
@@ -105,9 +119,7 @@ public class OrmBenchmark {
     public void runJpaByEclipseLink() {
         EntityManager em = eclipseLinkEntityManagerFactory.createEntityManager();
         try {
-            em.getTransaction().begin();
             em.createQuery("select data from JpaData data").getResultList();
-            em.getTransaction().commit();
         } finally {
             em.close();
         }
@@ -143,5 +155,15 @@ public class OrmBenchmark {
     @Benchmark
     public void runNutz() {
         nutDao.query(NutzData.class, null);
+    }
+
+    @Benchmark
+    public void runJdbcByColumnIndex() throws SQLException {
+        jdbcDao.findAllByColumnIndex();
+    }
+
+    @Benchmark
+    public void runJdbcByColumnName() throws SQLException {
+        jdbcDao.findAllByColumnName();
     }
 }
