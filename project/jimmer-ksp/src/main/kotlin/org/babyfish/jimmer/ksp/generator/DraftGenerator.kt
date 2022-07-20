@@ -22,9 +22,9 @@ class DraftGenerator(
             file.fileName.let {
                 var lastDotIndex = it.lastIndexOf('.')
                 if (lastDotIndex == -1) {
-                    "${it}$DRAFT_SUFFIX"
+                    "${it}$DRAFT"
                 } else {
-                    "${it.substring(0, lastDotIndex)}$DRAFT_SUFFIX"
+                    "${it.substring(0, lastDotIndex)}$DRAFT"
                 }
             }
         codeGenerator.createNewFile(
@@ -60,7 +60,7 @@ class DraftGenerator(
     private fun FileSpec.Builder.addType(type: ImmutableType) {
         addType(
             TypeSpec
-                .interfaceBuilder("${type.simpleName}${DRAFT_SUFFIX}")
+                .interfaceBuilder("${type.simpleName}${DRAFT}")
                 .apply {
                     type.superType?.let {
                         addSuperinterface(it.draftClassName)
@@ -134,7 +134,7 @@ class DraftGenerator(
                 .returns(receiverTypeName)
                 .addStatement(
                     "add(%T.produce(base, block) as %T)",
-                    type.draftClassName("Producer"),
+                    type.draftClassName(PRODUCER),
                     type.draftClassName
                 )
                 .addStatement("return this")

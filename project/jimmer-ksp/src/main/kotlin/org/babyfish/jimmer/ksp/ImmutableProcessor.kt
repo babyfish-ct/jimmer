@@ -36,10 +36,14 @@ class ImmutableProcessor(
         val modelMap = mutableMapOf<KSFile, MutableList<KSClassDeclaration>>()
         for (file in ctx.resolver.getAllFiles()) {
             for (classDeclaration in file.declarations.filterIsInstance<KSClassDeclaration>()) {
-                if (classDeclaration.classKind == ClassKind.INTERFACE &&
-                        classDeclaration.qualifiedName !== null &&
-                        ctx.typeAnnotationOf(classDeclaration) !== null
-                ) {
+                val annotation = ctx.typeAnnotationOf(classDeclaration)
+                if (classDeclaration.qualifiedName !== null && annotation != null) {
+                    if (classDeclaration.classKind != ClassKind.INTERFACE) {
+                        throw GeneratorException(
+                            "The immutable interface '${classDeclaration.fullName}' " +
+                                "must be interface"
+                        )
+                    }
                     if (classDeclaration.typeParameters.isNotEmpty()) {
                         throw GeneratorException(
                             "The immutable interface '${classDeclaration.fullName}' " +

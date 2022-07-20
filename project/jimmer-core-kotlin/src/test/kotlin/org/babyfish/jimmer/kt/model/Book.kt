@@ -9,4 +9,5 @@ interface Book {
     val edition: Int
     val price: BigDecimal
     val store: BookStore?
+    val authors: List<Author>
 }

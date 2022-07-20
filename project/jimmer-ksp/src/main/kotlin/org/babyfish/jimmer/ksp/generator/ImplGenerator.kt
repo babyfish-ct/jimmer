@@ -12,7 +12,7 @@ class ImplGenerator(
     fun generate() {
         parent.addType(
             TypeSpec
-                .classBuilder("Impl")
+                .classBuilder(IMPL)
                 .addModifiers(KModifier.PRIVATE)
                 .superclass(type.draftClassName(PRODUCER, IMPLEMENTOR))
                 .primaryConstructor(
@@ -48,14 +48,16 @@ class ImplGenerator(
         addProperty(
             PropertySpec
                 .builder(prop.valueFieldName, prop.typeName().copy(nullable = !prop.isPrimitive))
-                .addModifiers(KModifier.PRIVATE)
+                .addModifiers(KModifier.INTERNAL)
+                .mutable()
                 .build()
         )
-        prop.loadStateFieldName?.let {
+        prop.loadedFieldName?.let {
             addProperty(
                 PropertySpec
                     .builder(it, BOOLEAN)
-                    .addModifiers(KModifier.PRIVATE)
+                    .addModifiers(KModifier.INTERNAL)
+                    .mutable()
                     .build()
             )
         }
@@ -70,7 +72,7 @@ class ImplGenerator(
                     for (prop in type.properties.values) {
                         beginControlFlow("if (from !== null && from.__isLoaded(%L))", prop.id)
                         addStatement("this.%L = from.%L", prop.valueFieldName, prop.name)
-                        prop.loadStateFieldName?.let {
+                        prop.loadedFieldName?.let {
                             addStatement("this.%L = true", it)
                         }
                         nextControlFlow("else")
@@ -89,7 +91,7 @@ class ImplGenerator(
                                 "null"
                             }
                         )
-                        prop.loadStateFieldName?.let {
+                        prop.loadedFieldName?.let {
                             addStatement("this.%L = false", it)
                         }
                         endControlFlow()
@@ -101,7 +103,7 @@ class ImplGenerator(
 
     private fun TypeSpec.Builder.addProp(prop: ImmutableProp) {
         val ifUnLoaded = prop
-            .loadStateFieldName
+            .loadedFieldName
             ?.let {
                 "if (!$it)"
             }
@@ -117,6 +119,7 @@ class ImplGenerator(
                             CodeBlock
                                 .builder()
                                 .apply {
+                                    addStatement("val %L = this.%L", prop.valueFieldName, prop.valueFieldName)
                                     beginControlFlow(ifUnLoaded)
                                     addStatement(
                                         "throw %T(%T::class.java, %S)",
@@ -150,7 +153,7 @@ class ImplGenerator(
                             beginControlFlow("when (prop)")
                             for (prop in type.properties.values) {
                                 val arg = if (argType == Int::class) prop.id else "\"${prop.name}\""
-                                val cond = prop.loadStateFieldName ?: "${prop.valueFieldName} !== null"
+                                val cond = prop.loadedFieldName ?: "${prop.valueFieldName} !== null"
                                 addStatement("%L -> %L", arg, cond)
                             }
                             addElseBranchForProp(argType)
@@ -180,7 +183,7 @@ class ImplGenerator(
                             for (prop in type.properties.values) {
                                 beginControlFlow(
                                     "if (%L)",
-                                    prop.loadStateFieldName ?: "${prop.valueFieldName} !== null"
+                                    prop.loadedFieldName ?: "${prop.valueFieldName} !== null"
                                 )
                                 add("hash = 31 * hash + ")
                                 if (shallow && prop.isAssociation) {
@@ -238,13 +241,13 @@ class ImplGenerator(
                             endControlFlow()
                             addStatement("val otherImpl = other as %T", type.draftClassName(PRODUCER, IMPL))
                             for (prop in type.properties.values) {
-                                val localLoadedName = prop.name + "_Loaded"
-                                val objLoadedName = prop.loadStateFieldName ?: "${prop.valueFieldName} !== null"
+                                val localLoadedName = "__${prop.name}Loaded"
+                                val objLoadedName = prop.loadedFieldName ?: "${prop.valueFieldName} !== null"
                                 addStatement("val %L = this.%L", localLoadedName, objLoadedName)
                                 beginControlFlow(
                                     "if (%L != (otherImpl.%L))",
                                     localLoadedName,
-                                    prop.loadStateFieldName ?: "${prop.valueFieldName} !== null"
+                                    prop.loadedFieldName ?: "${prop.valueFieldName} !== null"
                                 )
                                 addStatement("return false")
                                 endControlFlow()

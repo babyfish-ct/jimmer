@@ -12,7 +12,7 @@ class ImplementorGenerator(
     fun generate() {
         parent.addType(
             TypeSpec
-                .classBuilder("Implementor")
+                .classBuilder(IMPLEMENTOR)
                 .addModifiers(KModifier.PRIVATE, KModifier.ABSTRACT)
                 .addSuperinterface(type.className)
                 .addSuperinterface(IMMUTABLE_SPI_CLASS_NAME)
@@ -62,7 +62,7 @@ class ImplementorGenerator(
                 .builder("__type")
                 .addModifiers(KModifier.OVERRIDE)
                 .returns(IMMUTABLE_TYPE_CLASS_NAME)
-                .addCode("return %T.type", type.draftClassName("Producer"))
+                .addCode("return %T.type", type.draftClassName(PRODUCER))
                 .build()
         )
     }

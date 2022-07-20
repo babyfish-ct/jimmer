@@ -8,7 +8,7 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.ksp.className
 import org.babyfish.jimmer.ksp.fullName
-import org.babyfish.jimmer.ksp.generator.DRAFT_SUFFIX
+import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.name
 import javax.persistence.Id
 import javax.persistence.Version
@@ -77,11 +77,14 @@ class ImmutableProp(
             resolvedType.isMarkedNullable
         }
 
-    fun targetTypeName(draft: Boolean = false, overrideNullable: Boolean? = null): ClassName =
+    fun targetTypeName(
+        draft: Boolean = false,
+        overrideNullable: Boolean? = null
+    ): ClassName =
         targetDeclaration
             .className(overrideNullable ?: isNullable) {
                 if (draft) {
-                    "$it$DRAFT_SUFFIX"
+                    "$it$DRAFT"
                 } else {
                     it
                 }
@@ -100,6 +103,12 @@ class ImmutableProp(
                     it
                 }
             }
+
+    val targetType: ImmutableType? by lazy {
+        targetDeclaration
+            .takeIf { isAssociation }
+            ?.let { ctx.typeOf(it) }
+    }
 
     val isReference = isAssociation && !isList
 
@@ -136,11 +145,11 @@ class ImmutableProp(
             false
         }
 
-    val valueFieldName: String = "${name}_Value"
+    val valueFieldName: String = "__${name}Value"
 
-    val loadStateFieldName: String? =
+    val loadedFieldName: String? =
         if (isNullable || isPrimitive) {
-            "${name}_LoadedState"
+            "__${name}Loaded"
         } else {
             null
         }
