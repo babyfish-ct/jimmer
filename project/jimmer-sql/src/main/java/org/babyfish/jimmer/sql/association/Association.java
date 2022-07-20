@@ -4,9 +4,9 @@ import java.util.Objects;
 
 public class Association<S, T> {
 
-    private S source;
+    private final S source;
 
-    private T target;
+    private final T target;
 
     public Association(S source, T target) {
         this.source = source;

@@ -1,0 +1,150 @@
+package org.babyfish.jimmer.ksp.meta
+
+import com.google.devtools.ksp.getDeclaredProperties
+import com.google.devtools.ksp.isAnnotationPresent
+import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.squareup.kotlinpoet.ClassName
+import org.babyfish.jimmer.ksp.*
+import org.babyfish.jimmer.ksp.generator.DRAFT_SUFFIX
+import javax.persistence.Entity
+import javax.persistence.Id
+import javax.persistence.MappedSuperclass
+
+class ImmutableType(
+    ctx: Context,
+    private val classDeclaration: KSClassDeclaration
+) {
+    val name: String = classDeclaration.fullName
+
+    val simpleName: String = classDeclaration.simpleName.asString()
+
+    val className: ClassName = classDeclaration.className()
+
+    val draftClassName: ClassName = classDeclaration.className { "$it$DRAFT_SUFFIX" }
+
+    fun draftClassName(vararg nestedNames: String) =
+        classDeclaration.nestedClassName {
+            mutableListOf<String>().apply {
+                add("$it$DRAFT_SUFFIX")
+                for (nestedName in nestedNames) {
+                    add(nestedName)
+                }
+            }
+        }
+
+    val isEntity: Boolean = classDeclaration.firstAnnotation(Entity::class) !== null
+
+    val isMappedSuperClass: Boolean = classDeclaration.firstAnnotation(MappedSuperclass::class) != null
+
+    val isSqlType: Boolean
+        get() = isEntity || isMappedSuperClass
+
+    val superType: ImmutableType ?=
+        classDeclaration
+            .superTypes
+            .filterIsInstance<KSClassDeclaration>()
+            .filter {
+                it.classKind == ClassKind.INTERFACE &&
+                    ctx.typeAnnotationOf(it) !== null
+            }
+            .toList()
+            .also { 
+                if (it.size > 1) {
+                    throw MetaException(
+                        "Illegal immutable type '${classDeclaration.fullName}', " +
+                            "it extends several super immutable types: ${it.map { sp -> sp.fullName }}"
+                    )
+                }
+            }
+            .firstOrNull()
+            ?.let { 
+                ctx.typeOf(it)
+            }
+
+    val declaredProperties: Map<String, ImmutableProp>
+
+    init {
+        val superProps = superType?.properties
+        val reorderedPropDeclarations = mutableListOf<KSPropertyDeclaration>()
+        for (i in 0..1) {
+            classDeclaration
+                .getDeclaredProperties()
+                .forEach { propDeclaration ->
+                    val isId = propDeclaration.annotations.any { it.annotationType == Id::class }
+                    superProps?.get(propDeclaration.name)?.let {
+                        throw MetaException("'${propDeclaration}' overrides '$it', this is not allowed")
+                    }
+                    if (isId == (i == 0)) {
+                        reorderedPropDeclarations += propDeclaration
+                    }
+                }
+        }
+        val basePropId = (superProps?.size ?: 0) + 1
+        declaredProperties = reorderedPropDeclarations
+            .mapIndexed { index, propDeclaration ->
+                ImmutableProp(ctx, this, basePropId + index, propDeclaration)
+            }
+            .associateBy { it.name }
+    }
+
+    val properties: Map<String, ImmutableProp> =
+        if (superType == null) {
+            declaredProperties
+        } else {
+            val map = mutableMapOf<String, ImmutableProp>()
+            for ((name, prop) in superType.properties) {
+                if (prop.isId) {
+                    map[name] = prop
+                }
+            }
+            for ((name, prop) in declaredProperties) {
+                if (prop.isId) {
+                    map[name] = prop
+                }
+            }
+            for ((name, prop) in superType.properties) {
+                if (!prop.isId) {
+                    map[name] = prop
+                }
+            }
+            for ((name, prop) in declaredProperties) {
+                if (!prop.isId) {
+                    map[name] = prop
+                }
+            }
+            map
+        }
+
+    val idProp: ImmutableProp? = properties
+        .values
+        .filter { it.isId }
+        .let {
+            if (it.isEmpty() && isSqlType) {
+                throw MetaException("No id property is declared in '$classDeclaration'")
+            }
+            if (it.size > 1) {
+                throw MetaException("Conflict id properties: $it")
+            }
+            it.firstOrNull()
+        }
+
+    val versionProp: ImmutableProp? = properties
+        .values
+        .filter { it.isId }
+        .let {
+            if (it.size > 1) {
+                throw MetaException("Conflict version properties: $it")
+            }
+            it.firstOrNull()
+        }
+        ?.also {
+            if (superType !== null && superType.isEntity && it.declaringType === this) {
+                throw MetaException("Version property '$it' is not declared in super type")
+            }
+        }
+
+    override fun toString(): String =
+        classDeclaration.toString()
+}
