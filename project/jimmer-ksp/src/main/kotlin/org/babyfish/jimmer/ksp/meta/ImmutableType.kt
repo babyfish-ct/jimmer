@@ -1,13 +1,12 @@
 package org.babyfish.jimmer.ksp.meta
 
 import com.google.devtools.ksp.getDeclaredProperties
-import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.squareup.kotlinpoet.ClassName
 import org.babyfish.jimmer.ksp.*
-import org.babyfish.jimmer.ksp.generator.DRAFT_SUFFIX
+import org.babyfish.jimmer.ksp.generator.DRAFT
 import javax.persistence.Entity
 import javax.persistence.Id
 import javax.persistence.MappedSuperclass
@@ -22,12 +21,12 @@ class ImmutableType(
 
     val className: ClassName = classDeclaration.className()
 
-    val draftClassName: ClassName = classDeclaration.className { "$it$DRAFT_SUFFIX" }
+    val draftClassName: ClassName = classDeclaration.className { "$it$DRAFT" }
 
     fun draftClassName(vararg nestedNames: String) =
         classDeclaration.nestedClassName {
             mutableListOf<String>().apply {
-                add("$it$DRAFT_SUFFIX")
+                add("$it$DRAFT")
                 for (nestedName in nestedNames) {
                     add(nestedName)
                 }

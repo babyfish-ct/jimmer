@@ -18,6 +18,7 @@ class ProducerGenerator(
                     addProduceFun()
                     ImplementorGenerator(type, this).generate()
                     ImplGenerator(type, this).generate()
+                    DraftImplGenerator(type, this).generate()
                 }
                 .build()
         )
@@ -48,10 +49,12 @@ class ProducerGenerator(
         indent()
         add("%T::class.java,\n", type.className)
         refSuperType()
-        add(",\n")
-        add("null,\n")
         unindent()
-        add(")\n")
+        add("\n) { ctx, base ->\n")
+        indent()
+        addStatement("%T(ctx, base as %T)", type.draftClassName(PRODUCER, DRAFT_IMPL), type.className)
+        unindent()
+        add("}\n")
         for (prop in type.declaredProperties.values) {
             addProp(prop)
         }
