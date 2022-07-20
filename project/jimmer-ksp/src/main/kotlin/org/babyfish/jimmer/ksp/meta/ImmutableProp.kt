@@ -90,8 +90,8 @@ class ImmutableProp(
                 }
             }
 
-    fun typeName(draft: Boolean = false): TypeName =
-        targetTypeName(draft)
+    fun typeName(draft: Boolean = false, overrideNullable: Boolean? = null): TypeName =
+        targetTypeName(draft, overrideNullable)
             .let {
                 if (isList) {
                     if (draft) {

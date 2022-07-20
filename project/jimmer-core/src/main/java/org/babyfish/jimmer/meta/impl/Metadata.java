@@ -7,9 +7,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.util.StaticCache;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 
@@ -65,7 +63,7 @@ public class Metadata {
         }
         Class<?> producerClass = Arrays
                 .stream(draftClass.getDeclaredClasses())
-                .filter(it -> it.getSimpleName().equals("Producer"))
+                .filter(it -> it.getSimpleName().equals("Producer") || it.getSimpleName().equals("$"))
                 .findFirst()
                 .orElse(null);
         if (producerClass == null) {
@@ -73,26 +71,51 @@ public class Metadata {
                     "Cannot find producer type for \"" + draftClass.getName() + "\""
             );
         }
-        Field typeField;
-        try {
-            typeField = producerClass.getField("TYPE");
-        } catch (NoSuchFieldException ex) {
-            typeField = null;
-        }
-        if (typeField == null ||
-                !Modifier.isPublic(typeField.getModifiers()) ||
-                !Modifier.isStatic(typeField.getModifiers()) ||
-                !Modifier.isFinal(typeField.getModifiers()) ||
-                typeField.getType() != ImmutableType.class
-        ) {
-            throw new IllegalArgumentException(
-                    "Illegal producer type \"" + producerClass.getName() + "\""
-            );
-        }
-        try {
-            return (ImmutableTypeImpl) typeField.get(null);
-        } catch (IllegalAccessException e) {
-            throw new AssertionError("Internal bug: Cannot access " + typeField);
+
+        if (producerClass.getSimpleName().equals("$")) { // kotlin-ksp
+            Object owner;
+            try {
+                Field ownerField = producerClass.getField("INSTANCE");
+                owner = ownerField.get(null);
+            } catch (NoSuchFieldException | IllegalAccessException ex) {
+                owner = null;
+            }
+            Method method = null;
+            if (owner != null) {
+                try {
+                    method = owner.getClass().getMethod("getType");
+                } catch (NoSuchMethodException ex) {
+                }
+            }
+            if (owner == null || method == null) {
+                throw new IllegalArgumentException(
+                        "Cannot find immutable type from illegal producer type \"" + producerClass.getName() + "\""
+                );
+            }
+            try {
+                return (ImmutableTypeImpl) method.invoke(owner);
+            } catch (IllegalAccessException ex) {
+                throw new AssertionError("Internal bug: Cannot access " + method, ex);
+            } catch (InvocationTargetException ex) {
+                throw new AssertionError("Internal bug: Cannot get value from " + method, ex);
+            }
+        } else { // java-apt
+            Field typeField;
+            try {
+                typeField = producerClass.getField("TYPE");
+            } catch (NoSuchFieldException ex) {
+                typeField = null;
+            }
+            if (typeField == null || typeField.getType() != ImmutableType.class) {
+                throw new IllegalArgumentException(
+                        "Cannot find immutable type from illegal producer type \"" + producerClass.getName() + "\""
+                );
+            }
+            try {
+                return (ImmutableTypeImpl) typeField.get(null);
+            } catch (IllegalAccessException e) {
+                throw new AssertionError("Internal bug: Cannot access " + typeField);
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.ksp.generator
 
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.asClassName
 import org.babyfish.jimmer.CircularReferenceException
 import org.babyfish.jimmer.DraftConsumer
@@ -27,6 +28,8 @@ internal val DRAFT_SPI_CLASS_NAME = DraftSpi::class.asClassName()
 internal val DRAFT_CONTEXT_CLASS_NAME = DraftContext::class.asClassName()
 internal val NON_SHARED_LIST_CLASS_NAME = NonSharedList::class.asClassName()
 internal val CIRCULAR_REFERENCE_EXCEPTION_CLASS_NAME = CircularReferenceException::class.asClassName()
+internal val IMMUTABLE_CREATOR_CLASS_NAME = ClassName("org.babyfish.jimmer.kt", "ImmutableCreator")
+internal val DRAFT_SCOPE_CLASS_NAME = ClassName("org.babyfish.jimmer.kt", "DraftScope")
 
 internal const val CURRENT_IMPLEMENTOR = "(__modified ?: __base)"
 internal const val CURRENT_IMPL = "(__modified ?: $IMPL(__base).also { __modified = it })"

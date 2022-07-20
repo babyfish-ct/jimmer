@@ -22,7 +22,7 @@ class DraftImplGenerator(
                     FunSpec
                         .constructorBuilder()
                         .addParameter("ctx", DRAFT_CONTEXT_CLASS_NAME)
-                        .addParameter("base", type.className)
+                        .addParameter("base", type.className.copy(nullable = true))
                         .build()
                 )
                 .apply {
@@ -207,7 +207,7 @@ class DraftImplGenerator(
         addFunction(
             FunSpec
                 .builder(prop.name)
-                .returns(prop.typeName(true))
+                .returns(prop.typeName(draft = true, overrideNullable = false))
                 .addModifiers(KModifier.OVERRIDE)
                 .apply {
                     if (prop.isList) {
@@ -226,7 +226,11 @@ class DraftImplGenerator(
                         CodeBlock
                             .builder()
                             .apply {
-                                beginControlFlow("if (!__isLoaded(%L))", prop.id)
+                                beginControlFlow(
+                                    "if (!__isLoaded(%L) || %L === null)",
+                                    prop.id,
+                                    prop.name
+                                )
                                 if (prop.isList) {
                                     addStatement("%L = kotlin.collections.emptyList()", prop.name)
                                 } else {
@@ -245,7 +249,7 @@ class DraftImplGenerator(
                                             MUTABLE_LIST.parameterizedBy(it)
                                         }
                                         else {
-                                            it.copy(nullable = prop.isNullable)
+                                            it.copy(nullable = false)
                                         }
                                     }
                                 )
@@ -376,8 +380,8 @@ class DraftImplGenerator(
                                     endControlFlow()
                                     endControlFlow()
                                 }
-                                addStatement("modified = __modified")
                             }
+                            addStatement("modified = __modified")
                             nextControlFlow("else")
                             for (prop in type.properties.values) {
                                 if (prop.isList || prop.isReference) {

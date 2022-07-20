@@ -48,7 +48,10 @@ class DraftGenerator(
                             .build()
                     )
                     for (classDeclaration in modelClassDeclarations) {
-                        addType(ctx.typeOf(classDeclaration))
+                        val type = ctx.typeOf(classDeclaration)
+                        addType(type)
+                        addNewByFun(type)
+                        addAddFun(type)
                     }
                 }.build()
             val writer = OutputStreamWriter(it, Charsets.UTF_8)
@@ -61,6 +64,7 @@ class DraftGenerator(
         addType(
             TypeSpec
                 .interfaceBuilder("${type.simpleName}${DRAFT}")
+                .addAnnotation(DRAFT_SCOPE_CLASS_NAME)
                 .apply {
                     type.superType?.let {
                         addSuperinterface(it.draftClassName)
@@ -76,7 +80,6 @@ class DraftGenerator(
                 }
                 .build()
         )
-        addAddFun(type)
     }
 
     private fun TypeSpec.Builder.addProp(prop: ImmutableProp) {
@@ -100,7 +103,7 @@ class DraftGenerator(
                 FunSpec
                     .builder(prop.name)
                     .addModifiers(KModifier.ABSTRACT)
-                    .returns(prop.typeName(true))
+                    .returns(prop.typeName(draft = true, overrideNullable = false))
                     .build()
             )
         }
@@ -138,6 +141,37 @@ class DraftGenerator(
                     type.draftClassName
                 )
                 .addStatement("return this")
+                .build()
+        )
+    }
+
+    private fun FileSpec.Builder.addNewByFun(type: ImmutableType) {
+        addFunction(
+            FunSpec
+                .builder("by")
+                .receiver(
+                    IMMUTABLE_CREATOR_CLASS_NAME
+                        .parameterizedBy(type.className)
+                )
+                .addParameter(
+                    ParameterSpec
+                        .builder("base", type.className.copy(nullable = true))
+                        .defaultValue("null")
+                        .build()
+                )
+                .addParameter(
+                    "block",
+                    LambdaTypeName.get(
+                        type.draftClassName,
+                        emptyList(),
+                        UNIT
+                    )
+                )
+                .returns(type.className)
+                .addStatement(
+                    "return %T.produce(base, block)",
+                    type.draftClassName(PRODUCER)
+                )
                 .build()
         )
     }
