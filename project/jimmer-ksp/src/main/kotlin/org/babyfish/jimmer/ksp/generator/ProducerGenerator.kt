@@ -31,7 +31,6 @@ class ProducerGenerator(
                     "type",
                     IMMUTABLE_TYPE_CLASS_NAME
                 )
-                .addModifiers(KModifier.PRIVATE)
                 .initializer(
                     CodeBlock
                         .builder()
@@ -52,7 +51,7 @@ class ProducerGenerator(
         unindent()
         add("\n) { ctx, base ->\n")
         indent()
-        addStatement("%T(ctx, base as %T)", type.draftClassName(PRODUCER, DRAFT_IMPL), type.className)
+        addStatement("%T(ctx, base as %T?)", type.draftClassName(PRODUCER, DRAFT_IMPL), type.className)
         unindent()
         add("}\n")
         for (prop in type.declaredProperties.values) {
