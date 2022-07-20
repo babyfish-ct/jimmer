@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 public class ImmutableType {
 
-    private TypeElement typeElement;
+    private final TypeElement typeElement;
 
     private final boolean isEntity;
 
@@ -139,18 +139,29 @@ public class ImmutableType {
             }
         }
 
-        int idSequence = superType != null ? superType.getDeclaredProps().size() : 0;
+        int propIdSequence = superType != null ? superType.getDeclaredProps().size() : 0;
         Map<String, ImmutableProp> map = new LinkedHashMap<>();
         for (ExecutableElement executableElement : ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
             if (executableElement.getAnnotation(Id.class) != null) {
-                ImmutableProp prop = new ImmutableProp(typeUtils, executableElement, ++idSequence);
+                ImmutableProp prop = new ImmutableProp(typeUtils, executableElement, ++propIdSequence);
                 map.put(prop.getName(), prop);
             }
         }
         for (ExecutableElement executableElement : ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
             if (executableElement.getAnnotation(Id.class) == null) {
-                ImmutableProp prop = new ImmutableProp(typeUtils, executableElement, ++idSequence);
+                ImmutableProp prop = new ImmutableProp(typeUtils, executableElement, ++propIdSequence);
                 map.put(prop.getName(), prop);
+            }
+        }
+        if (superType != null) {
+            for (Map.Entry<String, ImmutableProp> e : map.entrySet()) {
+                if (superType.getProps().containsKey(e.getKey())) {
+                    throw new ModelException(
+                            "The property \"" +
+                                    e.getValue() +
+                                    "\" overrides property of super type, this is not allowed"
+                    );
+                }
             }
         }
         declaredProps = Collections.unmodifiableMap(map);
@@ -171,7 +182,7 @@ public class ImmutableType {
                                 typeElement.getQualifiedName() +
                                 "\", " +
                                 idProps.get(0) +
-                                "\" cannot be marked by @Id because id has been declared in super type"
+                                "\" cannot be decorated by @Id because id has been declared in super type"
                 );
             }
             if (superType.getVersionProp() != null && !versionProps.isEmpty()) {
@@ -180,7 +191,7 @@ public class ImmutableType {
                                 typeElement.getQualifiedName() +
                                 "\", " +
                                 versionProps.get(0) +
-                                "\" cannot be marked by @Version because version has been declared in super type"
+                                "\" cannot be decorated by @Version because version has been declared in super type"
                 );
             }
             idProp = superType.idProp;
@@ -193,7 +204,7 @@ public class ImmutableType {
                                 typeElement.getQualifiedName() +
                                 "\", " +
                                 idProps.get(0) +
-                                "\" cannot be marked by @Id because current type is not entity"
+                                "\" cannot be decorated by @Id because current type is not entity"
                 );
             }
             if (!versionProps.isEmpty()) {
@@ -202,7 +213,7 @@ public class ImmutableType {
                                 typeElement.getQualifiedName() +
                                 "\", " +
                                 versionProps.get(0) +
-                                "\" cannot be marked by @Version because current type is not entity"
+                                "\" cannot be decorated by @Version because current type is not entity"
                 );
             }
         } else {
@@ -215,7 +226,7 @@ public class ImmutableType {
                                 idProps.get(0) +
                                 "\" and \"" +
                                 idProps.get(1) +
-                                "\" is marked by @Id"
+                                "\" is decorated by @Id"
                 );
             }
             if (versionProps.size() > 1) {
@@ -227,7 +238,7 @@ public class ImmutableType {
                                 versionProps.get(0) +
                                 "\" and \"" +
                                 versionProps.get(1) +
-                                "\" is marked by @Version"
+                                "\" is decorated by @Version"
                 );
             }
             if (idProp == null) {
@@ -314,14 +325,25 @@ public class ImmutableType {
             if (superType == null) {
                 props = declaredProps;
             } else {
-                props = new LinkedHashMap<>(superType.getProps());
-                for (ImmutableProp declaredProp : declaredProps.values()) {
-                    if (props.put(declaredProp.getName(), declaredProp) != null) {
-                        throw new ModelException(
-                                "The property \"" +
-                                        declaredProp +
-                                        "\" overrides property of super type, this is not allowed"
-                        );
+                props = new LinkedHashMap<>();
+                for (ImmutableProp prop : superType.getProps().values()) {
+                    if (prop.getAnnotation(Id.class) != null) {
+                        props.put(prop.getName(), prop);
+                    }
+                }
+                for (ImmutableProp prop : declaredProps.values()) {
+                    if (prop.getAnnotation(Id.class) != null) {
+                        props.put(prop.getName(), prop);
+                    }
+                }
+                for (ImmutableProp prop : superType.getProps().values()) {
+                    if (prop.getAnnotation(Id.class) == null) {
+                        props.put(prop.getName(), prop);
+                    }
+                }
+                for (ImmutableProp prop : declaredProps.values()) {
+                    if (prop.getAnnotation(Id.class) == null) {
+                        props.put(prop.getName(), prop);
                     }
                 }
             }
