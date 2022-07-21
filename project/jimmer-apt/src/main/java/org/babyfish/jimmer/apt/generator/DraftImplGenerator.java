@@ -528,12 +528,22 @@ public class DraftImplGenerator {
 
             builder.beginControlFlow("else");
             for (ImmutableProp prop : type.getProps().values()) {
-                if (prop.isAssociation() || prop.isList()) {
+                if (prop.isList()) {
+                    builder.addStatement(
+                            "modified.$L = $T.of(modified.$L, $L.$L(modified.$L))",
+                            prop.getName(),
+                            NonSharedList.class,
+                            prop.getName(),
+                            DRAFT_FIELD_CTX,
+                            "resolveList",
+                            prop.getName()
+                    );
+                } else if (prop.isAssociation()) {
                     builder.addStatement(
                             "modified.$L = $L.$L(modified.$L)",
                             prop.getName(),
                             DRAFT_FIELD_CTX,
-                            prop.isList() ? "resolveList" : "resolveObject",
+                            "resolveObject",
                             prop.getName()
                     );
                 }

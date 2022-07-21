@@ -1,17 +1,13 @@
 package org.babyfish.jimmer.ksp.meta
 
-import com.google.devtools.ksp.symbol.ClassKind
-import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.symbol.KSPropertyDeclaration
-import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import org.babyfish.jimmer.ksp.className
-import org.babyfish.jimmer.ksp.fullName
+import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
-import org.babyfish.jimmer.ksp.name
 import javax.persistence.Id
 import javax.persistence.Version
+import kotlin.reflect.KClass
 
 class ImmutableProp(
     val ctx: Context,
@@ -20,15 +16,18 @@ class ImmutableProp(
     private val propDeclaration: KSPropertyDeclaration
 ) {
     init {
+        if (propDeclaration.isMutable) {
+            throw MetaException("Illegal property '${this}', this property of immutable interface must be readonly")
+        }
         if (!declaringType.isSqlType) {
-            val sqlAnnotationName = propDeclaration.annotations.map {
+            val sqlAnnotationNames = propDeclaration.annotations {
+                it.annotationType.resolve().declaration.fullName.startsWith("javax.persistence.")
+            }.map {
                 it.annotationType.resolve().declaration.fullName
-            }.firstOrNull {
-                it.startsWith("javax.persistence.")
             }
-            if (sqlAnnotationName != null) {
+            if (sqlAnnotationNames.isNotEmpty()) {
                 throw MetaException(
-                    "'$propDeclaration' cannot be decorated by '@$sqlAnnotationName' " +
+                    "'$propDeclaration' cannot be decorated by $sqlAnnotationNames " +
                     "because the current type is not sql type"
                 )
             }
@@ -40,17 +39,19 @@ class ImmutableProp(
     private val resolvedType: KSType = propDeclaration.type.resolve()
 
     val isList: Boolean =
-        when {
-            ctx.mapType.isAssignableFrom(resolvedType) ->
-                throw MetaException("Illegal property '$propDeclaration', cannot be map")
-            ctx.collectionType.isAssignableFrom(resolvedType) ->
-                if (!ctx.listType.isAssignableFrom(resolvedType) ||
-                    !resolvedType.isAssignableFrom(ctx.listType)) {
-                    true
-                } else {
-                    throw MetaException("Illegal property '$propDeclaration', collection property must be immutable list")
-                }
-            else -> false
+        (resolvedType.declaration as KSClassDeclaration).asStarProjectedType().let { starType ->
+            when {
+                ctx.mapType.isAssignableFrom(starType) ->
+                    throw MetaException("Illegal property '$propDeclaration', cannot be map")
+                ctx.collectionType.isAssignableFrom(starType) ->
+                    if (!ctx.listType.isAssignableFrom(starType) ||
+                        !resolvedType.isAssignableFrom(ctx.listType)) {
+                        true
+                    } else {
+                        throw MetaException("Illegal property '$propDeclaration', collection property must be immutable list")
+                    }
+                else -> false
+            }
         }
 
     val targetDeclaration: KSClassDeclaration =
@@ -83,7 +84,7 @@ class ImmutableProp(
     ): ClassName =
         targetDeclaration
             .className(overrideNullable ?: isNullable) {
-                if (draft) {
+                if (draft && isAssociation) {
                     "$it$DRAFT"
                 } else {
                     it
@@ -114,7 +115,7 @@ class ImmutableProp(
 
     val isScalarList = isList && !isAssociation
 
-    val isId: Boolean = if (propDeclaration.annotations.any { it.annotationType == Id::class }) {
+    val isId: Boolean = if (propDeclaration.annotations{ it.annotationType == Id::class }.isNotEmpty()) {
         if (resolvedType.isMarkedNullable) {
             throw MetaException("Id property '${propDeclaration}' cannot be nullable")
         }
@@ -154,6 +155,15 @@ class ImmutableProp(
             null
         }
 
+    fun annotation(annotationType: KClass<out Annotation>): KSAnnotation? =
+        propDeclaration.annotation(annotationType)
+
+    fun annotations(annotationType: KClass<out Annotation>): List<KSAnnotation> =
+        propDeclaration.annotations(annotationType)
+
+    fun annotations(predicate: (KSAnnotation) -> Boolean): List<KSAnnotation> =
+        propDeclaration.annotations(predicate)
+
     override fun toString(): String =
-        propDeclaration.toString()
+        "${declaringType}.${propDeclaration.name}"
 }

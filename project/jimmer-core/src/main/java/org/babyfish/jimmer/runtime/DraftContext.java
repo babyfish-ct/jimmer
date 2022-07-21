@@ -9,10 +9,6 @@ import java.util.List;
 
 public class DraftContext {
 
-    private static Class<?> EMPTY_LIST_CLASS = Collections.emptyList().getClass();
-
-    private static Class<?> UNMODIFIED_LIST_CLASS = Collections.unmodifiableList(new ArrayList<String>()).getClass();
-
     private final IdentityHashMap<Object, Draft> objDraftMap = new IdentityHashMap<>();
 
     private final IdentityHashMap<List<?>, ListDraft<?>> listDraftMap = new IdentityHashMap<>();
@@ -80,20 +76,11 @@ public class DraftContext {
         return (E)spi.__resolve();
     }
 
+    @SuppressWarnings("unchecked")
     public <E> List<E> resolveList(List<E> list) {
         if (list == null) {
             return null;
         }
-        List<E> resolvedList = resolveListImpl(list);
-        if (EMPTY_LIST_CLASS.isAssignableFrom(resolvedList.getClass()) ||
-        UNMODIFIED_LIST_CLASS.isAssignableFrom(resolvedList.getClass())) {
-            return resolvedList;
-        }
-        return Collections.unmodifiableList(resolvedList);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <E> List<E> resolveListImpl(List<E> list) {
         ListDraft<?> draft;
         if (list instanceof Draft) {
             draft = (ListDraft<?>)list;

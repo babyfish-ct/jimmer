@@ -33,9 +33,9 @@ class ImmutableType(
             }
         }
 
-    val isEntity: Boolean = classDeclaration.firstAnnotation(Entity::class) !== null
+    val isEntity: Boolean = classDeclaration.annotation(Entity::class) !== null
 
-    val isMappedSuperClass: Boolean = classDeclaration.firstAnnotation(MappedSuperclass::class) != null
+    val isMappedSuperClass: Boolean = classDeclaration.annotation(MappedSuperclass::class) != null
 
     val isSqlType: Boolean
         get() = isEntity || isMappedSuperClass
@@ -71,7 +71,7 @@ class ImmutableType(
             classDeclaration
                 .getDeclaredProperties()
                 .forEach { propDeclaration ->
-                    val isId = propDeclaration.annotations.any { it.annotationType == Id::class }
+                    val isId = propDeclaration.annotations { it.annotationType == Id::class }.isNotEmpty()
                     superProps?.get(propDeclaration.name)?.let {
                         throw MetaException("'${propDeclaration}' overrides '$it', this is not allowed")
                     }
@@ -145,5 +145,5 @@ class ImmutableType(
         }
 
     override fun toString(): String =
-        classDeclaration.toString()
+        classDeclaration.fullName
 }

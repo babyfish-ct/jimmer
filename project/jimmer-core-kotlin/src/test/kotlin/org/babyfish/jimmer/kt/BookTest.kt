@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.kt
 
+import org.babyfish.jimmer.ImmutableObjects
 import org.babyfish.jimmer.kt.model.Book
 import org.babyfish.jimmer.kt.model.addBy
 import org.babyfish.jimmer.kt.model.by
@@ -17,10 +18,21 @@ class BookTest {
                 firstName = "Jim"
             }
             authors().addBy {
-                lastName = "Kate"
+                firstName = "Kate"
             }
         }
-        expect(
+
+        val book2 = ImmutableObjects.fromString(Book::class.java, book.toString())
+
+        val book3 = new(Book::class).by(book) {
+            name += "@"
+            store().name += "#"
+            for (author in authors()) {
+                author.firstName += "!"
+            }
+        }
+
+        val json =
             """{
                 |--->"name":"book",
                 |--->"store":{
@@ -28,9 +40,24 @@ class BookTest {
                 |--->},
                 |--->"authors":[
                 |--->--->{"firstName":"Jim"},
-                |--->--->{"lastName":"Kate"}
+                |--->--->{"firstName":"Kate"}
                 |--->]
                 |}""".trimMargin().toSimpleJson()
-        ) { book.toString() }
+
+        val newJson =
+            """{
+                |--->"name":"book@",
+                |--->"store":{
+                |--->--->"name":"store#"
+                |--->},
+                |--->"authors":[
+                |--->--->{"firstName":"Jim!"},
+                |--->--->{"firstName":"Kate!"}
+                |--->]
+                |}""".trimMargin().toSimpleJson()
+
+        expect(json) { book.toString() }
+        expect(json) { book2.toString() }
+        expect(newJson) { book3.toString() }
     }
 }

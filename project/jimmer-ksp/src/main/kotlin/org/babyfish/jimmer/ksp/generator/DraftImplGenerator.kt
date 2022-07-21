@@ -1,9 +1,12 @@
 package org.babyfish.jimmer.ksp.generator
 
+import com.google.devtools.ksp.symbol.KSAnnotation
 import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
+import javax.validation.constraints.Email
+import javax.validation.constraints.Pattern
 import kotlin.reflect.KClass
 
 class DraftImplGenerator(
@@ -83,6 +86,7 @@ class DraftImplGenerator(
                 .initializer("false")
                 .build()
         )
+        addCompanionObject()
     }
 
     private fun TypeSpec.Builder.addIsLoadedProp(argType: KClass<*>) {
@@ -172,6 +176,7 @@ class DraftImplGenerator(
                             CodeBlock
                                 .builder()
                                 .apply {
+                                    ValidationGenerator(prop, this).generate()
                                     addStatement("val __modified = %L", CURRENT_IMPL)
                                     if (prop.isList || prop.isScalarList) {
                                         addStatement(
@@ -244,14 +249,7 @@ class DraftImplGenerator(
                                 addStatement(
                                     "return %L as %T",
                                     prop.name,
-                                    prop.targetType!!.draftClassName.let {
-                                        if (prop.isList) {
-                                            MUTABLE_LIST.parameterizedBy(it)
-                                        }
-                                        else {
-                                            it.copy(nullable = false)
-                                        }
-                                    }
+                                    prop.typeName(true, overrideNullable = false)
                                 )
                             }
                             .build()
@@ -357,47 +355,54 @@ class DraftImplGenerator(
                             beginControlFlow("try")
                             addStatement("val base = __base")
                             addStatement("var modified = __modified")
-                            beginControlFlow("if (modified === null)")
-                            for (prop in type.properties.values) {
-                                if (prop.isList || prop.isReference) {
-                                    beginControlFlow("if (__isLoaded(%L))", prop.id)
-                                    addStatement("val oldValue = base.%L", prop.name)
-                                    addStatement(
-                                        "val newValue = __ctx.%L(oldValue)",
-                                        if (prop.isList || prop.isScalarList) {
-                                            "resolveList"
+                            if (type.properties.values.any { it.isList || it.isReference }) {
+                                beginControlFlow("if (modified === null)")
+                                for (prop in type.properties.values) {
+                                    if (prop.isList || prop.isReference) {
+                                        beginControlFlow("if (__isLoaded(%L))", prop.id)
+                                        addStatement("val oldValue = base.%L", prop.name)
+                                        addStatement(
+                                            "val newValue = __ctx.%L(oldValue)",
+                                            if (prop.isList || prop.isScalarList) {
+                                                "resolveList"
+                                            } else {
+                                                "resolveObject"
+                                            }
+                                        )
+                                        if (prop.isList) {
+                                            add("if (oldValue !== newValue)")
                                         } else {
-                                            "resolveObject"
+                                            add("if (!%T.equals(oldValue, newValue, true))", IMMUTABLE_SPI_CLASS_NAME)
                                         }
-                                    )
-                                    if (prop.isList) {
-                                        add("if (oldValue !== newValue)")
-                                    } else {
-                                        add("if (!%T.equals(oldValue, newValue, true))", IMMUTABLE_SPI_CLASS_NAME)
+                                        beginControlFlow("")
+                                        addStatement("%L = newValue", prop.name)
+                                        endControlFlow()
+                                        endControlFlow()
                                     }
-                                    beginControlFlow("")
-                                    addStatement("%L = newValue", prop.name)
-                                    endControlFlow()
-                                    endControlFlow()
                                 }
-                            }
-                            addStatement("modified = __modified")
-                            nextControlFlow("else")
-                            for (prop in type.properties.values) {
-                                if (prop.isList || prop.isReference) {
-                                    addStatement(
-                                        "modified.%L = __ctx.%L(modified.%L)",
-                                        prop.valueFieldName,
-                                        if (prop.isList || prop.isScalarList) {
-                                            "resolveList"
-                                        } else {
-                                            "resolveObject"
-                                        },
-                                        prop.valueFieldName
-                                    )
+                                addStatement("modified = __modified")
+                                nextControlFlow("else")
+                                for (prop in type.properties.values) {
+                                    if (prop.isList) {
+                                        addStatement(
+                                            "modified.%L = %T.of(modified.%L, __ctx.%L(modified.%L))",
+                                            prop.valueFieldName,
+                                            NON_SHARED_LIST_CLASS_NAME,
+                                            prop.valueFieldName,
+                                            "resolveList",
+                                            prop.valueFieldName
+                                        )
+                                    } else if (prop.isReference) {
+                                        addStatement(
+                                            "modified.%L = __ctx.%L(modified.%L)",
+                                            prop.valueFieldName,
+                                            "resolveObject",
+                                            prop.valueFieldName
+                                        )
+                                    }
                                 }
+                                endControlFlow()
                             }
-                            endControlFlow()
                             beginControlFlow(
                                 "if (modified === null || %T.equals(base, modified, true))",
                                 IMMUTABLE_SPI_CLASS_NAME
@@ -413,5 +418,46 @@ class DraftImplGenerator(
                 )
                 .build()
         )
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun TypeSpec.Builder.addCompanionObject() {
+        val emailPropMap = type.properties.values
+            .associateBy({it}) {
+                it.annotation(Email::class)
+            }
+            .filterValues { it !== null } as Map<ImmutableProp, KSAnnotation>
+        val patternPropMultiMap = type.properties.values
+            .associateBy({it}) {
+                it.annotations(Pattern::class)
+            }
+            .filterValues { it.isNotEmpty() }
+        if (emailPropMap.isNotEmpty() || patternPropMultiMap.isNotEmpty()) {
+            addType(
+                TypeSpec
+                    .companionObjectBuilder()
+                    .apply {
+                        for ((prop, email) in emailPropMap) {
+                            addProperty(
+                                PropertySpec
+                                    .builder(DRAFT_FIELD_EMAIL_PATTERN, PATTERN_CLASS_NAME, KModifier.PRIVATE)
+                                    .initializer("%T.compile(%S)", PATTERN_CLASS_NAME, EMAIL_PATTERN)
+                                    .build()
+                            )
+                        }
+                        for ((prop, patterns) in patternPropMultiMap) {
+                            for (i in patterns.indices) {
+                                addProperty(
+                                    PropertySpec
+                                        .builder(regexpPatternFieldName(prop, i), PATTERN_CLASS_NAME, KModifier.PRIVATE)
+                                        .initializer("%T.compile(%S)", PATTERN_CLASS_NAME, patterns[i].get<String>("regexp"))
+                                        .build()
+                                )
+                            }
+                        }
+                    }
+                    .build()
+            )
+        }
     }
 }
