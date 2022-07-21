@@ -5,8 +5,11 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
-import javax.persistence.Id
-import javax.persistence.Version
+import org.babyfish.jimmer.ksp.generator.ID_FULL_NAME
+import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
+import org.babyfish.jimmer.ksp.generator.VERSION_FULL_NAME
+import org.babyfish.jimmer.sql.Key
+import javax.persistence.*
 import kotlin.reflect.KClass
 
 class ImmutableProp(
@@ -115,26 +118,94 @@ class ImmutableProp(
 
     val isScalarList = isList && !isAssociation
 
-    val isId: Boolean = if (propDeclaration.annotations{ it.annotationType == Id::class }.isNotEmpty()) {
-        if (resolvedType.isMarkedNullable) {
-            throw MetaException("Id property '${propDeclaration}' cannot be nullable")
+    val primaryJpaAnnotation: KSAnnotation? =
+        propDeclaration.let {
+            val id = it.annotation(Id::class)
+            val version = it.annotation(Version::class)
+            val oneToOne = it.annotation(OneToOne::class)
+            val manyToOne = it.annotation(ManyToOne::class)
+            val oneToMany = it.annotation(OneToMany::class)
+            val manyToMany = it.annotation(ManyToMany::class)
+            val list = listOfNotNull(
+                id,
+                version,
+                oneToOne,
+                manyToOne,
+                oneToMany,
+                manyToMany
+            )
+            if (list.size > 1) {
+                throw MetaException(
+                    "Illegal property '${this}', conflict annotation " +
+                        "'@${list[0].fullName}' and '@${list[1].fullName}'"
+                )
+            }
+            if (id !== null) {
+                if (resolvedType.isMarkedNullable) {
+                    throw MetaException("Id property '${this}' cannot be nullable")
+                }
+                if (isAssociation) {
+                    throw MetaException("Id property '${this}' cannot be association")
+                }
+            } else if (version !== null) {
+                if (resolvedType != ctx.intType) {
+                    throw MetaException("The type of version property '${propDeclaration}' must be int")
+                }
+            } else if (list.isNotEmpty()) {
+                if (!isAssociation) {
+                    throw MetaException(
+                        "The property '${this}' cannot be declared by " +
+                            "'@${list[0].fullName}' because it is not association"
+                    )
+                }
+                if ((oneToOne !== null || manyToOne !== null) && !isReference) {
+                    throw MetaException(
+                        "The property '${this}' cannot be declared by " +
+                            "'@${list[0].fullName}' because it is not reference association"
+                    )
+                }
+                if ((oneToMany !== null || manyToMany !== null) && !isList) {
+                    throw MetaException(
+                        "The property '${this}' cannot be declared by " +
+                            "'@${list[0].fullName}' because it is not list association"
+                    )
+                }
+            }
+            list.firstOrNull()
         }
-        if (isAssociation) {
-            throw MetaException("Id property '${propDeclaration}' cannot be association")
-        }
-        true
-    } else {
-        false
-    }
 
-    val isVersion: Boolean = if (propDeclaration.annotations.any { it.annotationType == Version::class }) {
-        if (resolvedType != ctx.intType) {
-            throw MetaException("The type of version property '${propDeclaration}' must be int")
+    val isId: Boolean =
+        primaryJpaAnnotation?.fullName == ID_FULL_NAME
+
+    val isVersion: Boolean =
+        primaryJpaAnnotation?.fullName == VERSION_FULL_NAME
+
+    val isKey: Boolean =
+        propDeclaration.annotations {
+            it.fullName == KEY_FULL_NAME
+        }.let { annotations ->
+            if (annotations.isEmpty()) {
+                false
+            } else {
+                if (isAssociation) {
+                    if (primaryJpaAnnotation?.fullName != ManyToOne::class.qualifiedName ||
+                        propDeclaration.annotations { it.fullName == JoinTable::class.qualifiedName}.isNotEmpty()) {
+                        throw MetaException(
+                            "Illegal property ${this}, when association property is " +
+                                "decorated by '@org.babyfish.jimmer.sql.Key', " +
+                                "it must be reference association based on foreign key"
+                        )
+                    }
+                } else if (isNullable) {
+                    throw MetaException(
+                        "Illegal property ${this}, when scalar property is " +
+                            "decorated by '@org.babyfish.jimmer.sql.Key', " +
+                            "it must be non-null"
+                    )
+                }
+                true
+            }
         }
-        true
-    } else {
-        false
-    }
 
     val isPrimitive: Boolean =
         if (!isList && !isNullable) {

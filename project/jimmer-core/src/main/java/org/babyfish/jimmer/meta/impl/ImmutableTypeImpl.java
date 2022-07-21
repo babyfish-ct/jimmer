@@ -329,6 +329,29 @@ class ImmutableTypeImpl implements ImmutableType {
         @Override
         public Builder add(
                 String name,
+                Class<? extends Annotation> associationType,
+                Class<?> elementType,
+                boolean nullable
+        ) {
+            ImmutablePropCategory category;
+            if (associationType == OneToOne.class || associationType == ManyToOne.class) {
+                category = ImmutablePropCategory.REFERENCE;
+            } else if (associationType == OneToMany.class || associationType == ManyToMany.class) {
+                category = ImmutablePropCategory.ENTITY_LIST;
+            } else {
+                throw new IllegalArgumentException("Invalid association type");
+            }
+            return add(
+                    name,
+                    category,
+                    elementType,
+                    nullable,
+                    associationType
+            );
+        }
+
+        private Builder add(
+                String name,
                 ImmutablePropCategory category,
                 Class<?> elementType,
                 boolean nullable,
