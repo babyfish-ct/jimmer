@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.ksp
 
+import com.google.devtools.ksp.getDeclaredFunctions
 import com.google.devtools.ksp.isPrivate
 import com.google.devtools.ksp.isProtected
 import com.google.devtools.ksp.processing.Resolver
@@ -54,6 +55,13 @@ class ImmutableProcessor(
                         throw GeneratorException(
                             "The immutable interface '${classDeclaration.fullName}' " +
                                 "cannot be private or protected'"
+                        )
+                    }
+                    val functions = classDeclaration.getDeclaredFunctions().toList()
+                    if (functions.isNotEmpty()) {
+                        throw GeneratorException(
+                            "The immutable interface '${classDeclaration.fullName}' " +
+                                "cannot have functions: $functions"
                         )
                     }
                     modelMap.computeIfAbsent(file) { mutableListOf() } +=

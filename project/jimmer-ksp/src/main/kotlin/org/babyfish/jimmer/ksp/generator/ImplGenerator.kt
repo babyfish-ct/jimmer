@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.ksp.generator
 
 import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
 import kotlin.reflect.KClass
@@ -47,7 +48,16 @@ class ImplGenerator(
     private fun TypeSpec.Builder.addFields(prop: ImmutableProp) {
         addProperty(
             PropertySpec
-                .builder(prop.valueFieldName, prop.typeName().copy(nullable = !prop.isPrimitive))
+                .builder(
+                    prop.valueFieldName,
+                    if (prop.isList) {
+                        NON_SHARED_LIST_CLASS_NAME
+                            .parameterizedBy(prop.targetTypeName())
+                            .copy(nullable = true)
+                    } else {
+                        prop.typeName().copy(nullable = !prop.isPrimitive)
+                    }
+                )
                 .addModifiers(KModifier.INTERNAL)
                 .mutable()
                 .build()
@@ -71,7 +81,16 @@ class ImplGenerator(
                     addStatement("val from = base as %T?", type.draftClassName(PRODUCER, IMPLEMENTOR))
                     for (prop in type.properties.values) {
                         beginControlFlow("if (from !== null && from.__isLoaded(%L))", prop.id)
-                        addStatement("this.%L = from.%L", prop.valueFieldName, prop.name)
+                        if (prop.isList) {
+                            addStatement(
+                                "this.%L = %T.of(null, from.%L)",
+                                prop.valueFieldName,
+                                NON_SHARED_LIST_CLASS_NAME,
+                                prop.name
+                            )
+                        } else {
+                            addStatement("this.%L = from.%L", prop.valueFieldName, prop.name)
+                        }
                         prop.loadedFieldName?.let {
                             addStatement("this.%L = true", it)
                         }
@@ -84,7 +103,7 @@ class ImplGenerator(
                                     BOOLEAN -> "false"
                                     CHAR -> "'\\0'"
                                     FLOAT -> "0F"
-                                    FLOAT -> "0D"
+                                    DOUBLE -> "0.0"
                                     else -> "0"
                                 }
                             } else {

@@ -6,6 +6,7 @@ import org.babyfish.jimmer.UnloadedException;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.runtime.NonSharedList;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.PrimitiveType;
@@ -49,7 +50,12 @@ public class ImplGenerator {
     private void addFields() {
         for (ImmutableProp prop : type.getProps().values()) {
             FieldSpec.Builder valueBuilder = FieldSpec.builder(
-                    TypeName.get(prop.getReturnType()),
+                    prop.isList() ?
+                            ParameterizedTypeName.get(
+                                    ClassName.get(NonSharedList.class),
+                                    prop.getElementTypeName()
+                            ) :
+                            TypeName.get(prop.getReturnType()),
                     prop.getName()
             );
             typeBuilder.addField(valueBuilder.build());
@@ -75,7 +81,16 @@ public class ImplGenerator {
             } else {
                 builder.beginControlFlow("if (from.__isLoaded($L))", prop.getId());
             }
-            builder.addStatement("$L = from.$L()", prop.getName(), prop.getGetterName());
+            if (prop.isList()) {
+                builder.addStatement(
+                        "$L = $T.of(null, from.$L())",
+                        prop.getName(),
+                        NonSharedList.class,
+                        prop.getGetterName()
+                );
+            } else {
+                builder.addStatement("$L = from.$L()", prop.getName(), prop.getGetterName());
+            }
             builder.endControlFlow();
         }
         builder.endControlFlow();

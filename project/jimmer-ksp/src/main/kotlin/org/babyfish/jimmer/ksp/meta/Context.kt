@@ -6,7 +6,7 @@ import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import org.babyfish.jimmer.Immutable
-import org.babyfish.jimmer.ksp.firstAnnotation
+import org.babyfish.jimmer.ksp.annotation
 import javax.persistence.Entity
 import javax.persistence.MappedSuperclass
 
@@ -38,8 +38,8 @@ class Context(
         }
 
     fun typeAnnotationOf(classDeclaration: KSClassDeclaration): KSAnnotation? {
-        val entity = classDeclaration.firstAnnotation(Entity::class)
-        val mappedSuperClass = classDeclaration.firstAnnotation(MappedSuperclass::class)
+        val entity = classDeclaration.annotation(Entity::class)
+        val mappedSuperClass = classDeclaration.annotation(MappedSuperclass::class)
         if (entity != null && mappedSuperClass != null) {
             throw MetaException(
                 "${classDeclaration.qualifiedName!!.asString()} cannot be decorated by both @Entity and @MappedSuperClass"
@@ -47,6 +47,6 @@ class Context(
         }
         return entity
             ?: mappedSuperClass
-            ?: classDeclaration.firstAnnotation(Immutable::class)
+            ?: classDeclaration.annotation(Immutable::class)
     }
 }

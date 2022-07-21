@@ -4,17 +4,20 @@ import java.util.*;
 
 public class NonSharedList<E> implements List<E> {
 
+    private static final String MUTATION_ERROR_MESSAGE =
+            "The list used by immutable object cannot be mutated";
+
     private final List<E> raw;
 
     NonSharedList(List<E> raw) {
         this.raw = raw;
     }
 
-    public static <E> NonSharedList<E> of(List<E> oldList, List<E> newList) {
+    public static <E> NonSharedList<E> of(NonSharedList<E> oldList, List<E> newList) {
+        if (oldList == newList) {
+            return oldList;
+        }
         if (newList instanceof NonSharedList<?>) {
-            if (oldList == newList) {
-                return (NonSharedList<E>) newList;
-            }
             return of(oldList, ((NonSharedList<E>) newList).raw);
         }
         if (newList == null || newList.isEmpty()) {
@@ -28,13 +31,13 @@ public class NonSharedList<E> implements List<E> {
     }
 
     @Override
-    public int size() {
-        return raw.size();
+    public boolean isEmpty() {
+        return raw.isEmpty();
     }
 
     @Override
-    public boolean isEmpty() {
-        return raw.isEmpty();
+    public int size() {
+        return raw.size();
     }
 
     @Override
@@ -43,78 +46,8 @@ public class NonSharedList<E> implements List<E> {
     }
 
     @Override
-    public Iterator<E> iterator() {
-        return raw.iterator();
-    }
-
-    @Override
-    public Object[] toArray() {
-        return raw.toArray();
-    }
-
-    @Override
-    public <T> T[] toArray(T[] a) {
-        return raw.toArray(a);
-    }
-
-    @Override
-    public boolean add(E e) {
-        return raw.add(e);
-    }
-
-    @Override
-    public boolean remove(Object o) {
-        return raw.remove(o);
-    }
-
-    @Override
     public boolean containsAll(Collection<?> c) {
         return raw.containsAll(c);
-    }
-
-    @Override
-    public boolean addAll(Collection<? extends E> c) {
-        return raw.addAll(c);
-    }
-
-    @Override
-    public boolean addAll(int index, Collection<? extends E> c) {
-        return raw.addAll(index, c);
-    }
-
-    @Override
-    public boolean removeAll(Collection<?> c) {
-        return raw.removeAll(c);
-    }
-
-    @Override
-    public boolean retainAll(Collection<?> c) {
-        return raw.retainAll(c);
-    }
-
-    @Override
-    public void clear() {
-        raw.clear();
-    }
-
-    @Override
-    public E get(int index) {
-        return raw.get(index);
-    }
-
-    @Override
-    public E set(int index, E element) {
-        return raw.set(index, element);
-    }
-
-    @Override
-    public void add(int index, E element) {
-        raw.add(index, element);
-    }
-
-    @Override
-    public E remove(int index) {
-        return raw.remove(index);
     }
 
     @Override
@@ -128,18 +61,68 @@ public class NonSharedList<E> implements List<E> {
     }
 
     @Override
-    public ListIterator<E> listIterator() {
-        return raw.listIterator();
+    public E get(int index) {
+        return raw.get(index);
     }
 
     @Override
-    public ListIterator<E> listIterator(int index) {
-        return raw.listIterator(index);
+    public boolean add(E e) {
+        throw new UnsupportedOperationException(MUTATION_ERROR_MESSAGE);
     }
 
     @Override
-    public List<E> subList(int fromIndex, int toIndex) {
-        return raw.subList(fromIndex, toIndex);
+    public void add(int index, E element) {
+        throw new UnsupportedOperationException(MUTATION_ERROR_MESSAGE);
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends E> c) {
+        throw new UnsupportedOperationException(MUTATION_ERROR_MESSAGE);
+    }
+
+    @Override
+    public boolean addAll(int index, Collection<? extends E> c) {
+        throw new UnsupportedOperationException(MUTATION_ERROR_MESSAGE);
+    }
+
+    @Override
+    public void clear() {
+        throw new UnsupportedOperationException(MUTATION_ERROR_MESSAGE);
+    }
+
+    @Override
+    public E remove(int index) {
+        throw new UnsupportedOperationException(MUTATION_ERROR_MESSAGE);
+    }
+
+    @Override
+    public boolean remove(Object o) {
+        throw new UnsupportedOperationException(MUTATION_ERROR_MESSAGE);
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        throw new UnsupportedOperationException(MUTATION_ERROR_MESSAGE);
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> c) {
+        throw new UnsupportedOperationException(MUTATION_ERROR_MESSAGE);
+    }
+
+    @Override
+    public E set(int index, E element) {
+        throw new UnsupportedOperationException(MUTATION_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Object[] toArray() {
+        return raw.toArray();
+    }
+
+    @Override
+    public <T> T[] toArray(T[] a) {
+        return raw.toArray(a);
     }
 
     @Override
@@ -157,10 +140,112 @@ public class NonSharedList<E> implements List<E> {
         return raw.toString();
     }
 
+    @Override
+    public Iterator<E> iterator() {
+        return new Itr<>(raw.iterator());
+    }
+
+    @Override
+    public ListIterator<E> listIterator() {
+        return new ListItr<>(raw.listIterator());
+    }
+
+    @Override
+    public ListIterator<E> listIterator(int index) {
+        return new ListItr<>(raw.listIterator(index));
+    }
+
+    @Override
+    public List<E> subList(int fromIndex, int toIndex) {
+        List<E> subList = raw.subList(fromIndex, toIndex);
+        if (subList instanceof RandomAccess) {
+            return new RA<>(subList);
+        }
+        return new NonSharedList<>(subList);
+    }
+
     private static class RA<E> extends NonSharedList<E> implements RandomAccess {
 
         RA(List<E> raw) {
             super(raw);
+        }
+    }
+
+    private static class Itr<E> implements Iterator<E> {
+
+        private final Iterator<E> raw;
+
+        private Itr(Iterator<E> raw) {
+            this.raw = raw;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return raw.hasNext();
+        }
+
+        @Override
+        public E next() {
+            return raw.next();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException(MUTATION_ERROR_MESSAGE);
+        }
+    }
+
+    private static class ListItr<E> implements ListIterator<E> {
+
+        private final ListIterator<E> raw;
+
+        private ListItr(ListIterator<E> raw) {
+            this.raw = raw;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return raw.hasNext();
+        }
+
+        @Override
+        public E next() {
+            return raw.next();
+        }
+
+        @Override
+        public int nextIndex() {
+            return raw.nextIndex();
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            return raw.hasPrevious();
+        }
+
+        @Override
+        public E previous() {
+            return raw.previous();
+        }
+
+        @Override
+        public int previousIndex() {
+            return raw.previousIndex();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException(MUTATION_ERROR_MESSAGE);
+        }
+
+        @Override
+        public void set(E e) {
+            throw new UnsupportedOperationException(MUTATION_ERROR_MESSAGE);
+        }
+
+        @Override
+        public void add(E e) {
+            throw new UnsupportedOperationException(MUTATION_ERROR_MESSAGE);
         }
     }
 }
