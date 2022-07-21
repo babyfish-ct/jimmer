@@ -142,13 +142,11 @@ public class ProducerGenerator {
                 );
             } else if (prop.getAssociationAnnotation() != null) {
                 builder.add(
-                        ".add($S, $T.$L, $T.class, $L, $T.class)\n",
+                        ".add($S, $T.class, $T.class, $L)\n",
                         prop.getName(),
-                        ImmutablePropCategory.class,
-                        category.name(),
+                        prop.getAssociationAnnotation().annotationType(),
                         prop.getElementTypeName(),
-                        prop.isNullable(),
-                        prop.getAssociationAnnotation().annotationType()
+                        prop.isNullable()
                 );
             } else {
                 builder.add(

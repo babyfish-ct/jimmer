@@ -74,10 +74,9 @@ public interface ImmutableType {
 
         Builder add(
                 String name,
-                ImmutablePropCategory category,
+                Class<? extends Annotation> associationType,
                 Class<?> elementType,
-                boolean nullable,
-                Class<? extends Annotation> associationType
+                boolean nullable
         );
 
         ImmutableType build();

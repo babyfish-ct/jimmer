@@ -13,6 +13,7 @@ import org.babyfish.jimmer.runtime.*
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.util.regex.Pattern
+import javax.persistence.*
 
 internal const val DRAFT = "Draft"
 internal const val PRODUCER = "$"
@@ -38,6 +39,18 @@ internal val DRAFT_SCOPE_CLASS_NAME = ClassName("org.babyfish.jimmer.kt", "Draft
 internal val BIG_DECIMAL_CLASS_NAME = BigDecimal::class.asClassName()
 internal val BIG_INTEGER_CLASS_NAME = BigInteger::class.asClassName()
 internal val PATTERN_CLASS_NAME = Pattern::class.asClassName()
+internal val ONE_TO_ONE_CLASS_NAME = OneToOne::class.asClassName()
+internal val MANY_TO_ONE_CLASS_NAME = ManyToOne::class.asClassName()
+internal val ONE_TO_MANY_CLASS_NAME = OneToMany::class.asClassName()
+internal val MANY_TO_MANY_CLASS_NAME = ManyToMany::class.asClassName()
+
+internal val ID_FULL_NAME = Id::class.qualifiedName
+internal val VERSION_FULL_NAME = Version::class.qualifiedName
+internal const val KEY_FULL_NAME = "org.babyfish.jimmer.sql.Key"
+internal val ONE_TO_ONE_FULL_NAME = OneToOne::class.qualifiedName
+internal val MANY_TO_ONE_FULL_NAME = ManyToOne::class.qualifiedName
+internal val ONE_TO_MANY_FULL_NAME = OneToMany::class.qualifiedName
+internal val MANY_TO_MANY_FULL_NAME = ManyToMany::class.qualifiedName
 
 internal const val CURRENT_IMPLEMENTOR = "(__modified ?: __base)"
 internal const val CURRENT_IMPL = "(__modified ?: $IMPL(__base).also { __modified = it })"

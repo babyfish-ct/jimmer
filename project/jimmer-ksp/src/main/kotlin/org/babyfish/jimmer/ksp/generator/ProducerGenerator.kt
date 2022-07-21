@@ -2,6 +2,7 @@ package org.babyfish.jimmer.ksp.generator
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import org.babyfish.jimmer.ksp.fullName
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
 
@@ -71,19 +72,59 @@ class ProducerGenerator(
     }
 
     private fun CodeBlock.Builder.addProp(prop: ImmutableProp) {
-        add(
-            ".add(%S, %T.%L, %T::class.java, %L)\n",
-            prop.name,
-            IMMUTABLE_PROP_CATEGORY_CLASS_NAME,
-            when {
-                prop.isList && prop.isAssociation -> "ENTITY_LIST"
-                prop.isList && !prop.isAssociation -> "SCALAR_LIST"
-                prop.isAssociation -> "REFERENCE"
-                else -> "SCALAR"
-            },
-            prop.targetTypeName(overrideNullable = false),
-            if (prop.isNullable) "true" else "false"
-        )
+        val fullName = prop.primaryJpaAnnotation?.fullName
+        when {
+            fullName == ID_FULL_NAME ->
+                add(
+                    ".id(%S, %T::class.java)\n",
+                    prop.name,
+                    prop.targetTypeName(overrideNullable = false)
+                )
+            fullName == VERSION_FULL_NAME ->
+                add(".version(%S)\n", prop.name)
+            fullName == KEY_FULL_NAME && prop.isAssociation ->
+                add(
+                    ".keyReference(%S, %T::class.java, %L)\n",
+                    prop.name,
+                    prop.targetTypeName(overrideNullable = false),
+                    prop.isNullable
+                )
+            fullName == KEY_FULL_NAME && prop.isAssociation ->
+                add(
+                    ".keyReference(%S, %T::class.java)\n",
+                    prop.name,
+                    prop.targetTypeName(overrideNullable = false),
+                    prop.isNullable
+                )
+            fullName !== null ->
+                add(
+                    ".add(%S, %T::class.java, %T::class.java, %L)\n",
+                    prop.name,
+                    when (fullName) {
+                        ONE_TO_ONE_FULL_NAME -> ONE_TO_ONE_CLASS_NAME
+                        MANY_TO_ONE_FULL_NAME -> MANY_TO_ONE_CLASS_NAME
+                        ONE_TO_MANY_FULL_NAME -> ONE_TO_MANY_CLASS_NAME
+                        MANY_TO_MANY_FULL_NAME -> MANY_TO_MANY_CLASS_NAME
+                        else -> error("Internal bug: $prop has not wrong JPA annotation @$fullName")
+                    },
+                    prop.targetTypeName(overrideNullable = false),
+                    prop.isNullable
+                )
+            else ->
+                add(
+                    ".add(%S, %T.%L, %T::class.java, %L)\n",
+                    prop.name,
+                    IMMUTABLE_PROP_CATEGORY_CLASS_NAME,
+                    when {
+                        prop.isList && prop.isAssociation -> "ENTITY_LIST"
+                        prop.isList && !prop.isAssociation -> "SCALAR_LIST"
+                        prop.isAssociation -> "REFERENCE"
+                        else -> "SCALAR"
+                    },
+                    prop.targetTypeName(overrideNullable = false),
+                    prop.isNullable
+                )
+        }
     }
 
     private fun TypeSpec.Builder.addProduceFun() {
