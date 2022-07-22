@@ -1,28 +1,29 @@
-package org.babyfish.jimmer.sql;
+package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.association.loader.Loaders;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
-import org.babyfish.jimmer.sql.ast.table.AssociationTable;
-import org.babyfish.jimmer.sql.cache.CacheConfig;
-import org.babyfish.jimmer.sql.cache.Caches;
-import org.babyfish.jimmer.sql.event.TriggersImpl;
-import org.babyfish.jimmer.sql.fetcher.Filter;
-import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
+import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.EntitiesImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
-import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
+import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
+import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.cache.CacheConfig;
+import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
-import org.babyfish.jimmer.sql.runtime.*;
+import org.babyfish.jimmer.sql.event.TriggersImpl;
+import org.babyfish.jimmer.sql.fetcher.Filter;
+import org.babyfish.jimmer.sql.meta.IdGenerator;
 
 import java.sql.Connection;
 import java.util.HashMap;
@@ -32,7 +33,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-class SqlClientImpl implements SqlClient {
+public class SqlClientImpl implements SqlClient {
 
     private static final ConnectionManager ILLEGAL_CONNECTION_MANAGER = new ConnectionManager() {
         @Override
@@ -61,7 +62,7 @@ class SqlClientImpl implements SqlClient {
 
     private final Caches caches;
 
-    SqlClientImpl(
+    public SqlClientImpl(
             ConnectionManager connectionManager,
             Dialect dialect,
             Executor executor,
@@ -171,7 +172,7 @@ class SqlClientImpl implements SqlClient {
                     MutableRootQuery<AssociationTable<SE, ST, TE, TT>>,
                     AssociationTable<SE, ST, TE, TT>,
                     ConfigurableTypedRootQuery<AssociationTable<SE, ST, TE, TT>, R>
-            > block
+                    > block
     ) {
         return Queries.createAssociationQuery(this, sourceTableType, targetTableGetter, block);
     }
@@ -291,4 +292,115 @@ class SqlClientImpl implements SqlClient {
                 Caches.of(block)
         );
     }
+
+    public static class BuilderImpl implements SqlClient.Builder {
+
+        private ConnectionManager connectionManager;
+
+        private Dialect dialect;
+
+        private Executor executor;
+
+        private final Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap = new HashMap<>();
+
+        private final Map<Class<?>, IdGenerator> idGeneratorMap = new HashMap<>();
+
+        private int defaultBatchSize = 128;
+
+        private int defaultListBatchSize = 16;
+
+        private Caches caches;
+
+        public BuilderImpl() {}
+
+        @Override
+        @OldChain
+        public SqlClient.Builder setConnectionManager(ConnectionManager connectionManager) {
+            this.connectionManager = connectionManager;
+            return this;
+        }
+
+        @Override
+        @OldChain
+        public SqlClient.Builder setDialect(Dialect dialect) {
+            this.dialect = dialect;
+            return this;
+        }
+
+        @Override
+        @OldChain
+        public SqlClient.Builder setExecutor(Executor executor) {
+            this.executor = executor;
+            return this;
+        }
+
+        @Override
+        @OldChain
+        public SqlClient.Builder setIdGenerator(IdGenerator idGenerator) {
+            return setIdGenerator(null, idGenerator);
+        }
+
+        @Override
+        @OldChain
+        public SqlClient.Builder setIdGenerator(Class<?> entityType, IdGenerator idGenerator) {
+            idGeneratorMap.put(entityType, idGenerator);
+            return this;
+        }
+
+        @Override
+        @OldChain
+        public SqlClient.Builder addScalarProvider(ScalarProvider<?, ?> scalarProvider) {
+            if (scalarProviderMap.containsKey(scalarProvider.getScalarType())) {
+                throw new IllegalStateException(
+                        "Cannot set scalar provider for scalar type \"" +
+                                scalarProvider.getScalarType() +
+                                "\" twice"
+                );
+            }
+            scalarProviderMap.put(scalarProvider.getScalarType(), scalarProvider);
+            return this;
+        }
+
+        @Override
+        @OldChain
+        public SqlClient.Builder setDefaultBatchSize(int size) {
+            if (size < 1) {
+                throw new IllegalStateException("size cannot be less than 1");
+            }
+            defaultBatchSize = size;
+            return this;
+        }
+
+        @Override
+        @OldChain
+        public SqlClient.Builder setDefaultListBatchSize(int size) {
+            if (size < 1) {
+                throw new IllegalStateException("size cannot be less than 1");
+            }
+            defaultListBatchSize = size;
+            return this;
+        }
+
+        @Override
+        @OldChain
+        public SqlClient.Builder setCaches(Consumer<CacheConfig> block) {
+            caches = Caches.of(block);
+            return this;
+        }
+
+        @Override
+        public SqlClient build() {
+            return new SqlClientImpl(
+                    connectionManager,
+                    dialect,
+                    executor,
+                    scalarProviderMap,
+                    idGeneratorMap,
+                    defaultBatchSize,
+                    defaultListBatchSize,
+                    caches
+            );
+        }
+    }
 }
+

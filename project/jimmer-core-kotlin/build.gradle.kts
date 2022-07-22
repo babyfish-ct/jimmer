@@ -8,7 +8,7 @@ repositories {
 }
 
 dependencies {
-    api(project(":jimmer-core"))
+    implementation(project(":jimmer-core"))
     implementation(kotlin("stdlib"))
 
     testAnnotationProcessor(project(":jimmer-apt"))
