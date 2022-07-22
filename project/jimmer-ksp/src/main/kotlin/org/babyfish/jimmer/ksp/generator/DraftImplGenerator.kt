@@ -437,7 +437,7 @@ class DraftImplGenerator(
                 TypeSpec
                     .companionObjectBuilder()
                     .apply {
-                        for ((prop, email) in emailPropMap) {
+                        if (emailPropMap.isNotEmpty()) {
                             addProperty(
                                 PropertySpec
                                     .builder(DRAFT_FIELD_EMAIL_PATTERN, PATTERN_CLASS_NAME, KModifier.PRIVATE)

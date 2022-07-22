@@ -3,6 +3,10 @@ package org.babyfish.jimmer.apt.meta;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.meta.ModelException;
+import org.babyfish.jimmer.sql.Entity;
+import org.babyfish.jimmer.sql.Id;
+import org.babyfish.jimmer.sql.MappedSuperclass;
+import org.babyfish.jimmer.sql.Version;
 
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -10,7 +14,6 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
-import javax.persistence.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -64,13 +67,6 @@ public class ImmutableType {
             TypeElement typeElement
     ) {
         this.typeElement = typeElement;
-        if (typeElement.getAnnotation(Embeddable.class) != null) {
-            throw new MetaException(
-                    "Illegal type \"" +
-                            typeElement.getQualifiedName() +
-                            "\", @Embeddable is not supported"
-            );
-        }
         isEntity = typeElement.getAnnotation(Entity.class) != null;
         isMappedSuperClass = typeElement.getAnnotation(MappedSuperclass.class) != null;
         if (isEntity && isMappedSuperClass) {

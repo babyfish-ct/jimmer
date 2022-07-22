@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
@@ -10,7 +11,6 @@ import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTableWrapper;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
-import javax.persistence.criteria.JoinType;
 import java.util.Collection;
 
 public interface TableImplementor<E> extends TableEx<E>, Ast {

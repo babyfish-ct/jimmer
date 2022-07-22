@@ -18,7 +18,6 @@ java {
 dependencies {
 
     api(project(":jimmer-core"))
-    api("javax.persistence:javax.persistence-api:2.2")
     implementation("org.slf4j:slf4j-api:1.7.36")
 
     testAnnotationProcessor(project(":jimmer-apt"))

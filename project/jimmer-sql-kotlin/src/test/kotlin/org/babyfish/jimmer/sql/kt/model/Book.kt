@@ -1,29 +1,25 @@
 package org.babyfish.jimmer.sql.kt.model
 
-import org.babyfish.jimmer.sql.Key
+import org.babyfish.jimmer.sql.*
 import java.math.BigDecimal
-import javax.persistence.Entity
-import javax.persistence.Id
-import javax.persistence.ManyToMany
-import javax.persistence.ManyToOne
 
 @Entity
 interface Book {
 
-    @get:Id
+    @Id
     val id: Long
 
-    @get:Key
+    @Key
     val name: String
 
-    @get:Key
+    @Key
     val edition: Int
 
     val price: BigDecimal
 
-    @get:ManyToOne
+    @ManyToOne
     val store: BookStore?
 
-    @get:ManyToMany
+    @ManyToMany
     val authors: List<Author>
 }

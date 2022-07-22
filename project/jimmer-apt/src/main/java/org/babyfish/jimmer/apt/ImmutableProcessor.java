@@ -16,7 +16,11 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-@SupportedAnnotationTypes({"org.babyfish.jimmer.Immutable", "javax.persistence.Entity"})
+@SupportedAnnotationTypes({
+        "org.babyfish.jimmer.Immutable",
+        "org.babyfish.jimmer.sql.Entity",
+        "org.babyfish.jimmer.sql.MappedSuperclass"
+})
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class ImmutableProcessor extends AbstractProcessor {
 

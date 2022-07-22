@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.mutation;
 
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
@@ -9,8 +10,6 @@ import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.junit.jupiter.api.Test;
-
-import javax.persistence.criteria.JoinType;
 
 public class DMLTest extends AbstractMutationTest {
 

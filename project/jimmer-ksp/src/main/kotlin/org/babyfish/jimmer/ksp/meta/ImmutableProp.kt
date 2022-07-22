@@ -8,7 +8,6 @@ import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.ID_FULL_NAME
 import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
 import org.babyfish.jimmer.ksp.generator.VERSION_FULL_NAME
-import org.babyfish.jimmer.sql.Key
 import javax.persistence.*
 import kotlin.reflect.KClass
 
@@ -24,7 +23,7 @@ class ImmutableProp(
         }
         if (!declaringType.isSqlType) {
             val sqlAnnotationNames = propDeclaration.annotations {
-                it.annotationType.resolve().declaration.fullName.startsWith("javax.persistence.")
+                it.annotationType.resolve().declaration.fullName.startsWith("org.babyfish.jimmer.sql.")
             }.map {
                 it.annotationType.resolve().declaration.fullName
             }
@@ -118,7 +117,7 @@ class ImmutableProp(
 
     val isScalarList = isList && !isAssociation
 
-    val primaryJpaAnnotation: KSAnnotation? =
+    val primarySqlAnnotation: KSAnnotation? =
         propDeclaration.let {
             val id = it.annotation(Id::class)
             val version = it.annotation(Version::class)
@@ -175,10 +174,10 @@ class ImmutableProp(
         }
 
     val isId: Boolean =
-        primaryJpaAnnotation?.fullName == ID_FULL_NAME
+        primarySqlAnnotation?.fullName == ID_FULL_NAME
 
     val isVersion: Boolean =
-        primaryJpaAnnotation?.fullName == VERSION_FULL_NAME
+        primarySqlAnnotation?.fullName == VERSION_FULL_NAME
 
     val isKey: Boolean =
         propDeclaration.annotations {
@@ -188,7 +187,7 @@ class ImmutableProp(
                 false
             } else {
                 if (isAssociation) {
-                    if (primaryJpaAnnotation?.fullName != ManyToOne::class.qualifiedName ||
+                    if (primarySqlAnnotation?.fullName != ManyToOne::class.qualifiedName ||
                         propDeclaration.annotations { it.fullName == JoinTable::class.qualifiedName}.isNotEmpty()) {
                         throw MetaException(
                             "Illegal property ${this}, when association property is " +

@@ -1,12 +1,12 @@
 package org.babyfish.jimmer.sql.query;
 
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
 
-import javax.persistence.criteria.JoinType;
 import java.math.BigDecimal;
 import java.util.Arrays;
 

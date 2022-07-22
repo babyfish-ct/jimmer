@@ -10,4 +10,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
 @Target(ElementType.METHOD)
-public @interface Key {}
+public @interface JoinTable {
+    String name() default "";
+    String joinColumnName() default "";
+    String inverseJoinColumnName() default "";
+}
