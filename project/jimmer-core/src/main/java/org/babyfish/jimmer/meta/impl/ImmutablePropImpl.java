@@ -4,14 +4,9 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutablePropCategory;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
-import org.babyfish.jimmer.sql.DeleteAction;
-import org.babyfish.jimmer.sql.OnDelete;
+import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.Storage;
 
-import javax.persistence.ManyToMany;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.Transient;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 

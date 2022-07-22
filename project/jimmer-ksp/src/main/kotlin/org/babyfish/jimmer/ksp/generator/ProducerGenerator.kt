@@ -72,7 +72,7 @@ class ProducerGenerator(
     }
 
     private fun CodeBlock.Builder.addProp(prop: ImmutableProp) {
-        val fullName = prop.primaryJpaAnnotation?.fullName
+        val fullName = prop.primarySqlAnnotation?.fullName
         when {
             fullName == ID_FULL_NAME ->
                 add(
@@ -105,7 +105,7 @@ class ProducerGenerator(
                         MANY_TO_ONE_FULL_NAME -> MANY_TO_ONE_CLASS_NAME
                         ONE_TO_MANY_FULL_NAME -> ONE_TO_MANY_CLASS_NAME
                         MANY_TO_MANY_FULL_NAME -> MANY_TO_MANY_CLASS_NAME
-                        else -> error("Internal bug: $prop has not wrong JPA annotation @$fullName")
+                        else -> error("Internal bug: $prop has not wrong sql annotation @$fullName")
                     },
                     prop.targetTypeName(overrideNullable = false),
                     prop.isNullable

@@ -1,10 +1,8 @@
 package org.babyfish.jimmer.sql.model;
 
-import org.babyfish.jimmer.sql.DeleteAction;
-import org.babyfish.jimmer.sql.Key;
-import org.babyfish.jimmer.sql.OnDelete;
+import org.babyfish.jimmer.sql.*;
 
-import javax.persistence.*;
+import javax.validation.constraints.Null;
 import java.util.List;
 
 @Entity
@@ -13,6 +11,7 @@ public interface TreeNode {
     @Key
     String name();
 
+    @Null
     @ManyToOne
     @Key
     @OnDelete(DeleteAction.CASCADE)
@@ -27,10 +26,10 @@ public interface TreeNode {
      * (hashCode/equals requires it)
      */
     @Id
-    @Column(name = "NODE_ID", nullable = false)
+    @Column(name = "NODE_ID")
     @GeneratedValue(
             strategy = GenerationType.SEQUENCE,
-            generator = "sequence:tree_node_id_seq"
+            sequenceName = "tree_node_id_seq"
     )
     long id();
 }

@@ -6,10 +6,10 @@ import com.squareup.kotlinpoet.TypeName
 import org.babyfish.jimmer.ksp.meta.MetaException
 import kotlin.reflect.KClass
 
-val KSDeclaration.fullName
-    get() = qualifiedName!!.asString()
+val KSDeclaration.fullName: String
+    get() = qualifiedName?.asString() ?: ""
 
-val KSPropertyDeclaration.name
+val KSPropertyDeclaration.name: String
     get() = simpleName.getShortName()
 
 fun KSAnnotated.annotations(predicate: (KSAnnotation) -> Boolean): List<KSAnnotation> {

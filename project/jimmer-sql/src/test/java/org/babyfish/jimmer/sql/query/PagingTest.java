@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.query;
 
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
@@ -12,7 +13,6 @@ import org.babyfish.jimmer.sql.model.BookTable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import javax.persistence.criteria.JoinType;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.UUID;

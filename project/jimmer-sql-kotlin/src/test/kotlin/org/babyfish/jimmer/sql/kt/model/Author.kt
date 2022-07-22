@@ -1,24 +1,24 @@
 package org.babyfish.jimmer.sql.kt.model
 
+import org.babyfish.jimmer.sql.Entity
+import org.babyfish.jimmer.sql.Id
 import org.babyfish.jimmer.sql.Key
-import javax.persistence.Entity
-import javax.persistence.Id
-import javax.persistence.ManyToMany
+import org.babyfish.jimmer.sql.ManyToMany
 
 @Entity
 interface Author {
 
-    @get:Id
+    @Id
     val id: Long
 
-    @get:Key
+    @Key
     val firstName: String
 
-    @get:Key
+    @Key
     val lastName: String
 
     val gender: Gender
 
-    @get:ManyToMany(mappedBy = "authors")
+    @ManyToMany(mappedBy = "authors")
     val books: List<Book>
 }

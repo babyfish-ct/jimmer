@@ -7,11 +7,10 @@ import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.NonSharedList;
+import org.babyfish.jimmer.sql.Id;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.PrimitiveType;
-import javax.persistence.Id;
-import java.util.Collection;
 import java.util.Objects;
 
 public class ImplGenerator {

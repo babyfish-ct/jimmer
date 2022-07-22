@@ -5,7 +5,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.TypeUtils;
-import org.babyfish.jimmer.sql.Key;
+import org.babyfish.jimmer.sql.*;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 
@@ -14,7 +14,6 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Null;
 import java.lang.annotation.Annotation;
@@ -296,12 +295,12 @@ public class ImmutableProp {
     private void initializeAssociationAnnotation() {
         Transient trans = getAnnotation(Transient.class);
 
-        JoinColumn[] joinColumns = getAnnotations(JoinColumn.class);
+        JoinColumn joinColumn = getAnnotation(JoinColumn.class);
         JoinTable joinTable = getAnnotation(JoinTable.class);
         Column column = getAnnotation(Column.class);
         Annotation[] storageAnnotations = Arrays.stream(
                 new Annotation[] {
-                        joinColumns.length == 0 ? null : joinColumns[0],
+                        joinColumn,
                         joinTable,
                         column
                 }
@@ -335,7 +334,7 @@ public class ImmutableProp {
                 throw new MetaException(
                         "Illegal property \"" +
                                 this +
-                                "\", it is marked by both @" +
+                                "\", it is decorated by both @" +
                                 Transient.class.getName() +
                                 " and @" +
                                 firstSqlAnnotation.annotationType().getName()
@@ -350,7 +349,7 @@ public class ImmutableProp {
                 throw new MetaException(
                         "Illegal property \"" +
                                 this +
-                                "\", it cannot be marked by @" +
+                                "\", it cannot be decorated by @" +
                                 firstSqlAnnotation.annotationType().getName() +
                                 "because the current type is not entity"
                 );
@@ -361,7 +360,7 @@ public class ImmutableProp {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
-                                    "\", association property must be marked by one of these annotations: " +
+                                    "\", association property must be decorated by one of these annotations: " +
                                     "@OneToOne, @OneToMany, @ManyToOne or @ManyToMany"
                     );
                 }
@@ -369,7 +368,7 @@ public class ImmutableProp {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
-                                    "\", it cannot be marked by both @" +
+                                    "\", it cannot be decorated by both @" +
                                     associationAnnotations[0].annotationType().getName() +
                                     "and @" +
                                     associationAnnotations[1].annotationType().getName()
@@ -381,7 +380,7 @@ public class ImmutableProp {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
-                                    "\", list property cannot be marked by both @" +
+                                    "\", list property cannot be decorated by both @" +
                                     associationAnnotation.annotationType().getName()
                     );
                 }
@@ -390,7 +389,7 @@ public class ImmutableProp {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
-                                    "\", reference property cannot be marked by both @" +
+                                    "\", reference property cannot be decorated by both @" +
                                     associationAnnotation.annotationType().getName()
                     );
                 }
@@ -398,25 +397,25 @@ public class ImmutableProp {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
-                                    "\", one-to-one property must be mapped by another reference property"
+                                    "\", The \"mappedBy\" of one-to-one property must be specified"
                     );
                 }
                 if (oneToMany != null && oneToMany.mappedBy().equals("")) {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
-                                    "\", one-to-many property must be mapped by another reference property"
+                                    "\", The \"mappedBy\" of one-to-many property must be specified"
                     );
                 }
                 if (oneToOne != null || oneToMany != null || (
                         manyToMany != null && !manyToMany.mappedBy().equals(""))
                 ) {
-                    if (joinColumns.length != 0) {
+                    if (joinColumn != null) {
                         throw new MetaException(
                                 "Illegal property \"" +
                                         this +
-                                        "\", mapped property cannot be marked by @" +
-                                        associationAnnotation.annotationType().getName()
+                                        "\", it cannot be decorated by @" +
+                                        JoinColumn.class.getName()
                         );
                     }
                 }
@@ -424,71 +423,23 @@ public class ImmutableProp {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
-                                    "\", association property cannot be marked by @" +
+                                    "\", association property cannot be decorated by @" +
                                     column.annotationType().getName()
                     );
                 }
-                if (joinColumns.length != 0 && joinTable != null) {
+                if (joinColumn != null && joinTable != null) {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
-                                    "\", it is marked by both @JoinColumn and @JoinTable"
-                    );
-                }
-                if (joinColumns.length > 1) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", multiple join columns is not supported"
-                    );
-                }
-                if (Arrays
-                        .stream(joinColumns)
-                        .anyMatch(it -> !it.referencedColumnName().isEmpty())) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", the referenced column of join column is not supported"
+                                    "\", it is decorated by both @JoinColumn and @JoinTable"
                     );
                 }
                 if (scalarAnnotations.length != 0) {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
-                                    "\", association property cannot be marked by @" +
+                                    "\", association property cannot be decorated by @" +
                                     scalarAnnotations[0].annotationType().getName()
-                    );
-                }
-                if (joinTable != null && joinTable.joinColumns().length > 1) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", join table with multiple join columns is not supported"
-                    );
-                }
-                if (joinTable != null &&
-                        Arrays.stream(joinTable.joinColumns())
-                                .anyMatch(it -> !it.referencedColumnName().isEmpty())) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", the referenced column of join column is not supported"
-                    );
-                }
-                if (joinTable != null && joinTable.inverseJoinColumns().length > 1) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", join table with multiple inverse join columns is not supported"
-                    );
-                }
-                if (joinTable != null &&
-                        Arrays.stream(joinTable.inverseJoinColumns())
-                                .anyMatch(it -> !it.referencedColumnName().isEmpty())) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", the referenced column of inverse join column is not supported"
                     );
                 }
             } else {
@@ -496,15 +447,15 @@ public class ImmutableProp {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
-                                    "\", scalar property cannot be marked by @" +
+                                    "\", scalar property cannot be decorated by @" +
                                     associationAnnotations[0].annotationType().getName()
                     );
                 }
-                if (joinColumns.length != 0) {
+                if (joinColumn != null) {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
-                                    "\", scalar property cannot be marked by @" +
+                                    "\", scalar property cannot be decorated by @" +
                                     JoinColumn.class.getName()
                     );
                 }
@@ -512,7 +463,7 @@ public class ImmutableProp {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
-                                    "\", scalar property cannot be marked by @" +
+                                    "\", scalar property cannot be decorated by @" +
                                     JoinTable.class.getName()
                     );
                 }
@@ -520,7 +471,7 @@ public class ImmutableProp {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
-                                    "\", it is marked by both @" +
+                                    "\", it is decorated by both @" +
                                     storageAnnotations[0].annotationType().getName() +
                                     " @" +
                                     storageAnnotations[1].annotationType().getName()
@@ -530,7 +481,7 @@ public class ImmutableProp {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
-                                    "\", nullable property cannot be marked by @" +
+                                    "\", nullable property cannot be decorated by @" +
                                     scalarAnnotations[0].annotationType().getName()
                     );
                 }
@@ -538,7 +489,7 @@ public class ImmutableProp {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
-                                    "\", it is marked by @" +
+                                    "\", it is decorated by @" +
                                     Version.class.getName() +
                                     " but its type is not int"
                     );
@@ -549,7 +500,7 @@ public class ImmutableProp {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
-                                    "\", it marked by both \"@" +
+                                    "\", it decorated by both \"@" +
                                     Key.class.getName() +
                                     "\" and \"@" +
                                     scalarAnnotations[0].annotationType().getName() +
@@ -561,7 +512,7 @@ public class ImmutableProp {
                         throw new MetaException(
                                 "Illegal property \"" +
                                         this +
-                                        "\", association property marked by both \"@" +
+                                        "\", association property decorated by both \"@" +
                                         Key.class.getName() +
                                         "\" must be many-to-one association"
                         );
@@ -570,7 +521,7 @@ public class ImmutableProp {
                         throw new MetaException(
                                 "Illegal property \"" +
                                         this +
-                                        "\", many-to-one property marked by both \"@" +
+                                        "\", many-to-one property decorated by both \"@" +
                                         Key.class.getName() +
                                         "\" must base on foreign key"
                         );
@@ -582,118 +533,62 @@ public class ImmutableProp {
 
     private boolean determineNullable() {
 
-        AnnotationRef notNullAnnotationRef = Arrays.stream(getAnnotations(NotNull.class))
+        Annotation notNullAnnotation = Arrays.stream(getAnnotations(NotNull.class))
                 .findFirst()
-                .map(it -> AnnotationRef.of(it))
                 .orElse(null);
-        if (notNullAnnotationRef == null) {
-            notNullAnnotationRef = AnnotationRef.of(getAnnotation(NonNull.class));
+        if (notNullAnnotation == null) {
+            notNullAnnotation = getAnnotation(NonNull.class);
         }
-        if (notNullAnnotationRef == null) {
-            notNullAnnotationRef = AnnotationRef.of(getAnnotation(org.jetbrains.annotations.NotNull.class));
+        if (notNullAnnotation == null) {
+            notNullAnnotation = getAnnotation(org.jetbrains.annotations.NotNull.class);
         }
-        if (notNullAnnotationRef == null) {
-            if (getAnnotation(Id.class) != null) {
-                notNullAnnotationRef = new AnnotationRef(Id.class);
-            }
-        }
-        if (notNullAnnotationRef == null) {
-            ManyToOne manyToOne = getAnnotation(ManyToOne.class);
-            if (manyToOne != null && !manyToOne.optional()) {
-                notNullAnnotationRef = new AnnotationRef(ManyToOne.class, "optional", false);
-            }
-        }
-        if (notNullAnnotationRef == null) {
-            OneToOne oneToOne = getAnnotation(OneToOne.class);
-            if (oneToOne != null && !oneToOne.optional()) {
-                notNullAnnotationRef = new AnnotationRef(OneToOne.class, "optional", false);
-            }
-        }
-        if (notNullAnnotationRef == null) {
-            notNullAnnotationRef = Arrays.stream(getAnnotations(Column.class))
-                    .filter(it -> !it.nullable())
-                    .findFirst()
-                    .map(it -> new AnnotationRef(Column.class, "nullable", false))
-                    .orElse(null);
-        }
-        if (notNullAnnotationRef == null) {
-            notNullAnnotationRef = Arrays.stream(getAnnotations(JoinColumn.class))
-                    .filter(it -> !it.nullable())
-                    .findFirst()
-                    .map(it -> new AnnotationRef(JoinColumn.class, "nullable", false))
-                    .orElse(null);
+        if (notNullAnnotation == null) {
+            notNullAnnotation = getAnnotation(Id.class);
         }
 
-        AnnotationRef nullAnnotationRef = Arrays.stream(getAnnotations(Null.class))
+        Annotation nullAnnotation = Arrays.stream(getAnnotations(Null.class))
                 .findFirst()
-                .map(it -> AnnotationRef.of(it))
                 .orElse(null);
-        if (nullAnnotationRef == null) {
-            nullAnnotationRef = AnnotationRef.of(getAnnotation(Nullable.class));
+        if (nullAnnotation == null) {
+            nullAnnotation = getAnnotation(Nullable.class);
         }
-        if (nullAnnotationRef == null) {
-            nullAnnotationRef = AnnotationRef.of(getAnnotation(org.jetbrains.annotations.Nullable.class));
-        }
-        if (nullAnnotationRef == null) {
-            ManyToOne manyToOne = getAnnotation(ManyToOne.class);
-            if (manyToOne != null && manyToOne.optional()) {
-                nullAnnotationRef = new AnnotationRef(ManyToOne.class, "optional", true);
-            }
-        }
-        if (nullAnnotationRef == null) {
-            OneToOne oneToOne = getAnnotation(OneToOne.class);
-            if (oneToOne != null && oneToOne.optional()) {
-                nullAnnotationRef = new AnnotationRef(OneToOne.class, "optional", true);
-            }
-        }
-        if (nullAnnotationRef == null) {
-            nullAnnotationRef = Arrays.stream(getAnnotations(Column.class))
-                    .filter(Column::nullable)
-                    .findFirst()
-                    .map(it -> new AnnotationRef(Column.class, "nullable", true))
-                    .orElse(null);
-        }
-        if (nullAnnotationRef == null) {
-            nullAnnotationRef = Arrays.stream(getAnnotations(JoinColumn.class))
-                    .filter(JoinColumn::nullable)
-                    .findFirst()
-                    .map(it -> new AnnotationRef(JoinColumn.class, "nullable", true))
-                    .orElse(null);
+        if (nullAnnotation == null) {
+            nullAnnotation = getAnnotation(org.jetbrains.annotations.Nullable.class);
         }
 
-        if (notNullAnnotationRef != null && nullAnnotationRef != null) {
+        if (notNullAnnotation != null && nullAnnotation != null) {
             throw new MetaException(
                     "Illegal property \"" +
                             this +
-                            "\", its nullity is conflict because it is marked by both " +
-                            notNullAnnotationRef +
+                            "\", its nullity is conflict because it is decorated by both " +
+                            notNullAnnotation +
                             " and " +
-                            nullAnnotationRef
+                            nullAnnotation
             );
         }
 
         ImplicitNullable implicitNullable = getImplicitNullable();
 
-        if (notNullAnnotationRef != null) {
+        if (notNullAnnotation != null) {
             if (implicitNullable != null && implicitNullable.nullable) {
                 throw new MetaException(
                         "Illegal property \"" +
                                 this +
-                                "\", it is marked by " +
-                                notNullAnnotationRef +
+                                "\", it is decorated by " +
+                                notNullAnnotation +
                                 ", but it is considered as nullable because " +
                                 implicitNullable.reason
                 );
             }
             return false;
         }
-        if (nullAnnotationRef != null) {
+        if (nullAnnotation != null) {
             if (implicitNullable != null && !implicitNullable.nullable) {
                 throw new MetaException(
                         "Illegal property \"" +
                                 this +
-                                "\", it is marked by " +
-                                nullAnnotationRef +
+                                "\", it is decorated by " +
+                                nullAnnotation +
                                 ", but it is considered as non-null because " +
                                 implicitNullable.reason
                 );
@@ -732,65 +627,6 @@ public class ImmutableProp {
             return new ImplicitNullable(true, "its type is box type");
         }
         return null;
-    }
-
-    private static class AnnotationRef {
-
-        private Class<? extends Annotation> annotationType;
-
-        private Map<String, Object> valueMap;
-
-        public static AnnotationRef of(Annotation annotation) {
-            return annotation == null ?
-                    null :
-                    new AnnotationRef(annotation.annotationType());
-        }
-
-        public AnnotationRef(Class<? extends Annotation> annotationType) {
-            this.annotationType = annotationType;
-        }
-
-        public AnnotationRef(
-                Class<? extends Annotation> annotationType,
-                String attrName,
-                Object attrValue
-        ) {
-            this.annotationType = annotationType;
-            Map<String, Object> valueMap = new HashMap<>();
-            valueMap.put(attrName, attrValue);
-            this.valueMap = valueMap;
-        }
-
-        public AnnotationRef(
-                Class<Annotation> annotationType,
-                Map<String, Object> valueMap
-        ) {
-            this.annotationType = annotationType;
-            this.valueMap = valueMap;
-        }
-
-        public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append('@');
-            builder.append(annotationType.getName());
-            if (valueMap != null && !valueMap.isEmpty()) {
-                builder.append('(');
-                boolean addComma = false;
-                for (Map.Entry<String, Object> e : valueMap.entrySet()) {
-                    if (addComma) {
-                        builder.append(", ");
-                    } else {
-                        addComma = true;
-                    }
-                    builder
-                            .append(e.getKey())
-                            .append('=')
-                            .append(e.getValue());
-                }
-                builder.append(')');
-            }
-            return builder.toString();
-        }
     }
 
     private static class ImplicitNullable {

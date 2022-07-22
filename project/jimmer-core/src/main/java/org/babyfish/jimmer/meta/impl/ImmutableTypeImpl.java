@@ -6,12 +6,12 @@ import org.babyfish.jimmer.meta.ImmutablePropCategory;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.runtime.DraftContext;
+import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.meta.SequenceIdGenerator;
 
-import javax.persistence.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
@@ -143,38 +143,31 @@ class ImmutableTypeImpl implements ImmutableType {
         if (generatedValue == null) {
             return;
         }
-        if (generatedValue.strategy() == GenerationType.AUTO) {
-            String generator = generatedValue.generator();
+        if (generatedValue.strategy() != GenerationType.USER &&
+                generatedValue.generatorType() != IdGenerator.None.class) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            idProp +
+                            "\", the generator cannot be specified when generation type is " +
+                            generatedValue.strategy()
+            );
+        }
+        if (generatedValue.strategy() == GenerationType.USER) {
+            Class<? extends IdGenerator> generatorType = generatedValue.generatorType();
             IdGenerator idGenerator = null;
             String error = null;
             Throwable errorCause = null;
-            if (generator.isEmpty()) {
+            if (generatorType == IdGenerator.None.class) {
                 error = "generator must be specified";
-            } else {
-                Class<?> idGeneratorType = null;
-                try {
-                    idGeneratorType = Class.forName(generator);
-                } catch (ClassNotFoundException ex) {
-                    error = "The class \"" + generator + "\" does not exists";
-                }
-                if (idGeneratorType != null) {
-                    if (!IdGenerator.class.isAssignableFrom(idGeneratorType)) {
-                        error = "the class \"" +
-                                generator +
-                                "\" does not implement \"" +
-                                IdGenerator.class.getName() +
-                                "\"";
-                    }
-                    try {
-                        idGenerator = (IdGenerator) idGeneratorType.getDeclaredConstructor().newInstance();
-                    } catch (InstantiationException | IllegalAccessException | NoSuchMethodException ex) {
-                        error = "cannot create the instance of \"" + generator + "\"";
-                        errorCause = ex;
-                    } catch (InvocationTargetException ex) {
-                        error = "cannot create the instance of \"" + generator + "\"";
-                        errorCause = ex.getTargetException();
-                    }
-                }
+            }
+            try {
+                idGenerator = generatorType.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException ex) {
+                error = "cannot create the instance of \"" + generatorType.getName() + "\"";
+                errorCause = ex;
+            } catch (InvocationTargetException ex) {
+                error = "cannot create the instance of \"" + generatorType.getName() + "\"";
+                errorCause = ex.getTargetException();
             }
             if (error != null) {
                 throw new ModelException(
@@ -186,44 +179,11 @@ class ImmutableTypeImpl implements ImmutableType {
         } else if (generatedValue.strategy() == GenerationType.IDENTITY) {
             this.idGenerator = IdentityIdGenerator.INSTANCE;
         } else if (generatedValue.strategy() == GenerationType.SEQUENCE) {
-            String generator = generatedValue.generator().trim();
-            String sequenceName;
-            if (generator.isEmpty()) {
-                sequenceName = tableName + "_ID_SEQ";
-            } else if (generator.startsWith(SEQUENCE_PREFIX)) {
-                sequenceName = generator.substring(SEQUENCE_PREFIX.length()).trim();
-            } else {
-                SequenceGenerator seqGenerator = Arrays.stream(idProp.getAnnotations(SequenceGenerator.class))
-                        .filter(it -> it.name().equals(generator))
-                        .findFirst()
-                        .orElse(null);
-                if (seqGenerator == null) {
-                    seqGenerator = Arrays.stream(javaClass.getAnnotationsByType(SequenceGenerator.class))
-                            .filter(it -> it.name().equals(generator))
-                            .findFirst()
-                            .orElse(null);
-                }
-                if (seqGenerator == null) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    idProp +
-                                    "\"with annotation @GeneratedValue, " +
-                                    "there is no sequence generator whose name is \"" +
-                                    generator +
-                                    "\""
-                    );
-                }
-                sequenceName = seqGenerator.sequenceName();
-            }
+            String sequenceName = generatedValue.sequenceName();
             if (sequenceName.isEmpty()) {
                 sequenceName = tableName + "_ID_SEQ";
             }
             idGenerator = new SequenceIdGenerator(sequenceName);
-        } else {
-            throw new ModelException(
-                    "Illegal property \"" + idProp + "\" with annotation @GeneratedValue, " +
-                            "strategy \"" + generatedValue.strategy() + "\" is not supported"
-            );
         }
     }
 

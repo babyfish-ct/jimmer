@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.model.inheritance;
 
-import javax.persistence.MappedSuperclass;
+import org.babyfish.jimmer.sql.MappedSuperclass;
 
 @MappedSuperclass
 public interface Named {
