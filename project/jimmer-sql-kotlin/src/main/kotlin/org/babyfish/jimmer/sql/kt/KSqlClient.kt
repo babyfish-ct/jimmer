@@ -1,26 +1,17 @@
 package org.babyfish.jimmer.sql.kt
 
-import org.babyfish.jimmer.sql.dialect.DefaultDialect
-import org.babyfish.jimmer.sql.dialect.Dialect
-import org.babyfish.jimmer.sql.runtime.ConnectionManager
-import org.babyfish.jimmer.sql.runtime.DefaultExecutor
-import org.babyfish.jimmer.sql.runtime.Executor
+import kotlin.reflect.KClass
 
 interface KSqlClient {
 
+    fun createQuery(entityType: KClass<*>)
+
     companion object {
 
-        fun create(block: DSL.() -> Unit): KSqlClient {
-            TODO()
+        fun create(block: KSqlClientDSL.() -> Unit): KSqlClient {
+            val dsl = KSqlClientDSL()
+            dsl.block()
+            return dsl.buildKSqlClient()
         }
-    }
-
-    class DSL internal constructor() {
-
-        var connectionManager: ConnectionManager? = null
-
-        var dialect: Dialect = DefaultDialect()
-
-        var executor: Executor = DefaultExecutor()
     }
 }

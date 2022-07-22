@@ -12,7 +12,10 @@ import java.lang.annotation.Target;
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
 @Target(ElementType.METHOD)
 public @interface GeneratedValue {
+
     GenerationType strategy();
+
     Class<? extends IdGenerator> generatorType() default IdGenerator.None.class;
+
     String sequenceName() default "";
 }

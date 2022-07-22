@@ -10,6 +10,7 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib"))
+    implementation(kotlin("reflect"))
     api(project(":jimmer-core-kotlin"))
     api(project(":jimmer-sql"))
     dokkaHtmlPlugin("org.jetbrains.dokka:dokka-base:1.6.20")

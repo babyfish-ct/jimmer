@@ -11,7 +11,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-class CachesImpl implements Caches {
+public class CachesImpl implements Caches {
 
     private final CacheFactory cacheFactory;
 
@@ -25,7 +25,7 @@ class CachesImpl implements Caches {
     // So read write lock is used here.
     private final ReadWriteLock rwl = new ReentrantReadWriteLock();
 
-    CachesImpl(
+    public CachesImpl(
             CacheFactory cacheFactory,
             Map<ImmutableType, Cache<?, ?>> objectCacheMap,
             Map<ImmutableProp, Cache<?, ?>> associatedIdCacheMap,
