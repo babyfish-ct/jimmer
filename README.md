@@ -11,7 +11,9 @@ A powerful java framework for
 - The ordinate represents the operation count per second.
 
 <kbd>
-   <img src="benchmark.png"/>
+   <a href="https://babyfish-ct.github.io/jimmer-doc/docs/benchmark">
+       <img src="benchmark.png"/>
+   </a>
 </kbd>
 
 
