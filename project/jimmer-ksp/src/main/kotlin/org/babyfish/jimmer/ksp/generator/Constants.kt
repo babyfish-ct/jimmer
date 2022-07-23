@@ -6,14 +6,13 @@ import org.babyfish.jimmer.CircularReferenceException
 import org.babyfish.jimmer.DraftConsumer
 import org.babyfish.jimmer.ImmutableObjects
 import org.babyfish.jimmer.UnloadedException
-import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutablePropCategory
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.*
+import org.babyfish.jimmer.sql.*
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.util.regex.Pattern
-import javax.persistence.*
 
 internal const val DRAFT = "Draft"
 internal const val PRODUCER = "$"
@@ -21,6 +20,7 @@ internal const val IMPLEMENTOR = "Implementor"
 internal const val IMPL = "Impl"
 internal const val DRAFT_IMPL = "DraftImpl"
 internal const val DRAFT_FIELD_EMAIL_PATTERN = "__email_pattern"
+internal const val TABLE = "Table"
 
 internal val INTERNAL_TYPE_CLASS_NAME = Internal::class.asClassName()
 internal val IMMUTABLE_PROP_CATEGORY_CLASS_NAME = ImmutablePropCategory::class.asClassName()
@@ -43,6 +43,38 @@ internal val ONE_TO_ONE_CLASS_NAME = OneToOne::class.asClassName()
 internal val MANY_TO_ONE_CLASS_NAME = ManyToOne::class.asClassName()
 internal val ONE_TO_MANY_CLASS_NAME = OneToMany::class.asClassName()
 internal val MANY_TO_MANY_CLASS_NAME = ManyToMany::class.asClassName()
+internal val K_NON_NULL_TABLE_EX_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table",
+    "KNonNullTableEx"
+)
+internal val K_NULLABLE_TABLE_EX_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table",
+    "KNullableTableEx"
+)
+internal val K_NON_NULL_TABLE_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table",
+    "KNonNullTable"
+)
+internal val K_NULLABLE_TABLE_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table",
+    "KNullableTable"
+)
+internal val K_TABLE_EX_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table",
+    "KTableEx"
+)
+internal val K_TABLE_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table",
+    "KTable"
+)
+internal val K_NON_NULL_PROP_EXPRESSION = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.expression",
+    "KNonNullPropExpression"
+)
+internal val K_NULLABLE_PROP_EXPRESSION = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.expression",
+    "KNullablePropExpression"
+)
 
 internal val ID_FULL_NAME = Id::class.qualifiedName
 internal val VERSION_FULL_NAME = Version::class.qualifiedName

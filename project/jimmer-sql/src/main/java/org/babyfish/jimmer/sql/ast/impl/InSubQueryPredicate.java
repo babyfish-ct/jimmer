@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 class InSubQueryPredicate extends AbstractPredicate {
 
@@ -38,13 +39,13 @@ class InSubQueryPredicate extends AbstractPredicate {
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         ((Ast) expression).accept(visitor);
         ((Ast) subQuery).accept(visitor);
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         renderChild((Ast) expression, builder);
         builder.sql(negative ? " not in " : " in ");
         renderChild((Ast) subQuery, builder);

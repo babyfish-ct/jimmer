@@ -8,7 +8,7 @@ import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.ID_FULL_NAME
 import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
 import org.babyfish.jimmer.ksp.generator.VERSION_FULL_NAME
-import javax.persistence.*
+import org.babyfish.jimmer.sql.*
 import kotlin.reflect.KClass
 
 class ImmutableProp(

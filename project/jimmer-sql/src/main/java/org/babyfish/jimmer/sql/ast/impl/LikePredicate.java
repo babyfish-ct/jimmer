@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.LikeMode;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.StringExpression;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 class LikePredicate extends AbstractPredicate {
 
@@ -61,12 +62,12 @@ class LikePredicate extends AbstractPredicate {
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         ((Ast)expression).accept(visitor);
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         if (insensitive) {
             builder.sql("lower(");
             renderChild((Ast) expression, builder);

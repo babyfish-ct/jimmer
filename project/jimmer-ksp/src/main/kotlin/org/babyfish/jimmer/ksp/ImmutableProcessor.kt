@@ -11,7 +11,9 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import org.babyfish.jimmer.ksp.generator.DraftGenerator
+import org.babyfish.jimmer.ksp.generator.TableGenerator
 import org.babyfish.jimmer.ksp.meta.Context
+import org.babyfish.jimmer.sql.Entity
 import java.util.concurrent.atomic.AtomicBoolean
 
 class ImmutableProcessor(
@@ -29,6 +31,17 @@ class ImmutableProcessor(
         for ((file, classDeclarations) in classDeclarationMultiMap) {
             DraftGenerator(environment.codeGenerator, ctx, file, classDeclarations)
                 .generate(resolver.getAllFiles().toList())
+            val entityClassDeclarations = classDeclarations.filter { it.annotation(Entity::class) !== null }
+            if (entityClassDeclarations.size > 1) {
+                throw GeneratorException(
+                    "The $file declares several types decorated by @${Entity::class.qualifiedName}: " +
+                        entityClassDeclarations.joinToString { it.fullName }
+                )
+            }
+            if (entityClassDeclarations.isNotEmpty()) {
+                TableGenerator(environment.codeGenerator, ctx, file, entityClassDeclarations[0])
+                    .generate(resolver.getAllFiles().toList())
+            }
         }
         return classDeclarationMultiMap.values.flatten()
     }

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -41,14 +42,14 @@ public abstract class CompositePredicate extends AbstractPredicate {
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         for (Predicate predicate : predicates) {
             ((Ast) predicate).accept(visitor);
         }
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         String sp = ' ' + operator() + ' ';
         int size = predicates.length;
         for (int i = 0; i < size; i++) {

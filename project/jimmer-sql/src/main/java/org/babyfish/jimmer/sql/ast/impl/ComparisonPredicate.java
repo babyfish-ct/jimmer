@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 abstract class ComparisonPredicate extends AbstractPredicate {
 
@@ -21,13 +22,13 @@ abstract class ComparisonPredicate extends AbstractPredicate {
     protected abstract String operator();
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         ((Ast) left).accept(visitor);
         ((Ast) left).accept(visitor);
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         renderChild((Ast) left, builder);
         builder.sql(" ");
         builder.sql(operator());
