@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 class NullExpression<T> extends AbstractExpression<T> {
 
@@ -11,10 +12,10 @@ class NullExpression<T> extends AbstractExpression<T> {
     }
 
     @Override
-    public void accept(AstVisitor visitor) {}
+    public void accept(@NotNull AstVisitor visitor) {}
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         builder.sql("null");
     }
 

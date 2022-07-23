@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableTypedSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 public class ExistsPredicate extends AbstractPredicate {
 
@@ -44,12 +45,12 @@ public class ExistsPredicate extends AbstractPredicate {
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         ((Ast) subQuery).accept(visitor);
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         builder.sql(negative ? "not exists " : "exists ");
         renderChild((Ast) subQuery, builder);
     }

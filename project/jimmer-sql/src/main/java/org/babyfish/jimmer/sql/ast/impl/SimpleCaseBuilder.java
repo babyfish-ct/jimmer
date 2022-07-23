@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.StringExpression;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -218,7 +219,7 @@ public class SimpleCaseBuilder<C, T> {
         }
 
         @Override
-        public void accept(AstVisitor visitor) {
+        public void accept(@NotNull AstVisitor visitor) {
             ((Ast) expression).accept(visitor);
             for (Tuple2<Expression<?>, Expression<T>> when : whens) {
                 ((Ast) when._1()).accept(visitor);
@@ -228,7 +229,7 @@ public class SimpleCaseBuilder<C, T> {
         }
 
         @Override
-        public void renderTo(SqlBuilder builder) {
+        public void renderTo(@NotNull SqlBuilder builder) {
             usingLowestPrecedence(() -> {
                 builder.sql("case ");
                 renderChild((Ast) expression, builder);

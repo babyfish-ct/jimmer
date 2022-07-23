@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.util.List;
@@ -63,13 +64,13 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQuery<R>, TypedQueryImplem
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         left.accept(visitor);
         right.accept(visitor);
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         left.renderTo(builder);
         builder.sql(" ");
         builder.sql(operator);

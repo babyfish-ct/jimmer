@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
@@ -40,7 +41,7 @@ class AbstractConfigurableTypedQueryImpl<R> implements TypedQueryImplementor {
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         for (Selection<?> selection : data.getSelections()) {
             Ast.from(selection).accept(visitor);
         }
@@ -48,7 +49,7 @@ class AbstractConfigurableTypedQueryImpl<R> implements TypedQueryImplementor {
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         if (data.isWithoutSortingAndPaging() || data.getLimit() == Integer.MAX_VALUE) {
             renderWithoutPaging(builder);
         } else {

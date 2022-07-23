@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 class FetcherSelectionImpl<E> implements FetcherSelection<E>, Ast {
 
@@ -27,7 +28,7 @@ class FetcherSelectionImpl<E> implements FetcherSelection<E>, Ast {
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
             if (prop.getStorage() instanceof Column) {
@@ -37,7 +38,7 @@ class FetcherSelectionImpl<E> implements FetcherSelection<E>, Ast {
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         String separator = "";
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();

@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.StringExpression;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 class Literals {
 
@@ -52,11 +53,11 @@ class Literals {
         }
 
         @Override
-        public void accept(AstVisitor visitor) {
+        public void accept(@NotNull AstVisitor visitor) {
         }
 
         @Override
-        public void renderTo(SqlBuilder builder) {
+        public void renderTo(@NotNull SqlBuilder builder) {
             builder.variable(value);
         }
 

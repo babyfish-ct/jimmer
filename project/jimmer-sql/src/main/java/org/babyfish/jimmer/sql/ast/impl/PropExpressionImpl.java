@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 public class PropExpressionImpl<T>
         extends AbstractExpression<T>
@@ -48,12 +49,12 @@ public class PropExpressionImpl<T>
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         visitor.visitTableReference(table, prop);
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         table.renderSelection(prop, builder);
     }
 

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class SubQueryFunctionExpression<R> extends AbstractExpression<R> {
 
@@ -25,12 +26,12 @@ public abstract class SubQueryFunctionExpression<R> extends AbstractExpression<R
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         ((Ast) subQuery).accept(visitor);
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         builder.sql(functionName());
         renderChild((Ast) subQuery, builder);
     }

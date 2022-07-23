@@ -7,9 +7,9 @@ import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.squareup.kotlinpoet.ClassName
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
-import javax.persistence.Entity
-import javax.persistence.Id
-import javax.persistence.MappedSuperclass
+import org.babyfish.jimmer.sql.Entity
+import org.babyfish.jimmer.sql.Id
+import org.babyfish.jimmer.sql.MappedSuperclass
 
 class ImmutableType(
     ctx: Context,

@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedSubQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -130,14 +131,14 @@ public class ConfigurableTypedSubQueryImpl<R>
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         if (visitor.visitSubQuery(this)) {
             super.accept(visitor);
         }
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         builder.sql("(");
         super.renderTo(builder);
         builder.sql(")");

@@ -1,11 +1,11 @@
 package org.babyfish.jimmer.sql.kt.ast.query
 
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
-import org.babyfish.jimmer.sql.kt.ast.table.KTable
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 
-interface KFilterable<E> {
+interface KFilterable<E: Any> {
 
-    val table: KTable<E>
+    val table: KNonNullTable<E>
 
     fun where(vararg predicates: KNonNullExpression<Boolean>)
 }

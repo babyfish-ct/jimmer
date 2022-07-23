@@ -21,6 +21,7 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.dialect.UpdateJoin;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -114,7 +115,7 @@ public class MutableUpdateImpl
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         for (Map.Entry<Target, Expression<?>> e : assignmentMap.entrySet()) {
             ((Ast) e.getKey().expr).accept(visitor);
             ((Ast) e.getValue()).accept(visitor);
@@ -125,7 +126,7 @@ public class MutableUpdateImpl
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         TableImplementor<?> table = TableImplementor.unwrap(this.table);
         Dialect dialect = getSqlClient().getDialect();
         this.accept(new VisitorImpl(builder, dialect));

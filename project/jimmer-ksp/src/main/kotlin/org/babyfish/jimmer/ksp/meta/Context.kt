@@ -7,8 +7,8 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.ksp.annotation
-import javax.persistence.Entity
-import javax.persistence.MappedSuperclass
+import org.babyfish.jimmer.sql.Entity
+import org.babyfish.jimmer.sql.MappedSuperclass
 
 class Context(
     val resolver: Resolver

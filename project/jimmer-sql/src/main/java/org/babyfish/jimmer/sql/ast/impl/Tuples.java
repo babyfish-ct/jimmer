@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
@@ -37,13 +38,13 @@ public class Tuples {
         }
 
         @Override
-        public void accept(AstVisitor visitor) {
+        public void accept(@NotNull AstVisitor visitor) {
             ((Ast) expr1).accept(visitor);
             ((Ast) expr2).accept(visitor);
         }
 
         @Override
-        public void renderTo(SqlBuilder builder) {
+        public void renderTo(@NotNull SqlBuilder builder) {
             builder.sql("(");
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
@@ -83,14 +84,14 @@ public class Tuples {
         }
 
         @Override
-        public void accept(AstVisitor visitor) {
+        public void accept(@NotNull AstVisitor visitor) {
             ((Ast) expr1).accept(visitor);
             ((Ast) expr2).accept(visitor);
             ((Ast) expr3).accept(visitor);
         }
 
         @Override
-        public void renderTo(SqlBuilder builder) {
+        public void renderTo(@NotNull SqlBuilder builder) {
             builder.sql("(");
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
@@ -136,7 +137,7 @@ public class Tuples {
         }
 
         @Override
-        public void accept(AstVisitor visitor) {
+        public void accept(@NotNull AstVisitor visitor) {
             ((Ast) expr1).accept(visitor);
             ((Ast) expr2).accept(visitor);
             ((Ast) expr3).accept(visitor);
@@ -144,7 +145,7 @@ public class Tuples {
         }
 
         @Override
-        public void renderTo(SqlBuilder builder) {
+        public void renderTo(@NotNull SqlBuilder builder) {
             builder.sql("(");
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
@@ -196,7 +197,7 @@ public class Tuples {
         }
 
         @Override
-        public void accept(AstVisitor visitor) {
+        public void accept(@NotNull AstVisitor visitor) {
             ((Ast) expr1).accept(visitor);
             ((Ast) expr2).accept(visitor);
             ((Ast) expr3).accept(visitor);
@@ -205,7 +206,7 @@ public class Tuples {
         }
 
         @Override
-        public void renderTo(SqlBuilder builder) {
+        public void renderTo(@NotNull SqlBuilder builder) {
             builder.sql("(");
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
@@ -263,7 +264,7 @@ public class Tuples {
         }
 
         @Override
-        public void accept(AstVisitor visitor) {
+        public void accept(@NotNull AstVisitor visitor) {
             ((Ast) expr1).accept(visitor);
             ((Ast) expr2).accept(visitor);
             ((Ast) expr3).accept(visitor);
@@ -273,7 +274,7 @@ public class Tuples {
         }
 
         @Override
-        public void renderTo(SqlBuilder builder) {
+        public void renderTo(@NotNull SqlBuilder builder) {
             builder.sql("(");
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
@@ -337,7 +338,7 @@ public class Tuples {
         }
 
         @Override
-        public void accept(AstVisitor visitor) {
+        public void accept(@NotNull AstVisitor visitor) {
             ((Ast) expr1).accept(visitor);
             ((Ast) expr2).accept(visitor);
             ((Ast) expr3).accept(visitor);
@@ -348,7 +349,7 @@ public class Tuples {
         }
 
         @Override
-        public void renderTo(SqlBuilder builder) {
+        public void renderTo(@NotNull SqlBuilder builder) {
             builder.sql("(");
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
@@ -418,7 +419,7 @@ public class Tuples {
         }
 
         @Override
-        public void accept(AstVisitor visitor) {
+        public void accept(@NotNull AstVisitor visitor) {
             ((Ast) expr1).accept(visitor);
             ((Ast) expr2).accept(visitor);
             ((Ast) expr3).accept(visitor);
@@ -430,7 +431,7 @@ public class Tuples {
         }
 
         @Override
-        public void renderTo(SqlBuilder builder) {
+        public void renderTo(@NotNull SqlBuilder builder) {
             builder.sql("(");
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
@@ -506,7 +507,7 @@ public class Tuples {
         }
 
         @Override
-        public void accept(AstVisitor visitor) {
+        public void accept(@NotNull AstVisitor visitor) {
             ((Ast) expr1).accept(visitor);
             ((Ast) expr2).accept(visitor);
             ((Ast) expr3).accept(visitor);
@@ -519,7 +520,7 @@ public class Tuples {
         }
 
         @Override
-        public void renderTo(SqlBuilder builder) {
+        public void renderTo(@NotNull SqlBuilder builder) {
             builder.sql("(");
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
