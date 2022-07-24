@@ -38,7 +38,7 @@ abstract class ComparisonPredicate extends AbstractPredicate {
 
     @Override
     public int precedence() {
-        return 4;
+        return ExpressionPrecedences.COMPARISON;
     }
 
     static class Eq extends ComparisonPredicate {

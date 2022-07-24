@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullablePropExpression
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
-internal class KNullablePropExpressionImpl<T: Any>(
+internal class NullablePropExpressionImpl<T: Any>(
     private val javaPropExpression: PropExpressionImpl<T>
 ) : AbstractKExpression<T>(), KNullablePropExpression<T> {
 
@@ -16,7 +16,7 @@ internal class KNullablePropExpressionImpl<T: Any>(
         javaPropExpression.precedence()
 
     override fun accept(visitor: AstVisitor) {
-        javaPropExpression.precedence()
+        javaPropExpression.accept(visitor)
     }
 
     override fun renderTo(builder: SqlBuilder) {

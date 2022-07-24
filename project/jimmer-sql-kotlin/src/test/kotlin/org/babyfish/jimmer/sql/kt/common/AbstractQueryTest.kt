@@ -46,14 +46,17 @@ abstract class AbstractQueryTest : AbstractTest() {
                 "Not sql history"
             )
             assertEquals(
-                sql.replace("--->", ""),
+                sql
+                    .replace("\r", "")
+                    .replace("\n", "")
+                    .replace("--->", ""),
                 executions[index].sql,
                 "statements[$index].sql"
             )
         }
 
         fun variables(vararg variables: Any?) {
-            variables(Arrays.asList(*variables))
+            variables(variables.toList())
         }
 
         fun variables(variables: List<Any?>?) {

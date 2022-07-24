@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.query.impl
 
+import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery
@@ -11,6 +12,7 @@ import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
@@ -25,19 +27,20 @@ internal class KMutableRootQueryImpl<E: Any>(
         KNonNullTableExImpl(javaTable)
 
     override fun where(vararg predicates: KNonNullExpression<Boolean>) {
-        TODO("Not yet implemented")
+        javaQuery.where(*predicates.map { it.toJavaPredicate() }.toTypedArray())
     }
 
     override fun orderBy(expression: KExpression<*>, orderMode: OrderMode, nullOrderMode: NullOrderMode) {
-        TODO("Not yet implemented")
+        javaQuery.orderBy(expression as Expression<*>, orderMode, nullOrderMode)
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun groupBy(vararg expressions: KExpression<*>) {
-        TODO("Not yet implemented")
+        javaQuery.groupBy(*expressions.map { it as Expression<*>}.toTypedArray())
     }
 
     override fun having(vararg predicates: KNonNullExpression<Boolean>) {
-        TODO("Not yet implemented")
+        javaQuery.having(*predicates.map { it.toJavaPredicate() }.toTypedArray())
     }
 
     override fun <T> select(selection: Selection<T>): KConfigurableRootQuery<E, T> =

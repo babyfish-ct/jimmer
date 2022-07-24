@@ -10,7 +10,7 @@ interface KSortable<E: Any> : KFilterable<E> {
     fun orderBy(
         expression: KExpression<*>,
         orderMode: OrderMode = OrderMode.ASC,
-        nullOrderMode: NullOrderMode = NullOrderMode.NULLS_FIRST
+        nullOrderMode: NullOrderMode = NullOrderMode.UNSPECIFIED
     )
 
     fun groupBy(vararg expressions: KExpression<*>)

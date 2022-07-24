@@ -7,19 +7,6 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 import java.lang.IllegalStateException
-import kotlin.reflect.KClass
-
-fun <T: Any> sql(type: KClass<T>, sql: String, block: SqlDSL.() -> Unit): KNonNullExpression<T> {
-    val dsl = SqlDSL(sql)
-    dsl.block()
-    return NonNullNativeExpression(type.java, dsl.parts())
-}
-
-fun <T: Any> sqlNullable(type: KClass<T>, sql: String, block: SqlDSL.() -> Unit): KNullableExpression<T> {
-    val dsl = SqlDSL(sql)
-    dsl.block()
-    return NullableNativeExpression(type.java, dsl.parts())
-}
 
 class SqlDSL internal constructor(
     sql: String
@@ -122,7 +109,7 @@ private class ValuePlaceholder {
     var next: ValuePlaceholder? = null
 }
 
-private abstract class AbstractNativeExpression<T: Any>(
+internal abstract class AbstractNativeExpression<T: Any>(
     private val type: Class<T>,
     private val parts: List<Any>
 ) : AbstractKExpression<T>() {
@@ -151,8 +138,8 @@ private abstract class AbstractNativeExpression<T: Any>(
     }
 }
 
-private class NonNullNativeExpression<T: Any>(type: Class<T>, parts: List<Any>) :
+internal class NonNullNativeExpression<T: Any>(type: Class<T>, parts: List<Any>) :
     AbstractNativeExpression<T>(type, parts), KNonNullExpression<T>
 
-private class NullableNativeExpression<T: Any>(type: Class<T>, parts: List<Any>) :
+internal class NullableNativeExpression<T: Any>(type: Class<T>, parts: List<Any>) :
     AbstractNativeExpression<T>(type, parts), KNullableExpression<T>
