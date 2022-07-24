@@ -23,9 +23,7 @@ public class TableWrappers {
         Class<?> javaClass = table.getImmutableType().getJavaClass();
         Constructor<?> constructor = CACHE.get(javaClass);
         if (constructor == null) {
-            throw new IllegalStateException(
-                    "No TableEx wrapper class for \"" + table.getImmutableType() +"\""
-            );
+            return (T) table;
         }
         try {
             return (T) constructor.newInstance(table);

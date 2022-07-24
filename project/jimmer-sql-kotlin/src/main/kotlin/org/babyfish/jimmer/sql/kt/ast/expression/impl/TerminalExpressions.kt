@@ -19,8 +19,10 @@ internal class LiteralExpression<T: Any>(
     private val value: T
 ) : AbstractKExpression<T>(), KNonNullExpression<T> {
 
-    override val precedence: Int
-        get() = 0
+    @Suppress("UNCHECKED_CAST")
+    override fun getType(): Class<T> = value::class.java as Class<T>
+
+    override fun precedence(): Int = 0
 
     override fun accept(visitor: AstVisitor) {}
 
@@ -33,8 +35,9 @@ private class NullExpression<T: Any>(
     private val type: Class<T>
 ): AbstractKExpression<T>(), KNullableExpression<T> {
 
-    override val precedence: Int
-        get() = 0
+    override fun getType(): Class<T> = type
+
+    override fun precedence(): Int = 0
 
     override fun accept(visitor: AstVisitor) {}
 
@@ -47,8 +50,10 @@ private class ConstantExpression<T: Number>(
     private val value: T
 ) : AbstractKExpression<T>(), KNonNullExpression<T> {
 
-    override val precedence: Int
-        get() = 0
+    @Suppress("UNCHECKED_CAST")
+    override fun getType(): Class<T> = value::class.java as Class<T>
+
+    override fun precedence(): Int = 0
 
     override fun accept(visitor: AstVisitor) {}
 

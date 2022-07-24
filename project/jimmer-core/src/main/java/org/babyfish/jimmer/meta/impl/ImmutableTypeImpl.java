@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.meta.impl;
 
+import kotlin.jvm.internal.ClassBasedDeclarationContainer;
+import kotlin.reflect.KClass;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutablePropCategory;
@@ -20,6 +22,8 @@ import java.util.function.BiFunction;
 class ImmutableTypeImpl implements ImmutableType {
 
     private Class<?> javaClass;
+
+    private KClass<?> kotlinClass;
 
     private ImmutableType superType;
 
@@ -45,7 +49,6 @@ class ImmutableTypeImpl implements ImmutableType {
             Class<?> javaClass,
             ImmutableType superType,
             BiFunction<DraftContext, Object, Draft> draftFactory
-
     ) {
         this.javaClass = javaClass;
         this.superType = superType;
@@ -58,9 +61,20 @@ class ImmutableTypeImpl implements ImmutableType {
         }
     }
 
+    ImmutableTypeImpl(
+            KClass<?> kotlinClass,
+            ImmutableType superType,
+            BiFunction<DraftContext, Object, Draft> draftFactory
+    ) {
+        this(((ClassBasedDeclarationContainer)kotlinClass).getJClass(), superType, draftFactory);
+        this.kotlinClass = kotlinClass;
+    }
+
     public Class<?> getJavaClass() {
         return javaClass;
     }
+
+    KClass<?> getKotlinClass() { return kotlinClass; }
 
     public ImmutableType getSuperType() {
         return superType;
@@ -222,6 +236,14 @@ class ImmutableTypeImpl implements ImmutableType {
                 BiFunction<DraftContext, Object, Draft> draftFactory
         ) {
             this.type = new ImmutableTypeImpl(javaClass, superType, draftFactory);
+        }
+
+        BuilderImpl(
+                KClass<?> kotlinType,
+                ImmutableType superType,
+                BiFunction<DraftContext, Object, Draft> draftFactory
+        ) {
+            this.type = new ImmutableTypeImpl(kotlinType, superType, draftFactory);
         }
 
         @Override

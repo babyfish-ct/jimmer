@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
@@ -20,11 +20,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 
-public class ConfigurableTypedRootQueryImpl<T extends Table<?>, R>
+public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         extends AbstractConfigurableTypedQueryImpl<R>
-        implements ConfigurableTypedRootQuery<T, R> {
+        implements ConfigurableRootQuery<T, R> {
 
-    public ConfigurableTypedRootQueryImpl(
+    public ConfigurableRootQueryImpl(
             TypedQueryData data,
             MutableRootQueryImpl<T> baseQuery
     ) {
@@ -39,8 +39,8 @@ public class ConfigurableTypedRootQueryImpl<T extends Table<?>, R>
 
     @SuppressWarnings("unchecked")
     @Override
-    public <X> ConfigurableTypedRootQuery<T, X> reselect(
-            BiFunction<MutableRootQuery<T>, T, ConfigurableTypedRootQuery<T, X>> block
+    public <X> ConfigurableRootQuery<T, X> reselect(
+            BiFunction<MutableRootQuery<T>, T, ConfigurableRootQuery<T, X>> block
     ) {
         if (getData().getOldSelections() != null) {
             throw new IllegalStateException("The current query has been reselected, it cannot be reselect again");
@@ -56,31 +56,31 @@ public class ConfigurableTypedRootQueryImpl<T extends Table<?>, R>
                 ((Ast) selection).accept(visitor);
             }
         }
-        ConfigurableTypedRootQuery<T, X> reselected = block.apply(
+        ConfigurableRootQuery<T, X> reselected = block.apply(
                 getBaseQuery(),
                 (T)getBaseQuery().getTable()
         );
-        List<Selection<?>> selections = ((ConfigurableTypedRootQueryImpl<T, X>)reselected).getData().getSelections();
-        return new ConfigurableTypedRootQueryImpl<>(
+        List<Selection<?>> selections = ((ConfigurableRootQueryImpl<T, X>)reselected).getData().getSelections();
+        return new ConfigurableRootQueryImpl<>(
                 getData().reselect(selections),
                 getBaseQuery()
         );
     }
 
     @Override
-    public ConfigurableTypedRootQuery<T, R> distinct() {
+    public ConfigurableRootQuery<T, R> distinct() {
         TypedQueryData data = getData();
         if (data.isDistinct()) {
             return this;
         }
-        return new ConfigurableTypedRootQueryImpl<>(
+        return new ConfigurableRootQueryImpl<>(
                 data.distinct(),
                 getBaseQuery()
         );
     }
 
     @Override
-    public ConfigurableTypedRootQuery<T, R> limit(int limit, int offset) {
+    public ConfigurableRootQuery<T, R> limit(int limit, int offset) {
         TypedQueryData data = getData();
         if (data.getLimit() == limit && data.getOffset() == offset) {
             return this;
@@ -94,31 +94,31 @@ public class ConfigurableTypedRootQueryImpl<T extends Table<?>, R>
         if (limit > Integer.MAX_VALUE - offset) {
             throw new IllegalArgumentException("'limit' > Int.MAX_VALUE - offset");
         }
-        return new ConfigurableTypedRootQueryImpl<>(
+        return new ConfigurableRootQueryImpl<>(
                 data.limit(limit, offset),
                 getBaseQuery()
         );
     }
 
     @Override
-    public ConfigurableTypedRootQuery<T, R> withoutSortingAndPaging() {
+    public ConfigurableRootQuery<T, R> withoutSortingAndPaging() {
         TypedQueryData data = getData();
         if (data.isWithoutSortingAndPaging()) {
             return this;
         }
-        return new ConfigurableTypedRootQueryImpl<>(
+        return new ConfigurableRootQueryImpl<>(
                 data.withoutSortingAndPaging(),
                 getBaseQuery()
         );
     }
 
     @Override
-    public ConfigurableTypedRootQuery<T, R> forUpdate() {
+    public ConfigurableRootQuery<T, R> forUpdate() {
         TypedQueryData data = getData();
         if (data.isForUpdate()) {
             return this;
         }
-        return new ConfigurableTypedRootQueryImpl<>(
+        return new ConfigurableRootQueryImpl<>(
                 data.forUpdate(),
                 getBaseQuery()
         );

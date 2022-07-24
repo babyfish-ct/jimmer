@@ -47,7 +47,7 @@ class ProducerGenerator(
         indent()
         add(".newBuilder(\n")
         indent()
-        add("%T::class.java,\n", type.className)
+        add("%T::class,\n", type.className)
         refSuperType()
         unindent()
         add("\n) { ctx, base ->\n")

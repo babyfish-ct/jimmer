@@ -13,9 +13,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.Collection;
 
-public interface TableImplementor<E> extends TableEx<E>, Ast {
-
-    ImmutableType getImmutableType();
+public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection<E> {
 
     TableImplementor<?> getParent();
 
@@ -29,11 +27,9 @@ public interface TableImplementor<E> extends TableEx<E>, Ast {
 
     String getAlias();
 
-    void renderSelection(ImmutableProp prop, SqlBuilder builder);
-
     TableRowCountDestructive getDestructive();
 
-    void renderJoinAsFrom(SqlBuilder builder, RenderMode mode);
+    void renderJoinAsFrom(SqlBuilder builder, TableImplementor.RenderMode mode);
 
     @SuppressWarnings("unchecked")
     static TableImplementor<?> unwrap(Table<?> table) {

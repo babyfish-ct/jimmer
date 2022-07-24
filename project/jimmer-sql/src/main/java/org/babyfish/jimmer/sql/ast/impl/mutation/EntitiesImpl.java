@@ -10,7 +10,7 @@ import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.*;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheLoader;
@@ -262,7 +262,7 @@ public class EntitiesImpl implements Entities {
             }
             return entities;
         }
-        ConfigurableTypedRootQuery<?, E> query = Queries.createQuery(
+        ConfigurableRootQuery<?, E> query = Queries.createQuery(
                 sqlClient, immutableType, (q, table) -> {
                     Expression<Object> idProp = table.get(immutableType.getIdProp().getName());
                     if (distinctIds.size() == 1) {

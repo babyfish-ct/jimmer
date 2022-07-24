@@ -8,7 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.ExistsPredicate;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.SubQueryFunctionExpression;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedSubQuery;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -16,14 +16,14 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class ConfigurableTypedSubQueryImpl<R>
+public class ConfigurableSubQueryImpl<R>
         extends AbstractConfigurableTypedQueryImpl<R>
-        implements ConfigurableTypedSubQuery<R>, ExpressionImplementor<R> {
+        implements ConfigurableSubQuery<R>, ExpressionImplementor<R> {
 
     private Class<R> type;
 
     @SuppressWarnings("unchecked")
-    ConfigurableTypedSubQueryImpl(
+    ConfigurableSubQueryImpl(
             TypedQueryData data,
             MutableSubQueryImpl baseQuery
     ) {
@@ -78,7 +78,7 @@ public class ConfigurableTypedSubQueryImpl<R>
     }
 
     @Override
-    public ConfigurableTypedSubQuery<R> limit(int limit, int offset) {
+    public ConfigurableSubQuery<R> limit(int limit, int offset) {
         TypedQueryData data = getData();
         if (data.getLimit() == limit && data.getOffset() == offset) {
             return this;
@@ -92,19 +92,19 @@ public class ConfigurableTypedSubQueryImpl<R>
         if (limit > Integer.MAX_VALUE - offset) {
             throw new IllegalArgumentException("'limit' > Int.MAX_VALUE - offset");
         }
-        return new ConfigurableTypedSubQueryImpl<>(
+        return new ConfigurableSubQueryImpl<>(
                 data.limit(limit, offset),
                 getBaseQuery()
         );
     }
 
     @Override
-    public ConfigurableTypedSubQuery<R> distinct() {
+    public ConfigurableSubQuery<R> distinct() {
         TypedQueryData data = getData();
         if (data.isDistinct()) {
             return this;
         }
-        return new ConfigurableTypedSubQueryImpl<>(
+        return new ConfigurableSubQueryImpl<>(
                 data.distinct(),
                 getBaseQuery()
         );

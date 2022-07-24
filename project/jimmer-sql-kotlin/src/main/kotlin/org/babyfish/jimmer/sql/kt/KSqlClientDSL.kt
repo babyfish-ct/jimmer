@@ -57,8 +57,9 @@ class KSqlClientDSL internal constructor() {
     var cacheFactory: CacheFactory? = null
 
     inner class ScalarProviderDSL internal constructor() {
-        fun <T: Any> add(scalarType: KClass<T>, scalarProvider: ScalarProvider<T, *>) {
-            scalarProviderMap[scalarType.java] = scalarProvider
+
+        fun <T: Any> add(scalarProvider: ScalarProvider<T, *>) {
+            scalarProviderMap[scalarProvider.scalarType] = scalarProvider
         }
     }
 
