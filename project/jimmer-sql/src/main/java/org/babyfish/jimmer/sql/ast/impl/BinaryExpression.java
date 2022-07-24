@@ -48,7 +48,7 @@ abstract class BinaryExpression<N extends Number> extends AbstractExpression<N> 
 
         @Override
         public int precedence() {
-            return 3;
+            return ExpressionPrecedences.PLUS;
         }
 
         @Override
@@ -65,7 +65,7 @@ abstract class BinaryExpression<N extends Number> extends AbstractExpression<N> 
 
         @Override
         public int precedence() {
-            return 3;
+            return ExpressionPrecedences.PLUS;
         }
 
         @Override
@@ -82,7 +82,7 @@ abstract class BinaryExpression<N extends Number> extends AbstractExpression<N> 
 
         @Override
         public int precedence() {
-            return 2;
+            return ExpressionPrecedences.TIMES;
         }
 
         @Override
@@ -99,7 +99,7 @@ abstract class BinaryExpression<N extends Number> extends AbstractExpression<N> 
 
         @Override
         public int precedence() {
-            return 2;
+            return ExpressionPrecedences.TIMES;
         }
 
         @Override
@@ -116,7 +116,7 @@ abstract class BinaryExpression<N extends Number> extends AbstractExpression<N> 
 
         @Override
         public int precedence() {
-            return 2;
+            return ExpressionPrecedences.TIMES;
         }
 
         @Override

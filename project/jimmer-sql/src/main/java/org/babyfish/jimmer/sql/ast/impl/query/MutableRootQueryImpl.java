@@ -163,32 +163,32 @@ public class MutableRootQueryImpl<T extends Table<?>>
     }
 
     @Override
-    public MutableRootQueryImpl where(Predicate... predicates) {
-        return (MutableRootQueryImpl) super.where(predicates);
+    public MutableRootQueryImpl<T> where(Predicate... predicates) {
+        return (MutableRootQueryImpl<T>) super.where(predicates);
     }
 
     @Override
-    public MutableRootQueryImpl groupBy(Expression<?>... expressions) {
-        return (MutableRootQueryImpl) super.groupBy(expressions);
+    public MutableRootQueryImpl<T> groupBy(Expression<?>... expressions) {
+        return (MutableRootQueryImpl<T>) super.groupBy(expressions);
     }
 
     @Override
-    public MutableRootQueryImpl having(Predicate... predicates) {
-        return (MutableRootQueryImpl) super.having(predicates);
+    public MutableRootQueryImpl<T> having(Predicate... predicates) {
+        return (MutableRootQueryImpl<T>) super.having(predicates);
     }
 
     @Override
-    public MutableRootQueryImpl orderBy(Expression<?> expression) {
-        return (MutableRootQueryImpl) super.orderBy(expression);
+    public MutableRootQueryImpl<T> orderBy(Expression<?> expression) {
+        return (MutableRootQueryImpl<T>) super.orderBy(expression);
     }
 
     @Override
-    public MutableRootQueryImpl orderBy(Expression<?> expression, OrderMode orderMode) {
-        return (MutableRootQueryImpl) super.orderBy(expression, orderMode);
+    public MutableRootQueryImpl<T> orderBy(Expression<?> expression, OrderMode orderMode) {
+        return (MutableRootQueryImpl<T>) super.orderBy(expression, orderMode);
     }
 
     @Override
-    public MutableRootQueryImpl orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
-        return (MutableRootQueryImpl) super.orderBy(expression, orderMode, nullOrderMode);
+    public MutableRootQueryImpl<T> orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
+        return (MutableRootQueryImpl<T>) super.orderBy(expression, orderMode, nullOrderMode);
     }
 }
