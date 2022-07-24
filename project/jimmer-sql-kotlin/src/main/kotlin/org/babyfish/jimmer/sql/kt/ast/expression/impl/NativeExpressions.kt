@@ -12,13 +12,13 @@ import kotlin.reflect.KClass
 fun <T: Any> sql(type: KClass<T>, sql: String, block: SqlDSL.() -> Unit): KNonNullExpression<T> {
     val dsl = SqlDSL(sql)
     dsl.block()
-    return NonNullNativeExpression(dsl.parts())
+    return NonNullNativeExpression(type.java, dsl.parts())
 }
 
 fun <T: Any> sqlNullable(type: KClass<T>, sql: String, block: SqlDSL.() -> Unit): KNullableExpression<T> {
     val dsl = SqlDSL(sql)
     dsl.block()
-    return NullableNativeExpression(dsl.parts())
+    return NullableNativeExpression(type.java, dsl.parts())
 }
 
 class SqlDSL internal constructor(
@@ -123,11 +123,13 @@ private class ValuePlaceholder {
 }
 
 private abstract class AbstractNativeExpression<T: Any>(
+    private val type: Class<T>,
     private val parts: List<Any>
 ) : AbstractKExpression<T>() {
 
-    override val precedence: Int
-        get() = 0
+    override fun getType(): Class<T> = type
+
+    override fun precedence(): Int = 0
 
     override fun accept(visitor: AstVisitor) {
         for (part in parts) {
@@ -149,8 +151,8 @@ private abstract class AbstractNativeExpression<T: Any>(
     }
 }
 
-private class NonNullNativeExpression<T: Any>(parts: List<Any>) :
-    AbstractNativeExpression<T>(parts), KNonNullExpression<T>
+private class NonNullNativeExpression<T: Any>(type: Class<T>, parts: List<Any>) :
+    AbstractNativeExpression<T>(type, parts), KNonNullExpression<T>
 
-private class NullableNativeExpression<T: Any>(parts: List<Any>) :
-    AbstractNativeExpression<T>(parts), KNullableExpression<T>
+private class NullableNativeExpression<T: Any>(type: Class<T>, parts: List<Any>) :
+    AbstractNativeExpression<T>(type, parts), KNullableExpression<T>

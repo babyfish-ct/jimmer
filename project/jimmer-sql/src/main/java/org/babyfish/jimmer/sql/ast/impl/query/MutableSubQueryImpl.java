@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.ExistsPredicate;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedSubQuery;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.NullOrderMode;
 import org.babyfish.jimmer.sql.ast.query.OrderMode;
@@ -65,24 +65,24 @@ public class MutableSubQueryImpl
     }
 
     @Override
-    public <R> ConfigurableTypedSubQuery<R> select(Selection<R> selection) {
+    public <R> ConfigurableSubQuery<R> select(Selection<R> selection) {
         if (selection instanceof FetcherSelection<?>) {
             throw new IllegalArgumentException("Fetcher selection cannot be accepted by sub query");
         }
-        return new ConfigurableTypedSubQueryImpl<>(
+        return new ConfigurableSubQueryImpl<>(
                 new TypedQueryData(Collections.singletonList(selection)),
                 this
         );
     }
 
     @Override
-    public <T1, T2> ConfigurableTypedSubQuery<Tuple2<T1, T2>> select(Selection<T1> selection1, Selection<T2> selection2) {
+    public <T1, T2> ConfigurableSubQuery<Tuple2<T1, T2>> select(Selection<T1> selection1, Selection<T2> selection2) {
         if (selection1 instanceof FetcherSelection<?> ||
                 selection2 instanceof FetcherSelection<?>
         ) {
             throw new IllegalArgumentException("Fetcher selection cannot be accepted by sub query");
         }
-        return new ConfigurableTypedSubQueryImpl<>(
+        return new ConfigurableSubQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(selection1, selection2)
                 ),
@@ -91,14 +91,14 @@ public class MutableSubQueryImpl
     }
 
     @Override
-    public <T1, T2, T3> ConfigurableTypedSubQuery<Tuple3<T1, T2, T3>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3) {
+    public <T1, T2, T3> ConfigurableSubQuery<Tuple3<T1, T2, T3>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3) {
         if (selection1 instanceof FetcherSelection<?> ||
                 selection2 instanceof FetcherSelection<?> ||
                 selection3 instanceof FetcherSelection<?>
         ) {
             throw new IllegalArgumentException("Fetcher selection cannot be accepted by sub query");
         }
-        return new ConfigurableTypedSubQueryImpl<>(
+        return new ConfigurableSubQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
                                 selection1,
@@ -111,7 +111,7 @@ public class MutableSubQueryImpl
     }
 
     @Override
-    public <T1, T2, T3, T4> ConfigurableTypedSubQuery<Tuple4<T1, T2, T3, T4>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4) {
+    public <T1, T2, T3, T4> ConfigurableSubQuery<Tuple4<T1, T2, T3, T4>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4) {
         if (selection1 instanceof FetcherSelection<?> ||
                 selection2 instanceof FetcherSelection<?> ||
                 selection3 instanceof FetcherSelection<?> ||
@@ -119,7 +119,7 @@ public class MutableSubQueryImpl
         ) {
             throw new IllegalArgumentException("Fetcher selection cannot be accepted by sub query");
         }
-        return new ConfigurableTypedSubQueryImpl<>(
+        return new ConfigurableSubQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
                                 selection1,
@@ -133,7 +133,7 @@ public class MutableSubQueryImpl
     }
 
     @Override
-    public <T1, T2, T3, T4, T5> ConfigurableTypedSubQuery<Tuple5<T1, T2, T3, T4, T5>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5) {
+    public <T1, T2, T3, T4, T5> ConfigurableSubQuery<Tuple5<T1, T2, T3, T4, T5>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5) {
         if (selection1 instanceof FetcherSelection<?> ||
                 selection2 instanceof FetcherSelection<?> ||
                 selection3 instanceof FetcherSelection<?> ||
@@ -142,7 +142,7 @@ public class MutableSubQueryImpl
         ) {
             throw new IllegalArgumentException("Fetcher selection cannot be accepted by sub query");
         }
-        return new ConfigurableTypedSubQueryImpl<>(
+        return new ConfigurableSubQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
                                 selection1,
@@ -157,7 +157,7 @@ public class MutableSubQueryImpl
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6> ConfigurableTypedSubQuery<Tuple6<T1, T2, T3, T4, T5, T6>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6) {
+    public <T1, T2, T3, T4, T5, T6> ConfigurableSubQuery<Tuple6<T1, T2, T3, T4, T5, T6>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6) {
         if (selection1 instanceof FetcherSelection<?> ||
                 selection2 instanceof FetcherSelection<?> ||
                 selection3 instanceof FetcherSelection<?> ||
@@ -167,7 +167,7 @@ public class MutableSubQueryImpl
         ) {
             throw new IllegalArgumentException("Fetcher selection cannot be accepted by sub query");
         }
-        return new ConfigurableTypedSubQueryImpl<>(
+        return new ConfigurableSubQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
                                 selection1,
@@ -183,7 +183,7 @@ public class MutableSubQueryImpl
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7> ConfigurableTypedSubQuery<Tuple7<T1, T2, T3, T4, T5, T6, T7>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7) {
+    public <T1, T2, T3, T4, T5, T6, T7> ConfigurableSubQuery<Tuple7<T1, T2, T3, T4, T5, T6, T7>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7) {
         if (selection1 instanceof FetcherSelection<?> ||
                 selection2 instanceof FetcherSelection<?> ||
                 selection3 instanceof FetcherSelection<?> ||
@@ -194,7 +194,7 @@ public class MutableSubQueryImpl
         ) {
             throw new IllegalArgumentException("Fetcher selection cannot be accepted by sub query");
         }
-        return new ConfigurableTypedSubQueryImpl<>(
+        return new ConfigurableSubQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
                                 selection1,
@@ -211,7 +211,7 @@ public class MutableSubQueryImpl
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7, T8> ConfigurableTypedSubQuery<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7, Selection<T8> selection8) {
+    public <T1, T2, T3, T4, T5, T6, T7, T8> ConfigurableSubQuery<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7, Selection<T8> selection8) {
         if (selection1 instanceof FetcherSelection<?> ||
                 selection2 instanceof FetcherSelection<?> ||
                 selection3 instanceof FetcherSelection<?> ||
@@ -223,7 +223,7 @@ public class MutableSubQueryImpl
         ) {
             throw new IllegalArgumentException("Fetcher selection cannot be accepted by sub query");
         }
-        return new ConfigurableTypedSubQueryImpl<>(
+        return new ConfigurableSubQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
                                 selection1,
@@ -241,7 +241,7 @@ public class MutableSubQueryImpl
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7, T8, T9> ConfigurableTypedSubQuery<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7, Selection<T8> selection8, Selection<T9> selection9) {
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9> ConfigurableSubQuery<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7, Selection<T8> selection8, Selection<T9> selection9) {
         if (selection1 instanceof FetcherSelection<?> ||
             selection2 instanceof FetcherSelection<?> ||
             selection3 instanceof FetcherSelection<?> ||
@@ -254,7 +254,7 @@ public class MutableSubQueryImpl
         ) {
             throw new IllegalArgumentException("Fetcher selection cannot be accepted by sub query");
         }
-        return new ConfigurableTypedSubQueryImpl<>(
+        return new ConfigurableSubQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
                                 selection1,

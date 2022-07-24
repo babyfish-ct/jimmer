@@ -15,9 +15,9 @@ public interface Filterable {
     @OldChain
     Filterable where(Predicate...predicates);
 
-    <T extends Table<?>, R> ConfigurableTypedSubQuery<R> createSubQuery(
+    <T extends Table<?>, R> ConfigurableSubQuery<R> createSubQuery(
             Class<T> tableType,
-            BiFunction<MutableSubQuery, T, ConfigurableTypedSubQuery<R>> block
+            BiFunction<MutableSubQuery, T, ConfigurableSubQuery<R>> block
     );
 
     <T extends Table<?>> MutableSubQuery createWildSubQuery(
@@ -26,13 +26,13 @@ public interface Filterable {
     );
 
     <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R>
-    ConfigurableTypedSubQuery<R> createAssociationSubQuery(
+    ConfigurableSubQuery<R> createAssociationSubQuery(
             Class<ST> sourceTableType,
             Function<ST, TT> targetTableGetter,
             BiFunction<
                     MutableSubQuery,
                     AssociationTableEx<SE, ST, TE, TT>,
-                    ConfigurableTypedSubQuery<R>
+                    ConfigurableSubQuery<R>
             > block
     );
 

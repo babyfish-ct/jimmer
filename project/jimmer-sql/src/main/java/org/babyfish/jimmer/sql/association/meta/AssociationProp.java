@@ -63,17 +63,7 @@ public abstract class AssociationProp implements ImmutableProp {
     public boolean isNullable() {
         return false;
     }
-
-    @Override
-    public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
-        return getGetter().getAnnotation(annotationType);
-    }
-
-    @Override
-    public <A extends Annotation> A[] getAnnotations(Class<A> annotationType) {
-        return getGetter().getAnnotationsByType(annotationType);
-    }
-
+    
     @Override
     public Annotation getAssociationAnnotation() {
         return null;
@@ -141,8 +131,13 @@ public abstract class AssociationProp implements ImmutableProp {
         }
 
         @Override
-        public Method getGetter() {
-            return GETTER;
+        public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
+            return GETTER.getAnnotation(annotationType);
+        }
+
+        @Override
+        public <A extends Annotation> A[] getAnnotations(Class<A> annotationType) {
+            return GETTER.getAnnotationsByType(annotationType);
         }
 
         @SuppressWarnings("unchecked")
@@ -192,8 +187,13 @@ public abstract class AssociationProp implements ImmutableProp {
         }
 
         @Override
-        public Method getGetter() {
-            return GETTER;
+        public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
+            return GETTER.getAnnotation(annotationType);
+        }
+
+        @Override
+        public <A extends Annotation> A[] getAnnotations(Class<A> annotationType) {
+            return GETTER.getAnnotationsByType(annotationType);
         }
 
         @SuppressWarnings("unchecked")

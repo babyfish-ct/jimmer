@@ -111,9 +111,9 @@ public class FilterArgsImpl<T extends Table<?>> implements FilterArgs<T> {
     }
 
     @Override
-    public <X extends Table<?>, R> ConfigurableTypedSubQuery<R> createSubQuery(
+    public <X extends Table<?>, R> ConfigurableSubQuery<R> createSubQuery(
             Class<X> tableType,
-            BiFunction<MutableSubQuery, X, ConfigurableTypedSubQuery<R>> block
+            BiFunction<MutableSubQuery, X, ConfigurableSubQuery<R>> block
     ) {
         return sortable.createSubQuery(tableType, block);
     }
@@ -127,11 +127,11 @@ public class FilterArgsImpl<T extends Table<?>> implements FilterArgs<T> {
     }
 
     @Override
-    public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R> ConfigurableTypedSubQuery<R>
+    public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R> ConfigurableSubQuery<R>
     createAssociationSubQuery(
             Class<ST> sourceTableType,
             Function<ST, TT> targetTableGetter,
-            BiFunction<MutableSubQuery, AssociationTableEx<SE, ST, TE, TT>, ConfigurableTypedSubQuery<R>> block
+            BiFunction<MutableSubQuery, AssociationTableEx<SE, ST, TE, TT>, ConfigurableSubQuery<R>> block
     ) {
         return sortable.createAssociationSubQuery(sourceTableType, targetTableGetter, block);
     }

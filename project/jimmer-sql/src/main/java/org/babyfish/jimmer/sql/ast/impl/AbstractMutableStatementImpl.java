@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedSubQuery;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.Filterable;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.AssociationTableEx;
@@ -62,8 +62,8 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
     }
 
     @Override
-    public <T extends Table<?>, R> ConfigurableTypedSubQuery<R> createSubQuery(
-            Class<T> tableType, BiFunction<MutableSubQuery, T, ConfigurableTypedSubQuery<R>> block
+    public <T extends Table<?>, R> ConfigurableSubQuery<R> createSubQuery(
+            Class<T> tableType, BiFunction<MutableSubQuery, T, ConfigurableSubQuery<R>> block
     ) {
         return Queries.createSubQuery(this, tableType, block);
     }
@@ -77,10 +77,10 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
 
     @Override
     public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R>
-    ConfigurableTypedSubQuery<R> createAssociationSubQuery(
+    ConfigurableSubQuery<R> createAssociationSubQuery(
             Class<ST> sourceTableType,
             Function<ST, TT> targetTableGetter,
-            BiFunction<MutableSubQuery, AssociationTableEx<SE, ST, TE, TT>, ConfigurableTypedSubQuery<R>> block
+            BiFunction<MutableSubQuery, AssociationTableEx<SE, ST, TE, TT>, ConfigurableSubQuery<R>> block
     ) {
         return Queries.createAssociationSubQuery(this, sourceTableType, targetTableGetter, block);
     }

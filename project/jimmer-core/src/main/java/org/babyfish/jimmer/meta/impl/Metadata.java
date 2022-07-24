@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.meta.impl;
 
+import kotlin.reflect.KClass;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
@@ -127,6 +128,14 @@ public class Metadata {
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
         return new ImmutableTypeImpl.BuilderImpl(javaClass, superType, draftFactory);
+    }
+
+    public static ImmutableType.Builder newTypeBuilder(
+            KClass<?> kotlinClass,
+            ImmutableType superType,
+            BiFunction<DraftContext, Object, Draft> draftFactory
+    ) {
+        return new ImmutableTypeImpl.BuilderImpl(kotlinClass, superType, draftFactory);
     }
 
     private static Class<?> getImmutableJavaClass(Class<?> javaClass) {

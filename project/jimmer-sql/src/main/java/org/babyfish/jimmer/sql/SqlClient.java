@@ -11,7 +11,7 @@ import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
@@ -20,8 +20,6 @@ import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.babyfish.jimmer.sql.runtime.SqlClientImpl;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -47,19 +45,19 @@ public interface SqlClient {
 
     int getDefaultListBatchSize();
 
-    <T extends Table<?>, R> ConfigurableTypedRootQuery<T, R> createQuery(
+    <T extends Table<?>, R> ConfigurableRootQuery<T, R> createQuery(
             Class<T> tableType,
-            BiFunction<MutableRootQuery<T>, T, ConfigurableTypedRootQuery<T, R>> block
+            BiFunction<MutableRootQuery<T>, T, ConfigurableRootQuery<T, R>> block
     );
 
     <SE, ST extends Table<SE>, TE, TT extends Table<TE>, R>
-    ConfigurableTypedRootQuery<AssociationTable<SE, ST, TE, TT>, R> createAssociationQuery(
+    ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R> createAssociationQuery(
             Class<ST> sourceTableType,
             Function<ST, TT> targetTableGetter,
             BiFunction<
                     MutableRootQuery<AssociationTable<SE, ST, TE, TT>>,
                     AssociationTable<SE, ST, TE, TT>,
-                    ConfigurableTypedRootQuery<AssociationTable<SE, ST, TE, TT>, R>
+                    ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R>
             > block
     );
 

@@ -30,8 +30,6 @@ public interface ImmutableProp {
 
     boolean isNullable();
 
-    Method getGetter();
-
     <A extends Annotation> A getAnnotation(Class<A> annotationType);
 
     <A extends Annotation> A[] getAnnotations(Class<A> annotationType);

@@ -23,6 +23,7 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3")
     implementation("org.apache.commons:commons-lang3:3.12.0")
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.7.10")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.10")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

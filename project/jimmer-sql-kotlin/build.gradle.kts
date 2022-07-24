@@ -17,6 +17,8 @@ dependencies {
 
     testImplementation(kotlin("test"))
     kspTest(project(":jimmer-ksp"))
+
+    testImplementation("com.h2database:h2:2.1.212")
 }
 
 kotlin {

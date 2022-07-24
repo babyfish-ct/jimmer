@@ -20,10 +20,10 @@ public class Queries {
     private Queries() {}
 
     @SuppressWarnings("unchecked")
-    public static <T extends Table<?>, R> ConfigurableTypedRootQuery<T, R> createQuery(
+    public static <T extends Table<?>, R> ConfigurableRootQuery<T, R> createQuery(
             SqlClient sqlClient,
             Class<T> tableType,
-            BiFunction<MutableRootQuery<T>, T, ConfigurableTypedRootQuery<T, R>> block
+            BiFunction<MutableRootQuery<T>, T, ConfigurableRootQuery<T, R>> block
     ) {
         if (TableEx.class.isAssignableFrom(tableType)) {
             throw new IllegalArgumentException("Top-level query does not support TableEx");
@@ -33,23 +33,23 @@ public class Queries {
                 sqlClient,
                 immutableType
         );
-        ConfigurableTypedRootQuery<T, R> typedQuery = block.apply(query, (T)query.getTable());
+        ConfigurableRootQuery<T, R> typedQuery = block.apply(query, (T)query.getTable());
         query.freeze();
         return typedQuery;
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends Table<?>, R> ConfigurableTypedSubQuery<R> createSubQuery(
+    public static <T extends Table<?>, R> ConfigurableSubQuery<R> createSubQuery(
             Filterable parent,
             Class<T> tableType,
-            BiFunction<MutableSubQuery, T, ConfigurableTypedSubQuery<R>> block
+            BiFunction<MutableSubQuery, T, ConfigurableSubQuery<R>> block
     ) {
         ImmutableType immutableType = ImmutableType.get(tableType);
         MutableSubQueryImpl query = new MutableSubQueryImpl(
                 (AbstractMutableStatementImpl) parent,
                 immutableType
         );
-        ConfigurableTypedSubQuery<R> typedQuery = block.apply(query, (T)query.getTable());
+        ConfigurableSubQuery<R> typedQuery = block.apply(query, (T)query.getTable());
         query.freeze();
         return typedQuery;
     }
@@ -71,30 +71,30 @@ public class Queries {
     }
 
     @SuppressWarnings("unchecked")
-    public static <R> ConfigurableTypedRootQuery<Table<?>, R> createQuery(
+    public static <R> ConfigurableRootQuery<Table<?>, R> createQuery(
             SqlClient sqlClient,
             ImmutableType immutableType,
-            BiFunction<MutableRootQuery<Table<?>>, Table<?>, ConfigurableTypedRootQuery<Table<?>, R>> block
+            BiFunction<MutableRootQuery<Table<?>>, Table<?>, ConfigurableRootQuery<Table<?>, R>> block
     ) {
         MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(
                 sqlClient,
                 immutableType
         );
-        ConfigurableTypedRootQuery<Table<?>, R> typedQuery = block.apply(query, query.getTable());
+        ConfigurableRootQuery<Table<?>, R> typedQuery = block.apply(query, query.getTable());
         query.freeze();
         return typedQuery;
     }
 
     @SuppressWarnings("unchecked")
     public static <SE, ST extends Table<SE>, TE, TT extends Table<TE>, R>
-    ConfigurableTypedRootQuery<AssociationTable<SE, ST, TE, TT>, R> createAssociationQuery(
+    ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R> createAssociationQuery(
             SqlClient sqlClient,
             Class<ST> sourceTableType,
             Function<ST, TT> targetTableGetter,
             BiFunction<
                     MutableRootQuery<AssociationTable<SE, ST, TE, TT>>,
                     AssociationTable<SE, ST, TE, TT>,
-                    ConfigurableTypedRootQuery<AssociationTable<SE, ST, TE, TT>, R>
+                    ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R>
             > block
     ) {
         AssociationType associationType = AssociationType.of(
@@ -104,7 +104,7 @@ public class Queries {
                 sqlClient,
                 associationType
         );
-        ConfigurableTypedRootQuery<AssociationTable<SE, ST, TE, TT>, R> typedQuery =
+        ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R> typedQuery =
                 block.apply(query, (AssociationTable<SE, ST, TE, TT>)query.getTable());
         query.freeze();
         return typedQuery;
@@ -112,14 +112,14 @@ public class Queries {
 
     @SuppressWarnings("unchecked")
     public static <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R>
-    ConfigurableTypedSubQuery<R> createAssociationSubQuery(
+    ConfigurableSubQuery<R> createAssociationSubQuery(
             Filterable parent,
             Class<ST> sourceTableType,
             Function<ST, TT> targetTableGetter,
             BiFunction<
                     MutableSubQuery,
                     AssociationTableEx<SE, ST, TE, TT>,
-                    ConfigurableTypedSubQuery<R>
+                    ConfigurableSubQuery<R>
             > block
     ) {
         AssociationType associationType = AssociationType.of(
@@ -129,7 +129,7 @@ public class Queries {
                 (AbstractMutableStatementImpl) parent,
                 associationType
         );
-        ConfigurableTypedSubQuery<R> typedSubQuery =
+        ConfigurableSubQuery<R> typedSubQuery =
                 block.apply(subQuery, (AssociationTableEx<SE, ST, TE, TT>)subQuery.getTable());
         subQuery.freeze();
         return typedSubQuery;
@@ -159,20 +159,20 @@ public class Queries {
     }
 
     public static <R>
-    ConfigurableTypedRootQuery<AssociationTable<?, ?, ?, ?>, R> createAssociationQuery(
+    ConfigurableRootQuery<AssociationTable<?, ?, ?, ?>, R> createAssociationQuery(
             SqlClient sqlClient,
             AssociationType associationType,
             BiFunction<
                     MutableRootQuery<AssociationTable<?, ?, ?, ?>>,
                     AssociationTable<?, ?, ?, ?>,
-                    ConfigurableTypedRootQuery<AssociationTable<?, ?, ?, ?>, R>
+                    ConfigurableRootQuery<AssociationTable<?, ?, ?, ?>, R>
                     > block
     ) {
         MutableRootQueryImpl<AssociationTable<?, ?, ?, ?>> query = new MutableRootQueryImpl<>(
                 sqlClient,
                 associationType
         );
-        ConfigurableTypedRootQuery<AssociationTable<?, ?, ?, ?>, R> typedQuery =
+        ConfigurableRootQuery<AssociationTable<?, ?, ?, ?>, R> typedQuery =
                 block.apply(query, (AssociationTable<?, ?, ?, ?>)query.getTable());
         query.freeze();
         return typedQuery;

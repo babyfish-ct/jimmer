@@ -13,7 +13,7 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -156,22 +156,22 @@ public class SqlClientImpl implements SqlClient {
     }
 
     @Override
-    public <T extends Table<?>, R> ConfigurableTypedRootQuery<T, R> createQuery(
+    public <T extends Table<?>, R> ConfigurableRootQuery<T, R> createQuery(
             Class<T> tableType,
-            BiFunction<MutableRootQuery<T>, T, ConfigurableTypedRootQuery<T, R>> block
+            BiFunction<MutableRootQuery<T>, T, ConfigurableRootQuery<T, R>> block
     ) {
         return Queries.createQuery(this, tableType, block);
     }
 
     @Override
     public <SE, ST extends Table<SE>, TE, TT extends Table<TE>, R>
-    ConfigurableTypedRootQuery<AssociationTable<SE, ST, TE, TT>, R> createAssociationQuery(
+    ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R> createAssociationQuery(
             Class<ST> sourceTableType,
             Function<ST, TT> targetTableGetter,
             BiFunction<
                     MutableRootQuery<AssociationTable<SE, ST, TE, TT>>,
                     AssociationTable<SE, ST, TE, TT>,
-                    ConfigurableTypedRootQuery<AssociationTable<SE, ST, TE, TT>, R>
+                    ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R>
                     > block
     ) {
         return Queries.createAssociationQuery(this, sourceTableType, targetTableGetter, block);
