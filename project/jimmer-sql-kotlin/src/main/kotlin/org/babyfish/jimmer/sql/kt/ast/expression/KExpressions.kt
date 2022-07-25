@@ -134,6 +134,30 @@ infix fun <T: Comparable<T>> KExpression<T>.ge(right: KExpression<T>): KNonNullE
 infix fun <T: Comparable<T>> KExpression<T>.ge(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Ge(this, value(right))
 
+fun <T: Comparable<T>> KExpression<T>.between(
+    min: KNonNullExpression<T>,
+    max: KNonNullExpression<T>
+): KNonNullExpression<Boolean> =
+    BetweenPredicate(false, this, min, max)
+
+fun <T: Comparable<T>> KExpression<T>.between(
+    min: T,
+    max: T
+): KNonNullExpression<Boolean> =
+    BetweenPredicate(false, this, value(min), value(max))
+
+fun <T: Comparable<T>> KExpression<T>.notBetween(
+    min: KNonNullExpression<T>,
+    max: KNonNullExpression<T>
+): KNonNullExpression<Boolean> =
+    BetweenPredicate(true, this, min, max)
+
+fun <T: Comparable<T>> KExpression<T>.notBetween(
+    min: T,
+    max: T
+): KNonNullExpression<Boolean> =
+    BetweenPredicate(true, this, value(min), value(max))
+
 
 
 operator fun <N: Number> KNonNullExpression<N>.plus(right: KNonNullExpression<N>): KNonNullExpression<N> =

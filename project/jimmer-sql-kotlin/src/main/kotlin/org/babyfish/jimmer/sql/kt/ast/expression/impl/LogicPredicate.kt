@@ -79,7 +79,7 @@ internal class NotPredicate(
     override fun renderTo(builder: SqlBuilder) {
         builder.sql("not ")
         usingLowestPrecedence {
-            predicate.renderTo(builder)
+            renderChild(predicate, builder)
         }
     }
 }
