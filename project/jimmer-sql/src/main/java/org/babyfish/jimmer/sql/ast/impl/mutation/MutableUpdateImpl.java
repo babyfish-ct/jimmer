@@ -33,8 +33,6 @@ public class MutableUpdateImpl
 
     private Map<Target, Expression<?>> assignmentMap = new LinkedHashMap<>();
 
-    private List<Predicate> predicates = new ArrayList<>();
-
     private Table<?> table;
 
     public MutableUpdateImpl(SqlClient sqlClient, ImmutableType immutableType) {
@@ -45,6 +43,7 @@ public class MutableUpdateImpl
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public <T extends Table<?>> T getTable() {
         return (T)table;
     }
@@ -86,12 +85,7 @@ public class MutableUpdateImpl
 
     @Override
     public MutableUpdate where(Predicate ... predicates) {
-        for (Predicate predicate : predicates) {
-            if (predicate != null) {
-                this.predicates.add(predicate);
-            }
-        }
-        return null;
+        return (MutableUpdate) super.where(predicates);
     }
 
     @Override
@@ -120,8 +114,9 @@ public class MutableUpdateImpl
             ((Ast) e.getKey().expr).accept(visitor);
             ((Ast) e.getValue()).accept(visitor);
         }
-        for (Predicate predicate : predicates) {
-            ((Ast) predicate).accept(visitor);
+        Predicate predicate = getPredicate();
+        if (predicate != null) {
+            ((Ast)predicate).accept(visitor);
         }
     }
 
@@ -219,10 +214,10 @@ public class MutableUpdateImpl
                 child.renderJoinAsFrom(builder, TableImplementor.RenderMode.WHERE_ONLY);
             }
         }
-        for (Predicate predicate : predicates) {
+        Predicate predicate = getPredicate();
+        if (predicate != null) {
             builder.sql(separator);
-            separator = " and ";
-            ((Ast) predicate).renderTo(builder);
+            ((Ast)predicate).renderTo(builder);
         }
     }
 

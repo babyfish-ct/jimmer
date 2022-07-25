@@ -34,6 +34,10 @@ public class MutableSubQueryImpl
         this.parent = parent;
     }
 
+    public AbstractMutableStatementImpl getParent() {
+        return parent;
+    }
+
     @Override
     public MutableSubQueryImpl where(Predicate... predicates) {
         return (MutableSubQueryImpl) super.where(predicates);

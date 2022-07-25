@@ -32,6 +32,7 @@ public class MutableDeleteImpl
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public <T extends Table<?>> T getTable() {
         return (T)deleteQuery.getTable();
     }
@@ -79,11 +80,10 @@ public class MutableDeleteImpl
         builder.sql(table.getImmutableType().getTableName());
         builder.sql(" as ");
         builder.sql(table.getAlias());
-        String separator = " where ";
-        for (Predicate predicate : deleteQuery.getPredicates()) {
-            builder.sql(separator);
-            separator = " and ";
-            ((Ast) predicate).renderTo(builder);
+        Predicate predicate = deleteQuery.getPredicate();
+        if (predicate != null) {
+            builder.sql(" where ");
+            ((Ast)predicate).renderTo(builder);
         }
     }
 }

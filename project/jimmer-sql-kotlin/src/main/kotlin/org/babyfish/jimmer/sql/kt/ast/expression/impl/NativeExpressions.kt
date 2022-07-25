@@ -24,7 +24,7 @@ class SqlDSL internal constructor(
             if (index == -1) {
                 break
             }
-            if (index + 1 < parts.size) {
+            if (index + 1 < sql.length) {
                 parts += sql.substring(startIndex, index)
                 startIndex = index + when (sql[index + 1]) {
                     'e' -> {
@@ -40,13 +40,13 @@ class SqlDSL internal constructor(
                     }
                 }
             }
-            if (startIndex < sql.length) {
-                parts += sql.substring(startIndex)
-            }
+        }
+        if (startIndex < sql.length) {
+            parts += sql.substring(startIndex)
         }
     }
 
-    fun <T: Any> expression(expression: KExpression<*>) {
+    fun <T: Any> expression(expression: KExpression<T>) {
         val head = expressionPlaceholder
         if (head === null) {
             throw IllegalStateException("Too many expressions")

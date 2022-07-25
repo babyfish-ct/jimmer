@@ -7,8 +7,8 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal abstract class ComparisonPredicate(
-    private val left: KExpression<*>,
-    private val right: KExpression<*>
+    protected val left: KExpression<*>,
+    protected val right: KExpression<*>
 ) : AbstractKPredicate() {
 
     override fun precedence(): Int =
@@ -32,30 +32,36 @@ internal abstract class ComparisonPredicate(
     class Eq(left: KExpression<*>, right: KExpression<*>) :
         ComparisonPredicate(left, right) {
         override fun operator(): String = "="
+        override fun not(): AbstractKPredicate = Ne(left, right)
     }
 
     class Ne(left: KExpression<*>, right: KExpression<*>) :
         ComparisonPredicate(left, right) {
         override fun operator(): String = "<>"
+        override fun not(): AbstractKPredicate = Eq(left, right)
     }
 
     class Lt(left: KExpression<*>, right: KExpression<*>) :
         ComparisonPredicate(left, right) {
         override fun operator(): String = "<"
+        override fun not(): AbstractKPredicate = Ge(left, right)
     }
 
     class Le(left: KExpression<*>, right: KExpression<*>) :
         ComparisonPredicate(left, right) {
         override fun operator(): String = "<="
+        override fun not(): AbstractKPredicate = Gt(left, right)
     }
 
     class Gt(left: KExpression<*>, right: KExpression<*>) :
         ComparisonPredicate(left, right) {
         override fun operator(): String = ">"
+        override fun not(): AbstractKPredicate = Le(left, right)
     }
 
     class Ge(left: KExpression<*>, right: KExpression<*>) :
         ComparisonPredicate(left, right) {
         override fun operator(): String = ">="
+        override fun not(): AbstractKPredicate = Lt(left, right)
     }
 }

@@ -45,11 +45,8 @@ abstract class AbstractQueryTest : AbstractTest() {
                 executions.isEmpty(),
                 "Not sql history"
             )
-            assertEquals(
-                sql
-                    .replace("\r", "")
-                    .replace("\n", "")
-                    .replace("--->", ""),
+            contentEquals(
+                sql,
                 executions[index].sql,
                 "statements[$index].sql"
             )
@@ -90,13 +87,7 @@ abstract class AbstractQueryTest : AbstractTest() {
 
         fun rows(json: String): QueryTestContext<R> {
             try {
-                assertEquals(
-                    json
-                        .replace("\r", "")
-                        .replace("\n", "")
-                        .replace("--->", ""),
-                    MAPPER.writeValueAsString(rows)
-                )
+                contentEquals(json, MAPPER.writeValueAsString(rows))
             } catch (ex: JsonProcessingException) {
                 throw RuntimeException(ex)
             }
@@ -110,6 +101,23 @@ abstract class AbstractQueryTest : AbstractTest() {
     }
 
     companion object {
+
         private val MAPPER = ObjectMapper().registerModule(ImmutableModule())
+
+        @JvmStatic
+        protected fun contentEquals(
+            expect: String,
+            actual: String,
+            message: String? = null
+        ) {
+            assertEquals(
+                expect
+                    .replace("\r", "")
+                    .replace("\n", "")
+                    .replace("--->", ""),
+                actual,
+                message
+            )
+        }
     }
 }

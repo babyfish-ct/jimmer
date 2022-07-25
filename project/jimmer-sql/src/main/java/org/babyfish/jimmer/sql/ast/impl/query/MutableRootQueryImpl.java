@@ -162,31 +162,37 @@ public class MutableRootQueryImpl<T extends Table<?>>
         );
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public MutableRootQueryImpl<T> where(Predicate... predicates) {
         return (MutableRootQueryImpl<T>) super.where(predicates);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public MutableRootQueryImpl<T> groupBy(Expression<?>... expressions) {
         return (MutableRootQueryImpl<T>) super.groupBy(expressions);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public MutableRootQueryImpl<T> having(Predicate... predicates) {
         return (MutableRootQueryImpl<T>) super.having(predicates);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public MutableRootQueryImpl<T> orderBy(Expression<?> expression) {
         return (MutableRootQueryImpl<T>) super.orderBy(expression);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public MutableRootQueryImpl<T> orderBy(Expression<?> expression, OrderMode orderMode) {
         return (MutableRootQueryImpl<T>) super.orderBy(expression, orderMode);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public MutableRootQueryImpl<T> orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
         return (MutableRootQueryImpl<T>) super.orderBy(expression, orderMode, nullOrderMode);

@@ -75,7 +75,7 @@ public abstract class CompositePredicate extends AbstractPredicate {
 
         @Override
         public int precedence() {
-            return 6;
+            return ExpressionPrecedences.AND;
         }
     }
 
@@ -92,7 +92,7 @@ public abstract class CompositePredicate extends AbstractPredicate {
 
         @Override
         public int precedence() {
-            return 7;
+            return ExpressionPrecedences.OR;
         }
     }
 }

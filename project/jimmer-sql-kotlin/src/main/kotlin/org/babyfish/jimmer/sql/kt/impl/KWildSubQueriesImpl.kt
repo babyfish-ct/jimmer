@@ -1,0 +1,42 @@
+package org.babyfish.jimmer.sql.kt.impl
+
+import org.babyfish.jimmer.meta.ImmutableType
+import org.babyfish.jimmer.sql.association.Association
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl
+import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl
+import org.babyfish.jimmer.sql.kt.KWildSubQueries
+import org.babyfish.jimmer.sql.kt.ast.query.KMutableSubQuery
+import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableSubQueryImpl
+import kotlin.reflect.KClass
+import kotlin.reflect.KProperty1
+
+internal class KWildSubQueriesImpl<P: Any>(
+    private val parent: AbstractMutableStatementImpl
+) : KWildSubQueries<P> {
+
+    override fun <E : Any> forEntity(
+        entityType: KClass<E>,
+        block: KMutableSubQuery<P, E>.() -> Unit
+    ): KMutableSubQuery<P, E> {
+        val immutableType = ImmutableType.get(entityType.java)
+        val subQuery = MutableSubQueryImpl(parent, immutableType)
+        val wrappedQuery = KMutableSubQueryImpl<P, E>(subQuery)
+        wrappedQuery.block()
+        subQuery.freeze()
+        return wrappedQuery
+    }
+
+    override fun <S : Any, T : Any, R> forReference(
+        prop: KProperty1<S, R?>,
+        block: KMutableSubQuery<P, Association<S, T>>.() -> Unit
+    ): KMutableSubQuery<P, Association<S, T>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun <S : Any, T : Any, R> forList(
+        prop: KProperty1<S, List<R>>,
+        block: KMutableSubQuery<P, Association<S, T>>.() -> Unit
+    ): KMutableSubQuery<P, Association<S, T>> {
+        TODO("Not yet implemented")
+    }
+}

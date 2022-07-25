@@ -15,6 +15,8 @@ internal abstract class AbstractKPredicate :
 
     override fun getType(): Class<Boolean> =
         Boolean::class.java
+
+    abstract override fun not(): AbstractKPredicate
 }
 
 internal fun KNonNullExpression<Boolean>.toJavaPredicate(): Predicate =
@@ -24,9 +26,19 @@ internal fun KNonNullExpression<Boolean>.toJavaPredicate(): Predicate =
         PredicateWrapper(this)
     }
 
+internal fun KNonNullExpression<Boolean>.toKtPredicate(): AbstractKPredicate =
+    if (this is AbstractKPredicate) {
+        this
+    } else {
+        PredicateWrapper(this)
+    }
+
 internal class PredicateWrapper(
     private val expr: KNonNullExpression<Boolean>
 ) : AbstractKPredicate() {
+
+    override fun not(): AbstractKPredicate =
+        NotPredicate(this)
 
     @Suppress("UNCHECKED_CAST")
     override fun precedence(): Int =
