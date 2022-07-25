@@ -100,12 +100,22 @@ interface NumberExpressionImplementor<N extends Number> extends NumericExpressio
 
     @Override
     default Predicate between(Expression<N> min, Expression<N> max) {
-        return new BetweenPredicate(this, min, max);
+        return new BetweenPredicate(false, this, min, max);
     }
 
     @Override
     default Predicate between(N min, N max) {
-        return new BetweenPredicate(this, Literals.any(min), Literals.any(max));
+        return new BetweenPredicate(false, this, Literals.any(min), Literals.any(max));
+    }
+
+    @Override
+    default Predicate notBetween(Expression<N> min, Expression<N> max) {
+        return new BetweenPredicate(true, this, min, max);
+    }
+
+    @Override
+    default Predicate notBetween(N min, N max) {
+        return new BetweenPredicate(true, this, Literals.any(min), Literals.any(max));
     }
 
     @Override
