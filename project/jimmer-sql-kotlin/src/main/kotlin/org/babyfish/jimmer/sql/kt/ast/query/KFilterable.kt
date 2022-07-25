@@ -12,19 +12,19 @@ interface KFilterable<E: Any> {
 
     fun where(vararg predicates: KNonNullExpression<Boolean>)
 
-    fun <X: Any, R> subQuery(
+    fun <X: Any, R, SQ: KConfigurableSubQuery<R>> subQuery(
         entityType: KClass<X>,
-        block: KMutableSubQuery<X>.() -> KConfigurableTypedSubQuery<R>
-    ): KConfigurableTypedSubQuery<R> =
+        block: KMutableSubQuery<E, X>.() -> SQ
+    ): SQ =
         subQueries.forEntity(entityType, block)
 
     fun <X: Any> wildSubQuery(
         entityType: KClass<X>,
-        block: KMutableSubQuery<X>.() -> Unit
-    ): KMutableSubQuery<X> =
+        block: KMutableSubQuery<E, X>.() -> Unit
+    ): KMutableSubQuery<E, X> =
         wildSubQueries.forEntity(entityType, block)
 
-    val subQueries: KSubQueries
+    val subQueries: KSubQueries<E>
 
-    val wildSubQueries: KWildSubQueries
+    val wildSubQueries: KWildSubQueries<E>
 }

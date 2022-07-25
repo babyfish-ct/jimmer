@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.query.impl
 
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery
@@ -19,8 +20,8 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
     override fun <X> reselect(
         block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, X>
     ): KConfigurableRootQuery<E, X> {
-        val javaBlock = BiFunction<MutableRootQuery<Table<E>>, Table<E>, ConfigurableRootQuery<Table<E>, X>> { query, table ->
-            (KMutableRootQueryImpl(query, table as TableImplementor<E>).block() as KConfigurableRootQueryImpl<E, X>).javaQuery
+        val javaBlock = BiFunction<MutableRootQuery<Table<E>>, Table<E>, ConfigurableRootQuery<Table<E>, X>> { query, _ ->
+            (KMutableRootQueryImpl(query as MutableRootQueryImpl<Table<E>>).block() as KConfigurableRootQueryImpl<E, X>).javaQuery
         }
         return KConfigurableRootQueryImpl(javaQuery.reselect(javaBlock))
     }

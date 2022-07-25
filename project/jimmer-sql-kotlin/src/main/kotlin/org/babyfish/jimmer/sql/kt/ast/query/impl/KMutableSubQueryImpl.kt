@@ -2,9 +2,10 @@ package org.babyfish.jimmer.sql.kt.ast.query.impl
 
 import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.Selection
-import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
+import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
-import org.babyfish.jimmer.sql.ast.query.MutableRootQuery
+import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery
+import org.babyfish.jimmer.sql.ast.query.MutableSubQuery
 import org.babyfish.jimmer.sql.ast.query.NullOrderMode
 import org.babyfish.jimmer.sql.ast.query.OrderMode
 import org.babyfish.jimmer.sql.ast.table.Table
@@ -13,54 +14,78 @@ import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
-import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
-import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableSubQuery
+import org.babyfish.jimmer.sql.kt.ast.query.KMutableSubQuery
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
+import org.babyfish.jimmer.sql.kt.ast.table.KNullableTable
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
 import org.babyfish.jimmer.sql.kt.impl.KSubQueriesImpl
 import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
+import kotlin.reflect.KClass
 
-internal class KMutableRootQueryImpl<E: Any>(
-    private val javaQuery: MutableRootQueryImpl<Table<E>>
-) : KMutableRootQuery<E> {
+internal class KMutableSubQueryImpl<P: Any, E: Any>(
+    private val javaSubQuery: MutableSubQueryImpl
+) : KMutableSubQuery<P, E> {
 
-    override val table: KNonNullTable<E> =
-        KNonNullTableExImpl(javaQuery.getTable())
+    override val table: KNonNullTableEx<E> =
+        KNonNullTableExImpl(javaSubQuery.getTable())
+
+    override val parentTable: KNonNullTableEx<P> =
+        KNonNullTableExImpl(javaSubQuery.parent.getTable())
 
     override fun where(vararg predicates: KNonNullExpression<Boolean>) {
-        javaQuery.where(*predicates.map { it.toJavaPredicate() }.toTypedArray())
+        javaSubQuery.where(*predicates.map { it.toJavaPredicate() }.toTypedArray())
     }
 
     override fun orderBy(expression: KExpression<*>, orderMode: OrderMode, nullOrderMode: NullOrderMode) {
-        javaQuery.orderBy(expression as Expression<*>, orderMode, nullOrderMode)
+        javaSubQuery.orderBy(expression as Expression<*>, orderMode, nullOrderMode)
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun groupBy(vararg expressions: KExpression<*>) {
-        javaQuery.groupBy(*expressions.map { it as Expression<*>}.toTypedArray())
+        javaSubQuery.groupBy(*expressions.map { it as Expression<*>}.toTypedArray())
     }
 
     override fun having(vararg predicates: KNonNullExpression<Boolean>) {
-        javaQuery.having(*predicates.map { it.toJavaPredicate() }.toTypedArray())
+        javaSubQuery.having(*predicates.map { it.toJavaPredicate() }.toTypedArray())
     }
 
-    override fun <T> select(selection: Selection<T>): KConfigurableRootQuery<E, T> =
-        KConfigurableRootQueryImpl(javaQuery.select(selection))
+    override fun <T : Any> select(
+        expression: KNonNullExpression<T>
+    ): KConfigurableSubQuery.NonNull<T> =
+        KConfigurableSubQueryImpl.NonNull(javaSubQuery.select(expression))
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : Any> select(expression: KNullableExpression<T>): KConfigurableSubQuery.Nullable<T> =
+        KConfigurableSubQueryImpl.Nullable(javaSubQuery.select(expression) as ConfigurableSubQuery<T>)
+
+    override fun <T : Any> select(table: KNonNullTable<T>): KConfigurableSubQuery.NonNull<T> =
+        KConfigurableSubQueryImpl.NonNull(javaSubQuery.select(table))
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : Any> select(table: KNullableTable<T>): KConfigurableSubQuery.Nullable<T> =
+        KConfigurableSubQueryImpl.Nullable(javaSubQuery.select(table) as ConfigurableSubQuery<T>)
 
     override fun <T1, T2> select(
         selection1: Selection<T1>,
         selection2: Selection<T2>
-    ): KConfigurableRootQuery<E, Tuple2<T1, T2>> =
-        KConfigurableRootQueryImpl(javaQuery.select(selection1, selection2))
+    ): KConfigurableSubQuery.NonNull<Tuple2<T1, T2>> =
+        KConfigurableSubQueryImpl.NonNull(
+            javaSubQuery.select(
+                selection1,
+                selection2
+            )
+        )
 
     override fun <T1, T2, T3> select(
         selection1: Selection<T1>,
         selection2: Selection<T2>,
         selection3: Selection<T3>
-    ): KConfigurableRootQuery<E, Tuple3<T1, T2, T3>> =
-        KConfigurableRootQueryImpl(
-            javaQuery.select(
+    ): KConfigurableSubQuery.NonNull<Tuple3<T1, T2, T3>> =
+        KConfigurableSubQueryImpl.NonNull(
+            javaSubQuery.select(
                 selection1,
                 selection2,
                 selection3
@@ -72,9 +97,9 @@ internal class KMutableRootQueryImpl<E: Any>(
         selection2: Selection<T2>,
         selection3: Selection<T3>,
         selection4: Selection<T4>
-    ): KConfigurableRootQuery<E, Tuple4<T1, T2, T3, T4>> =
-        KConfigurableRootQueryImpl(
-            javaQuery.select(
+    ): KConfigurableSubQuery.NonNull<Tuple4<T1, T2, T3, T4>> =
+        KConfigurableSubQueryImpl.NonNull(
+            javaSubQuery.select(
                 selection1,
                 selection2,
                 selection3,
@@ -88,9 +113,9 @@ internal class KMutableRootQueryImpl<E: Any>(
         selection3: Selection<T3>,
         selection4: Selection<T4>,
         selection5: Selection<T5>
-    ): KConfigurableRootQuery<E, Tuple5<T1, T2, T3, T4, T5>> =
-        KConfigurableRootQueryImpl(
-            javaQuery.select(
+    ): KConfigurableSubQuery.NonNull<Tuple5<T1, T2, T3, T4, T5>> =
+        KConfigurableSubQueryImpl.NonNull(
+            javaSubQuery.select(
                 selection1,
                 selection2,
                 selection3,
@@ -106,9 +131,9 @@ internal class KMutableRootQueryImpl<E: Any>(
         selection4: Selection<T4>,
         selection5: Selection<T5>,
         selection6: Selection<T6>
-    ): KConfigurableRootQuery<E, Tuple6<T1, T2, T3, T4, T5, T6>> =
-        KConfigurableRootQueryImpl(
-            javaQuery.select(
+    ): KConfigurableSubQuery.NonNull<Tuple6<T1, T2, T3, T4, T5, T6>> =
+        KConfigurableSubQueryImpl.NonNull(
+            javaSubQuery.select(
                 selection1,
                 selection2,
                 selection3,
@@ -126,9 +151,9 @@ internal class KMutableRootQueryImpl<E: Any>(
         selection5: Selection<T5>,
         selection6: Selection<T6>,
         selection7: Selection<T7>
-    ): KConfigurableRootQuery<E, Tuple7<T1, T2, T3, T4, T5, T6, T7>> =
-        KConfigurableRootQueryImpl(
-            javaQuery.select(
+    ): KConfigurableSubQuery.NonNull<Tuple7<T1, T2, T3, T4, T5, T6, T7>> =
+        KConfigurableSubQueryImpl.NonNull(
+            javaSubQuery.select(
                 selection1,
                 selection2,
                 selection3,
@@ -148,9 +173,9 @@ internal class KMutableRootQueryImpl<E: Any>(
         selection6: Selection<T6>,
         selection7: Selection<T7>,
         selection8: Selection<T8>
-    ): KConfigurableRootQuery<E, Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> =
-        KConfigurableRootQueryImpl(
-            javaQuery.select(
+    ): KConfigurableSubQuery.NonNull<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> =
+        KConfigurableSubQueryImpl.NonNull(
+            javaSubQuery.select(
                 selection1,
                 selection2,
                 selection3,
@@ -172,9 +197,9 @@ internal class KMutableRootQueryImpl<E: Any>(
         selection7: Selection<T7>,
         selection8: Selection<T8>,
         selection9: Selection<T9>
-    ): KConfigurableRootQuery<E, Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> =
-        KConfigurableRootQueryImpl(
-            javaQuery.select(
+    ): KConfigurableSubQuery.NonNull<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> =
+        KConfigurableSubQueryImpl.NonNull(
+            javaSubQuery.select(
                 selection1,
                 selection2,
                 selection3,
@@ -188,8 +213,8 @@ internal class KMutableRootQueryImpl<E: Any>(
         )
 
     override val subQueries: KSubQueries<E> =
-        KSubQueriesImpl(javaQuery)
+        KSubQueriesImpl(javaSubQuery)
 
     override val wildSubQueries: KWildSubQueries<E> =
-        KWildSubQueriesImpl(javaQuery)
+        KWildSubQueriesImpl(javaSubQuery)
 }

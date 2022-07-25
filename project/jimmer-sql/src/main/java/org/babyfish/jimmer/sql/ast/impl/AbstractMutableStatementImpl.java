@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
@@ -11,7 +12,7 @@ import org.babyfish.jimmer.sql.ast.table.AssociationTableEx;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -24,6 +25,8 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
 
     private boolean frozen;
 
+    private List<Predicate> predicates = new ArrayList<>();
+
     public AbstractMutableStatementImpl(
             TableAliasAllocator tableAliasAllocator,
             SqlClient sqlClient
@@ -35,7 +38,16 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
         }
     }
 
+    public abstract <T extends Table<?>> T getTable();
+
+    public Predicate getPredicate() {
+        return predicates.isEmpty() ? null : predicates.get(0);
+    }
+
     public void freeze() {
+        if (predicates.size() > 1) {
+            predicates = mergePredicates(predicates);
+        }
         frozen = true;
     }
 
@@ -59,6 +71,17 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
             );
         }
         return client;
+    }
+
+    @Override
+    public Filterable where(Predicate ... predicates) {
+        validateMutable();
+        for (Predicate predicate : predicates) {
+            if (predicate != null) {
+                this.predicates.add(predicate);
+            }
+        }
+        return this;
     }
 
     @Override
@@ -99,6 +122,19 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
         return new Fake();
     }
 
+    private static final Predicate[] EMPTY_PREDICATE = new Predicate[0];
+
+    protected static List<Predicate> mergePredicates(List<Predicate> predicates) {
+        if (predicates.size() < 2) {
+            return predicates;
+        }
+        return Collections.singletonList(
+                Predicate.and(
+                        predicates.toArray(EMPTY_PREDICATE)
+                )
+        );
+    }
+
     private static class Fake extends AbstractMutableStatementImpl {
 
         private Fake() {
@@ -106,8 +142,13 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
         }
 
         @Override
-        public Filterable where(Predicate ... predicates) {
+        public AbstractMutableStatementImpl where(Predicate ... predicates) {
             throw new UnsupportedOperationException("Fake statement does not support where operation");
+        }
+
+        @Override
+        public <T extends Table<?>> T getTable() {
+            throw new UnsupportedOperationException("Fake statement does not support table property");
         }
     }
 }

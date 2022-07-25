@@ -24,11 +24,11 @@ internal abstract class BinaryOperatorExpression<N: Number>(
     }
 
     override fun renderTo(builder: SqlBuilder) {
-        renderChild((left as Ast)!!, builder)
+        renderChild((left as Ast), builder)
         builder.sql(" ")
         builder.sql(operator())
         builder.sql(" ")
-        renderChild((right as Ast)!!, builder)
+        renderChild((right as Ast), builder)
     }
 
     protected abstract fun operator(): String

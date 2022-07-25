@@ -25,6 +25,6 @@ public class NotPredicate extends AbstractPredicate {
 
     @Override
     public int precedence() {
-        return 5;
+        return ExpressionPrecedences.NOT;
     }
 }

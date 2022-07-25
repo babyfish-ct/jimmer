@@ -28,8 +28,7 @@ internal class KQueriesImpl(
             ImmutableType.get(entityType.java)
         )
         val typedQuery = KMutableRootQueryImpl(
-            query as MutableRootQuery<Table<E>>,
-            query.table as TableImplementor<E>
+            query as MutableRootQueryImpl<Table<E>>
         ).block()
         query.freeze()
         return typedQuery

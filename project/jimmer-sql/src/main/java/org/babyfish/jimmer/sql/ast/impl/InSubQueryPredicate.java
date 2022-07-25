@@ -26,7 +26,7 @@ class InSubQueryPredicate extends AbstractPredicate {
 
     @Override
     public int precedence() {
-        return 7;
+        return 0;
     }
 
     @Override

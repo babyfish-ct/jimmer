@@ -25,8 +25,6 @@ public abstract class AbstractMutableQueryImpl
 
     private Table<?> table;
 
-    private List<Predicate> predicates = new ArrayList<>();
-
     private List<Expression<?>> groupByExpressions = new ArrayList<>();
 
     private List<Predicate> havingPredicates = new ArrayList<>();
@@ -46,17 +44,13 @@ public abstract class AbstractMutableQueryImpl
     }
 
     @Override
-    public AbstractMutableQueryImpl where(Predicate ... predicates) {
-        for (Predicate predicate : predicates) {
-            if (predicate != null) {
-                this.predicates.add(predicate);
-            }
-        }
-        return this;
+    public AbstractMutableQueryImpl where(Predicate... predicates) {
+        return (AbstractMutableQueryImpl) super.where(predicates);
     }
 
     @Override
     public AbstractMutableQueryImpl groupBy(Expression<?> ... expressions) {
+        validateMutable();
         for (Expression<?> expression : expressions) {
             if (expression != null) {
                 groupByExpressions.add(expression);
@@ -67,6 +61,7 @@ public abstract class AbstractMutableQueryImpl
 
     @Override
     public AbstractMutableQueryImpl having(Predicate ... predicates) {
+        validateMutable();
         for (Predicate predicate : predicates) {
             if (predicate != null) {
                 havingPredicates.add(predicate);
@@ -77,26 +72,33 @@ public abstract class AbstractMutableQueryImpl
 
     @Override
     public AbstractMutableQueryImpl orderBy(Expression<?> expression) {
+        validateMutable();
         return (AbstractMutableQueryImpl)MutableQuery.super.orderBy(expression);
     }
 
     @Override
     public AbstractMutableQueryImpl orderBy(Expression<?> expression, OrderMode orderMode) {
+        validateMutable();
         return (AbstractMutableQueryImpl) MutableQuery.super.orderBy(expression, orderMode);
     }
 
     @Override
     public AbstractMutableQueryImpl orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
+        validateMutable();
         this.orders.add(new Order(expression, orderMode, nullOrderMode));
         return this;
     }
 
-    public Table<?> getTable() {
-        return table;
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T extends Table<?>> T getTable() {
+        return (T)table;
     }
 
-    public List<Predicate> getPredicates() {
-        return Collections.unmodifiableList(predicates);
+    @Override
+    public void freeze() {
+        havingPredicates = mergePredicates(havingPredicates);
+        super.freeze();
     }
 
     void accept(
@@ -109,14 +111,15 @@ public abstract class AbstractMutableQueryImpl
                     "Having clause cannot be used without group clause"
             );
         }
-        for (Predicate predicate : predicates) {
+        Predicate predicate = getPredicate();
+        if (predicate != null) {
             ((Ast)predicate).accept(visitor);
         }
         for (Expression<?> expression : groupByExpressions) {
             ((Ast)expression).accept(visitor);
         }
-        for (Predicate predicate : havingPredicates) {
-            ((Ast)predicate).accept(visitor);
+        for (Predicate havingPredicate : havingPredicates) {
+            ((Ast)havingPredicate).accept(visitor);
         }
         if (withoutSortingAndPaging) {
             AstVisitor ignoredVisitor = new UseJoinOfIgnoredClauseVisitor(visitor.getSqlBuilder());
@@ -136,47 +139,44 @@ public abstract class AbstractMutableQueryImpl
         }
     }
 
-    void renderTo(SqlBuilder sqlBuilder, boolean withoutSortingAndPaging) {
+    void renderTo(SqlBuilder builder, boolean withoutSortingAndPaging) {
+
+        Predicate predicate = getPredicate();
+        Predicate havingPredicate = havingPredicates.isEmpty() ? null : havingPredicates.get(0);
+
         TableImplementor<?> table = TableImplementor.unwrap(this.table);
-        table.renderTo(sqlBuilder);
-        if (!predicates.isEmpty()) {
-            String separator = " where ";
-            for (Predicate predicate : predicates) {
-                sqlBuilder.sql(separator);
-                ((Ast)predicate).renderTo(sqlBuilder);
-                separator = " and ";
-            }
+        table.renderTo(builder);
+
+        if (predicate != null) {
+            builder.sql(" where ");
+            ((Ast)predicate).renderTo(builder);
         }
         if (!groupByExpressions.isEmpty()) {
             String separator = " group by ";
             for (Expression<?> expression : groupByExpressions) {
-                sqlBuilder.sql(separator);
-                ((Ast)expression).renderTo(sqlBuilder);
+                builder.sql(separator);
+                ((Ast)expression).renderTo(builder);
                 separator = ", ";
             }
         }
-        if (!havingPredicates.isEmpty()) {
-            String separator = " having ";
-            for (Predicate predicate : havingPredicates) {
-                sqlBuilder.sql(separator);
-                ((Ast)predicate).renderTo(sqlBuilder);
-                separator = " and ";
-            }
+        if (havingPredicate != null) {
+            builder.sql(" having ");
+            ((Ast)havingPredicate).renderTo(builder);
         }
         if (!withoutSortingAndPaging && !orders.isEmpty()) {
             String separator = " order by ";
             for (Order order : orders) {
-                sqlBuilder.sql(separator);
-                ((Ast)order.expression).renderTo(sqlBuilder);
+                builder.sql(separator);
+                ((Ast)order.expression).renderTo(builder);
                 if (order.orderMode == OrderMode.ASC) {
-                    sqlBuilder.sql(" asc");
+                    builder.sql(" asc");
                 } else {
-                    sqlBuilder.sql(" desc");
+                    builder.sql(" desc");
                 }
                 if (order.nullOrderMode == NullOrderMode.NULLS_FIRST) {
-                    sqlBuilder.sql(" nulls first");
+                    builder.sql(" nulls first");
                 } else if (order.nullOrderMode == NullOrderMode.NULLS_LAST) {
-                    sqlBuilder.sql(" nulls last");
+                    builder.sql(" nulls last");
                 }
                 separator = ", ";
             }
