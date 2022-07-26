@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.sql.ast.Executable;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.List;
@@ -8,23 +9,29 @@ import java.util.Map;
 
 public interface ListLoader<S, T> {
 
-    default List<T> load(S source) {
+    @NotNull
+    default List<T> load(@NotNull S source) {
         return loadCommand(source).execute();
     }
 
-    default List<T> load(S source, int limit, int offset) {
+    @NotNull
+    default List<T> load(@NotNull S source, int limit, int offset) {
         return loadCommand(source, limit, offset).execute();
     }
 
-    default Executable<List<T>> loadCommand(S source) {
+    @NotNull
+    default Executable<List<T>> loadCommand(@NotNull S source) {
         return loadCommand(source, Integer.MAX_VALUE, 0);
     }
 
-    Executable<List<T>> loadCommand(S source, int limit, int offset);
+    @NotNull
+    Executable<List<T>> loadCommand(@NotNull S source, int limit, int offset);
 
-    default Map<S, List<T>> batchLoad(Collection<S> sources) {
+    @NotNull
+    default Map<S, List<T>> batchLoad(@NotNull Collection<S> sources) {
         return batchLoadCommand(sources).execute();
     }
 
-    Executable<Map<S, List<T>>> batchLoadCommand(Collection<S> sources);
+    @NotNull
+    Executable<Map<S, List<T>>> batchLoadCommand(@NotNull Collection<S> sources);
 }

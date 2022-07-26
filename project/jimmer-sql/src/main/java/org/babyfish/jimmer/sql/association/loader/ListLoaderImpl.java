@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Filter;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.List;
@@ -26,9 +27,10 @@ class ListLoaderImpl<S, T> implements ListLoader<S, T> {
         this.filter = filter;
     }
 
+    @NotNull
     @SuppressWarnings("unchecked")
     @Override
-    public Executable<List<T>> loadCommand(S source, int limit, int offset) {
+    public Executable<List<T>> loadCommand(@NotNull S source, int limit, int offset) {
         if (source instanceof Collection<?>) {
             throw new IllegalArgumentException(
                     "source cannot be collection, do you want to call 'batchLoadCommand'?"
@@ -44,9 +46,10 @@ class ListLoaderImpl<S, T> implements ListLoader<S, T> {
         );
     }
 
+    @NotNull
     @SuppressWarnings("unchecked")
     @Override
-    public Executable<Map<S, List<T>>> batchLoadCommand(Collection<S> sources) {
+    public Executable<Map<S, List<T>>> batchLoadCommand(@NotNull Collection<S> sources) {
         return new BatchCommand<>(
                 sqlClient,
                 prop,

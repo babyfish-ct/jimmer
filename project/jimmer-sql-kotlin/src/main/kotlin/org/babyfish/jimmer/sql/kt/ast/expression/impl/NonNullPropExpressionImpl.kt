@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal class NonNullPropExpressionImpl<T: Any>(
-    private val javaPropExpression: PropExpressionImpl<T>
+    internal val javaPropExpression: PropExpressionImpl<T>
 ) : AbstractKExpression<T>(), KNonNullPropExpression<T> {
 
     override fun getType(): Class<T> =
