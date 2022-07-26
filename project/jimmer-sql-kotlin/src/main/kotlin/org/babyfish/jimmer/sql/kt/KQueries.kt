@@ -14,12 +14,12 @@ interface KQueries {
     ): KConfigurableRootQuery<E, R>
 
     fun <S: Any, T: Any, R> forReference(
-        prop: KProperty1<S, R?>,
+        prop: KProperty1<S, T?>,
         block: KMutableRootQuery<Association<S, T>>.() -> KConfigurableRootQuery<Association<S, T>, R>
     ): KConfigurableRootQuery<Association<S, T>, R>
 
     fun <S: Any, T: Any, R> forList(
-        prop: KProperty1<S, List<R>>,
+        prop: KProperty1<S, List<T>>,
         block: KMutableRootQuery<Association<S, T>>.() -> KConfigurableRootQuery<Association<S, T>, R>
     ): KConfigurableRootQuery<Association<S, T>, R>
 }

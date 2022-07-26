@@ -14,12 +14,12 @@ interface KSubQueries<P: Any> {
     ): SQ
 
     fun <S: Any, T: Any, R, SQ: KConfigurableSubQuery<R>> forReference(
-        prop: KProperty1<S, R?>,
+        prop: KProperty1<S, T?>,
         block: KMutableSubQuery<P, Association<S, T>>.() -> SQ
     ): SQ
 
     fun <S: Any, T: Any, R, SQ: KConfigurableSubQuery<R>> forList(
-        prop: KProperty1<S, List<R>>,
+        prop: KProperty1<S, List<T>>,
         block: KMutableSubQuery<P, Association<S, T>>.() -> SQ
     ): SQ
 }

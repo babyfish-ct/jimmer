@@ -178,7 +178,10 @@ class SubQueryTest : AbstractQueryTest() {
                     tuple(table.name, table.edition) eq any(
                         subQuery(Book::class) {
                             groupBy(table.name)
-                            select(table.name, max(table.edition).asNonNull())
+                            select(
+                                table.name,
+                                max(table.edition).asNonNull()
+                            )
                         }
                     )
                 )

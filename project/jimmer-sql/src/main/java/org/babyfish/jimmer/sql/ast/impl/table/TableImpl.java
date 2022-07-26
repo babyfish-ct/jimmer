@@ -21,10 +21,7 @@ import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 class TableImpl<E> implements TableImplementor<E> {
@@ -46,7 +43,7 @@ class TableImpl<E> implements TableImplementor<E> {
     private String middleTableAlias;
 
     private Map<String, TableImpl<?>> childTableMap =
-            new HashMap<>();
+            new LinkedHashMap<>();
 
     public TableImpl(
             AbstractMutableStatementImpl statement,
@@ -515,7 +512,7 @@ class TableImpl<E> implements TableImplementor<E> {
         if (prop.isId() && joinProp != null) {
             MiddleTable middleTable;
             if (joinProp.getStorage() instanceof MiddleTable) {
-                middleTable = (MiddleTable) joinProp.getStorage();
+                middleTable = joinProp.getStorage();
             } else {
                 middleTable = null;
             }

@@ -67,13 +67,17 @@ public class Storages {
                 joinTable.joinColumnName() :
                 "";
         if (joinColumnName.isEmpty()) {
-            joinColumnName = ((Column)prop.getDeclaringType().getIdProp().getStorage()).getName();
+            joinColumnName =
+                    Utils.databaseIdentifier(prop.getDeclaringType().getJavaClass().getSimpleName()) +
+                            "_ID";
         }
         String targetJoinColumn = joinTable != null ?
                 joinTable.inverseJoinColumnName() :
                 "";
         if (targetJoinColumn.isEmpty()) {
-            targetJoinColumn = Utils.databaseIdentifier(prop.getName()) + "_ID";
+            targetJoinColumn =
+                    Utils.databaseIdentifier(prop.getTargetType().getJavaClass().getSimpleName()) +
+                            "_ID";
         }
         if (joinColumnName.equals(targetJoinColumn)) {
             throw new ModelException(
