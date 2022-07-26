@@ -4,11 +4,9 @@ import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
-import com.squareup.kotlinpoet.AnnotationSpec
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.PropertySpec
+import org.babyfish.jimmer.ksp.className
 import org.babyfish.jimmer.ksp.meta.Context
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
@@ -57,6 +55,8 @@ class TableGenerator(
                         addProp(prop, nonNullTable = false, outerJoin = true)
                         addProp(prop, nonNullTable = true, outerJoin = true)
                     }
+                    addFetchByFun(type, false)
+                    addFetchByFun(type, true)
                 }.build()
             val writer = OutputStreamWriter(it, Charsets.UTF_8)
             fileSpec.writeTo(writer)
@@ -137,6 +137,40 @@ class TableGenerator(
                         .getterBuilder()
                         .addCode("return %L(%S)", innerFunName, prop.name)
                         .build()
+                )
+                .build()
+        )
+    }
+
+    private fun FileSpec.Builder.addFetchByFun(type: ImmutableType, nullable: Boolean) {
+        addFunction(
+            FunSpec
+                .builder("fetchBy")
+                .receiver(
+                    if (nullable) {
+                        K_NULLABLE_TABLE_CLASS_NAME
+                    } else {
+                        K_NON_NULL_TABLE_CLASS_NAME
+                    }
+                    .parameterizedBy(type.className)
+                )
+                .addParameter(
+                    "block",
+                    LambdaTypeName.get(
+                        type.fetcherDslClassName,
+                        emptyList(),
+                        UNIT
+                    )
+                )
+                .returns(
+                    SELECTION_CLASS_NAME.parameterizedBy(
+                        type.className.copy(nullable = nullable)
+                    )
+                )
+                .addCode(
+                    "return fetch(%T(%T::class).by(block))",
+                    NEW_FETCHER_FUN_CLASS_NAME,
+                    type.className
                 )
                 .build()
         )

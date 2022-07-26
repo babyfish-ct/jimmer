@@ -7,21 +7,24 @@ import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.squareup.kotlinpoet.ClassName
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
+import org.babyfish.jimmer.ksp.generator.FETCHER_DSL
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.Id
 import org.babyfish.jimmer.sql.MappedSuperclass
 
 class ImmutableType(
     ctx: Context,
-    private val classDeclaration: KSClassDeclaration
+    val classDeclaration: KSClassDeclaration
 ) {
-    val name: String = classDeclaration.fullName
+    val fullName: String = classDeclaration.fullName
 
     val simpleName: String = classDeclaration.simpleName.asString()
 
     val className: ClassName = classDeclaration.className()
 
     val draftClassName: ClassName = classDeclaration.className { "$it$DRAFT" }
+
+    val fetcherDslClassName: ClassName = classDeclaration.className { "$it$FETCHER_DSL" }
 
     fun draftClassName(vararg nestedNames: String) =
         classDeclaration.nestedClassName {
@@ -71,7 +74,7 @@ class ImmutableType(
             classDeclaration
                 .getDeclaredProperties()
                 .forEach { propDeclaration ->
-                    val isId = propDeclaration.annotations { it.annotationType == Id::class }.isNotEmpty()
+                    val isId = propDeclaration.annotations(Id::class).isNotEmpty()
                     superProps?.get(propDeclaration.name)?.let {
                         throw MetaException("'${propDeclaration}' overrides '$it', this is not allowed")
                     }

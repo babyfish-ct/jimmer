@@ -11,6 +11,7 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import org.babyfish.jimmer.ksp.generator.DraftGenerator
+import org.babyfish.jimmer.ksp.generator.FetcherGenerator
 import org.babyfish.jimmer.ksp.generator.TableGenerator
 import org.babyfish.jimmer.ksp.meta.Context
 import org.babyfish.jimmer.sql.Entity
@@ -29,8 +30,9 @@ class ImmutableProcessor(
         val ctx = Context(resolver)
         val classDeclarationMultiMap = findModelMap(ctx)
         for ((file, classDeclarations) in classDeclarationMultiMap) {
+            val allFiles = resolver.getAllFiles().toList()
             DraftGenerator(environment.codeGenerator, ctx, file, classDeclarations)
-                .generate(resolver.getAllFiles().toList())
+                .generate(allFiles)
             val entityClassDeclarations = classDeclarations.filter { it.annotation(Entity::class) !== null }
             if (entityClassDeclarations.size > 1) {
                 throw GeneratorException(
@@ -40,7 +42,9 @@ class ImmutableProcessor(
             }
             if (entityClassDeclarations.isNotEmpty()) {
                 TableGenerator(environment.codeGenerator, ctx, file, entityClassDeclarations[0])
-                    .generate(resolver.getAllFiles().toList())
+                    .generate(allFiles)
+                FetcherGenerator(environment.codeGenerator, ctx, file, entityClassDeclarations[0])
+                    .generate(allFiles)
             }
         }
         return classDeclarationMultiMap.values.flatten()

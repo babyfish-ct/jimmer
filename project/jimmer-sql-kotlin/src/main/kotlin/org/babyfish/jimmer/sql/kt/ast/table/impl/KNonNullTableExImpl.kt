@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.sql.kt.ast.table.impl
 
+import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
+import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullablePropExpressionImpl
@@ -27,4 +29,7 @@ internal class KNonNullTableExImpl<E: Any>(
 
     override fun <X: Any> inverseJoin(targetType: KClass<X>, backProp: String): KNonNullTableEx<X> =
         KNonNullTableExImpl(javaTable.inverseJoin(targetType.java, backProp))
+
+    override fun fetch(fetcher: Fetcher<E>): Selection<E> =
+        javaTable.fetch(fetcher)
 }
