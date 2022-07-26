@@ -64,7 +64,7 @@ class DraftGenerator(
         addType(
             TypeSpec
                 .interfaceBuilder("${type.simpleName}${DRAFT}")
-                .addAnnotation(DRAFT_SCOPE_CLASS_NAME)
+                .addAnnotation(DSL_SCOPE_CLASS_NAME)
                 .apply {
                     type.superType?.let {
                         addSuperinterface(it.draftClassName)

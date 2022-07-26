@@ -56,7 +56,7 @@ abstract class AbstractQueryTest : AbstractTest() {
             variables(variables.toList())
         }
 
-        fun variables(variables: List<Any?>?) {
+        fun variables(variables: List<Any?>) {
             assertFalse(
                 executions.isEmpty(),
                 "Not sql history"
@@ -64,6 +64,18 @@ abstract class AbstractQueryTest : AbstractTest() {
             assertEquals(
                 variables,
                 executions[index].variables,
+                "statements[$index].variables"
+            )
+        }
+
+        fun variables(variables: Set<Any?>) {
+            assertFalse(
+                executions.isEmpty(),
+                "Not sql history"
+            )
+            assertEquals(
+                variables,
+                executions[index].variables.toSet(),
                 "statements[$index].variables"
             )
         }

@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.common
 
 import org.babyfish.jimmer.sql.kt.KSqlClient
-import org.babyfish.jimmer.sql.kt.KSqlClientDSL
+import org.babyfish.jimmer.sql.kt.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.model.Gender
 import org.babyfish.jimmer.sql.kt.newKSqlClient
 import org.babyfish.jimmer.sql.runtime.DefaultExecutor
@@ -27,7 +27,7 @@ abstract class AbstractTest {
 
     protected val sqlClient: KSqlClient = sqlClient()
 
-    protected fun sqlClient(block: KSqlClientDSL.() -> Unit = {}): KSqlClient =
+    protected fun sqlClient(block: KSqlClientDsl.() -> Unit = {}): KSqlClient =
         newKSqlClient {
             executor = ExecutorImpl()
             scalarProviders {

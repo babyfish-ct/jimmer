@@ -14,7 +14,7 @@ import org.babyfish.jimmer.sql.runtime.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
-class KSqlClientDSL internal constructor() {
+class KSqlClientDsl internal constructor() {
 
     private val idGeneratorMap = mutableMapOf<Class<*>?, IdGenerator>()
 

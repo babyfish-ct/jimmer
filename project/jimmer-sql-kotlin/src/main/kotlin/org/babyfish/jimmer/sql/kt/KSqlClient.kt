@@ -15,8 +15,8 @@ interface KSqlClient {
     val queries: KQueries
 }
 
-fun newKSqlClient(block: KSqlClientDSL.() -> Unit): KSqlClient {
-    val dsl = KSqlClientDSL()
+fun newKSqlClient(block: KSqlClientDsl.() -> Unit): KSqlClient {
+    val dsl = KSqlClientDsl()
     dsl.block()
     return dsl.buildKSqlClient()
 }
