@@ -1,21 +1,26 @@
 package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.sql.ast.Executable;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Map;
 
 public interface ReferenceLoader<S, T> {
 
-    default T load(S source) {
+    @NotNull
+    default T load(@NotNull S source) {
         return loadCommand(source).execute();
     }
 
-    Executable<T> loadCommand(S source);
+    @NotNull
+    Executable<T> loadCommand(@NotNull S source);
 
-    default Map<S, T> batchLoad(Collection<S> sources) {
+    @NotNull
+    default Map<S, T> batchLoad(@NotNull Collection<S> sources) {
         return batchLoadCommand(sources).execute();
     }
 
-    Executable<Map<S, T>> batchLoadCommand(Collection<S> sources);
+    @NotNull
+    Executable<Map<S, T>> batchLoadCommand(@NotNull Collection<S> sources);
 }

@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNullablePropExpression
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal class NullablePropExpressionImpl<T: Any>(
-    private val javaPropExpression: PropExpressionImpl<T>
+    internal val javaPropExpression: PropExpressionImpl<T>
 ) : AbstractKExpression<T>(), KNullablePropExpression<T> {
 
     override fun getType(): Class<T> =

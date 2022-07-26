@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.AssociationSaveCommand;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.Converters;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -22,19 +23,28 @@ public class AssociationsImpl implements Associations {
         this(sqlClient, associationType, false);
     }
 
-    private AssociationsImpl(SqlClient sqlClient, AssociationType associationType, boolean reversed) {
+    private AssociationsImpl(
+            SqlClient sqlClient,
+            AssociationType associationType,
+            boolean reversed
+    ) {
         this.sqlClient = sqlClient;
         this.associationType = associationType;
         this.reversed = reversed;
     }
 
+    @NotNull
     @Override
     public Associations reverse() {
         return new AssociationsImpl(sqlClient, associationType, !reversed);
     }
 
+    @NotNull
     @Override
-    public AssociationSaveCommand saveCommand(Object sourceId, Object targetId) {
+    public AssociationSaveCommand saveCommand(
+            @NotNull Object sourceId,
+            @NotNull Object targetId
+    ) {
         if (sourceId instanceof Collection<?> || targetId instanceof Collection<?>) {
             throw new IllegalArgumentException(
                     "sourceId or targetId cannot be collection, do you want to call 'batchSaveCommand'?"
@@ -45,22 +55,33 @@ public class AssociationsImpl implements Associations {
         );
     }
 
+    @NotNull
     @Override
-    public AssociationSaveCommand batchSaveCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
+    public AssociationSaveCommand batchSaveCommand(
+            @NotNull Collection<Object> sourceIds,
+            @NotNull Collection<Object> targetIds
+    ) {
         return new AssociationSaveCommandImpl(
                 saveExecutable(cartesianProduct(sourceIds, targetIds))
         );
     }
 
+    @NotNull
     @Override
-    public AssociationSaveCommand batchSaveCommand(Collection<Tuple2<Object, Object>> idTuples) {
+    public AssociationSaveCommand batchSaveCommand(
+            @NotNull Collection<Tuple2<Object, Object>> idTuples
+    ) {
         return new AssociationSaveCommandImpl(
                 saveExecutable(idTuples)
         );
     }
 
+    @NotNull
     @Override
-    public Executable<Integer> deleteCommand(Object sourceId, Object targetId) {
+    public Executable<Integer> deleteCommand(
+            @NotNull Object sourceId,
+            @NotNull Object targetId
+    ) {
         if (sourceId instanceof Collection<?> || targetId instanceof Collection<?>) {
             throw new IllegalArgumentException(
                     "sourceId or targetId cannot be collection, do you want to call 'batchDeleteCommand'?"
@@ -69,13 +90,20 @@ public class AssociationsImpl implements Associations {
         return deleteExecutable(Collections.singleton(new Tuple2<>(sourceId, targetId)));
     }
 
+    @NotNull
     @Override
-    public Executable<Integer> batchDeleteCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
+    public Executable<Integer> batchDeleteCommand(
+            @NotNull Collection<Object> sourceIds,
+            @NotNull Collection<Object> targetIds
+    ) {
         return deleteExecutable(cartesianProduct(sourceIds, targetIds));
     }
 
+    @NotNull
     @Override
-    public Executable<Integer> batchDeleteCommand(Collection<Tuple2<Object, Object>> idTuples) {
+    public Executable<Integer> batchDeleteCommand(
+            @NotNull Collection<Tuple2<Object, Object>> idTuples
+    ) {
         return deleteExecutable(idTuples);
     }
 
