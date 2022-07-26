@@ -1,21 +1,18 @@
 package org.babyfish.jimmer.sql.kt.impl
 
+import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.association.Association
+import org.babyfish.jimmer.sql.association.meta.AssociationType
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
-import org.babyfish.jimmer.sql.ast.query.MutableRootQuery
-import org.babyfish.jimmer.sql.ast.query.MutableSubQuery
-import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.KSubQueries
-import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableSubQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableSubQuery
-import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableRootQueryImpl
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableSubQueryImpl
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
+import kotlin.reflect.jvm.javaMethod
 
 internal class KSubQueriesImpl<P: Any>(
     private val parent: AbstractMutableStatementImpl
@@ -33,16 +30,31 @@ internal class KSubQueriesImpl<P: Any>(
     }
 
     override fun <S : Any, T : Any, R, SQ : KConfigurableSubQuery<R>> forReference(
-        prop: KProperty1<S, R?>,
+        prop: KProperty1<S, T?>,
         block: KMutableSubQuery<P, Association<S, T>>.() -> SQ
     ): SQ {
-        TODO("Not yet implemented")
+        val javaType = prop.getter.javaMethod!!.declaringClass
+        val immutableProp = ImmutableType.get(javaType).getProp(prop.name)
+        return forAssociation(immutableProp, block)
     }
 
     override fun <S : Any, T : Any, R, SQ : KConfigurableSubQuery<R>> forList(
-        prop: KProperty1<S, List<R>>,
+        prop: KProperty1<S, List<T>>,
         block: KMutableSubQuery<P, Association<S, T>>.() -> SQ
     ): SQ {
-        TODO("Not yet implemented")
+        val javaType = prop.getter.javaMethod!!.declaringClass
+        val immutableProp = ImmutableType.get(javaType).getProp(prop.name)
+        return forAssociation(immutableProp, block)
+    }
+
+    private fun <S : Any, T : Any, R, SQ : KConfigurableSubQuery<R>> forAssociation(
+        immutableProp: ImmutableProp,
+        block: KMutableSubQuery<P, Association<S, T>>.() -> SQ
+    ): SQ {
+        val associationType = AssociationType.of(immutableProp)
+        val subQuery = MutableSubQueryImpl(parent, associationType)
+        val typedSubQuery = KMutableSubQueryImpl<P, Association<S, T>>(subQuery).block()
+        subQuery.freeze()
+        return typedSubQuery
     }
 }

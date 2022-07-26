@@ -12,13 +12,13 @@ interface KWildSubQueries<P: Any> {
         block: KMutableSubQuery<P, E>.() -> Unit
     ): KMutableSubQuery<P, E>
 
-    fun <S: Any, T: Any, R> forReference(
-        prop: KProperty1<S, R?>,
+    fun <S: Any, T: Any> forReference(
+        prop: KProperty1<S, T?>,
         block: KMutableSubQuery<P, Association<S, T>>.() -> Unit
     ): KMutableSubQuery<P, Association<S, T>>
 
-    fun <S: Any, T: Any, R> forList(
-        prop: KProperty1<S, List<R>>,
+    fun <S: Any, T: Any> forList(
+        prop: KProperty1<S, List<T>>,
         block: KMutableSubQuery<P, Association<S, T>>.() -> Unit
     ): KMutableSubQuery<P, Association<S, T>>
 }
