@@ -3,7 +3,7 @@ plugins {
 }
 
 group 'org.babyfish.jimmer.example.core'
-version '0.0.33'
+version '0.1.1'
 
 repositories {
     mavenCentral()
