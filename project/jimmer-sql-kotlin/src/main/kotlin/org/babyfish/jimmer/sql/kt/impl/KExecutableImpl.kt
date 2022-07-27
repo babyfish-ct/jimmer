@@ -9,9 +9,5 @@ internal class KExecutableImpl<R>(
 ) : KExecutable<R> {
 
     override fun execute(con: Connection?): R =
-        if (con === null) {
-            javaExecutable.execute()
-        } else {
-            javaExecutable.execute(con)
-        }
+        javaExecutable.execute(con)
 }
