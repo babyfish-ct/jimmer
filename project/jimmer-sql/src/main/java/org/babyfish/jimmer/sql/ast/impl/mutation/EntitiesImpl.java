@@ -281,11 +281,7 @@ public class EntitiesImpl implements Entities {
 
     @Override
     public <E> SimpleSaveResult<E> save(E entity) {
-        SimpleEntitySaveCommand<E> command = saveCommand(entity);
-        if (con != null) {
-            return command.execute(con);
-        }
-        return command.execute();
+        return saveCommand(entity).execute();
     }
 
     @Override
@@ -298,11 +294,7 @@ public class EntitiesImpl implements Entities {
 
     @Override
     public <E> BatchSaveResult<E> batchSave(Collection<E> entities) {
-        BatchEntitySaveCommand<E> command = batchSaveCommand(entities);
-        if (con != null) {
-            return command.execute(con);
-        }
-        return command.execute();
+        return batchSaveCommand(entities).execute();
     }
 
     @Override
