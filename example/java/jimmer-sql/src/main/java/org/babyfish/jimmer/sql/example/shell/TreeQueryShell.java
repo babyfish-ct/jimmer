@@ -30,9 +30,9 @@ public class TreeQueryShell {
 
     @ShellMethod(
             "Find treeNodes, can optionally exclude child nodes of some nodes" +
-            "(Example: trees --no-recursive clothing,drinks)"
+            "(Example: tree --no-recursive clothing,drinks)"
     )
-    public void trees(
+    public void tree(
             @ShellOption(defaultValue = "") String noRecursive
     ) throws JsonProcessingException {
 
