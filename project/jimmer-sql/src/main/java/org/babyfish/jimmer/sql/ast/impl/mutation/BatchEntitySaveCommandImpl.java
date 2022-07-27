@@ -18,8 +18,8 @@ class BatchEntitySaveCommandImpl<E>
 
     private Collection<E> entities;
 
-    BatchEntitySaveCommandImpl(SqlClient sqlClient, Collection<E> entities) {
-        super(sqlClient, null);
+    BatchEntitySaveCommandImpl(SqlClient sqlClient, Connection con, Collection<E> entities) {
+        super(sqlClient, con, null);
         for (E entity : entities) {
             if (!(entity instanceof ImmutableSpi)) {
                 throw new IllegalArgumentException(
@@ -31,7 +31,7 @@ class BatchEntitySaveCommandImpl<E>
     }
 
     private BatchEntitySaveCommandImpl(BatchEntitySaveCommandImpl<E> base, Data data) {
-        super(base.sqlClient, data);
+        super(base.sqlClient, base.con, data);
         this.entities = base.entities;
     }
 
@@ -43,6 +43,9 @@ class BatchEntitySaveCommandImpl<E>
 
     @Override
     public BatchSaveResult<E> execute() {
+        if (con != null) {
+            return executeImpl(con);
+        }
         return sqlClient
                 .getConnectionManager()
                 .execute(this::executeImpl);
@@ -52,6 +55,9 @@ class BatchEntitySaveCommandImpl<E>
     public BatchSaveResult<E> execute(Connection con) {
         if (con != null) {
             return executeImpl(con);
+        }
+        if (this.con != null) {
+            return executeImpl(this.con);
         }
         return sqlClient
                 .getConnectionManager()

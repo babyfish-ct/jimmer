@@ -293,7 +293,7 @@ public class EntitiesImpl implements Entities {
         if (entity instanceof Collection<?>) {
             throw new IllegalArgumentException("entity cannot be collection, do you want to call 'batchSaveCommand'?");
         }
-        return new SimpleEntitySaveCommandImpl<>(sqlClient, entity);
+        return new SimpleEntitySaveCommandImpl<>(sqlClient, con, entity);
     }
 
     @Override
@@ -307,16 +307,12 @@ public class EntitiesImpl implements Entities {
 
     @Override
     public <E> BatchEntitySaveCommand<E> batchSaveCommand(Collection<E> entities) {
-        return new BatchEntitySaveCommandImpl<>(sqlClient, entities);
+        return new BatchEntitySaveCommandImpl<>(sqlClient, con, entities);
     }
 
     @Override
     public DeleteResult delete(Class<?> entityType, Object id) {
-        DeleteCommand command = deleteCommand(entityType, id);
-        if (con != null) {
-            return command.execute(con);
-        }
-        return command.execute();
+        return deleteCommand(entityType, id).execute();
     }
 
     @Override
@@ -332,11 +328,7 @@ public class EntitiesImpl implements Entities {
 
     @Override
     public DeleteResult batchDelete(Class<?> entityType, Collection<?> ids) {
-        DeleteCommand command = batchDeleteCommand(entityType, ids);
-        if (con != null) {
-            return command.execute(con);
-        }
-        return command.execute();
+        return batchDeleteCommand(entityType, ids).execute();
     }
 
     @Override
@@ -345,6 +337,6 @@ public class EntitiesImpl implements Entities {
             Collection<?> ids
     ) {
         ImmutableType immutableType = ImmutableType.get(entityType);
-        return new DeleteCommandImpl(sqlClient, immutableType, ids);
+        return new DeleteCommandImpl(sqlClient, con, immutableType, ids);
     }
 }

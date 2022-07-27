@@ -12,18 +12,22 @@ import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 
+import java.sql.Connection;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveCommand {
 
-    SqlClient sqlClient;
+    final SqlClient sqlClient;
 
-    Data data;
+    final Connection con;
 
-    AbstractEntitySaveCommandImpl(SqlClient sqlClient, Data data) {
+    final Data data;
+
+    AbstractEntitySaveCommandImpl(SqlClient sqlClient, Connection con, Data data) {
         this.sqlClient = sqlClient;
+        this.con = con;
         this.data = data != null ? data.freeze() : new Data(sqlClient).freeze();
     }
 
