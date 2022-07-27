@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.util.List;
+import java.util.Map;
 
 class MergedTypedRootQueryImpl<R> implements TypedRootQuery<R>, TypedQueryImplementor {
 
@@ -47,11 +48,20 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQuery<R>, TypedQueryImplem
     public List<R> execute() {
         return sqlClient
                 .getConnectionManager()
-                .execute(this::execute);
+                .execute(this::executeImpl);
     }
 
     @Override
     public List<R> execute(Connection con) {
+        if (con != null) {
+            return executeImpl(con);
+        }
+        return sqlClient
+                .getConnectionManager()
+                .execute(this::executeImpl);
+    }
+
+    private List<R> executeImpl(Connection con) {
         Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(sqlClient));
         return Selectors.select(sqlClient, con, sqlResult._1(), sqlResult._2(), selections);
     }

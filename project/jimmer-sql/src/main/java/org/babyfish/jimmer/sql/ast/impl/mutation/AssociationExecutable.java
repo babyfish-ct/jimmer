@@ -59,11 +59,20 @@ class AssociationExecutable implements Executable<Integer> {
     public Integer execute() {
         return sqlClient
                 .getConnectionManager()
-                .execute(this::execute);
+                .execute(this::executeImpl);
     }
 
     @Override
     public Integer execute(Connection con) {
+        if (con != null) {
+            return executeImpl(con);
+        }
+        return sqlClient
+                .getConnectionManager()
+                .execute(this::executeImpl);
+    }
+
+    private Integer executeImpl(Connection con) {
 
         if (idTuples.isEmpty()) {
             return 0;

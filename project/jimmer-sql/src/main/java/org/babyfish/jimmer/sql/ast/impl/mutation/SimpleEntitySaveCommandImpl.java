@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.mutation.SimpleEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 
 import java.sql.Connection;
+import java.util.Map;
 import java.util.function.Consumer;
 
 class SimpleEntitySaveCommandImpl<E>
@@ -38,11 +39,20 @@ class SimpleEntitySaveCommandImpl<E>
     public SimpleSaveResult<E> execute() {
         return sqlClient
                 .getConnectionManager()
-                .execute(this::execute);
+                .execute(this::executeImpl);
     }
 
     @Override
     public SimpleSaveResult<E> execute(Connection con) {
+        if (con != null) {
+            return executeImpl(con);
+        }
+        return sqlClient
+                .getConnectionManager()
+                .execute(this::executeImpl);
+    }
+
+    private SimpleSaveResult<E> executeImpl(Connection con) {
         Saver saver = new Saver(data, con);
         return saver.save(entity);
     }

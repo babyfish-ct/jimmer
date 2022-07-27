@@ -80,13 +80,7 @@ internal class KEntitiesImpl(
                     }
                 }
             }
-            .let {
-                if (con !== null) {
-                    it.execute(con)
-                } else {
-                    it.execute()
-                }
-            }
+            .execute(con)
             .let { KSimpleSaveResultImpl(it) }
 
     override fun <E : Any> batchSave(
@@ -105,13 +99,7 @@ internal class KEntitiesImpl(
                     }
                 }
             }
-            .let {
-                if (con !== null) {
-                    it.execute(con)
-                } else {
-                    it.execute()
-                }
-            }
+            .execute(con)
             .let { KBatchSaveResultImpl(it) }
 
     override fun delete(
@@ -131,13 +119,7 @@ internal class KEntitiesImpl(
                     }
                 }
             }
-            .let {
-                if (con !== null) {
-                    it.execute(con)
-                } else {
-                    it.execute()
-                }
-            }
+            .execute(con)
             .let { KDeleteResultImpl(it) }
 
     override fun batchDelete(
@@ -157,12 +139,6 @@ internal class KEntitiesImpl(
                     }
                 }
             }
-            .let {
-                if (con !== null) {
-                    it.execute(con)
-                } else {
-                    it.execute()
-                }
-            }
+            .execute(con)
             .let { KDeleteResultImpl(it) }
 }

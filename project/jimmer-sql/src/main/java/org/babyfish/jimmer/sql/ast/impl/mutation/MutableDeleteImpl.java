@@ -19,6 +19,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.List;
+import java.util.Map;
 
 public class MutableDeleteImpl
         extends AbstractMutableStatementImpl
@@ -47,12 +48,21 @@ public class MutableDeleteImpl
     public Integer execute() {
         return getSqlClient()
                 .getConnectionManager()
-                .execute(this::execute);
+                .execute(this::executeImpl);
+    }
+
+    @Override
+    public Integer execute(Connection con) {
+        if (con != null) {
+            return executeImpl(con);
+        }
+        return getSqlClient()
+                .getConnectionManager()
+                .execute(this::executeImpl);
     }
 
     @SuppressWarnings("unchecked")
-    @Override
-    public Integer execute(Connection con) {
+    private Integer executeImpl(Connection con) {
         SqlClient sqlClient = getSqlClient();
         TableImplementor<?> table = TableImplementor.unwrap(deleteQuery.getTable());
         if (table.getChildren().isEmpty()) {

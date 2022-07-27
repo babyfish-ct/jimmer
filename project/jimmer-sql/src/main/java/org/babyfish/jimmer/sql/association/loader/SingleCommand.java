@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.fetcher.Filter;
 import java.sql.Connection;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 
 class SingleCommand<T> implements Executable<T> {
 
@@ -45,12 +46,21 @@ class SingleCommand<T> implements Executable<T> {
     public T execute() {
         return sqlClient
                 .getConnectionManager()
-                .execute(this::execute);
+                .execute(this::executeImpl);
+    }
+
+    @Override
+    public T execute(Connection con) {
+        if (con != null) {
+            return executeImpl(con);
+        }
+        return sqlClient
+                .getConnectionManager()
+                .execute(this::executeImpl);
     }
 
     @SuppressWarnings("unchecked")
-    @Override
-    public T execute(Connection con) {
+    private T executeImpl(Connection con) {
         return (T) new DataLoader(
                 sqlClient,
                 con,
