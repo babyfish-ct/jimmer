@@ -76,11 +76,20 @@ class DeleteCommandImpl implements DeleteCommand {
     public DeleteResult execute() {
         return sqlClient
                 .getConnectionManager()
-                .execute(this::execute);
+                .execute(this::executeImpl);
     }
 
     @Override
     public DeleteResult execute(Connection con) {
+        if (con != null) {
+            return executeImpl(con);
+        }
+        return sqlClient
+                .getConnectionManager()
+                .execute(this::executeImpl);
+    }
+
+    private DeleteResult executeImpl(Connection con) {
         Deleter deleter = new Deleter(data, con);
         deleter.addPreHandleInput(immutableType, ids);
         return deleter.execute();

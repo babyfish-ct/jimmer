@@ -40,12 +40,21 @@ class BatchCommand<S, T> implements Executable<Map<S, T>> {
     public Map<S, T> execute() {
         return sqlClient
                 .getConnectionManager()
-                .execute(this::execute);
+                .execute(this::executeImpl);
+    }
+
+    @Override
+    public Map<S, T> execute(Connection con) {
+        if (con != null) {
+            return executeImpl(con);
+        }
+        return sqlClient
+                .getConnectionManager()
+                .execute(this::executeImpl);
     }
 
     @SuppressWarnings("unchecked")
-    @Override
-    public Map<S, T> execute(Connection con) {
+    private Map<S, T> executeImpl(Connection con) {
         return (Map<S, T>) new DataLoader(
                 sqlClient,
                 con,

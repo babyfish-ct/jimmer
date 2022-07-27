@@ -45,11 +45,20 @@ class BatchEntitySaveCommandImpl<E>
     public BatchSaveResult<E> execute() {
         return sqlClient
                 .getConnectionManager()
-                .execute(this::execute);
+                .execute(this::executeImpl);
     }
 
     @Override
     public BatchSaveResult<E> execute(Connection con) {
+        if (con != null) {
+            return executeImpl(con);
+        }
+        return sqlClient
+                .getConnectionManager()
+                .execute(this::executeImpl);
+    }
+
+    private BatchSaveResult<E> executeImpl(Connection con) {
         SaverCache cache = new SaverCache(data);
         Map<AffectedTable, Integer> affectedRowCountMap = new LinkedHashMap<>();
         List<SimpleSaveResult<E>> simpleSaveResults = entities

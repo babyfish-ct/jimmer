@@ -18,6 +18,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import java.sql.Connection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 
 public class ConfigurableRootQueryImpl<T extends Table<?>, R>
@@ -129,11 +130,21 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         return getBaseQuery()
                 .getSqlClient()
                 .getConnectionManager()
-                .execute(this::execute);
+                .execute(this::executeImpl);
     }
 
     @Override
     public List<R> execute(Connection con) {
+        if (con != null) {
+            return executeImpl(con);
+        }
+        return getBaseQuery()
+                .getSqlClient()
+                .getConnectionManager()
+                .execute(this::executeImpl);
+    }
+
+    private List<R> executeImpl(Connection con) {
         TypedQueryData data = getData();
         if (getData().getLimit() == 0) {
             return Collections.emptyList();
