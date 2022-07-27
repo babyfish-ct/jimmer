@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.fetcher;
 
+import org.jetbrains.annotations.NotNull;
+
 public interface RecursionStrategy<E> {
 
     boolean isRecursive(Args<E> args);
@@ -15,6 +17,7 @@ public interface RecursionStrategy<E> {
             this.depth = depth;
         }
 
+        @NotNull
         public E getEntity() {
             return entity;
         }

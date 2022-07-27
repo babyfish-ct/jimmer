@@ -8,7 +8,9 @@ import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
+import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -425,14 +427,14 @@ public abstract class AbstractDataLoader {
 
     @SuppressWarnings("unchecked")
     private void applyFilter(
-            Sortable sortable,
+            MutableQuery query,
             Table<?> table,
             Collection<Object> keys
     ) {
         if (filter != null) {
             filter.apply(
-                    FilterArgsImpl.batchLoaderArgs(
-                            sortable,
+                    FilterArgsImpl.of(
+                            (AbstractMutableQueryImpl) query,
                             (Table<ImmutableSpi>) table,
                             keys
                     )

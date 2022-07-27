@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.AssociationTableEx;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -18,49 +19,31 @@ import java.util.function.Function;
 
 public class FilterArgsImpl<T extends Table<?>> implements FilterArgs<T> {
 
-    private Sortable sortable;
+    private AbstractMutableQueryImpl query;
 
     private T table;
 
-    private Object key;
-
     private Collection<Object> keys;
 
-    public static <T extends Table<?>> FilterArgs<T> singleLoaderArgs(
-            Sortable sortable,
-            T table,
-            Object key
-    ) {
-        return new FilterArgsImpl<>(
-                sortable,
-                table,
-                Objects.requireNonNull(key, "key cannot be null"),
-                null
-        );
-    }
-
-    public static <T extends Table<?>> FilterArgs<T> batchLoaderArgs(
-            Sortable sortable,
+    public static <T extends Table<?>> FilterArgs<T> of(
+            AbstractMutableQueryImpl query,
             T table,
             Collection<Object> keys
     ) {
         return new FilterArgsImpl<>(
-                sortable,
+                query,
                 table,
-                null,
                 Objects.requireNonNull(keys, "keys cannot be null")
         );
     }
 
     private FilterArgsImpl(
-            Sortable sortable,
+            AbstractMutableQueryImpl query,
             T table,
-            Object key,
             Collection<Object> keys
     ) {
-        this.sortable = sortable;
+        this.query = query;
         this.table = table;
-        this.key = key;
         this.keys = keys != null ? Collections.unmodifiableCollection(keys) : null;
     }
 
@@ -72,50 +55,50 @@ public class FilterArgsImpl<T extends Table<?>> implements FilterArgs<T> {
     @SuppressWarnings("unchecked")
     @Override
     public <K> K getKey() {
-        if (key == null) {
+        if (keys.size() > 1) {
             throw new IllegalStateException(
-                    "Cannot get the single key in BatchDataLoader"
+                    "Too much keys"
             );
         }
-        return (K) key;
+        return (K) keys.iterator().next();
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <K> Collection<K> getKeys() {
-        return keys != null ? (Collection<K>) keys : Collections.singleton((K) key);
+        return (Collection<K>)keys;
     }
 
     @Override
     @OldChain
     public Sortable where(Predicate... predicates) {
-        return sortable.where(predicates);
+        return query.where(predicates);
     }
 
     @Override
     @OldChain
     public Sortable orderBy(Expression<?> expression) {
-        return sortable.orderBy(expression);
+        return query.orderBy(expression);
     }
 
     @Override
     @OldChain
     public Sortable orderBy(Expression<?> expression, OrderMode orderMode) {
-        return sortable.orderBy(expression, orderMode);
+        return query.orderBy(expression, orderMode);
     }
 
     @Override
     @OldChain
     public Sortable orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
-        return sortable.orderBy(expression, orderMode, nullOrderMode);
+        return query.orderBy(expression, orderMode, nullOrderMode);
     }
 
     @Override
-    public <X extends Table<?>, R> ConfigurableTypedSubQuery<R> createSubQuery(
+    public <X extends Table<?>, R> ConfigurableSubQuery<R> createSubQuery(
             Class<X> tableType,
-            BiFunction<MutableSubQuery, X, ConfigurableTypedSubQuery<R>> block
+            BiFunction<MutableSubQuery, X, ConfigurableSubQuery<R>> block
     ) {
-        return sortable.createSubQuery(tableType, block);
+        return query.createSubQuery(tableType, block);
     }
 
     @Override
@@ -123,17 +106,17 @@ public class FilterArgsImpl<T extends Table<?>> implements FilterArgs<T> {
             Class<X> tableType,
             BiConsumer<MutableSubQuery, X> block
     ) {
-        return sortable.createWildSubQuery(tableType, block);
+        return query.createWildSubQuery(tableType, block);
     }
 
     @Override
-    public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R> ConfigurableTypedSubQuery<R>
+    public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R> ConfigurableSubQuery<R>
     createAssociationSubQuery(
             Class<ST> sourceTableType,
             Function<ST, TT> targetTableGetter,
-            BiFunction<MutableSubQuery, AssociationTableEx<SE, ST, TE, TT>, ConfigurableTypedSubQuery<R>> block
+            BiFunction<MutableSubQuery, AssociationTableEx<SE, ST, TE, TT>, ConfigurableSubQuery<R>> block
     ) {
-        return sortable.createAssociationSubQuery(sourceTableType, targetTableGetter, block);
+        return query.createAssociationSubQuery(sourceTableType, targetTableGetter, block);
     }
 
     @Override
@@ -142,6 +125,10 @@ public class FilterArgsImpl<T extends Table<?>> implements FilterArgs<T> {
             Function<ST, TT> targetTableGetter,
             BiConsumer<MutableSubQuery, AssociationTableEx<SE, ST, TE, TT>> block
     ) {
-        return sortable.createAssociationWildSubQuery(sourceTableType, targetTableGetter, block);
+        return query.createAssociationWildSubQuery(sourceTableType, targetTableGetter, block);
+    }
+
+    public AbstractMutableQueryImpl unwrap() {
+        return query;
     }
 }

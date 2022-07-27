@@ -6,10 +6,10 @@ import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.lang.NewChain;
+import org.babyfish.jimmer.sql.Id;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
-import javax.persistence.Id;
 import java.io.IOException;
 
 public class FetcherGenerator {

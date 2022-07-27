@@ -3,10 +3,14 @@ package org.babyfish.jimmer.sql;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.AssociationSaveCommand;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.jetbrains.annotations.NotNull;
 
+import java.sql.Connection;
 import java.util.Collection;
 
 public interface Associations {
+
+    Associations forConnection(Connection con);
 
     Associations reverse();
 
@@ -21,20 +25,12 @@ public interface Associations {
     default int batchSave(Collection<Tuple2<Object, Object>> idTuples) {
         return batchSaveCommand(idTuples).execute();
     }
+    
+    AssociationSaveCommand saveCommand(Object sourceId, Object targetId);
 
-    AssociationSaveCommand saveCommand(
-            Object sourceId,
-            Object targetId
-    );
+    AssociationSaveCommand batchSaveCommand(Collection<Object> sourceIds, Collection<Object> targetIds);
 
-    AssociationSaveCommand batchSaveCommand(
-            Collection<Object> sourceIds,
-            Collection<Object> targetIds
-    );
-
-    AssociationSaveCommand batchSaveCommand(
-            Collection<Tuple2<Object, Object>> idTuples
-    );
+    AssociationSaveCommand batchSaveCommand(Collection<Tuple2<Object, Object>> idTuples);
 
     default int delete(Object sourceId, Object targetId) {
         return deleteCommand(sourceId, targetId).execute();

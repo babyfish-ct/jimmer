@@ -46,6 +46,10 @@ public interface NumericExpression<N extends Number> extends Expression<N> {
 
     Predicate between(N min, N max);
 
+    Predicate notBetween(Expression<N> min, Expression<N> max);
+
+    Predicate notBetween(N min, N max);
+
     NumericExpression<N> sum();
 
     NumericExpression<N> min();

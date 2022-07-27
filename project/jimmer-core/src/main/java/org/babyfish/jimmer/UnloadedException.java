@@ -21,4 +21,12 @@ public class UnloadedException extends RuntimeException {
         this.type = type;
         this.prop = prop;
     }
+
+    public Class<?> getType() {
+        return type;
+    }
+
+    public String getProp() {
+        return prop;
+    }
 }

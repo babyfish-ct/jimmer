@@ -2,6 +2,8 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.JoinType;
+import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
@@ -12,7 +14,6 @@ import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -20,8 +21,8 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.dialect.UpdateJoin;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
-import javax.persistence.criteria.JoinType;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.*;
@@ -31,8 +32,6 @@ public class MutableUpdateImpl
         implements MutableUpdate, Executable<Integer>, Ast {
 
     private Map<Target, Expression<?>> assignmentMap = new LinkedHashMap<>();
-
-    private List<Predicate> predicates = new ArrayList<>();
 
     private Table<?> table;
 
@@ -44,6 +43,7 @@ public class MutableUpdateImpl
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public <T extends Table<?>> T getTable() {
         return (T)table;
     }
@@ -85,23 +85,27 @@ public class MutableUpdateImpl
 
     @Override
     public MutableUpdate where(Predicate ... predicates) {
-        for (Predicate predicate : predicates) {
-            if (predicate != null) {
-                this.predicates.add(predicate);
-            }
-        }
-        return null;
+        return (MutableUpdate) super.where(predicates);
     }
 
     @Override
     public Integer execute() {
         return getSqlClient()
                 .getConnectionManager()
-                .execute(this::execute);
+                .execute(this::executeImpl);
     }
 
     @Override
     public Integer execute(Connection con) {
+        if (con != null) {
+            return executeImpl(con);
+        }
+        return getSqlClient()
+                .getConnectionManager()
+                .execute(this::executeImpl);
+    }
+
+    private Integer executeImpl(Connection con) {
         if (assignmentMap.isEmpty()) {
             return 0;
         }
@@ -114,18 +118,19 @@ public class MutableUpdateImpl
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         for (Map.Entry<Target, Expression<?>> e : assignmentMap.entrySet()) {
             ((Ast) e.getKey().expr).accept(visitor);
             ((Ast) e.getValue()).accept(visitor);
         }
-        for (Predicate predicate : predicates) {
-            ((Ast) predicate).accept(visitor);
+        Predicate predicate = getPredicate();
+        if (predicate != null) {
+            ((Ast)predicate).accept(visitor);
         }
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         TableImplementor<?> table = TableImplementor.unwrap(this.table);
         Dialect dialect = getSqlClient().getDialect();
         this.accept(new VisitorImpl(builder, dialect));
@@ -218,10 +223,10 @@ public class MutableUpdateImpl
                 child.renderJoinAsFrom(builder, TableImplementor.RenderMode.WHERE_ONLY);
             }
         }
-        for (Predicate predicate : predicates) {
+        Predicate predicate = getPredicate();
+        if (predicate != null) {
             builder.sql(separator);
-            separator = " and ";
-            ((Ast) predicate).renderTo(builder);
+            ((Ast)predicate).renderTo(builder);
         }
     }
 

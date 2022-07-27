@@ -10,7 +10,7 @@ import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.*;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheLoader;
@@ -262,7 +262,7 @@ public class EntitiesImpl implements Entities {
             }
             return entities;
         }
-        ConfigurableTypedRootQuery<?, E> query = Queries.createQuery(
+        ConfigurableRootQuery<?, E> query = Queries.createQuery(
                 sqlClient, immutableType, (q, table) -> {
                     Expression<Object> idProp = table.get(immutableType.getIdProp().getName());
                     if (distinctIds.size() == 1) {
@@ -281,11 +281,7 @@ public class EntitiesImpl implements Entities {
 
     @Override
     public <E> SimpleSaveResult<E> save(E entity) {
-        SimpleEntitySaveCommand<E> command = saveCommand(entity);
-        if (con != null) {
-            return command.execute(con);
-        }
-        return command.execute();
+        return saveCommand(entity).execute();
     }
 
     @Override
@@ -293,30 +289,22 @@ public class EntitiesImpl implements Entities {
         if (entity instanceof Collection<?>) {
             throw new IllegalArgumentException("entity cannot be collection, do you want to call 'batchSaveCommand'?");
         }
-        return new SimpleEntitySaveCommandImpl<>(sqlClient, entity);
+        return new SimpleEntitySaveCommandImpl<>(sqlClient, con, entity);
     }
 
     @Override
     public <E> BatchSaveResult<E> batchSave(Collection<E> entities) {
-        BatchEntitySaveCommand<E> command = batchSaveCommand(entities);
-        if (con != null) {
-            return command.execute(con);
-        }
-        return command.execute();
+        return batchSaveCommand(entities).execute();
     }
 
     @Override
     public <E> BatchEntitySaveCommand<E> batchSaveCommand(Collection<E> entities) {
-        return new BatchEntitySaveCommandImpl<>(sqlClient, entities);
+        return new BatchEntitySaveCommandImpl<>(sqlClient, con, entities);
     }
 
     @Override
     public DeleteResult delete(Class<?> entityType, Object id) {
-        DeleteCommand command = deleteCommand(entityType, id);
-        if (con != null) {
-            return command.execute(con);
-        }
-        return command.execute();
+        return deleteCommand(entityType, id).execute();
     }
 
     @Override
@@ -332,11 +320,7 @@ public class EntitiesImpl implements Entities {
 
     @Override
     public DeleteResult batchDelete(Class<?> entityType, Collection<?> ids) {
-        DeleteCommand command = batchDeleteCommand(entityType, ids);
-        if (con != null) {
-            return command.execute(con);
-        }
-        return command.execute();
+        return batchDeleteCommand(entityType, ids).execute();
     }
 
     @Override
@@ -345,6 +329,6 @@ public class EntitiesImpl implements Entities {
             Collection<?> ids
     ) {
         ImmutableType immutableType = ImmutableType.get(entityType);
-        return new DeleteCommandImpl(sqlClient, immutableType, ids);
+        return new DeleteCommandImpl(sqlClient, con, immutableType, ids);
     }
 }

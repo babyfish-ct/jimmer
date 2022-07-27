@@ -1,8 +1,7 @@
 package org.babyfish.jimmer.sql.example.graphql.entities;
 
-import org.babyfish.jimmer.sql.Key;
+import org.babyfish.jimmer.sql.*;
 
-import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import java.util.List;
 
@@ -12,7 +11,7 @@ public interface Author {
     @Id
     @GeneratedValue(
             strategy = GenerationType.SEQUENCE,
-            generator = "sequence:AUTHOR_ID_SEQ"
+            sequenceName = "AUTHOR_ID_SEQ"
     )
     long id();
 

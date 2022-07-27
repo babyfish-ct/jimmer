@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ImmutableProps;
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Selection;
@@ -18,12 +19,9 @@ import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
-import javax.persistence.criteria.JoinType;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 class TableImpl<E> implements TableImplementor<E> {
@@ -45,7 +43,7 @@ class TableImpl<E> implements TableImplementor<E> {
     private String middleTableAlias;
 
     private Map<String, TableImpl<?>> childTableMap =
-            new HashMap<>();
+            new LinkedHashMap<>();
 
     public TableImpl(
             AbstractMutableStatementImpl statement,
@@ -306,7 +304,7 @@ class TableImpl<E> implements TableImplementor<E> {
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         visitor.visitTableReference(this, null);
     }
 
@@ -329,7 +327,7 @@ class TableImpl<E> implements TableImplementor<E> {
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         renderSelf(builder, RenderMode.NORMAL);
         if (parent == null || builder.isTableUsed(this)) {
             for (TableImpl<?> childTable : childTableMap.values()) {
@@ -514,7 +512,7 @@ class TableImpl<E> implements TableImplementor<E> {
         if (prop.isId() && joinProp != null) {
             MiddleTable middleTable;
             if (joinProp.getStorage() instanceof MiddleTable) {
-                middleTable = (MiddleTable) joinProp.getStorage();
+                middleTable = joinProp.getStorage();
             } else {
                 middleTable = null;
             }

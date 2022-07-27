@@ -7,6 +7,7 @@ import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.runtime.NonSharedList;
 
 import javax.lang.model.element.Modifier;
 import javax.validation.constraints.Email;
@@ -317,16 +318,13 @@ public class DraftImplGenerator {
 
         builder.addStatement("$T modified = $L()", type.getImplClassName(), DRAFT_FIELD_MODIFIED);
         if (prop.isList()) {
-            builder.addComment("Cannot use the shared instance 'Collections.EMPTY_LIST' ")
-                    .addComment("because DraftContext depends on identities of list objects")
-                    .addStatement(
-                            "modified.$L = $L != $T.EMPTY_LIST ? $L : new $T<>()",
-                            prop.getName(),
-                            prop.getName(),
-                            Collections.class,
-                            prop.getName(),
-                            ArrayList.class
-                    );
+            builder.addStatement(
+                    "modified.$L = $T.of(modified.$L, $L)",
+                    prop.getName(),
+                    NonSharedList.class,
+                    prop.getName(),
+                    prop.getName()
+            );
         } else {
             builder.addStatement("modified.$L = $L", prop.getName(), prop.getName());
         }
@@ -530,12 +528,22 @@ public class DraftImplGenerator {
 
             builder.beginControlFlow("else");
             for (ImmutableProp prop : type.getProps().values()) {
-                if (prop.isAssociation() || prop.isList()) {
+                if (prop.isList()) {
+                    builder.addStatement(
+                            "modified.$L = $T.of(modified.$L, $L.$L(modified.$L))",
+                            prop.getName(),
+                            NonSharedList.class,
+                            prop.getName(),
+                            DRAFT_FIELD_CTX,
+                            "resolveList",
+                            prop.getName()
+                    );
+                } else if (prop.isAssociation()) {
                     builder.addStatement(
                             "modified.$L = $L.$L(modified.$L)",
                             prop.getName(),
                             DRAFT_FIELD_CTX,
-                            prop.isList() ? "resolveList" : "resolveObject",
+                            "resolveObject",
                             prop.getName()
                     );
                 }

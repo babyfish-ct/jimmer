@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -120,7 +121,7 @@ public class SqlExpressions {
         }
 
         @Override
-        public void accept(AstVisitor visitor) {
+        public void accept(@NotNull AstVisitor visitor) {
             for (Object part : parts) {
                 if (part instanceof Ast) {
                     ((Ast) part).accept(visitor);
@@ -129,7 +130,7 @@ public class SqlExpressions {
         }
 
         @Override
-        public void renderTo(SqlBuilder builder) {
+        public void renderTo(@NotNull SqlBuilder builder) {
             for (Object part : parts) {
                 if (part instanceof Ast) {
                     renderChild((Ast) part, builder);

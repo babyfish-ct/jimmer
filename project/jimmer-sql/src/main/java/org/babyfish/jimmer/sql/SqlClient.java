@@ -11,16 +11,15 @@ import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
+import org.babyfish.jimmer.sql.runtime.SqlClientImpl;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -29,7 +28,7 @@ import java.util.function.Function;
 public interface SqlClient {
 
     static Builder newBuilder() {
-        return new Builder();
+        return new SqlClientImpl.BuilderImpl();
     }
 
     ConnectionManager getConnectionManager();
@@ -46,19 +45,19 @@ public interface SqlClient {
 
     int getDefaultListBatchSize();
 
-    <T extends Table<?>, R> ConfigurableTypedRootQuery<T, R> createQuery(
+    <T extends Table<?>, R> ConfigurableRootQuery<T, R> createQuery(
             Class<T> tableType,
-            BiFunction<MutableRootQuery<T>, T, ConfigurableTypedRootQuery<T, R>> block
+            BiFunction<MutableRootQuery<T>, T, ConfigurableRootQuery<T, R>> block
     );
 
     <SE, ST extends Table<SE>, TE, TT extends Table<TE>, R>
-    ConfigurableTypedRootQuery<AssociationTable<SE, ST, TE, TT>, R> createAssociationQuery(
+    ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R> createAssociationQuery(
             Class<ST> sourceTableType,
             Function<ST, TT> targetTableGetter,
             BiFunction<
                     MutableRootQuery<AssociationTable<SE, ST, TE, TT>>,
                     AssociationTable<SE, ST, TE, TT>,
-                    ConfigurableTypedRootQuery<AssociationTable<SE, ST, TE, TT>, R>
+                    ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R>
             > block
     );
 
@@ -88,131 +87,50 @@ public interface SqlClient {
     Associations getAssociations(AssociationType associationType);
 
     <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ReferenceLoader<SE, TE> getReferenceLoader(
+    ReferenceLoader<SE, TE, TT> getReferenceLoader(
             Class<ST> sourceTableType,
             Function<ST, TT> block
     );
 
     <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ReferenceLoader<SE, TE> getReferenceLoader(
-            Class<ST> sourceTableType,
-            Function<ST, TT> block,
-            Filter<TT> filter
-    );
-
-    <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ListLoader<SE, TE> getListLoader(
+    ListLoader<SE, TE, TT> getListLoader(
             Class<ST> sourceTableType,
             Function<ST, TT> block
-    );
-
-    <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ListLoader<SE, TE> getListLoader(
-            Class<ST> sourceTableType,
-            Function<ST, TT> block,
-            Filter<TT> filter
     );
 
     Caches getCaches();
 
     SqlClient caches(Consumer<CacheConfig> block);
 
-    class Builder {
-
-        private ConnectionManager connectionManager;
-
-        private Dialect dialect;
-
-        private Executor executor;
-
-        private final Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap = new HashMap<>();
-
-        private final Map<Class<?>, IdGenerator> idGeneratorMap = new HashMap<>();
-
-        private int defaultBatchSize = 128;
-
-        private int defaultListBatchSize = 16;
-
-        private Caches caches;
-
-        Builder() {}
+    interface Builder {
 
         @OldChain
-        public Builder setConnectionManager(ConnectionManager connectionManager) {
-            this.connectionManager = connectionManager;
-            return this;
-        }
+        Builder setConnectionManager(ConnectionManager connectionManager);
 
         @OldChain
-        public Builder setDialect(Dialect dialect) {
-            this.dialect = dialect;
-            return this;
-        }
+        Builder setDialect(Dialect dialect);
 
         @OldChain
-        public Builder setExecutor(Executor executor) {
-            this.executor = executor;
-            return this;
-        }
+        Builder setExecutor(Executor executor);
 
         @OldChain
-        public Builder setIdGenerator(IdGenerator idGenerator) {
-            return setIdGenerator(null, idGenerator);
-        }
-
-        public Builder setIdGenerator(Class<?> entityType, IdGenerator idGenerator) {
-            idGeneratorMap.put(entityType, idGenerator);
-            return this;
-        }
+        Builder setIdGenerator(IdGenerator idGenerator);
 
         @OldChain
-        public Builder addScalarProvider(ScalarProvider<?, ?> scalarProvider) {
-            if (scalarProviderMap.containsKey(scalarProvider.getScalarType())) {
-                throw new IllegalStateException(
-                        "Cannot set scalar provider for scalar type \"" +
-                                scalarProvider.getScalarType() +
-                                "\" twice"
-                );
-            }
-            scalarProviderMap.put(scalarProvider.getScalarType(), scalarProvider);
-            return this;
-        }
+        Builder setIdGenerator(Class<?> entityType, IdGenerator idGenerator);
 
         @OldChain
-        public Builder setDefaultBatchSize(int size) {
-            if (size < 1) {
-                throw new IllegalStateException("size cannot be less than 1");
-            }
-            defaultBatchSize = size;
-            return this;
-        }
+        Builder addScalarProvider(ScalarProvider<?, ?> scalarProvider);
 
         @OldChain
-        public Builder setDefaultListBatchSize(int size) {
-            if (size < 1) {
-                throw new IllegalStateException("size cannot be less than 1");
-            }
-            defaultListBatchSize = size;
-            return this;
-        }
+        Builder setDefaultBatchSize(int size);
 
         @OldChain
-        public Builder setCaches(Consumer<CacheConfig> block) {
-            caches = Caches.of(block);
-            return this;
-        }
+        Builder setDefaultListBatchSize(int size);
 
-        public SqlClient build() {
-            return new SqlClientImpl(
-                    connectionManager,
-                    dialect,
-                    executor,
-                    scalarProviderMap,
-                    idGeneratorMap,
-                    defaultBatchSize,
-                    defaultListBatchSize,
-                    caches
-            );
-        }
+        @OldChain
+        Builder setCaches(Consumer<CacheConfig> block);
+
+        SqlClient build();
     }
 }

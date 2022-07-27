@@ -8,12 +8,15 @@ import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Filter;
 
+import java.sql.Connection;
 import java.util.Collection;
 import java.util.Map;
 
-class ReferenceLoaderImpl<S, T> implements ReferenceLoader<S, T> {
+class ReferenceLoaderImpl<SE, TE, TT extends Table<TE>> implements ReferenceLoader<SE, TE, TT> {
 
     private SqlClient sqlClient;
+
+    private Connection con;
 
     private ImmutableProp prop;
 
@@ -21,17 +24,48 @@ class ReferenceLoaderImpl<S, T> implements ReferenceLoader<S, T> {
 
     public ReferenceLoaderImpl(
             SqlClient sqlClient,
+            ImmutableProp prop
+    ) {
+        this(sqlClient, null, prop, null);
+    }
+
+    public ReferenceLoaderImpl(
+            SqlClient sqlClient,
+            Connection con,
             ImmutableProp prop,
             Filter<?> filter
     ) {
         this.sqlClient = sqlClient;
+        this.con = con;
         this.prop = prop;
         this.filter = filter;
     }
 
     @Override
+    public ReferenceLoader<SE, TE, TT> forConnection(Connection con) {
+        if (this.con == con) {
+            return this;
+        }
+        return new ReferenceLoaderImpl<>(sqlClient, con, prop, filter);
+    }
+
+    @Override
+    public ReferenceLoader<SE, TE, TT> forFilter(Filter<TT> filter) {
+        if (this.filter == filter) {
+            return this;
+        }
+        if (!prop.isNullable() && filter != null) {
+            throw new IllegalArgumentException(
+                    "Cannot create filterable loader for \"" + prop + "\", " +
+                            "non-null association does not accept filter"
+            );
+        }
+        return new ReferenceLoaderImpl<>(sqlClient, con, prop, filter);
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
-    public Executable<T> loadCommand(S source) {
+    public Executable<TE> loadCommand(SE source) {
         if (source instanceof Collection<?>) {
             throw new IllegalArgumentException(
                     "source cannot be collection, do you want to call 'batchLoadCommand'?"
@@ -39,6 +73,7 @@ class ReferenceLoaderImpl<S, T> implements ReferenceLoader<S, T> {
         }
         return new SingleCommand<>(
                 sqlClient,
+                con,
                 prop,
                 (Filter<Table<ImmutableSpi>>) filter,
                 Integer.MAX_VALUE,
@@ -49,9 +84,10 @@ class ReferenceLoaderImpl<S, T> implements ReferenceLoader<S, T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public Executable<Map<S, T>> batchLoadCommand(Collection<S> sources) {
+    public Executable<Map<SE, TE>> batchLoadCommand(Collection<SE> sources) {
         return new BatchCommand<>(
                 sqlClient,
+                con,
                 prop,
                 (Filter<Table<ImmutableSpi>>) filter,
                 (Collection<ImmutableSpi>) sources

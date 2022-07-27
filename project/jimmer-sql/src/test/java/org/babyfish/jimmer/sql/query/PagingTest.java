@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.query;
 
-import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
+import org.babyfish.jimmer.sql.JoinType;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
@@ -12,7 +13,6 @@ import org.babyfish.jimmer.sql.model.BookTable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import javax.persistence.criteria.JoinType;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.UUID;
@@ -22,14 +22,14 @@ public class PagingTest extends AbstractQueryTest {
     @Test
     public void testCountQuerySkipUnnecessaryJoinOfIgnoredOrderByClause() {
 
-        ConfigurableTypedRootQuery<BookTable, Book> query = getSqlClient().createQuery(BookTable.class, (q, book) -> {
+        ConfigurableRootQuery<BookTable, Book> query = getSqlClient().createQuery(BookTable.class, (q, book) -> {
             q.where(book.price().between(new BigDecimal(20), new BigDecimal(30)));
             q.orderBy(book.store(JoinType.LEFT).name());
             q.orderBy(book.name());
             return q.select(book);
         });
 
-        ConfigurableTypedRootQuery<BookTable, Long> countQuery = query
+        ConfigurableRootQuery<BookTable, Long> countQuery = query
                 .reselect((q, book) -> q.select(book.count()))
                 .withoutSortingAndPaging();
 
@@ -65,14 +65,14 @@ public class PagingTest extends AbstractQueryTest {
     @Test
     public void testCountQueryKeepNecessaryJoinOfIgnoredOrderByClause() {
 
-        ConfigurableTypedRootQuery<BookTable, Book> query = getSqlClient().createQuery(BookTable.class, (q, book) -> {
+        ConfigurableRootQuery<BookTable, Book> query = getSqlClient().createQuery(BookTable.class, (q, book) -> {
             q.where(book.price().between(new BigDecimal(20), new BigDecimal(30)));
             q.orderBy(book.store().name());
             q.orderBy(book.name());
             return q.select(book);
         });
 
-        ConfigurableTypedRootQuery<BookTable, Long> countQuery = query
+        ConfigurableRootQuery<BookTable, Long> countQuery = query
                 .reselect((q, book) -> q.select(book.count()))
                 .withoutSortingAndPaging();
 
@@ -109,14 +109,14 @@ public class PagingTest extends AbstractQueryTest {
     @Test
     public void testCountQuerySkipNecessaryJoinOfIgnoredSelectClause() {
 
-        ConfigurableTypedRootQuery<BookTable, Tuple2<Book, BookStore>> query =
+        ConfigurableRootQuery<BookTable, Tuple2<Book, BookStore>> query =
                 getSqlClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(book.price().between(new BigDecimal(20), new BigDecimal(30)));
                     q.orderBy(book.name());
                     return q.select(book, book.store(JoinType.LEFT));
                 });
 
-        ConfigurableTypedRootQuery<BookTable, Long> countQuery = query
+        ConfigurableRootQuery<BookTable, Long> countQuery = query
                 .reselect((q, book) -> q.select(book.count()))
                 .withoutSortingAndPaging();
 
@@ -154,14 +154,14 @@ public class PagingTest extends AbstractQueryTest {
     @Test
     public void testCountQueryKeepNecessaryJoinOfIgnoredSelectClause() {
 
-        ConfigurableTypedRootQuery<BookTable, Tuple2<Book, BookStore>> query =
+        ConfigurableRootQuery<BookTable, Tuple2<Book, BookStore>> query =
                 getSqlClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(book.price().between(new BigDecimal(20), new BigDecimal(30)));
                     q.orderBy(book.name());
                     return q.select(book, book.store());
                 });
 
-        ConfigurableTypedRootQuery<BookTable, Long> countQuery = query
+        ConfigurableRootQuery<BookTable, Long> countQuery = query
                 .reselect((q, book) -> q.select(book.count()))
                 .withoutSortingAndPaging();
 
@@ -200,7 +200,7 @@ public class PagingTest extends AbstractQueryTest {
     @Test
     public void testReselectTwice() {
 
-        ConfigurableTypedRootQuery<BookTable, Tuple2<Book, BookStore>> query =
+        ConfigurableRootQuery<BookTable, Tuple2<Book, BookStore>> query =
                 getSqlClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(book.price().between(new BigDecimal(20), new BigDecimal(30)));
                     q.orderBy(book.name());
@@ -217,7 +217,7 @@ public class PagingTest extends AbstractQueryTest {
     @Test
     public void testReselectBaseOnGroupBy() {
 
-        ConfigurableTypedRootQuery<BookTable, UUID> query =
+        ConfigurableRootQuery<BookTable, UUID> query =
                 getSqlClient().createQuery(BookTable.class, (q, book) -> {
                     q.groupBy(book.id());
                     return q.select(book.id());
@@ -231,7 +231,7 @@ public class PagingTest extends AbstractQueryTest {
     @Test
     public void testReselectBaseOnAggregation() {
 
-        ConfigurableTypedRootQuery<BookTable, Long> query =
+        ConfigurableRootQuery<BookTable, Long> query =
                 getSqlClient().createQuery(BookTable.class, (q, book) -> {
                     return q.select(book.count());
                 });

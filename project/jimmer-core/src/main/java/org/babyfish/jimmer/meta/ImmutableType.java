@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.meta;
 
+import kotlin.reflect.KClass;
+import kotlin.reflect.KProperty1;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.impl.Metadata;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
@@ -8,6 +10,7 @@ import org.babyfish.jimmer.runtime.DraftContext;
 import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public interface ImmutableType {
 
@@ -25,6 +28,14 @@ public interface ImmutableType {
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
         return Metadata.newTypeBuilder(javaClass, superType, draftFactory);
+    }
+
+    static Builder newBuilder(
+            KClass<?> kotlinClass,
+            ImmutableType superType,
+            BiFunction<DraftContext, Object, Draft> draftFactory
+    ) {
+        return Metadata.newTypeBuilder(kotlinClass, superType, draftFactory);
     }
     
     Class<?> getJavaClass();
@@ -74,10 +85,9 @@ public interface ImmutableType {
 
         Builder add(
                 String name,
-                ImmutablePropCategory category,
+                Class<? extends Annotation> associationType,
                 Class<?> elementType,
-                boolean nullable,
-                Class<? extends Annotation> associationType
+                boolean nullable
         );
 
         ImmutableType build();

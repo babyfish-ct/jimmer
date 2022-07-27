@@ -1,19 +1,18 @@
 package org.babyfish.jimmer.meta.impl;
 
+import kotlin.reflect.KClass;
+import kotlin.reflect.KProperty1;
+import kotlin.reflect.full.KClasses;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutablePropCategory;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
-import org.babyfish.jimmer.sql.DeleteAction;
-import org.babyfish.jimmer.sql.OnDelete;
+import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.Storage;
 
-import javax.persistence.ManyToMany;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.Transient;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.stream.Collectors;
 
 class ImmutablePropImpl implements ImmutableProp {
 
@@ -29,7 +28,9 @@ class ImmutablePropImpl implements ImmutableProp {
 
     private final boolean nullable;
 
-    private Method getter;
+    private KProperty1<?, ?> kotlinProp;
+
+    private Method javaGetter;
 
     private Annotation associationAnnotation;
 
@@ -69,21 +70,32 @@ class ImmutablePropImpl implements ImmutableProp {
         this.elementClass = elementClass;
         this.nullable = nullable;
 
+        KClass<?> kotlinClass = declaringType.getKotlinClass();
+        if (kotlinClass != null) {
+            kotlinProp = KClasses.getDeclaredMemberProperties(kotlinClass)
+                    .stream()
+                    .filter(it -> name.equals(it.getName()))
+                    .findFirst()
+                    .get();
+        }
         try {
-            getter = declaringType.getJavaClass().getDeclaredMethod(name);
+            javaGetter = declaringType.getJavaClass().getDeclaredMethod(name);
         } catch (NoSuchMethodException ignored) {
         }
         try {
-            getter = declaringType.getJavaClass().getDeclaredMethod(
+            javaGetter = declaringType.getJavaClass().getDeclaredMethod(
                     "get" + name.substring(0, 1).toUpperCase() + name.substring(1));
         } catch (NoSuchMethodException ignored) {
         }
         try {
-            getter = declaringType.getJavaClass().getDeclaredMethod(
+            javaGetter = declaringType.getJavaClass().getDeclaredMethod(
                     "is" + name.substring(0, 1).toUpperCase() + name.substring(1));
+            if (javaGetter.getReturnType() != boolean.class) {
+                javaGetter = null;
+            }
         } catch (NoSuchMethodException ignored) {
         }
-        if (getter == null) {
+        if (javaGetter == null) {
             throw new AssertionError(
                     "Internal bug: Cannot find the getter of prop \"" +
                             name +
@@ -146,16 +158,40 @@ class ImmutablePropImpl implements ImmutableProp {
         return nullable;
     }
 
-    public Method getGetter() {
-        return getter;
-    }
-
+    @SuppressWarnings("unchecked")
     public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
-        return getter.getAnnotation(annotationType);
+        if (kotlinProp != null) {
+            Annotation annotation = kotlinProp
+                    .getAnnotations()
+                    .stream()
+                    .filter(it -> it.annotationType() == annotationType)
+                    .findFirst()
+                    .orElse(null);
+            if (annotation != null) {
+                return (A) annotation;
+            }
+        }
+        return javaGetter.getAnnotation(annotationType);
     }
 
+    @SuppressWarnings("unchecked")
     public <A extends Annotation> A[] getAnnotations(Class<A> annotationType) {
-        return getter.getAnnotationsByType(annotationType);
+        A[] getterArr = javaGetter.getAnnotationsByType(annotationType);
+        A[] propArr = null;
+        if (kotlinProp != null) {
+            propArr = (A[])kotlinProp
+                    .getAnnotations()
+                    .stream()
+                    .filter(it -> it.annotationType() == annotationType)
+                    .toArray();
+        }
+        if (propArr == null && propArr.length == 0) {
+            return getterArr;
+        }
+        A[] mergedArr = (A[])new Object[propArr.length + getterArr.length];
+        System.arraycopy(propArr, 0, mergedArr, 0, propArr.length);
+        System.arraycopy(getterArr, 0, mergedArr, propArr.length, getterArr.length);
+        return mergedArr;
     }
 
     public Annotation getAssociationAnnotation() {

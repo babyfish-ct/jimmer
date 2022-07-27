@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Predicate;
 
-interface PredicateImplementor extends Predicate {
+public interface PredicateImplementor extends Predicate, ExpressionImplementor<Boolean> {
 
     @Override
     default Predicate and(Predicate other) {

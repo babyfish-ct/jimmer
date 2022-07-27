@@ -7,30 +7,52 @@ import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.AssociationSaveCommand;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.Converters;
+import org.jetbrains.annotations.NotNull;
 
+import java.sql.Connection;
 import java.util.*;
 
 public class AssociationsImpl implements Associations {
 
     private final SqlClient sqlClient;
+    
+    private final Connection con;
 
     private final AssociationType associationType;
 
     private final boolean reversed;
 
-    public AssociationsImpl(SqlClient sqlClient, AssociationType associationType) {
-        this(sqlClient, associationType, false);
+    public AssociationsImpl(
+            SqlClient sqlClient, 
+            Connection con, 
+            AssociationType associationType
+    ) {
+        this(sqlClient, con, associationType, false);
     }
 
-    private AssociationsImpl(SqlClient sqlClient, AssociationType associationType, boolean reversed) {
+    private AssociationsImpl(
+            SqlClient sqlClient,
+            Connection con,
+            AssociationType associationType,
+            boolean reversed
+    ) {
         this.sqlClient = sqlClient;
+        this.con = con;
         this.associationType = associationType;
         this.reversed = reversed;
     }
 
     @Override
+    public Associations forConnection(Connection con) {
+        if (this.con == con) {
+            return this;
+        }
+        return new AssociationsImpl(sqlClient, con, associationType, reversed);
+    }
+
+    @Override
     public Associations reverse() {
-        return new AssociationsImpl(sqlClient, associationType, !reversed);
+        return new AssociationsImpl(sqlClient, con, associationType, !reversed);
     }
 
     @Override
@@ -73,7 +95,7 @@ public class AssociationsImpl implements Associations {
     public Executable<Integer> batchDeleteCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
         return deleteExecutable(cartesianProduct(sourceIds, targetIds));
     }
-
+    
     @Override
     public Executable<Integer> batchDeleteCommand(Collection<Tuple2<Object, Object>> idTuples) {
         return deleteExecutable(idTuples);
@@ -83,6 +105,7 @@ public class AssociationsImpl implements Associations {
         validate(idTuples);
         return new AssociationExecutable(
                 sqlClient,
+                con,
                 associationType,
                 reversed,
                 AssociationExecutable.Mode.INSERT,
@@ -94,6 +117,7 @@ public class AssociationsImpl implements Associations {
         validate(idTuples);
         return new AssociationExecutable(
                 sqlClient,
+                con,
                 associationType,
                 reversed,
                 AssociationExecutable.Mode.DELETE,

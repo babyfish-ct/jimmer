@@ -23,6 +23,8 @@ class DeleteCommandImpl implements DeleteCommand {
 
     private final SqlClient sqlClient;
 
+    private final Connection con;
+
     private final ImmutableType immutableType;
 
     private final Collection<?> ids;
@@ -31,6 +33,7 @@ class DeleteCommandImpl implements DeleteCommand {
 
     public DeleteCommandImpl(
             SqlClient sqlClient,
+            Connection con,
             ImmutableType immutableType,
             Collection<?> ids
     ) {
@@ -47,6 +50,7 @@ class DeleteCommandImpl implements DeleteCommand {
             }
         }
         this.sqlClient = sqlClient;
+        this.con = con;
         this.immutableType = immutableType;
         this.ids = ids;
         this.data = new Data(sqlClient).freeze();
@@ -57,6 +61,7 @@ class DeleteCommandImpl implements DeleteCommand {
             Data data
     ) {
         this.sqlClient = base.sqlClient;
+        this.con = base.con;
         this.immutableType = base.immutableType;
         this.ids = base.ids;
         this.data = data.freeze();
@@ -74,13 +79,28 @@ class DeleteCommandImpl implements DeleteCommand {
 
     @Override
     public DeleteResult execute() {
+        if (con != null) {
+            return executeImpl(con);
+        }
         return sqlClient
                 .getConnectionManager()
-                .execute(this::execute);
+                .execute(this::executeImpl);
     }
 
     @Override
     public DeleteResult execute(Connection con) {
+        if (con != null) {
+            return executeImpl(con);
+        }
+        if (this.con != null) {
+            return executeImpl(this.con);
+        }
+        return sqlClient
+                .getConnectionManager()
+                .execute(this::executeImpl);
+    }
+
+    private DeleteResult executeImpl(Connection con) {
         Deleter deleter = new Deleter(data, con);
         deleter.addPreHandleInput(immutableType, ids);
         return deleter.execute();

@@ -12,24 +12,28 @@ import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 
+import java.sql.Connection;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-abstract class AbstractEntitySaveCommandImpl<C extends AbstractEntitySaveCommand<C>> implements AbstractEntitySaveCommand<C> {
+abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveCommand {
 
-    SqlClient sqlClient;
+    final SqlClient sqlClient;
 
-    Data data;
+    final Connection con;
 
-    AbstractEntitySaveCommandImpl(SqlClient sqlClient, Data data) {
+    final Data data;
+
+    AbstractEntitySaveCommandImpl(SqlClient sqlClient, Connection con, Data data) {
         this.sqlClient = sqlClient;
+        this.con = con;
         this.data = data != null ? data.freeze() : new Data(sqlClient).freeze();
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public C configure(Consumer<Cfg> block) {
+    public AbstractEntitySaveCommand configure(Consumer<Cfg> block) {
         Data newData = new Data(data);
         block.accept(newData);
         if (newData.mode == SaveMode.UPSERT &&
@@ -37,12 +41,12 @@ abstract class AbstractEntitySaveCommandImpl<C extends AbstractEntitySaveCommand
                 !newData.autoAttachingAll &&
                 newData.deleteActionMap.isEmpty() &&
                 newData.autoAttachingSet.isEmpty()) {
-            return (C)this;
+            return this;
         }
         return create(newData);
     }
 
-    abstract C create(Data data);
+    abstract AbstractEntitySaveCommand create(Data data);
 
     static class Data implements Cfg {
 

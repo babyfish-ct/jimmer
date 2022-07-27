@@ -5,8 +5,10 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
@@ -40,7 +42,7 @@ class AbstractConfigurableTypedQueryImpl<R> implements TypedQueryImplementor {
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         for (Selection<?> selection : data.getSelections()) {
             Ast.from(selection).accept(visitor);
         }
@@ -48,7 +50,7 @@ class AbstractConfigurableTypedQueryImpl<R> implements TypedQueryImplementor {
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         if (data.isWithoutSortingAndPaging() || data.getLimit() == Integer.MAX_VALUE) {
             renderWithoutPaging(builder);
         } else {
@@ -78,9 +80,12 @@ class AbstractConfigurableTypedQueryImpl<R> implements TypedQueryImplementor {
         String separator = "";
         for (Selection<?> selection : data.getSelections()) {
             builder.sql(separator);
-            if (selection instanceof Table<?>) {
-                TableImplementor<?> tableImpl = TableImplementor.unwrap((Table<?>)selection);
-                renderAllProps(tableImpl, builder);
+            if (selection instanceof TableSelection<?>) {
+                TableSelection<?> tableSelection = (TableSelection<?>) selection;
+                renderAllProps(tableSelection, builder);
+            } else if (selection instanceof Table<?>) {
+                TableSelection<?> tableSelection = TableImplementor.unwrap((Table<?>)selection);
+                renderAllProps(tableSelection, builder);
             } else {
                 Ast.from(selection).renderTo(builder);
             }
@@ -89,7 +94,7 @@ class AbstractConfigurableTypedQueryImpl<R> implements TypedQueryImplementor {
         baseQuery.renderTo(builder, data.isWithoutSortingAndPaging());
     }
 
-    private static void renderAllProps(TableImplementor<?> table, SqlBuilder builder) {
+    private static void renderAllProps(TableSelection<?> table, SqlBuilder builder) {
         String separator = "";
         Map<String, ImmutableProp> selectableProps = table
                 .getImmutableType()

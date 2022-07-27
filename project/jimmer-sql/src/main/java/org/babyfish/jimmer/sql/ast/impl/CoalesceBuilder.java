@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.StringExpression;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -137,14 +138,14 @@ public class CoalesceBuilder<T> {
         }
 
         @Override
-        public void accept(AstVisitor visitor) {
+        public void accept(@NotNull AstVisitor visitor) {
             for (Expression<?> expression : expressions) {
                 ((Ast) expression).accept(visitor);
             }
         }
 
         @Override
-        public void renderTo(SqlBuilder builder) {
+        public void renderTo(@NotNull SqlBuilder builder) {
             if  (expressions.size() == 1) {
                 renderChild((Ast) expressions.get(0), builder);
             } else {

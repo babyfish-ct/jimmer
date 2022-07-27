@@ -16,21 +16,25 @@ import java.util.Map;
 
 class BatchCommand<S, T> implements Executable<Map<S, T>> {
 
-    private SqlClient sqlClient;
+    private final SqlClient sqlClient;
 
-    private ImmutableProp prop;
+    private final Connection con;
 
-    private Filter<Table<ImmutableSpi>> filter;
+    private final ImmutableProp prop;
 
-    private Collection<ImmutableSpi> sources;
+    private final Filter<Table<ImmutableSpi>> filter;
+
+    private final Collection<ImmutableSpi> sources;
 
     public BatchCommand(
             SqlClient sqlClient,
+            Connection con,
             ImmutableProp prop,
             Filter<Table<ImmutableSpi>> filter,
             Collection<ImmutableSpi> sources
     ) {
         this.sqlClient = sqlClient;
+        this.con = con;
         this.prop = prop;
         this.filter = filter;
         this.sources = sources;
@@ -38,14 +42,29 @@ class BatchCommand<S, T> implements Executable<Map<S, T>> {
 
     @Override
     public Map<S, T> execute() {
+        if (con != null) {
+            return executeImpl(con);
+        }
         return sqlClient
                 .getConnectionManager()
-                .execute(this::execute);
+                .execute(this::executeImpl);
+    }
+
+    @Override
+    public Map<S, T> execute(Connection con) {
+        if (con != null) {
+            return executeImpl(con);
+        }
+        if (this.con != null) {
+            return executeImpl(this.con);
+        }
+        return sqlClient
+                .getConnectionManager()
+                .execute(this::executeImpl);
     }
 
     @SuppressWarnings("unchecked")
-    @Override
-    public Map<S, T> execute(Connection con) {
+    private Map<S, T> executeImpl(Connection con) {
         return (Map<S, T>) new DataLoader(
                 sqlClient,
                 con,

@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 public class ValidationGenerator {
@@ -63,7 +64,7 @@ public class ValidationGenerator {
             throw new MetaException(
                     "Illegal property \"" +
                             prop +
-                            "\", it's marked by the annotation @" +
+                            "\", it's decorated by the annotation @" +
                             notEmpties[0].annotationType().getName() +
                             " but its type is neither string nor list"
             );
@@ -85,7 +86,7 @@ public class ValidationGenerator {
             throw new MetaException(
                     "Illegal property \"" +
                             prop +
-                            "\", it's marked by the annotation @" +
+                            "\", it's decorated by the annotation @" +
                             notBlanks[0].annotationType().getName() +
                             " but its type is not string"
             );
@@ -103,13 +104,13 @@ public class ValidationGenerator {
         if (sizes.length == 0) {
             return;
         }
-        if (!isSimpleClass(String.class)) {
+        if (!isSimpleClass(String.class) && !isSimpleClass(List.class)) {
             throw new MetaException(
                     "Illegal property \"" +
                             prop +
-                            "\", it's marked by the annotation @" +
+                            "\", it's decorated by the annotation @" +
                             sizes[0].annotationType().getName() +
-                            " but its type is neither nor string"
+                            " but its type is neither string nor list"
             );
         }
         int min = 0;
@@ -167,21 +168,21 @@ public class ValidationGenerator {
         Negative[] negatives = prop.getAnnotations(Negative.class);
         NegativeOrZero[] negativeOrZeros = prop.getAnnotations(NegativeOrZero.class);
         Annotation annotation = Arrays.stream(new Annotation[][] { minArr, maxArr, positives, positiveOrZeros, negatives, negativeOrZeros})
-                .flatMap(it -> Arrays.stream(it))
-                .filter(it -> it != null)
+                .flatMap(Arrays::stream)
+                .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);
         if (annotation == null) {
             return;
         }
         if (!prop.getTypeName().isPrimitive() &&
-                prop.getTypeName().isBoxedPrimitive() &&
+                !prop.getTypeName().isBoxedPrimitive() &&
                 !isSimpleClass(BigInteger.class) &&
                 !isSimpleClass(BigDecimal.class)) {
             throw new MetaException(
                     "Illegal property \"" +
                             prop +
-                            "\", it's marked by the annotation @" +
+                            "\", it's decorated by the annotation @" +
                             annotation.annotationType().getName() +
                             " but its type is numeric"
             );
@@ -252,7 +253,7 @@ public class ValidationGenerator {
             throw new MetaException(
                     "Illegal property \"" +
                             prop +
-                            "\", it's marked by the annotation @" +
+                            "\", it's decorated by the annotation @" +
                             emails[0].annotationType().getName() +
                             " but its type is not string"
             );
@@ -274,7 +275,7 @@ public class ValidationGenerator {
             throw new MetaException(
                     "Illegal property \"" +
                             prop +
-                            "\", it's marked by the annotation @" +
+                            "\", it's decorated by the annotation @" +
                             patterns[0].annotationType().getName() +
                             " but its type is not string"
             );
@@ -284,7 +285,7 @@ public class ValidationGenerator {
             validate(
                     "!$L.matcher($L).matches()",
                     new Object[]{ Constants.regexpPatternFieldName(prop, i), valueName },
-                    patterns[0].message(),
+                    patterns[index].message(),
                     () -> "it does not match the regexp '" +
                             patterns[index].regexp().replace("\\", "\\\\") +
                             "'"

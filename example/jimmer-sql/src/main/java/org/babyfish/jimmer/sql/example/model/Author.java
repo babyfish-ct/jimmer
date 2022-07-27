@@ -1,12 +1,8 @@
 package org.babyfish.jimmer.sql.example.model;
 
-import org.babyfish.jimmer.sql.Key;
+import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.ManyToMany;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,7 +10,7 @@ import java.util.UUID;
 public interface Author {
 
     @Id
-    @GeneratedValue(generator = UUIDIdGenerator.FULL_NAME)
+    @GeneratedValue(strategy = GenerationType.USER, generatorType = UUIDIdGenerator.class)
     UUID id();
 
     @Key

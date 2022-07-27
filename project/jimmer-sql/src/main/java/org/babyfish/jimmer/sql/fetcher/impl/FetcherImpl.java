@@ -214,7 +214,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
         }
         FieldConfigImpl<Object, Table<Object>> loaderImpl = new FieldConfigImpl<>(immutableProp, (FetcherImpl<?>) childFetcher);
         if (loaderBlock != null) {
-            ((Consumer<FieldConfig<Object, Table<Object>>>)loaderBlock).accept(loaderImpl);
+            ((Consumer<FieldConfig<Object, Table<Object>>>) loaderBlock).accept(loaderImpl);
             if (loaderImpl.getLimit() != Integer.MAX_VALUE && loaderImpl.getBatchSize() != 1) {
                 throw new IllegalArgumentException(
                         "Fetcher field with limit does not support batch load, " +
