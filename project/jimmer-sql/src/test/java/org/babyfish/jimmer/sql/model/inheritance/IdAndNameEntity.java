@@ -1,7 +1,8 @@
 package org.babyfish.jimmer.sql.model.inheritance;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import org.babyfish.jimmer.sql.Entity;
+import org.babyfish.jimmer.sql.Table;
+
 
 @Entity
 @Table(name = "BOOK_STORE")

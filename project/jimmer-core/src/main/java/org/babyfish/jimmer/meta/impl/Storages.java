@@ -2,11 +2,11 @@ package org.babyfish.jimmer.meta.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ModelException;
+import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.meta.Storage;
 
-import javax.persistence.*;
 import java.lang.annotation.Annotation;
 
 public class Storages {
@@ -25,7 +25,7 @@ public class Storages {
             return null;
         }
         if (annotation == null) {
-            javax.persistence.Column column = prop.getAnnotation(javax.persistence.Column.class);
+            org.babyfish.jimmer.sql.Column column = prop.getAnnotation(org.babyfish.jimmer.sql.Column.class);
             String columnName = column != null ? column.name() : "";
             if (columnName.isEmpty()) {
                 columnName = Utils.databaseIdentifier(prop.getName());
@@ -63,17 +63,21 @@ public class Storages {
                             ) +
                             "_MAPPING";
         }
-        String joinColumnName = joinTable != null && joinTable.joinColumns().length != 0 ?
-                joinTable.joinColumns()[0].name() :
+        String joinColumnName = joinTable != null ?
+                joinTable.joinColumnName() :
                 "";
         if (joinColumnName.isEmpty()) {
-            joinColumnName = ((Column)prop.getDeclaringType().getIdProp().getStorage()).getName();
+            joinColumnName =
+                    Utils.databaseIdentifier(prop.getDeclaringType().getJavaClass().getSimpleName()) +
+                            "_ID";
         }
-        String targetJoinColumn = joinTable != null && joinTable.inverseJoinColumns().length != 0 ?
-                joinTable.inverseJoinColumns()[0].name() :
+        String targetJoinColumn = joinTable != null ?
+                joinTable.inverseJoinColumnName() :
                 "";
         if (targetJoinColumn.isEmpty()) {
-            targetJoinColumn = Utils.databaseIdentifier(prop.getName()) + "_ID";
+            targetJoinColumn =
+                    Utils.databaseIdentifier(prop.getTargetType().getJavaClass().getSimpleName()) +
+                            "_ID";
         }
         if (joinColumnName.equals(targetJoinColumn)) {
             throw new ModelException(

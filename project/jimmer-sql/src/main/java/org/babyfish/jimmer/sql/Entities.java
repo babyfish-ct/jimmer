@@ -30,7 +30,7 @@ public interface Entities {
     <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids);
 
     <E> SimpleSaveResult<E> save(E entity);
-
+    
     <E> SimpleEntitySaveCommand<E> saveCommand(E entity);
 
     <E> BatchSaveResult<E> batchSave(Collection<E> entities);

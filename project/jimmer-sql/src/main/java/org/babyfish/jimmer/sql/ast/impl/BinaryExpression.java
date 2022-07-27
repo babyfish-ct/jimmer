@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 abstract class BinaryExpression<N extends Number> extends AbstractExpression<N> implements NumberExpressionImplementor<N> {
 
@@ -25,13 +26,13 @@ abstract class BinaryExpression<N extends Number> extends AbstractExpression<N> 
     protected abstract String operator();
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         ((Ast) left).accept(visitor);
         ((Ast) right).accept(visitor);
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         renderChild((Ast) left, builder);
         builder.sql(" ");
         builder.sql(operator());
@@ -47,7 +48,7 @@ abstract class BinaryExpression<N extends Number> extends AbstractExpression<N> 
 
         @Override
         public int precedence() {
-            return 3;
+            return ExpressionPrecedences.PLUS;
         }
 
         @Override
@@ -64,7 +65,7 @@ abstract class BinaryExpression<N extends Number> extends AbstractExpression<N> 
 
         @Override
         public int precedence() {
-            return 3;
+            return ExpressionPrecedences.PLUS;
         }
 
         @Override
@@ -81,7 +82,7 @@ abstract class BinaryExpression<N extends Number> extends AbstractExpression<N> 
 
         @Override
         public int precedence() {
-            return 2;
+            return ExpressionPrecedences.TIMES;
         }
 
         @Override
@@ -98,7 +99,7 @@ abstract class BinaryExpression<N extends Number> extends AbstractExpression<N> 
 
         @Override
         public int precedence() {
-            return 2;
+            return ExpressionPrecedences.TIMES;
         }
 
         @Override
@@ -115,7 +116,7 @@ abstract class BinaryExpression<N extends Number> extends AbstractExpression<N> 
 
         @Override
         public int precedence() {
-            return 2;
+            return ExpressionPrecedences.TIMES;
         }
 
         @Override

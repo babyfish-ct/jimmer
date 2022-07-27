@@ -1,8 +1,9 @@
 package org.babyfish.jimmer.sql.model;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
+import org.babyfish.jimmer.sql.Entity;
+import org.babyfish.jimmer.sql.Id;
+import org.babyfish.jimmer.sql.OneToMany;
+
 import java.util.List;
 
 @Entity

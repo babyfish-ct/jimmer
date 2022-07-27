@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTableWrapper;
 import org.babyfish.jimmer.util.StaticCache;
 
@@ -17,19 +16,14 @@ public class TableWrappers {
     private TableWrappers() {}
 
     @SuppressWarnings("unchecked")
-    public static <T extends Table<?>> T wrap(TableImplementor<?> table) {
+    public static <T extends TableEx<?>> T wrap(TableImplementor<?> table) {
         if (table.getImmutableType() instanceof AssociationType || table instanceof AbstractTableWrapper<?>) {
             return (T)table;
-        }
-        if (table instanceof TableEx<?>) {
-            return TableExWrappers.wrap(table);
         }
         Class<?> javaClass = table.getImmutableType().getJavaClass();
         Constructor<?> constructor = CACHE.get(javaClass);
         if (constructor == null) {
-            throw new IllegalStateException(
-                    "No Table wrapper class for \"" + table.getImmutableType() +"\""
-            );
+            return (T) table;
         }
         try {
             return (T) constructor.newInstance(table);
@@ -56,19 +50,17 @@ public class TableWrappers {
     private static Constructor<?> createConstructor(Class<?> javaClass) {
         Class<?> tableClass;
         try {
-            tableClass = Class.forName(javaClass.getName() + "Table");
+            tableClass = Class.forName(javaClass.getName() + "TableEx");
         } catch (ClassNotFoundException ex) {
             return null;
         }
         if (!AbstractTableWrapper.class.isAssignableFrom(tableClass)) {
             return null;
         }
-        Constructor<?> constructor;
         try {
-            constructor = tableClass.getConstructor(Table.class);
+            return tableClass.getConstructor(TableEx.class);
         } catch (NoSuchMethodException ex) {
             return null;
         }
-        return constructor;
     }
 }

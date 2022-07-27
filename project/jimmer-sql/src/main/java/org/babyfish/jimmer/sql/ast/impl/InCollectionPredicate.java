@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.List;
@@ -26,12 +27,12 @@ class InCollectionPredicate extends AbstractPredicate {
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         ((Ast) expression).accept(visitor);
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         if (values.isEmpty()) {
             builder.sql(negative ? "1 = 1" : "1 = 0");
         } else {
@@ -50,7 +51,7 @@ class InCollectionPredicate extends AbstractPredicate {
 
     @Override
     public int precedence() {
-        return 7;
+        return 0;
     }
 
     @Override

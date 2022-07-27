@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 
@@ -20,12 +21,12 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         visitor.visitAggregation(functionName(), expression, prefix());
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         builder.sql(functionName());
         builder.sql("(");
         String prefix = prefix();

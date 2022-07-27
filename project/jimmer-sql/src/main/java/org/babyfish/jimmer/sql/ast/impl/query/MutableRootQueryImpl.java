@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.NullOrderMode;
 import org.babyfish.jimmer.sql.ast.query.OrderMode;
@@ -28,24 +28,24 @@ public class MutableRootQueryImpl<T extends Table<?>>
     }
 
     @Override
-    public <R> ConfigurableTypedRootQuery<T, R> select(Selection<R> selection) {
-        return new ConfigurableTypedRootQueryImpl<>(
+    public <R> ConfigurableRootQuery<T, R> select(Selection<R> selection) {
+        return new ConfigurableRootQueryImpl<>(
                 new TypedQueryData(Collections.singletonList(selection)),
                 this
         );
     }
 
     @Override
-    public <T1, T2> ConfigurableTypedRootQuery<T, Tuple2<T1, T2>> select(Selection<T1> selection1, Selection<T2> selection2) {
-        return new ConfigurableTypedRootQueryImpl<>(
+    public <T1, T2> ConfigurableRootQuery<T, Tuple2<T1, T2>> select(Selection<T1> selection1, Selection<T2> selection2) {
+        return new ConfigurableRootQueryImpl<>(
                 new TypedQueryData(Arrays.asList(selection1, selection2)),
                 this
         );
     }
 
     @Override
-    public <T1, T2, T3> ConfigurableTypedRootQuery<T, Tuple3<T1, T2, T3>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3) {
-        return new ConfigurableTypedRootQueryImpl<>(
+    public <T1, T2, T3> ConfigurableRootQuery<T, Tuple3<T1, T2, T3>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3) {
+        return new ConfigurableRootQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
                                 selection1,
@@ -58,8 +58,8 @@ public class MutableRootQueryImpl<T extends Table<?>>
     }
 
     @Override
-    public <T1, T2, T3, T4> ConfigurableTypedRootQuery<T, Tuple4<T1, T2, T3, T4>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4) {
-        return new ConfigurableTypedRootQueryImpl<>(
+    public <T1, T2, T3, T4> ConfigurableRootQuery<T, Tuple4<T1, T2, T3, T4>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4) {
+        return new ConfigurableRootQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
                                 selection1,
@@ -73,8 +73,8 @@ public class MutableRootQueryImpl<T extends Table<?>>
     }
 
     @Override
-    public <T1, T2, T3, T4, T5> ConfigurableTypedRootQuery<T, Tuple5<T1, T2, T3, T4, T5>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5) {
-        return new ConfigurableTypedRootQueryImpl<>(
+    public <T1, T2, T3, T4, T5> ConfigurableRootQuery<T, Tuple5<T1, T2, T3, T4, T5>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5) {
+        return new ConfigurableRootQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
                                 selection1,
@@ -89,8 +89,8 @@ public class MutableRootQueryImpl<T extends Table<?>>
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6> ConfigurableTypedRootQuery<T, Tuple6<T1, T2, T3, T4, T5, T6>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6) {
-        return new ConfigurableTypedRootQueryImpl<>(
+    public <T1, T2, T3, T4, T5, T6> ConfigurableRootQuery<T, Tuple6<T1, T2, T3, T4, T5, T6>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6) {
+        return new ConfigurableRootQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
                                 selection1,
@@ -106,8 +106,8 @@ public class MutableRootQueryImpl<T extends Table<?>>
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7> ConfigurableTypedRootQuery<T, Tuple7<T1, T2, T3, T4, T5, T6, T7>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7) {
-        return new ConfigurableTypedRootQueryImpl<>(
+    public <T1, T2, T3, T4, T5, T6, T7> ConfigurableRootQuery<T, Tuple7<T1, T2, T3, T4, T5, T6, T7>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7) {
+        return new ConfigurableRootQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
                                 selection1,
@@ -124,8 +124,8 @@ public class MutableRootQueryImpl<T extends Table<?>>
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7, T8> ConfigurableTypedRootQuery<T, Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7, Selection<T8> selection8) {
-        return new ConfigurableTypedRootQueryImpl<>(
+    public <T1, T2, T3, T4, T5, T6, T7, T8> ConfigurableRootQuery<T, Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7, Selection<T8> selection8) {
+        return new ConfigurableRootQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
                                 selection1,
@@ -143,8 +143,8 @@ public class MutableRootQueryImpl<T extends Table<?>>
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7, T8, T9> ConfigurableTypedRootQuery<T, Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7, Selection<T8> selection8, Selection<T9> selection9) {
-        return new ConfigurableTypedRootQueryImpl<>(
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9> ConfigurableRootQuery<T, Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> select(Selection<T1> selection1, Selection<T2> selection2, Selection<T3> selection3, Selection<T4> selection4, Selection<T5> selection5, Selection<T6> selection6, Selection<T7> selection7, Selection<T8> selection8, Selection<T9> selection9) {
+        return new ConfigurableRootQueryImpl<>(
                 new TypedQueryData(
                         Arrays.asList(
                                 selection1,
@@ -162,33 +162,39 @@ public class MutableRootQueryImpl<T extends Table<?>>
         );
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public MutableRootQueryImpl where(Predicate... predicates) {
-        return (MutableRootQueryImpl) super.where(predicates);
+    public MutableRootQueryImpl<T> where(Predicate... predicates) {
+        return (MutableRootQueryImpl<T>) super.where(predicates);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public MutableRootQueryImpl groupBy(Expression<?>... expressions) {
-        return (MutableRootQueryImpl) super.groupBy(expressions);
+    public MutableRootQueryImpl<T> groupBy(Expression<?>... expressions) {
+        return (MutableRootQueryImpl<T>) super.groupBy(expressions);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public MutableRootQueryImpl having(Predicate... predicates) {
-        return (MutableRootQueryImpl) super.having(predicates);
+    public MutableRootQueryImpl<T> having(Predicate... predicates) {
+        return (MutableRootQueryImpl<T>) super.having(predicates);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public MutableRootQueryImpl orderBy(Expression<?> expression) {
-        return (MutableRootQueryImpl) super.orderBy(expression);
+    public MutableRootQueryImpl<T> orderBy(Expression<?> expression) {
+        return (MutableRootQueryImpl<T>) super.orderBy(expression);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public MutableRootQueryImpl orderBy(Expression<?> expression, OrderMode orderMode) {
-        return (MutableRootQueryImpl) super.orderBy(expression, orderMode);
+    public MutableRootQueryImpl<T> orderBy(Expression<?> expression, OrderMode orderMode) {
+        return (MutableRootQueryImpl<T>) super.orderBy(expression, orderMode);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public MutableRootQueryImpl orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
-        return (MutableRootQueryImpl) super.orderBy(expression, orderMode, nullOrderMode);
+    public MutableRootQueryImpl<T> orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
+        return (MutableRootQueryImpl<T>) super.orderBy(expression, orderMode, nullOrderMode);
     }
 }

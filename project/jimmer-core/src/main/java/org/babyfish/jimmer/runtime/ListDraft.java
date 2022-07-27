@@ -22,9 +22,10 @@ public class ListDraft<E> implements List<E>, Draft {
         this(null, elementType, base);
     }
 
+    @SuppressWarnings("unchecked")
     public ListDraft(DraftContext ctx, Class<E> elementType, List<E> base) {
         this.ctx = ctx;
-        this.elementType = elementType;
+        this.elementType = (Class<E>) boxType(elementType);
         this.base = base;
     }
 
@@ -275,6 +276,36 @@ public class ListDraft<E> implements List<E>, Draft {
                 }
             }
         }
+    }
+
+    private Class<?> boxType(Class<?> type) {
+        if (type.isPrimitive()) {
+            if (type == boolean.class) {
+                return Boolean.class;
+            }
+            if (type == char.class) {
+                return Character.class;
+            }
+            if (type == byte.class) {
+                return Byte.class;
+            }
+            if (type == short.class) {
+                return Short.class;
+            }
+            if (type == int.class) {
+                return Integer.class;
+            }
+            if (type == long.class) {
+                return Long.class;
+            }
+            if (type == float.class) {
+                return Float.class;
+            }
+            if (type == double.class) {
+                return Double.class;
+            }
+        }
+        return type;
     }
 
     private class Itr implements ListIterator<E> {

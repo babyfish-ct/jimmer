@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -124,6 +125,14 @@ class ResultMapper {
     }
 
     private Object map(Selection<?> selection) throws SQLException {
+        if (selection instanceof TableSelection<?>) {
+            ImmutableType immutableType =
+                    ((TableSelection<?>)selection).getImmutableType();
+            if (immutableType instanceof AssociationType) {
+                return map((AssociationType)immutableType);
+            }
+            return map(immutableType, null);
+        }
         if (selection instanceof Table<?>) {
             ImmutableType immutableType = TableImplementor
                     .unwrap((Table<?>)selection)

@@ -2,22 +2,26 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 
 import java.sql.Connection;
+import java.util.Map;
+import java.util.function.Consumer;
 
 class SimpleEntitySaveCommandImpl<E>
-        extends AbstractEntitySaveCommandImpl<SimpleEntitySaveCommand<E>>
+        extends AbstractEntitySaveCommandImpl
         implements SimpleEntitySaveCommand<E> {
 
     private E entity;
 
     SimpleEntitySaveCommandImpl(
             SqlClient sqlClient,
+            Connection con,
             E entity
     ) {
-        super(sqlClient, null);
+        super(sqlClient, con, null);
         if (!(entity instanceof ImmutableSpi)) {
             throw new IllegalArgumentException("entity must be an immutable object");
         }
@@ -28,21 +32,42 @@ class SimpleEntitySaveCommandImpl<E>
             SimpleEntitySaveCommandImpl<E> base,
             Data data
     ) {
-        super(base.sqlClient, data);
+        super(base.sqlClient, base.con, data);
         this.entity = base.entity;
     }
 
     @Override
     public SimpleSaveResult<E> execute() {
+        if (con != null) {
+            return executeImpl(con);
+        }
         return sqlClient
                 .getConnectionManager()
-                .execute(this::execute);
+                .execute(this::executeImpl);
     }
 
     @Override
     public SimpleSaveResult<E> execute(Connection con) {
+        if (con != null) {
+            return executeImpl(con);
+        }
+        if (this.con != null) {
+            return executeImpl(this.con);
+        }
+        return sqlClient
+                .getConnectionManager()
+                .execute(this::executeImpl);
+    }
+
+    private SimpleSaveResult<E> executeImpl(Connection con) {
         Saver saver = new Saver(data, con);
         return saver.save(entity);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public SimpleEntitySaveCommand<E> configure(Consumer<Cfg> block) {
+        return (SimpleEntitySaveCommand<E>) super.configure(block);
     }
 
     @Override

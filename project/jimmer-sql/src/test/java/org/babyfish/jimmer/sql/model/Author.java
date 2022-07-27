@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.model;
 import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 
-import javax.persistence.*;
+import org.babyfish.jimmer.sql.*;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,7 +11,7 @@ import java.util.UUID;
 public interface Author {
 
     @Id
-    @GeneratedValue(generator = UUIDIdGenerator.FULL_NAME)
+    @GeneratedValue(strategy = GenerationType.USER, generatorType = UUIDIdGenerator.class)
     UUID id();
 
     @Key
@@ -28,8 +28,8 @@ public interface Author {
     @ManyToOne
     @JoinTable(
             name = "AUTHOR_COUNTRY_MAPPING",
-            joinColumns = @JoinColumn(name = "AUTHOR_ID"),
-            inverseJoinColumns = @JoinColumn(name = "COUNTRY_CODE")
+            joinColumnName = "AUTHOR_ID",
+            inverseJoinColumnName = "COUNTRY_CODE"
     )
     Country country();
 }

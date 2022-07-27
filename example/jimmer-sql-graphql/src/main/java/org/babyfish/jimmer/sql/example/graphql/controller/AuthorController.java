@@ -48,9 +48,9 @@ public class AuthorController {
         return sqlClient
                 .getListLoader(
                         AuthorTableEx.class,
-                        AuthorTableEx::books,
-                        args -> args.orderBy(args.getTable().name())
+                        AuthorTableEx::books
                 )
+                .forFilter(args -> args.orderBy(args.getTable().name()))
                 .batchLoad(authors);
     }
 

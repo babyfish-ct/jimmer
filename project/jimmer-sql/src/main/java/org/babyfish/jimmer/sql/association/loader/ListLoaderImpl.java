@@ -7,28 +7,59 @@ import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Filter;
+import org.jetbrains.annotations.NotNull;
 
+import java.sql.Connection;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-class ListLoaderImpl<S, T> implements ListLoader<S, T> {
+class ListLoaderImpl<SE, TE, TT extends Table<TE>> implements ListLoader<SE, TE, TT> {
 
-    private SqlClient sqlClient;
+    private final SqlClient sqlClient;
 
-    private ImmutableProp prop;
+    private Connection con;
 
-    private Filter<?> filter;
+    private final ImmutableProp prop;
 
-    public ListLoaderImpl(SqlClient sqlClient, ImmutableProp prop, Filter<?> filter) {
+    private final Filter<?> filter;
+
+    public ListLoaderImpl(SqlClient sqlClient, ImmutableProp prop) {
+        this(sqlClient, null, prop, null);
+    }
+
+    private ListLoaderImpl(
+            SqlClient sqlClient,
+            Connection con,
+            ImmutableProp prop,
+            Filter<?> filter
+    ) {
         this.sqlClient = sqlClient;
+        this.con = con;
         this.prop = prop;
         this.filter = filter;
     }
 
+    @Override
+    public ListLoader<SE, TE, TT> forConnection(Connection con) {
+        if (this.con == con) {
+            return this;
+        }
+        return new ListLoaderImpl<>(sqlClient, con, prop, filter);
+    }
+
+    @Override
+    public ListLoader<SE, TE, TT> forFilter(Filter<TT> filter) {
+        if (this.filter == filter) {
+            return this;
+        }
+        return new ListLoaderImpl<>(sqlClient, con, prop, filter);
+    }
+
+    @NotNull
     @SuppressWarnings("unchecked")
     @Override
-    public Executable<List<T>> loadCommand(S source, int limit, int offset) {
+    public Executable<List<TE>> loadCommand(@NotNull SE source, int limit, int offset) {
         if (source instanceof Collection<?>) {
             throw new IllegalArgumentException(
                     "source cannot be collection, do you want to call 'batchLoadCommand'?"
@@ -36,6 +67,7 @@ class ListLoaderImpl<S, T> implements ListLoader<S, T> {
         }
         return new SingleCommand<>(
                 sqlClient,
+                con,
                 prop,
                 (Filter<Table<ImmutableSpi>>) filter,
                 limit,
@@ -44,11 +76,13 @@ class ListLoaderImpl<S, T> implements ListLoader<S, T> {
         );
     }
 
+    @NotNull
     @SuppressWarnings("unchecked")
     @Override
-    public Executable<Map<S, List<T>>> batchLoadCommand(Collection<S> sources) {
+    public Executable<Map<SE, List<TE>>> batchLoadCommand(@NotNull Collection<SE> sources) {
         return new BatchCommand<>(
                 sqlClient,
+                con,
                 prop,
                 (Filter<Table<ImmutableSpi>>) filter,
                 (Collection<ImmutableSpi>) sources

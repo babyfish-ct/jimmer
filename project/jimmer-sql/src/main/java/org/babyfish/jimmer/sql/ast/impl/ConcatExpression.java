@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -19,7 +20,7 @@ class ConcatExpression
     }
 
     @Override
-    public void accept(AstVisitor visitor) {
+    public void accept(@NotNull AstVisitor visitor) {
         ((Ast) first).accept(visitor);
         for (Expression<?> other : others) {
             ((Ast) other).accept(visitor);
@@ -27,7 +28,7 @@ class ConcatExpression
     }
 
     @Override
-    public void renderTo(SqlBuilder builder) {
+    public void renderTo(@NotNull SqlBuilder builder) {
         builder.sql("concat(");
         renderChild((Ast) first, builder);
         for (Expression<?> other : others) {

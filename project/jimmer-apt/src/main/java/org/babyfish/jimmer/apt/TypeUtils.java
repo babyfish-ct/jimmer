@@ -2,14 +2,14 @@ package org.babyfish.jimmer.apt;
 
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.sql.Entity;
+import org.babyfish.jimmer.sql.MappedSuperclass;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import javax.persistence.Entity;
-import javax.persistence.MappedSuperclass;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.HashMap;
@@ -18,19 +18,19 @@ import java.util.Set;
 
 public class TypeUtils {
 
-    private Types types;
+    private final Types types;
 
-    private TypeMirror collectionType;
+    private final TypeMirror collectionType;
 
-    private TypeMirror stringType;
+    private final TypeMirror stringType;
 
-    private TypeMirror numberType;
+    private final TypeMirror numberType;
 
-    private TypeMirror comparableType;
+    private final TypeMirror comparableType;
 
     private Set<Class<? extends Annotation>> annotationTypes;
 
-    private Map<TypeElement, ImmutableType> immutableTypeMap = new HashMap<>();
+    private final Map<TypeElement, ImmutableType> immutableTypeMap = new HashMap<>();
 
     TypeUtils(Elements elements, Types types) {
         this.types = types;

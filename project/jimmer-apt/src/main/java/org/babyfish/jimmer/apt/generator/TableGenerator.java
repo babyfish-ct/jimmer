@@ -5,10 +5,10 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.sql.JoinType;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
-import javax.persistence.criteria.JoinType;
 import java.io.IOException;
 
 import static org.babyfish.jimmer.apt.generator.Constants.*;

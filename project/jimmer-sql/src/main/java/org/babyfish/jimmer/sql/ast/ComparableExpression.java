@@ -24,6 +24,10 @@ public interface ComparableExpression<T extends Comparable<T>> extends Expressio
 
     Predicate between(T min, T max);
 
+    Predicate notBetween(Expression<T> min, Expression<T> max);
+
+    Predicate notBetween(T min, T max);
+
     @Override
     ComparableExpression<T> coalesce(T defaultValue);
 

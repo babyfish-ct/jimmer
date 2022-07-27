@@ -18,8 +18,8 @@ java {
 dependencies {
 
     api(project(":jimmer-core"))
-    api("javax.persistence:javax.persistence-api:2.2")
     implementation("org.slf4j:slf4j-api:1.7.36")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.7.10")
 
     testAnnotationProcessor(project(":jimmer-apt"))
 
@@ -32,10 +32,6 @@ dependencies {
     testImplementation("com.h2database:h2:2.1.212")
     testImplementation("mysql:mysql-connector-java:8.0.29")
     testImplementation("org.postgresql:postgresql:42.3.6")
-}
-
-tasks.getByName<Test>("test") {
-    useJUnitPlatform()
 }
 
 // Publish to maven-----------------------------------------------------
