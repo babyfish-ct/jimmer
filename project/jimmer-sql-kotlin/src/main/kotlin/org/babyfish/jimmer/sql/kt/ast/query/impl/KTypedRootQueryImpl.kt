@@ -24,9 +24,5 @@ internal open class KTypedRootQueryImpl<R>(
         KTypedRootQueryImpl(_javaQuery.intersect((other as KTypedRootQueryImpl<R>)._javaQuery))
 
     override fun execute(con: Connection?): List<R> =
-        if (con === null) {
-            _javaQuery.execute()
-        } else {
-            _javaQuery.execute(con)
-        }
+        _javaQuery.execute(con)
 }
