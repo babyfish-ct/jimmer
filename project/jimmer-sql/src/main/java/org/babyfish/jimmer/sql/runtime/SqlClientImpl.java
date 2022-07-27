@@ -223,52 +223,24 @@ public class SqlClientImpl implements SqlClient {
 
     @Override
     public Associations getAssociations(AssociationType associationType) {
-        return new AssociationsImpl(this, associationType);
+        return new AssociationsImpl(this, null, associationType);
     }
 
     @Override
-    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ReferenceLoader<SE, TE> getReferenceLoader(
-            Class<ST> sourceTableType,
-            Function<ST, TT> block
-    ) {
-        return getReferenceLoader(sourceTableType, block, null);
-    }
-
-    @Override
-    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>> ReferenceLoader<SE, TE>
-    getReferenceLoader(
-            Class<ST> sourceTableType,
-            Function<ST, TT> block,
-            Filter<TT> filter
-    ) {
+    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>> ReferenceLoader<SE, TE, TT>
+    getReferenceLoader(Class<ST> sourceTableType, Function<ST, TT> block) {
         return Loaders.createReferenceLoader(
                 this,
-                ImmutableProps.join(sourceTableType, block),
-                filter
+                ImmutableProps.join(sourceTableType, block)
         );
     }
 
     @Override
     public <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ListLoader<SE, TE> getListLoader(
-            Class<ST> sourceTableType,
-            Function<ST, TT> block
-    ) {
-        return getListLoader(sourceTableType, block, null);
-    }
-
-    @Override
-    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ListLoader<SE, TE> getListLoader(
-            Class<ST> sourceTableType,
-            Function<ST, TT> block,
-            Filter<TT> filter
-    ) {
+    ListLoader<SE, TE, TT> getListLoader(Class<ST> sourceTableType, Function<ST, TT> block) {
         return Loaders.createListLoader(
                 this,
-                ImmutableProps.join(sourceTableType, block),
-                filter
+                ImmutableProps.join(sourceTableType, block)
         );
     }
 

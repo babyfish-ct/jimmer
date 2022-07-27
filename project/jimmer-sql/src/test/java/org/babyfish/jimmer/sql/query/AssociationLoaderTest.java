@@ -106,11 +106,11 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                 getSqlClient()
                         .getListLoader(
                                 BookStoreTableEx.class,
-                                BookStoreTableEx::books,
-                                args -> {
-                                    args.orderBy(args.getTable().edition(), OrderMode.DESC);
-                                }
+                                BookStoreTableEx::books
                         )
+                        .forFilter(args -> {
+                            args.orderBy(args.getTable().edition(), OrderMode.DESC);
+                        })
                         .loadCommand(
                                 BookStoreDraft.$.produce(store -> {
                                     store.setId(manningId);
@@ -163,11 +163,11 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                 getSqlClient()
                         .getListLoader(
                                 BookStoreTableEx.class,
-                                BookStoreTableEx::books,
-                                args -> {
-                                    args.where(args.getTable().edition().eq(3));
-                                }
+                                BookStoreTableEx::books
                         )
+                        .forFilter(args -> {
+                            args.where(args.getTable().edition().eq(3));
+                        })
                         .batchLoadCommand(bookStores),
                 ctx -> {
                     ctx.sql(
@@ -277,9 +277,9 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                 getSqlClient()
                         .getListLoader(
                                 BookTableEx.class,
-                                BookTableEx::authors,
-                                args -> args.orderBy(args.getTable().firstName())
+                                BookTableEx::authors
                         )
+                        .forFilter(args -> args.orderBy(args.getTable().firstName()))
                         .batchLoadCommand(books),
                 ctx -> {
                     ctx.sql(

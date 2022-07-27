@@ -1,11 +1,11 @@
 package org.babyfish.jimmer.sql.kt.common
 
 import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.databind.ObjectMapper
-import org.babyfish.jimmer.jackson.ImmutableModule
 import org.babyfish.jimmer.sql.kt.ast.query.KTypedRootQuery
+import java.sql.Connection
 import java.util.*
 import java.util.function.Consumer
+import java.util.function.Function
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
@@ -26,6 +26,31 @@ abstract class AbstractQueryTest : AbstractTest() {
             rows = query.execute(con)
         }
         block(QueryTestContext<R>(0))
+        assertEquals(
+            maxStatementIndex + 1,
+            executions.size,
+            "statement count"
+        )
+    }
+
+    protected open fun <T> connectAndExpect(
+        func: (Connection) -> T,
+        block: QueryTestContext<T>.() -> Unit
+    ) {
+        clearExecutions()
+        rows = emptyList()
+        maxStatementIndex = -1
+        jdbc { con: Connection ->
+            if (rows.isEmpty()) {
+                val result = func(con)
+                rows = if (result is List<*>) {
+                    result
+                } else {
+                    listOf(result)
+                }
+            }
+        }
+        block(QueryTestContext<T>(0))
         assertEquals(
             maxStatementIndex + 1,
             executions.size,

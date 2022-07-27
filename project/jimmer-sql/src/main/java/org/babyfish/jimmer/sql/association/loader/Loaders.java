@@ -12,35 +12,28 @@ public class Loaders {
     private Loaders() {}
 
     @SuppressWarnings("unchecked")
-    public static <S, T> ReferenceLoader<S, T> createReferenceLoader(
+    public static <SE, TE, TT extends Table<TE>> ReferenceLoader<SE, TE, TT> createReferenceLoader(
             SqlClient sqlClient,
-            ImmutableProp prop,
-            Filter<? extends Table<? extends T>> filter
+            ImmutableProp prop
     ) {
         if (!prop.isReference()) {
             throw new IllegalArgumentException(
                     "Cannot create reference loader for \"" + prop + "\", it is not reference association"
             );
         }
-        if (!prop.isNullable() && filter != null) {
-            throw new IllegalArgumentException(
-                    "Cannot create filterable loader for \"" + prop + "\", non-null association does not accept filter"
-            );
-        }
-        return new ReferenceLoaderImpl<>(sqlClient, prop, filter);
+        return new ReferenceLoaderImpl<>(sqlClient, prop);
     }
 
     @SuppressWarnings("unchecked")
-    public static <S, T> ListLoader<S, T> createListLoader(
+    public static <SE, TE, TT extends Table<TE>> ListLoader<SE, TE, TT> createListLoader(
             SqlClient sqlClient,
-            ImmutableProp prop,
-            Filter<? extends Table<? extends T>> filter
+            ImmutableProp prop
     ) {
         if (!prop.isEntityList()) {
             throw new IllegalArgumentException(
                     "Cannot create list loader for \"" + prop + "\", it is not list association"
             );
         }
-        return new ListLoaderImpl<>(sqlClient, prop, filter);
+        return new ListLoaderImpl<>(sqlClient, prop);
     }
 }

@@ -5,16 +5,12 @@ import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.sql.association.loader.Loaders
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
-import org.babyfish.jimmer.sql.kt.KEntities
-import org.babyfish.jimmer.sql.kt.KExecutable
-import org.babyfish.jimmer.sql.kt.KQueries
-import org.babyfish.jimmer.sql.kt.KSqlClient
+import org.babyfish.jimmer.sql.ast.table.Table
+import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableDeleteImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableUpdateImpl
-import org.babyfish.jimmer.sql.kt.fetcher.impl.FilterWrapper
-import org.babyfish.jimmer.sql.kt.fetcher.impl.KFilter
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.jvm.javaMethod
@@ -49,47 +45,51 @@ internal class KSqlClientImpl(
     override val entities: KEntities =
         KEntitiesImpl(sqlClient.entities)
 
-    override fun <S: Any, T: Any> getReferenceAssociation(prop: KProperty1<S, T?>): Associations =
+    override fun <S: Any, T: Any> getReferenceAssociations(
+        prop: KProperty1<S, T?>
+    ): KAssociations =
         sqlClient.getAssociations(
             ImmutableType
                 .get(prop.getter.javaMethod!!.declaringClass)
                 .getProp(prop.name)
-        )
+        ).let {
+            KAssociationsImpl(it)
+        }
 
-    override fun <S: Any, T: Any> getListAssociation(prop: KProperty1<S, List<T>>): Associations =
+    override fun <S: Any, T: Any> getListAssociations(
+        prop: KProperty1<S, List<T>>
+    ): KAssociations =
         sqlClient.getAssociations(
             ImmutableType
                 .get(prop.getter.javaMethod!!.declaringClass)
                 .getProp(prop.name)
-        )
+        ).let {
+            KAssociationsImpl(it)
+        }
 
-    override fun <S : Any, T : Any> getReferenceLoader(
-        prop: KProperty1<S, T?>,
-        filter: KFilter<T>?
-    ): ReferenceLoader<S, T> =
-        Loaders.createReferenceLoader(
-            sqlClient,
-            ImmutableType
-                .get(prop.getter.javaMethod!!.declaringClass)
-                .getProp(prop.name),
-            filter?.let {
-                FilterWrapper(it)
+    override fun <S : Any, T : Any> getReferenceLoader(prop: KProperty1<S, T?>): KReferenceLoader<S, T> =
+        Loaders
+            .createReferenceLoader<S, T, Table<T>>(
+                sqlClient,
+                ImmutableType
+                    .get(prop.getter.javaMethod!!.declaringClass)
+                    .getProp(prop.name)
+            )
+            .let {
+                KReferenceLoaderImpl(it)
             }
-        )
 
-    override fun <S : Any, T : Any> getListLoader(
-        prop: KProperty1<S, List<T>>,
-        filter: KFilter<T>?
-    ): ListLoader<S, T> =
-        Loaders.createListLoader(
-            sqlClient,
-            ImmutableType
-                .get(prop.getter.javaMethod!!.declaringClass)
-                .getProp(prop.name),
-            filter?.let {
-                FilterWrapper(it)
+    override fun <S : Any, T : Any> getListLoader(prop: KProperty1<S, List<T>>): KListLoader<S, T> =
+        Loaders
+            .createListLoader<S, T, Table<T>>(
+                sqlClient,
+                ImmutableType
+                    .get(prop.getter.javaMethod!!.declaringClass)
+                    .getProp(prop.name)
+            )
+            .let {
+                KListLoaderImpl(it)
             }
-        )
 
     override val javaClient: SqlClient
         get() = sqlClient
