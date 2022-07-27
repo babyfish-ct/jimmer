@@ -18,9 +18,10 @@ class SimpleEntitySaveCommandImpl<E>
 
     SimpleEntitySaveCommandImpl(
             SqlClient sqlClient,
+            Connection con,
             E entity
     ) {
-        super(sqlClient, null);
+        super(sqlClient, con, null);
         if (!(entity instanceof ImmutableSpi)) {
             throw new IllegalArgumentException("entity must be an immutable object");
         }
@@ -31,12 +32,15 @@ class SimpleEntitySaveCommandImpl<E>
             SimpleEntitySaveCommandImpl<E> base,
             Data data
     ) {
-        super(base.sqlClient, data);
+        super(base.sqlClient, base.con, data);
         this.entity = base.entity;
     }
 
     @Override
     public SimpleSaveResult<E> execute() {
+        if (con != null) {
+            return executeImpl(con);
+        }
         return sqlClient
                 .getConnectionManager()
                 .execute(this::executeImpl);
@@ -46,6 +50,9 @@ class SimpleEntitySaveCommandImpl<E>
     public SimpleSaveResult<E> execute(Connection con) {
         if (con != null) {
             return executeImpl(con);
+        }
+        if (this.con != null) {
+            return executeImpl(this.con);
         }
         return sqlClient
                 .getConnectionManager()
