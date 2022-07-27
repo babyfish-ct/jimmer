@@ -11,7 +11,7 @@ interface TreeNode {
     @ManyToOne
     @Key
     @OnDelete(DeleteAction.CASCADE)
-    val parent: TreeNode
+    val parent: TreeNode?
 
     @OneToMany(mappedBy = "parent")
     val childNodes: List<TreeNode>

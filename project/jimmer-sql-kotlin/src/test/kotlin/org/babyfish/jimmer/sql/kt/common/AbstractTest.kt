@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.kt.common
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import org.babyfish.jimmer.jackson.ImmutableModule
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.model.Gender
@@ -14,8 +16,11 @@ import java.io.InputStreamReader
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.SQLException
+import java.util.*
 import javax.sql.DataSource
+import kotlin.reflect.KClass
 import kotlin.test.BeforeTest
+import kotlin.test.assertEquals
 import kotlin.test.fail
 
 abstract class AbstractTest {
@@ -118,10 +123,29 @@ abstract class AbstractTest {
 
         @BeforeClass
         @JvmStatic
-        open fun beforeAll() {
+        fun beforeAll() {
             jdbc {con ->
                 initDatabase(con)
             }
+        }
+
+        @JvmStatic
+        protected val MAPPER = ObjectMapper().registerModule(ImmutableModule())
+
+        @JvmStatic
+        protected fun contentEquals(
+            expect: String,
+            actual: String,
+            message: String? = null
+        ) {
+            assertEquals(
+                expect
+                    .replace("\r", "")
+                    .replace("\n", "")
+                    .replace("--->", ""),
+                actual,
+                message
+            )
         }
     }
 }

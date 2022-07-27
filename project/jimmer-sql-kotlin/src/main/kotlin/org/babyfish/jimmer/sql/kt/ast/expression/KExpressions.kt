@@ -295,6 +295,14 @@ fun <T: Any> KNullableExpression<T>.coalesce(
 
 
 
+fun concat(vararg expressions: KNonNullExpression<String>): KNonNullExpression<String> =
+    ConcatExpression.NonNull(expressions.toList())
+
+fun concat(vararg expressions: KExpression<String>): KNullableExpression<String> =
+    ConcatExpression.Nullable(expressions.toList())
+
+
+
 infix fun <T: Any> KExpression<T>.valueIn(
     values: Collection<T>
 ): KNonNullExpression<Boolean> =

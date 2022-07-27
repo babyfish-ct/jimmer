@@ -2,13 +2,15 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 
 import java.sql.Connection;
+import java.util.function.Consumer;
 
 class SimpleEntitySaveCommandImpl<E>
-        extends AbstractEntitySaveCommandImpl<SimpleEntitySaveCommand<E>>
+        extends AbstractEntitySaveCommandImpl
         implements SimpleEntitySaveCommand<E> {
 
     private E entity;
@@ -43,6 +45,12 @@ class SimpleEntitySaveCommandImpl<E>
     public SimpleSaveResult<E> execute(Connection con) {
         Saver saver = new Saver(data, con);
         return saver.save(entity);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public SimpleEntitySaveCommand<E> configure(Consumer<Cfg> block) {
+        return (SimpleEntitySaveCommand<E>) super.configure(block);
     }
 
     @Override

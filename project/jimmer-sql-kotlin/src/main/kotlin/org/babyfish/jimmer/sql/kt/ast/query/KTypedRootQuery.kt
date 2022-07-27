@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.kt.ast.query
 
-import org.babyfish.jimmer.sql.ast.Executable
+import org.babyfish.jimmer.sql.kt.KExecutable
 
-interface KTypedRootQuery<R> : Executable<List<R>> {
+interface KTypedRootQuery<R> : KExecutable<List<R>> {
 
     infix fun union(other: KTypedRootQuery<R>): KTypedRootQuery<R>
 

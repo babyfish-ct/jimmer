@@ -3,9 +3,10 @@ package org.babyfish.jimmer.sql.kt.impl
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.sql.association.loader.Loaders
-import org.babyfish.jimmer.sql.ast.Executable
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
+import org.babyfish.jimmer.sql.kt.KEntities
+import org.babyfish.jimmer.sql.kt.KExecutable
 import org.babyfish.jimmer.sql.kt.KQueries
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
@@ -25,24 +26,28 @@ internal class KSqlClientImpl(
     override fun <E : Any> createUpdate(
         entityType: KClass<E>,
         block: KMutableUpdate<E>.() -> Unit
-    ): Executable<Int> {
+    ): KExecutable<Int> {
         val update = MutableUpdateImpl(sqlClient, ImmutableType.get(entityType.java))
         block(KMutableUpdateImpl(update))
         update.freeze()
-        return update
+        return KExecutableImpl(update)
     }
 
-    override fun <E : Any> createDelete(entityType: KClass<E>, block: KMutableDelete<E>.() -> Unit): Executable<Int> {
+    override fun <E : Any> createDelete(
+        entityType: KClass<E>,
+        block: KMutableDelete<E>.() -> Unit
+    ): KExecutable<Int> {
         val delete = MutableDeleteImpl(sqlClient, ImmutableType.get(entityType.java))
         block(KMutableDeleteImpl(delete))
         delete.freeze()
-        return delete
+        return KExecutableImpl(delete)
     }
 
-    override val queries: KQueries = KQueriesImpl(sqlClient)
+    override val queries: KQueries =
+        KQueriesImpl(sqlClient)
 
-    override val entities: Entities
-        get() = sqlClient.entities
+    override val entities: KEntities =
+        KEntitiesImpl(sqlClient.entities)
 
     override fun <S: Any, T: Any> getReferenceAssociation(prop: KProperty1<S, T?>): Associations =
         sqlClient.getAssociations(

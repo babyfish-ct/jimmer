@@ -21,16 +21,16 @@ interface KSqlClient {
     fun <E: Any> createUpdate(
         entityType: KClass<E>,
         block: KMutableUpdate<E>.() -> Unit
-    ): Executable<Int>
+    ): KExecutable<Int>
 
     fun <E: Any> createDelete(
         entityType: KClass<E>,
         block: KMutableDelete<E>.() -> Unit
-    ): Executable<Int>
+    ): KExecutable<Int>
 
     val queries: KQueries
 
-    val entities: Entities
+    val entities: KEntities
 
     fun <S: Any, T: Any> getReferenceAssociation(prop: KProperty1<S, T?>): Associations
 

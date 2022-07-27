@@ -82,19 +82,18 @@ class ProducerGenerator(
                 )
             fullName == VERSION_FULL_NAME ->
                 add(".version(%S)\n", prop.name)
-            fullName == KEY_FULL_NAME && prop.isAssociation ->
+            prop.isKey && prop.isAssociation ->
                 add(
                     ".keyReference(%S, %T::class.java, %L)\n",
                     prop.name,
                     prop.targetTypeName(overrideNullable = false),
                     prop.isNullable
                 )
-            fullName == KEY_FULL_NAME && prop.isAssociation ->
+            prop.isKey && !prop.isAssociation ->
                 add(
-                    ".keyReference(%S, %T::class.java)\n",
+                    ".key(%S, %T::class.java)\n",
                     prop.name,
-                    prop.targetTypeName(overrideNullable = false),
-                    prop.isNullable
+                    prop.targetTypeName(overrideNullable = false)
                 )
             fullName !== null ->
                 add(

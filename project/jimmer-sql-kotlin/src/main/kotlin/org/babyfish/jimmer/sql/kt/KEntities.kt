@@ -1,36 +1,54 @@
 package org.babyfish.jimmer.sql.kt
 
-import org.babyfish.jimmer.sql.Entities
-import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand
-import org.babyfish.jimmer.sql.ast.mutation.DeleteResult
+import org.babyfish.jimmer.lang.NewChain
+import org.babyfish.jimmer.sql.fetcher.Fetcher
+import org.babyfish.jimmer.sql.kt.ast.mutation.*
+import java.sql.Connection
 import kotlin.reflect.KClass
 
-fun <E: Any> Entities.findById(entityType: KClass<E>, id: Any): E? =
-    findById(entityType.java, id)
+interface KEntities {
 
-fun <E: Any> Entities.findByIds(entityType: KClass<E>, ids: Collection<*>): List<E> =
-    findByIds(entityType.java, ids)
+    @NewChain
+    fun forUpdate() :KEntities
 
-fun <ID, E: Any> Entities.findMapByIds(entityType: KClass<E>, ids: Collection<ID>): Map<ID, E> =
-    findMapByIds(entityType.java, ids)
+    @NewChain
+    fun forConnection(con: Connection?) :KEntities
 
-inline fun <reified E: Any> Entities.findById(id: Any): E? =
-    findById(E::class.java, id)
+    fun <E: Any> findById(entityType: KClass<E>, id: Any): E?
 
-inline fun <reified E: Any> Entities.findByIds(ids: Collection<*>): List<E> =
-    findByIds(E::class.java, ids)
+    fun <E: Any> findByIds(entityType: KClass<E>, ids: Collection<*>): List<E>
 
-inline fun <reified E: Any, ID> Entities.findMapByIds(ids: Collection<ID>): Map<ID, E> =
-    findMapByIds(E::class.java, ids)
+    fun <ID, E: Any> findMapByIds(entityType: KClass<E>, ids: Collection<ID>): Map<ID, E>
 
-fun Entities.delete(entityType: KClass<*>, id: Any): DeleteResult =
-    delete(entityType.java, id)
+    fun <E: Any> findById(fetcher: Fetcher<E>, id: Any): E?
 
-fun Entities.deleteCommand(entityType: KClass<*>, id: Any): DeleteCommand =
-    deleteCommand(entityType.java, id)
+    fun <E: Any> findByIds(fetcher: Fetcher<E>, ids: Collection<*>): List<E>
 
-fun Entities.batchDelete(entityType: KClass<*>, ids: Collection<*>): DeleteResult =
-    batchDelete(entityType.java, ids)
+    fun <ID, E: Any> findMapByIds(fetcher: Fetcher<E>, ids: Collection<ID>): Map<ID, E>
 
-fun Entities.batchDeleteCommand(entityType: KClass<*>, ids: Collection<*>): DeleteCommand =
-    batchDeleteCommand(entityType.java, ids)
+    fun <E: Any> save(
+        entity: E,
+        con: Connection? = null,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E>
+
+    fun <E: Any> batchSave(
+        entities: Collection<E>,
+        con: Connection? = null,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E>
+
+    fun delete(
+        entityType: KClass<*>,
+        id: Any,
+        con: Connection? = null,
+        block: (KDeleteCommandDsl.() -> Unit)? = null
+    ): KDeleteResult
+
+    fun batchDelete(
+        entityType: KClass<*>,
+        ids: Collection<*>,
+        con: Connection? = null,
+        block: (KDeleteCommandDsl.() -> Unit)? = null
+    ): KDeleteResult
+}

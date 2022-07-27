@@ -6,15 +6,14 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.DeleteAction;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public interface AbstractEntitySaveCommand<C extends AbstractEntitySaveCommand<C>> {
+public interface AbstractEntitySaveCommand {
 
     @NewChain
-    C configure(Consumer<Cfg> block);
+    AbstractEntitySaveCommand configure(Consumer<Cfg> block);
 
     interface Cfg {
 
