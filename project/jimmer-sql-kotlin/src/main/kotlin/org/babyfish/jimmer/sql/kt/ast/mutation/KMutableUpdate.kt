@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.mutation
 
-import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KNullablePropExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.ast.query.KFilterable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
 
@@ -23,7 +20,7 @@ interface KMutableUpdate<E: Any> : KFilterable<E> {
 
     fun <X: Any> set(
         path: KNullablePropExpression<X>,
-        value: KNullableExpression<X>
+        value: KExpression<X>
     )
 
     fun <X: Any> set(

@@ -16,7 +16,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-abstract class AbstractEntitySaveCommandImpl<C extends AbstractEntitySaveCommand<C>> implements AbstractEntitySaveCommand<C> {
+abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveCommand {
 
     SqlClient sqlClient;
 
@@ -29,7 +29,7 @@ abstract class AbstractEntitySaveCommandImpl<C extends AbstractEntitySaveCommand
 
     @SuppressWarnings("unchecked")
     @Override
-    public C configure(Consumer<Cfg> block) {
+    public AbstractEntitySaveCommand configure(Consumer<Cfg> block) {
         Data newData = new Data(data);
         block.accept(newData);
         if (newData.mode == SaveMode.UPSERT &&
@@ -37,12 +37,12 @@ abstract class AbstractEntitySaveCommandImpl<C extends AbstractEntitySaveCommand
                 !newData.autoAttachingAll &&
                 newData.deleteActionMap.isEmpty() &&
                 newData.autoAttachingSet.isEmpty()) {
-            return (C)this;
+            return this;
         }
         return create(newData);
     }
 
-    abstract C create(Data data);
+    abstract AbstractEntitySaveCommand create(Data data);
 
     static class Data implements Cfg {
 

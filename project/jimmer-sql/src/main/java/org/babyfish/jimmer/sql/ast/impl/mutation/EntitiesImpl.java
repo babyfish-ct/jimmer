@@ -19,7 +19,6 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.fetcher.impl.Fetchers;
 import org.babyfish.jimmer.sql.runtime.Converters;
-import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.util.*;
@@ -44,7 +43,6 @@ public class EntitiesImpl implements Entities {
         this.con = con;
     }
 
-    @NotNull
     @Override
     public Entities forUpdate() {
         if (forUpdate) {
@@ -53,7 +51,6 @@ public class EntitiesImpl implements Entities {
         return new EntitiesImpl(sqlClient, true, con);
     }
 
-    @NotNull
     @Override
     public Entities forConnection(Connection con) {
         if (this.con == con) {
@@ -63,7 +60,7 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> E findById(@NotNull Class<E> entityType, @NotNull Object id) {
+    public <E> E findById(Class<E> entityType, Object id) {
         if (con != null) {
             return findById(entityType, id, con);
         }
@@ -72,9 +69,8 @@ public class EntitiesImpl implements Entities {
         );
     }
 
-    @NotNull
     @Override
-    public <E> List<E> findByIds(@NotNull Class<E> entityType, @NotNull Collection<?> ids) {
+    public <E> List<E> findByIds(Class<E> entityType, Collection<?> ids) {
         if (con != null) {
             return findByIds(entityType, ids, con);
         }
@@ -83,9 +79,8 @@ public class EntitiesImpl implements Entities {
         );
     }
 
-    @NotNull
     @Override
-    public <ID, E> Map<ID, E> findMapByIds(@NotNull Class<E> entityType, @NotNull Collection<ID> ids) {
+    public <ID, E> Map<ID, E> findMapByIds(Class<E> entityType, Collection<ID> ids) {
         if (con != null) {
             return findMapByIds(entityType, ids, con);
         }
@@ -95,7 +90,7 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> E findById(@NotNull Fetcher<E> fetcher, @NotNull Object id) {
+    public <E> E findById(Fetcher<E> fetcher, Object id) {
         if (con != null) {
             return findById(fetcher, id, con);
         }
@@ -104,9 +99,8 @@ public class EntitiesImpl implements Entities {
         );
     }
 
-    @NotNull
     @Override
-    public <E> List<E> findByIds(@NotNull Fetcher<E> fetcher, @NotNull Collection<?> ids) {
+    public <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids) {
         if (con != null) {
             return findByIds(fetcher, ids, con);
         }
@@ -115,9 +109,8 @@ public class EntitiesImpl implements Entities {
         );
     }
 
-    @NotNull
     @Override
-    public <ID, E> Map<ID, E> findMapByIds(@NotNull Fetcher<E> fetcher, @NotNull Collection<ID> ids) {
+    public <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids) {
         if (con != null) {
             return findMapByIds(fetcher, ids, con);
         }
@@ -286,9 +279,8 @@ public class EntitiesImpl implements Entities {
         return query.execute(con);
     }
 
-    @NotNull
     @Override
-    public <E> SimpleSaveResult<E> save(@NotNull E entity) {
+    public <E> SimpleSaveResult<E> save(E entity) {
         SimpleEntitySaveCommand<E> command = saveCommand(entity);
         if (con != null) {
             return command.execute(con);
@@ -296,18 +288,16 @@ public class EntitiesImpl implements Entities {
         return command.execute();
     }
 
-    @NotNull
     @Override
-    public <E> SimpleEntitySaveCommand<E> saveCommand(@NotNull E entity) {
+    public <E> SimpleEntitySaveCommand<E> saveCommand(E entity) {
         if (entity instanceof Collection<?>) {
             throw new IllegalArgumentException("entity cannot be collection, do you want to call 'batchSaveCommand'?");
         }
         return new SimpleEntitySaveCommandImpl<>(sqlClient, entity);
     }
 
-    @NotNull
     @Override
-    public <E> BatchSaveResult<E> batchSave(@NotNull Collection<E> entities) {
+    public <E> BatchSaveResult<E> batchSave(Collection<E> entities) {
         BatchEntitySaveCommand<E> command = batchSaveCommand(entities);
         if (con != null) {
             return command.execute(con);
@@ -315,15 +305,13 @@ public class EntitiesImpl implements Entities {
         return command.execute();
     }
 
-    @NotNull
     @Override
-    public <E> BatchEntitySaveCommand<E> batchSaveCommand(@NotNull Collection<E> entities) {
+    public <E> BatchEntitySaveCommand<E> batchSaveCommand(Collection<E> entities) {
         return new BatchEntitySaveCommandImpl<>(sqlClient, entities);
     }
 
-    @NotNull
     @Override
-    public DeleteResult delete(@NotNull Class<?> entityType, @NotNull Object id) {
+    public DeleteResult delete(Class<?> entityType, Object id) {
         DeleteCommand command = deleteCommand(entityType, id);
         if (con != null) {
             return command.execute(con);
@@ -331,11 +319,10 @@ public class EntitiesImpl implements Entities {
         return command.execute();
     }
 
-    @NotNull
     @Override
     public DeleteCommand deleteCommand(
-            @NotNull Class<?> entityType,
-            @NotNull Object id
+            Class<?> entityType,
+            Object id
     ) {
         if (id instanceof Collection<?>) {
             throw new IllegalArgumentException("id cannot be collection, do you want to call 'batchDeleteCommand'?");
@@ -343,9 +330,8 @@ public class EntitiesImpl implements Entities {
         return batchDeleteCommand(entityType, Collections.singleton(id));
     }
 
-    @NotNull
     @Override
-    public DeleteResult batchDelete(@NotNull Class<?> entityType, @NotNull Collection<?> ids) {
+    public DeleteResult batchDelete(Class<?> entityType, Collection<?> ids) {
         DeleteCommand command = batchDeleteCommand(entityType, ids);
         if (con != null) {
             return command.execute(con);
@@ -353,11 +339,10 @@ public class EntitiesImpl implements Entities {
         return command.execute();
     }
 
-    @NotNull
     @Override
     public DeleteCommand batchDeleteCommand(
-            @NotNull Class<?> entityType,
-            @NotNull Collection<?> ids
+            Class<?> entityType,
+            Collection<?> ids
     ) {
         ImmutableType immutableType = ImmutableType.get(entityType);
         return new DeleteCommandImpl(sqlClient, immutableType, ids);

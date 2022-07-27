@@ -111,25 +111,4 @@ abstract class AbstractQueryTest : AbstractTest() {
             return this
         }
     }
-
-    companion object {
-
-        private val MAPPER = ObjectMapper().registerModule(ImmutableModule())
-
-        @JvmStatic
-        protected fun contentEquals(
-            expect: String,
-            actual: String,
-            message: String? = null
-        ) {
-            assertEquals(
-                expect
-                    .replace("\r", "")
-                    .replace("\n", "")
-                    .replace("--->", ""),
-                actual,
-                message
-            )
-        }
-    }
 }

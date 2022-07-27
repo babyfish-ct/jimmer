@@ -9,29 +9,23 @@ import java.util.Map;
 
 public interface ListLoader<S, T> {
 
-    @NotNull
-    default List<T> load(@NotNull S source) {
+    default List<T> load(S source) {
         return loadCommand(source).execute();
     }
 
-    @NotNull
-    default List<T> load(@NotNull S source, int limit, int offset) {
+    default List<T> load(S source, int limit, int offset) {
         return loadCommand(source, limit, offset).execute();
     }
 
-    @NotNull
-    default Executable<List<T>> loadCommand(@NotNull S source) {
+    default Executable<List<T>> loadCommand(S source) {
         return loadCommand(source, Integer.MAX_VALUE, 0);
     }
 
-    @NotNull
-    Executable<List<T>> loadCommand(@NotNull S source, int limit, int offset);
+    Executable<List<T>> loadCommand(S source, int limit, int offset);
 
-    @NotNull
-    default Map<S, List<T>> batchLoad(@NotNull Collection<S> sources) {
+    default Map<S, List<T>> batchLoad(Collection<S> sources) {
         return batchLoadCommand(sources).execute();
     }
 
-    @NotNull
-    Executable<Map<S, List<T>>> batchLoadCommand(@NotNull Collection<S> sources);
+    Executable<Map<S, List<T>>> batchLoadCommand(Collection<S> sources);
 }

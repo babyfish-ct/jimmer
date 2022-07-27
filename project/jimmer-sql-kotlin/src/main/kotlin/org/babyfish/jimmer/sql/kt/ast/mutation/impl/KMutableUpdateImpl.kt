@@ -5,10 +5,7 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate
 import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
-import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KNullablePropExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullablePropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
@@ -45,7 +42,7 @@ internal class KMutableUpdateImpl<E: Any>(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <X : Any> set(path: KNullablePropExpression<X>, value: KNullableExpression<X>) {
+    override fun <X : Any> set(path: KNullablePropExpression<X>, value: KExpression<X>) {
         javaUpdate.set(
             (path as NullablePropExpressionImpl<X>).javaPropExpression,
             value as Expression<X>

@@ -2,20 +2,18 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.SqlClient;
-import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
-import org.babyfish.jimmer.sql.ast.mutation.BatchEntitySaveCommand;
-import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
-import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
+import org.babyfish.jimmer.sql.ast.mutation.*;
 
 import java.sql.Connection;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 class BatchEntitySaveCommandImpl<E>
-        extends AbstractEntitySaveCommandImpl<BatchEntitySaveCommand<E>>
+        extends AbstractEntitySaveCommandImpl
         implements BatchEntitySaveCommand<E> {
 
     private Collection<E> entities;
@@ -35,6 +33,12 @@ class BatchEntitySaveCommandImpl<E>
     private BatchEntitySaveCommandImpl(BatchEntitySaveCommandImpl<E> base, Data data) {
         super(base.sqlClient, data);
         this.entities = base.entities;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public BatchEntitySaveCommand<E> configure(Consumer<Cfg> block) {
+        return (BatchEntitySaveCommand<E>) super.configure(block);
     }
 
     @Override
