@@ -14,8 +14,8 @@ repositories {
 
 dependencies {
 
-    implementation 'org.babyfish.jimmer:jimmer-sql:0.0.34'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.34'
+    implementation 'org.babyfish.jimmer:jimmer-sql:0.1.1'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.1.1'
 
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.shell:spring-shell-starter:2.0.1.RELEASE'

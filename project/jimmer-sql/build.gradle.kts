@@ -34,10 +34,6 @@ dependencies {
     testImplementation("org.postgresql:postgresql:42.3.6")
 }
 
-tasks.getByName<Test>("test") {
-    useJUnitPlatform()
-}
-
 // Publish to maven-----------------------------------------------------
 val NEXUS_USERNAME: String by project
 val NEXUS_PASSWORD: String by project

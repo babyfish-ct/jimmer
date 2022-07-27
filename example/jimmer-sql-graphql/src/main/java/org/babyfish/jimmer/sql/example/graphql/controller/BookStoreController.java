@@ -59,7 +59,9 @@ public class BookStoreController {
         return sqlClient
                 .getListLoader(
                         BookStoreTableEx.class,
-                        BookStoreTableEx::books,
+                        BookStoreTableEx::books
+                )
+                .forFilter(
                         args -> args.orderBy(args.getTable().name())
                 )
                 .batchLoad(bookStores);
