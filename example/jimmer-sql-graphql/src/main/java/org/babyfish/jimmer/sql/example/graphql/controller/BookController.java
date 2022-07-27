@@ -60,7 +60,9 @@ public class BookController {
         return sqlClient
                 .getListLoader(
                         BookTableEx.class,
-                        BookTableEx::authors,
+                        BookTableEx::authors
+                )
+                .forFilter(
                         args -> args
                                 .orderBy(args.getTable().firstName())
                                 .orderBy(args.getTable().lastName())

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import org.babyfish.jimmer.sql.SqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableTypedRootQuery;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
@@ -39,7 +39,7 @@ public class PaginationQueryShell {
             @ShellOption(defaultValue = "2") int pageSize,
             @ShellOption(defaultValue = "false") boolean fetch
     ) throws JsonProcessingException {
-        ConfigurableTypedRootQuery<BookTable, Tuple3<Book, Integer, Integer>> query =
+        ConfigurableRootQuery<BookTable, Tuple3<Book, Integer, Integer>> query =
                 sqlClient.createQuery(BookTable.class, (q, book) -> {
                     if (name != null && !name.isEmpty()) {
                         q.where(book.name().ilike(name));
