@@ -15,7 +15,9 @@ import java.util.*;
 
 class AssociationExecutable implements Executable<Integer> {
 
-    SqlClient sqlClient;
+    final SqlClient sqlClient;
+
+    final Connection con;
 
     private final AssociationType associationType;
 
@@ -27,12 +29,14 @@ class AssociationExecutable implements Executable<Integer> {
 
     public AssociationExecutable(
             SqlClient sqlClient,
+            Connection con,
             AssociationType associationType,
             boolean reversed,
             Mode mode,
             Collection<Tuple2<Object, Object>> idTuples
     ) {
         this.sqlClient = sqlClient;
+        this.con = con;
         this.associationType = associationType;
         this.reversed = reversed;
         this.mode = mode;
@@ -48,6 +52,7 @@ class AssociationExecutable implements Executable<Integer> {
         }
         return new AssociationExecutable(
                 sqlClient,
+                con,
                 associationType,
                 reversed,
                 mode,
@@ -57,6 +62,9 @@ class AssociationExecutable implements Executable<Integer> {
 
     @Override
     public Integer execute() {
+        if (con != null) {
+            return executeImpl(con);
+        }
         return sqlClient
                 .getConnectionManager()
                 .execute(this::executeImpl);
@@ -66,6 +74,9 @@ class AssociationExecutable implements Executable<Integer> {
     public Integer execute(Connection con) {
         if (con != null) {
             return executeImpl(con);
+        }
+        if (this.con != null) {
+            return executeImpl(this.con);
         }
         return sqlClient
                 .getConnectionManager()

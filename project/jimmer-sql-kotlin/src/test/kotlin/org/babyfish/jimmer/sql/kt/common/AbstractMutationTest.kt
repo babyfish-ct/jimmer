@@ -21,8 +21,27 @@ abstract class AbstractMutationTest : AbstractTest() {
     }
 
     protected fun executeAndExpectRowCount(
+        rowCountBlock: (Connection) -> Int,
+        block: ExpectDSLWithRowCount.() -> Unit
+    ) {
+        executeAndExpectRowCount(null, { con -> rowCountBlock(con) }, block)
+    }
+
+    protected fun executeAndExpectRowCount(
         dataSource: DataSource? = null,
         executable: KExecutable<Int>,
+        block: ExpectDSLWithRowCount.() -> Unit
+    ) {
+        return executeAndExpectRowCount(
+            dataSource,
+            { con -> executable.execute(con) },
+            block
+        )
+    }
+
+    protected fun executeAndExpectRowCount(
+        dataSource: DataSource? = null,
+        rowCountBlock: (Connection) -> Int,
         block: ExpectDSLWithRowCount.() -> Unit
     ) {
         jdbc(dataSource, true) { con ->
@@ -30,7 +49,7 @@ abstract class AbstractMutationTest : AbstractTest() {
             var affectedRowCount = 0
             var throwable: Throwable? = null
             try {
-                affectedRowCount = executable.execute(con)
+                affectedRowCount = rowCountBlock(con)
             } catch (ex: Throwable) {
                 throwable = ex
             }

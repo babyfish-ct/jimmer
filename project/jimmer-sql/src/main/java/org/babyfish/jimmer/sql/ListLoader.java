@@ -1,31 +1,40 @@
 package org.babyfish.jimmer.sql;
 
+import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.ast.Executable;
-import org.jetbrains.annotations.NotNull;
+import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.fetcher.Filter;
 
+import java.sql.Connection;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public interface ListLoader<S, T> {
+public interface ListLoader<SE, TE, TT extends Table<TE>> {
 
-    default List<T> load(S source) {
+    @NewChain
+    ListLoader<SE, TE, TT> forConnection(Connection con);
+
+    @NewChain
+    ListLoader<SE, TE, TT> forFilter(Filter<TT> filter);
+
+    default List<TE> load(SE source) {
         return loadCommand(source).execute();
     }
 
-    default List<T> load(S source, int limit, int offset) {
+    default List<TE> load(SE source, int limit, int offset) {
         return loadCommand(source, limit, offset).execute();
     }
 
-    default Executable<List<T>> loadCommand(S source) {
+    default Executable<List<TE>> loadCommand(SE source) {
         return loadCommand(source, Integer.MAX_VALUE, 0);
     }
 
-    Executable<List<T>> loadCommand(S source, int limit, int offset);
+    Executable<List<TE>> loadCommand(SE source, int limit, int offset);
 
-    default Map<S, List<T>> batchLoad(Collection<S> sources) {
+    default Map<SE, List<TE>> batchLoad(Collection<SE> sources) {
         return batchLoadCommand(sources).execute();
     }
 
-    Executable<Map<S, List<T>>> batchLoadCommand(Collection<S> sources);
+    Executable<Map<SE, List<TE>>> batchLoadCommand(Collection<SE> sources);
 }

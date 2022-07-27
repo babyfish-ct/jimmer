@@ -5,84 +5,48 @@ import org.babyfish.jimmer.sql.ast.mutation.AssociationSaveCommand;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.jetbrains.annotations.NotNull;
 
+import java.sql.Connection;
 import java.util.Collection;
 
 public interface Associations {
 
-    @NotNull
+    Associations forConnection(Connection con);
+
     Associations reverse();
 
-    default int save(
-            @NotNull Object sourceId,
-            @NotNull Object targetId
-    ) {
+    default int save(Object sourceId, Object targetId) {
         return saveCommand(sourceId, targetId).execute();
     }
 
-    default int batchSave(
-            @NotNull Collection<Object> sourceIds,
-            @NotNull Collection<Object> targetIds
-    ) {
+    default int batchSave(Collection<Object> sourceIds, Collection<Object> targetIds) {
         return batchSaveCommand(sourceIds, targetIds).execute();
     }
 
-    default int batchSave(
-            @NotNull Collection<Tuple2<Object, Object>> idTuples
-    ) {
+    default int batchSave(Collection<Tuple2<Object, Object>> idTuples) {
         return batchSaveCommand(idTuples).execute();
     }
+    
+    AssociationSaveCommand saveCommand(Object sourceId, Object targetId);
 
-    @NotNull
-    AssociationSaveCommand saveCommand(
-            @NotNull Object sourceId,
-            @NotNull Object targetId
-    );
+    AssociationSaveCommand batchSaveCommand(Collection<Object> sourceIds, Collection<Object> targetIds);
 
-    @NotNull
-    AssociationSaveCommand batchSaveCommand(
-            @NotNull Collection<Object> sourceIds,
-            @NotNull Collection<Object> targetIds
-    );
+    AssociationSaveCommand batchSaveCommand(Collection<Tuple2<Object, Object>> idTuples);
 
-    @NotNull
-    AssociationSaveCommand batchSaveCommand(
-            @NotNull Collection<Tuple2<Object, Object>> idTuples
-    );
-
-    default int delete(
-            @NotNull Object sourceId,
-            @NotNull Object targetId
-    ) {
+    default int delete(Object sourceId, Object targetId) {
         return deleteCommand(sourceId, targetId).execute();
     }
 
-    default int batchDelete(
-            @NotNull Collection<Object> sourceIds,
-            @NotNull Collection<Object> targetIds
-    ) {
+    default int batchDelete(Collection<Object> sourceIds, Collection<Object> targetIds) {
         return batchDeleteCommand(sourceIds, targetIds).execute();
     }
 
-    default int batchDelete(
-            @NotNull Collection<Tuple2<Object, Object>> idTuples
-    ) {
+    default int batchDelete(Collection<Tuple2<Object, Object>> idTuples) {
         return batchDeleteCommand(idTuples).execute();
     }
 
-    @NotNull
-    Executable<Integer> deleteCommand(
-            @NotNull Object sourceId,
-            @NotNull Object targetId
-    );
+    Executable<Integer> deleteCommand(Object sourceId, Object targetId);
 
-    @NotNull
-    Executable<Integer> batchDeleteCommand(
-            @NotNull Collection<Object> sourceIds,
-            @NotNull Collection<Object> targetIds
-    );
+    Executable<Integer> batchDeleteCommand(Collection<Object> sourceIds, Collection<Object> targetIds);
 
-    @NotNull
-    Executable<Integer> batchDeleteCommand(
-            @NotNull Collection<Tuple2<Object, Object>> idTuples
-    );
+    Executable<Integer> batchDeleteCommand(Collection<Tuple2<Object, Object>> idTuples);
 }

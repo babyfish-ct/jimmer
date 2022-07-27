@@ -9,42 +9,54 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.Converters;
 import org.jetbrains.annotations.NotNull;
 
+import java.sql.Connection;
 import java.util.*;
 
 public class AssociationsImpl implements Associations {
 
     private final SqlClient sqlClient;
+    
+    private final Connection con;
 
     private final AssociationType associationType;
 
     private final boolean reversed;
 
-    public AssociationsImpl(SqlClient sqlClient, AssociationType associationType) {
-        this(sqlClient, associationType, false);
+    public AssociationsImpl(
+            SqlClient sqlClient, 
+            Connection con, 
+            AssociationType associationType
+    ) {
+        this(sqlClient, con, associationType, false);
     }
 
     private AssociationsImpl(
             SqlClient sqlClient,
+            Connection con,
             AssociationType associationType,
             boolean reversed
     ) {
         this.sqlClient = sqlClient;
+        this.con = con;
         this.associationType = associationType;
         this.reversed = reversed;
     }
 
-    @NotNull
     @Override
-    public Associations reverse() {
-        return new AssociationsImpl(sqlClient, associationType, !reversed);
+    public Associations forConnection(Connection con) {
+        if (this.con == con) {
+            return this;
+        }
+        return new AssociationsImpl(sqlClient, con, associationType, reversed);
     }
 
-    @NotNull
     @Override
-    public AssociationSaveCommand saveCommand(
-            @NotNull Object sourceId,
-            @NotNull Object targetId
-    ) {
+    public Associations reverse() {
+        return new AssociationsImpl(sqlClient, con, associationType, !reversed);
+    }
+
+    @Override
+    public AssociationSaveCommand saveCommand(Object sourceId, Object targetId) {
         if (sourceId instanceof Collection<?> || targetId instanceof Collection<?>) {
             throw new IllegalArgumentException(
                     "sourceId or targetId cannot be collection, do you want to call 'batchSaveCommand'?"
@@ -55,33 +67,22 @@ public class AssociationsImpl implements Associations {
         );
     }
 
-    @NotNull
     @Override
-    public AssociationSaveCommand batchSaveCommand(
-            @NotNull Collection<Object> sourceIds,
-            @NotNull Collection<Object> targetIds
-    ) {
+    public AssociationSaveCommand batchSaveCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
         return new AssociationSaveCommandImpl(
                 saveExecutable(cartesianProduct(sourceIds, targetIds))
         );
     }
 
-    @NotNull
     @Override
-    public AssociationSaveCommand batchSaveCommand(
-            @NotNull Collection<Tuple2<Object, Object>> idTuples
-    ) {
+    public AssociationSaveCommand batchSaveCommand(Collection<Tuple2<Object, Object>> idTuples) {
         return new AssociationSaveCommandImpl(
                 saveExecutable(idTuples)
         );
     }
 
-    @NotNull
     @Override
-    public Executable<Integer> deleteCommand(
-            @NotNull Object sourceId,
-            @NotNull Object targetId
-    ) {
+    public Executable<Integer> deleteCommand(Object sourceId, Object targetId) {
         if (sourceId instanceof Collection<?> || targetId instanceof Collection<?>) {
             throw new IllegalArgumentException(
                     "sourceId or targetId cannot be collection, do you want to call 'batchDeleteCommand'?"
@@ -90,20 +91,13 @@ public class AssociationsImpl implements Associations {
         return deleteExecutable(Collections.singleton(new Tuple2<>(sourceId, targetId)));
     }
 
-    @NotNull
     @Override
-    public Executable<Integer> batchDeleteCommand(
-            @NotNull Collection<Object> sourceIds,
-            @NotNull Collection<Object> targetIds
-    ) {
+    public Executable<Integer> batchDeleteCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
         return deleteExecutable(cartesianProduct(sourceIds, targetIds));
     }
-
-    @NotNull
+    
     @Override
-    public Executable<Integer> batchDeleteCommand(
-            @NotNull Collection<Tuple2<Object, Object>> idTuples
-    ) {
+    public Executable<Integer> batchDeleteCommand(Collection<Tuple2<Object, Object>> idTuples) {
         return deleteExecutable(idTuples);
     }
 
@@ -111,6 +105,7 @@ public class AssociationsImpl implements Associations {
         validate(idTuples);
         return new AssociationExecutable(
                 sqlClient,
+                con,
                 associationType,
                 reversed,
                 AssociationExecutable.Mode.INSERT,
@@ -122,6 +117,7 @@ public class AssociationsImpl implements Associations {
         validate(idTuples);
         return new AssociationExecutable(
                 sqlClient,
+                con,
                 associationType,
                 reversed,
                 AssociationExecutable.Mode.DELETE,

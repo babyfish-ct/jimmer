@@ -14,20 +14,23 @@ import java.util.Map;
 
 class SingleCommand<T> implements Executable<T> {
 
-    private SqlClient sqlClient;
+    private final SqlClient sqlClient;
 
-    private ImmutableProp prop;
+    private final Connection con;
 
-    private Filter<Table<ImmutableSpi>> filter;
+    private final ImmutableProp prop;
 
-    private int limit;
+    private final Filter<Table<ImmutableSpi>> filter;
 
-    private int offset;
+    private final int limit;
 
-    private ImmutableSpi source;
+    private final int offset;
+
+    private final ImmutableSpi source;
 
     public SingleCommand(
             SqlClient sqlClient,
+            Connection con,
             ImmutableProp prop,
             Filter<Table<ImmutableSpi>> filter,
             int limit,
@@ -35,6 +38,7 @@ class SingleCommand<T> implements Executable<T> {
             ImmutableSpi source
     ) {
         this.sqlClient = sqlClient;
+        this.con = con;
         this.prop = prop;
         this.filter = filter;
         this.limit = limit;
@@ -44,6 +48,9 @@ class SingleCommand<T> implements Executable<T> {
 
     @Override
     public T execute() {
+        if (con != null) {
+            return executeImpl(con);
+        }
         return sqlClient
                 .getConnectionManager()
                 .execute(this::executeImpl);
@@ -53,6 +60,9 @@ class SingleCommand<T> implements Executable<T> {
     public T execute(Connection con) {
         if (con != null) {
             return executeImpl(con);
+        }
+        if (this.con != null) {
+            return executeImpl(this.con);
         }
         return sqlClient
                 .getConnectionManager()

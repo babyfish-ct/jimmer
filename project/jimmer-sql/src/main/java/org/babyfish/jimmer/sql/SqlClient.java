@@ -87,29 +87,15 @@ public interface SqlClient {
     Associations getAssociations(AssociationType associationType);
 
     <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ReferenceLoader<SE, TE> getReferenceLoader(
+    ReferenceLoader<SE, TE, TT> getReferenceLoader(
             Class<ST> sourceTableType,
             Function<ST, TT> block
     );
 
     <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ReferenceLoader<SE, TE> getReferenceLoader(
-            Class<ST> sourceTableType,
-            Function<ST, TT> block,
-            Filter<TT> filter
-    );
-
-    <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ListLoader<SE, TE> getListLoader(
+    ListLoader<SE, TE, TT> getListLoader(
             Class<ST> sourceTableType,
             Function<ST, TT> block
-    );
-
-    <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ListLoader<SE, TE> getListLoader(
-            Class<ST> sourceTableType,
-            Function<ST, TT> block,
-            Filter<TT> filter
     );
 
     Caches getCaches();
