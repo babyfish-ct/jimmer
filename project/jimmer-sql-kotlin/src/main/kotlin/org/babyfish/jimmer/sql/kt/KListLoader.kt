@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt
 
 import org.babyfish.jimmer.lang.NewChain
-import org.babyfish.jimmer.sql.kt.fetcher.impl.KFilter
+import org.babyfish.jimmer.sql.kt.fetcher.KFilterDsl
 import java.sql.Connection
 
 interface KListLoader<S: Any, T: Any> {
@@ -10,7 +10,7 @@ interface KListLoader<S: Any, T: Any> {
     fun forConnection(con: Connection): KListLoader<S, T>
 
     @NewChain
-    fun forFilter(filter: KFilter<T>): KListLoader<S, T>
+    fun forFilter(filter: KFilterDsl<T>.() -> Unit): KListLoader<S, T>
 
     fun load(source: S, con: Connection? = null): List<T>
 
