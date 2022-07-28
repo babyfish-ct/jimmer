@@ -48,8 +48,8 @@ class MiddleTableOperator {
         return Selectors.select(
                 sqlClient,
                 con,
-                sqlResult._1(),
-                sqlResult._2(),
+                sqlResult.get_1(),
+                sqlResult.get_2(),
                 Collections.singletonList(targetIdExpression)
         );
     }
@@ -88,8 +88,8 @@ class MiddleTableOperator {
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
                 con,
-                sqlResult._1(),
-                sqlResult._2(),
+                sqlResult.get_1(),
+                sqlResult.get_2(),
                 PreparedStatement::executeUpdate
         );
     }
@@ -129,8 +129,8 @@ class MiddleTableOperator {
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
                 con,
-                sqlResult._1(),
-                sqlResult._2(),
+                sqlResult.get_1(),
+                sqlResult.get_2(),
                 PreparedStatement::executeUpdate
         );
     }

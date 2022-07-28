@@ -27,9 +27,6 @@ public interface TreeNode {
      */
     @Id
     @Column(name = "NODE_ID")
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            sequenceName = "tree_node_id_seq"
-    )
+    @GeneratedValue(sequenceName = "tree_node_id_seq")
     long id();
 }

@@ -33,6 +33,7 @@ public class TreeQueryShell {
             "(Example: tree --no-recursive clothing,drinks)"
     )
     public void tree(
+            @ShellOption(defaultValue = "") String rootName,
             @ShellOption(defaultValue = "") String noRecursive
     ) throws JsonProcessingException {
 
@@ -51,6 +52,9 @@ public class TreeQueryShell {
                     q
                             .where(treeNode.parent().isNull())
                             .orderBy(treeNode.name());
+                    if (!rootName.isEmpty()) {
+                        q.where(treeNode.name().ilike(rootName));
+                    }
                     return q.select(
                             treeNode.fetch(
                                     TreeNodeFetcher.$
@@ -59,11 +63,13 @@ public class TreeQueryShell {
                                                     TreeNodeFetcher.$
                                                             .allScalarFields(),
                                                     it -> it
-                                                            .filter(args -> args.orderBy(args.getTable().name()))
                                                             .recursive(args ->
                                                                     !noRecursiveNames.contains(
                                                                             args.getEntity().name().toLowerCase()
                                                                     )
+                                                            )
+                                                            .filter(args ->
+                                                                    args.orderBy(args.getTable().name())
                                                             )
                                             )
                             )

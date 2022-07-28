@@ -2,12 +2,10 @@ package org.babyfish.jimmer.sql.kt.impl
 
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
-import org.babyfish.jimmer.sql.ImmutableProps
 import org.babyfish.jimmer.sql.SqlClient
 import org.babyfish.jimmer.sql.association.Association
 import org.babyfish.jimmer.sql.association.meta.AssociationType
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
-import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery
 import org.babyfish.jimmer.sql.ast.table.AssociationTable
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.KQueries
@@ -16,7 +14,6 @@ import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableRootQueryImpl
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
-import kotlin.reflect.jvm.javaMethod
 
 internal class KQueriesImpl(
     private val sqlClient: SqlClient
@@ -42,18 +39,14 @@ internal class KQueriesImpl(
         prop: KProperty1<S, T?>,
         block: KMutableRootQuery<Association<S, T>>.() -> KConfigurableRootQuery<Association<S, T>, R>
     ): KConfigurableRootQuery<Association<S, T>, R> {
-        val javaType = prop.getter.javaMethod!!.declaringClass
-        val immutableProp = ImmutableType.get(javaType).getProp(prop.name)
-        return forAssociation(immutableProp, block)
+        return forAssociation(prop.toImmutableProp(), block)
     }
 
     override fun <S : Any, T : Any, R> forList(
         prop: KProperty1<S, List<T>>,
         block: KMutableRootQuery<Association<S, T>>.() -> KConfigurableRootQuery<Association<S, T>, R>
     ): KConfigurableRootQuery<Association<S, T>, R> {
-        val javaType = prop.getter.javaMethod!!.declaringClass
-        val immutableProp = ImmutableType.get(javaType).getProp(prop.name)
-        return forAssociation(immutableProp, block)
+        return forAssociation(prop.toImmutableProp(), block)
     }
 
     @Suppress("UNCHECKED_CAST")

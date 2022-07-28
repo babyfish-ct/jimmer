@@ -149,19 +149,19 @@ public class AssociationsImpl implements Associations {
             targetIdType = tmp;
         }
         for (Tuple2<Object, Object> idTuple : idTuples) {
-            if (Converters.tryConvert(idTuple._1(), sourceIdType) == null) {
+            if (Converters.tryConvert(idTuple.get_1(), sourceIdType) == null) {
                 throw new IllegalArgumentException(
                         "sourceId \"" +
-                                idTuple._1() +
+                                idTuple.get_1() +
                                 "\" does not match the type \"" +
                                 sourceIdType.getName() +
                                 "\""
                 );
             }
-            if (Converters.tryConvert(idTuple._2(), targetIdType) == null) {
+            if (Converters.tryConvert(idTuple.get_2(), targetIdType) == null) {
                 throw new IllegalArgumentException(
                         "targetId \"" +
-                                idTuple._2() +
+                                idTuple.get_2() +
                                 "\" does not match the type \"" +
                                 targetIdType.getName() +
                                 "\""

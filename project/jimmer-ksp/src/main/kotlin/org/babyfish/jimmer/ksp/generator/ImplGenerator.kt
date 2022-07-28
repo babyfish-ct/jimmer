@@ -270,19 +270,26 @@ class ImplGenerator(
                                 )
                                 addStatement("return false")
                                 endControlFlow()
-                                beginControlFlow(
-                                    "if (%L && this.%L %L otherImpl.%L)",
-                                    localLoadedName,
-                                    prop.valueFieldName,
-                                    if (shallow && prop.isAssociation) "!==" else "!=",
-                                    prop.name
-                                )
-                                addStatement("return false")
-                                if (!shallow && prop.isId) {
-                                    nextControlFlow("else")
-                                    addStatement("return true")
+                                if (prop.isId) {
+                                    beginControlFlow("if (%L)", localLoadedName)
+                                    addStatement(
+                                        "return this.%L %L otherImpl.%L",
+                                        prop.valueFieldName,
+                                        if (shallow && prop.isAssociation) "!==" else "!=",
+                                        prop.name
+                                    )
+                                    endControlFlow()
+                                } else {
+                                    beginControlFlow(
+                                        "if (%L && this.%L %L otherImpl.%L)",
+                                        localLoadedName,
+                                        prop.valueFieldName,
+                                        if (shallow && prop.isAssociation) "!==" else "!=",
+                                        prop.name
+                                    )
+                                    addStatement("return false")
+                                    endControlFlow()
                                 }
-                                endControlFlow()
                             }
                             addStatement("return true")
                         }

@@ -55,8 +55,8 @@ class BookRepository(
             }
             .execute()
             .associateBy(
-                {it._1()}
+                {it._1}
             ) {
-                it._2()
+                it._2
             }
 }

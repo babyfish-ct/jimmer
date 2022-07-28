@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.Id
 import org.babyfish.jimmer.sql.Key
 import org.babyfish.jimmer.sql.ManyToMany
+import javax.validation.constraints.NotBlank
 
 @Entity
 interface Author {
@@ -12,10 +13,10 @@ interface Author {
     val id: Long
 
     @Key
-    val firstName: String
+    val firstName: @NotBlank String
 
     @Key
-    val lastName: String
+    val lastName: @NotBlank String
 
     val gender: Gender
 

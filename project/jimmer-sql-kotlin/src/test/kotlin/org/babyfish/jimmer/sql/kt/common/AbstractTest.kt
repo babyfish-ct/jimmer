@@ -34,13 +34,16 @@ abstract class AbstractTest {
 
     protected fun sqlClient(block: KSqlClientDsl.() -> Unit = {}): KSqlClient =
         newKSqlClient {
-            executor = ExecutorImpl()
-            scalarProviders {
-                add(ScalarProvider.enumProviderByString(Gender::class.java) {
+            setExecutor {
+                _executions.add(Execution(sql, variables))
+                proceed()
+            }
+            addScalarProvider(
+                ScalarProvider.enumProviderByString(Gender::class.java) {
                     it.map(Gender.MALE, "M")
                     it.map(Gender.FEMALE, "F")
-                })
-            }
+                }
+            )
             block()
         }
 
@@ -57,18 +60,6 @@ abstract class AbstractTest {
     }
 
     private val _executions = mutableListOf<Execution>()
-
-    private inner class ExecutorImpl : Executor {
-        override fun <R> execute(
-            con: Connection,
-            sql: String,
-            variables: List<Any>,
-            block: SqlFunction<PreparedStatement, R>
-        ): R {
-            _executions.add(Execution(sql, variables))
-            return DefaultExecutor.INSTANCE.execute(con, sql, variables, block)
-        }
-    }
 
     companion object {
 

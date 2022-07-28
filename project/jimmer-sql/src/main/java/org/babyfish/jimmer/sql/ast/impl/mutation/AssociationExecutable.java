@@ -136,9 +136,9 @@ class AssociationExecutable implements Executable<Integer> {
             builder
                     .sql(separator)
                     .sql("(")
-                    .variable(idTuple._1())
+                    .variable(idTuple.get_1())
                     .sql(", ")
-                    .variable(idTuple._2())
+                    .variable(idTuple.get_2())
                     .sql(")");
             separator = ", ";
         }
@@ -148,9 +148,9 @@ class AssociationExecutable implements Executable<Integer> {
         return Selectors.select(
                 sqlClient,
                 con,
-                sqlResult._1(),
-                sqlResult._2(),
-                Arrays.asList(expressionPair._1(), expressionPair._2())
+                sqlResult.get_1(),
+                sqlResult.get_2(),
+                Arrays.asList(expressionPair.get_1(), expressionPair.get_2())
         );
     }
 
@@ -203,12 +203,12 @@ class AssociationExecutable implements Executable<Integer> {
 
         @Override
         public Object sourceId() {
-            return currentIdPair._1();
+            return currentIdPair.get_1();
         }
 
         @Override
         public Object targetId() {
-            return currentIdPair._2();
+            return currentIdPair.get_2();
         }
     }
 }

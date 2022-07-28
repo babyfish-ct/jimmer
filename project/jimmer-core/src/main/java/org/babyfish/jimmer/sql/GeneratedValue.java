@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface GeneratedValue {
 
-    GenerationType strategy();
+    GenerationType strategy() default GenerationType.AUTO;
 
     Class<? extends IdGenerator> generatorType() default IdGenerator.None.class;
 

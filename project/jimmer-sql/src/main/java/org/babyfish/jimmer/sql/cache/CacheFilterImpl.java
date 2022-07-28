@@ -19,7 +19,7 @@ class CacheFilterImpl implements CacheFilter {
     public CacheFilterImpl(List<Tuple2<String, Object>> tuples) {
         NavigableMap<String, Object> map = new TreeMap<>();
         for (Tuple2<String, Object> tuple : tuples) {
-            map.put(tuple._1(), tuple._2());
+            map.put(tuple.get_1(), tuple.get_2());
         }
         this.args = map;
     }

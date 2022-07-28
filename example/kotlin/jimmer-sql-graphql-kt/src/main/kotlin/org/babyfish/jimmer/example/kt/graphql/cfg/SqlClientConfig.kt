@@ -11,8 +11,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.jdbc.datasource.DataSourceUtils
 import java.io.InputStreamReader
 import java.sql.Connection
-import java.sql.PreparedStatement
-import java.util.function.Function
 import javax.sql.DataSource
 
 @Configuration
@@ -24,70 +22,52 @@ class SqlClientConfig {
     fun sqlClient(dataSource: DataSource): KSqlClient =
         newKSqlClient {
 
-            /*
-             * It's very important to use
-             *      "org.springframework.jdbc.datasource.DataSourceUtils"!
-             * This is spring transaction aware ConnectionManager
-             */
-            connectionManager = object : ConnectionManager {
-                override fun <R> execute(block: Function<Connection, R>): R {
-                    val con: Connection = DataSourceUtils.getConnection(dataSource)
-                    return try {
-                        block.apply(con)
-                    } finally {
-                        DataSourceUtils.releaseConnection(con, dataSource)
-                    }
+            setConnectionManager {
+                /*
+                 * It's very important to use
+                 *      "org.springframework.jdbc.datasource.DataSourceUtils"!
+                 * This is spring transaction aware ConnectionManager
+                 */
+                val con: Connection = DataSourceUtils.getConnection(dataSource)
+                try {
+                    proceed(con)
+                } finally {
+                    DataSourceUtils.releaseConnection(con, dataSource)
                 }
             }
 
-            dialect = H2Dialect()
+            setExecutor {
+                /*
+                 * Log SQL and variables
+                 */
+                LOGGER.info("Execute sql : \"{}\", with variables: {}", sql, variables)
+                proceed()
+            }
 
-            /*
-             * Log SQL and variables
-             */
-            executor = object : Executor {
-                override fun <R> execute(
-                    con: Connection,
-                    sql: String,
-                    variables: List<Any>,
-                    block: SqlFunction<PreparedStatement, R>
-                ): R {
-                    LOGGER.info("Execute sql : \"{}\", with variables: {}", sql, variables)
-                    return DefaultExecutor.INSTANCE.execute(
-                        con,
-                        sql,
-                        variables,
-                        block
-                    )
+            setDialect(H2Dialect())
+
+            addScalarProvider(
+                ScalarProvider.enumProviderByString(
+                    Gender::class.java
+                ) {
+                    it
+                        .map(Gender.MALE, "M")
+                        .map(Gender.FEMALE, "F")
                 }
-            }
-
-            scalarProviders {
-                add(
-                    ScalarProvider.enumProviderByString(
-                        Gender::class.java
-                    ) {
-                        it
-                            .map(Gender.MALE, "M")
-                            .map(Gender.FEMALE, "F")
-                    }
-                )
-            }
+            )
         }.also {
             initializeH2Database(it)
         }
 
     private fun initializeH2Database(sqlClient: KSqlClient) {
-        sqlClient.javaClient.connectionManager.execute { con: Connection ->
+        sqlClient.executeNativeSql { con: Connection ->
             val inputStream = SqlClientConfig::class.java
                 .classLoader
-                .getResourceAsStream("h2-database.sql")
-                ?: throw RuntimeException("no h2-database.sql")
+                .getResourceAsStream("h2-database.sql") ?: throw RuntimeException("no h2-database.sql")
             val sql = InputStreamReader(inputStream).use { reader ->
                 reader.readText()
             }
             con.createStatement().execute(sql)
-            null
         }
     }
 }

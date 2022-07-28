@@ -50,7 +50,7 @@ class QueryTest : AbstractQueryTest() {
         ) {
             sql("select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE from BOOK_STORE as tb_1_")
             rows {
-                expect("[Tuple3{_1=1, _2=O'REILLY, _3=null}, Tuple3{_1=2, _2=MANNING, _3=null}]") {
+                expect("[Tuple3(_1=1, _2=O'REILLY, _3=null), Tuple3(_1=2, _2=MANNING, _3=null)]") {
                     it.toString()
                 }
             }
@@ -115,7 +115,7 @@ class QueryTest : AbstractQueryTest() {
                     |group by tb_2_.NAME""".trimMargin()
             )
             rows {
-                expect("[Tuple2{_1=MANNING, _2=3}, Tuple2{_1=O'REILLY, _2=9}]") {
+                expect("[Tuple2(_1=MANNING, _2=3), Tuple2(_1=O'REILLY, _2=9)]") {
                     it.toString()
                 }
             }
@@ -148,7 +148,7 @@ class QueryTest : AbstractQueryTest() {
             rows {
                 contentEquals(
                     """[
-                        |--->Tuple3{
+                        |--->Tuple3(
                         |--->--->_1={
                         |--->--->--->"id":1,
                         |--->--->--->"name":"Learning GraphQL",
@@ -158,8 +158,8 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->}, 
                         |--->--->_2=9, 
                         |--->--->_3=6
-                        |--->}, 
-                        |--->Tuple3{
+                        |--->), 
+                        |--->Tuple3(
                         |--->--->_1={
                         |--->--->--->"id":2,
                         |--->--->--->"name":"Learning GraphQL",
@@ -168,8 +168,9 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->--->"store":{"id":1}
                         |--->--->}, 
                         |--->--->_2=7, 
-                        |--->--->_3=4}, 
-                        |--->Tuple3{
+                        |--->--->_3=4
+                        |--->), 
+                        |--->Tuple3(
                         |--->--->_1={
                         |--->--->--->"id":3,
                         |--->--->--->"name":"Learning GraphQL",
@@ -179,8 +180,8 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->}, 
                         |--->--->_2=8, 
                         |--->--->_3=5
-                        |--->}, 
-                        |--->Tuple3{
+                        |--->), 
+                        |--->Tuple3(
                         |--->--->_1={
                         |--->--->--->"id":4,
                         |--->--->--->"name":"Effective TypeScript",
@@ -190,8 +191,8 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->}, 
                         |--->--->_2=5, 
                         |--->--->_3=2
-                        |--->}, 
-                        |--->Tuple3{
+                        |--->), 
+                        |--->Tuple3(
                         |--->--->_1={
                         |--->--->--->"id":5,
                         |--->--->--->"name":"Effective TypeScript",
@@ -200,8 +201,8 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->--->"store":{"id":1}}, 
                         |--->--->_2=6, 
                         |--->--->_3=3
-                        |--->}, 
-                        |--->Tuple3{
+                        |--->), 
+                        |--->Tuple3(
                         |--->--->_1={
                         |--->--->--->"id":6,
                         |--->--->--->"name":"Effective TypeScript",
@@ -211,8 +212,8 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->}, 
                         |--->--->_2=1, 
                         |--->--->_3=1
-                        |--->}, 
-                        |--->Tuple3{
+                        |--->), 
+                        |--->Tuple3(
                         |--->--->_1={
                         |--->--->--->"id":7,
                         |--->--->--->"name":"Programming TypeScript",
@@ -222,8 +223,8 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->}, 
                         |--->--->_2=11, 
                         |--->--->_3=8
-                        |--->}, 
-                        |--->Tuple3{
+                        |--->), 
+                        |--->Tuple3(
                         |--->--->_1={
                         |--->--->--->"id":8,
                         |--->--->--->"name":"Programming TypeScript",
@@ -233,8 +234,8 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->}, 
                         |--->--->_2=12, 
                         |--->--->_3=9
-                        |--->}, 
-                        |--->Tuple3{
+                        |--->), 
+                        |--->Tuple3(
                         |--->--->_1={
                         |--->--->--->"id":9,
                         |--->--->--->"name":"Programming TypeScript",
@@ -244,8 +245,8 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->}, 
                         |--->--->_2=10, 
                         |--->--->_3=7
-                        |--->}, 
-                        |--->Tuple3{
+                        |--->), 
+                        |--->Tuple3(
                         |--->--->_1={
                         |--->--->--->"id":10,
                         |--->--->--->"name":"GraphQL in Action",
@@ -255,8 +256,8 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->}, 
                         |--->--->_2=3, 
                         |--->--->_3=2
-                        |--->}, 
-                        |--->Tuple3{
+                        |--->), 
+                        |--->Tuple3(
                         |--->--->_1={
                         |--->--->--->"id":11,
                         |--->--->--->"name":"GraphQL in Action",
@@ -266,8 +267,8 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->}, 
                         |--->--->_2=2, 
                         |--->--->_3=1
-                        |--->}, 
-                        |--->Tuple3{
+                        |--->), 
+                        |--->Tuple3(
                         |--->--->_1={
                         |--->--->--->"id":12,
                         |--->--->--->"name":"GraphQL in Action",
@@ -277,7 +278,7 @@ class QueryTest : AbstractQueryTest() {
                         |--->--->}, 
                         |--->--->_2=3, 
                         |--->--->_3=2
-                        |--->}
+                        |--->)
                         |]""".trimMargin(),
                     it.toString()
                 )

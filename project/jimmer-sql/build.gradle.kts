@@ -1,5 +1,6 @@
 plugins {
     `java-library`
+    kotlin("jvm") version "1.6.10"
     id("maven-publish")
     id("signing")
 }
@@ -32,6 +33,10 @@ dependencies {
     testImplementation("com.h2database:h2:2.1.212")
     testImplementation("mysql:mysql-connector-java:8.0.29")
     testImplementation("org.postgresql:postgresql:42.3.6")
+}
+
+tasks.getByName<Test>("test") {
+    useJUnitPlatform()
 }
 
 // Publish to maven-----------------------------------------------------

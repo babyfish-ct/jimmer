@@ -154,8 +154,8 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         return Selectors.select(
                 sqlClient,
                 con,
-                sqlResult._1(),
-                sqlResult._2(),
+                sqlResult.get_1(),
+                sqlResult.get_2(),
                 data.getSelections()
         );
     }

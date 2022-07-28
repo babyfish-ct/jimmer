@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql;
 
 public enum GenerationType {
-    NONE,
+    AUTO,
     USER,
     IDENTITY,
     SEQUENCE

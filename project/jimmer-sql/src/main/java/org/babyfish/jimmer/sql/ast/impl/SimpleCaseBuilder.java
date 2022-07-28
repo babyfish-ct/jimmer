@@ -222,8 +222,8 @@ public class SimpleCaseBuilder<C, T> {
         public void accept(@NotNull AstVisitor visitor) {
             ((Ast) expression).accept(visitor);
             for (Tuple2<Expression<?>, Expression<T>> when : whens) {
-                ((Ast) when._1()).accept(visitor);
-                ((Ast) when._2()).accept(visitor);
+                ((Ast) when.get_1()).accept(visitor);
+                ((Ast) when.get_2()).accept(visitor);
             }
             ((Ast) otherwise).accept(visitor);
         }
@@ -235,9 +235,9 @@ public class SimpleCaseBuilder<C, T> {
                 renderChild((Ast) expression, builder);
                 for (Tuple2<Expression<?>, Expression<T>> when : whens) {
                     builder.sql(" when ");
-                    renderChild((Ast) when._1(), builder);
+                    renderChild((Ast) when.get_1(), builder);
                     builder.sql(" then ");
-                    renderChild((Ast) when._2(), builder);
+                    renderChild((Ast) when.get_2(), builder);
                 }
                 builder.sql(" else ");
                 renderChild((Ast) otherwise, builder);

@@ -13,7 +13,7 @@ import java.util.UUID;
 public interface BookStore {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.USER, generatorType = UUIDIdGenerator.class)
+    @GeneratedValue(generatorType = UUIDIdGenerator.class)
     UUID id();
 
     @Key

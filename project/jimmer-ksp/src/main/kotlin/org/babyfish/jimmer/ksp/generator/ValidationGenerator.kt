@@ -299,11 +299,11 @@ class ValidationGenerator(
             parent.apply {
                 add("throw %T(\n", ValidationException::class)
                 indent()
-                add("%S", "Illegal value")
+                add("%S", "Illegal value'")
                 add(" +\n")
                 add("%L", prop.name)
                 add(" +\n")
-                add("%S", "for property '${prop}', ")
+                add("%S", "'for property '${prop}', ")
                 add(" +\n")
                 add("%S", defaultMessageSupplier())
                 unindent()
@@ -318,6 +318,12 @@ class ValidationGenerator(
             is ClassName -> typeName
             is ParameterizedTypeName -> typeName.rawType
             else -> return false
+        }.let {
+            if (it.isNullable) {
+                it.copy(nullable = false)
+            } else {
+                it
+            }
         }
         return className == type.asClassName()
     }

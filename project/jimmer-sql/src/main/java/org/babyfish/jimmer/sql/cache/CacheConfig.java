@@ -47,6 +47,14 @@ public class CacheConfig {
             Cache<?, ?> cache
     ) {
         ImmutableProp prop = ImmutableProps.join(sourceTableType, targetTableGetter);
+        return setAssociatedIdCache(prop, cache);
+    }
+
+    @OldChain
+    public CacheConfig setAssociatedIdCache(
+            ImmutableProp prop,
+            Cache<?, ?> cache
+    ) {
         CachesImpl.validateForAssociatedTargetId(prop);
         associatedIdCacheMap.put(prop, CacheWrapper.unwrap(cache));
         return this;
@@ -59,6 +67,14 @@ public class CacheConfig {
             Cache<?, List<?>> cache
     ) {
         ImmutableProp prop = ImmutableProps.join(sourceTableType, targetTableGetter);
+        return setAssociatedIdListCache(prop, cache);
+    }
+
+    @OldChain
+    public CacheConfig setAssociatedIdListCache(
+            ImmutableProp prop,
+            Cache<?, List<?>> cache
+    ) {
         CachesImpl.validateForAssociationTargetIdList(prop);
         associatedIdListCacheMap.put(prop, CacheWrapper.unwrap(cache));
         return this;
