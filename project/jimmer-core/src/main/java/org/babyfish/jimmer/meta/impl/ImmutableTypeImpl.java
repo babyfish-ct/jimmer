@@ -9,10 +9,8 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.meta.Column;
-import org.babyfish.jimmer.sql.meta.IdGenerator;
-import org.babyfish.jimmer.sql.meta.IdentityIdGenerator;
-import org.babyfish.jimmer.sql.meta.SequenceIdGenerator;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -157,22 +155,81 @@ class ImmutableTypeImpl implements ImmutableType {
         if (generatedValue == null) {
             return;
         }
-        if (generatedValue.strategy() != GenerationType.USER &&
-                generatedValue.generatorType() != IdGenerator.None.class) {
+
+        Class<? extends IdGenerator> generatorType = generatedValue.generatorType();
+
+        GenerationType strategy = generatedValue.strategy();
+        GenerationType strategyFromGeneratorType = GenerationType.AUTO;
+        GenerationType strategyFromSequenceName = GenerationType.AUTO;
+
+        if (UserIdGenerator.class.isAssignableFrom(generatorType)) {
+            strategyFromGeneratorType = GenerationType.USER;
+        } else if (IdentityIdGenerator.class.isAssignableFrom(generatorType)) {
+            strategyFromGeneratorType = GenerationType.IDENTITY;
+        } else if (SequenceIdGenerator.class.isAssignableFrom(generatorType)) {
+            strategyFromGeneratorType = GenerationType.SEQUENCE;
+        }
+
+        if (!generatedValue.sequenceName().isEmpty()) {
+            strategyFromSequenceName = GenerationType.SEQUENCE;
+        }
+
+        if (strategy != GenerationType.AUTO &&
+                strategyFromGeneratorType != GenerationType.AUTO &&
+                strategy != strategyFromGeneratorType) {
             throw new ModelException(
                     "Illegal property \"" +
                             idProp +
-                            "\", the generator cannot be specified when generation type is " +
-                            generatedValue.strategy()
+                            "\", it's decorated by the annotation @" +
+                            GeneratedValue.class.getName() +
+                            " but that annotation has conflict attributes 'strategy' and 'generatorType'"
             );
         }
-        if (generatedValue.strategy() == GenerationType.USER) {
-            Class<? extends IdGenerator> generatorType = generatedValue.generatorType();
+        if (strategy != GenerationType.AUTO &&
+                strategyFromSequenceName != GenerationType.AUTO &&
+                strategy != strategyFromSequenceName) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            idProp +
+                            "\", it's decorated by the annotation @" +
+                            GeneratedValue.class.getName() +
+                            " but that annotation has conflict attributes 'strategy' and 'sequenceName'"
+            );
+        }
+        if (strategyFromGeneratorType != GenerationType.AUTO &&
+                strategyFromSequenceName != GenerationType.AUTO &&
+                strategyFromGeneratorType != strategyFromSequenceName) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            idProp +
+                            "\", it's decorated by the annotation @" +
+                            GeneratedValue.class.getName() +
+                            " but that annotation has conflict attributes 'generatorType' and 'sequenceName'"
+            );
+        }
+
+        if (strategy == GenerationType.AUTO) {
+            strategy = strategyFromGeneratorType;
+        }
+        if (strategy == GenerationType.AUTO) {
+            strategy = strategyFromSequenceName;
+        }
+        if (strategy == GenerationType.AUTO) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            idProp +
+                            "\", it's decorated by the annotation @" +
+                            GeneratedValue.class.getName() +
+                            " but that annotation does not have any attributes"
+            );
+        }
+
+        if (strategy == GenerationType.USER) {
             IdGenerator idGenerator = null;
             String error = null;
             Throwable errorCause = null;
             if (generatorType == IdGenerator.None.class) {
-                error = "generator must be specified";
+                error = "'generatorType' must be specified when 'strategy' is 'GenerationType.USER'";
             }
             try {
                 idGenerator = generatorType.getDeclaredConstructor().newInstance();
@@ -190,9 +247,9 @@ class ImmutableTypeImpl implements ImmutableType {
                 );
             }
             this.idGenerator = idGenerator;
-        } else if (generatedValue.strategy() == GenerationType.IDENTITY) {
+        } else if (strategy == GenerationType.IDENTITY) {
             this.idGenerator = IdentityIdGenerator.INSTANCE;
-        } else if (generatedValue.strategy() == GenerationType.SEQUENCE) {
+        } else if (strategy == GenerationType.SEQUENCE) {
             String sequenceName = generatedValue.sequenceName();
             if (sequenceName.isEmpty()) {
                 sequenceName = tableName + "_ID_SEQ";

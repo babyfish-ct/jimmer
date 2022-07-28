@@ -13,9 +13,7 @@ class SaveCommandTest : AbstractMutationTest() {
     fun testSaveLonely() {
         executeAndExpectResult({ con ->
             sqlClient {
-                type(Book::class) {
-                    idGenerator = PreparedIdGenerator(100)
-                }
+                setIdGenerator(Book::class, PreparedIdGenerator(100L))
             }.entities.save(
                 new(Book::class).by {
                     name = "GraphQL in Action+"
@@ -140,12 +138,8 @@ class SaveCommandTest : AbstractMutationTest() {
     fun testDeepTree() {
         executeAndExpectResult({ con ->
             sqlClient {
-                type(BookStore::class) {
-                    idGenerator = PreparedIdGenerator(100L)
-                }
-                type(Author::class) {
-                    idGenerator = PreparedIdGenerator(100L, 101L)
-                }
+                setIdGenerator(BookStore::class, PreparedIdGenerator(100L))
+                setIdGenerator(Author::class, PreparedIdGenerator(100L, 101L))
             }.entities.save(
                 new(Book::class).by {
                     name = "GraphQL in Action"

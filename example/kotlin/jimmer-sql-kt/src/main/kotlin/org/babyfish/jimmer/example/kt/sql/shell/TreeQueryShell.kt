@@ -48,13 +48,13 @@ class TreeQueryShell(
                 table.fetchBy {
                     allScalarFields()
                     childNodes({
-                        filter {
-                            orderBy(table.name)
-                        }
                         recursive {
                             !noRecursiveNames.contains(
                                 entity.name.lowercase()
                             )
+                        }
+                        filter {
+                            orderBy(table.name)
                         }
                     }) {
                         allScalarFields()

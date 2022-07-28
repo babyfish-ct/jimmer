@@ -11,9 +11,9 @@ import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableDeleteImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableUpdateImpl
+import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
-import kotlin.reflect.jvm.javaMethod
 
 internal class KSqlClientImpl(
     private val sqlClient: SqlClient
@@ -49,9 +49,7 @@ internal class KSqlClientImpl(
         prop: KProperty1<S, T?>
     ): KAssociations =
         sqlClient.getAssociations(
-            ImmutableType
-                .get(prop.getter.javaMethod!!.declaringClass)
-                .getProp(prop.name)
+            prop.toImmutableProp()
         ).let {
             KAssociationsImpl(it)
         }
@@ -60,9 +58,7 @@ internal class KSqlClientImpl(
         prop: KProperty1<S, List<T>>
     ): KAssociations =
         sqlClient.getAssociations(
-            ImmutableType
-                .get(prop.getter.javaMethod!!.declaringClass)
-                .getProp(prop.name)
+            prop.toImmutableProp()
         ).let {
             KAssociationsImpl(it)
         }
@@ -71,9 +67,7 @@ internal class KSqlClientImpl(
         Loaders
             .createReferenceLoader<S, T, Table<T>>(
                 sqlClient,
-                ImmutableType
-                    .get(prop.getter.javaMethod!!.declaringClass)
-                    .getProp(prop.name)
+                prop.toImmutableProp()
             )
             .let {
                 KReferenceLoaderImpl(it)
@@ -83,13 +77,14 @@ internal class KSqlClientImpl(
         Loaders
             .createListLoader<S, T, Table<T>>(
                 sqlClient,
-                ImmutableType
-                    .get(prop.getter.javaMethod!!.declaringClass)
-                    .getProp(prop.name)
+                prop.toImmutableProp()
             )
             .let {
                 KListLoaderImpl(it)
             }
+
+    override fun <R> executeNativeSql(block: (Connection) -> R): R =
+        javaClient.connectionManager.execute(block)
 
     override val javaClient: SqlClient
         get() = sqlClient

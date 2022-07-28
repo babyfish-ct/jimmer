@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
+import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -38,11 +39,14 @@ interface KSqlClient {
 
     fun <S: Any, T: Any> getListLoader(prop: KProperty1<S, List<T>>): KListLoader<S, T>
 
+    fun <R> executeNativeSql(block: (Connection) -> R): R
+
     val javaClient: SqlClient
 }
 
 fun newKSqlClient(block: KSqlClientDsl.() -> Unit): KSqlClient {
-    val dsl = KSqlClientDsl()
+    val javaBuilder = SqlClient.newBuilder()
+    val dsl = KSqlClientDsl(javaBuilder)
     dsl.block()
     return dsl.buildKSqlClient()
 }

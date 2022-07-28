@@ -61,8 +61,8 @@ class ChildTableOperator {
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
                 con,
-                sqlResult._1(),
-                sqlResult._2(),
+                sqlResult.get_1(),
+                sqlResult.get_2(),
                 PreparedStatement::executeUpdate
         );
     }
@@ -80,8 +80,8 @@ class ChildTableOperator {
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
                 con,
-                sqlResult._1(),
-                sqlResult._2(),
+                sqlResult.get_1(),
+                sqlResult.get_2(),
                 PreparedStatement::executeUpdate
         );
     }
@@ -99,8 +99,8 @@ class ChildTableOperator {
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
                 con,
-                sqlResult._1(),
-                sqlResult._2(),
+                sqlResult.get_1(),
+                sqlResult.get_2(),
                 stmt -> {
                     List<Object> list = new ArrayList<>();
                     try (ResultSet rs = stmt.executeQuery()) {

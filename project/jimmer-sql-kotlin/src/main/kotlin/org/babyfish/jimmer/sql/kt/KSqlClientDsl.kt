@@ -1,150 +1,157 @@
 package org.babyfish.jimmer.sql.kt
 
-import org.babyfish.jimmer.meta.ImmutableProp
-import org.babyfish.jimmer.meta.ImmutableType
-import org.babyfish.jimmer.sql.cache.Cache
-import org.babyfish.jimmer.sql.cache.CacheFactory
-import org.babyfish.jimmer.sql.cache.CachesImpl
-import org.babyfish.jimmer.sql.dialect.DefaultDialect
+import org.babyfish.jimmer.sql.SqlClient
+import org.babyfish.jimmer.sql.cache.*
 import org.babyfish.jimmer.sql.dialect.Dialect
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
-import org.babyfish.jimmer.sql.kt.util.immutableProp
+import org.babyfish.jimmer.sql.kt.impl.toImmutableProp
 import org.babyfish.jimmer.sql.meta.IdGenerator
 import org.babyfish.jimmer.sql.runtime.*
+import java.lang.IllegalStateException
+import java.sql.Connection
+import java.sql.PreparedStatement
+import java.util.function.Function
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
-class KSqlClientDsl internal constructor() {
-
-    private val idGeneratorMap = mutableMapOf<Class<*>?, IdGenerator>()
-
-    private val objectCacheMap = mutableMapOf<ImmutableType, Cache<*, *>>()
-
-    private val associatedIdCacheMap = mutableMapOf<ImmutableProp, Cache<*, *>>()
-
-    private val associatedIdListCacheMap = mutableMapOf<ImmutableProp, Cache<*, List<*>>>()
-
-    private val scalarProviderMap = mutableMapOf<Class<*>?, ScalarProvider<*, *>?>()
-
-    fun <T: Any> type(type: KClass<T>, block: TypeDSL<T>.() -> Unit) {
-        TypeDSL(type).block()
+class KSqlClientDsl internal constructor(
+    private val javaBuilder: SqlClient.Builder
+) {
+    fun setDialect(dialect: Dialect) {
+        javaBuilder.setDialect(dialect)
     }
 
-    fun scalarProviders(block: ScalarProviderDSL.() -> Unit) {
-        ScalarProviderDSL().block()
+    fun setDefaultBatchSize(size: Int) {
+        javaBuilder.setDefaultBatchSize(size)
     }
 
-    var connectionManager: ConnectionManager? = null
+    fun setDefaultListBatchSize(size: Int) {
+        javaBuilder.setDefaultListBatchSize(size)
+    }
 
-    var dialect: Dialect = DefaultDialect()
+    fun setConnectionManager(block: ConnectionManagerDsl.() -> Unit) {
+        javaBuilder.setConnectionManager(ConnectionManagerImpl(block))
+    }
 
-    var executor: Executor = DefaultExecutor()
+    fun setExecutor(block: ExecutorDsl.() -> Unit) {
+        javaBuilder.setExecutor(ExecutorImpl(block))
+    }
 
-    var defaultBatchSize: Int = 128
+    fun setIdGenerator(idGenerator: IdGenerator) {
+        javaBuilder.setIdGenerator(idGenerator)
+    }
 
-    var defaultListBatchSize: Int = 16
+    fun setIdGenerator(entityType: KClass<*>, idGenerator: IdGenerator) {
+        javaBuilder.setIdGenerator(entityType.java, idGenerator)
+    }
 
-    var idGenerator: IdGenerator?
-        get() = idGeneratorMap[null]
-        set(value) {
-            if (value !== null) {
-                idGeneratorMap[null] = value
-            } else {
-                idGeneratorMap.remove(null)
-            }
-        }
+    fun addScalarProvider(scalarProvider: ScalarProvider<*, *>) {
+        javaBuilder.addScalarProvider(scalarProvider)
+    }
 
-    var cacheFactory: CacheFactory? = null
-
-    inner class ScalarProviderDSL internal constructor() {
-
-        fun <T: Any> add(scalarProvider: ScalarProvider<T, *>) {
-            scalarProviderMap[scalarProvider.scalarType] = scalarProvider
+    fun setCaches(block: CacheDsl.() -> Unit) {
+        javaBuilder.setCaches {
+            CacheDsl(it).block()
         }
     }
 
-    inner class TypeDSL<T: Any> internal constructor(
-        private val type: KClass<T>
+    class ConnectionManagerDsl internal constructor(
+        private val javaBlock: Function<Connection, *>
     ) {
-        fun reference(prop: KProperty1<T, *>, block: ReferencePropDSL.() -> Unit) {
-            val immutableProp = immutableProp(prop)
-            if (!immutableProp.isReference) {
-                throw IllegalArgumentException("$prop is not reference property")
-            }
-            ReferencePropDSL(immutableProp).block()
-        }
+        private var proceeded: Boolean = false
 
-        fun list(prop: KProperty1<T, List<*>>, block: ListPropDSL.() -> Unit) {
-            val immutableProp = immutableProp(prop)
-            if (!immutableProp.isEntityList) {
-                throw IllegalArgumentException("$prop is not list property")
-            }
-            ListPropDSL(immutableProp).block()
-        }
+        private var result: Any? = null
 
-        var idGenerator: IdGenerator?
-            get() = idGeneratorMap[type.java]
-            set(value) {
-                if (value !== null) {
-                    idGeneratorMap[type.java] = value
-                } else {
-                    idGeneratorMap.remove(type.java)
-                }
+        fun proceed(con: Connection) {
+            if (proceeded) {
+                throw IllegalStateException("ConnectionManagerDsl cannot be proceeded twice")
             }
+            result = javaBlock.apply(con)
+            proceeded = true
+        }
 
         @Suppress("UNCHECKED_CAST")
-        var objectCache: Cache<*, T>?
-            get() =
-                objectCacheMap[ImmutableType.get(type.java)] as Cache<*, T>
-            set(value) {
-                if (value !== null) {
-                    objectCacheMap[ImmutableType.get(type.java)] = value
-                } else {
-                    objectCacheMap.remove(ImmutableType.get(type.java))
-                }
+        internal fun <R> get(): R {
+            if (!proceeded) {
+                throw IllegalStateException("ConnectionManagerDsl has not be proceeded")
+            }
+            return result as R
+        }
+    }
+
+    private class ConnectionManagerImpl(
+        private val dslBlock: ConnectionManagerDsl.() -> Unit
+    ) : ConnectionManager {
+
+        override fun <R> execute(block: Function<Connection, R>): R =
+            ConnectionManagerDsl(block).let {
+                it.dslBlock()
+                it.get()
             }
     }
 
-    inner class ReferencePropDSL internal constructor(private val prop: ImmutableProp) {
-        var associatedCache: Cache<*, *>?
-            get() = associatedIdCacheMap[prop]
-            set(value) {
-                if (value !== null) {
-                    associatedIdCacheMap[prop] = value
-                } else {
-                    associatedIdCacheMap.remove(prop)
-                }
+    class ExecutorDsl internal constructor(
+        val con: Connection,
+        val sql: String,
+        val variables: List<Any>,
+        private val javaBlock: SqlFunction<PreparedStatement, *>
+    ) {
+        private var proceeded: Boolean = false
+
+        private var result: Any? = null
+
+        fun proceed() {
+            if (proceeded) {
+                throw IllegalStateException("ExecutorDsl cannot be proceeded twice")
+            }
+            result = DefaultExecutor.INSTANCE.execute(con, sql, variables, javaBlock)
+            proceeded = true
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        internal fun <R> get(): R {
+            if (!proceeded) {
+                throw IllegalStateException("ExecutorDsl has not be proceeded")
+            }
+            return result as R
+        }
+    }
+
+    private class ExecutorImpl(
+        private val dslBlock: ExecutorDsl.() -> Unit
+    ) : Executor {
+        override fun <R> execute(
+            con: Connection,
+            sql: String,
+            variables: List<Any>,
+            block: SqlFunction<PreparedStatement, R>
+        ): R =
+            ExecutorDsl(con, sql, variables, block).let {
+                it.dslBlock()
+                it.get()
             }
     }
 
-    inner class ListPropDSL internal constructor(private val prop: ImmutableProp) {
-        var associatedCache: Cache<*, List<*>>?
-            get() = associatedIdListCacheMap[prop]
-            set(value) {
-                if (value !== null) {
-                    associatedIdListCacheMap[prop] = value
-                } else {
-                    associatedIdListCacheMap.remove(prop)
-                }
-            }
+    class CacheDsl internal constructor(
+        private val javaCfg: CacheConfig
+    ) {
+        fun setCacheFactory(cacheFactory: CacheFactory) {
+            javaCfg.setCacheFactory(cacheFactory)
+        }
+
+        fun <T: Any> setObjectCache(entityType: KClass<T>, cache: Cache<*, T>) {
+            javaCfg.setObjectCache(entityType.java, cache)
+        }
+
+        fun setAssociatedIdCache(prop: KProperty1<*, *>, cache: Cache<*, *>) {
+            javaCfg.setAssociatedIdCache(prop.toImmutableProp(), cache)
+        }
+
+        fun setAssociatedListIdCache(prop: KProperty1<*, *>, cache: Cache<*, List<*>>) {
+            javaCfg.setAssociatedIdListCache(prop.toImmutableProp(), cache)
+        }
     }
 
     internal fun buildKSqlClient(): KSqlClient =
-        SqlClientImpl(
-            connectionManager,
-            dialect,
-            executor,
-            scalarProviderMap,
-            idGeneratorMap,
-            defaultBatchSize,
-            defaultListBatchSize,
-            CachesImpl(
-                cacheFactory,
-                objectCacheMap,
-                associatedIdCacheMap,
-                associatedIdListCacheMap
-            )
-        ).let {
-            KSqlClientImpl(it)
-        }
+        KSqlClientImpl(javaBuilder.build())
 }

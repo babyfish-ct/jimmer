@@ -40,7 +40,7 @@ class SubQueryTest : AbstractQueryTest() {
             rows {
                 contentEquals(
                     """[
-                        |--->Tuple2{
+                        |--->Tuple2(
                         |--->--->_1={
                         |--->--->--->"id":2,
                         |--->--->--->"name":"MANNING",
@@ -48,8 +48,8 @@ class SubQueryTest : AbstractQueryTest() {
                         |--->--->--->"website":null
                         |--->--->}, 
                         |--->--->_2=3
-                        |--->}, 
-                        |--->Tuple2{
+                        |--->), 
+                        |--->Tuple2(
                         |--->--->_1={
                         |--->--->--->"id":1,
                         |--->--->--->"name":"O'REILLY",
@@ -57,7 +57,7 @@ class SubQueryTest : AbstractQueryTest() {
                         |--->--->--->"website":null
                         |--->--->}, 
                         |--->--->_2=9
-                        |--->}
+                        |--->)
                         |]""".trimMargin(),
                     it.toString()
                 )

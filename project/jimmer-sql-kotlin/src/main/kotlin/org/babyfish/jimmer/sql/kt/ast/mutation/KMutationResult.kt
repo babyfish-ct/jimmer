@@ -9,5 +9,5 @@ interface KMutationResult {
 
     fun affectedRowCount(entityType: KClass<*>): Int
 
-    fun affectedRowCount(associationProp: KProperty1<*, *>): Int
+    fun affectedRowCount(prop: KProperty1<*, *>): Int
 }

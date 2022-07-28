@@ -63,7 +63,7 @@ class AssociationQueryTest : AbstractQueryTest() {
             rows {
                 contentEquals(
                     """[
-                        |--->Tuple2{
+                        |--->Tuple2(
                         |--->--->_1={
                         |--->--->--->"id":1,
                         |--->--->--->"name":"Learning GraphQL",
@@ -77,8 +77,8 @@ class AssociationQueryTest : AbstractQueryTest() {
                         |--->--->--->"lastName":"Banks",
                         |--->--->--->"gender":"MALE"
                         |--->--->}
-                        |--->}, 
-                        |--->Tuple2{
+                        |--->), 
+                        |--->Tuple2(
                         |--->--->_1={
                         |--->--->--->"id":2,
                         |--->--->--->"name":"Learning GraphQL",
@@ -92,8 +92,8 @@ class AssociationQueryTest : AbstractQueryTest() {
                         |--->--->--->"lastName":"Banks",
                         |--->--->--->"gender":"MALE"
                         |--->--->}
-                        |--->}, 
-                        |--->Tuple2{
+                        |--->), 
+                        |--->Tuple2(
                         |--->--->_1={
                         |--->--->--->"id":3,
                         |--->--->--->"name":"Learning GraphQL",
@@ -107,7 +107,7 @@ class AssociationQueryTest : AbstractQueryTest() {
                         |--->--->--->"lastName":"Banks",
                         |--->--->--->"gender":"MALE"
                         |--->--->}
-                        |--->}
+                        |--->)
                         |]""".trimMargin(),
                     it.toString()
                 )

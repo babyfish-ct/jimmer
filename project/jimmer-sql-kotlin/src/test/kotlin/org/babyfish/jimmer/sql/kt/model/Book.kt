@@ -2,6 +2,8 @@ package org.babyfish.jimmer.sql.kt.model
 
 import org.babyfish.jimmer.sql.*
 import java.math.BigDecimal
+import javax.validation.constraints.NotBlank
+import javax.validation.constraints.Positive
 
 @Entity
 interface Book {
@@ -10,12 +12,12 @@ interface Book {
     val id: Long
 
     @Key
-    val name: String
+    val name: @NotBlank String
 
     @Key
-    val edition: Int
+    val edition: @Positive Int
 
-    val price: BigDecimal
+    val price: @Positive BigDecimal
 
     @ManyToOne
     val store: BookStore?

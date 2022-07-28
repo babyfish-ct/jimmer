@@ -170,8 +170,8 @@ public class CaseBuilder<T> {
         @Override
         public void accept(@NotNull AstVisitor visitor) {
             for (Tuple2<Predicate, Expression<T>> when : whens) {
-                ((Ast) when._1()).accept(visitor);
-                ((Ast) when._2()).accept(visitor);
+                ((Ast) when.get_1()).accept(visitor);
+                ((Ast) when.get_2()).accept(visitor);
             }
             ((Ast) otherwise).accept(visitor);
         }
@@ -182,9 +182,9 @@ public class CaseBuilder<T> {
                 builder.sql("case");
                 for (Tuple2<Predicate, Expression<T>> when : whens) {
                     builder.sql(" when ");
-                    renderChild((Ast) when._1(), builder);
+                    renderChild((Ast) when.get_1(), builder);
                     builder.sql(" then ");
-                    renderChild((Ast) when._2(), builder);
+                    renderChild((Ast) when.get_2(), builder);
                 }
                 builder.sql(" else ");
                 renderChild((Ast) otherwise, builder);

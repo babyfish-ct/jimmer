@@ -164,7 +164,7 @@ class FetcherTest : AbstractQueryTest() {
             rows {
                 contentEquals(
                     """[
-                        |--->Tuple2{
+                        |--->Tuple2(
                         |--->--->_1={
                         |--->--->--->"id":1,
                         |--->--->--->"name":"Learning GraphQL",
@@ -210,7 +210,7 @@ class FetcherTest : AbstractQueryTest() {
                         |--->--->--->--->}
                         |--->--->--->]
                         |--->--->}
-                        |--->}
+                        |--->)
                         |]""".trimMargin(),
                     it.toString()
                 )

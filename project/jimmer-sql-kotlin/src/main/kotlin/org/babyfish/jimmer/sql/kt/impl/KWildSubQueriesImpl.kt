@@ -11,7 +11,6 @@ import org.babyfish.jimmer.sql.kt.ast.query.KMutableSubQuery
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableSubQueryImpl
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
-import kotlin.reflect.jvm.javaMethod
 
 internal class KWildSubQueriesImpl<P: Any>(
     private val parent: AbstractMutableStatementImpl
@@ -33,18 +32,14 @@ internal class KWildSubQueriesImpl<P: Any>(
         prop: KProperty1<S, T?>,
         block: KMutableSubQuery<P, Association<S, T>>.() -> Unit
     ): KMutableSubQuery<P, Association<S, T>> {
-        val javaType = prop.getter.javaMethod!!.declaringClass
-        val immutableProp = ImmutableType.get(javaType).getProp(prop.name)
-        return forAssociation(immutableProp, block)
+        return forAssociation(prop.toImmutableProp(), block)
     }
 
     override fun <S : Any, T : Any> forList(
         prop: KProperty1<S, List<T>>,
         block: KMutableSubQuery<P, Association<S, T>>.() -> Unit
     ): KMutableSubQuery<P, Association<S, T>> {
-        val javaType = prop.getter.javaMethod!!.declaringClass
-        val immutableProp = ImmutableType.get(javaType).getProp(prop.name)
-        return forAssociation(immutableProp, block)
+        return forAssociation(prop.toImmutableProp(), block)
     }
 
     private fun <S : Any, T : Any> forAssociation(

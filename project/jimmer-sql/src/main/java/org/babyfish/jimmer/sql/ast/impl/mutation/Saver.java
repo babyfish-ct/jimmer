@@ -360,8 +360,8 @@ class Saver {
         Tuple2<String, List<Object>> sqlResult = builder.build();
         int rowCount = data.getSqlClient().getExecutor().execute(
                 con,
-                sqlResult._1(),
-                sqlResult._2(),
+                sqlResult.get_1(),
+                sqlResult.get_2(),
                 PreparedStatement::executeUpdate
         );
         addOutput(AffectedTable.of(type), rowCount);
@@ -475,8 +475,8 @@ class Saver {
         Tuple2<String, List<Object>> sqlResult = builder.build();
         int rowCount = data.getSqlClient().getExecutor().execute(
                 con,
-                sqlResult._1(),
-                sqlResult._2(),
+                sqlResult.get_1(),
+                sqlResult.get_2(),
                 PreparedStatement::executeUpdate
         );
         if (rowCount != 0) {

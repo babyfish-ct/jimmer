@@ -47,18 +47,18 @@ public class ComplexExprTest extends AbstractQueryTest {
                         Assertions.assertEquals(12, list.size());
                         Tuple3<Book, Integer, Integer> rank1 = list
                                 .stream()
-                                .filter(it -> it._1().price().intValue() == 88)
+                                .filter(it -> it.get_1().price().intValue() == 88)
                                 .findFirst()
                                 .get();
                         Tuple3<Book, Integer, Integer> rank12 = list
                                 .stream()
-                                .filter(it -> it._1().price().intValue() == 45)
+                                .filter(it -> it.get_1().price().intValue() == 45)
                                 .findFirst()
                                 .get();
-                        Assertions.assertEquals(1, rank1._2());
-                        Assertions.assertEquals(1, rank1._3());
-                        Assertions.assertEquals(12, rank12._2());
-                        Assertions.assertEquals(9, rank12._3());
+                        Assertions.assertEquals(1, rank1.get_2());
+                        Assertions.assertEquals(1, rank1.get_3());
+                        Assertions.assertEquals(12, rank12.get_2());
+                        Assertions.assertEquals(9, rank12.get_3());
                     });
                 }
         );

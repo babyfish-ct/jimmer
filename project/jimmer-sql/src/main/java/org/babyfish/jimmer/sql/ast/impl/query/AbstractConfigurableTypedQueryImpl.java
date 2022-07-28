@@ -60,8 +60,8 @@ class AbstractConfigurableTypedQueryImpl<R> implements TypedQueryImplementor {
                 PaginationContextImpl ctx = new PaginationContextImpl(
                         data.getLimit(),
                         data.getOffset(),
-                        result._1(),
-                        result._2()
+                        result.get_1(),
+                        result.get_2()
                 );
                 baseQuery.getSqlClient().getDialect().paginate(ctx);
                 return ctx.build();

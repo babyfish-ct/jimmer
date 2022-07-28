@@ -107,10 +107,10 @@ public class PaginationQueryShell {
                             .execute();
             for (Tuple3<Book, Integer, Integer> row : rows) {
                 System.out.println(
-                        "Book: " + prettyWriter.writeValueAsString(row._1())
+                        "Book: " + prettyWriter.writeValueAsString(row.get_1())
                 );
-                System.out.println("Global rank: " + row._2());
-                System.out.println("Partition rank: " + row._3());
+                System.out.println("Global rank: " + row.get_2());
+                System.out.println("Partition rank: " + row.get_3());
             }
         }
 

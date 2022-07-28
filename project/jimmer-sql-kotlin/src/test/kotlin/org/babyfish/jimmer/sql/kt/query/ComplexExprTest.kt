@@ -70,12 +70,12 @@ class ComplexExprTest : AbstractQueryTest() {
             rows {
                 contentEquals(
                     """[
-                        |--->Tuple2{_1=Effective TypeScript, _2=EXPENSIVE}, 
-                        |--->Tuple2{_1=Effective TypeScript, _2=EXPENSIVE}, 
-                        |--->Tuple2{_1=Effective TypeScript, _2=EXPENSIVE}, 
-                        |--->Tuple2{_1=Programming TypeScript, _2=MIDDLE}, 
-                        |--->Tuple2{_1=Programming TypeScript, _2=MIDDLE}, 
-                        |--->Tuple2{_1=Programming TypeScript, _2=MIDDLE}
+                        |--->Tuple2(_1=Effective TypeScript, _2=EXPENSIVE), 
+                        |--->Tuple2(_1=Effective TypeScript, _2=EXPENSIVE), 
+                        |--->Tuple2(_1=Effective TypeScript, _2=EXPENSIVE), 
+                        |--->Tuple2(_1=Programming TypeScript, _2=MIDDLE), 
+                        |--->Tuple2(_1=Programming TypeScript, _2=MIDDLE), 
+                        |--->Tuple2(_1=Programming TypeScript, _2=MIDDLE)
                         |]""".trimMargin(),
                     it.toString()
                 )

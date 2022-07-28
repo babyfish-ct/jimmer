@@ -45,11 +45,13 @@ public class TreeMutationShell {
                 .getEntities()
                 .saveCommand(rootNode)
                 .configure(
-                        // If child nodes do not exist, create them
+                        // If child nodes do not exist, insert them automatically
                         it -> it.setAutoAttachingAll()
 
                         // Need not `setAutoDetaching` because `on cascade delete`
-                        // is configured on model interface
+                        // is configured on model interface,
+                        // If user update a tree with less child nodes,
+                        // abandoned child nodes will be deleted automatically
                 )
                 .execute();
     }
