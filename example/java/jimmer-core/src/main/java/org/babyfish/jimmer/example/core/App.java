@@ -19,20 +19,26 @@ public class App {
 
     private static void bookDemo() {
 
+        /*
+         * First step, create new object from scratch
+         */
         Book book = BookDraft.$.produce(b -> {
             b.setName("book");
             b.setStore(s -> {
-                s.setName("parent");
+                s.setName("store");
             });
             b.addIntoAuthors(a -> {
-                a.setName("child-1");
+                a.setName("author-1");
             });
             b.addIntoAuthors(a -> {
-                a.setName("child-2");
+                a.setName("author-2");
             });
         });
 
-        Book book2 = BookDraft.$.produce(book, b -> {
+        /*
+         * Second step, make some "changes" based on the existing object to get a new object.
+         */
+        Book newBook = BookDraft.$.produce(book, b -> {
             b.setName(b.name() + "!");
             b.store().setName(b.store().name() + "!");
             for (AuthorDraft author : b.authors(false)) {
@@ -41,12 +47,14 @@ public class App {
         });
 
         System.out.println("book: " + book);
-        System.out.println("newBook: " + book2);
+        System.out.println("newBook: " + newBook);
     }
 
     private static void treeNodeDemo() {
 
-        // First step, create new object from scratch
+        /*
+         * First step, create new object from scratch
+         */
         TreeNode treeNode = TreeNodeDraft.$.produce(root -> {
             root.setName("Root").addIntoChildNodes(food -> {
                 food
@@ -55,7 +63,7 @@ public class App {
                             drink
                                     .setName("Drink")
                                     .addIntoChildNodes(cococola -> {
-                                        cococola.setName("Coco Cola");
+                                        cococola.setName("Cococola");
                                     })
                                     .addIntoChildNodes(fanta -> {
                                         fanta.setName("Fanta");
@@ -65,7 +73,9 @@ public class App {
             });
         });
 
-        // Second step, make some "changes" based on the existing object to get a new object.
+        /*
+         * Second step, make some "changes" based on the existing object to get a new object.
+         */
         TreeNode newTreeNode = TreeNodeDraft.$.produce(
                 treeNode, // existing object
                 root -> {
