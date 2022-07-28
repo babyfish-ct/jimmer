@@ -37,7 +37,7 @@ class BookStoreController(
 
     @BatchMapping
     fun books(
-        // Must use `java.util.List` because bug of Spring-GraphQL
+        // Must use `java.util.List` because Spring-GraphQL has a bug: #454
         stores: java.util.List<BookStore>
     ): Map<BookStore, List<Book>> =
         sqlClient
@@ -52,7 +52,7 @@ class BookStoreController(
 
     @BatchMapping
     fun avgPrice(
-        // Must use `java.util.List` because bug of Spring-GraphQL
+        // Must use `java.util.List` because bug of Spring-GraphQL: #454
         stores: java.util.List<BookStore>
     ): Map<BookStore, BigDecimal?> {
         val avgPriceMap = bookRepository
