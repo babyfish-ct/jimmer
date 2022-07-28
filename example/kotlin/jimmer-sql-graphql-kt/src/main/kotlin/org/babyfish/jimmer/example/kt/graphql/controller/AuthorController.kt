@@ -32,7 +32,7 @@ class AuthorController(
 
     @BatchMapping
     fun books(
-        // Must use `java.util.List` because bug of Spring-GraphQL
+        // Must use `java.util.List` because Spring-GraphQL has a bug: #454
         authors: java.util.List<Author>
     ): Map<Author, List<Book>> =
         sqlClient
