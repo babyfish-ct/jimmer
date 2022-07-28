@@ -3,8 +3,8 @@ package org.babyfish.jimmer.sql.kt.impl
 import org.babyfish.jimmer.sql.ReferenceLoader
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.KReferenceLoader
+import org.babyfish.jimmer.sql.kt.fetcher.KFilterDsl
 import org.babyfish.jimmer.sql.kt.fetcher.impl.FilterWrapper
-import org.babyfish.jimmer.sql.kt.fetcher.impl.KFilter
 import java.sql.Connection
 
 internal class KReferenceLoaderImpl<S: Any, T: Any>(
@@ -20,7 +20,7 @@ internal class KReferenceLoaderImpl<S: Any, T: Any>(
             }
         }
 
-    override fun forFilter(filter: KFilter<T>): KReferenceLoader<S, T> =
+    override fun forFilter(filter: KFilterDsl<T>.() -> Unit): KReferenceLoader<S, T> =
         javaLoader.forFilter(FilterWrapper(filter)).let {
             if (javaLoader === it) {
                 this
