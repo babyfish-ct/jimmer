@@ -32,6 +32,13 @@ Please view [**jimmer documentation**](https://babyfish-ct.github.io/jimmer-doc/
 
 This framework provides three examples
 
-- [example/jimmer-core](example/jimmer-core): How to use immutable objects
-- [example/jimmer-sql](example/jimmer-sql): How to use ORM framework
-- [example/jimmer-sql-graphql](example/jimmer-sql-graphql): How to quickly develop [Spring GraphQL](https://spring.io/projects/spring-graphql) services based on jimmer.
+1. Java Examples
+   - [example/java/jimmer-core](example/java/jimmer-core): How to use immutable objects
+   - [example/java/jimmer-sql](example/java/jimmer-sql): How to use ORM framework
+   - [example/java/jimmer-sql-graphql](example/java/jimmer-sql-graphql): How to quickly develop [Spring GraphQL](https://spring.io/projects/spring-graphql) services based on jimmer.
+
+
+2. Kotlin Examples
+   - [example/kotlin/jimmer-core-kt](example/kotlin/jimmer-core-kt): How to use immutable objects
+   - [example/kotlin/jimmer-sql-kt](example/kotlin/jimmer-sql-kt): How to use ORM framework
+   - [example/kotlin/jimmer-sql-graphql-kt](example/kotlin/jimmer-sql-graphql-kt): How to quickly develop [Spring GraphQL](https://spring.io/projects/spring-graphql) services based on jimmer.
