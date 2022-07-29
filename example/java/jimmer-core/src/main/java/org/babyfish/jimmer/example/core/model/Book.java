@@ -12,7 +12,7 @@ public interface Book {
     @Size(max = 50)
     String name();
 
-    @Null
+    @Null // Nullable property, Java-API needs it, but kotlin-API does not.
     BookStore store();
 
     int price();
