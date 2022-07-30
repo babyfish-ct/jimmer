@@ -1,0 +1,204 @@
+---
+sidebar_position: 1
+title: Update statement
+---
+
+## Basic udage
+
+Update statement usage is as follows
+
+```java
+int affectedRowCount = sqlClient
+    .createUpdate(AuthorTable.class, (u, author) -> {
+        u
+            .set(
+                author.firstName(), 
+                author.firstName().concat("*")
+            )
+            .where(author.firstName().eq("Dan"));
+    })
+    .execute();
+System.out.println("Affected row count: " + affectedRowCount);
+```
+
+The final generated SQL is as follows
+
+```sql
+update AUTHOR tb_1_ 
+set FIRST_NAME = concat(tb_1_.FIRST_NAME, ?) 
+where tb_1_.FIRST_NAME = ?
+```
+
+## Use table joins
+
+By default, the update statement does not support table join, which results in an exception
+
+```java
+int affectedRowCount = sqlClient
+    .createUpdate(AuthorTableEx.class, (u, author) -> {
+        u
+            .set(
+                author.firstName(),
+                author.firstName().concat("*")
+            )
+            .where(
+                author
+                    // highlight-next-line
+                    .books()
+                    .name()
+                    .eq("Learning GraphQL")
+            );
+    })
+    .execute();
+System.out.println("Affected row count: " + affectedRowCount);
+```
+
+The exception information is as follows
+:::caution
+Table joins for update statement is forbidden by the current dialect, but there is a join `'Author.books'`.
+:::
+
+When using MySql or Postgres, the update statement can use the table joins.
+
+### MySql
+
+First, you need to specify the dialect as MySqlDialect when creating SqlClient
+
+```java
+SqlClient sqlClient = SqlClient
+    .newBuilder()
+    .setDialect(
+        new org.babyfish.jimmer.sql.dialect.MySqlDialect()
+    )
+    ...
+    .build();
+```
+
+Then, you can use table joins in the update statement
+
+```java
+int affectedRowCount = sqlClient
+        .createUpdate(AuthorTableEx.class, (u, author) -> {
+            u
+                .set(
+                    author.firstName(), 
+                    author.firstName().concat("*")
+                )
+                .set(
+                    author.books().name(), 
+                    author.books().name().concat("*")
+                )
+                .set(
+                    author.books().store().name(), 
+                    author.books().store().name().concat("*")
+                )
+                .where(
+                    author
+                        .books()
+                        .store()
+                        .name()
+                        .eq("MANNING")
+                );
+        })
+        .execute();
+System.out.println("Affected row count: " + affectedRowCount);
+```
+
+Finally, the SQL statement for MySQL is generated as follows:
+
+```sql
+update 
+    AUTHOR tb_1_ 
+    inner join BOOK_AUTHOR_MAPPING as tb_2_ 
+        on tb_1_.ID = tb_2_.AUTHOR_ID 
+    inner join BOOK as tb_3_ 
+        on tb_2_.BOOK_ID = tb_3_.ID 
+    inner join BOOK_STORE as tb_4_ 
+        on tb_3_.STORE_ID = tb_4_.ID 
+set 
+    tb_1_.FIRST_NAME = concat(tb_1_.FIRST_NAME, ?), 
+    tb_3_.NAME = concat(tb_3_.NAME, ?), 
+    tb_4_.NAME = concat(tb_4_.NAME, ?) 
+where 
+    tb_4_.NAME = ?
+```
+
+### Postgres
+
+First, you need to specify the dialect as PostgresDialect when creating SqlClient
+
+```java
+SqlClient sqlClient = SqlClient
+    .newBuilder()
+    .setDialect(
+        new org.babyfish.jimmer.sql.dialect.PostgresDialect()
+    )
+    ...
+    .build();
+```
+
+Then, you can use Table joins in the update statement
+
+```java
+int affectedRowCount = sqlClient
+    .createUpdate(AuthorTableEx.class, (u, author) -> {
+        u
+            .set(
+                author.firstName(),
+                author.firstName().concat("*")
+            )
+            .where(
+                author
+                    .books()
+                    .store()
+                    .name()
+                    .eq("MANNING")
+            );
+    })
+    .execute();
+System.out.println("Affected row count: " + affectedRowCount);
+```
+
+:::note
+Unlike MySql, Table joins using update statement in Postgres has the following limitations
+
+1. You can only use table joins in a `where` clause, not in a `set` clause. That is, postgres still only allows to modify the fields of the primary table, and supports join to other tables only for where condition.
+
+2. The join path can have multiple levels, such as `author.books().store()`, where `books()` is level 1 and `store()` is level 2.
+
+     The join type of the first level join must be `inner join`.
+:::
+
+Finally, the SQL statement for Postgres is generated as follows:
+
+```sql
+update 
+    AUTHOR tb_1_ 
+set 
+    FIRST_NAME = concat(tb_1_.FIRST_NAME, ?) 
+from BOOK_AUTHOR_MAPPING as tb_2_ /* α */
+inner join BOOK as tb_3_ /* β */
+    on tb_2_.BOOK_ID = tb_3_.ID 
+inner join BOOK_STORE as tb_4_ /* γ */
+    on tb_3_.STORE_ID = tb_4_.ID 
+where 
+    tb_1_.ID = tb_2_.AUTHOR_ID /* join codition of α */
+and 
+    tb_4_.NAME = ?
+```
+
+:::note
+
+The join path `author.books().store()` has 2 levels, `books()` is level 1, `store()` is level 2.
+
+1. The first level `books()` involves two tables
+     - `BOOK_AUTHOR_MAPPING` table at `α`
+     - `BOOK` table at `β`
+
+2. The second level `store()` involves a table
+     - `BOOK_STORE` table at `γ`
+
+In the update statement of postgres, the direct table join from primary table cannot be wrote as `join` + `on`, and must be equivalently converted to `from` + `where`.
+
+This is why jimmer-sql stipulates that the type of the first-level table join of the update statement in the postgres dialect must be `inner join`.
+:::
