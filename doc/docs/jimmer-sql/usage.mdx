@@ -125,7 +125,7 @@ public interface BookStore {
 </Tabs>
 
 :::info
-The annotation `@Key` will be explained in other articles. ignore it please.
+The annotation `@Key` will be explained in other articles, ignore it please.
 :::
 
 <Tabs groupId="language">
@@ -166,8 +166,8 @@ public interface Book {
     @ManyToMany
     @JoinTable(
             name = "BOOK_AUTHOR_MAPPING",
-            joinColumns = @JoinColumn(name = "BOOK_ID"),
-            inverseJoinColumns = @JoinColumn(name = "AUTHOR_ID")
+            joinColumnName = "BOOK_ID",
+            inverseJoinColumnName = "AUTHOR_ID"
     )
     List<Author> authors();
 }

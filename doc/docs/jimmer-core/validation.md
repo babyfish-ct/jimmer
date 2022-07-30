@@ -11,34 +11,32 @@ The validation of the jimmer object is directly hard-coded in the source code ge
 
 ## Nullity
 
-jimmer uses the following means to determine whether a property is nullable.
+:::tip
+Kotlin support null safety, `T` means non-null, `T?` means nullable, it's very precise, no problem.
+
+So this section is wrote for java, kotlin devloper can skip it.
+:::
+
+Java API uses the following means to determine whether a property is nullable.
 
 For any property defined in the jimmer immutable data interface, the Annotation Processor will first make two sub-judgments
 
 1. Any one of these rules is satisfied, it is judged to be non-null
 
-    - Is it decorated with `@javax.validation.constraints.NotNull`.
-    - Is it decorated with `@org.jetbrains.annotations.NotNull`.
-    - Is it decorated with `@org.springframework.lang.NonNull`.
-    - Is it decorated with `@javax.persistence.Id`.
-    - Is it decorated with `@javax.persistence.ManyToOne(optional = false)`.
-    - Is it decorated with `@javax.persistence.OneToOne(optional = false)`.
-    - Is it decorated with `@javax.persistence.Column(nullable = false)`.
-    - Is it decorated with `@javax.persistence.JoinColumn(nullable = false)`.
-    - Is it a collection type property.
-    - Is its type one of the primitive types `boolean`, `char`, `byte`, `short`, `int`, `long`, `float` and `double`.
+    - Is it decorated with `@javax.validation.constraints.NotNull`?
+    - Is it decorated with `@org.jetbrains.annotations.NotNull`?
+    - Is it decorated with `@org.springframework.lang.NonNull`?
+    - Is it decorated with `@org.babyfish.jimmer.sql.Id`(This is content of the jimmer-sql, will not discuss it here)?
+    - Is it a list property?
+    - Is its type one of the primitive types `boolean`, `char`, `byte`, `short`, `int`, `long`, `float` and `double`?
 
 2. Any one of these rules is satisfied, it is judged to be nullable
 
-    - Is it decorated with `@javax.validation.constraints.Null`.
-    - Is it decorated with `@org.jetbrains.annotations.Nullable`.
-    - Is it decorated with `@org.springframework.lang.Nullable`.
-    - Is it decorated with `@javax.persistence.ManyToOne(optional = true)`.
-    - Is it decorated with `@javax.persistence.OneToOne(optional = true)`.
-    - Is it decorated with `@javax.persistence.Column(nullable = true)`.
-    - Is it decorated with `@javax.persistence.JoinColumn(nullable = true)`.
-    - Is it a many-to-one association based on the middle table(the content of the jimmer-sql section).
-    - Is its type one of the boxed types `java.lang.Boolean`, `java.lang.Character`, `java.lang.Byte`, `java.lang.Short`, `java.lang.Integer`, `java One of .lang.Long`, `java.lang.Float` and `java.lang.Double`.
+    - Is it decorated with `@javax.validation.constraints.Null`?
+    - Is it decorated with `@org.jetbrains.annotations.Nullable`?
+    - Is it decorated with `@org.springframework.lang.Nullable`?
+    - Is it a many-to-one association based on the middle table(This is content of the jimmer-sql, will not discuss it here).
+    - Is its type one of the boxed types `java.lang.Boolean`, `java.lang.Character`, `java.lang.Byte`, `java.lang.Short`, `java.lang.Integer`, `java One of .lang.Long`, `java.lang.Float` and `java.lang.Double`?
 
 Finally, merge sub-judgments.
 
@@ -48,6 +46,10 @@ Finally, merge sub-judgments.
 - If it is judged to be neither non-null nor nullable, refer to the value of the annotation `@org.babyfish.jimmer.Immutable` of the interface.
      - If the interface is decorated with the annotation `@Immutable` and its `value` is `NULLABLE`, the property is nullable.
      - Otherwise, the property is non-null.
+
+:::tip
+For kotlin, the value of `@Immutable` is always ignored.
+:::
 
 ## Other validation
 
@@ -64,6 +66,33 @@ In addition to Nullity, jimmer implements partial JSR380 validation. As of now, 
 - `@javax.validation.constraints.NegativeOrZero`
 - `@javax.validation.constraints.Email`
 - `@javax.validation.constraints.Pattern`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Immutable
+public interface Car {
+
+    @Min(60)
+    @Max(2000)
+    int hp();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Immutable
+public interface Car {
+
+    val hp: @Min(60) @Max(2000) Int
+}
+```
+
+</TabItem>
+</Tabs>
 
 :::note
 Subsequent versions will continue to improve this function, and the supported rules will gradually increase.
