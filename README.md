@@ -1,5 +1,5 @@
 
-[![logo](logo.png)](https://babyfish-ct.github.io/jimmer-doc/)
+[![logo](logo.png)](https://babyfish-ct.github.io/jimmer/)
 
 A powerful java framework for Java and Kotlin.
 - Immutable data model
@@ -11,7 +11,7 @@ A powerful java framework for Java and Kotlin.
 - The ordinate represents the operation count per second.
 
 <kbd>
-   <a href="https://babyfish-ct.github.io/jimmer-doc/docs/benchmark">
+   <a href="https://babyfish-ct.github.io/jimmer/docs/benchmark">
        <img src="benchmark.png"/>
    </a>
 </kbd>
@@ -26,7 +26,7 @@ A powerful java framework for Java and Kotlin.
 
 The project provides complete documentation.
 
-Please view [**jimmer documentation**](https://babyfish-ct.github.io/jimmer-doc/) to know everything.
+Please view [**jimmer documentation**](https://babyfish-ct.github.io/jimmer/) to know everything.
 
 ## 3. Examples:
 
