@@ -1,0 +1,465 @@
+---
+sidebar_position: 3
+title: Draft代理
+---
+
+## 使用AnnotationProcessor
+
+用户定义不可变数据接口
+
+```java title="TreeNode.java"
+package yourpackage;
+
+import org.babyfish.jimmer.Immutable;
+
+import java.util.List;
+
+@Immutable
+public interface TreeNode {
+    String name();
+    TreeNode parent();
+    List<TreeNode> childNodes();
+}
+```
+
+由于gradle配置文件中存在Annotation Processor
+
+```groovy title="build.gradle"
+dependencies {
+
+    implementation 'org.babyfish.jimmer:jimmer-core:0.0.35'
+
+    // highlight-next-line
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.35'
+    // This annotation processor generates source code
+    // for INTERFACEs marked by
+    // `@org.babyfish.jimmer.Immutable` or
+    // `@javax.persistance.Entity`
+}
+```
+
+此Annotation Processor将生成如下一个名称为`TreeNodeDraft`的接口类型：
+
+```java title="TreeNodeDraft.java"
+package org.babyfish.jimmer.example.core.model;
+
+import java.util.List;
+import org.babyfish.jimmer.DraftConsumer;
+import org.babyfish.jimmer.lang.OldChain;
+
+public interface TreeNodeDraft extends TreeNode, Draft {
+
+    // highlight-next-line
+    TreeNodeDraft.Producer $ = Producer.INSTANCE;
+
+
+    @OldChain
+    TreeNodeDraft setName(String name);
+
+
+    TreeNodeDraft parent();
+
+    TreeNodeDraft parent(boolean autoCreate);
+
+
+    @OldChain
+    TreeNodeDraft setParent(TreeNode parent);
+
+    @OldChain
+    TreeNodeDraft setParent(DraftConsumer<TreeNodeDraft> block);
+
+    @OldChain
+    TreeNodeDraft setParent(TreeNode base, DraftConsumer<TreeNodeDraft> block);
+
+
+
+    List<TreeNodeDraft> childNodes(boolean autoCreate);
+
+    @OldChain
+    TreeNodeDraft setChildNodes(List<TreeNode> childNodes);
+
+    @OldChain
+    TreeNodeDraft addIntoChildNodes(DraftConsumer<TreeNodeDraft> block);
+
+    @OldChain
+    TreeNodeDraft addIntoChildNodes(TreeNode base, DraftConsumer<TreeNodeDraft> block);
+
+
+
+    class Producer {
+
+        private Producer() {}
+
+        // highlight-next-line
+        public TreeNode produce(
+            DraftConsumer<TreeNodeDraft> block
+        ) {
+            return produce(null, block);
+        }
+
+        // highlight-next-line
+        public TreeNode produce(
+            TreeNode base, 
+            DraftConsumer<TreeNodeDraft> block
+        ) {
+            ...省略...
+        }
+
+        ...省略其它代码...
+    }
+
+    ...省略其它代码...
+}
+
+```
+
+:::info
+
+1. `TreeNode`是不可变对象；而`TreeNodeDraft`是可变代理。
+
+2. Java代码中的`@OldChain`已经在[和开发人员的约定](../intro#和开发人员的约定)中被解释。
+:::
+
+其中，`TreeNodeDraft.$`是一个重要的静态只读字段，它提供两个重要的API
+
+1. 从头创建全新的对象
+
+    ```java
+    TreeNode oldTreeNode = TreeNodeDraft.$
+        .produce(treeNodeDraft -> {
+            ...代码省略...
+        });
+    ```
+
+2. 根据已有的对象，进行某些“变更”后，创建新的对象
+
+    ```java
+    TreeNode newTreeNode = TreeNodeDraft.$
+        .produce(oldTreeNode, treeNodeDraft -> {
+            ...代码省略...
+        });
+    ```
+
+:::note
+这两种用法的完整的代码已经在[jimmer-core初体验](./usage)中已经被示范，所以，这里省略了lambda表达式内部的代码，不做重复粘贴。
+:::
+
+## 标量属性
+
+`TreeNode.name`是一个标量属性。`TreeNodeDraft`会定义如下一个`setter方法/可写属性`
+
+```java title="TreeNodeDraft.java"
+public interface TreeNodeDraft extends TreeNode, Draft {
+
+    @OldChain
+    TreeNodeDraft setName(String name);
+
+    ...省略其它代码...
+}
+```
+
+开发人员可以通过此方法设置draft代理的`name`属性
+
+```java
+TreeNode oldTreeNode = TreeNodeDraft.$
+    .produce(draft -> {
+        draft.setName("Root Node");
+    });
+```
+
+## 引用关联
+
+`TreeNode.store`是一个关联属性。其类型是对象，而非集合。如果用ORM的话来讲，是一对一或多对一关联。
+
+`TreeNodeDraft`为其定义了多个方法
+
+### 覆盖getter `parent()`
+
+```java title="TreeNodeDraft.java"
+public interface TreeNodeDraft extends TreeNode, Draft {
+
+    TreeNodeDraft parent();
+
+    ...省略其它代码...
+}
+```
+
+:::info
+注意，此方法的返回类型是`TreeNodeDraft`，而非`TreeNode`。
+
+即，如果draft对象的引用关联被设置过且被设置为非null，那么该方法一定返回draft对象。这样，用户就可以直接修改更深的关联对象。
+:::
+
+```java
+TreeNode newTreeNode = TreeNodeDraft.$
+    .produce(oldTreeNode, draft -> {
+        draft.parent().setName("Daddy");
+        draft.parent().parent().setName("Grandpa");
+    });
+```
+
+### 新增getter `parent(boolean)`
+
+```java title="TreeNodeDraft.java"
+public interface TreeNodeDraft extends TreeNode, Draft {
+
+    List<TreeNodeDraft> childNodes(boolean autoCreate);
+
+    ...省略其它代码...
+}
+```
+
+`parent(false)`和`parent()`等价，具备以下两个问题：
+
+- 如果draft对象的属性`parent`未被设置，访问它会导致异常
+- 如果draft对象的属性`parent`被设置为null，访问它会返回null，null无法支持进一步修改。
+
+`parent(true)`可以解决以上的问题，如果上述任何一种情况满足，就自动创建并设置一个关联对象，然后允许用户修改。这是一个实用的功能，尤其是从头创建对象时。
+
+```java
+TreeNode oldTreeNode = TreeNodeDraft.$
+    .produce(/* No `oldTreeNode` here */ draft -> {
+        draft.parent(true).setName("Daddy");
+        draft.parent(true).parent(true).setName("Grandpa");
+    });
+```
+
+### 新增`setParent`
+
+```java title="TreeNodeDraft.java"
+public interface TreeNodeDraft extends TreeNode, Draft {
+
+    @OldChain
+    TreeNodeDraft setParent(TreeNode parent);
+
+    ...省略其它代码...
+}
+```
+
+该setter允许用户替换整个关联对象。
+
+```java
+TreeNode oldTreeNode = TreeNodeDraft.$
+    .produce(draft -> {
+        draft.setParent(
+            TreeNodeDraft.$.produce(daddyDraft -> {
+                daddyDraft.setName("Daddy")
+            })
+        )
+    });
+```
+
+### 新增基于lambda的`setParent`
+
+:::info
+此功能仅适用于Java
+
+kotlin的代码已经足够简洁了，不需要这种方法来简化代码。
+:::
+
+```java title="TreeNodeDraft.java"
+public interface TreeNodeDraft extends TreeNode, Draft {
+
+    @OldChain
+    TreeNodeDraft setParent(
+        DraftConsumer<TreeNodeDraft> block
+    );
+
+    @OldChain
+    TreeNodeDraft setParent(
+        TreeNode base, 
+        DraftConsumer<TreeNodeDraft> block
+    );
+
+    ...省略其它代码...
+}
+```
+
+这两个setter用于简化的代码。由于两个方法的用法高度相似，仅以第一个举例。
+
+1. 比较啰嗦的写法
+    ```java
+    TreeNode oldTreeNode = TreeNodeDraft.$
+        .produce(draft -> {
+            draft.setParent(
+                TreeNodeDraft.$.produce(daddyDraft -> {
+                    daddyDraft.setName("Daddy")
+                })
+            )
+        });
+    ```
+
+2. 比较简洁的写法
+    ```java
+    TreeNode oldTreeNode = TreeNodeDraft.$
+        .produce(draft -> {
+            draft.setParent(daddyDraft -> {
+                daddyDraft.setName("Daddy")
+            })
+        });
+    ```
+
+二者完全等价。
+
+## 集合关联
+
+`TreeNode.childNodes`是一个关联属性。其类型是集合，而非对象。如果用ORM的话来讲，是一对多或多对多关联。
+
+`TreeNodeDraft`为其定义了多个方法
+
+### 继承getter `childNodes()`
+
+`TreeNodeDraft`无法覆盖`childNodes()`方法，从语法层面上讲，只能继承`TreeNode`的`childNodes()`方法。
+
+```java
+List<TreeNode> childNodes();
+```
+
+:::caution
+虽然这个的方法在`TreeNode`接口中定义的返回类型是`List<TreeNode>`，但是，被`TreeNodeDraft`接口继承后，应该将其返回类型理解成`List<TreeNodeDraft>`。
+
+返回类型的不兼容，也说明了为什么无法覆盖这个方法。
+:::
+
+:::info
+如果draft对象的集合关联被设置过，返回的集合中的所有元素都是draft。这样，用户就可以直接修改集合中更深的关联对象。
+:::
+
+```java
+TreeNode newTreeNode = TreeNodeDraft.$
+    .produce(oldTreeNode, draft -> {
+        ((TreeNodeDraft)
+            draft
+                .childNodes().get(0)
+        ).setName("Son");
+        ((TreeNodeDraft)
+            draft
+                .childNodes().get(0)
+                .childNodes().get(0)
+        ).setName("Grandson");
+    });
+```
+
+:::danger
+上述代码中，两个强制类型转换对开发体验产生了显著的破坏，所以，不推荐在实际项目中如此使用。
+
+为实现相同目的，更推荐接下来要介绍的`childNodes(boolean)`方法。
+:::
+
+### 新增getter `childNodes(boolean)`
+
+```java title="TreeNodeDraft.java"
+public interface TreeNodeDraft extends TreeNode, Draft {
+
+    List<TreeNodeDraft> childNodes(boolean autoCreate);
+
+    ...省略其它代码...
+}
+```
+
+`childNodes(false)`和`childNodes()`等价，如果draft对象的属性`childNodes`未被设置，访问它会导致异常。
+
+`childNodes(true)`会解决这个问题，如果集合关联属性还未被设置，则自动创建并设置一个集合，然后允许用户修改该集合。
+
+```java
+TreeNode newTreeNode = TreeNodeDraft.$
+    .produce(oldTreeNode, draft -> {
+        draft
+            .childNodes(false)
+            .get(0)
+            .setName("Son");
+        draft
+            .childNodes(false)
+            .get(0)
+            .childNodes(false)
+            .get(0)
+            .setName("Grandson");
+    });
+```
+
+:::tip
+诚然，`childNodes(boolean)`在参数为true时，具备在`childNodes`属性未被指定时自动创建集合的功能。
+
+然而，参数为false时一样很有用。因为这个方法的返回类型时`List<TreeNodeDraft>`而非`List<TreeNode>`，上一个例子中那种开发体验不友好的代码将会因此而消失。
+
+本例子如此，[jimmer-core初体验](./usage)中亦如此。
+:::
+
+### 新增`setChildNodes`
+
+```java title="TreeNodeDraft.java"
+public interface TreeNodeDraft extends TreeNode, Draft {
+
+    @OldChain
+    TreeNodeDraft setChildNodes(List<TreeNode> childNodes);
+
+    ...省略其它代码...
+}
+```
+
+该setter允许用户替换整个关联集合。
+
+```java
+TreeNode oldTreeNode = TreeNodeDraft.$
+    .produce(draft -> {
+        draft.setChildNodes(
+            Arrays.asList(
+                TreeNodeDraft.$.produce(childDraft -> {
+                    childDraft.setName("Eldest son")
+                }),
+                TreeNodeDraft.$.produce(childDraft -> {
+                    childDraft.setName("Second son")
+                })
+            )
+        )
+    });
+```
+
+:::info
+略显繁琐，更推荐下面即将介绍的`addIntoChildNodes`
+:::
+
+### 新增`addIntoChildNodes`
+
+上面的例子中，我们使用`setChildNodes`替换了整个集合，但是还可以选择以逐个添加集合元素，而非一次性替换整个集合。
+
+为此，`TreeNodeDraft`接口支持两个adder方法。
+
+```java title="TreeNodeDraft.java"
+public interface TreeNodeDraft extends TreeNode, Draft {
+
+    @OldChain
+    TreeNodeDraft addIntoChildNodes(
+        DraftConsumer<TreeNodeDraft> block
+    );
+
+    @OldChain
+    TreeNodeDraft addIntoChildNodes(
+        TreeNode base, 
+        DraftConsumer<TreeNodeDraft> block
+    );
+
+    ...省略其它代码...
+}
+```
+
+这两个adder用于简化的代码。由于两个方法的用法高度相似，仅以第一个举例。
+
+```java
+TreeNode oldTreeNode = TreeNodeDraft.$
+    .produce(draft -> {
+        draft
+            .addIntoChildNodes(childDraft ->
+                childDraft.setName("Eldest son");
+            )
+            .addIntoChildNodes(childDraft ->
+                childDraft.setName("Second son");
+            )
+    });
+```
+
+:::info
+这种写法隐含了一个功能，draft对象的属性`childNodes`未被设置，自动创建集合。即，内置了一个`childNodes(true)`。
+
+很明显，这种写法比使用setter替换整个集合更简单，所以，更推荐这种写法。
+:::

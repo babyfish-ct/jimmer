@@ -1,0 +1,67 @@
+---
+sidebar_position: 2
+title: Delete语句
+---
+
+## 基本用法
+
+Delete语句用法如下
+
+```java
+int affectedRowCount = sqlClient
+    .createDelete(BookTable.class, (d, book) -> {
+        d.where(book.name().eq("Learning GraphQL"));
+    })
+    .execute();
+System.out.println("Affected row count: " + affectedRowCount);
+```
+
+生成的SQL如下：
+```sql
+delete 
+from BOOK as tb_1_ 
+where tb_1_.NAME = ?
+```
+
+## 使用JOIN
+
+Delete语句用法如下支持JOIN子句，如下
+
+```java
+int affectedRowCount = sqlClient
+    .createDelete(BookTable.class, (d, book) -> {
+        d.where(book.store().name().eq("MANNING"));
+    })
+    .execute();
+System.out.println("Affected row count: " + affectedRowCount);
+```
+
+最终生成了3条SQL:
+
+1. 
+    ```sql
+    select 
+        distinct tb_1_.ID 
+    from BOOK as tb_1_ 
+    inner join BOOK_STORE as tb_2_ 
+        on tb_1_.STORE_ID = tb_2_.ID 
+    where 
+        tb_2_.NAME = ?
+    ```
+
+2. 
+    ```sql
+    delete from BOOK_AUTHOR_MAPPING 
+    where BOOK_ID in(?, ?, ?)
+    ```
+3. 
+    ```sql
+    delete from BOOK 
+    where ID in(?, ?, ?)
+    ```
+
+:::note
+如果在Delete语句中使用join，jimmer-sql会将之翻译成`select` + `delete`。先利用带有`join`子句的`select`语句查询到需要删除的数据id，然后使用[Delete指令](./delete-command)删除数据。
+
+这个方案对任何数据库都有效。
+:::

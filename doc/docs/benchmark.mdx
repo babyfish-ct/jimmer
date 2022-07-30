@@ -1,0 +1,26 @@
+---
+sidebar_position: 2
+title: Benchmark
+---
+
+import { Benchmark } from '@site/src/components/Benchmark';
+
+The [source code for benchmark](./benchmark) can be found in the project. Using H2's in-memory database, it can run directly without any environment preparation.
+
+## Operation count per second
+
+- The abscissa represents the count of data objects queried from the database each time.
+- The ordinate represents the operation count per second.
+
+<Benchmark type="OPS"/>
+
+## Time cost per operation
+
+- The abscissa represents the count of data objects queried from the database each time.
+- The ordinate represents the time cost per operation(μs).
+
+<Benchmark type="TIME"/>
+
+:::note
+This benchmark does not include `JPA(OpenJPA)` as Spring has removed support for OpenJPA.
+:::
