@@ -1,26 +1,31 @@
 ---
 sidebar_position: 1
-title: Tutorial introduction
+title: 教程介绍 
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## Purpose
-- Powerful immutable data model
-- Revolutionary ORM based on the immutable data model
+:::tip
+对于中文版，从本文档中挑取最重要的一部分，形成[B站视频集](https://www.bilibili.com/video/BV1dA4y1R7pV/?vd_source=60313648ad86e28e629f98e944f7fa2a)
+:::
 
-## Part I: Powerful immutable data model
+目的
 
-We port the popular JavaScript project [immer](https://github.com/immerjs/immer) to Java/Kotlin. You can manipulate immutable objects naturally and intuitively the same way you manipulate mutable objects, you can have all the well-known advantages of immutable objects without any notorious overhead. This is the most powerful solution for immutable objects.
+- 强大的不可变对象模型
+- 基于不可变模型的革命性ORM
+
+## 第一部分：强大的只读数据模型
+
+我们将流行的JavaScript项目[immer](https://github.com/immerjs/immer)移植到Java/Kotlin。 您可以像操作可变对象一样自然而直观地操作不可变对象，您可以拥有不可变对象的所有众所周知的优点，也不必承担非必需开销。 这是不可变对象最强大的解决方案。
 
 <details>
-<summary>Quick view</summary>
+<summary>快速预览</summary>
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
-// Step 1, create data from scratch
+// 第一步，从头构建数据
 TreeNode treeNode = TreeNodeDraft.$.produce(root -> {
     root.setName("Root").addIntoChildNodes(food -> {
         food
@@ -40,11 +45,10 @@ TreeNode treeNode = TreeNodeDraft.$.produce(root -> {
     });
 });
 
-// Step 2, make some "changes" based on the 
-// existing data to create new data.
+// 第二步，对现有数据做出某些“修改”，创建新数据
 TreeNode newTreeNode = TreeNodeDraft.$.produce(
         // highlight-next-line
-        treeNode, // existing data
+        treeNode, // 现有数据
         root -> {
             root
                 .childNodes(false).get(0) // Food
@@ -62,7 +66,7 @@ System.out.println("newTreeNode:" + newTreeNode);
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-// Step 1, create data from scratch
+// 第一步，从头构建数据
 val treeNode = new(TreeNode::class).by {
     name = "Root"
     childNodes().addBy {
@@ -79,8 +83,7 @@ val treeNode = new(TreeNode::class).by {
     }
 }
 
-// Step 2, make some "changes" based on the 
-// existing data to create new data.
+// 第二步，对现有数据做出某些“修改”，创建新数据
 val newTreeNode = new(TreeNode::class).by(
     // highlight-next-line
     treeNode // existing data
@@ -100,7 +103,7 @@ println("newTreeNode: $newTreeNode")
 </Tabs>
 
 <details>
-<summary>Output</summary>
+<summary>打印结果</summary>
 
 ```javascript
 treeNode: {
@@ -145,26 +148,26 @@ newTreeNode: {
 
 </details>
 
-Jimmer can be used to replace java records(or kotlin data classes) in any context where immutable data structures are preferred. We use very effective mechanisms to detect changes and eliminate unnecessary replication overhead. In general, any change of an object would create a new object reference, that is, the object is immutable in the sense of any specific reference. The unchanged parts would be shared among all versions of the data in memory to avoid naive copying and achieve the best performance.
+Jimmer可用于在首选不可变数据结构的任何上下文中替换java record（或 kotlin dataclass）。 我们使用非常有效的机制来检测更改并消除不必要的复制开销。 通常，对象的任何更改都会创建一个新的对象引用，也就是说，在任何特定引用的意义上，该对象都是不可变的。 未更改的部分将在内存中的所有数据版本之间共享，以避免无脑的复制并获得最佳性能。
 
-Jimmer could help you:
+Jimmer可以帮助你
 
-1. Detect unexpected mutation and throw appropriate errors;
-2. Throw away the tedious boilerplate code for manipulating the deep structure of immutable objects, avoid manual replication and save the overhead of redundant copy construction;
-3. Make changes to draft objects that record and trace the modifications, and create any necessary copies automatically with the original intact.
+1. 检测意外修改并抛出适当的错误；
+2. 对深层次结构的不可变对象的操作，不再需繁琐样板代码，避免手动复制，节省冗余副本构建的开销；
+3. 跟踪对草稿对象的更改操作，在原对象完好无损的情况下，自动创建任何必要的副本。
 
-With Jimmer, you don't need to learn specialized APIs or data structures to benefit from immutability.
+使用Jimmer，您无需学习专门的API或数据结构即可受益于不变性。
 
-To support ORM, Jimmer improves the dynamic features of objects. Any property of an object is allowed to be missing.
-- Missing properties cause exceptions when accessed directly with code;
-- Missing properties are automatically ignored during Jackson serialization and would not cause exceptions.
+为了支持ORM，Jimmer引入了对象的动态特性。 对象的任何属性皆可缺失。
+- 直接使用代码访问时，缺失属性会导致异常；
+- Jackson 序列化过程中会自动忽略缺失属性，并且不会导致异常。
 
-## Part II: Revolutionary ORM Based on the Immutable Data Model
+## 第二部分：基于不可变数据模型的革命性的ORM
 
-1. Check for errors at compile time rather than runtime whenever possible with strong typed SQL DSL like JPA Criteria, QueryDSL, or JOOQ. Kotlin nullsafety would be introduced to SQL for kotlin API.
+1. 和JPA Criteria、QueryDSL或JOOQ一样，使用强类型SQL DSL，在编译时而不是运行时检查错误。 Kotlin API还会把kotlin的空安全引入到SQL中。
    
    <details>
-   <summary>Quick view</summary>
+   <summary>快速预览</summary>
      
    <Tabs groupId="language">
    <TabItem value="java" label="Java">
@@ -211,11 +214,10 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
 
    </details>
 
-
-2. Strongly typed SQL DSL and Native SQL can be mixed without extra restrictions, Using database-specific features is very easy;
+2. 强类型SQL DSL和Native SQL可以混合使用，没有额外的限制，使用数据库特定的特性是非常容易的。
 
    <details>
-   <summary>Quick view</summary>
+   <summary>快速预览</summary>
      
    <Tabs groupId="language">
    <TabItem value="java" label="Java">
@@ -276,12 +278,12 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
 
    </details>
 
-3. Always use much more efficient [ResultSet.getObject(int)](https://docs.oracle.com/javase/7/docs/api/java/sql/ResultSet.html#getObject(int)) instead of  [ResultSet.getObject(String)](https://docs.oracle.com/javase/7/docs/api/java/sql/ResultSet.html#getObject(java.lang.String))
+3. 始终使用效率更高的 [ResultSet.getObject(int)](https://docs.oracle.com/javase/7/docs/api/java/sql/ResultSet.html#getObject(int)) 而不是 [ResultSet. getObject(String)](https://docs.oracle.com/javase/7/docs/api/java/sql/ResultSet.html#getObject(java.lang.String))
 
-4. Implicit dynamic table joins: automatically merge conflicting table joins in different code logic branches for complex dynamic queries *(Even with the highly controllable myBatis, it is difficult to implement this feature)*;
+4. 隐式动态表连接：对于复杂的动态查询，自动合并不同代码逻辑分支中冲突的表连接 *（即使是高度可控的myBatis，也很难实现这个特性）*；
 
    <details>
-   <summary>Quick view</summary>
+   <summary>快速预览</summary>
    
    <Tabs groupId="language">
    <TabItem value="java" label="Java">
@@ -329,35 +331,35 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
    </TabItem>
    </Tabs>
 
-   In jimmer-sql table joins are implicit.
+   在jimmer-sql中，表连接是隐式的。
 
-   Taking the above code as an example, `book.store()` in the Java code and `table.store` in the kotlin code represent the inner join of the association `Book::store`.
+   以上述代码为例，Java代码中的`book.store()`和kotlin代码中的`table.store`代表关联`Book::store`的内连接。
 
-   Obviously, the above code implements a dynamic query, and different parameters will cause different SQL to be generated.
+   显然，上面的代码实现了动态查询，不同的参数会导致生成不同的SQL。
 
-   When the above two conditions are met, in the final generated SQL, the table join of `Book::store` will only appear once, not twice. 
+   当以上两个条件都满足时，在最终生成的SQL中，`Book::store`的表连接只会出现一次，而非两次。
    </details>
 
-5. In the paging scenario, developers only need to focus on querying the actual data, and the query on the number of rows is automatically generated and optimized by the framework.
+5. 在分页场景下，开发者只需要专注于查询实际数据，对行数的查询由框架自动生成和优化。
 
    <details>
-   <summary>Quick view</summary>
+   <summary>快速预览</summary>
    
    <Tabs groupId="language">
    <TabItem value="java" label="Java">
 
    ```java
-   // Developers only need to focus on data-query
+   // 开发者只需要专注于查询实际数据
    ConfigurableRootQuery<Book> query = sqlClient
        .createQuery(BookTable.class, (q, book) -> {
-           ... Omit some code logic, including: ...
-           ... 1. Arbitrarily complex dynamic conditions ...
-           ... 2. Arbitrarily complex dynamic sorting ...
-           ... 3. Arbitrarily complex subqueries ...
+           ... 省略一些代码逻辑，包含: ...
+           ... 1. 任意复杂的动态条件 ...
+           ... 2. 任意复杂的动态拍戏 ...
+           ... 3. 任意复杂的子查询 ...
            return q.select(book);
        });
 
-   // count-query can be generated and optimized.
+   // 对行数的查询由框架自动生成和优化。
    TypedRootQuery<Long> countQuery = query
        .reselect((oldQuery, book) -> 
            oldQuery.select(book.count())
@@ -366,7 +368,7 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
 
    int rowCount = countQuery.execute().get(0).intValue();
 
-   //Query data from 1/3 to 2/3
+   // 查询从1/3处到2/3的部分数据
    List<Book> books = query
        .limit(rowCount / 3, rowCount / 3)
        .execute();
@@ -376,17 +378,17 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
    <TabItem value="kotlin" label="Kotlin">
 
    ```kotlin
-   // Developers only need to focus on data-query
+   // 开发者只需要专注于查询实际数据
    val query = sqlClient
        .createQuery(Book::class) {
-           ... Omit some code logic, including: ...
-           ... 1. Arbitrarily complex dynamic conditions ...
-           ... 2. Arbitrarily complex dynamic sorting ...
-           ... 3. Arbitrarily complex subqueries ...
+           ... 省略一些代码逻辑，包含: ...
+           ... 1. 任意复杂的动态条件 ...
+           ... 2. 任意复杂的动态拍戏 ...
+           ... 3. 任意复杂的子查询 ...
            select(table)
        }
 
-   // count-query can be generated and optimized.
+   // 对行数的查询由框架自动生成和优化。
    val countQuery = query
        .reselect {
            select(count(table))
@@ -395,7 +397,7 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
 
    val rowCount = countQuery.execute()[0]
 
-   //Query data from 1/3 to 2/3
+   // 查询从1/3处到2/3的部分数据
    val books = query
        .limit(rowCount / 3, rowCount / 3)
        .execute()
@@ -405,13 +407,13 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
    </Tabs>
    </details>
 
-6. **Object Fetcher**: extend the ability of SQL. If a column in the query is an object type, it can be specified as the query format of the object. This format accepts any association depth and breadth and even allows recursively query self-association attributes. It can be considered that SQL has been extended to a capability comparable to GraphQL.
+6. **Object Fetcher**：扩展SQL的能力。 如果查询中的列是对象类型，则可以为其指定查询格式。 这种格式接受任何关联深度和广度，甚至允许递归查询自关联属性。 可以认为SQL被扩展了可媲美于GraphQL的能力。
 
    <details>
-   <summary>Quick view</summary>
+   <summary>快速预览</summary>
 
    <details>
-   <summary>Simple Fetcher</summary>
+   <summary>简单抓取器</summary>
    <Tabs groupId="language">
    <TabItem value="java" label="Java">
 
@@ -464,7 +466,7 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
    </details>
 
    <details>
-   <summary>Fetcher With filter</summary>
+   <summary>使用过滤器</summary>
    <Tabs groupId="language">
    <TabItem value="java" label="Java">
 
@@ -483,7 +485,7 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
                        .authors(
                            AuthorFetcher.$
                                .allScalarFields(),
-                           // This filter sorts the associated collection 
+                           // 此过滤器对关联集合进行排序 
                            it -> it.filter(args -> {
                                args.orderBy(args.getTable().firstName());
                                args.orderBy(args.getTable().lastName());
@@ -509,7 +511,7 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
                        allScalarFields()
                    }
                    authors({
-                        // This filter sorts the associated collection
+                        // 此过滤器对关联集合进行排序
                         filter { 
                             orderBy(table.firstName)
                             orderBy(table.lastName)
@@ -528,7 +530,7 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
    </details>
 
    <details>
-   <summary>Recursively query self-association attributes</summary>
+   <summary>递归查询自关联属性</summary>
    <Tabs groupId="language">
    <TabItem value="java" label="Java">
 
@@ -544,9 +546,9 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
                        .childNodes(
                            TreeNodeFetcher.$.allScalarFields(),
                            it -> {
-                               // Recursively query, no matter how deep
+                               // 递归查询，无论多深
                                it.recursive(args -> 
-                                   // but exclude some subtrees
+                                   // 但，排除某些子树
                                    !args.getEntity().name().equals("XX")
                                );
                                it.filter(args -> {
@@ -572,9 +574,9 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
                table.fetchBy {
                    allScalarFields()
                    childNodes({
-                       // Recursively query, no matter how deep
+                       // 递归查询，无论多深
                        recursive {
-                           // but exclude some subtrees
+                           // 但，排除某些子树
                            entity.name != "XX"
                        }
                        filter { 
@@ -595,13 +597,13 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
    
    </details>
 
-7. **Save Command**: the data to be saved is no longer a simple object, but an arbitrarily complex object tree. No matter how complex the tree is, the framework takes care of all the internal details and the developers can handle the whole operation with a single statement. This feature is the inverse of the Object Fetcher.
+7. **Save command**：要保存的数据不再是简单的对象，而是任意复杂的对象树。 无论树有多复杂，框架都会处理所有内部细节，开发人员可以用一条语句处理整个操作。 此功能是Object Fetcher的逆功能。
 
    <details>
-   <summary>Quick view</summary>
+   <summary>快速预览</summary>
 
    <details>
-   <summary>Save lonely object</summary>
+   <summary>保存孤单的对象</summary>
 
    <Tabs groupId="language">
    <TabItem value="java" label="Java">
@@ -639,9 +641,9 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
    </details>
 
    <details>
-   <summary>Save shallow object tree</summary>
+   <summary>保存浅的对象树</summary>
 
-   If the associated objects of the saved object only have id, then only the current object and its relationship with other objects can be modified (this may cause the middle table to be modified), not the associated objects themselves.
+   如果被保存对象的关联对象只有id，那么只会修改当前对象及其与其他对象的关系（这可能会导致中间表被修改），而关联对象本身不会被修改。
 
    <Tabs groupId="language">
    <TabItem value="java" label="Java">
@@ -697,13 +699,13 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
    </details>
 
    <details>
-   <summary>Save deep object tree</summary>
+   <summary>保存深的对象树</summary>
    
-   If the associated objects of the saved object contains non-id properties, then
+   如果被保存对象的关联对象包含非id属性，则
 
-   - Not only the current object and its relationship to other objects can be modified (which may cause the intermediate table to be modified), but also the associated objects can be further modified.
+   - 不仅可以修改当前对象及其与其他对象的关系（可能导致修改中间表），还可以进一步修改关联对象。
 
-   - The depth of the saved object tree can be unlimited. However, no matter how deep it is, the framework can handle all the details inside it.
+   - 被保存对象树的深度可以不受限制。 然而，无论它有多深，框架都可以处理其中的所有细节。
 
    <Tabs groupId="language">
    <TabItem value="java" label="Java">
@@ -734,7 +736,7 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
        .getEntities()
        .saveCommand(toBeSaved)
        .configure(it -> {
-           // Automatically create non-existing associated objects
+           // 如果某些关联对象不存在，自动创建它们
            it.setAutoAttachingAll();
        })
        .execute()
@@ -766,7 +768,7 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
    val saved = sqlClient
        .entities
        .save(toBeSaved) {
-           // Automatically create non-existing associated objects
+           // 如果某些关联对象不存在，自动创建它们
            setAutoAttachingAll()
        }
        .modifiedEntity
@@ -778,26 +780,26 @@ To support ORM, Jimmer improves the dynamic features of objects. Any property of
 
    </details>
 
-8. Work with any external cache. By default, the framework is just a very lightweight and powerful SQL generator without caching. Still, users can attach any external cache, **and keep it consistent with the business system's own cache technology**. Unlike other ORMs, it supports both object cache and also associative cache, and works with object fetchers, especially when recursively querying self-associative properties.
+8. 允许使用任何外部缓存。 默认情况下，该框架只是一个非常轻量级且功能强大的SQL生成器，没有缓存。 尽管如此，用户仍可以附加任何外部缓存，**并使其与业务系统自己的缓存技术保持一致**。 与其他 ORM 不同，它同时支持对象缓存和关联缓存，并可与对象获取器一起使用，尤其是在递归查询自关联属性时。
 
    :::warning
-   This is an important and brand new feature, we will add the corresponding demo and documentation as soon as possible.
+   这是一个重要的特性，但也是一个新功能，我们会尽快添加相应的例子和文档。
    :::
 
-9. Extreme lightweight. No reflection, no dynamic bytecode generation, guarantee to be Graal friendly.
+9. 极致的轻量化，无反射，无动态字节码生成，保证对 Graal 友好。
 
-## Other highlights
+## 其他亮点
 
-1. Provide rapid development support for Spring GraphQL introduced in spring boot 2.7;
+1. 为spring boot 2.7引入的Spring GraphQL提供快速开发支持；
 
-2. The dynamic capabilities of immutable objects introduce beneficial side effects and a new design philosophy.
+2. 不可变对象的动态功能引入了有益的副作用和新的设计理念。
 
-   In the process of information management software development, HTTP APIs often interact with object trees that only contain one-way associations, people will not use two-way associations even though the JSON serialization technology used has some corresponding ability.
+   在信息管理软件开发过程中，HTTP API交互只有单向关联的对象树，即使JSON序列化技术具有一定的双向关联处理能力，人们也不会使用。
 
-   Therefore, DTOs are important when designing module API, because the DTOs required by each business clearly define the aggregate root. DTO design becomes a prerequisite for business design and development.
+   因此，在设计模块API时，DTO很重要，因为每个业务所需的DTO都明确定义了聚合根。 DTO设计成为业务设计和开发的先决条件。
 
-   Immutable objects in Jimmer are dynamic. Although two-way associations can be defined in the design of ORM entity types, Jimmer ensures that there are only one-way associations between object instances when creating objects for specific business scenarios, and any attempt to establish a two-way association will result in exceptions.
+   Jimmer中的不可变对象是动态的。虽然在ORM实体类型的设计中可以定义双向关联，但在针对特定业务场景创建对象时，Jimmer确保对象实例之间只有单向关联，任何企图建立双向关联的尝试都会导致异常。
 
-   That is, the design of the aggregate root is deferred from the design of the system API until the object is created in a specific business scenario. It is no longer necessary to design and develop based on DTO, and it is possible to completely use entity objects as the basis for development, which makes the development process natural.
+   也就是说，聚合根的抉择，被延迟到了特定的业务场景需要创建对象时，系统API的设计不再受其影响。不必以DTO为中心进行设计和开发，完全可以使用实体对象作为开发的基础，让开发过程自然而然。
 
-   Of course, such a design concept does not deny the value of DTO. If you think it is safer and clearer to design external APIs with static DTOs than with dynamic entities, you can still use DTOs to encapsulate a layer. This is a useful but not required option.
+   当然，这样的设计理念并不否定DTO的价值。如果您认为使用静态DTO比使用动态实体更安全、更清晰，您仍然可以使用DTO封装你的最终API。这是一个有用但不是必需的选项。
