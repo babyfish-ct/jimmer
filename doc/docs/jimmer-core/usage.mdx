@@ -26,16 +26,18 @@ dependencies {
 plugins {
     // Step1: Add ksp plugin
     id("com.google.devtools.ksp") version "1.7.10-1.0.6"
-    ... other code...
+    ...omit other plugins...
 }
 dependencies {
 
-    // Step2: Apply ksp plugin
+    // Step2: Add jimmer-core-kotlin
     implementation("org.babyfish.jimmer:jimmer-core-kotlin:0.1.4")
+
+    // Step3: Apply ksp plugin
     ksp("org.babyfish.jimmer:jimmer-ksp:0.1.4")
 }
 
-// Step3: Add generated sources into compile path
+// Step4: Add generated sources into compile path.
 // Without this configuration, gradle command can still run.
 // However, Intellij cannot find the generated source.
 kotlin {

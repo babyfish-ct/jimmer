@@ -5,13 +5,52 @@ title: jimmer-core初体验
 
 ## 引入依赖
 
-```groovy title="build.gradle"
-dependencies {
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
-    implementation 'org.babyfish.jimmer:jimmer-core:0.0.35'
+```groovy title="build.gradle"
+depdencies {
+    
+    implementation 'org.babyfish.jimmer:jimmer-sql:0.0.35'
     annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.35'
+
+    runtimeOnly 'com.h2database:h2:2.1.212'
 }
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="build.gradle.kts"
+plugins {
+    // 第一步: 添加ksp插件
+	id("com.google.devtools.ksp") version "1.7.10-1.0.6"
+
+    ...省略其他插件...
+}
+depdencies {
+    
+    // 第二步: 添加jimmer-sql-kotlin
+    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.1.4")
+
+    // 第三步: 应用ksp插件
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.1.4")
+
+    ...ommit other dependency...
+}
+
+// 第四部: 讲生成的代码添加到编译目录中。
+// 没有这个配置，gradle命令仍然可以正常执行，
+// 但是, Intellij无法找到生成的源码。
+kotlin {
+    sourceSets.main {
+        kotlin.srcDir("build/generated/ksp/main/kotlin")
+    }
+}
+```
+
+</TabItem>
+</Tabs>
 
 ## 声明不可变模型
 
