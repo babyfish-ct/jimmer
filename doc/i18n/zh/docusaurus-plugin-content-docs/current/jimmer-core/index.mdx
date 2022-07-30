@@ -1,0 +1,164 @@
+---
+sidebar_position: 3
+title: jimmer-core子项目
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::tip
+对于中文版，从本文档中挑取最重要的一部分，形成[B站视频集](https://www.bilibili.com/video/BV1dA4y1R7pV/?vd_source=60313648ad86e28e629f98e944f7fa2a)
+:::
+
+:::tip
+本文从首页的第一部分复制而来，内容完全一样。
+
+如果你已经阅读过首页的第一部分，可以跳过本文，直接阅读更深的文档。
+:::
+
+强大的只读数据模型
+
+我们将流行的JavaScript项目[immer](https://github.com/immerjs/immer)移植到Java/Kotlin。 您可以像操作可变对象一样自然而直观地操作不可变对象，您可以拥有不可变对象的所有众所周知的优点，也不必承担非必需开销。 这是不可变对象最强大的解决方案。
+
+<details>
+<summary>快速预览</summary>
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+// 第一步，从头构建数据
+TreeNode treeNode = TreeNodeDraft.$.produce(root -> {
+    root.setName("Root").addIntoChildNodes(food -> {
+        food
+            .setName("Food")
+            .addIntoChildNodes(drink -> {
+                drink
+                    .setName("Drink")
+                    .addIntoChildNodes(cococola -> {
+                        cococola.setName("Cococola");
+                    })
+                    .addIntoChildNodes(fanta -> {
+                        fanta.setName("Fanta");
+                    });
+                ;
+            });
+        ;
+    });
+});
+
+// 第二步，对现有数据做出某些“修改”，创建新数据
+TreeNode newTreeNode = TreeNodeDraft.$.produce(
+        // highlight-next-line
+        treeNode, // 现有数据
+        root -> {
+            root
+                .childNodes(false).get(0) // Food
+                .childNodes(false).get(0) // Drink
+                .childNodes(false).get(0) // Cococola
+                .setName("Cococola plus");
+        }
+);
+
+System.out.println("treeNode:" + treeNode);
+System.out.println("newTreeNode:" + newTreeNode);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+// 第一步，从头构建数据
+val treeNode = new(TreeNode::class).by {
+    name = "Root"
+    childNodes().addBy {
+        name = "Food"
+        childNodes().addBy {
+            name = "Drinks"
+            childNodes().addBy {
+                name = "Cococola"
+            }
+            childNodes().addBy {
+                name = "Fanta"
+            }
+        }
+    }
+}
+
+// 第二步，对现有数据做出某些“修改”，创建新数据
+val newTreeNode = new(TreeNode::class).by(
+    // highlight-next-line
+    treeNode // existing data
+) {
+    childNodes()[0] // Food
+        .childNodes()[0] // Drinks
+        .childNodes()[0] // Cococola
+        .name += " plus"
+}
+
+println("treeNode: $treeNode")
+println("newTreeNode: $newTreeNode")
+```
+
+</TabItem>
+
+</Tabs>
+
+<details>
+<summary>打印结果</summary>
+
+```javascript
+treeNode: {
+    "name":"Root",
+    "childNodes":[
+        {
+            "name":"Food",
+            "childNodes":[
+                {
+                    "name":"Drink",
+                    "childNodes":[
+                        // highlight-next-line
+                        {"name":"Cococola"},
+                        {"name":"Fanta"}
+                    ]
+                }
+            ]
+        }
+    ]
+}
+newTreeNode: {
+    "name":"Root",
+    "childNodes":[
+        {
+            "name":"Food",
+            "childNodes":[
+                {
+                    "name":"Drink",
+                    "childNodes":[
+                        // highlight-next-line
+                        {"name":"Cococola plus"},
+                        {"name":"Fanta"}
+                    ]
+                }
+            ]
+        }
+    ]
+}
+```
+
+</details>
+
+</details>
+
+Jimmer可用于在首选不可变数据结构的任何上下文中替换java record（或 kotlin dataclass）。 我们使用非常有效的机制来检测更改并消除不必要的复制开销。 通常，对象的任何更改都会创建一个新的对象引用，也就是说，在任何特定引用的意义上，该对象都是不可变的。 未更改的部分将在内存中的所有数据版本之间共享，以避免无脑的复制并获得最佳性能。
+
+Jimmer可以帮助你
+
+1. 检测意外修改并抛出适当的错误；
+2. 对深层次结构的不可变对象的操作，不再需繁琐样板代码，避免手动复制，节省冗余副本构建的开销；
+3. 跟踪对草稿对象的更改操作，在原对象完好无损的情况下，自动创建任何必要的副本。
+
+使用Jimmer，您无需学习专门的API或数据结构即可受益于不变性。
+
+为了支持ORM，Jimmer引入了对象的动态特性。 对象的任何属性皆可缺失。
+- 直接使用代码访问时，缺失属性会导致异常；
+- Jackson 序列化过程中会自动忽略缺失属性，并且不会导致异常。
