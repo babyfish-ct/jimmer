@@ -4,7 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.DeleteAction;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -21,7 +21,7 @@ import java.util.function.Function;
 
 class DeleteCommandImpl implements DeleteCommand {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
     private final Connection con;
 
@@ -32,7 +32,7 @@ class DeleteCommandImpl implements DeleteCommand {
     private final Data data;
 
     public DeleteCommandImpl(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             Connection con,
             ImmutableType immutableType,
             Collection<?> ids
@@ -108,18 +108,18 @@ class DeleteCommandImpl implements DeleteCommand {
 
     static class Data implements Cfg {
 
-        private SqlClient sqlClient;
+        private JSqlClient sqlClient;
 
         private Map<ImmutableProp, DeleteAction> deleteActionMap;
 
         private boolean frozen;
 
-        Data(SqlClient sqlClient) {
+        Data(JSqlClient sqlClient) {
             this.sqlClient = sqlClient;
             this.deleteActionMap = new LinkedHashMap<>();
         }
 
-        Data(SqlClient sqlClient, Map<ImmutableProp, DeleteAction> deleteActionMap) {
+        Data(JSqlClient sqlClient, Map<ImmutableProp, DeleteAction> deleteActionMap) {
             this.sqlClient = sqlClient;
             if (deleteActionMap != null) {
                 this.deleteActionMap = new LinkedHashMap<>(deleteActionMap);
@@ -133,7 +133,7 @@ class DeleteCommandImpl implements DeleteCommand {
             this.deleteActionMap = new LinkedHashMap<>(base.deleteActionMap);
         }
 
-        public SqlClient getSqlClient() {
+        public JSqlClient getSqlClient() {
             return sqlClient;
         }
 

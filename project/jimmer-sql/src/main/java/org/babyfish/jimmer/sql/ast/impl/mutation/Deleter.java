@@ -5,7 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
@@ -193,7 +193,7 @@ public class Deleter {
             ImmutableProp manyToOneProp,
             Collection<Object> ids
     ) {
-        SqlClient sqlClient = data.getSqlClient();
+        JSqlClient sqlClient = data.getSqlClient();
         ImmutableType childType = manyToOneProp.getDeclaringType();
         if (sqlClient.getTriggers().hasListeners(manyToOneProp)) {
             List<Object> childIds =

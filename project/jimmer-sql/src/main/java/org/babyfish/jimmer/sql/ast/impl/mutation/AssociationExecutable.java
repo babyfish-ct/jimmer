@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.lang.NewChain;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -15,7 +15,7 @@ import java.util.*;
 
 class AssociationExecutable implements Executable<Integer> {
 
-    final SqlClient sqlClient;
+    final JSqlClient sqlClient;
 
     final Connection con;
 
@@ -28,7 +28,7 @@ class AssociationExecutable implements Executable<Integer> {
     private final Set<Tuple2<Object, Object>> idTuples;
 
     public AssociationExecutable(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             Connection con,
             AssociationType associationType,
             boolean reversed,

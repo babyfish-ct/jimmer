@@ -3,9 +3,8 @@ package org.babyfish.jimmer.sql.association.loader;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ListLoader;
 import org.babyfish.jimmer.sql.ReferenceLoader;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.fetcher.Filter;
 
 public class Loaders {
 
@@ -13,7 +12,7 @@ public class Loaders {
 
     @SuppressWarnings("unchecked")
     public static <SE, TE, TT extends Table<TE>> ReferenceLoader<SE, TE, TT> createReferenceLoader(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             ImmutableProp prop
     ) {
         if (!prop.isReference()) {
@@ -26,7 +25,7 @@ public class Loaders {
 
     @SuppressWarnings("unchecked")
     public static <SE, TE, TT extends Table<TE>> ListLoader<SE, TE, TT> createListLoader(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             ImmutableProp prop
     ) {
         if (!prop.isEntityList()) {

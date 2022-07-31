@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
@@ -15,11 +15,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.util.List;
-import java.util.Map;
 
 class MergedTypedRootQueryImpl<R> implements TypedRootQuery<R>, TypedQueryImplementor {
 
-    private SqlClient sqlClient;
+    private JSqlClient sqlClient;
 
     private String operator;
 
@@ -30,7 +29,7 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQuery<R>, TypedQueryImplem
     private List<Selection<?>> selections;
 
     public MergedTypedRootQueryImpl(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             String operator,
             TypedRootQuery<R> left,
             TypedRootQuery<R> right) {

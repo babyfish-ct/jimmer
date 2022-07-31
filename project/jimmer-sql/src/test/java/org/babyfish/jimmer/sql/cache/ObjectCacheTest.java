@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
 import org.babyfish.jimmer.sql.model.BookStore;
@@ -13,7 +13,7 @@ public class ObjectCacheTest extends AbstractQueryTest {
 
     @Test
     public void test() {
-        SqlClient sqlClient = getSqlClient(builder -> {
+        JSqlClient sqlClient = getSqlClient(builder -> {
             builder.setCaches(cfg ->
                     cfg.setCacheFactory(
                             new CacheFactory() {

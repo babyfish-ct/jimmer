@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.common;
 
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.model.Gender;
 import org.babyfish.jimmer.sql.runtime.DefaultExecutor;
@@ -39,7 +39,7 @@ public class AbstractTest {
         executions.clear();
     }
 
-    private SqlClient sqlClient = getSqlClient(it -> {
+    private JSqlClient sqlClient = getSqlClient(it -> {
         UserIdGenerator idGenerator = this::autoId;
         it.setIdGenerator(idGenerator);
     });
@@ -60,12 +60,12 @@ public class AbstractTest {
         }
     }
 
-    protected SqlClient getSqlClient() {
+    protected JSqlClient getSqlClient() {
         return sqlClient;
     }
 
-    protected SqlClient getSqlClient(Consumer<SqlClient.Builder> block) {
-        SqlClient.Builder builder = SqlClient.newBuilder()
+    protected JSqlClient getSqlClient(Consumer<JSqlClient.Builder> block) {
+        JSqlClient.Builder builder = JSqlClient.newBuilder()
                 .setExecutor(new ExecutorImpl())
                 .addScalarProvider(
                         ScalarProvider.enumProviderByString(Gender.class, it -> {

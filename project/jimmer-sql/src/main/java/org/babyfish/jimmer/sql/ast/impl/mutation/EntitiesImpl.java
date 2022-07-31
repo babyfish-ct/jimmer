@@ -6,7 +6,7 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.Entities;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.*;
@@ -27,17 +27,17 @@ import java.util.stream.Collectors;
 
 public class EntitiesImpl implements Entities {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
     private final boolean forUpdate;
 
     private final Connection con;
 
-    public EntitiesImpl(SqlClient sqlClient) {
+    public EntitiesImpl(JSqlClient sqlClient) {
         this(sqlClient, false, null);
     }
 
-    public EntitiesImpl(SqlClient sqlClient, boolean forUpdate, Connection con) {
+    public EntitiesImpl(JSqlClient sqlClient, boolean forUpdate, Connection con) {
         this.sqlClient = sqlClient;
         this.forUpdate = forUpdate;
         this.con = con;

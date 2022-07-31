@@ -5,7 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.meta.Column;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -35,7 +35,7 @@ public class MutableUpdateImpl
 
     private Table<?> table;
 
-    public MutableUpdateImpl(SqlClient sqlClient, ImmutableType immutableType) {
+    public MutableUpdateImpl(JSqlClient sqlClient, ImmutableType immutableType) {
         super(new TableAliasAllocator(), sqlClient);
         table = TableWrappers.wrap(
                 TableImplementor.create(this, immutableType)

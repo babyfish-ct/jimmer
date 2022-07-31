@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 
 import java.sql.Connection;
@@ -18,7 +18,7 @@ class BatchEntitySaveCommandImpl<E>
 
     private Collection<E> entities;
 
-    BatchEntitySaveCommandImpl(SqlClient sqlClient, Connection con, Collection<E> entities) {
+    BatchEntitySaveCommandImpl(JSqlClient sqlClient, Connection con, Collection<E> entities) {
         super(sqlClient, con, null);
         for (E entity : entities) {
             if (!(entity instanceof ImmutableSpi)) {

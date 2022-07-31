@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.runtime.DraftSpi;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
@@ -17,7 +17,7 @@ class FetcherContext {
 
     private static final ThreadLocal<FetcherContext> FETCHER_CONTEXT_LOCAL = new ThreadLocal<>();
 
-    private SqlClient sqlClient;
+    private JSqlClient sqlClient;
 
     private Connection con;
 
@@ -26,7 +26,7 @@ class FetcherContext {
     private Map<Field, FetcherTask> taskMap = new LinkedHashMap<>();
 
     public static void using(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             Connection con,
             BiConsumer<FetcherContext, Boolean> block
     ) {
@@ -44,7 +44,7 @@ class FetcherContext {
         }
     }
 
-    private FetcherContext(SqlClient sqlClient, Connection con) {
+    private FetcherContext(JSqlClient sqlClient, Connection con) {
         this.sqlClient = sqlClient;
         this.con = con;
     }

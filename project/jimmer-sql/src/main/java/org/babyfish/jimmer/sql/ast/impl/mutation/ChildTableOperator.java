@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.meta.Column;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.Converters;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
@@ -17,14 +17,14 @@ import java.util.List;
 
 class ChildTableOperator {
 
-    private SqlClient sqlClient;
+    private JSqlClient sqlClient;
 
     private Connection con;
 
     private ImmutableProp parentProp;
 
     public ChildTableOperator(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             Connection con,
             ImmutableProp parentProp
     ) {

@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.kt.impl
 
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
-import org.babyfish.jimmer.sql.SqlClient
+import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.association.Association
 import org.babyfish.jimmer.sql.association.meta.AssociationType
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
@@ -16,7 +16,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 internal class KQueriesImpl(
-    private val sqlClient: SqlClient
+    private val sqlClient: JSqlClient
 ) : KQueries {
 
     @Suppress("UNCHECKED_CAST")

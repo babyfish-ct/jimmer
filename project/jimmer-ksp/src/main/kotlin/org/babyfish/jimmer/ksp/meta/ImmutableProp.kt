@@ -119,13 +119,15 @@ class ImmutableProp(
 
     val primarySqlAnnotation: KSAnnotation? =
         propDeclaration.let {
+
             val id = it.annotation(Id::class)
             val version = it.annotation(Version::class)
             val oneToOne = it.annotation(OneToOne::class)
             val manyToOne = it.annotation(ManyToOne::class)
             val oneToMany = it.annotation(OneToMany::class)
             val manyToMany = it.annotation(ManyToMany::class)
-            val list = listOfNotNull(
+
+            val annotations = listOfNotNull(
                 id,
                 version,
                 oneToOne,
@@ -133,12 +135,28 @@ class ImmutableProp(
                 oneToMany,
                 manyToMany
             )
-            if (list.size > 1) {
+            if (annotations.size > 1) {
                 throw MetaException(
                     "Illegal property '${this}', conflict annotation " +
-                        "'@${list[0].fullName}' and '@${list[1].fullName}'"
+                        "'@${annotations[0].fullName}' and '@${annotations[1].fullName}'"
                 )
             }
+
+            val column = it.annotation(Column::class)
+            val joinColumn = it.annotation(JoinColumn::class)
+            val joinTable = it.annotation(JoinTable::class)
+            val storageAnnotations = listOfNotNull(
+                column,
+                joinColumn,
+                joinTable
+            )
+            if (storageAnnotations.size > 1) {
+                throw MetaException(
+                    "Illegal property '${this}', conflict annotation " +
+                        "'@${storageAnnotations[0].fullName}' and '@${storageAnnotations[1].fullName}'"
+                )
+            }
+
             if (id !== null) {
                 if (resolvedType.isMarkedNullable) {
                     throw MetaException("Id property '${this}' cannot be nullable")
@@ -150,27 +168,77 @@ class ImmutableProp(
                 if (resolvedType != ctx.intType) {
                     throw MetaException("The type of version property '${propDeclaration}' must be int")
                 }
-            } else if (list.isNotEmpty()) {
+            } else if (annotations.isNotEmpty()) {
                 if (!isAssociation) {
                     throw MetaException(
                         "The property '${this}' cannot be declared by " +
-                            "'@${list[0].fullName}' because it is not association"
+                            "'@${annotations[0].fullName}' because it is not association"
                     )
                 }
                 if ((oneToOne !== null || manyToOne !== null) && !isReference) {
                     throw MetaException(
                         "The property '${this}' cannot be declared by " +
-                            "'@${list[0].fullName}' because it is not reference association"
+                            "'@${annotations[0].fullName}' because it is not reference association"
                     )
                 }
                 if ((oneToMany !== null || manyToMany !== null) && !isList) {
                     throw MetaException(
                         "The property '${this}' cannot be declared by " +
-                            "'@${list[0].fullName}' because it is not list association"
+                            "'@${annotations[0].fullName}' because it is not list association"
                     )
                 }
             }
-            list.firstOrNull()
+
+            if (storageAnnotations.isNotEmpty()) {
+                if (oneToOne !== null || oneToMany !== null) {
+                    throw MetaException(
+                        "The property '${this}' cannot be declared by " +
+                            "'@${storageAnnotations[0].fullName}' " +
+                            "because it is marked by '${annotations[0].fullName}'"
+                    )
+                }
+                if (column !== null && isAssociation) {
+                    throw MetaException(
+                        "The property '${this}' cannot be declared by " +
+                            "'@${storageAnnotations[0].fullName}' because it is not association association"
+                    )
+                }
+                if (joinColumn !== null && manyToOne === null) {
+                    throw MetaException(
+                        "The property '${this}' cannot be declared by " +
+                            "'@${storageAnnotations[0].fullName}' because it is not many-to-one association"
+                    )
+                }
+                if (joinTable !== null && manyToOne === null && manyToMany == null) {
+                    throw MetaException(
+                        "The property '${this}' cannot be declared by " +
+                            "'@${storageAnnotations[0].fullName}' because " +
+                            "it is neither many-to-one association nor many-to-many association"
+                    )
+                }
+                manyToMany?.get<String>("mappedBy")?.takeIf { v -> v.isNotEmpty() }?.let {
+                    throw MetaException(
+                        "Cannot specify the 'mappedBy' for the property '${this}' " +
+                            "because it is decorated by " +
+                            "'@${storageAnnotations[0].fullName}'"
+                    )
+                }
+            }
+
+            if (oneToOne !== null && !resolvedType.isMarkedNullable) {
+                throw MetaException("One-to-one property '${this}' must be nullable")
+            }
+            if (manyToOne !== null &&
+                !resolvedType.isMarkedNullable &&
+                joinTable != null
+            ) {
+                throw MetaException(
+                    "Many-to-one property '${this}' " +
+                        "is decorated by '${joinTable.fullName}', " +
+                        "so it must be nullable"
+                )
+            }
+            annotations.firstOrNull()
         }
 
     val isId: Boolean =

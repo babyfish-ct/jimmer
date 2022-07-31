@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.query;
 
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.AuthorFetcher;
 import org.babyfish.jimmer.sql.model.Book;
@@ -334,7 +334,7 @@ public class EntityTest extends AbstractQueryTest {
                 });
     }
 
-    private SqlClient getSqlClient(Connection con) {
+    private JSqlClient getSqlClient(Connection con) {
         return getSqlClient(builder -> {
             builder.setConnectionManager(new ConnectionManager() {
                 @Override

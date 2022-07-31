@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
@@ -15,7 +15,7 @@ public class Fetchers {
 
     @SuppressWarnings("unchecked")
     public static void fetch(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             Connection con,
             List<Selection<?>> selections,
             List<?> rows
@@ -81,7 +81,7 @@ public class Fetchers {
     }
 
     private static void fetch(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             Connection con,
             Fetcher<?> fetcher,
             List<DraftSpi> drafts

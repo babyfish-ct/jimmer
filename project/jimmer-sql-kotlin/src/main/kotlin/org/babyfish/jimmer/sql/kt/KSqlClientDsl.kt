@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt
 
-import org.babyfish.jimmer.sql.SqlClient
+import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.cache.*
 import org.babyfish.jimmer.sql.dialect.Dialect
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
@@ -15,7 +15,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 class KSqlClientDsl internal constructor(
-    private val javaBuilder: SqlClient.Builder
+    private val javaBuilder: JSqlClient.Builder
 ) {
     fun setDialect(dialect: Dialect) {
         javaBuilder.setDialect(dialect)

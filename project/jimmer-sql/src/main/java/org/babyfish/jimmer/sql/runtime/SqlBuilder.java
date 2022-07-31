@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 
@@ -11,7 +11,7 @@ import java.util.function.Function;
 
 public class SqlBuilder {
 
-    private SqlClient sqlClient;
+    private JSqlClient sqlClient;
 
     private Set<Table<?>> usedTables;
 
@@ -25,7 +25,7 @@ public class SqlBuilder {
 
     private boolean terminated;
 
-    public SqlBuilder(SqlClient sqlClient) {
+    public SqlBuilder(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
         this.usedTables = new HashSet<>();
     }

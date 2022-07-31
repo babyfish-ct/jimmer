@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
@@ -14,7 +14,7 @@ public class Mutations {
     private Mutations() {}
 
     public static <T extends Table<?>> Executable<Integer> createUpdate(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             Class<T> tableType,
             BiConsumer<MutableUpdate, T> block
     ) {
@@ -28,7 +28,7 @@ public class Mutations {
     }
 
     public static Executable<Integer> createUpdate(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             ImmutableType type,
             BiConsumer<MutableUpdate, Table<?>> block
     ) {
@@ -42,7 +42,7 @@ public class Mutations {
     }
 
     public static <T extends Table<?>> Executable<Integer> createDelete(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             Class<T> tableType,
             BiConsumer<MutableDelete, T> block
     ) {

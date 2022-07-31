@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
@@ -21,7 +21,7 @@ public class MutableRootQueryImpl<T extends Table<?>>
         implements MutableRootQuery<T> {
 
     public MutableRootQueryImpl(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             ImmutableType immutableType
     ) {
         super(new TableAliasAllocator(), sqlClient, immutableType);

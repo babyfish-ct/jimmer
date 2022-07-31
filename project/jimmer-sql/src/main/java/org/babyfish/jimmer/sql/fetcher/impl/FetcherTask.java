@@ -4,7 +4,7 @@ import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
@@ -17,7 +17,7 @@ class FetcherTask {
 
     private final FetchingCache cache;
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
     private Field field;
 
@@ -29,7 +29,7 @@ class FetcherTask {
 
     public FetcherTask(
             FetchingCache cache,
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             Connection con,
             Field field
     ) {

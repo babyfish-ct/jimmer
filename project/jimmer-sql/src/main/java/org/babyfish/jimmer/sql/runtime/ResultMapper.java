@@ -4,7 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Selection;
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 class ResultMapper {
 
-    private SqlClient sqlClient;
+    private JSqlClient sqlClient;
 
     private List<Selection<?>> selections;
 
@@ -34,7 +34,7 @@ class ResultMapper {
     private int index;
 
     public ResultMapper(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             List<Selection<?>> selections,
             ResultSet resultSet
     ) {

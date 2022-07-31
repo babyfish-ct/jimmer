@@ -1,29 +1,29 @@
 package org.babyfish.jimmer.sql.cache;
 
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 
 import java.sql.Connection;
 import java.util.Objects;
 
 public class CacheEnvironment {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
     private final Connection connection;
 
     private final CacheFilter filter;
 
-    public CacheEnvironment(SqlClient sqlClient, Connection connection) {
+    public CacheEnvironment(JSqlClient sqlClient, Connection connection) {
         this(sqlClient, connection, null);
     }
 
-    public CacheEnvironment(SqlClient sqlClient, Connection connection, CacheFilter filter) {
+    public CacheEnvironment(JSqlClient sqlClient, Connection connection, CacheFilter filter) {
         this.sqlClient = Objects.requireNonNull(sqlClient, "sqlClient cannot be null");
         this.connection = Objects.requireNonNull(connection, "connection cannot be null");
         this.filter = filter;
     }
 
-    public SqlClient getSqlClient() {
+    public JSqlClient getSqlClient() {
         return sqlClient;
     }
 

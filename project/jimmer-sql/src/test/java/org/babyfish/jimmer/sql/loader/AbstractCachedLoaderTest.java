@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.loader;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
@@ -13,7 +13,7 @@ import java.util.List;
 
 public class AbstractCachedLoaderTest extends AbstractQueryTest {
 
-    private SqlClient cachedSqlClient;
+    private JSqlClient cachedSqlClient;
 
     @BeforeEach
     public void initialize() {
@@ -39,7 +39,7 @@ public class AbstractCachedLoaderTest extends AbstractQueryTest {
         });
     }
 
-    protected SqlClient getCachedSqlClient() {
+    protected JSqlClient getCachedSqlClient() {
         return cachedSqlClient;
     }
 }

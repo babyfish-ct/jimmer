@@ -41,11 +41,11 @@ interface KSqlClient {
 
     fun <R> executeNativeSql(block: (Connection) -> R): R
 
-    val javaClient: SqlClient
+    val javaClient: JSqlClient
 }
 
 fun newKSqlClient(block: KSqlClientDsl.() -> Unit): KSqlClient {
-    val javaBuilder = SqlClient.newBuilder()
+    val javaBuilder = JSqlClient.newBuilder()
     val dsl = KSqlClientDsl(javaBuilder)
     dsl.block()
     return dsl.buildKSqlClient()

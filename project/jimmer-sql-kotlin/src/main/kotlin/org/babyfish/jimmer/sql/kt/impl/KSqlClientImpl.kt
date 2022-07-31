@@ -16,7 +16,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 internal class KSqlClientImpl(
-    private val sqlClient: SqlClient
+    private val sqlClient: JSqlClient
 ) : KSqlClient {
 
     override fun <E : Any> createUpdate(
@@ -86,6 +86,6 @@ internal class KSqlClientImpl(
     override fun <R> executeNativeSql(block: (Connection) -> R): R =
         javaClient.connectionManager.execute(block)
 
-    override val javaClient: SqlClient
+    override val javaClient: JSqlClient
         get() = sqlClient
 }
