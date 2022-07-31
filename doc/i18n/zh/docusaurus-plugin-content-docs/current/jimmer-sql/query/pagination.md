@@ -223,7 +223,7 @@ List<Book> books = query
 不幸的是，不同的数据库对分页查询的支持大相径庭。所以，在创建SqlClient时需要指定方言
 
 ```java
-SqlClient sqlClient = SqlClient
+JSqlClient sqlClient = JSqlClient
     .newBuilder()
     // highlight-next-line
     .setDialect(new H2Dialect())

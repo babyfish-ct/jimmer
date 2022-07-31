@@ -446,15 +446,15 @@ This will cause `in(?, ?, ?, ?)` clause to be split into two `in(?, ?)` clauses,
         where tb_1_.BOOK_ID in (?, ?)
     ```
 
-In actual development, batchSize is not set like this in most cases, but the global configuration in SqlClient is used.
+In actual development, batchSize is not set like this in most cases, but the global configuration in JSqlClient is used.
 
-1. `SqlClient.getDefaultBatchSize()`: Default batchSize for one-to-one and many-to-one association properties, default value is 128
-2. `SqlClient.getDefaultListBatchSize()`: Default batchSize for one-to-many and many-to-many association properties, default value is 16
+1. `JSqlClient.getDefaultBatchSize()`: Default batchSize for one-to-one and many-to-one association properties, default value is 128
+2. `JSqlClient.getDefaultListBatchSize()`: Default batchSize for one-to-many and many-to-many association properties, default value is 16
 
-When creating a SqlClient, you can change the global configuration:
+When creating a JSqlClient, you can change the global configuration:
 
 ```java
-SqlClient sqlClient = SqlClient
+JSqlClient sqlClient = JSqlClient
     .newBuilder()
     .setDefaultBatchSize(256)
     .setDefaultListBatchSize(32)

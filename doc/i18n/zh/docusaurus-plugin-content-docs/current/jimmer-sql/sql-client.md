@@ -1,6 +1,6 @@
 ---
 sidebar_position: 3
-title: SqlClient
+title: JSqlClient
 ---
 
 SqlClient是jimmer-sql所有API的入口。
@@ -10,7 +10,7 @@ SqlClient是jimmer-sql所有API的入口。
 SqlClient是不可变对象，基于Builder模式创建。
 
 ```java
-SqlClient sqlClient = SqlClient
+JSqlClient sqlClient = JSqlClient
     .newBuilder()
     ...doSomething...
     .builde();
@@ -29,8 +29,8 @@ SqlClient需要一个实例，应该被全局共享。
 public class SqlClientConfig {
 
     @Bean
-    public SqlClient sqlClient() {
-        return SqlClient
+    public JSqlClient sqlClient() {
+        return JSqlClient
             .newBuilder()
             ...doSomething...
             .builde();
@@ -98,7 +98,7 @@ public interface Executable<R> {
 ```java
 javax.sql.DataSource dataSource = ...;
 
-SqlClient sqlClient = SqlClient
+JSqlClient sqlClient = JSqlClient
     .newBuilder()
     .setConnectionManager(
         ConnectionManager
@@ -124,12 +124,12 @@ jimmer-sql只专注于生成SQL和执行SQL，在连接管理和事务管理方�
 
 ```java
 @Bean
-public SqlClient sqlClient(
+public JSqlClient sqlClient(
     // Inject dataSoruce of spring-jdbc
     // highlight-next-line
     DataSource dataSource
 ) {
-    return SqlClient.newBuilder()
+    return JSqlClient.newBuilder()
         .setConnectionManager(
             new ConnectionManager() {
                 @Override
@@ -174,8 +174,8 @@ public SqlClient sqlClient(
 public class SqlClientConfig {
 
     @Bean
-    public SqlClient sqlClient() {
-        return SqlClient
+    public JSqlClient sqlClient() {
+        return JSqlClient
             .newBuilder()
             .setConnectionManager(...)
             // highlight-next-line
@@ -243,8 +243,8 @@ public class SqlClientConfig {
         LoggerFactory.getLogger(SqlClientConfig.class);
 
     @Bean
-    public SqlClient sqlClient() {
-        return SqlClient
+    public JSqlClient sqlClient() {
+        return JSqlClient
             .newBuilder()
             .setConnectionManager(...)
             .setDialect(new H2Dialect())
@@ -293,8 +293,8 @@ public class SqlClientConfig {
         LoggerFactory.getLogger(SqlClientConfig.class);
 
     @Bean
-    public SqlClient sqlClient() {
-        return SqlClient
+    public JSqlClient sqlClient() {
+        return JSqlClient
             .newBuilder()
             .setConnectionManager(...)
             .setDialect(new H2Dialect())
@@ -373,8 +373,8 @@ public class SqlClientConfig {
         LoggerFactory.getLogger(SqlClientConfig.class);
 
     @Bean
-    public SqlClient sqlClient() {
-        return SqlClient
+    public JSqlClient sqlClient() {
+        return JSqlClient
             .newBuilder()
             .setConnectionManager(...)
             .setDialect(new H2Dialect())
@@ -514,11 +514,11 @@ public class UnitTestIdGenerator implements UserIdGenerator {
 ```java title="MyTest.java"
 class MyTest {
 
-    private SqlClient sqlClient;
+    private JSqlClient sqlClient;
 
     @BeforeEach
     public void init() {
-        sqlClient = SqlClient
+        sqlClient = JSqlClient
             .newBuilder()
             // highlight-next-line
             .setIdGenerator(
@@ -554,8 +554,8 @@ SqlClient支持两个配置：`DefaultBatchSize`和`DefaultListBatchSize`。
 public class SqlClientConfig {
 
     @Bean
-    public SqlClient sqlClient() {
-        return SqlClient
+    public JSqlClient sqlClient() {
+        return JSqlClient
             .newBuilder()
             .setConnectionManager(...)
             .setDialect(new H2Dialect())

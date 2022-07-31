@@ -25,9 +25,9 @@ title: 表连接
 ```java
 public class BookRepository {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
-    public BookRepository(SqlClient sqlClient) {
+    public BookRepository(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
     }
 

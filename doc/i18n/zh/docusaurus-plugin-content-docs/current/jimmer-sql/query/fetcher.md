@@ -447,13 +447,13 @@ List<Book> books = sqlClient
 
 实际开发中，绝大部分情况都不会这样设置batchSize，而是采用SqlClient中的全局配置。
 
-1. `SqlClient.getDefaultBatchSize()`: 一对一和多对一关联属性的默认batchSize，默认128
-2. `SqlClient.getDefaultListBatchSize()`: 一对多和多对多关联属性的默认batchSize，默认16
+1. `JSqlClient.getDefaultBatchSize()`: 一对一和多对一关联属性的默认batchSize，默认128
+2. `JSqlClient.getDefaultListBatchSize()`: 一对多和多对多关联属性的默认batchSize，默认16
 
 创建SqlClient时，可以更改全局配置:
 
 ```java
-SqlClient sqlClient = SqlClient
+JSqlClient sqlClient = JSqlClient
     .newBuilder()
     .setDefaultBatchSize(256)
     .setDefaultListBatchSize(32)

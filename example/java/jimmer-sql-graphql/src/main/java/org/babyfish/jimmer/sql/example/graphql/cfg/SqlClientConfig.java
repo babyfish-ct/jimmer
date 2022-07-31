@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.example.graphql.cfg;
 
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.example.graphql.entities.Gender;
 import org.babyfish.jimmer.sql.runtime.*;
@@ -28,8 +28,8 @@ public class SqlClientConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqlClientConfig.class);
 
     @Bean
-    public SqlClient sqlClient(DataSource dataSource) {
-        return SqlClient.newBuilder()
+    public JSqlClient sqlClient(DataSource dataSource) {
+        return JSqlClient.newBuilder()
                 .setConnectionManager(
                         /*
                          * It's very important to use
@@ -84,10 +84,10 @@ public class SqlClientConfig {
     }
 
     @Bean
-    public ApplicationRunner initializeH2DatabaseRunner(SqlClient sqlClient) {
+    public ApplicationRunner initializeH2DatabaseRunner(JSqlClient sqlClient) {
         return args -> {
             sqlClient.getConnectionManager().execute(con -> {
-                InputStream inputStream = SqlClient.class
+                InputStream inputStream = JSqlClient.class
                         .getClassLoader()
                         .getResourceAsStream("h2-database.sql");
                 if (inputStream == null) {

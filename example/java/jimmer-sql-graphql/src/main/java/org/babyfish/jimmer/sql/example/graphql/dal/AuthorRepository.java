@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.example.graphql.dal;
 
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.LikeMode;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.example.graphql.entities.Author;
@@ -14,9 +14,9 @@ import java.util.List;
 @Repository
 public class AuthorRepository {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
-    public AuthorRepository(SqlClient sqlClient) {
+    public AuthorRepository(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
     }
 

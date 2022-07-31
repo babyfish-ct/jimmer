@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.example.graphql.controller;
 
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.example.graphql.dal.BookRepository;
 import org.babyfish.jimmer.sql.example.graphql.entities.*;
@@ -20,12 +20,12 @@ import java.util.Map;
 @Controller
 public class BookController {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
     private final BookRepository bookRepository;
 
     public BookController(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             BookRepository bookRepository
     ) {
         this.sqlClient = sqlClient;
