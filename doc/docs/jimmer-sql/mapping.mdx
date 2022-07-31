@@ -12,7 +12,6 @@ Jimmer-sql uses these annotations
 
 - org.babyfish.jimmer.Entity
 - org.babyfish.jimmer.Table
-- org.babyfish.jimmer.SequenceGenerator
 - org.babyfish.jimmer.Transient
 - org.babyfish.jimmer.Id
 - org.babyfish.jimmer.GeneratedValue
@@ -34,7 +33,9 @@ The annotation `Entity` is used to decorate an immutable interface, representing
 :::note
 1. Once `@Entity` is used, it is implied that the interface is immutable, no need to use `@org.babyfish.jimmer.Immutable`.
 
-2. However, In java, `@Immutable` can specify the default nullability of the properties, so `@Entity` and `@Immutable` can be mixed. However, you should not do this in kotlin because 
+2. In java, `@Immutable` can specify the default nullability of the properties, so `@Entity` and `@Immutable` can be mixed. 
+
+3. In kotlin, you should never use both `@Entity` and `@Immutable`, because kotlin can declare the nullity of properites clearly. 
 :::
 
 ## Table
@@ -45,6 +46,9 @@ The default table name uses all uppercase letters. Every place where the origina
 
 If the default table name does not meet your requirements, please use `@Tabale` to specify your table name.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java title="BookStore.java"
 @Entity
 @Table("MY_BOOK_STORE")
@@ -53,19 +57,19 @@ public interface BookStore {
 }
 ```
 
-:::note
-So far, only parse the property `name` of the `@Table`.
-:::
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
 
-## SequenceGenerator
+```kotlin title="BookStore.kt"
+@Entity
+@Table("MY_BOOK_STORE")
+interface BookStore {
+    ...
+}
+```
 
-This annotation is rarely used in jimmer-sql, and even if it is used, there are a few points to note.
-
-:::caution
-1. jimmer-sql only parses its properties `name` and `sequenceName`, and does not parse other attributes, especially `initialValue` and `allocationSize`.
-
-2. If you want to use the table/database sharding technology and ensure the unique id of the logic table in different databases/tables, it is more recommended to use Snowflake id.
-:::
+</TabItem>
+</Tabs>
 
 ## Transient
 
@@ -76,6 +80,35 @@ ORM will not operate this property, and its best drinking scenarios are as follo
 1. This property is a complex computed property, which cannot be obtained through ORM and needs to be implemented by coding in the business.
 
 2. The data required for this property is not in the current database, and the upper-level business needs to get it from other microservices.
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStore.java"
+@Entity
+public interface BookStore {
+
+    @Transient
+    DataFromOtherMicroService dataFromOtherMicroService();
+    ...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStore.kt"
+@Entity
+interface BookStore {
+
+    @Transient
+    val dataFromOtherMicroService: DataFromOtherMicroService
+    ...
+}
+```
+
+</TabItem>
+</Tabs>
 
 ## Id
 
@@ -151,7 +184,7 @@ In particular, when the id is of type UUID, jimmer-sql provides a class called `
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java title="Book.java"
 @Entity
 public interface Book {
 
@@ -164,7 +197,7 @@ public interface Book {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin title="Book.kt"
 @Entity
 interface Book {
 
@@ -182,7 +215,7 @@ If you want to use snowflake id, you need to implement the interface `UserIdGene
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java title="SnowflakeIdGenerator.java"
 public class SnowflakeIdGenerator implements UserIdGenerator {
     @Override
     public Long generate() {
@@ -195,7 +228,7 @@ public class SnowflakeIdGenerator implements UserIdGenerator {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```java
+```java title="SnowflakeIdGenerator.kt"
 class SnowflakeIdGenerator : UserIdGenerator {
     override fun generate(): Long {
         // Please call some third-party library 
@@ -212,22 +245,22 @@ Finally, you can use it like this
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java title="Book.java"
 @Entity
 public interface Book {
 
     @Id
     @GeneratedValue(generateType = SnowflakeIdGenerator.class)
-    val id: Long
+    long id();
 }
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin title="Book.kt"
 @Entity
-public interface Book {
+interface Book {
 
     @Id
     @GeneratedValue(generateType = SnowflakeIdGenerator.class)
@@ -245,7 +278,7 @@ Use identity id/auto incremenet id of database
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java title="Book.java"
 @Entity
 public interface Book {
 
@@ -258,7 +291,7 @@ public interface Book {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```java
+```kotlin title="Book.kt"
 @Entity
 interface Book {
 
@@ -276,7 +309,7 @@ or
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java title="Book.java"
 @Entity
 public interface Book {
 
@@ -289,7 +322,7 @@ public interface Book {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```java
+```java title="Book.kt"
 @Entity
 interface Book {
 
@@ -309,7 +342,7 @@ Use sequence of database.
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java title="Book.java"
 @Entity
 public interface Book {
 
@@ -325,7 +358,7 @@ public interface Book {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```java
+```kotlin title="Book.kt"
 @Entity
 interface Book {
 
@@ -346,7 +379,7 @@ or
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java title="Book.java"
 @Entity
 public interface Book {
 
@@ -362,7 +395,7 @@ public interface Book {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```java
+```kotlin title="Book.kt"
 @Entity
 interface Book {
 
@@ -387,7 +420,7 @@ Specifies the optimistic locking version property of the entity
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java title="Book.java"
 @Entity
 public interface Book {
 
@@ -401,7 +434,7 @@ public interface Book {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```java
+```kotlin title="Book.kt"
 @Entity
 interface Book {
 
@@ -430,7 +463,7 @@ There are two ways to implement many-to-one associations, based on foreign key a
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java title="Book.java"
 @Entity
 public interface Book {
 
@@ -445,7 +478,7 @@ public interface Book {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin title="Book.kt"
 @Entity
 interface Book {
 
@@ -468,7 +501,7 @@ It can also be used with `@JoinColum` with the explicit column name.
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java title="Book.java"
 @Entity
 public interface Book {
 
@@ -484,7 +517,7 @@ public interface Book {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin title="Book.kt"
 @Entity
 interface Book {
 
@@ -497,16 +530,12 @@ interface Book {
 </TabItem>
 </Tabs>
 
-:::note
-So far, jimmer-sql does not support multiple `@JoinColumn` annotations for a property.
-:::
-
 ### 2. Base on middle table
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java title="Book.java"
 @Entity
 public interface Book {
 
@@ -522,7 +551,7 @@ public interface Book {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```java
+```java title="Book.kt"
 @Entity
 interface Book {
 
@@ -543,12 +572,12 @@ Here, no annotation properties are specified for `@JoinTable`, the default prope
 - `joinColumnName`: BOOK_ID.
 - `inverseJoinColumnName`: STORE_ID.
 
-You can also specify it explicitly
+You can also specify them explicitly
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java title="Book.java"
 @Entity
 public interface Book {
 
@@ -568,9 +597,9 @@ public interface Book {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin title="Book.kt"
 @Entity
-public interface Book {
+interface Book {
 
     @ManyToOne
     @JoinTable(
@@ -591,15 +620,12 @@ public interface Book {
 The many-to-one association based on the middle table must be nullable. 
 :::
 
-:::note
-So far, jimmer-sql does not support
-1. Specify multiple `@JoinColumn` annotations for the `joinColumns` or `inverseJoinColumns` of `@JoinTable`.
-2. Specify `referencedColumnName` for `@JoinColumn` because it always refers to the id of the target table.
-:::
-
 ## OneToOne
 
 A one-to-one association must be the mirror of many-to-one association. That is, a one-to-one association necessarily implies a bidirectional association.
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java title="Address.java"
 @Entity
@@ -610,6 +636,25 @@ public interface Adress {
     ...
 }
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Address.kt"
+@Entity
+interface Adress {
+
+    @ManyToOne
+    val customer: Customer
+    ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java title="Customer.java"
 @Entity
@@ -622,34 +667,93 @@ public interface Customer {
 }
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Customer.kt"
+@Entity
+interface Customer {
+
+    // highlight-next-line
+    @OneToOne(mappedBy = "customer")
+    val address: Address?
+    ...
+}
+```
+
+</TabItem>
+</Tabs>
+
 :::caution
-Property decorated with `@OneToOne` must be nullable
+Property decorated with `@OneToOne` must be nullable.
+
+For java, `@OneToOne` means nullable, so no `@Null` here.
 :::
 
 ## OneToMany
 
 Unlike JPA, one-to-many association must be mirror of many-to-one association. That is, a one-to-many association necessarily implies a bidirectional association.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java title="Book.java"
 @Entity
 public interface Book {
 
+    @Null
     @ManyToOne
     BookStore store();
     ...
 }
 ```
 
-```java title="Customer.java"
-@Entity
-public interface Customer {
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
 
-    // highlight-next-line
-    @OneToMany(mappedBy = "store")
-    List<Boo> books();
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @ManyToOne
+    val store: BookStore?
     ...
 }
 ```
+
+</TabItem>
+</Tabs>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Customer.java"
+@Entity
+public interface BookStore {
+
+    // highlight-next-line
+    @OneToMany(mappedBy = "store")
+    List<Book> books();
+    ...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStore.kt"
+@Entity
+interface BookStore {
+
+    // highlight-next-line
+    @OneToMany(mappedBy = "store")
+    val books: List<Book>
+    ...
+}
+```
+
+</TabItem>
+</Tabs>
 
 :::caution
 Collection properties are always treated as non-null, of course, including properties decorated by `@OneToMany`, using any nullable validation annotation will cause the annotation processor to report an error.
@@ -664,7 +768,11 @@ Collection properties are always treated as non-null, of course, including prope
 Since many-to-many associations can be used as the active side, they can also be used as the slave side.
 
 ### 1. Used as active side
-```java
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
 @Entity
 public interface Book {
 
@@ -676,38 +784,80 @@ public interface Book {
 }
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @ManyToMany
+    @JoinTable
+    val authors: List<Author>
+
+    ...
+}
+```
+
+</TabItem>
+</Tabs>
+
 Here, no annotation properties are specified for `@JoinTable`, the default properties are as follows
 
-- `name`: own table name + "_" + opponent table name + "_" + "_MAPPING".
-- `joinColumns`: a `@JoinColumn` object whose column name is the id column name of declaring entity.
-- `inverseJoinColumns`: an `@JoinColumn` object whose column names are automatically inferred by attribute name uses uppercase letters. Every place where the original name is switched from lowercase letter to uppercase letter will automatically add an underscore, and finally add a suffix "_ID".
+- `name`: BOOK_AUTHOR_MAPPING.
+- `joinColumnName`: BOOK_ID.
+- `inverseJoinColumnName`: AUTHOR_ID.
 
-Assuming the column name of `Book.id` is `BOOK_ID`, then the above configuration is equivalent to
-```java
+You can also specify them explicitly
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
 @Entity
 public interface Book {
 
     @ManyToMany
     @JoinTable(
         name = "BOOK_AUTHOR_MAPPING",
-        joinColumns = @JoinColumn(name = "BOOK_ID")
-        inverseColumns = @JoinColumn(name = "AUTHOR_ID")
+        joinColumnName = "BOOK_ID",
+        inverseColumnName = "AUTHOR_ID"
     )
     List<Author> autors();
 
     ...
 }
 ```
-:::note
-So far, jimmer-sql does not support
-1. Specify multiple `@JoinColumn` annotations for the `joinColumns` or `inverseJoinColumns` of `@JoinTable`.
-2. Specify `referencedColumnName` for `@JoinColumn` because it always refers to the id of the target table.
-:::
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @ManyToMany
+    @JoinTable(
+        name = "BOOK_AUTHOR_MAPPING",
+        joinColumnName = "BOOK_ID",
+        inverseColumnName = "AUTHOR_ID"
+    )
+    val authors: List<Author>
+
+    ...
+}
+```
+
+</TabItem>
+</Tabs>
 
 ### 2. Used as the slave side
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-@Entity
+@Entity title="Author.java"
 public interface Author {
 
     @ManyToMany(mappedBy = "authors")
@@ -717,14 +867,34 @@ public interface Author {
 }
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java
+@Entity title="Author.kt"
+public interface Author {
+
+    @ManyToMany(mappedBy = "authors")
+    val books: List<Book>
+
+    ...
+}
+```
+
+</TabItem>
+</Tabs>
+
 ## org.babyfish.jimmer.sql.Key
 
 `@org.babyfish.jimmer.sql.Key` and `@Id` are similar but different.
 
 - @Id is used to specify the technical primary key of the table.
-- @Key is used to specify the business primary key of the table.
+- @Key is used to specify the business primary key of the table. can used on scalar property or many-to-one assocaition based on foreign key.
 
 for example:
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java title="Book.java"
 @Entity
@@ -742,6 +912,29 @@ public interface Book {
     ...
 }
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java title="Book.kt"
+@Entity
+interface Book {
+
+    @Id
+    val id: UUID
+
+    @Key
+    val name: String
+
+    @Key
+    val edition: Int
+
+    ...
+}
+```
+
+</TabItem>
+</Tabs>
 
 - From a technical point of view, Book has a primary key `id`.
 
@@ -762,16 +955,37 @@ public interface Book {
 
 It can only be used in many-to-one association based on foreign key, such as
 
-```java
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
 @Entity
 public interface Book {
 
+    @Null
     @ManyToOne
     @OnDelete(DeleteAction.SET_NULL)
     BookStore store();
     ...
 }
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @ManyToOne
+    @OnDelete(DeleteAction.SET_NULL)
+    val store: BookStore?
+    ...
+}
+```
+
+</TabItem>
+</Tabs>
 
 DeleteAction has 3 options, corresponding to the foreign key behavior of the database:
 
