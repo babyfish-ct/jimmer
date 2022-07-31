@@ -25,6 +25,9 @@ Dynamic table join is very useful, but it is not convenient to implement it by c
 
 Let's look at an example of a dynamic join.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 public class BookRepository {
 
@@ -70,6 +73,48 @@ public class BookRepository {
     }
 }
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+class BookRepository(
+    private val sqlClient: KSqlClient
+) {
+    fun findBooks(
+        name: String?,
+        storeName: String?,
+        storeWebsite: String?
+    ): List<Book> =
+        sqlClient
+            .createQuery(Book::class) {
+                name?.let {
+                    where(table.name eq it)
+                }
+                storeName?.let {
+                    where(
+                        table
+                            // highlight-next-line
+                            .store // α
+                            .name eq it
+                    )
+                }
+                storeName?.let {
+                    where(
+                        table
+                            // highlight-next-line
+                            .store // β
+                            .website eq it
+                    )
+                }
+                select(table)
+            }
+            .execute()
+}
+```
+
+</TabItem>
+</Tabs>
 
 This is a typical dynamic query, and all three query parameters are allowed to be null.
 
@@ -172,10 +217,13 @@ Also, if a table join is created but not used, the table join will be ignored an
 
 The above example is very simple, the table join in has only one layer. In fact, it is possible to create deeper join objects
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 q.where(
-    store // Assuming that the store is a TableEx, 
-          // and collection association is allowed
+    store // Assuming that the type of `store` is 
+          // BookStoreTableEx, so collection join is allowed
         // highlight-next-line
         .books().authors() // multi-level join
         .firstName()
@@ -183,17 +231,51 @@ q.where(
 );
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(
+    table // Assuming that the type of `table` is 
+          // TableEx<BookStore>, so collection join is allowed
+        // highlight-next-line
+        .books.authors // multi-level join
+        .firstName eq "X"
+)
+```
+
+</TabItem>
+</Tabs>
+
 Or
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 q.where(
-    author // Assuming that the author is a TableEx, 
-           // and collection association is allowed
+    author // Assuming that the type of `author` is 
+           // BookStoreTableEx, and collection join is allowed
         .books().store() // multi-level join
         .name()
         .eq("X")
 );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(
+    table // Assuming that the type of `table` is 
+          // BookStoreTableEx, and collection join is allowed
+        .books.store // multi-level join
+        .name eq "X"
+)
+```
+
+</TabItem>
+</Tabs>
 
 It can be seen that the join object is actually a path of arbitrary length, which can also be called a join path. The join path contains from 1 to infinity of join nodes.
 
@@ -244,9 +326,23 @@ jimmer-sql will generate the join clause in the final SQL based on this tree.
 
 Another rule that needs to be explained is the join type. The method that creates the join object has a parameter to specify the join type, for example. For example, deveoper can create left join like this:
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 book.store(JoinType.LEFT);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+book.`store?`
+```
+
+</TabItem>
+</Tabs>
+
 > If this parameter is not specified, the default behavior is inner join.
 
 The join type merging rules are as follows:
@@ -260,6 +356,9 @@ Phantom join is a very simple optimization concept, which can be understood by c
 
 Let's first look at an example of a ordinary table join.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -268,8 +367,22 @@ List<Book> books = sqlClient
             .select(book);
     })
     .execute();
-books.stream().forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.store.name eq "MANNING")
+        select(table)    
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 The generated SQL is as follows:
 
@@ -291,6 +404,9 @@ where
 
 Now, let's look at an example of phantom join
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -309,8 +425,30 @@ List<Book> books = sqlClient
             .select(book);
     })
     .execute();
-books.stream().forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(
+            table
+            .store
+            // highlight-next-line
+            .id // Only access id 
+            eq UUID.fromString(
+                "2fa3955e-3e83-49b9-902e-0465c109c779"
+            )
+        )
+        select(table)
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 At this time, the generated SQL is as follows:
 
@@ -341,6 +479,9 @@ Half join is a similar concept to a phantom join, but for associations based on 
 
 Let's first look at a normal join based on middle table
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<UUID> bookIds = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -355,8 +496,27 @@ List<UUID> bookIds = sqlClient
     })
     .distinct()
     .execute();
-bookIds.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookIds = sqlClient
+    .createQuery(Book::class) {
+        where(
+            (table as KNullableTableEx<Book>)
+                .authors
+                .firstName eq "Alex"
+        )
+        select(table.id)
+    }
+    .distinct()
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 The generated SQL is as follows:
 ```sql
@@ -382,6 +542,9 @@ We see that the association based on the middle table will generate two SQL join
 
 Next, let's look at half join
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<UUID> bookIds = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -401,8 +564,31 @@ List<UUID> bookIds = sqlClient
     })
     .distinct()
     .execute();
-bookIds.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookIds = sqlClient
+    .createQuery(Book::class) {
+        where(
+            (table as KNullableTableEx<Book>)
+                .authors
+                // highlight-next-line
+                .id // Only access id 
+                eq UUID.fromString(
+                    "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
+                )
+        )
+        select(table.id)
+    }
+    .distinct()
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 At this time, the generated SQL is as follows:
 
@@ -446,6 +632,9 @@ Admittedly, subqueries can solve all problems. However, jimmer-sql still allows 
 
 To better illustrate the inverse join, let's first look at normal join.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 q.where(
     book
@@ -457,9 +646,36 @@ q.where(
 );
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(
+    table
+        // Normal join
+        // highlight-next-line
+        .authors
+        .firstName eq "Alex"
+)
+```
+
+</TabItem>
+</Tabs>
+
 There are two ways to write the inverse join that is completely equivalent to it
 
-1. Weak typing
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+</TabItem>
+</Tabs>
+
+1.  Weak typing    
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
     ```java
     q.where(
         book
@@ -472,21 +688,59 @@ There are two ways to write the inverse join that is completely equivalent to it
     );
     ```
 
-2. Strong typing
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    where(
+        table
+            // Reverse `Auhtor.books`,
+            // it's actually `Book.authors`
+            // highlight-next-line
+            .inverseJoin(Author::class, "books")
+            .firstName eq "Alex"
+    )
+    ```
+
+    </TabItem>
+    </Tabs>
+
+2.  Strong typing
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
     ```java
     q.where(
         book
-            /// Reverse `Auhtor.books`,
+            // Reverse `Auhtor.books`,
             // it's actually `Book.authors`
+            // highlight-next-line
             .inverseJoin(
                 AuthorTableEx.class, 
                 AuthorTableEx::books
             )
-            // highlight-end
             .firstName()
             .eq("Alex")
     );
     ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    where(
+        table
+            // Reverse `Auhtor.books`,
+            // it's actually `Book.authors`
+            // highlight-next-line
+            .inverseJoin(Author::books)
+            .firstName eq "Alex"
+    )
+    ```
+
+    </TabItem>
+    </Tabs>
 
 :::info
 

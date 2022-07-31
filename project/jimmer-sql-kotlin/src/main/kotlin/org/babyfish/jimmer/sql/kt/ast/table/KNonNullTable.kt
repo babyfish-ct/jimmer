@@ -4,10 +4,18 @@ import org.babyfish.jimmer.sql.association.Association
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty1
 
 interface KNonNullTable<E: Any> : KTable<E>, Selection<E> {
+
     override fun <X: Any> join(prop: String): KNonNullTable<X>
+    override fun <X: Any> joinReference(prop: KProperty1<E, X?>): KNonNullTable<X>
+    override fun <X: Any> joinList(prop: KProperty1<E, List<X>>): KNonNullTable<X>
+
     override fun <X: Any> inverseJoin(targetType: KClass<X>, backProp: String): KNonNullTable<X>
+    override fun <X: Any> inverseJoinReference(backProp: KProperty1<X, E?>): KNonNullTable<X>
+    override fun <X: Any> inverseJoinList(backProp: KProperty1<X, List<E>>): KNonNullTable<X>
+
     fun fetch(fetcher: Fetcher<E>): Selection<E>
 }
 
