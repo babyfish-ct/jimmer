@@ -1,6 +1,6 @@
 ---
 sidebar_position: 3
-title: JSqlClient
+title: SqlClient
 ---
 
 SqlClient是jimmer-sql所有API的入口。
