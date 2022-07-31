@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -19,7 +19,6 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.List;
-import java.util.Map;
 
 public class MutableDeleteImpl
         extends AbstractMutableStatementImpl
@@ -27,7 +26,7 @@ public class MutableDeleteImpl
 
     private MutableRootQueryImpl<TableEx<?>> deleteQuery;
 
-    public MutableDeleteImpl(SqlClient sqlClient, ImmutableType immutableType) {
+    public MutableDeleteImpl(JSqlClient sqlClient, ImmutableType immutableType) {
         super(new TableAliasAllocator(), sqlClient);
         deleteQuery = new MutableRootQueryImpl<>(sqlClient, immutableType);
     }
@@ -63,7 +62,7 @@ public class MutableDeleteImpl
 
     @SuppressWarnings("unchecked")
     private Integer executeImpl(Connection con) {
-        SqlClient sqlClient = getSqlClient();
+        JSqlClient sqlClient = getSqlClient();
         TableImplementor<?> table = TableImplementor.unwrap(deleteQuery.getTable());
         if (table.getChildren().isEmpty()) {
             SqlBuilder builder = new SqlBuilder(sqlClient);

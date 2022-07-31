@@ -6,7 +6,6 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.cache.CacheConfig;
 import org.babyfish.jimmer.sql.cache.Caches;
-import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
@@ -18,17 +17,17 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
-import org.babyfish.jimmer.sql.runtime.SqlClientImpl;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImpl;
 
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public interface SqlClient {
+public interface JSqlClient {
 
     static Builder newBuilder() {
-        return new SqlClientImpl.BuilderImpl();
+        return new JSqlClientImpl.BuilderImpl();
     }
 
     ConnectionManager getConnectionManager();
@@ -100,7 +99,7 @@ public interface SqlClient {
 
     Caches getCaches();
 
-    SqlClient caches(Consumer<CacheConfig> block);
+    JSqlClient caches(Consumer<CacheConfig> block);
 
     interface Builder {
 
@@ -131,6 +130,6 @@ public interface SqlClient {
         @OldChain
         Builder setCaches(Consumer<CacheConfig> block);
 
-        SqlClient build();
+        JSqlClient build();
     }
 }

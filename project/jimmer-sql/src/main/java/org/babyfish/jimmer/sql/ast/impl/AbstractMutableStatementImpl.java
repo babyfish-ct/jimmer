@@ -1,8 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
@@ -21,7 +20,7 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
 
     private TableAliasAllocator tableAliasAllocator;
 
-    private SqlClient sqlClient;
+    private JSqlClient sqlClient;
 
     private boolean frozen;
 
@@ -29,7 +28,7 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
 
     public AbstractMutableStatementImpl(
             TableAliasAllocator tableAliasAllocator,
-            SqlClient sqlClient
+            JSqlClient sqlClient
     ) {
         this.tableAliasAllocator = tableAliasAllocator;
         if (!(this instanceof Fake)) {
@@ -63,8 +62,8 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
         return tableAliasAllocator;
     }
 
-    public SqlClient getSqlClient() {
-        SqlClient client = sqlClient;
+    public JSqlClient getSqlClient() {
+        JSqlClient client = sqlClient;
         if (client == null) {
             throw new UnsupportedOperationException(
                     "getSqlClient() is not supported by " + Fake.class.getName()

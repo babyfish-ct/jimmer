@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
@@ -16,7 +16,6 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public abstract class AbstractMutableQueryImpl
@@ -34,7 +33,7 @@ public abstract class AbstractMutableQueryImpl
     @SuppressWarnings("unchecked")
     protected AbstractMutableQueryImpl(
             TableAliasAllocator tableAliasAllocator,
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             ImmutableType immutableType
     ) {
         super(tableAliasAllocator, sqlClient);

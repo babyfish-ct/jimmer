@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
@@ -18,7 +18,6 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import java.sql.Connection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BiFunction;
 
 public class ConfigurableRootQueryImpl<T extends Table<?>, R>
@@ -149,7 +148,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         if (getData().getLimit() == 0) {
             return Collections.emptyList();
         }
-        SqlClient sqlClient = getBaseQuery().getSqlClient();
+        JSqlClient sqlClient = getBaseQuery().getSqlClient();
         Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(sqlClient));
         return Selectors.select(
                 sqlClient,

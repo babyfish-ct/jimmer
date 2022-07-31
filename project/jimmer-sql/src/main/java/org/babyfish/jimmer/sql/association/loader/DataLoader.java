@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.association.loader;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.association.spi.AbstractDataLoader;
 import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
@@ -11,7 +11,7 @@ import java.sql.Connection;
 class DataLoader extends AbstractDataLoader {
 
     public DataLoader(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             Connection con,
             ImmutableProp prop,
             Filter<?> filter
@@ -26,7 +26,7 @@ class DataLoader extends AbstractDataLoader {
     }
 
     public DataLoader(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             Connection con,
             ImmutableProp prop,
             Filter<?> filter,

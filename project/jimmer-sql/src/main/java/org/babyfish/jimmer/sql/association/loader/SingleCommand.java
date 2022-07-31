@@ -2,19 +2,17 @@ package org.babyfish.jimmer.sql.association.loader;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Filter;
 
 import java.sql.Connection;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 
 class SingleCommand<T> implements Executable<T> {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
     private final Connection con;
 
@@ -29,7 +27,7 @@ class SingleCommand<T> implements Executable<T> {
     private final ImmutableSpi source;
 
     public SingleCommand(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             Connection con,
             ImmutableProp prop,
             Filter<Table<ImmutableSpi>> filter,

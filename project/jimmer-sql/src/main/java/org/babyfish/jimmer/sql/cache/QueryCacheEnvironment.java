@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.cache;
 
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 
 import java.sql.Connection;
 import java.util.Objects;
@@ -10,7 +10,7 @@ public class QueryCacheEnvironment<K, V> extends CacheEnvironment {
     private CacheLoader<K, V> loader;
 
     public QueryCacheEnvironment(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             Connection connection,
             CacheFilter filter,
             CacheLoader<K, V> loader

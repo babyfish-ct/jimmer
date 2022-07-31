@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.association.loader;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ReferenceLoader;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Filter;
@@ -14,7 +14,7 @@ import java.util.Map;
 
 class ReferenceLoaderImpl<SE, TE, TT extends Table<TE>> implements ReferenceLoader<SE, TE, TT> {
 
-    private SqlClient sqlClient;
+    private JSqlClient sqlClient;
 
     private Connection con;
 
@@ -23,14 +23,14 @@ class ReferenceLoaderImpl<SE, TE, TT extends Table<TE>> implements ReferenceLoad
     private Filter<?> filter;
 
     public ReferenceLoaderImpl(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             ImmutableProp prop
     ) {
         this(sqlClient, null, prop, null);
     }
 
     public ReferenceLoaderImpl(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             Connection con,
             ImmutableProp prop,
             Filter<?> filter

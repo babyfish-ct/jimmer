@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ImmutableProps;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.query.*;
@@ -21,7 +21,7 @@ public class Queries {
 
     @SuppressWarnings("unchecked")
     public static <T extends Table<?>, R> ConfigurableRootQuery<T, R> createQuery(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             Class<T> tableType,
             BiFunction<MutableRootQuery<T>, T, ConfigurableRootQuery<T, R>> block
     ) {
@@ -72,7 +72,7 @@ public class Queries {
 
     @SuppressWarnings("unchecked")
     public static <R> ConfigurableRootQuery<Table<?>, R> createQuery(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             ImmutableType immutableType,
             BiFunction<MutableRootQuery<Table<?>>, Table<?>, ConfigurableRootQuery<Table<?>, R>> block
     ) {
@@ -88,7 +88,7 @@ public class Queries {
     @SuppressWarnings("unchecked")
     public static <SE, ST extends Table<SE>, TE, TT extends Table<TE>, R>
     ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R> createAssociationQuery(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             Class<ST> sourceTableType,
             Function<ST, TT> targetTableGetter,
             BiFunction<
@@ -160,7 +160,7 @@ public class Queries {
 
     public static <R>
     ConfigurableRootQuery<AssociationTable<?, ?, ?, ?>, R> createAssociationQuery(
-            SqlClient sqlClient,
+            JSqlClient sqlClient,
             AssociationType associationType,
             BiFunction<
                     MutableRootQuery<AssociationTable<?, ?, ?, ?>>,

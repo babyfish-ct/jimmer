@@ -22,7 +22,6 @@ import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggersImpl;
-import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 
 import java.sql.Connection;
@@ -33,7 +32,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class SqlClientImpl implements SqlClient {
+public class JSqlClientImpl implements JSqlClient {
 
     private static final ConnectionManager ILLEGAL_CONNECTION_MANAGER = new ConnectionManager() {
         @Override
@@ -62,7 +61,7 @@ public class SqlClientImpl implements SqlClient {
 
     private final Caches caches;
 
-    public SqlClientImpl(
+    public JSqlClientImpl(
             ConnectionManager connectionManager,
             Dialect dialect,
             Executor executor,
@@ -88,7 +87,7 @@ public class SqlClientImpl implements SqlClient {
         );
     }
 
-    private SqlClientImpl(
+    private JSqlClientImpl(
             ConnectionManager connectionManager,
             Dialect dialect,
             Executor executor,
@@ -250,8 +249,8 @@ public class SqlClientImpl implements SqlClient {
     }
 
     @Override
-    public SqlClient caches(Consumer<CacheConfig> block) {
-        return new SqlClientImpl(
+    public JSqlClient caches(Consumer<CacheConfig> block) {
+        return new JSqlClientImpl(
                 connectionManager,
                 dialect,
                 executor,
@@ -265,7 +264,7 @@ public class SqlClientImpl implements SqlClient {
         );
     }
 
-    public static class BuilderImpl implements SqlClient.Builder {
+    public static class BuilderImpl implements JSqlClient.Builder {
 
         private ConnectionManager connectionManager;
 
@@ -287,41 +286,41 @@ public class SqlClientImpl implements SqlClient {
 
         @Override
         @OldChain
-        public SqlClient.Builder setConnectionManager(ConnectionManager connectionManager) {
+        public JSqlClient.Builder setConnectionManager(ConnectionManager connectionManager) {
             this.connectionManager = connectionManager;
             return this;
         }
 
         @Override
         @OldChain
-        public SqlClient.Builder setDialect(Dialect dialect) {
+        public JSqlClient.Builder setDialect(Dialect dialect) {
             this.dialect = dialect;
             return this;
         }
 
         @Override
         @OldChain
-        public SqlClient.Builder setExecutor(Executor executor) {
+        public JSqlClient.Builder setExecutor(Executor executor) {
             this.executor = executor;
             return this;
         }
 
         @Override
         @OldChain
-        public SqlClient.Builder setIdGenerator(IdGenerator idGenerator) {
+        public JSqlClient.Builder setIdGenerator(IdGenerator idGenerator) {
             return setIdGenerator(null, idGenerator);
         }
 
         @Override
         @OldChain
-        public SqlClient.Builder setIdGenerator(Class<?> entityType, IdGenerator idGenerator) {
+        public JSqlClient.Builder setIdGenerator(Class<?> entityType, IdGenerator idGenerator) {
             idGeneratorMap.put(entityType, idGenerator);
             return this;
         }
 
         @Override
         @OldChain
-        public SqlClient.Builder addScalarProvider(ScalarProvider<?, ?> scalarProvider) {
+        public JSqlClient.Builder addScalarProvider(ScalarProvider<?, ?> scalarProvider) {
             if (scalarProviderMap.containsKey(scalarProvider.getScalarType())) {
                 throw new IllegalStateException(
                         "Cannot set scalar provider for scalar type \"" +
@@ -335,7 +334,7 @@ public class SqlClientImpl implements SqlClient {
 
         @Override
         @OldChain
-        public SqlClient.Builder setDefaultBatchSize(int size) {
+        public JSqlClient.Builder setDefaultBatchSize(int size) {
             if (size < 1) {
                 throw new IllegalStateException("size cannot be less than 1");
             }
@@ -345,7 +344,7 @@ public class SqlClientImpl implements SqlClient {
 
         @Override
         @OldChain
-        public SqlClient.Builder setDefaultListBatchSize(int size) {
+        public JSqlClient.Builder setDefaultListBatchSize(int size) {
             if (size < 1) {
                 throw new IllegalStateException("size cannot be less than 1");
             }
@@ -355,14 +354,14 @@ public class SqlClientImpl implements SqlClient {
 
         @Override
         @OldChain
-        public SqlClient.Builder setCaches(Consumer<CacheConfig> block) {
+        public JSqlClient.Builder setCaches(Consumer<CacheConfig> block) {
             caches = Caches.of(block);
             return this;
         }
 
         @Override
-        public SqlClient build() {
-            return new SqlClientImpl(
+        public JSqlClient build() {
+            return new JSqlClientImpl(
                     connectionManager,
                     dialect,
                     executor,

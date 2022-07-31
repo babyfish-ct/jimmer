@@ -5,12 +5,11 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.DeleteAction;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.ImmutableProps;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
 
 import java.sql.Connection;
 import java.util.*;
@@ -19,13 +18,13 @@ import java.util.function.Function;
 
 abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveCommand {
 
-    final SqlClient sqlClient;
+    final JSqlClient sqlClient;
 
     final Connection con;
 
     final Data data;
 
-    AbstractEntitySaveCommandImpl(SqlClient sqlClient, Connection con, Data data) {
+    AbstractEntitySaveCommandImpl(JSqlClient sqlClient, Connection con, Data data) {
         this.sqlClient = sqlClient;
         this.con = con;
         this.data = data != null ? data.freeze() : new Data(sqlClient).freeze();
@@ -50,7 +49,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
     static class Data implements Cfg {
 
-        private SqlClient sqlClient;
+        private JSqlClient sqlClient;
 
         private boolean frozen;
 
@@ -64,7 +63,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         private Map<ImmutableProp, DeleteAction> deleteActionMap;
 
-        Data(SqlClient sqlClient) {
+        Data(JSqlClient sqlClient) {
             this.sqlClient = sqlClient;
             this.mode = SaveMode.UPSERT;
             this.keyPropMultiMap = new LinkedHashMap<>();
@@ -81,7 +80,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.deleteActionMap = new LinkedHashMap<>(base.deleteActionMap);
         }
 
-        public SqlClient getSqlClient() {
+        public JSqlClient getSqlClient() {
             return sqlClient;
         }
 

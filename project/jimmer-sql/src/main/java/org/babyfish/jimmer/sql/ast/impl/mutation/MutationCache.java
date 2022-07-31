@@ -5,20 +5,20 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 
 import java.sql.Connection;
 import java.util.*;
 
 class MutationCache {
 
-    private final SqlClient sqlClientWithoutCache;
+    private final JSqlClient sqlClientWithoutCache;
 
     private final Map<TypedId, ImmutableSpi> idObjMap = new HashMap<>();
 
     private final Map<TypedKey, ImmutableSpi> keyObjMap = new HashMap<>();
 
-    public MutationCache(SqlClient sqlClient) {
+    public MutationCache(JSqlClient sqlClient) {
         this.sqlClientWithoutCache = sqlClient.caches(null);
     }
 
