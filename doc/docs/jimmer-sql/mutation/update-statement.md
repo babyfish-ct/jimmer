@@ -62,10 +62,10 @@ When using MySql or Postgres, the update statement can use the table joins.
 
 ### MySql
 
-First, you need to specify the dialect as MySqlDialect when creating SqlClient
+First, you need to specify the dialect as MySqlDialect when creating JSqlClient
 
 ```java
-SqlClient sqlClient = SqlClient
+JSqlClient sqlClient = JSqlClient
     .newBuilder()
     .setDialect(
         new org.babyfish.jimmer.sql.dialect.MySqlDialect()
@@ -125,10 +125,10 @@ where
 
 ### Postgres
 
-First, you need to specify the dialect as PostgresDialect when creating SqlClient
+First, you need to specify the dialect as PostgresDialect when creating JSqlClient
 
 ```java
-SqlClient sqlClient = SqlClient
+JSqlClient sqlClient = JSqlClient
     .newBuilder()
     .setDialect(
         new org.babyfish.jimmer.sql.dialect.PostgresDialect()

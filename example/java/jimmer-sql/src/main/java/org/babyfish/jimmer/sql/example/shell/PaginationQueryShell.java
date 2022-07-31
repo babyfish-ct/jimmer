@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.example.shell;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
@@ -19,11 +19,11 @@ import java.util.List;
 @ShellComponent
 public class PaginationQueryShell {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
     private final ObjectWriter prettyWriter;
 
-    public PaginationQueryShell(SqlClient sqlClient, ObjectWriter prettyWriter) {
+    public PaginationQueryShell(JSqlClient sqlClient, ObjectWriter prettyWriter) {
         this.sqlClient = sqlClient;
         this.prettyWriter = prettyWriter;
     }

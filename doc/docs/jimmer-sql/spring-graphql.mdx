@@ -24,10 +24,10 @@ jimmer-sql provides special support for this, providing dedicated API that allow
 
 API related to this
 
-- SqlClient.getReferenceLoader
-- SqlClient.getListLoader
+- JSqlClient.getReferenceLoader
+- JSqlClient.getListLoader
 
-### SqlClient.getReferenceLoader
+### JSqlClient.getReferenceLoader
 
 This API is used to quickly implement one-to-one or many-to-one associations
 
@@ -35,9 +35,9 @@ This API is used to quickly implement one-to-one or many-to-one associations
 @Controller
 public class BookController {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
-    public BookController(SqlClient sqlClient) {
+    public BookController(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
     }
 
@@ -58,7 +58,7 @@ public class BookController {
 }
 ```
 
-### SqlClient.getListLoader
+### JSqlClient.getListLoader
 
 This API is used to quickly implement one-to-many or many-to-many associations
 
@@ -66,9 +66,9 @@ This API is used to quickly implement one-to-many or many-to-many associations
 @Controller
 public class BookStoreController {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
-    public BookStoreController(SqlClient sqlClient) {
+    public BookStoreController(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
     }
 
@@ -93,9 +93,9 @@ public class BookStoreController {
 @Controller
 public class BookController {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
-    public BookController(SqlClient sqlClient) {
+    public BookController(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
     }
 
@@ -118,9 +118,9 @@ public class BookController {
 @Controller
 public class AuthorController {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
-    public AuthorController(SqlClient sqlClient) {
+    public AuthorController(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
     }
 

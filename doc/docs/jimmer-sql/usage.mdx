@@ -36,10 +36,10 @@ plugins {
 depdencies {
     
     // Step2: Add jimmer-sql-kotlin
-    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.1.4")
+    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.1.5")
 
     // Step3: Apply ksp plugin
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.1.4")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.1.5")
 
     ...ommit other dependency...
 }
@@ -312,15 +312,15 @@ enum class Gender {
 </TabItem>
 </Tabs>
 
-## Create SqlClient
+## Create JSqlClient
 
-`SqlClient/KSqlClient` is the entry point of all APIs of jimmer-sql, therefore, SqlClient needs to be created first.
+`JSqlClient/KSqlClient` is the entry point of all APIs of jimmer-sql, therefore, JSqlClient needs to be created first.
 
 :::danger
 
 The entry points of Java API and Kotlin API are different
 
-- The entry to the Java API is `org.babyfish.jimmer.sql.SqlClient`
+- The entry to the Java API is `org.babyfish.jimmer.sql.JSqlClient`
 - The entry to the Kotlin API is `org.babyfish.jimmer.sql.kt.KSqlClient`
 :::
 
@@ -330,7 +330,7 @@ The entry points of Java API and Kotlin API are different
 ```java
 package org.babyfish.jimmer.sql.example;
 
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.example.model.Gender;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
@@ -340,7 +340,7 @@ import javax.sql.DataSource;
 
 DataSource dataSource = ...;
 
-SqlClient sqlClient = SqlClient
+JSqlClient sqlClient = JSqlClient
     .newBuilder()
     .setConnectionManager(
         ConnectionManager.simpleConnectionManager(dataSource)
@@ -384,7 +384,7 @@ val sqlClient = newKSqlClient {
 :::note
 This example only let jimmer-sql can automatically create connections based on the connection pool.
 
-For the topic of cooperation with Spring transaction mechanism, please refer to [SqlClient](./sql-client).
+For the topic of cooperation with Spring transaction mechanism, please refer to [JSqlClient](./sql-client).
 :::
 
 ## Query

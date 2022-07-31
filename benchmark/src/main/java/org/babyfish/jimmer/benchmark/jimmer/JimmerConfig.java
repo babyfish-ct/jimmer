@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.benchmark.jimmer;
 
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.springframework.context.annotation.Bean;
@@ -15,10 +15,10 @@ import java.util.function.Function;
 public class JimmerConfig {
 
     @Bean
-    public SqlClient sqlClient(
+    public JSqlClient sqlClient(
             DataSource dataSource
     ) {
-        return SqlClient
+        return JSqlClient
                 .newBuilder()
                 .setDialect(new H2Dialect())
                 .setConnectionManager(new ConnectionManager() {

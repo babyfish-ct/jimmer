@@ -1,25 +1,25 @@
 ---
 sidebar_position: 3
-title: SqlClient
+title: JSqlClient
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-SqlClient is the entry point for all APIs of jimmer-sql.
+JSqlClient is the entry point for all APIs of jimmer-sql.
 
-## Create SqlClient
+## Create JSqlClient
 
-SqlClient is an immutable object, created based on the Builder pattern.
+JSqlClient is an immutable object, created based on the Builder pattern.
 
 ```java
-SqlClient sqlClient = SqlClient
+JSqlClient sqlClient = JSqlClient
     .newBuilder()
     ...doSomething...
     .builde();
 ```
 
-SqlClient requires an instance and should be shared globally.
+JSqlClient requires an instance and should be shared globally.
 
 - If Spring is not used, it should be shared via static variables.
 
@@ -29,11 +29,11 @@ There is no doubt that using Spring/SpringBoot is a fixed pattern for almost all
 
 ```java
 @Configuration
-public class SqlClientConfig {
+public class JSqlClientConfig {
 
     @Bean
-    public SqlClient sqlClient() {
-        return SqlClient
+    public JSqlClient sqlClient() {
+        return JSqlClient
             .newBuilder()
             ...doSomething...
             .builde();
@@ -41,7 +41,7 @@ public class SqlClientConfig {
 }
 ```
 
-Then, the SqlClient object can be injected anywhere to use all the features of jimmer-sql.
+Then, the JSqlClient object can be injected anywhere to use all the features of jimmer-sql.
 
 ## ConnectionManager
 
@@ -89,11 +89,11 @@ public interface Executable<R> {
     ```
 
 :::caution
-To use the first way, no special configuration of SqlClient is required.
+To use the first way, no special configuration of JSqlClient is required.
 
-To use the second way, the ConnectionManager must be configured for SqlClient. Otherwise an exception will be thrown.
+To use the second way, the ConnectionManager must be configured for JSqlClient. Otherwise an exception will be thrown.
 
-There is no doubt that the second method is more in line with the requirements of business system development and is more recommended. Therefore, it is strongly recommended to configure ConnectionManager for SqlClient.
+There is no doubt that the second method is more in line with the requirements of business system development and is more recommended. Therefore, it is strongly recommended to configure ConnectionManager for JSqlClient.
 :::
 
 ### Simple ConnectionManager
@@ -101,7 +101,7 @@ There is no doubt that the second method is more in line with the requirements o
 ```java
 javax.sql.DataSource dataSource = ...;
 
-SqlClient sqlClient = SqlClient
+JSqlClient sqlClient = JSqlClient
     .newBuilder()
     .setConnectionManager(
         ConnectionManager
@@ -127,12 +127,12 @@ When you use spring-jdbc, you can implement ConnectionManager based on `org.spri
 
 ```java
 @Bean
-public SqlClient sqlClient(
+public JSqlClient sqlClient(
     // Inject dataSoruce of spring-jdbc
     // highlight-next-line
     DataSource dataSource
 ) {
-    return SqlClient.newBuilder()
+    return JSqlClient.newBuilder()
         .setConnectionManager(
             new ConnectionManager() {
                 @Override
@@ -174,11 +174,11 @@ Taking H2 as an example, the dialect is set as follows
 
 ```java
 @Configuration
-public class SqlClientConfig {
+public class JSqlClientConfig {
 
     @Bean
-    public SqlClient sqlClient() {
-        return SqlClient
+    public JSqlClient sqlClient() {
+        return JSqlClient
             .newBuilder()
             .setConnectionManager(...)
             // highlight-next-line
@@ -240,14 +240,14 @@ If you encounter one of the following scenarios, you can specify a custom Execut
 
 ```java
 @Configuration
-public class SqlClientConfig {
+public class JSqlClientConfig {
 
     private static final Logger LOGGER = 
-        LoggerFactory.getLogger(SqlClientConfig.class);
+        LoggerFactory.getLogger(JSqlClientConfig.class);
 
     @Bean
-    public SqlClient sqlClient() {
-        return SqlClient
+    public JSqlClient sqlClient() {
+        return JSqlClient
             .newBuilder()
             .setConnectionManager(...)
             .setDialect(new H2Dialect())
@@ -290,14 +290,14 @@ public class SqlClientConfig {
 
 ```java
 @Configuration
-public class SqlClientConfig {
+public class JSqlClientConfig {
 
     private static final Logger LOGGER = 
-        LoggerFactory.getLogger(SqlClientConfig.class);
+        LoggerFactory.getLogger(JSqlClientConfig.class);
 
     @Bean
-    public SqlClient sqlClient() {
-        return SqlClient
+    public JSqlClient sqlClient() {
+        return JSqlClient
             .newBuilder()
             .setConnectionManager(...)
             .setDialect(new H2Dialect())
@@ -337,7 +337,7 @@ public class SqlClientConfig {
 
 ## ScalarProvider
 
-Multiple `ScalarProvider`s can be added to SqlClient, each `ScalarProvider` tells the database how to handle a custom data type.
+Multiple `ScalarProvider`s can be added to JSqlClient, each `ScalarProvider` tells the database how to handle a custom data type.
 
 `ScalarProvider` is defined as follows
 
@@ -370,14 +370,14 @@ For example, if database does not support the UUID type, it can be handled like 
 
 ```java
 @Configuration
-public class SqlClientConfig {
+public class JSqlClientConfig {
 
     private static final Logger LOGGER = 
-        LoggerFactory.getLogger(SqlClientConfig.class);
+        LoggerFactory.getLogger(JSqlClientConfig.class);
 
     @Bean
-    public SqlClient sqlClient() {
-        return SqlClient
+    public JSqlClient sqlClient() {
+        return JSqlClient
             .newBuilder()
             .setConnectionManager(...)
             .setDialect(new H2Dialect())
@@ -491,9 +491,9 @@ The id generation strategy for objects can be set dynamically.
 
 Normally, the id generation strategy should be statically configured in the entity interface using the annotation `@javax.persistance.GeneratedValue`, you can refer to [mapping](./mapping#javaxpersistancegeneratedvalue) for more information.
 
-In this case, why provide the function of dynamically specifying the id generator in SqlClient?
+In this case, why provide the function of dynamically specifying the id generator in JSqlClient?
 
-Dynamically specifying IdGenerator in SqlClient can override the static configuration of the annotation `@javax.persistance.GeneratedValue` in the entity file, which is very useful for unit testing.
+Dynamically specifying IdGenerator in JSqlClient can override the static configuration of the annotation `@javax.persistance.GeneratedValue` in the entity file, which is very useful for unit testing.
 :::
 
 ```java title="UnitTestIdGenerator.java"
@@ -517,11 +517,11 @@ public class UnitTestIdGenerator implements UserIdGenerator {
 ```java title="MyTest.java"
 class MyTest {
 
-    private SqlClient sqlClient;
+    private JSqlClient sqlClient;
 
     @BeforeEach
     public void init() {
-        sqlClient = SqlClient
+        sqlClient = JSqlClient
             .newBuilder()
             // highlight-next-line
             .setIdGenerator(
@@ -550,15 +550,15 @@ class MyTest {
 
 ## DefaultBatchSize and DefaultListBatchSize
 
-SqlClient supports two configurations: `DefaultBatchSize` and `DefaultListBatchSize`.
+JSqlClient supports two configurations: `DefaultBatchSize` and `DefaultListBatchSize`.
 
 ```java
 @Configuration
-public class SqlClientConfig {
+public class JSqlClientConfig {
 
     @Bean
-    public SqlClient sqlClient() {
-        return SqlClient
+    public JSqlClient sqlClient() {
+        return JSqlClient
             .newBuilder()
             .setConnectionManager(...)
             .setDialect(new H2Dialect())

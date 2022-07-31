@@ -21,10 +21,10 @@ jimmer-sql对此提供了特别支持，提供专用的API，让开发人员可�
 
 与此相关的API
 
-- SqlClient.getReferenceLoader
-- SqlClient.getListLoader
+- JSqlClient.getReferenceLoader
+- JSqlClient.getListLoader
 
-### SqlClient.getReferenceLoader
+### JSqlClient.getReferenceLoader
 
 此API用于快速实现一对一或多对一关联
 
@@ -32,9 +32,9 @@ jimmer-sql对此提供了特别支持，提供专用的API，让开发人员可�
 @Controller
 public class BookController {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
-    public BookController(SqlClient sqlClient) {
+    public BookController(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
     }
 
@@ -55,7 +55,7 @@ public class BookController {
 }
 ```
 
-### SqlClient.getListLoader
+### JSqlClient.getListLoader
 
 此API用于快速实现一对多或多对多关联
 
@@ -63,9 +63,9 @@ public class BookController {
 @Controller
 public class BookStoreController {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
-    public BookStoreController(SqlClient sqlClient) {
+    public BookStoreController(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
     }
 
@@ -90,9 +90,9 @@ public class BookStoreController {
 @Controller
 public class BookController {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
-    public BookController(SqlClient sqlClient) {
+    public BookController(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
     }
 
@@ -115,9 +115,9 @@ public class BookController {
 @Controller
 public class AuthorController {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
-    public AuthorController(SqlClient sqlClient) {
+    public AuthorController(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
     }
 

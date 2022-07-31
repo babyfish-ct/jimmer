@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.example.shell;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.example.model.TreeNode;
 import org.babyfish.jimmer.sql.example.model.TreeNodeDraft;
 import org.springframework.shell.standard.ShellComponent;
@@ -12,11 +12,11 @@ import org.springframework.shell.standard.ShellOption;
 @ShellComponent
 public class TreeMutationShell {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
     private final ObjectWriter prettyWriter;
 
-    public TreeMutationShell(SqlClient sqlClient, ObjectWriter prettyWriter) {
+    public TreeMutationShell(JSqlClient sqlClient, ObjectWriter prettyWriter) {
         this.sqlClient = sqlClient;
         this.prettyWriter = prettyWriter;
     }

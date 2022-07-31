@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.example.graphql.dal;
 
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.LikeMode;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStore;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStoreTable;
@@ -13,9 +13,9 @@ import java.util.List;
 @Repository
 public class BookStoreRepository {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
-    public BookStoreRepository(SqlClient sqlClient) {
+    public BookStoreRepository(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
     }
 

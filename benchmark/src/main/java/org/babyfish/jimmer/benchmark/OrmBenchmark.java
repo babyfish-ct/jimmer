@@ -3,6 +3,7 @@ package org.babyfish.jimmer.benchmark;
 import org.babyfish.jimmer.benchmark.exposed.ExposedDataTable;
 import org.babyfish.jimmer.benchmark.exposed.ExposedJavaHelperKt;
 import org.babyfish.jimmer.benchmark.jdbc.JdbcDao;
+import org.babyfish.jimmer.benchmark.jimmer.JimmerDataTable;
 import org.babyfish.jimmer.benchmark.jooq.JooqData;
 import org.babyfish.jimmer.benchmark.jooq.JooqDataTable;
 import org.babyfish.jimmer.benchmark.ktorm.KtormDataTable;
@@ -10,9 +11,8 @@ import org.babyfish.jimmer.benchmark.nutz.NutzData;
 import org.babyfish.jimmer.benchmark.objsql.FakeObjSqlLoggerFactory;
 import org.babyfish.jimmer.benchmark.objsql.ObjSqlData;
 import org.babyfish.jimmer.benchmark.springjdbc.SpringJdbcDataRepository;
-import org.babyfish.jimmer.benchmark.jimmer.JimmerDataTable;
 import org.babyfish.jimmer.benchmark.mybatis.MyBatisDataMapper;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.query.selectable.RootSelectable;
 import org.jooq.DSLContext;
 import org.ktorm.database.Database;
@@ -40,7 +40,7 @@ public class OrmBenchmark {
     @Param({"10", "20", "50", "100", "200", "500", "1000"})
     private int dataCount;
 
-    private SqlClient sqlClient;
+    private JSqlClient sqlClient;
 
     private MyBatisDataMapper myBatisDataMapper;
 
@@ -64,7 +64,7 @@ public class OrmBenchmark {
         DatabaseInitializer databaseInitializer = ctx.getBean(DatabaseInitializer.class);
         databaseInitializer.initialize(dataCount);
 
-        sqlClient = ctx.getBean(SqlClient.class);
+        sqlClient = ctx.getBean(JSqlClient.class);
         myBatisDataMapper = ctx.getBean(MyBatisDataMapper.class);
         hibernateEntityManagerFactory = ctx.getBean("hibernateEntityManagerFactory", EntityManagerFactory.class);
         eclipseLinkEntityManagerFactory = ctx.getBean("eclipseLinkEntityManagerFactory", EntityManagerFactory.class);

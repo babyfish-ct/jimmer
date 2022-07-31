@@ -220,10 +220,10 @@ List<Book> books = query
 
 Here, `limit(limit, offset)` sets the pagination range.
 
-Unfortunately, different databases support paginated queries quite differently. Therefore, you need to specify the dialect when creating the SqlClient
+Unfortunately, different databases support paginated queries quite differently. Therefore, you need to specify the dialect when creating the JSqlClient
 
 ```java
-SqlClient sqlClient = SqlClient
+JSqlClient sqlClient = JSqlClient
     .newBuilder()
     // highlight-next-line
     .setDialect(new H2Dialect())

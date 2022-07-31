@@ -138,7 +138,7 @@ SqlClient是jimmer-sql所有Api的入口，因此，需要先创建SqlClient。
 ```java
 package org.babyfish.jimmer.sql.example;
 
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.example.model.Gender;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
@@ -148,7 +148,7 @@ import javax.sql.DataSource;
 
 DataSource dataSource = ...;
 
-SqlClient sqlClient = SqlClient
+JSqlClient sqlClient = JSqlClient
     .newBuilder()
     .setConnectionManager(
         ConnectionManager.simpleConnectionManager(dataSource)
@@ -165,7 +165,7 @@ SqlClient sqlClient = SqlClient
 :::note
 这个例子，仅仅让jimmer-sql能根据连接池自动创建连接。
 
-关于和Spring事务机制配合的话题，其参见[SqlClient](./sql-client)
+关于和Spring事务机制配合的话题，其参见[JSqlClient](./sql-client)
 :::
 
 ## 查询

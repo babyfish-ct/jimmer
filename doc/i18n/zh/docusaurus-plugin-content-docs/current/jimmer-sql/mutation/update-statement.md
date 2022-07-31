@@ -65,7 +65,7 @@ Table joins for update statement is forbidden by the current dialect, but there 
 首先，需要在创建SqlClient时，指定方言为MySqlDialect
 
 ```java
-SqlClient sqlClient = SqlClient
+JSqlClient sqlClient = JSqlClient
     .newBuilder()
     .setDialect(
         new org.babyfish.jimmer.sql.dialect.MySqlDialect()
@@ -128,7 +128,7 @@ where
 首先，需要在创建SqlClient时，指定方言为PostgresDialect
 
 ```java
-SqlClient sqlClient = SqlClient
+JSqlClient sqlClient = JSqlClient
     .newBuilder()
     .setDialect(
         new org.babyfish.jimmer.sql.dialect.PostgresDialect()

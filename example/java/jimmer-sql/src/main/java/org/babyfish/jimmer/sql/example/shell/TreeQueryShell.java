@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.example.shell;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import org.babyfish.jimmer.sql.SqlClient;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.example.model.TreeNode;
 import org.babyfish.jimmer.sql.example.model.TreeNodeFetcher;
 import org.babyfish.jimmer.sql.example.model.TreeNodeTable;
@@ -19,11 +19,11 @@ import java.util.stream.Collectors;
 @ShellComponent
 public class TreeQueryShell {
 
-    private final SqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
     private final ObjectWriter prettyWriter;
 
-    public TreeQueryShell(SqlClient sqlClient, ObjectWriter prettyWriter) {
+    public TreeQueryShell(JSqlClient sqlClient, ObjectWriter prettyWriter) {
         this.sqlClient = sqlClient;
         this.prettyWriter = prettyWriter;
     }

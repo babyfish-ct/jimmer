@@ -31,10 +31,10 @@ plugins {
 depdencies {
     
     // 第二步: 添加jimmer-sql-kotlin
-    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.1.4")
+    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.1.5")
 
     // 第三步: 应用ksp插件
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.1.4")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.1.5")
 
     ...ommit other dependency...
 }
