@@ -10,14 +10,19 @@ import TabItem from '@theme/TabItem';
 
 Let's look at this entity definition
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java title="Book.java"
 
 package org.babyfish.jimmer.sql.example.model;
 
-import javax.persistence.*;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import javax.validation.constraints.Null;
+
+import org.babyfish.jimmer.sql.*;
 
 @Entity
 public interface Book {
@@ -31,6 +36,7 @@ public interface Book {
 
     BigDecimal price();
 
+    @Null
     @ManyToOne
     // highlight-next-line
     BookStore store();
@@ -38,26 +44,66 @@ public interface Book {
     @ManyToMany
     @JoinTable(
             name = "BOOK_AUTHOR_MAPPING",
-            joinColumns = @JoinColumn(name = "BOOK_ID"),
-            inverseJoinColumns = @JoinColumn(name = "AUTHOR_ID")
+            joinColumnName = "BOOK_ID",
+            inverseJoinColumnName = "AUTHOR_ID"
     )
     // highlight-next-line
     List<Author> authors();
 }
 ```
 
-in the code above
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java title="Book.java"
+
+package org.babyfish.jimmer.sql.example.model
+
+import java.math.BigDecimal;
+import java.util.UUID;
+
+import org.babyfish.jimmer.sql.*;
+
+@Entity
+interface Book {
+
+    @Id
+    val id: UUID
+
+    val name: String
+
+    val edition: Int
+
+    val price: BigDecimal
+
+    @ManyToOne
+    // highlight-next-line
+    val store: BookStore?
+
+    @ManyToMany
+    @JoinTable(
+            name = "BOOK_AUTHOR_MAPPING",
+            joinColumnName = "BOOK_ID",
+            inverseJoinColumnName = "AUTHOR_ID"
+    )
+    // highlight-next-line
+    val authors: List<Author>
+}
+```
+
+</TabItem>
+</Tabs>
+
+In the code above
 - `store` is a many-to-one association
 - `authors` is a many-to-many association
 
-One-to-one associations and many-to-one associations are collectively referred to as reference associations, one-to-many associations and many-to-many associations are collectively referred to as collection associations.
-
 The differences between reference associations and collection associations are as follows
 
-- Join query base on reference associations dose not cause duplicate results.
-- Join query base on collection associations causes duplicate results.
+- Reference joins do not cause duplicate results.
+- Collection joins cause duplicate results.
 
-Table joins based on collection associations can cause duplicate results, which in turn can cause the following problems:
+Collection joins can cause duplicate results, which in turn can cause the following problems:
 
 1. If developers forget to deduplicate, bugs will be introduced.
 
@@ -65,7 +111,7 @@ Table joins based on collection associations can cause duplicate results, which 
 
 3. **The most important point, it is not friendly to pagination queries**.
 
-    Pagination query of join results at the SQL level is often not what people need; in more scenarios, people want pagination operations to be applied to the main object *(The aggregate root) *.
+    Pagination query of with collection join at the SQL level is not what people need; in more scenarios, people want pagination operations to be applied to the main object *(The aggregate root) *.
 
     Take Hibernate as an example. In this case, Hibernate has to give up the paging strategy at the SQL level and adopt the paging strategy at the memory level. This is very low performance, in order to attract the attention of developers, hibernate will warn in the log. If you has experience using Hibernate, the following log will give you a headache.
 
@@ -78,17 +124,23 @@ To sum up, the disadvantages of using collection joins in top-level queries are 
 So, jimmer-sql has an important design goal
 
 :::info
-1. Table joins based on collection associations need to be prohibited in **top-level** queries.
-2. Table joins based on collection associations are still available in subqueries, update statements, and delete statements.
+1. Collection joins need to be prohibited in **top-level** queries.
+2. Collection joins are still available in subqueries, update statements, and delete statements.
 :::
 
 ## Table and TableEx
 
-To support a strongly typed DSL, the annotation processor generates some source code based on user-defined entity interfaces.
+To support a strongly typed DSL, the annotation processor generates some source code for user-defined entity interfaces.
 
-Taking the Book entity interface at the beginning of the article as an example, the following two types will be automatically generated
+Taking the `Book` entity interface at the beginning of the article as an example, the generated code is
 
-```java title="BookTable.java(Auto-generated)"
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Generated java code"
+/* 
+ * BookTable.java
+ */
 package org.babyfish.jimmer.sql.example.model;
 
 import java.lang.Integer;
@@ -129,9 +181,10 @@ public class BookTable extends AbstractTableWrapper<Book> {
         return join("store", joinType);
     }
 }
-```
 
-```java title="BookTableEx.java(Auto-generated)"
+/* 
+ * BookTableEx.java
+ */
 package org.babyfish.jimmer.sql.example.model;
 
 import javax.persistence.criteria.JoinType;
@@ -152,11 +205,79 @@ public class BookTableEx extends BookTable implements TableEx<Book> {
 }
 ```
 
-Looking at these two auto-generated types, it can be seen that
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
 
-- `BookTableEx` extends `BookTable`.
-- `BookTable` does not support collection associations, but supports scalar property and reference associations (`store` in this case).
-- `BookTableEx` adds support for collection associations (`authors` in this case).
+```kotlin title="Generated kotlin code"
+package org.babyfish.jimmer.example.kt.sql.model
+
+import java.math.BigDecimal
+import java.util.UUID
+import org.babyfish.jimmer.sql.ast.Selection
+import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.KNullablePropExpression
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
+import org.babyfish.jimmer.sql.kt.ast.table.KNullableTable
+import org.babyfish.jimmer.sql.kt.ast.table.KNullableTableEx
+import org.babyfish.jimmer.sql.kt.ast.table.KTable
+import org.babyfish.jimmer.sql.kt.ast.table.KTableEx
+
+/* 
+ * Extension for Table<Book>
+ */
+public val KTable<Book>.id: KNullablePropExpression<UUID>
+    get() = get("id")
+
+public val KNonNullTable<Book>.id: KNonNullPropExpression<UUID>
+    get() = get("id")
+
+public val KTable<Book>.name: KNullablePropExpression<String>
+    get() = get("name")
+
+public val KNonNullTable<Book>.name: KNonNullPropExpression<String>
+    get() = get("name")
+
+public val KTable<Book>.edition: KNullablePropExpression<Int>
+    get() = get("edition")
+
+public val KNonNullTable<Book>.edition: KNonNullPropExpression<Int>
+    get() = get("edition")
+
+public val KTable<Book>.price: KNullablePropExpression<BigDecimal>
+    get() = get("price")
+
+public val KNonNullTable<Book>.price: KNonNullPropExpression<BigDecimal>
+    get() = get("price")
+
+public val KNullableTable<Book>.store: KNullableTable<BookStore>
+    get() = join("store")
+
+public val KNonNullTable<Book>.store: KNonNullTable<BookStore>
+    get() = join("store")
+
+public val KTable<Book>.`store?`: KNullableTable<BookStore>
+    get() = outerJoin("store")
+
+/* 
+ * Extension for BookTableEx<Book>
+ */
+
+public val KNullableTableEx<Book>.authors: KNullableTableEx<Author>
+    get() = join("authors")
+
+public val KNonNullTableEx<Book>.authors: KNonNullTableEx<Author>
+    get() = join("authors")
+
+public val KTableEx<Book>.`authors?`: KNullableTableEx<Author>
+    get() = outerJoin("authors")
+```
+
+</TabItem>
+</Tabs>
+
+- `Tabe` does not support collection associations, but supports scalar properties and reference associations (`store` in this case).
+- Only `TableEx` supports collection associations (`authors` in this case).
 
 Therefore, the API of jimmer-sql follows the following pattern
 - Top-level queries can only be created based on `Table`.
@@ -164,22 +285,39 @@ Therefore, the API of jimmer-sql follows the following pattern
 
 Next, take the top-level query and sub-query as example for a comparative demonstration.
 
-### Top-level queries that can only be created based on Table
+### Top-level queries can only use Table
 
-Top-level queries that can only be created based on Table
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-sqlClient.createQuery(BookTable.class, (q, book) -> ...);
+sqlClient.createQuery(
+    // `createQuery` only accept `BookTable.class`,
+    // If the paraemter is `BookTableEx.class`, 
+    // exception will be thrown
+    BookTable.class, 
+    (q, book) -> ...
+);
 ```
 
-If it takes TableEx as its parameter,
-```java
-sqlClient.createQuery(BookTableEx.class, (q, book) -> ...);
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient.createQuery(Book::class) {
+    // You can access `table` here.
+    // Its type is `Table<Book>`, not `TableEx<Book>`
+    ...
+}
 ```
 
-the exception will be thrown
-:::caution
-Top-level query does not support TableEx
-:::
+</TabItem>
+</Tabs>
+
+So, your code looks like this
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 List<Book> books = sqlClient
@@ -210,8 +348,45 @@ List<Book> books = sqlClient
             .select(book);
     })
     .execute();
-books.stream().forEach(System.out::println);
+books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(
+            table
+                // highlight-next-line
+                .name // scalar field "name"
+                eq "Book Name"
+        )
+        where(
+            table
+                // highlight-next-line
+                .store // reference association "store"
+                .name
+                eq "Store Name"
+        )
+        /*
+            * However, "table.authors" cannot be used 
+            * because the property "authors" is defined 
+            * in `TableEx<Book>`, not `Table<Book>`.
+            *
+            * That is, compile-time prohibits users 
+            * from joining collections
+            * in top-level queries
+            */
+        select(table)
+    }
+    .execute()
+books.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
 
 The final generated SQL is as follows
 
@@ -229,13 +404,19 @@ where
 and 
     tb_2_.NAME = ?
 ```
-### Allow subqueries created based on TableEx
+### Subqueries can use TableEx
 
 Unlike top-level queries, TableEx can be used to create subqueries, update statements, and delete statements.
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 List<Author> authors = sqlClient
     .createQuery(AuthorTable.class, (q, author) -> {
+
+        // The type of author is AuthorTable
+
         return q
                 .where(author.firstName().eq("Author Name"))
                 .where(
@@ -243,12 +424,18 @@ List<Author> authors = sqlClient
                         // highlight-next-line
                         BookTableEx.class, // TableEx is allowed
                         (sq, book) -> {
+
+                            // The type of `book` is 
+                            // BookTableEx, not BookTable
+
                             sq.where(
-                                book.name().eq("Book name"),
                                 book
+                                    // TableEx supports collection join
                                     // highlight-next-line
-                                    .authors() // collection association
-                                    .eq(author)
+                                    .authors()
+                                    .eq(author),
+
+                                book.name().eq("Book name")
                             );
                         }
                     ).exists()
@@ -256,8 +443,46 @@ List<Author> authors = sqlClient
                 .select(author);
     })
     .execute();
-authors.stream().forEach(System.out::println);
+authors.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val authors = sqlClient
+    .createQuery(Author::class) {
+
+        // In parent query, the type of `table` is `Table<Author>`
+
+        where(
+            table.firstName eq "Author Name",
+            exists(
+                wildSubQuery(Book::class) {
+
+                    // In sub query, the type of `table` is 
+                    // `TableEx<Book>`, not `Table<Book>`
+
+                    where(
+                        table
+                            // TableEx supports collection join
+                            // highlight-next-line
+                            .authors
+                            eq parentTable,
+
+                        table.name eq "Book name"
+                    );
+                }
+            )
+        )
+        select(table)
+    }
+    .execute()
+authors.forEach(::println);
+```
+
+</TabItem>
+</Tabs>
 
 The final generated SQL is as follows
 
@@ -278,24 +503,27 @@ where
             on tb_2_.ID = tb_3_.BOOK_ID 
         /* highlight-end */
         where 
-            tb_2_.NAME = ? 
+            tb_3_.AUTHOR_ID = tb_1_.ID 
         and 
-            tb_3_.AUTHOR_ID = tb_1_.ID
+            tb_2_.NAME = ?
     )
 ```
 
 ## Break through soft limits
 
-Disallowing collection associations in top-level queries is reasonable in most, but not all cases.
+Disallowing collection joins in top-level queries is reasonable in most, but not all cases.
 
-For example, users do not query the entire object, but query individual fields, and use SQL keyword `distinct` to counteract the side effects of table joins base on collection associations. This scenario is completely reasonable.
+For example, users do not query the entire object, but query individual fields, and use SQL keyword `distinct`, this scenario is completely reasonable.
 
-So, prohibiting the use of collection associations in top-level queries is a soft restriction, not a rigid one. Can easily break through.
+So, this rule is a soft restriction, not a rigid one. it can be easily broken.
 
-There are two ways to break through
+There are two ways to break this rule
 
 1. Use weakly typed API *(not recommended)*
 
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
     ```java
     List<UUID> bookIds = sqlClient
         .createQuery(BookTable.class, (q, book) -> {
@@ -305,17 +533,43 @@ There are two ways to break through
                         // highlight-next-line
                         .<AuthorTable>join("authors")
                         .firstName()
-                        .ilike("%")
+                        .ilike("A%")
                 )
                 .select(book.id());
         })
         .distinct()
         .execute();
-    bookIds.stream().forEach(System.out::println);
+    bookIds.forEach(System.out::println);
     ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    val bookIds = sqlClient
+        .createQuery(Book::class) {
+            where(
+                table 
+                    // highlight-next-line
+                    .join<Author>("Authors")
+                    .firstName
+                    ilike "A%"
+            )
+            select(table.id)
+        }
+        .distinct()
+        .execute()
+    bookIds.forEach(::println)
+    ```
+
+    </TabItem>
+    </Tabs>
 
 2. Cast Table to TableEx *(recommended)*
 
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
     ```java
     List<UUID> bookIds = sqlClient
         .createQuery(BookTable.class, (q, book) -> {
@@ -323,17 +577,38 @@ There are two ways to break through
                 .where(
                     // highlight-next-line
                     ((BookTableEx)book)
-                        // highlight-next-line
                         .authors()
                         .firstName()
-                        .ilike("%")
+                        .ilike("A%")
                 )
                 .select(book.id());
         })
         .distinct()
         .execute();
-    bookIds.stream().forEach(System.out::println);
+    bookIds.forEach(System.out::println);
     ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    val bookIds = sqlClient
+        .createQuery(Book::class) {
+            where(
+                // highlight-next-line
+                (table as KNonNullTableEx<Book>)
+                    .authors
+                    .firstName ilike "A%"
+            )
+            select(table.id)
+        }
+        .distinct()
+        .execute()
+    bookIds.forEach(::println)
+    ```
+
+    </TabItem>
+    </Tabs>
 
 Either way, you can break through this soft limitation and use collection associations in top-level queries.
 
@@ -353,7 +628,7 @@ where lower(tb_3_.FIRST_NAME) like ?
 ```
 
 :::info
-This limit is added, but it's easy to be broken through. What is the purpose of such a seemingly contradictory approach?
+This rule is added, but it's easy to be broken. Why?
 
 When a developer really wants to do it, make sure he understands what he's doing.
 :::
