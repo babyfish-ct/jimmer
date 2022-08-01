@@ -4,18 +4,22 @@ import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.fetcher.Filter
 import org.babyfish.jimmer.sql.fetcher.FilterArgs
 import org.babyfish.jimmer.sql.fetcher.impl.FilterArgsImpl
-import org.babyfish.jimmer.sql.kt.fetcher.KFilterDsl
+import org.babyfish.jimmer.sql.kt.fetcher.KFilter
+import java.util.*
 
-internal class FilterWrapper<E: Any>(
-    private val ktFilter: KFilterDsl<E>.() -> Unit
-) : Filter<Table<E>> {
+class KtFilterWrapper<E: Any>(
+    private val ktFilter: KFilter<E>
+): Filter<Table<E>> {
 
-    override fun apply(args: FilterArgs<Table<E>>?) {
+    override fun apply(args: FilterArgs<Table<E>>) {
         val javaQuery = (args as FilterArgsImpl<*>).unwrap()
         ktFilter.apply {
-            KFilterDslImpl<E>(javaQuery, args.getKeys()).ktFilter()
+            KFilterDslImpl<E>(javaQuery, args.getKeys()).apply()
         }
     }
+
+    override fun toCacheArgs(): NavigableMap<String, Any> =
+        ktFilter.toCacheArgs()
 
     override fun hashCode(): Int =
         ktFilter.hashCode()
@@ -24,7 +28,7 @@ internal class FilterWrapper<E: Any>(
         if (this === other) {
             return true
         }
-        if (other !is FilterWrapper<*>) {
+        if (other !is KtFilterWrapper<*>) {
             return false
         }
         return ktFilter == other.ktFilter

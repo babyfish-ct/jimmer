@@ -14,7 +14,7 @@ import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.cache.Cache;
-import org.babyfish.jimmer.sql.cache.QueryCacheEnvironment;
+import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
@@ -95,9 +95,7 @@ public abstract class AbstractDataLoader {
 
     @SuppressWarnings("unchecked")
     private Map<ImmutableSpi, ImmutableSpi> loadParents(Collection<ImmutableSpi> sources) {
-        Cache<Object, Object> fkCache = sqlClient
-                .getCaches()
-                .getAssociatedIdCache(prop);
+        Cache<Object, Object> fkCache = sqlClient.getCaches().getAssociationCache(prop);
         if (fkCache == null) {
             return loadParentsDirectly(sources);
         }
@@ -123,7 +121,7 @@ public abstract class AbstractDataLoader {
         if (!missedFkSourceIds.isEmpty()) {
             Map<Object, Object> cachedFkMap = fkCache.getAll(
                     missedFkSourceIds,
-                    new QueryCacheEnvironment<>(
+                    new CacheEnvironment<>(
                             sqlClient,
                             con,
                             filter,
@@ -211,14 +209,14 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<ImmutableSpi, ImmutableSpi> loadTargetMap(Collection<ImmutableSpi> sources) {
-        Cache<Object, Object> cache = sqlClient.getCaches().getAssociatedIdCache(prop);
+        Cache<Object, Object> cache = sqlClient.getCaches().getAssociationCache(prop);
         if (cache == null) {
             return loadTargetMapDirectly(sources);
         }
         List<Object> sourceIds = toSourceIds(sources);
         Map<Object, Object> idMap = cache.getAll(
                 sourceIds,
-                new QueryCacheEnvironment<>(
+                new CacheEnvironment<>(
                         sqlClient,
                         con,
                         filter,
@@ -261,14 +259,14 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<ImmutableSpi, List<ImmutableSpi>> loadTargetMultiMap(Collection<ImmutableSpi> sources) {
-        Cache<Object, List<Object>> cache = sqlClient.getCaches().getAssociatedIdListCache(prop);
+        Cache<Object, List<Object>> cache = sqlClient.getCaches().getAssociationCache(prop);
         if (cache == null) {
             return loadTargetMultiMapDirectly(sources);
         }
         List<Object> sourceIds = toSourceIds(sources);
         Map<Object, List<Object>> idMultiMap = cache.getAll(
                 sourceIds,
-                new QueryCacheEnvironment<>(
+                new CacheEnvironment<>(
                         sqlClient,
                         con,
                         filter,

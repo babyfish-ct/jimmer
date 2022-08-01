@@ -6,6 +6,7 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 
 import java.sql.Connection;
 import java.util.*;
@@ -19,7 +20,7 @@ class MutationCache {
     private final Map<TypedKey, ImmutableSpi> keyObjMap = new HashMap<>();
 
     public MutationCache(JSqlClient sqlClient) {
-        this.sqlClientWithoutCache = sqlClient.caches(null);
+        this.sqlClientWithoutCache = sqlClient.caches(CacheDisableConfig::disableAll);
     }
 
     public ImmutableSpi find(ImmutableSpi example) {

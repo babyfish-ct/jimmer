@@ -17,7 +17,9 @@ import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.CacheConfig;
+import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.cache.Caches;
+import org.babyfish.jimmer.sql.cache.CachesImpl;
 import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggersImpl;
@@ -69,7 +71,8 @@ class JSqlClientImpl implements JSqlClient {
             Map<Class<?>, IdGenerator> idGeneratorMap,
             int defaultBatchSize,
             int defaultListBatchSize,
-            Caches caches
+            Caches caches,
+            Triggers triggers
     ) {
         this(
                 connectionManager != null ?
@@ -82,8 +85,8 @@ class JSqlClientImpl implements JSqlClient {
                 defaultBatchSize,
                 defaultListBatchSize,
                 null,
-                null,
-                caches
+                caches,
+                triggers
         );
     }
 
@@ -96,8 +99,8 @@ class JSqlClientImpl implements JSqlClient {
             int defaultBatchSize,
             int defaultListBatchSize,
             Entities entities,
-            Triggers triggers,
-            Caches caches
+            Caches caches,
+            Triggers triggers
     ) {
         this.connectionManager = connectionManager;
         this.dialect = dialect;
@@ -107,8 +110,8 @@ class JSqlClientImpl implements JSqlClient {
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
         this.entities = entities != null ? entities : new EntitiesImpl(this);
-        this.triggers = triggers != null ? triggers : new TriggersImpl();
-        this.caches = caches != null ? caches : Caches.of(null);
+        this.caches = caches != null ? caches : Caches.of(triggers, null);
+        this.triggers = triggers;
     }
 
     @Override
@@ -249,7 +252,12 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
-    public JSqlClient caches(Consumer<CacheConfig> block) {
+    public JSqlClient caches(Consumer<CacheDisableConfig> block) {
+        if (block == null) {
+            throw new IllegalArgumentException("block cannot be null");
+        }
+        CacheDisableConfig cfg = new CacheDisableConfig();
+        block.accept(cfg);
         return new JSqlClientImpl(
                 connectionManager,
                 dialect,
@@ -259,8 +267,8 @@ class JSqlClientImpl implements JSqlClient {
                 defaultBatchSize,
                 defaultListBatchSize,
                 entities,
-                triggers,
-                Caches.of(block)
+                new CachesImpl((CachesImpl) caches, cfg),
+                triggers
         );
     }
 
@@ -281,6 +289,8 @@ class JSqlClientImpl implements JSqlClient {
         private int defaultListBatchSize = 16;
 
         private Caches caches;
+
+        private Triggers triggers = new TriggersImpl();
 
         public BuilderImpl() {}
 
@@ -355,7 +365,7 @@ class JSqlClientImpl implements JSqlClient {
         @Override
         @OldChain
         public JSqlClient.Builder setCaches(Consumer<CacheConfig> block) {
-            caches = Caches.of(block);
+            caches = Caches.of(triggers, block);
             return this;
         }
 
@@ -369,7 +379,8 @@ class JSqlClientImpl implements JSqlClient {
                     idGeneratorMap,
                     defaultBatchSize,
                     defaultListBatchSize,
-                    caches
+                    caches,
+                    triggers
             );
         }
     }

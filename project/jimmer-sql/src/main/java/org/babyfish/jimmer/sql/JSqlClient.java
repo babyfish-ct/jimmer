@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.cache.CacheConfig;
+import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
@@ -98,7 +99,7 @@ public interface JSqlClient {
 
     Caches getCaches();
 
-    JSqlClient caches(Consumer<CacheConfig> block);
+    JSqlClient caches(Consumer<CacheDisableConfig> block);
 
     interface Builder {
 

@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.ListLoader
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.KListLoader
 import org.babyfish.jimmer.sql.kt.fetcher.KFilterDsl
-import org.babyfish.jimmer.sql.kt.fetcher.impl.FilterWrapper
+import org.babyfish.jimmer.sql.kt.fetcher.impl.LambdaFilterWrapper
 import java.sql.Connection
 
 internal class KListLoaderImpl<S: Any, T: Any>(
@@ -21,7 +21,7 @@ internal class KListLoaderImpl<S: Any, T: Any>(
         }
 
     override fun forFilter(filter: KFilterDsl<T>.() -> Unit): KListLoader<S, T> =
-        javaLoader.forFilter(FilterWrapper(filter)).let {
+        javaLoader.forFilter(LambdaFilterWrapper(filter)).let {
             if (javaLoader === it) {
                 this
             } else {

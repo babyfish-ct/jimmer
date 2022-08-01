@@ -16,11 +16,11 @@ import java.util.function.Function;
  */
 public class StaticCache<K, V> {
 
-    private Function<K, V> creator;
+    private final Function<K, V> creator;
 
-    private ReadWriteLock cacheLock = new ReentrantReadWriteLock();
+    private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
     
-    private Map<K, V> positiveCacheMap = new HashMap<>();
+    private final Map<K, V> positiveCacheMap = new HashMap<>();
 
     private Map<K, Void> negativeCacheMap;
 
