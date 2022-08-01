@@ -37,7 +37,9 @@ TypedRootQuery<Long> countQuery = query
 
 // γ
 int rowCount = countQuery.execute().get(0).intValue();
-List<Book> books = query.limit(10, 90).execute();
+List<Book> books = query
+    .limit(rowCount / 3, rowCount / 3)
+    .execute();
 ```
 
 1. Code at `α`:
