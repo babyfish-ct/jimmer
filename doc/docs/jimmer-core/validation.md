@@ -3,6 +3,9 @@ sidebar_position: 5
 title: Validation
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 Validation is an incidental feature of jimmer objects that ensures that object data conforms to business rules.
 
 :::info

@@ -1,9 +1,8 @@
-package org.babyfish.jimmer.sql.runtime;
+package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.association.loader.Loaders;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Executable;
@@ -23,6 +22,7 @@ import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggersImpl;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
+import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
 import java.util.HashMap;
@@ -32,7 +32,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class JSqlClientImpl implements JSqlClient {
+class JSqlClientImpl implements JSqlClient {
 
     private static final ConnectionManager ILLEGAL_CONNECTION_MANAGER = new ConnectionManager() {
         @Override

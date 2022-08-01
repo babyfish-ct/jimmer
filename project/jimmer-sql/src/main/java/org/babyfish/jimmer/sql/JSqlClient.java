@@ -17,7 +17,6 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
-import org.babyfish.jimmer.sql.runtime.JSqlClientImpl;
 
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;

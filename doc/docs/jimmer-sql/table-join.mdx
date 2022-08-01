@@ -256,6 +256,7 @@ Or
 q.where(
     author // Assuming that the type of `author` is 
            // BookStoreTableEx, and collection join is allowed
+        // highlight-next-line
         .books().store() // multi-level join
         .name()
         .eq("X")
@@ -269,6 +270,7 @@ q.where(
 where(
     table // Assuming that the type of `table` is 
           // BookStoreTableEx, and collection join is allowed
+        // highlight-next-line
         .books.store // multi-level join
         .name eq "X"
 )

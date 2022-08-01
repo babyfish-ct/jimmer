@@ -9,6 +9,10 @@ import TabItem from '@theme/TabItem';
 ## Literal
 
 Let's look at an example first *(This query has no actual business meaning, just for demonstration)*
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<
     Tuple5<
@@ -28,8 +32,27 @@ List<
             Expression.nullValue(Boolean.class)
         );
     }).execute();
-tuples.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val tuples = sqlClient
+    .createQuery(Book::class) {
+        select(
+            value("String"),
+            value(3L),
+            value(OffsetDateTime.now()),
+            value("String"),
+            nullValue(Boolean::class)
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 The generated SQL is as follows
 ```sql
@@ -47,7 +70,7 @@ To create a literal expression for null, you must use the `nullValue()` method, 
 :::
 
 :::note
-This example uses the type bootstrap method:
+In this example, java code uses the type bootstrap method:
 1. Expression.string(), for string types.
 2. Expression.numeric(), for numeric types.
 3. Expression.comparble(), for comparable types, that is, types inherited from java.lang.Comparable.
@@ -59,6 +82,10 @@ The type boostrap method is designed for the inadequacy of the java language and
 In most cases, developers do not need to manually create literal expressions.
 
 Take the equality judgment to be discussed below as an example, this is the relatively cumbersome way
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 q.where(
     book.name().eq(
@@ -66,10 +93,37 @@ q.where(
     )
 );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(
+    table.name eq value("Java in Action"))
+)
+```
+
+</TabItem>
+</Tabs>
+
 It can be replaced by a more convenient way, like this
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 q.where(book.name().eq("Java in Action"));
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java
+where(table.name eq "Java in Action")
+```
+
+</TabItem>
+</Tabs>
 
 Other APIs provide overloaded methods to avoid having developers build literal expressions themselves.
 
@@ -78,6 +132,10 @@ However, this cannot be done 100%. In rare cases, developers are still required 
 ## Constant
 
 Constant expressions are highly similar to literal expressions, let's look at the example first *(this query has no actual business meaning, just for demonstration)*
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Integer> constants = sqlClient
     .createQuery(BookTable.class, (q, store) -> {
@@ -86,8 +144,24 @@ List<Integer> constants = sqlClient
             Expression.constant(1)
         );
     }).execute();
-constants.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val constants = sqlClient
+    .createQuery(Book::class) {
+        select(
+            // highlight-next-line
+            constant(1)
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 The generated SQL is as follows
 
@@ -114,64 +188,226 @@ Using constant expressions incorrectly can have serious consequences. Implanting
 
 ## Comparison
 
-1. Equal to
-```java
-q.where(book.name().eq("SQL in Action"));
-```
+1.  Equal to
 
-2. Not equal to
-```java
-q.where(book.name().ne("SQL in Action"));
-```
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
 
-3. Greater than
-```java
-q.where(book.price().gt(new BigDecimal(50)));
-```
+    ```java
+    q.where(book.name().eq("SQL in Action"));
+    ```
 
-4. Greater than or equal to
-```java
-q.where(book.price().ge(new BigDecimal(50)));
-```
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
 
-5. Less than
-```java
-q.where(book.price().lt(new BigDecimal(50)));
-```
+    ```kotlin
+    where(table.name eq "SQL in Action")
+    ```
 
-6. Less than or equal to
-```java
-q.where(book.price().le(new BigDecimal(50)));
-```
+    </TabItem>
+    </Tabs>
 
-7. Between
-```java
-q.where(
-    book.price().between(
-        new BigDecimal(40), 
-        new BigDecimal(40)
+2.  Not equal to
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    q.where(book.name().ne("SQL in Action"));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    where(table.name ne "SQL in Action")
+    ```
+
+    </TabItem>
+    </Tabs>
+
+3.  Greater than
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    q.where(book.price().gt(new BigDecimal(50)));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    where(table.price gt new BigDecimal(50))
+    ```
+
+    </TabItem>
+    </Tabs>
+
+4.  Greater than or equal to
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    q.where(book.price().ge(new BigDecimal(50)));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    where(table.price ge new BigDecimal(50))
+    ```
+
+    </TabItem>
+    </Tabs>
+
+5.  Less than
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    q.where(book.price().lt(new BigDecimal(50)));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    where(table.price lt new BigDecimal(50))
+    ```
+
+    </TabItem>
+    </Tabs>
+
+6.  Less than or equal to
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    q.where(book.price().le(new BigDecimal(50)));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    where(table.price le new BigDecimal(50))
+    ```
+
+    </TabItem>
+    </Tabs>
+
+7.  Between
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    q.where(
+        book.price().between(
+            new BigDecimal(40), 
+            new BigDecimal(40)
+        )
+    );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```java
+    where(
+        table.price.between(
+            new BigDecimal(40), 
+            new BigDecimal(40)
+        )
     )
-);
-```
+    ```
+
+    </TabItem>
+    </Tabs>
+
+8.  Not Between
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    q.where(
+        book.price().notBetween(
+            new BigDecimal(40), 
+            new BigDecimal(40)
+        )
+    );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```java
+    where(
+        table.price.notBetween(
+            new BigDecimal(40), 
+            new BigDecimal(40)
+        )
+    )
+    ```
+
+    </TabItem>
+    </Tabs>
 
 ## Like
 
-### Tet case
+### Simple case
 
-1. like: Case sensitive
+1.  like: Case sensitive
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
     ```java
     q.where(book.name().like("Ab"));
     ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    where(table.name like "Ab")
+    ```
+
+    </TabItem>
+    </Tabs>
+
     The final generated SQL condition
     ```sql
     where tb_1_.NAME like ?
     ```
     Corresponding JDBC parameters: `%Ab%`
 
-2. ilike: Case insensitive
+2.  ilike: Case insensitive
+    
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
     ```java
     q.where(book.name().ilike("Ab"));
     ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    where(table.name ilike "Ab")
+    ```
+
+    </TabItem>
+    </Tabs>
+
     The final generated SQL condition
     ```sql
     where lower(tb_1_.NAME) like ?
@@ -180,64 +416,170 @@ q.where(
 
 ### Like mode
 
-1. `LikeMode.ANYWHERE`(Default behavior when not specified): appear anywhere
+1.  `LikeMode.ANYWHERE`(Default behavior when not specified): appear anywhere
+    
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
     ```java
     q.where(book.name().like("Ab", LikeMode.ANYWHERE));
     ```
-    or
-    ```java
-    q.where(book.name().like("Ab"));
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    where(table.name.like("Ab", LikeMode.ANYWHERE))
     ```
+
+    </TabItem>
+    </Tabs>
+
     Corresponding JDBC parameters: `'%Ab%'`
 
 2. `LikeMode.START`: as a start
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
     ```java
     q.where(book.name().like("Ab", LikeMode.START));
     ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    where(table.name.like("Ab", LikeMode.START))
+    ```
+
+    </TabItem>
+    </Tabs>
+
     Corresponding JDBC parameters: `'Ab%'`
 
 3. `LikeMode.END`: as an end
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
     ```java
     q.where(book.name().like("Ab", LikeMode.END));
     ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    where(table.name.like("Ab", LikeMode.END))
+    ```
+
+    </TabItem>
+    </Tabs>
+
     Corresponding JDBC parameters: `'%Ab'`
 
 4. `LikeMode.EXACT`: exact match
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
     ```java
     q.where(book.name().like("Ab", LikeMode.EXACT));
     ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    where(table.name.like("Ab", LikeMode.EXACT))
+    ```
+
+    </TabItem>
+    </Tabs>
+
     Corresponding JDBC parameters: `'Ab'`
 
 ## Nullity
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 q.where(book.store().isNull());
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(table.store.isNull())
+```
+
+</TabItem>
+</Tabs>
+
+Or
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 q.where(book.store().isNotNull());
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(table.store.isNotNull())
+```
+
+</TabItem>
+</Tabs>
+
 ## IN LIST
 
-### Use single column
+### Single column
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 q.where(
     book.name().in(
-        "SQL in Action",
-        "Java in Action"
+        Arrays.asList(
+            "SQL in Action",
+            "Java in Action"
+        )
     )
 );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(
+    table.name valueIn listOf(
+        "SQL in Action",
+        "Java in Action"
+    )
+)
+```
+
+</TabItem>
+</Tabs>
+
 Generated SQL condition
 ```sql
 where tb_1_.NAME in (?, ?)
 ```
 
-### Use column
+### Multiple columns
 
-Using the tuple requires the static method `org.babyfish.jimmer.sql.ast.Expression.tuple`.
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 q.where(
@@ -255,6 +597,26 @@ q.where(
 );
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(
+    tuple(
+        table.name, 
+        table.edition
+    ) valueIn listOf(
+        Tuple2("SQL in Action", 1),
+        Tuple2("SQL in Action", 2),
+        Tuple2("Java in Action", 1),
+        Tuple2("Java in Action", 2)
+    )
+)
+```
+
+</TabItem>
+</Tabs>
+
 Generated SQL condition
 ```sql
 where (tb_1_.NAME, tb_1_.EDITION) in (
@@ -271,51 +633,129 @@ This part of the content will be introduced in detail in the related documents o
 ## And, Or, Not
 
 ### And
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 q.where(
     Predicate.and(
+        book.name().like("Ab"),
+        book.price().ge(new BigDecimal(40)),
+        book.price().lt(new BigDecimal(60))
+    )
+);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(
+    and(
+        table.name like "Ab",
+        table.price ge BigDecimal(40),
+        table.price lt BigDecimal(60)
+    )
+)
+```
+
+</TabItem>
+</Tabs>
+
+:::note
+Note that if the logical AND expression is directly used as the parameter of the `where` method, the following two equivalent ways are more recommended.
+:::
+
+1.  Using the variadic version of the `where` method
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    q.where(
+        book.name().like("Ab"),
+        book.price().ge(new BigDecimal(40)),
+        book.price().lt(new BigDecimal(60))
+    );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    where(
+        table.name like "Ab",
+        table.price ge BigDecimal(40),
+        table.price lt BigDecimal(60)
+    )
+    ```
+
+    </TabItem>
+    </Tabs>
+
+2.  Multiple calls to `where` method
+    
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    q.where(book.name().like("Ab"));
+    q.where(book.price().ge(new BigDecimal(40)));
+    q.where(book.price().lt(new BigDecimal(60)));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    where(table.name like "Ab")
+    where(table.price ge BigDecimal(40))
+    where(table.price lt BigDecimal(60))
+    ```
+
+    </TabItem>
+    </Tabs>
+
+Therefore, the direct use of `and` should not be common in actual projects.
+
+### Or
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+q.where(
+    // highlight-next-line
+    Predicate.or(
         book.name().like("Ab"),
         book.price().ge(new BigDecimal(40)),
         book.price().le(new BigDecimal(60))
     )
 );
 ```
-:::note
-Note that if the logical AND expression is directly used as the parameter of the `where` method, the following two equivalent ways are more recommended.
-:::
 
-1. Using the variadic version of the `where` method
-    ```java
-    q.where(
-        book.name().like("Ab"),
-        book.price().ge(new BigDecimal(40)),
-        book.price().le(new BigDecimal(60))
-    );
-    ```
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
 
-1. Multiple calls to `where` method
-    ```java
-    q
-        .where(book.name().like("Ab"))
-        .where(book.price().ge(new BigDecimal(40)))
-        .where(book.price().le(new BigDecimal(60)));
-    ```
-
-Therefore, the direct use of `and` should not be common in actual projects.
-
-### Or
-
-```java
-q.where(
-    Predicate.or(
-        book.name().like("Ab"),
-        book.price().ge(new BigDecimal(40)),
-        book.price().le(new BigDecimal(60))
-    );
-);
+```kotlin
+where(
+    // highlight-next-line
+    or(
+        table.name like "Ab",
+        table.price ge BigDecimal(40),
+        table.price le BigDecimal(60)
+    )
+)
 ```
 
+</TabItem>
+</Tabs>
+
 ### Not
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 q.where(
@@ -323,18 +763,46 @@ q.where(
 );
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(
+    not(table.name like "Ab")
+);
+```
+
+</TabItem>
+</Tabs>
+
 It is not always necessary to call the `not()` function. Many times there are shortcuts available, such as
 1. `.eq(value).not()` can be abbreviated as `.ne(value)`
 2. `.isNull().not()` can be abbreviated as `.isNotNull(value)`
-3. `.exists().not()` can be abbreviated as `.notExists()` *(exists will be introduced in [sub-query](./query/sub-query), but will not be introduced in this article)*
+3. `.exists()` can be abbreviated as `.notExists()` *(exists will be introduced in [sub-query](./query/sub-query), but will not be introduced in this article)*
 
 Even if the developer explicitly uses `not()`, the `not` expression does not necessarily appear in the final SQL, such as
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 q.where(
-    book.price().ge(new BigDecimal(40))
-        .not()
+    book.price().ge(new BigDecimal(40)).not()
 );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java
+where(
+    not(book.price ge BigDecimal(40))
+)
+```
+
+</TabItem>
+</Tabs>
+
 The actual generated SQL is
 ```sql
 where tb_1_1.PRICE < ?
@@ -343,30 +811,105 @@ jimmer-sql tries to avoid using `not` directly in SQL, but anyway, in the end th
 
 ## Computation
 
-1. +
-```java
-q.select(book.price.plus(BigDecimal.TWO));
-```
-2. -
-```java
-q.select(book.price.minus(BigDecimal.TWO));
-```
-3. *
-```java
-q.select(book.price.times(BigDecimal.TWO));
-```
+1.  `+`
 
-4. /
-```java
-q.select(book.price.div(BigDecimal.TWO));
-```
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    select(book.price().plus(BigDecimal.TWO));
+    ```
 
-5. %
-```java
-q.select(book.price.rem(BigDecimal.TWO));
-```
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    select(table.price + BigDecimal.TWO)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+2.  `-`
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    select(book.price().minus(BigDecimal.TWO));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    select(table.price - BigDecimal.TWO)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+1.  `*`
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    select(book.price().times(BigDecimal.TWO));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    select(table.price * BigDecimal.TWO)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+1.  `/`
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    select(book.price().div(BigDecimal.TWO));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    select(table.price / BigDecimal.TWO)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+1.  `%`
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    select(book.price().rem(BigDecimal.TWO));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    select(table.price % BigDecimal.TWO)
+    ```
+
+    </TabItem>
+    </Tabs>
 
 ## Aggregate
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 List<
@@ -388,9 +931,30 @@ List<
                 book.price().max(),
                 book.price().avg()
         );
-    }).execute();
-tuples.forEach(System.out::println);
+    })
+    .execute();
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val tuples = sqlClient
+    .createQuery(Book::class) {
+        select(
+            count(table),
+            count(table.id, distinct = true),
+            sum(table.price),
+            min(table.price),
+            max(table.price),
+            avg(table.price)
+        );
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 The generated SQL is as follows
 
@@ -409,6 +973,9 @@ from BOOK as tb_1_
 
 The `coalesce` expression returns the first non-null value in a sequence of expressions.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<String> results = sqlClient
     .createQuery(BookStoreTable.class, (q, store) -> {
@@ -421,10 +988,38 @@ List<String> results = sqlClient
                 .build()
         );
     }).execute();
-results.forEach(System.out::println);
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+var results = sqlClient
+    .createQuery(BookStore::class) {
+        select(
+            table.website.coalesce() // 1
+                .or(table.name) // 2
+                .end()
+        )
+    }
+```
+
+</TabItem>
+</Tabs>
+
+:::tip
+
+In example, kotlin code and java code are different. there is no expression `3` in kotlin code.
+
+Kotlin-API intorduces null-safety of kotlin to SQL, `table.name` is a non-null field, so kotlin forces us to write `end()` to finish this expression. 
+
+That means expression `3` in java code will never be used.
+:::
+
 The generated SQL is as follows
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```sql
 select 
@@ -437,7 +1032,26 @@ select
 from BOOK_STORE as tb_1_
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```sql
+select 
+    /* highlight-next-line */
+    coalesce(
+        tb_1_.WEBSITE, 
+        tb_1_.NAME
+    ) 
+from BOOK_STORE as tb_1_
+```
+
+</TabItem>
+</Tabs>
+
 In particular, if the SQL `coalesce` function has only two parameters, that is, the `or()` method will only be called once, there is a shortcut:
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 List<String> results = sqlClient
@@ -445,9 +1059,25 @@ List<String> results = sqlClient
         return q.select(
             store.website().coalesce(store.name())
         );
-    }).execute();
-results.forEach(System.out::println);
+    })
+    .execute();
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+var results = sqlClient
+    .createQuery(BookStore::class) {
+        select(
+            table.website.coalesce(table.name)
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 The generated SQL is as follows
 
@@ -466,6 +1096,9 @@ Contact expressions are used for string concatenation.
 
 This example uses a space as separator to concat the author's firstName and lastName
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<String> fullNames = sqlClient
     .createQuery(AuthorTable.class, (q, author) -> {
@@ -477,8 +1110,29 @@ List<String> fullNames = sqlClient
                 )
         );
     }).execute();
-fullNames.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+var fullNames = sqlClient
+    .createQuery(Author::class) {
+        select(
+            concat(
+                table.firstName,
+                value(" "),
+                table.lastName
+            )
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+
 
 The generated SQL is as follows
 
@@ -500,6 +1154,9 @@ There are two types of case expressions, simple case and ordinary case
 
 A simple case expression needs to specify an expression at the beginning, and each subsequent judgment branch specifies an expected value to check whether a target expression of one branch matches an expected value.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<String> results = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -507,13 +1164,33 @@ List<String> results = sqlClient
             Expression.string()
                 // highlight-next-line
                 .caseBuilder(book.name())
-                .when("Java in Action", "matched")
-                .when("SQL in Action", "matched")
-                .otherwise("not matched")
+                .when("Java in Action", "Matched")
+                .when("SQL in Action", "Matched")
+                .otherwise("Not matched")
         );
-    }).execute();
-results.forEach(System.out::println);
+    })
+    .execute();
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val results = sqlClient
+    .createQuery(Book::class) {
+        select(
+            // highlight-next-line
+            case(table.name)
+                .match("Kotlin in Action", "Matched")
+                .match("SQL in Action", "Matched")
+                .otherwise("Not matched")
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 The generated SQL is as follows
 
@@ -532,6 +1209,9 @@ from BOOK as tb_1_
 
 Ordinary case expressions do not need to specify any parameters at the beginning, but each subsequent judgment branch can specify a logical judgment expression of arbitrary complexity to check whether the branch is matched.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<String> results = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -549,9 +1229,29 @@ List<String> results = sqlClient
                 )
                 .otherwise("Appropriate")
         );
-    }).execute();
-results.forEach(System.out::println);
+    })
+    .execute();
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val results = sqlClient
+    .createQuery(Book::class) {
+        select(
+            // highlight-next-line
+            case()
+                .match(table.price lt BigDecimal(30), "Cheap")
+                .match(table.price gt BigDecimal(70), "Expensive")
+                .otherwise("Appropriate")
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 The generated SQL is as follows
 ```sql
@@ -571,6 +1271,9 @@ NativeSQL expression is an important function. Database products always have uni
 
 This example demonstrates how to use regular match expression of Oracle and HSQLDB.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Author> authors = sqlClient.
     .createQuery(AuthorTable.class, (q, author) -> {
@@ -585,10 +1288,31 @@ List<Author> authors = sqlClient.
         );
     })
     .execute();
-authors.forEach(System.out::println);
 ```
 
-Here, we call `Predicate.sql` to create query conditions based on native SQL. In fact, other expression types also support NativeSQL expressions, there are 5 `sql` functions in total
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val authors = sqlClient
+    .createQuery(Author::class) {
+        where(
+            sql(Boolean::class, "regexp_like(%e, %v)") {
+                expression(table.firstName)
+                value("^Ste(v|ph)en$")
+            }
+        )
+        select(table)
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+:::note
+
+For Java, we call `Predicate.sql` to create query conditions based on native SQL. In fact, other expression types also support NativeSQL expressions, there are 5 `sql` functions in total
 
 1. Predicate.sql(...)
 2. Expression.string().sql(...)
@@ -596,7 +1320,10 @@ Here, we call `Predicate.sql` to create query conditions based on native SQL. In
 4. Expression.comparable().sql(...)
 5. Expression.any().sql(...)
 
-The first parameter of the `sql(...)` method is the SQL string template, which can contain the special symbols "%e" and "%v".
+Kotlin does not have this problem, its API is unified.
+:::
+
+The SQL string template can contain the special symbols "%e" and "%v".
 
 - %e: an expression
 - %v: a value
@@ -619,14 +1346,26 @@ where
     regexp_like(tb_1_.FIRST_NAME, ?)
 ```
 
-## Type bootstrap
+## Type bootstrap for Java
 
-The above example occurs multiple times with these method calls
+:::note
+Kotlin does not require this feature, kotin developer can goto next article.
+:::
+
+The java code of above examples calls
 
 1. Expression.string(), for string types.
 2. Expression.numeric(), for numeric types.
-3. Expression.comparable(), for comparable types, that is, types inherited from java.lang.Comparable.
-4. Expression.any(), other types.
+3. Expression.comparable(), for comparable types
+4. Expression.any(), for other types.
+
+and
+
+1. Predicate.sql(...), for boolean type
+2. Expression.string().sql(...), for string types.
+3. Expression.numeric().sql(...), for numeric types.
+4. Expression.comparable().sql(...), for comparable types 
+5. Expression.any().sql(...), for other types
 
 These methods are called type bootstrap methods. Due to the defects of java itself, it is necessary to help the DSL to perform better type inference at the cost of slightly affecting the development experience.
 
