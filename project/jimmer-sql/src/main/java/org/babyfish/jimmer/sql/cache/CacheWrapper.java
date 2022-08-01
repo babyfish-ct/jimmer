@@ -1,38 +1,76 @@
 package org.babyfish.jimmer.sql.cache;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.Triggers;
 
 import java.util.*;
 import java.util.function.Supplier;
 
 class CacheWrapper<K, V> implements Cache<K, V> {
 
-    private static final ThreadLocal<Set<Cache<?, ?>>> LOADING_CACHES_LOCAL =
+    private static final ThreadLocal<Set<CacheWrapper<?, ?>>> LOADING_CACHES_LOCAL =
         new ThreadLocal<>();
 
     private final Cache<K, V> raw;
 
-    private final Type type;
+    private final ImmutableType type;
 
-    private CacheWrapper(Cache<K, V> raw, Type type) {
-        this.raw = raw;
+    private final ImmutableProp prop;
+
+    public CacheWrapper(Cache<K, V> raw, ImmutableType type, ImmutableProp prop) {
+        if ((type == null) == (prop == null)) {
+            throw new IllegalArgumentException("The nullity of type and prop must be different");
+        }
+        if (prop != null && !prop.isAssociation()) {
+            throw new IllegalArgumentException("The prop \"" + prop + "\" is not association");
+        }
+        this.raw = Objects.requireNonNull(raw, "raw cannot be null");
         this.type = type;
+        this.prop = prop;
     }
 
-    public static <K, V> Cache<K, V> wrap(Cache<K, V> cache, Type type) {
+    public static <K, V> CacheWrapper<K, V> wrap(
+            Cache<K, V> cache,
+            ImmutableType type
+    ) {
+        return wrap(cache, type, null);
+    }
+
+    public static <K, V> CacheWrapper<K, V> wrap(
+            Cache<K, V> cache,
+            ImmutableProp prop
+    ) {
+        return wrap(cache, null, prop);
+    }
+
+    private static <K, V> CacheWrapper<K, V> wrap(
+            Cache<K, V> cache,
+            ImmutableType type,
+            ImmutableProp prop
+    ) {
         if (cache == null) {
             return null;
         }
         if (cache instanceof CacheWrapper<?, ?>) {
-            if (((CacheWrapper<?, ?>) cache).type != type) {
-                throw new AssertionError("");
+            CacheWrapper<K, V> wrapper = (CacheWrapper<K, V>) cache;
+            if (wrapper.type == type && wrapper.prop == prop) {
+                return wrapper;
+            }
+            cache = ((CacheWrapper<K, V>) cache).raw;
+        }
+        return new CacheWrapper<>(cache, type, prop);
+    }
+
+    public static <K, V> CacheWrapper<K, V> export(CacheWrapper<K, V> cacheWrapper) {
+        if (cacheWrapper != null) {
+            Set<CacheWrapper<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
+            if (disabledCaches != null && disabledCaches.contains(cacheWrapper)) {
+                return null;
             }
         }
-        Set<Cache<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
-        if (disabledCaches != null && disabledCaches.contains(cache)) {
-            return null;
-        }
-        return new CacheWrapper<>(cache, type);
+        return cacheWrapper;
     }
 
     public static <K, V> Cache<K, V> unwrap(Cache<K, V> cache) {
@@ -45,103 +83,117 @@ class CacheWrapper<K, V> implements Cache<K, V> {
 
 
     @Override
-    public V get(K key, QueryCacheEnvironment<K, V> env) {
-        return execute(() -> validateResult(raw.get(key, env)));
+    public V get(K key, CacheEnvironment<K, V> env) {
+        return loading(() -> {
+            V value = raw.get(key, env);
+            validateResult(value);
+            return value;
+        });
     }
 
     @Override
-    public Map<K, V> getAll(Collection<K> keys, QueryCacheEnvironment<K, V> env) {
-        return execute(() -> validateResult(raw.getAll(keys, env)));
+    public Map<K, V> getAll(Collection<K> keys, CacheEnvironment<K, V> env) {
+        return loading(() -> {
+            Map<K, V> valueMap = raw.getAll(keys, env);
+            for (V value : valueMap.values()) {
+                validateResult(value);
+            }
+            return valueMap;
+        });
     }
 
     @Override
-    public void delete(K key, CacheEnvironment env) {
-        this.<Void>execute(() -> {
-            raw.delete(key, env);
+    public void delete(K key) {
+        this.<Void>loading(() -> {
+            raw.delete(key);
             return null;
         });
     }
 
     @Override
-    public void deleteAll(Collection<K> keys, CacheEnvironment env) {
-        this.<Void>execute(() -> {
-            raw.deleteAll(keys, env);
+    public void deleteAll(Collection<K> keys) {
+        this.<Void>loading(() -> {
+            raw.deleteAll(keys);
             return null;
         });
     }
 
-    private <R> R execute(Supplier<R> block) {
-        Set<Cache<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
+    private <R> R loading(Supplier<R> block) {
+        Set<CacheWrapper<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
         if (disabledCaches == null) {
-            disabledCaches = Collections.singleton(raw);
-            LOADING_CACHES_LOCAL.set(disabledCaches);
-        } else if (disabledCaches.size() == 1) {
-            Cache<?, ?> oldRaw = disabledCaches.iterator().next();
             disabledCaches = new HashSet<>();
-            disabledCaches.add(oldRaw);
-            disabledCaches.add(raw);
             LOADING_CACHES_LOCAL.set(disabledCaches);
-        } else {
-            disabledCaches.add(raw);
         }
+        disabledCaches.add(this);
         try {
             return block.get();
         } finally {
-            if (disabledCaches.size() < 2) {
-                LOADING_CACHES_LOCAL.remove();
+            if (disabledCaches.size() > 1) {
+                disabledCaches.remove(this);
             } else {
-                disabledCaches.remove(raw);
+                LOADING_CACHES_LOCAL.remove();
             }
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private <R> R validateResult(R result) {
-        switch (type) {
-            case ASSOCIATED_ID:
-                for (Object value : ((Map<?, Object>)result).values()) {
-                    validateValue(value);
+    private void validateResult(Object result) {
+        if (result != null) {
+            if (prop == null) {
+                if (!(result instanceof ImmutableSpi)) {
+                    throw new IllegalArgumentException(
+                            "Object cache for \"" +
+                                    type +
+                                    "\" must return object"
+                    );
                 }
-                break;
-            case ASSOCIATED_ID_LIST:
-                for (List<Object> list : ((Map<?, List<Object>>)result).values()) {
-                    if (list != null) {
-                        for (Object value : list) {
-                            validateValue(value);
-                        }
+            } else if (prop.isEntityList()) {
+                if (!(result instanceof List<?>)) {
+                    throw new IllegalArgumentException(
+                            "Association id list cache for \"" +
+                                    prop +
+                                    "\" must return id list"
+                    );
+                }
+                List<Object> ids = (List<Object>) result;
+                for (Object id : ids) {
+                    if (id instanceof ImmutableSpi || id instanceof List<?>) {
+                        throw new IllegalArgumentException(
+                                "Association id list cache for \"" +
+                                        prop +
+                                        "\" returns a list " +
+                                        "but some elements is not simple id value"
+                        );
                     }
                 }
-                break;
-        }
-        return result;
-    }
-
-    private void validateValue(Object value) {
-        if (value instanceof ImmutableSpi) {
-            throw new IllegalArgumentException(
-                    "Illegal cache " +
-                            raw +
-                            ", " +
-                            type.getName() +
-                            " can only return id, should not return object"
-            );
+            } else if (result instanceof ImmutableSpi || result instanceof List<?>) {
+                throw new IllegalArgumentException(
+                        "Association id cache for \"" +
+                                prop +
+                                "\" must return simple id value"
+                );
+            }
         }
     }
 
-    enum Type {
+    @Override
+    public int hashCode() {
+        return Objects.hash(raw, type, prop);
+    }
 
-        OBJECT("object cache"),
-        ASSOCIATED_ID("associated id ache"),
-        ASSOCIATED_ID_LIST("associated id list cache");
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CacheWrapper<?, ?> that = (CacheWrapper<?, ?>) o;
+        return raw.equals(that.raw) && Objects.equals(type, that.type) && Objects.equals(prop, that.prop);
+    }
 
-        private String name;
-
-        private Type(String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
-        }
+    @Override
+    public String toString() {
+        return "CacheWrapper{" +
+                "raw=" + raw +
+                ", type=" + type +
+                ", prop=" + prop +
+                '}';
     }
 }

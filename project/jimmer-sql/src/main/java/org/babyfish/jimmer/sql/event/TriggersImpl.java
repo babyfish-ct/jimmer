@@ -59,13 +59,11 @@ public class TriggersImpl implements Triggers {
         }
     }
 
-    @Override
     public boolean hasListeners(ImmutableType type) {
         List<EntityListener<ImmutableSpi>> listeners = entityTableListenerMultiMap.get(type);
         return listeners != null && !listeners.isEmpty();
     }
 
-    @Override
     public boolean hasListeners(ImmutableProp prop) {
         ImmutableProp primaryAssociationProp = Utils.primaryAssociationProp(prop);
         if (primaryAssociationProp.getStorage() instanceof MiddleTable) {
@@ -128,6 +126,7 @@ public class TriggersImpl implements Triggers {
         }
     }
 
+    @Override
     public void fireMiddleTableInsert(ImmutableProp prop, Object sourceId, Object targetId) {
         ImmutableProp primaryAssociationProp = Utils.primaryAssociationProp(prop);
         List<MiddleTableListener> listeners = middleTableListenerMultiMap.get(primaryAssociationProp);

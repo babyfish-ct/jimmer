@@ -4,6 +4,7 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ImmutableProps;
+import org.babyfish.jimmer.sql.Triggers;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
 import java.util.HashMap;
@@ -18,11 +19,10 @@ public class CacheConfig {
     private final Map<ImmutableType, Cache<?, ?>> objectCacheMap =
             new HashMap<>();
 
-    private final Map<ImmutableProp, Cache<?, ?>> associatedIdCacheMap =
+    private final Map<ImmutableProp, Cache<?, ?>> associationCacheMap =
             new HashMap<>();
 
-    private final Map<ImmutableProp, Cache<?, List<?>>> associatedIdListCacheMap =
-            new HashMap<>();
+    private CacheOperator operator;
 
     @OldChain
     public CacheConfig setCacheFactory(CacheFactory cacheFactory) {
@@ -55,8 +55,10 @@ public class CacheConfig {
             ImmutableProp prop,
             Cache<?, ?> cache
     ) {
-        CachesImpl.validateForAssociatedTargetId(prop);
-        associatedIdCacheMap.put(prop, CacheWrapper.unwrap(cache));
+        if (!prop.isReference()) {
+            throw new IllegalArgumentException("The prop \"" + prop + "\" is not reference");
+        }
+        associationCacheMap.put(prop, CacheWrapper.unwrap(cache));
         return this;
     }
 
@@ -75,17 +77,20 @@ public class CacheConfig {
             ImmutableProp prop,
             Cache<?, List<?>> cache
     ) {
-        CachesImpl.validateForAssociationTargetIdList(prop);
-        associatedIdListCacheMap.put(prop, CacheWrapper.unwrap(cache));
+        if (!prop.isReference()) {
+            throw new IllegalArgumentException("The prop \"" + prop + "\" is not list");
+        }
+        associationCacheMap.put(prop, CacheWrapper.unwrap(cache));
         return this;
     }
 
-    Caches build() {
+    Caches build(Triggers triggers) {
         return new CachesImpl(
+                triggers,
                 cacheFactory,
                 objectCacheMap,
-                associatedIdCacheMap,
-                associatedIdListCacheMap
+                associationCacheMap,
+                operator
         );
     }
 }

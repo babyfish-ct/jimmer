@@ -13,8 +13,8 @@ import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.Cache;
+import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.cache.CacheLoader;
-import org.babyfish.jimmer.sql.cache.QueryCacheEnvironment;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.fetcher.impl.Fetchers;
@@ -209,7 +209,7 @@ public class EntitiesImpl implements Entities {
             List<E> entities = new ArrayList<>(
                     cache.getAll(
                             distinctIds,
-                            new QueryCacheEnvironment<>(
+                            new CacheEnvironment<>(
                                     sqlClient,
                                     con,
                                     null,

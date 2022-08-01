@@ -193,68 +193,36 @@ public class Deleter {
             ImmutableProp manyToOneProp,
             Collection<Object> ids
     ) {
-        JSqlClient sqlClient = data.getSqlClient();
         ImmutableType childType = manyToOneProp.getDeclaringType();
-        if (sqlClient.getTriggers().hasListeners(manyToOneProp)) {
-            List<Object> childIds =
-                    Queries.createQuery(sqlClient, childType, (q, child) -> {
-                        Expression<Object> fkExpr = child
-                                .join(manyToOneProp.getName())
-                                .get(manyToOneProp.getTargetType().getIdProp().getName());
-                        q.where(fkExpr.in(ids));
-                        return q.select(child.<Expression<Object>>get(childType.getIdProp().getName()));
-                    }).execute(con);
-            if (!childIds.isEmpty()) {
-                Map<Object, ImmutableSpi> oldMap = cache.findByIds(childType, childIds, con);
-                int affectedRowCount = Mutations
-                        .createUpdate(sqlClient, childType, (u, child) -> {
-                            PropExpression<Object> fkExpr = child
-                                    .join(manyToOneProp.getName())
-                                    .get(manyToOneProp.getTargetType().getIdProp().getName());
-                            u.set(fkExpr, (Object) null);
-                            u.where(child.<Expression<Object>>get(childType.getIdProp().getName()).in(ids));
-                        }).execute(con);
-                addOutput(AffectedTable.of(childType), affectedRowCount);
-                for (Object childId : childIds) {
-                    ImmutableSpi oldChild = oldMap.get(childId);
-                    ImmutableSpi newChild = (ImmutableSpi) Internal.produce(childType, oldChild, draft -> {
-                        ((DraftSpi)draft).__set(childType.getIdProp().getId(), childId);
-                        ((DraftSpi)draft).__set(manyToOneProp.getId(), null);
-                    });
-                    sqlClient.getTriggers().fireEntityTableChange(oldChild, newChild);
-                    cache.save(newChild, false);
-                }
-            }
-        } else {
-            String fkColumnName = ((Column)manyToOneProp.getStorage()).getName();
-            SqlBuilder builder = new SqlBuilder(data.getSqlClient());
-            builder
-                    .sql("update ")
-                    .sql(childType.getTableName())
-                    .sql(" set ")
-                    .sql(fkColumnName)
-                    .sql(" = null where ")
-                    .sql(fkColumnName)
-                    .sql(" in(");
-            String separator = "";
-            for (Object id : ids) {
-                builder.sql(separator);
-                separator = ", ";
-                builder.variable(id);
-            }
-            builder.sql(")");
-            Tuple2<String, List<Object>> sqlResult = builder.build();
-            int affectedRowCount = data
-                    .getSqlClient()
-                    .getExecutor()
-                    .execute(
-                            con,
-                            sqlResult.get_1(),
-                            sqlResult.get_2(),
-                            PreparedStatement::executeUpdate
-                    );
-            addOutput(AffectedTable.of(childType), affectedRowCount);
+
+        String fkColumnName = ((Column)manyToOneProp.getStorage()).getName();
+        SqlBuilder builder = new SqlBuilder(data.getSqlClient());
+        builder
+                .sql("update ")
+                .sql(childType.getTableName())
+                .sql(" set ")
+                .sql(fkColumnName)
+                .sql(" = null where ")
+                .sql(fkColumnName)
+                .sql(" in(");
+        String separator = "";
+        for (Object id : ids) {
+            builder.sql(separator);
+            separator = ", ";
+            builder.variable(id);
         }
+        builder.sql(")");
+        Tuple2<String, List<Object>> sqlResult = builder.build();
+        int affectedRowCount = data
+                .getSqlClient()
+                .getExecutor()
+                .execute(
+                        con,
+                        sqlResult.get_1(),
+                        sqlResult.get_2(),
+                        PreparedStatement::executeUpdate
+                );
+        addOutput(AffectedTable.of(childType), affectedRowCount);
     }
 
     private void tryDeleteFromChildTable(ImmutableProp prop, Collection<?> ids) {
