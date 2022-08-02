@@ -28,6 +28,11 @@ public class MutateCacheTest extends AbstractQueryTest {
         sqlClient = getSqlClient(builder -> {
             builder.setCaches(cfg ->
                     cfg.setCacheFactory(
+                            new Class[] {
+                                    BookStore.class,
+                                    Book.class,
+                                    Author.class
+                            },
                             new CacheFactory() {
                                 @Override
                                 public Cache<?, ?> createObjectCache(ImmutableType type) {
@@ -121,14 +126,14 @@ public class MutateCacheTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 String.format(
-                        "[" +
-                                "Book.store-%s, " +
-                                "BookStore.books-00000000-0000-0000-0000-000000000000, " +
-                                "BookStore.books-%s, " +
-                                "Book-%s]",
-                        graphQLInActionId3,
-                        oreillyId,
-                        graphQLInActionId3
+                        "[Book-" +
+                                graphQLInActionId3 +
+                                ", BookStore.books-00000000-0000-0000-0000-000000000000, " +
+                                "BookStore.books-" +
+                                oreillyId +
+                                ", Book.store-" +
+                                graphQLInActionId3 +
+                                "]"
                 ),
                 cacheOpRecords.toString()
         );

@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.association.loader.Loaders
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
 import org.babyfish.jimmer.sql.ast.table.Table
+import org.babyfish.jimmer.sql.cache.CacheDisableConfig
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
@@ -85,6 +86,11 @@ internal class KSqlClientImpl(
 
     override fun <R> executeNativeSql(block: (Connection) -> R): R =
         javaClient.connectionManager.execute(block)
+
+    override fun caches(block: KCacheDisableDsl.() -> Unit): KSqlClient =
+        KSqlClientImpl(
+            javaClient.caches { block(KCacheDisableDsl(CacheDisableConfig())) }
+        )
 
     override val javaClient: JSqlClient
         get() = sqlClient

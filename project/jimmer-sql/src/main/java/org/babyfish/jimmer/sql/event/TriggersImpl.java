@@ -109,8 +109,21 @@ public class TriggersImpl implements Triggers {
         List<EntityListener<ImmutableSpi>> listeners =
                 entityTableListenerMultiMap.get(event.getImmutableType());
         if (listeners != null && !listeners.isEmpty()) {
+            Throwable throwable = null;
             for (EntityListener<ImmutableSpi> listener : listeners) {
-                listener.onChange(event);
+                try {
+                    listener.onChange(event);
+                } catch (RuntimeException | Error ex) {
+                    if (throwable == null) {
+                        throwable =ex;
+                    }
+                }
+            }
+            if (throwable instanceof RuntimeException) {
+                throw (RuntimeException)throwable;
+            }
+            if (throwable != null) {
+                throw (Error)throwable;
             }
         }
     }
@@ -120,14 +133,33 @@ public class TriggersImpl implements Triggers {
         ImmutableProp primaryAssociationProp = Utils.primaryAssociationProp(prop);
         List<MiddleTableListener> listeners = middleTableListenerMultiMap.get(primaryAssociationProp);
         if (listeners != null && !listeners.isEmpty()) {
+            Throwable throwable = null;
             if (prop == primaryAssociationProp) {
                 for (MiddleTableListener listener : listeners) {
-                    listener.delete(sourceId, targetId);
+                    try {
+                        listener.delete(sourceId, targetId);
+                    } catch (RuntimeException | Error ex) {
+                        if (throwable == null) {
+                            throwable =ex;
+                        }
+                    }
                 }
             } else {
                 for (MiddleTableListener listener : listeners) {
-                    listener.delete(targetId, sourceId);
+                    try {
+                        listener.delete(targetId, sourceId);
+                    } catch (RuntimeException | Error ex) {
+                        if (throwable == null) {
+                            throwable =ex;
+                        }
+                    }
                 }
+            }
+            if (throwable instanceof RuntimeException) {
+                throw (RuntimeException)throwable;
+            }
+            if (throwable != null) {
+                throw (Error)throwable;
             }
         }
     }
@@ -137,14 +169,33 @@ public class TriggersImpl implements Triggers {
         ImmutableProp primaryAssociationProp = Utils.primaryAssociationProp(prop);
         List<MiddleTableListener> listeners = middleTableListenerMultiMap.get(primaryAssociationProp);
         if (listeners != null && !listeners.isEmpty()) {
+            Throwable throwable = null;
             if (prop == primaryAssociationProp) {
                 for (MiddleTableListener listener : listeners) {
-                    listener.insert(sourceId, targetId);
+                    try {
+                        listener.insert(sourceId, targetId);
+                    } catch (RuntimeException | Error ex) {
+                        if (throwable == null) {
+                            throwable =ex;
+                        }
+                    }
                 }
             } else {
                 for (MiddleTableListener listener : listeners) {
-                    listener.insert(targetId, sourceId);
+                    try {
+                        listener.insert(targetId, sourceId);
+                    } catch (RuntimeException | Error ex) {
+                        if (throwable == null) {
+                            throwable =ex;
+                        }
+                    }
                 }
+            }
+            if (throwable instanceof RuntimeException) {
+                throw (RuntimeException)throwable;
+            }
+            if (throwable != null) {
+                throw (Error)throwable;
             }
         }
     }

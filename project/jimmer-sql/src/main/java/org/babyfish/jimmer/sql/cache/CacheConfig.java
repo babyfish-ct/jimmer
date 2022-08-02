@@ -8,25 +8,46 @@ import org.babyfish.jimmer.sql.Triggers;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
 public class CacheConfig {
 
-    private CacheFactory cacheFactory;
-
     private final Map<ImmutableType, Cache<?, ?>> objectCacheMap =
-            new HashMap<>();
+            new LinkedHashMap<>();
 
     private final Map<ImmutableProp, Cache<?, ?>> associationCacheMap =
-            new HashMap<>();
+            new LinkedHashMap<>();
 
     private CacheOperator operator;
 
     @OldChain
-    public CacheConfig setCacheFactory(CacheFactory cacheFactory) {
-        this.cacheFactory = cacheFactory;
+    public CacheConfig setCacheFactory(Class<?>[] entityTypes, CacheFactory cacheFactory) {
+        if (cacheFactory == null) {
+            throw new IllegalArgumentException("cacheFactory cannot be null");
+        }
+        if (entityTypes.length == 0) {
+            throw new IllegalArgumentException("vararg \"entityTypes\" cannot be empty");
+        }
+        for (Class<?> entityType : entityTypes) {
+            ImmutableType type = ImmutableType.get(entityType);
+            if (!objectCacheMap.containsKey(type)) {
+                Cache<?, ?> objectCache = cacheFactory.createObjectCache(type);
+                if (objectCache != null) {
+                    objectCacheMap.put(type, objectCache);
+                }
+            }
+            for (ImmutableProp prop : type.getProps().values()) {
+                if (prop.isAssociation() && !associationCacheMap.containsKey(prop)) {
+                    Cache<?, ?> associationCache = cacheFactory.createAssociatedIdCache(prop);
+                    if (associationCache != null) {
+                        associationCacheMap.put(prop, associationCache);
+                    }
+                }
+            }
+        }
         return this;
     }
 
@@ -99,7 +120,6 @@ public class CacheConfig {
     Caches build(Triggers triggers) {
         return new CachesImpl(
                 triggers,
-                cacheFactory,
                 objectCacheMap,
                 associationCacheMap,
                 operator

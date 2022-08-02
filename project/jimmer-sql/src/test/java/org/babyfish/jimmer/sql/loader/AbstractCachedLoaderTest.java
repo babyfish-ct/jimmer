@@ -7,6 +7,10 @@ import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
+import org.babyfish.jimmer.sql.model.Author;
+import org.babyfish.jimmer.sql.model.Book;
+import org.babyfish.jimmer.sql.model.BookStore;
+import org.babyfish.jimmer.sql.model.Country;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.util.List;
@@ -19,22 +23,30 @@ public class AbstractCachedLoaderTest extends AbstractQueryTest {
     public void initialize() {
         cachedSqlClient = getSqlClient(builder -> {
             builder.setCaches(cfg -> {
-                cfg.setCacheFactory(new CacheFactory() {
-                    @Override
-                    public Cache<?, ?> createObjectCache(ImmutableType type) {
-                        return new CacheImpl<>();
-                    }
+                cfg.setCacheFactory(
+                        new Class[] {
+                                BookStore.class,
+                                Book.class,
+                                Author.class,
+                                Country.class
+                        },
+                        new CacheFactory() {
+                            @Override
+                            public Cache<?, ?> createObjectCache(ImmutableType type) {
+                                return new CacheImpl<>();
+                            }
 
-                    @Override
-                    public Cache<?, ?> createAssociatedIdCache(ImmutableProp type) {
-                        return new CacheImpl<>();
-                    }
+                            @Override
+                            public Cache<?, ?> createAssociatedIdCache(ImmutableProp type) {
+                                return new CacheImpl<>();
+                            }
 
-                    @Override
-                    public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp type) {
-                        return new CacheImpl<>();
-                    }
-                });
+                            @Override
+                            public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp type) {
+                                return new CacheImpl<>();
+                            }
+                        }
+                );
             });
         });
     }
