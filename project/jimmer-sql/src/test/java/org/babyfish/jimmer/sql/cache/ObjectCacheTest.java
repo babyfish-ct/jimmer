@@ -4,6 +4,8 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
+import org.babyfish.jimmer.sql.model.Author;
+import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.BookStore;
 import org.junit.jupiter.api.Test;
 
@@ -16,6 +18,11 @@ public class ObjectCacheTest extends AbstractQueryTest {
         JSqlClient sqlClient = getSqlClient(builder -> {
             builder.setCaches(cfg ->
                     cfg.setCacheFactory(
+                            new Class[] {
+                                    BookStore.class,
+                                    Book.class,
+                                    Author.class
+                            },
                             new CacheFactory() {
                                 @Override
                                 public Cache<?, ?> createObjectCache(ImmutableType type) {

@@ -62,7 +62,7 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
         return new LocatedCacheImpl<>(cache, type, prop);
     }
 
-    public static <K, V> LocatedCacheImpl<K, V> export(LocatedCacheImpl<K, V> cacheWrapper) {
+    public static <K, V> LocatedCache<K, V> export(LocatedCache<K, V> cacheWrapper) {
         if (cacheWrapper != null) {
             Set<LocatedCacheImpl<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
             if (disabledCaches != null && disabledCaches.contains(cacheWrapper)) {

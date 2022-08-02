@@ -41,6 +41,8 @@ interface KSqlClient {
 
     fun <R> executeNativeSql(block: (Connection) -> R): R
 
+    fun caches(block: KCacheDisableDsl.() -> Unit): KSqlClient
+
     val javaClient: JSqlClient
 }
 
