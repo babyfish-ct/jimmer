@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.runtime.DraftContext;
+import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.Filter;
@@ -20,7 +22,10 @@ public class FetchingCache {
         ImmutableProp prop = field.getProp();
         if (prop.getStorage() instanceof Column) {
             Object fk = Ids.idOf((ImmutableSpi) owner.__get(prop.getId()));
-            return new ForeignKey(fk);
+            DraftContext ctx = owner instanceof DraftSpi ?
+                    ((DraftSpi) owner).__draftContext() :
+                    null;
+            return new ForeignKey(fk, ctx);
         }
         return Ids.idOf(owner);
     }
@@ -97,13 +102,16 @@ public class FetchingCache {
 
         private final Object raw;
 
-        private ForeignKey(Object raw) {
+        private final DraftContext ctx;
+
+        private ForeignKey(Object raw, DraftContext ctx) {
             this.raw = raw;
+            this.ctx = ctx;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(raw);
+            return Objects.hash(raw, ctx);
         }
 
         @Override
@@ -111,13 +119,14 @@ public class FetchingCache {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             ForeignKey that = (ForeignKey) o;
-            return Objects.equals(raw, that.raw);
+            return Objects.equals(raw, that.raw) && ctx == that.ctx;
         }
 
         @Override
         public String toString() {
             return "ForeignKey{" +
                     "raw=" + raw +
+                    "ctx=" + ctx +
                     '}';
         }
     }

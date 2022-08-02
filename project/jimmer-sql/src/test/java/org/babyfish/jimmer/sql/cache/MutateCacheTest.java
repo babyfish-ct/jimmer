@@ -1,0 +1,451 @@
+package org.babyfish.jimmer.sql.cache;
+
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.ImmutableProps;
+import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.common.CacheImpl;
+import org.babyfish.jimmer.sql.model.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.babyfish.jimmer.sql.common.Constants.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+public class MutateCacheTest extends AbstractQueryTest {
+
+    private JSqlClient sqlClient;
+
+    private List<CacheOpRecord> cacheOpRecords = new ArrayList<>();
+
+    @BeforeEach
+    public void initialize() {
+        cacheOpRecords.clear();
+        sqlClient = getSqlClient(builder -> {
+            builder.setCaches(cfg ->
+                    cfg.setCacheFactory(
+                            new CacheFactory() {
+                                @Override
+                                public Cache<?, ?> createObjectCache(ImmutableType type) {
+                                    return new CacheImpl<>();
+                                }
+
+                                @Override
+                                public Cache<?, ?> createAssociatedIdCache(ImmutableProp type) {
+                                    return new CacheImpl<>();
+                                }
+
+                                @Override
+                                public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp type) {
+                                    return new CacheImpl<>();
+                                }
+                            }
+                    ).setCacheOperator(
+                            (cache, key) -> {
+                                cacheOpRecords.add(new CacheOpRecord(cache, key));
+                                cache.delete(key);
+                            }
+                    )
+            );
+        });
+    }
+
+    @Test
+    public void testChangeBook() {
+        executeAndExpect(
+                sqlClient.createQuery(BookTable.class, (q, book) -> {
+                    return q.select(
+                            book.fetch(
+                                    BookFetcher.$
+                                            .allScalarFields()
+                                            .store(
+                                                    BookStoreFetcher.$
+                                                            .allScalarFields()
+                                            )
+                            )
+                    );
+                }),
+                it -> {
+                    it.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_"
+                    );
+                    it.statement(1).sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                    "from BOOK_STORE as tb_1_ " +
+                                    "where tb_1_.ID in (?, ?)"
+                    );
+                }
+        );
+        executeAndExpect(
+                sqlClient.createQuery(BookStoreTable.class, (q, store) -> {
+                    return q.select(
+                            store.fetch(
+                                    BookStoreFetcher.$
+                                            .allScalarFields()
+                                            .books(
+                                                    BookFetcher.$
+                                                            .allScalarFields()
+                                            )
+                            )
+                    );
+                }),
+                it -> {
+                    it.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                    "from BOOK_STORE as tb_1_"
+                    );
+                    it.statement(1).sql(
+                            "select tb_1_.STORE_ID, tb_1_.ID " +
+                                    "from BOOK as tb_1_ " +
+                                    "where tb_1_.STORE_ID in (?, ?)"
+                    );
+                    it.statement(2).sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_ " +
+                                    "where tb_1_.ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    );
+                }
+        );
+        sqlClient.getTriggers().fireEntityTableChange(
+                BookDraft.$.produce(book -> {
+                    book.setId(graphQLInActionId3).setStore(store -> store.setId(UUID.fromString("00000000-0000-0000-0000-000000000000")));
+                }),
+                BookDraft.$.produce(book -> {
+                    book.setId(graphQLInActionId3).setStore(store -> store.setId(oreillyId));
+                })
+        );
+        Assertions.assertEquals(
+                String.format(
+                        "[" +
+                                "Book.store-%s, " +
+                                "BookStore.books-00000000-0000-0000-0000-000000000000, " +
+                                "BookStore.books-%s, " +
+                                "Book-%s]",
+                        graphQLInActionId3,
+                        oreillyId,
+                        graphQLInActionId3
+                ),
+                cacheOpRecords.toString()
+        );
+        executeAndExpect(
+                sqlClient.createQuery(BookTable.class, (q, book) -> {
+                    return q.select(
+                            book.fetch(
+                                    BookFetcher.$
+                                            .allScalarFields()
+                                            .store(
+                                                    BookStoreFetcher.$
+                                                            .allScalarFields()
+                                            )
+                            )
+                    );
+                }),
+                it -> {
+                    it.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_"
+                    );
+                }
+        );
+        executeAndExpect(
+                sqlClient.createQuery(BookStoreTable.class, (q, store) -> {
+                    return q.select(
+                            store.fetch(
+                                    BookStoreFetcher.$
+                                            .allScalarFields()
+                                            .books(
+                                                    BookFetcher.$
+                                                            .allScalarFields()
+                                            )
+                            )
+                    );
+                }),
+                it -> {
+                    it.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION from BOOK_STORE as tb_1_"
+                    );
+                    it.statement(1).sql(
+                            "select tb_1_.ID from BOOK as tb_1_ where tb_1_.STORE_ID = ?"
+                    );
+                    it.statement(2).sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testInsertMiddleTable() {
+        executeAndExpect(
+                sqlClient.createQuery(BookTable.class, (q, book) -> {
+                    return q.select(
+                            book.fetch(
+                                    BookFetcher.$
+                                            .allScalarFields()
+                                            .authors(
+                                                    AuthorFetcher.$.allScalarFields()
+                                            )
+                            )
+                    );
+                }),
+                it -> {
+                    it.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE from BOOK as tb_1_"
+                    );
+                    it.statement(1).sql(
+                            "select tb_1_.BOOK_ID, tb_1_.AUTHOR_ID " +
+                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "where tb_1_.BOOK_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    );
+                    it.statement(2).sql(
+                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                    "from AUTHOR as tb_1_ " +
+                                    "where tb_1_.ID in (?, ?, ?, ?, ?)"
+                    );
+                }
+        );
+        executeAndExpect(
+                sqlClient.createQuery(AuthorTable.class, (q, author) -> {
+                    return q.select(
+                            author.fetch(
+                                    AuthorFetcher.$
+                                            .allScalarFields()
+                                            .books(
+                                                    BookFetcher.$
+                                                            .allScalarFields()
+                                            )
+                            )
+                    );
+                }),
+                it -> {
+                    it.sql(
+                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                    "from AUTHOR as tb_1_"
+                    );
+                    it.statement(1).sql(
+                            "select tb_1_.AUTHOR_ID, tb_1_.BOOK_ID " +
+                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "where tb_1_.AUTHOR_ID in (?, ?, ?, ?, ?)"
+                    );
+                    it.statement(2).sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_ " +
+                                    "where tb_1_.ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    );
+                }
+        );
+        sqlClient.getTriggers().fireMiddleTableInsert(
+                ImmutableProps.join(BookTableEx.class, BookTableEx::authors),
+                graphQLInActionId3,
+                danId
+        );
+        Assertions.assertEquals(
+                "[Book.authors-" +
+                        graphQLInActionId3 +
+                        ", Author.books-" +
+                        danId +
+                        "]",
+                cacheOpRecords.toString()
+        );
+        executeAndExpect(
+                sqlClient.createQuery(BookTable.class, (q, book) -> {
+                    return q.select(
+                            book.fetch(
+                                    BookFetcher.$
+                                            .allScalarFields()
+                                            .authors(
+                                                    AuthorFetcher.$.allScalarFields()
+                                            )
+                            )
+                    );
+                }),
+                it -> {
+                    it.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE from BOOK as tb_1_"
+                    );
+                    it.statement(1).sql(
+                            "select tb_1_.AUTHOR_ID " +
+                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "where tb_1_.BOOK_ID = ?"
+                    ).variables(graphQLInActionId3);
+                }
+        );
+        executeAndExpect(
+                sqlClient.createQuery(AuthorTable.class, (q, author) -> {
+                    return q.select(
+                            author.fetch(
+                                    AuthorFetcher.$
+                                            .allScalarFields()
+                                            .books(
+                                                    BookFetcher.$
+                                                            .allScalarFields()
+                                            )
+                            )
+                    );
+                }),
+                it -> {
+                    it.sql(
+                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                    "from AUTHOR as tb_1_"
+                    );
+                    it.statement(1).sql(
+                            "select tb_1_.BOOK_ID " +
+                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "where tb_1_.AUTHOR_ID = ?"
+                    ).variables(danId);
+                }
+        );
+    }
+
+    @Test
+    public void testInsertInverseMiddleTable() {
+        executeAndExpect(
+                sqlClient.createQuery(BookTable.class, (q, book) -> {
+                    return q.select(
+                            book.fetch(
+                                    BookFetcher.$
+                                            .allScalarFields()
+                                            .authors(
+                                                    AuthorFetcher.$.allScalarFields()
+                                            )
+                            )
+                    );
+                }),
+                it -> {
+                    it.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE from BOOK as tb_1_"
+                    );
+                    it.statement(1).sql(
+                            "select tb_1_.BOOK_ID, tb_1_.AUTHOR_ID " +
+                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "where tb_1_.BOOK_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    );
+                    it.statement(2).sql(
+                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                    "from AUTHOR as tb_1_ " +
+                                    "where tb_1_.ID in (?, ?, ?, ?, ?)"
+                    );
+                }
+        );
+        executeAndExpect(
+                sqlClient.createQuery(AuthorTable.class, (q, author) -> {
+                    return q.select(
+                            author.fetch(
+                                    AuthorFetcher.$
+                                            .allScalarFields()
+                                            .books(
+                                                    BookFetcher.$
+                                                            .allScalarFields()
+                                            )
+                            )
+                    );
+                }),
+                it -> {
+                    it.sql(
+                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                    "from AUTHOR as tb_1_"
+                    );
+                    it.statement(1).sql(
+                            "select tb_1_.AUTHOR_ID, tb_1_.BOOK_ID " +
+                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "where tb_1_.AUTHOR_ID in (?, ?, ?, ?, ?)"
+                    );
+                    it.statement(2).sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_ " +
+                                    "where tb_1_.ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    );
+                }
+        );
+        sqlClient.getTriggers().fireMiddleTableInsert(
+                ImmutableProps.join(AuthorTableEx.class, AuthorTableEx::books),
+                danId,
+                graphQLInActionId3
+        );
+        Assertions.assertEquals(
+                "[Book.authors-" +
+                        graphQLInActionId3 +
+                        ", Author.books-" +
+                        danId +
+                        "]",
+                cacheOpRecords.toString()
+        );
+        executeAndExpect(
+                sqlClient.createQuery(BookTable.class, (q, book) -> {
+                    return q.select(
+                            book.fetch(
+                                    BookFetcher.$
+                                            .allScalarFields()
+                                            .authors(
+                                                    AuthorFetcher.$.allScalarFields()
+                                            )
+                            )
+                    );
+                }),
+                it -> {
+                    it.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE from BOOK as tb_1_"
+                    );
+                    it.statement(1).sql(
+                            "select tb_1_.AUTHOR_ID " +
+                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "where tb_1_.BOOK_ID = ?"
+                    ).variables(graphQLInActionId3);
+                }
+        );
+        executeAndExpect(
+                sqlClient.createQuery(AuthorTable.class, (q, author) -> {
+                    return q.select(
+                            author.fetch(
+                                    AuthorFetcher.$
+                                            .allScalarFields()
+                                            .books(
+                                                    BookFetcher.$
+                                                            .allScalarFields()
+                                            )
+                            )
+                    );
+                }),
+                it -> {
+                    it.sql(
+                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                    "from AUTHOR as tb_1_"
+                    );
+                    it.statement(1).sql(
+                            "select tb_1_.BOOK_ID " +
+                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "where tb_1_.AUTHOR_ID = ?"
+                    ).variables(danId);
+                }
+        );
+    }
+
+    private static class CacheOpRecord {
+
+        final LocatedCache<?, ?> cache;
+
+        private Object key;
+
+        public CacheOpRecord(LocatedCache<?, ?> cache, Object key) {
+            this.cache = cache;
+            this.key = key;
+        }
+
+        @Override
+        public String toString() {
+            ImmutableType type = cache.getType();
+            ImmutableProp prop = cache.getProp();
+            if (type != null) {
+                return type.getJavaClass().getSimpleName() + "-" + key;
+            }
+            return prop.getDeclaringType().getJavaClass().getSimpleName() + "." + prop.getName() + "-" + key;
+        }
+    }
+}

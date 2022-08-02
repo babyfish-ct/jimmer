@@ -8,18 +8,15 @@ import java.util.List;
 
 public interface CacheFactory {
 
-    @NotNull
-    default Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
+    default Cache<?, ?> createObjectCache(ImmutableType type) {
         return null;
     }
 
-    @NotNull
-    default Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp type) {
+    default Cache<?, ?> createAssociatedIdCache(ImmutableProp type) {
         return null;
     }
 
-    @NotNull
-    default Cache<?, List<?>> createAssociatedIdListCache(@NotNull ImmutableProp type) {
+    default Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp type) {
         return null;
     }
 }

@@ -36,7 +36,7 @@ public class CacheConfig {
             Cache<?, T> cache
     ) {
         ImmutableType immutableType = ImmutableType.get(type);
-        objectCacheMap.put(immutableType, CacheWrapper.unwrap(cache));
+        objectCacheMap.put(immutableType, LocatedCacheImpl.unwrap(cache));
         return this;
     }
 
@@ -58,7 +58,13 @@ public class CacheConfig {
         if (!prop.isReference()) {
             throw new IllegalArgumentException("The prop \"" + prop + "\" is not reference");
         }
-        associationCacheMap.put(prop, CacheWrapper.unwrap(cache));
+        if (!prop.isNullable()) {
+            throw new IllegalArgumentException(
+                    "Cannot set cache for \"" + prop + "\", " +
+                            "non-null reference association does not support cache"
+            );
+        }
+        associationCacheMap.put(prop, LocatedCacheImpl.unwrap(cache));
         return this;
     }
 
@@ -80,7 +86,13 @@ public class CacheConfig {
         if (!prop.isReference()) {
             throw new IllegalArgumentException("The prop \"" + prop + "\" is not list");
         }
-        associationCacheMap.put(prop, CacheWrapper.unwrap(cache));
+        associationCacheMap.put(prop, LocatedCacheImpl.unwrap(cache));
+        return this;
+    }
+
+    @OldChain
+    public CacheConfig setCacheOperator(CacheOperator operator) {
+        this.operator = operator;
         return this;
     }
 

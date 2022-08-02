@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.runtime.Internal;
 
 public class ImmutableObjects {
 
@@ -112,6 +113,10 @@ public class ImmutableObjects {
     @SuppressWarnings("unchecked")
     public static <I> I fromString(Class<I> type, String json) throws JsonProcessingException {
         return MAPPER.readValue(json, type);
+    }
+
+    public static <T, D extends T> D toDraftObject(T obj) {
+        return Internal.currentDraftContext().toDraftObject(obj);
     }
 
     static {

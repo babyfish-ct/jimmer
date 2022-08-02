@@ -21,12 +21,14 @@ public class CacheEnvironment<K, V> {
             JSqlClient sqlClient,
             Connection connection,
             CacheFilter filter,
-            CacheLoader<K, V> loader) {
+            CacheLoader<K, V> loader,
+            boolean requiresNewDraftContext) {
         this.sqlClient = Objects.requireNonNull(sqlClient, "sqlClient cannot be null");
         this.connection = Objects.requireNonNull(connection, "connection cannot be null");
         this.filter = filter;
         this.loader = CacheLoaderWrapper.wrap(
-                Objects.requireNonNull(loader, "loader cannot be null")
+                Objects.requireNonNull(loader, "loader cannot be null"),
+                requiresNewDraftContext
         );
     }
 

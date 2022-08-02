@@ -1,17 +1,23 @@
 package org.babyfish.jimmer.runtime;
 
+import org.babyfish.jimmer.CircularReferenceException;
 import org.babyfish.jimmer.Draft;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 
 public class DraftContext {
 
+    private final DraftContext parent;
+
     private final IdentityHashMap<Object, Draft> objDraftMap = new IdentityHashMap<>();
 
     private final IdentityHashMap<List<?>, ListDraft<?>> listDraftMap = new IdentityHashMap<>();
+
+    public DraftContext(DraftContext parent) {
+        this.parent = parent;
+    }
 
     @SuppressWarnings("unchecked")
     public <D> D toDraftObject(Object obj) {
@@ -68,11 +74,10 @@ public class DraftContext {
             return obj;
         }
         DraftSpi spi = (DraftSpi)draft;
-        if (spi.__draftContext() != this) {
-            throw new IllegalArgumentException(
-                    "Cannot resolve the draft object because it belong to another draft context"
-            );
-        }
+        validateOtherDraft(
+                spi.__draftContext(),
+                "Cannot resolve the draft object because it belong to another draft context"
+        );
         return (E)spi.__resolve();
     }
 
@@ -104,11 +109,21 @@ public class DraftContext {
             }
             return newList != null ? newList : list;
         }
-        if (draft.draftContext() != null && draft.draftContext() != this) {
-            throw new IllegalArgumentException(
-                    "Cannot resolve the draft list because it belong to another draft context"
-            );
-        }
+        validateOtherDraft(
+                draft.draftContext(),
+                "Cannot resolve the draft list because it belong to another draft context"
+        );
         return (List<E>)draft.resolve();
+    }
+
+    private void validateOtherDraft(DraftContext ctx, String errorMessage) {
+        if (ctx != null && ctx != this) {
+            for (DraftContext parent = this.parent; parent != null; parent = parent.parent) {
+                if (parent == ctx) {
+                    throw new CircularReferenceException();
+                }
+            }
+            throw new IllegalArgumentException(errorMessage);
+        }
     }
 }
