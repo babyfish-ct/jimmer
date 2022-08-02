@@ -16,9 +16,9 @@ public class CachesImpl implements Caches {
 
     private final CacheFactory cacheFactory;
 
-    private final Map<ImmutableType, CacheWrapper<?, ?>> objectCacheMap;
+    private final Map<ImmutableType, LocatedCacheImpl<?, ?>> objectCacheMap;
 
-    private final Map<ImmutableProp, CacheWrapper<?, ?>> associationCacheMap;
+    private final Map<ImmutableProp, LocatedCacheImpl<?, ?>> associationCacheMap;
 
     private final CacheOperator operator;
 
@@ -39,12 +39,12 @@ public class CachesImpl implements Caches {
             Map<ImmutableProp, Cache<?, ?>> associationCacheMap,
             CacheOperator operator
     ) {
-        Map<ImmutableType, CacheWrapper<?, ?>> objectCacheWrapperMap = new HashMap<>();
+        Map<ImmutableType, LocatedCacheImpl<?, ?>> objectCacheWrapperMap = new HashMap<>();
         for (Map.Entry<ImmutableType, Cache<?, ?>> e : objectCacheMap.entrySet()) {
             ImmutableType type = e.getKey();
             objectCacheWrapperMap.put(type, wrapObjectCache(e.getValue(), type));
         }
-        Map<ImmutableProp, CacheWrapper<?, ?>> associationCacheWrapperMap = new HashMap<>();
+        Map<ImmutableProp, LocatedCacheImpl<?, ?>> associationCacheWrapperMap = new HashMap<>();
         for (Map.Entry<ImmutableProp, Cache<?, ?>> e : associationCacheMap.entrySet()) {
             ImmutableProp prop = e.getKey();
             associationCacheWrapperMap.put(prop, wrapAssociationCache(e.getValue(), prop));
@@ -74,34 +74,34 @@ public class CachesImpl implements Caches {
     }
 
     @Override
-    public <K, V> Cache<K, V> getObjectCache(ImmutableType type) {
+    public <K, V> LocatedCache<K, V> getObjectCache(ImmutableType type) {
         if (disableAll || disabledTypes.contains(type)) {
             return null;
         }
-        return CacheWrapper.export(getObjectCacheWrapper(type));
+        return LocatedCacheImpl.export(getObjectCacheWrapper(type));
     }
 
     @Override
-    public <K, V> Cache<K, V> getAssociationCache(ImmutableProp prop) {
+    public <K, V> LocatedCache<K, V> getAssociationCache(ImmutableProp prop) {
         if (disableAll ||
                 disabledProps.contains(prop) ||
                 disabledTypes.contains(prop.getTargetType())
         ) {
             return null;
         }
-        return CacheWrapper.export(getAssociationWrapper(prop));
+        return LocatedCacheImpl.export(getAssociationWrapper(prop));
     }
 
     @SuppressWarnings("unchecked")
-    private <K, V> CacheWrapper<K, V> getObjectCacheWrapper(ImmutableType type) {
+    private <K, V> LocatedCacheImpl<K, V> getObjectCacheWrapper(ImmutableType type) {
 
         Lock lock;
 
         (lock = rwl.readLock()).lock();
         try {
-            CacheWrapper<?, ?> cacheWrapper = objectCacheMap.get(type);
+            LocatedCacheImpl<?, ?> cacheWrapper = objectCacheMap.get(type);
             if (cacheWrapper != null || objectCacheMap.containsKey(type)) {
-                return (CacheWrapper<K, V>) cacheWrapper;
+                return (LocatedCacheImpl<K, V>) cacheWrapper;
             }
         } finally {
             lock.unlock();
@@ -109,30 +109,30 @@ public class CachesImpl implements Caches {
 
         (lock = rwl.writeLock()).lock();
         try {
-            CacheWrapper<?, ?> cacheWrapper = objectCacheMap.get(type);
+            LocatedCacheImpl<?, ?> cacheWrapper = objectCacheMap.get(type);
             if (cacheWrapper != null || objectCacheMap.containsKey(type)) {
-                return (CacheWrapper<K, V>) cacheWrapper;
+                return (LocatedCacheImpl<K, V>) cacheWrapper;
             }
             if (cacheFactory != null) {
                 cacheWrapper = wrapObjectCache(cacheFactory.createObjectCache(type), type);
             }
             objectCacheMap.put(type, cacheWrapper);
-            return (CacheWrapper<K, V>) cacheWrapper;
+            return (LocatedCacheImpl<K, V>) cacheWrapper;
         } finally {
             lock.unlock();
         }
     }
 
     @SuppressWarnings("unchecked")
-    private <K, V> CacheWrapper<K, V> getAssociationWrapper(ImmutableProp prop) {
+    private <K, V> LocatedCacheImpl<K, V> getAssociationWrapper(ImmutableProp prop) {
 
         Lock lock;
 
         (lock = rwl.readLock()).lock();
         try {
-            CacheWrapper<?, ?> cacheWrapper = associationCacheMap.get(prop);
+            LocatedCacheImpl<?, ?> cacheWrapper = associationCacheMap.get(prop);
             if (cacheWrapper != null || associationCacheMap.containsKey(prop)) {
-                return (CacheWrapper<K, V>) cacheWrapper;
+                return (LocatedCacheImpl<K, V>) cacheWrapper;
             }
         } finally {
             lock.unlock();
@@ -140,29 +140,29 @@ public class CachesImpl implements Caches {
 
         (lock = rwl.writeLock()).lock();
         try {
-            CacheWrapper<?, ?> cacheWrapper = associationCacheMap.get(prop);
-            if (cacheWrapper != null || associationCacheMap.containsKey(prop)) {
-                return (CacheWrapper<K, V>) cacheWrapper;
+            LocatedCacheImpl<?, ?> locatedCache = associationCacheMap.get(prop);
+            if (locatedCache != null || associationCacheMap.containsKey(prop)) {
+                return (LocatedCacheImpl<K, V>) locatedCache;
             }
-            if (cacheFactory != null) {
-                cacheWrapper = wrapAssociationCache(cacheFactory.createAssociatedIdCache(prop), prop);
+            if ((!prop.isReference() || prop.isNullable()) && cacheFactory != null) {
+                locatedCache = wrapAssociationCache(cacheFactory.createAssociatedIdCache(prop), prop);
             }
-            associationCacheMap.put(prop, cacheWrapper);
-            return (CacheWrapper<K, V>) cacheWrapper;
+            associationCacheMap.put(prop, locatedCache);
+            return (LocatedCacheImpl<K, V>) locatedCache;
         } finally {
             lock.unlock();
         }
     }
 
     @SuppressWarnings("unchecked")
-    private CacheWrapper<?, ?> wrapObjectCache(
+    private LocatedCacheImpl<?, ?> wrapObjectCache(
             Cache<?, ?> cache,
             ImmutableType type
     ) {
         if (cache == null) {
             return null;
         }
-        CacheWrapper<Object, Object> wrapper = CacheWrapper.wrap(
+        LocatedCacheImpl<Object, Object> wrapper = LocatedCacheImpl.wrap(
                 (Cache<Object, Object>) cache,
                 type
         );
@@ -181,14 +181,14 @@ public class CachesImpl implements Caches {
     }
 
     @SuppressWarnings("unchecked")
-    private CacheWrapper<?, ?> wrapAssociationCache(
+    private LocatedCacheImpl<?, ?> wrapAssociationCache(
             Cache<?, ?> cache,
             ImmutableProp prop
     ) {
         if (cache == null) {
             return null;
         }
-        CacheWrapper<Object, Object> wrapper = CacheWrapper.wrap(
+        LocatedCacheImpl<Object, Object> wrapper = LocatedCacheImpl.wrap(
                 (Cache<Object, Object>) cache,
                 prop
         );

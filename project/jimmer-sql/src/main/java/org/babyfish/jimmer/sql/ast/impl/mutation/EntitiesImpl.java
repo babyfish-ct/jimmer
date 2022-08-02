@@ -217,7 +217,8 @@ public class EntitiesImpl implements Entities {
                                             sqlClient,
                                             con,
                                             (Class<E>) immutableType.getJavaClass()
-                                    )
+                                    ),
+                                    true
                             )
                     ).values()
             );

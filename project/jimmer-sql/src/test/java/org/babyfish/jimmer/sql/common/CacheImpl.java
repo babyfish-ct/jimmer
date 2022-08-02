@@ -24,9 +24,7 @@ public class CacheImpl<T> implements Cache<Object, T> {
                 missedKeys.add(key);
             }
         }
-        Map<Object, T> loadedMap = env
-                .getLoader()
-                .loadAll(missedKeys);
+        Map<Object, T> loadedMap = env.getLoader().loadAll(missedKeys);
         for (Map.Entry<Object, T> e : resultMap.entrySet()) {
             if (e.getValue() == null) {
                 e.setValue(loadedMap.get(e.getKey()));

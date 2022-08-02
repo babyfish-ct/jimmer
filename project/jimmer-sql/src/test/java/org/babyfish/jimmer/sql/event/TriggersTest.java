@@ -110,7 +110,7 @@ public class TriggersTest {
     public void fireInsertBookWithNullParent() {
         triggers.fireEntityTableChange(
                 null,
-                (ImmutableSpi) BookDraft.$.produce(book -> {
+                BookDraft.$.produce(book -> {
                     book
                             .setId(graphQLInActionId3)
                             .setName("GraphQL in Action")
@@ -140,7 +140,7 @@ public class TriggersTest {
     public void fireInsertBook() {
         triggers.fireEntityTableChange(
                 null,
-                (ImmutableSpi) BookDraft.$.produce(book -> {
+                BookDraft.$.produce(book -> {
                     book
                             .setId(graphQLInActionId3)
                             .setName("GraphQL in Action")
@@ -189,7 +189,7 @@ public class TriggersTest {
     @Test
     public void fireDeleteBook() {
         triggers.fireEntityTableChange(
-                (ImmutableSpi) BookDraft.$.produce(book -> {
+                BookDraft.$.produce(book -> {
                     book
                             .setId(graphQLInActionId3)
                             .setName("GraphQL in Action")
@@ -239,13 +239,13 @@ public class TriggersTest {
     @Test
     public void fireUpdateBook() {
         triggers.fireEntityTableChange(
-                (ImmutableSpi) BookDraft.$.produce(book -> {
+                BookDraft.$.produce(book -> {
                     book
                             .setId(graphQLInActionId3)
                             .setName("GraphQL in Action")
                             .setStore(store -> store.setId(manningId));
                 }),
-                (ImmutableSpi) BookDraft.$.produce(book -> {
+                BookDraft.$.produce(book -> {
                     book
                             .setId(graphQLInActionId3)
                             .setName("GraphQL in Action3")

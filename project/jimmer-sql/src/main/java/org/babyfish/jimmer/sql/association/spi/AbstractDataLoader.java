@@ -125,7 +125,8 @@ public abstract class AbstractDataLoader {
                             sqlClient,
                             con,
                             filter,
-                            this::queryForeignKeyMap
+                            this::queryForeignKeyMap,
+                            false
                     )
             );
             for (Object sourceId : missedFkSourceIds) {
@@ -222,7 +223,8 @@ public abstract class AbstractDataLoader {
                         filter,
                         it -> Tuple2.toMap(
                                 querySourceTargetIdPairs(it)
-                        )
+                        ),
+                        false
                 )
         );
         Map<Object, ImmutableSpi> targetMap = Utils.toMap(
@@ -272,7 +274,8 @@ public abstract class AbstractDataLoader {
                         filter,
                         it -> Tuple2.toMultiMap(
                                 querySourceTargetIdPairs(it)
-                        )
+                        ),
+                        false
                 )
         );
         Map<Object, ImmutableSpi> targetMap = Utils.toMap(

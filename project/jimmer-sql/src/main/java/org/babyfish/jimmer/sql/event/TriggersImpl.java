@@ -95,11 +95,17 @@ public class TriggersImpl implements Triggers {
     }
 
     @Override
-    public void fireEntityTableChange(ImmutableSpi oldRow, ImmutableSpi newRow) {
+    public void fireEntityTableChange(Object oldRow, Object newRow) {
         if (oldRow == null && newRow == null) {
             return;
         }
-        EntityEvent<ImmutableSpi> event = new EntityEvent<>(oldRow, newRow);
+        if (oldRow != null && !(oldRow instanceof ImmutableSpi)) {
+            throw new IllegalArgumentException("oldRow must be immutable");
+        }
+        if (newRow != null && !(newRow instanceof ImmutableSpi)) {
+            throw new IllegalArgumentException("newRow must be immutable");
+        }
+        EntityEvent<ImmutableSpi> event = new EntityEvent<>((ImmutableSpi)oldRow, (ImmutableSpi) newRow);
         List<EntityListener<ImmutableSpi>> listeners =
                 entityTableListenerMultiMap.get(event.getImmutableType());
         if (listeners != null && !listeners.isEmpty()) {

@@ -3,14 +3,13 @@ package org.babyfish.jimmer.sql.cache;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.Triggers;
 
 import java.util.*;
 import java.util.function.Supplier;
 
-class CacheWrapper<K, V> implements Cache<K, V> {
+class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
 
-    private static final ThreadLocal<Set<CacheWrapper<?, ?>>> LOADING_CACHES_LOCAL =
+    private static final ThreadLocal<Set<LocatedCacheImpl<?, ?>>> LOADING_CACHES_LOCAL =
         new ThreadLocal<>();
 
     private final Cache<K, V> raw;
@@ -19,7 +18,7 @@ class CacheWrapper<K, V> implements Cache<K, V> {
 
     private final ImmutableProp prop;
 
-    public CacheWrapper(Cache<K, V> raw, ImmutableType type, ImmutableProp prop) {
+    public LocatedCacheImpl(Cache<K, V> raw, ImmutableType type, ImmutableProp prop) {
         if ((type == null) == (prop == null)) {
             throw new IllegalArgumentException("The nullity of type and prop must be different");
         }
@@ -31,21 +30,21 @@ class CacheWrapper<K, V> implements Cache<K, V> {
         this.prop = prop;
     }
 
-    public static <K, V> CacheWrapper<K, V> wrap(
+    public static <K, V> LocatedCacheImpl<K, V> wrap(
             Cache<K, V> cache,
             ImmutableType type
     ) {
         return wrap(cache, type, null);
     }
 
-    public static <K, V> CacheWrapper<K, V> wrap(
+    public static <K, V> LocatedCacheImpl<K, V> wrap(
             Cache<K, V> cache,
             ImmutableProp prop
     ) {
         return wrap(cache, null, prop);
     }
 
-    private static <K, V> CacheWrapper<K, V> wrap(
+    private static <K, V> LocatedCacheImpl<K, V> wrap(
             Cache<K, V> cache,
             ImmutableType type,
             ImmutableProp prop
@@ -53,19 +52,19 @@ class CacheWrapper<K, V> implements Cache<K, V> {
         if (cache == null) {
             return null;
         }
-        if (cache instanceof CacheWrapper<?, ?>) {
-            CacheWrapper<K, V> wrapper = (CacheWrapper<K, V>) cache;
+        if (cache instanceof LocatedCache<?, ?>) {
+            LocatedCacheImpl<K, V> wrapper = (LocatedCacheImpl<K, V>) cache;
             if (wrapper.type == type && wrapper.prop == prop) {
                 return wrapper;
             }
-            cache = ((CacheWrapper<K, V>) cache).raw;
+            cache = ((LocatedCacheImpl<K, V>) cache).raw;
         }
-        return new CacheWrapper<>(cache, type, prop);
+        return new LocatedCacheImpl<>(cache, type, prop);
     }
 
-    public static <K, V> CacheWrapper<K, V> export(CacheWrapper<K, V> cacheWrapper) {
+    public static <K, V> LocatedCacheImpl<K, V> export(LocatedCacheImpl<K, V> cacheWrapper) {
         if (cacheWrapper != null) {
-            Set<CacheWrapper<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
+            Set<LocatedCacheImpl<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
             if (disabledCaches != null && disabledCaches.contains(cacheWrapper)) {
                 return null;
             }
@@ -74,13 +73,22 @@ class CacheWrapper<K, V> implements Cache<K, V> {
     }
 
     public static <K, V> Cache<K, V> unwrap(Cache<K, V> cache) {
-        if (cache instanceof CacheWrapper<?, ?>) {
-            CacheWrapper<K, V> wrapper = (CacheWrapper<K, V>) cache;
+        if (cache instanceof LocatedCacheImpl<?, ?>) {
+            LocatedCacheImpl<K, V> wrapper = (LocatedCacheImpl<K, V>) cache;
             return wrapper.raw;
         }
         return cache;
     }
 
+    @Override
+    public ImmutableType getType() {
+        return type;
+    }
+
+    @Override
+    public ImmutableProp getProp() {
+        return prop;
+    }
 
     @Override
     public V get(K key, CacheEnvironment<K, V> env) {
@@ -119,7 +127,7 @@ class CacheWrapper<K, V> implements Cache<K, V> {
     }
 
     private <R> R loading(Supplier<R> block) {
-        Set<CacheWrapper<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
+        Set<LocatedCacheImpl<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
         if (disabledCaches == null) {
             disabledCaches = new HashSet<>();
             LOADING_CACHES_LOCAL.set(disabledCaches);
@@ -184,7 +192,7 @@ class CacheWrapper<K, V> implements Cache<K, V> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        CacheWrapper<?, ?> that = (CacheWrapper<?, ?>) o;
+        LocatedCacheImpl<?, ?> that = (LocatedCacheImpl<?, ?>) o;
         return raw.equals(that.raw) && Objects.equals(type, that.type) && Objects.equals(prop, that.prop);
     }
 

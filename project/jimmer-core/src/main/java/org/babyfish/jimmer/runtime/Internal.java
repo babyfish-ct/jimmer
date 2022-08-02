@@ -7,6 +7,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class Internal {
 
@@ -69,12 +70,29 @@ public class Internal {
         if (ctx != null) {
             return block.apply(ctx, false);
         }
-        ctx = new DraftContext();
+        ctx = new DraftContext(null);
         DRAFT_CONTEXT_LOCAL.set(ctx);
         try {
             return block.apply(ctx, true);
         } finally {
             DRAFT_CONTEXT_LOCAL.remove();
+        }
+    }
+
+    public static <T> T requiresNewDraftContext(
+            Function<DraftContext, T> block
+    ) {
+        DraftContext oldCtx = DRAFT_CONTEXT_LOCAL.get();
+        DraftContext ctx = new DraftContext(oldCtx);
+        DRAFT_CONTEXT_LOCAL.set(ctx);
+        try {
+            return block.apply(ctx);
+        } finally {
+            if (oldCtx != null) {
+                DRAFT_CONTEXT_LOCAL.set(oldCtx);
+            } else {
+                DRAFT_CONTEXT_LOCAL.remove();
+            }
         }
     }
 
