@@ -4,8 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.babyfish.jimmer.jackson.ImmutableModule;
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.sql.meta.Column;
 
 public class ImmutableObjects {
 
@@ -89,6 +91,53 @@ public class ImmutableObjects {
         throw new IllegalArgumentException("The first argument is immutable object created by jimmer");
     }
 
+    public static boolean isIdOnly(Object immutable) {
+        if (immutable == null) {
+            return false;
+        }
+        if (immutable instanceof ImmutableSpi) {
+            ImmutableSpi spi = (ImmutableSpi) immutable;
+            ImmutableType type = spi.__type();
+            ImmutableProp idProp = type.getIdProp();
+            if (idProp == null) {
+                throw new IllegalArgumentException("The object type \"" + type + "\" does not have id property");
+            }
+            for (ImmutableProp prop : type.getProps().values()) {
+                if (prop.isId()) {
+                    if (!spi.__isLoaded(prop.getId())) {
+                        throw new IllegalArgumentException("The id of " + spi + " is unloaded");
+                    }
+                } else if (spi.__isLoaded(prop.getId())) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        throw new IllegalArgumentException("The first argument is immutable object created by jimmer");
+    }
+
+    public static boolean isLonely(Object immutable) {
+        if (immutable instanceof ImmutableSpi) {
+            ImmutableSpi spi = (ImmutableSpi) immutable;
+            ImmutableType type = spi.__type();
+            for (ImmutableProp prop : type.getProps().values()) {
+                if (prop.isAssociation()) {
+                    if (spi.__isLoaded(prop.getId())) {
+                        if (prop.getStorage() instanceof Column) {
+                            ImmutableSpi target = (ImmutableSpi) spi.__get(prop.getId());
+                            if (!isIdOnly(target)) {
+                                return false;
+                            }
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        throw new IllegalArgumentException("The first argument is immutable object created by jimmer");
+    }
+
     /**
      * Convert an object to a JSON string.
      * If the object is jimmer immutable object, unspecified properties can be automatically ignored.
@@ -113,10 +162,6 @@ public class ImmutableObjects {
     @SuppressWarnings("unchecked")
     public static <I> I fromString(Class<I> type, String json) throws JsonProcessingException {
         return MAPPER.readValue(json, type);
-    }
-
-    public static <T, D extends T> D toDraftObject(T obj) {
-        return Internal.currentDraftContext().toDraftObject(obj);
     }
 
     static {
