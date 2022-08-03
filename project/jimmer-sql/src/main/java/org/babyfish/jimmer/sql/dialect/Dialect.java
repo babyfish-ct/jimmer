@@ -14,10 +14,6 @@ public interface Dialect {
         throw new ExecutionException("Sequence is not supported by '" + getClass().getName() + "'");
     }
 
-    default String getLastIdentitySql() {
-        throw new ExecutionException("Identity is not supported by '" + getClass().getName() + "'");
-    }
-
     default String getOverrideIdentityIdSql() {
         return null;
     }

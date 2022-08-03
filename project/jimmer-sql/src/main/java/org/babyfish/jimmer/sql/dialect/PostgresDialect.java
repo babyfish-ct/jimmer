@@ -13,11 +13,6 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
-    public String getLastIdentitySql() {
-        return "select lastval()";
-    }
-
-    @Override
     public String getOverrideIdentityIdSql() {
         return "overriding system value";
     }

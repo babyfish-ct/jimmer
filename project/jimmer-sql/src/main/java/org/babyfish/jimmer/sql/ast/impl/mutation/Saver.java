@@ -22,6 +22,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.*;
 
 class Saver {
@@ -255,6 +256,7 @@ class Saver {
         return ObjectType.NEW;
     }
 
+    @SuppressWarnings("unchecked")
     private void insert(DraftSpi draftSpi) {
 
         ImmutableType type = draftSpi.__type();
@@ -275,7 +277,7 @@ class Saver {
                 String sql = data.getSqlClient().getDialect().getSelectIdFromSequenceSql(
                         ((SequenceIdGenerator)idGenerator).getSequenceName()
                 );
-                id = data.getSqlClient().getExecutor().execute(con, sql, Collections.emptyList(), stmt -> {
+                id = data.getSqlClient().getExecutor().execute(con, sql, Collections.emptyList(), null, stmt -> {
                     try (ResultSet rs = stmt.executeQuery()) {
                         rs.next();
                         return rs.getObject(1);
@@ -358,26 +360,35 @@ class Saver {
         builder.sql(")");
 
         Tuple2<String, List<Object>> sqlResult = builder.build();
-        int rowCount = data.getSqlClient().getExecutor().execute(
+        boolean generateKeys = id == null;
+        Object insertedResult = data.getSqlClient().getExecutor().execute(
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
-                PreparedStatement::executeUpdate
+                generateKeys ?
+                        (c, s) ->
+                                c.prepareStatement(s, Statement.RETURN_GENERATED_KEYS) :
+                        null,
+                stmt -> {
+                    if (generateKeys) {
+                        int updateCount = stmt.executeUpdate();
+                        Object generatedId;
+                        try (ResultSet rs = stmt.getGeneratedKeys()) {
+                            rs.next();
+                            generatedId = rs.getObject(1);
+                        }
+                        return new Tuple2<>(updateCount, generatedId);
+                    }
+                    return stmt.executeUpdate();
+                }
         );
+        int rowCount = insertedResult instanceof Tuple2<?, ?> ?
+                ((Tuple2<Integer, ?>)insertedResult).get_1() :
+                (Integer)insertedResult;
         addOutput(AffectedTable.of(type), rowCount);
 
-        if (id == null) {
-            id = data.getSqlClient().getExecutor().execute(
-                    con,
-                    data.getSqlClient().getDialect().getLastIdentitySql(),
-                    Collections.emptyList(),
-                    stmt -> {
-                        try (ResultSet rs = stmt.executeQuery()) {
-                            rs.next();
-                            return rs.getObject(1);
-                        }
-                    }
-            );
+        if (insertedResult instanceof Tuple2<?, ?>) {
+            id = ((Tuple2<?, Object>)insertedResult).get_2();
             setDraftId(draftSpi, id);
         }
 
@@ -477,6 +488,7 @@ class Saver {
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                null,
                 PreparedStatement::executeUpdate
         );
         if (rowCount != 0) {

@@ -68,7 +68,13 @@ public class MutableDeleteImpl
             SqlBuilder builder = new SqlBuilder(sqlClient);
             renderDirectly(builder);
             Tuple2<String, List<Object>> sqlResult = builder.build();
-            return sqlClient.getExecutor().execute(con, sqlResult.get_1(), sqlResult.get_2(), PreparedStatement::executeUpdate);
+            return sqlClient.getExecutor().execute(
+                    con,
+                    sqlResult.get_1(),
+                    sqlResult.get_2(),
+                    null,
+                    PreparedStatement::executeUpdate
+            );
         }
         List<Object> ids = deleteQuery
                 .select((Expression<Object>)table.get(table.getImmutableType().getIdProp().getName()))
