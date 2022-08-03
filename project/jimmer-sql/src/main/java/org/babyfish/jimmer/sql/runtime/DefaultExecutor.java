@@ -17,9 +17,13 @@ public class DefaultExecutor implements Executor {
             Connection con,
             String sql,
             List<Object> variables,
+            StatementFactory statementFactory,
             SqlFunction<PreparedStatement, R> block
     ) {
-        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+        try (PreparedStatement stmt = statementFactory != null ?
+                statementFactory.preparedStatement(con, sql) :
+                con.prepareStatement(sql)
+        ) {
             int size = variables.size();
             for (int index = 0; index < size; index++) {
                 Object variable = variables.get(index);

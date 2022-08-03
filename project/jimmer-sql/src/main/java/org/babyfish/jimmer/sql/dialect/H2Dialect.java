@@ -6,9 +6,4 @@ public class H2Dialect extends DefaultDialect {
     public String getSelectIdFromSequenceSql(String sequenceName) {
         return "select nextval('" + sequenceName + "')";
     }
-
-    @Override
-    public String getLastIdentitySql() {
-        return "call scopeidentity()";
-    }
 }

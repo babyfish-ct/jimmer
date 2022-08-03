@@ -48,7 +48,12 @@ public class SqlClientConfig {
                         }
                 )
                 .setDialect(
-                        new H2Dialect() // Support sequence
+                        new H2Dialect() {
+                            @Override
+                            public String getLastIdentitySql() {
+                                return "call scope_identity()";
+                            }
+                        }// Support sequence
                 )
                 .setExecutor(
                         /*

@@ -90,6 +90,7 @@ class MiddleTableOperator {
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                null,
                 PreparedStatement::executeUpdate
         );
     }
@@ -131,6 +132,7 @@ class MiddleTableOperator {
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                null,
                 PreparedStatement::executeUpdate
         );
     }

@@ -10,6 +10,7 @@ public interface Executor {
             Connection con,
             String sql,
             List<Object> variables,
+            StatementFactory statementFactory,
             SqlFunction<PreparedStatement, R> block
     );
 }

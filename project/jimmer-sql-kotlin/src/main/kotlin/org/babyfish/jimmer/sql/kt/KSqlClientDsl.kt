@@ -94,6 +94,7 @@ class KSqlClientDsl internal constructor(
         val con: Connection,
         val sql: String,
         val variables: List<Any>,
+        private val statementFactory: StatementFactory?,
         private val javaBlock: SqlFunction<PreparedStatement, *>
     ) {
         private var proceeded: Boolean = false
@@ -104,7 +105,7 @@ class KSqlClientDsl internal constructor(
             if (proceeded) {
                 throw IllegalStateException("ExecutorDsl cannot be proceeded twice")
             }
-            result = DefaultExecutor.INSTANCE.execute(con, sql, variables, javaBlock)
+            result = DefaultExecutor.INSTANCE.execute(con, sql, variables, statementFactory, javaBlock)
             proceeded = true
         }
 
@@ -124,9 +125,16 @@ class KSqlClientDsl internal constructor(
             con: Connection,
             sql: String,
             variables: List<Any>,
+            statementFactory: StatementFactory?,
             block: SqlFunction<PreparedStatement, R>
         ): R =
-            ExecutorDsl(con, sql, variables, block).let {
+            ExecutorDsl(
+                con,
+                sql,
+                variables,
+                statementFactory,
+                block
+            ).let {
                 it.dslBlock()
                 it.get()
             }

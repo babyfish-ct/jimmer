@@ -21,7 +21,7 @@ public class Selectors {
             List<Object> variables,
             List<Selection<?>> selections
     ) {
-        return sqlClient.getExecutor().execute(con, sql, variables, stmt -> {
+        return sqlClient.getExecutor().execute(con, sql, variables, null, stmt -> {
             List<R> results = new ArrayList<>();
             try (ResultSet resultSet = stmt.executeQuery()) {
                 ResultMapper resultMapper = new ResultMapper(sqlClient, selections, resultSet);

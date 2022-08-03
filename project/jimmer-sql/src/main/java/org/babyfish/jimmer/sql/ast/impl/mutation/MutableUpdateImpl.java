@@ -114,7 +114,13 @@ public class MutableUpdateImpl
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return getSqlClient()
                 .getExecutor()
-                .execute(con, sqlResult.get_1(), sqlResult.get_2(), PreparedStatement::executeUpdate);
+                .execute(
+                        con,
+                        sqlResult.get_1(),
+                        sqlResult.get_2(),
+                        null,
+                        PreparedStatement::executeUpdate
+                );
     }
 
     @Override

@@ -184,6 +184,7 @@ public class Deleter {
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
+                        null,
                         PreparedStatement::executeUpdate
                 );
         addOutput(AffectedTable.of(middleTableProp), affectedRowCount);
@@ -220,6 +221,7 @@ public class Deleter {
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
+                        null,
                         PreparedStatement::executeUpdate
                 );
         addOutput(AffectedTable.of(childType), affectedRowCount);
@@ -253,6 +255,7 @@ public class Deleter {
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
+                        null,
                         stmt -> {
                             List<Object> values = new ArrayList<>();
                             try (ResultSet rs = stmt.executeQuery()) {
@@ -316,6 +319,7 @@ public class Deleter {
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
+                        null,
                         PreparedStatement::executeUpdate
                 );
         addOutput(AffectedTable.of(type), affectedRowCount);

@@ -63,6 +63,7 @@ class ChildTableOperator {
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                null,
                 PreparedStatement::executeUpdate
         );
     }
@@ -82,6 +83,7 @@ class ChildTableOperator {
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                null,
                 PreparedStatement::executeUpdate
         );
     }
@@ -101,6 +103,7 @@ class ChildTableOperator {
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                null,
                 stmt -> {
                     List<Object> list = new ArrayList<>();
                     try (ResultSet rs = stmt.executeQuery()) {
