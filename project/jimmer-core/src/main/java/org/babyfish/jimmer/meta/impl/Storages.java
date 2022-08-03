@@ -28,7 +28,7 @@ public class Storages {
             org.babyfish.jimmer.sql.Column column = prop.getAnnotation(org.babyfish.jimmer.sql.Column.class);
             String columnName = column != null ? column.name() : "";
             if (columnName.isEmpty()) {
-                columnName = Utils.databaseIdentifier(prop.getName());
+                columnName = DatabaseIdentifiers.databaseIdentifier(prop.getName());
             }
             return new Column(columnName);
         }
@@ -54,11 +54,11 @@ public class Storages {
         String tableName = joinTable != null ? joinTable.name() : "";
         if (tableName.isEmpty()) {
             tableName =
-                    Utils.databaseIdentifier(
+                    DatabaseIdentifiers.databaseIdentifier(
                             prop.getDeclaringType().getJavaClass().getSimpleName()
                     ) +
                             '_' +
-                            Utils.databaseIdentifier(
+                            DatabaseIdentifiers.databaseIdentifier(
                                     prop.getElementClass().getSimpleName()
                             ) +
                             "_MAPPING";
@@ -68,7 +68,7 @@ public class Storages {
                 "";
         if (joinColumnName.isEmpty()) {
             joinColumnName =
-                    Utils.databaseIdentifier(prop.getDeclaringType().getJavaClass().getSimpleName()) +
+                    DatabaseIdentifiers.databaseIdentifier(prop.getDeclaringType().getJavaClass().getSimpleName()) +
                             "_ID";
         }
         String targetJoinColumn = joinTable != null ?
@@ -76,7 +76,7 @@ public class Storages {
                 "";
         if (targetJoinColumn.isEmpty()) {
             targetJoinColumn =
-                    Utils.databaseIdentifier(prop.getTargetType().getJavaClass().getSimpleName()) +
+                    DatabaseIdentifiers.databaseIdentifier(prop.getTargetType().getJavaClass().getSimpleName()) +
                             "_ID";
         }
         if (joinColumnName.equals(targetJoinColumn)) {
@@ -97,7 +97,7 @@ public class Storages {
         }
         String columnName = joinColumn != null ? joinColumn.name() : "";
         if (columnName.isEmpty()) {
-            columnName = Utils.databaseIdentifier(prop.getName()) + "_ID";
+            columnName = DatabaseIdentifiers.databaseIdentifier(prop.getName()) + "_ID";
         }
         return new Column(columnName);
     }

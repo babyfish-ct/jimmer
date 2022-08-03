@@ -13,7 +13,7 @@ import java.io.IOException;
 
 public class ImmutableDeserializer extends StdDeserializer<Object> {
 
-    private ImmutableType immutableType;
+    private final ImmutableType immutableType;
 
     public ImmutableDeserializer(ImmutableType immutableType) {
         super(immutableType.getJavaClass());
