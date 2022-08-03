@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.meta.impl;
 
-class Utils {
+public class DatabaseIdentifiers {
+
+    private DatabaseIdentifiers() {}
 
     public static String databaseIdentifier(String name) {
         StringBuilder builder = new StringBuilder();
@@ -19,5 +21,17 @@ class Utils {
             }
         }
         return builder.toString();
+    }
+
+    public static String standardColumnName(String columName) {
+        boolean cut = false;
+        if (columName.startsWith("`") && columName.endsWith("`") && columName.length() > 2) {
+            cut = true;
+        } else if (columName.startsWith("\"") && columName.endsWith("\"") && columName.length() > 2) {
+            cut = true;
+        } else if (columName.startsWith("[") && columName.endsWith("]")) {
+            cut = true;
+        }
+        return (cut ? columName.substring(1, columName.length() - 1) : columName).toUpperCase();
     }
 }

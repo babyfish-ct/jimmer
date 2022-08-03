@@ -31,6 +31,8 @@ class ImmutableTypeImpl implements ImmutableType {
 
     private Map<String, ImmutableProp> props;
 
+    private Map<String, ImmutableProp> columnProps;
+
     private Map<String, ImmutableProp> selectableProps;
 
     private ImmutableProp idProp;
@@ -55,7 +57,7 @@ class ImmutableTypeImpl implements ImmutableType {
         Table table = javaClass.getAnnotation(Table.class);
         tableName = table != null ? table.name() : "";
         if (tableName.isEmpty()) {
-            tableName = Utils.databaseIdentifier(javaClass.getSimpleName());
+            tableName = DatabaseIdentifiers.databaseIdentifier(javaClass.getSimpleName());
         }
     }
 
@@ -132,6 +134,47 @@ class ImmutableTypeImpl implements ImmutableType {
             );
         }
         return prop;
+    }
+
+    public ImmutableProp getPropByColumnName(String columnName) {
+        String scName = DatabaseIdentifiers.standardColumnName(columnName);
+        ImmutableProp prop = getColumnProps().get(scName);
+        if (prop == null) {
+            throw new IllegalArgumentException(
+                    "There is no property whose column name is \"" +
+                            columnName +
+                            "\" in type \"" +
+                            this +
+                            "\""
+            );
+        }
+        return prop;
+    }
+
+    private Map<String, ImmutableProp> getColumnProps() {
+        Map<String, ImmutableProp> cps = columnProps;
+        if (cps == null) {
+            cps = new LinkedHashMap<>();
+            for (ImmutableProp prop : getProps().values()) {
+                if (prop.getStorage() instanceof Column) {
+                    String scName = DatabaseIdentifiers.standardColumnName(prop.<Column>getStorage().getName());
+                    ImmutableProp conflictProp = cps.put(scName, prop);
+                    if (conflictProp != null) {
+                        throw new ModelException(
+                                "Conflict column name \"" +
+                                        scName +
+                                        "\" of \"" +
+                                        conflictProp +
+                                        "\" and \"" +
+                                        prop +
+                                        "\""
+                        );
+                    }
+                }
+            }
+            columnProps = cps;
+        }
+        return cps;
     }
 
     public Map<String, ImmutableProp> getSelectableProps() {
