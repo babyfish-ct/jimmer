@@ -9,14 +9,18 @@ docker run \
 	--network-alias jimmer-demo-mysql \
 	-p 4001:3306 \
 	-e MYSQL_ROOT_PASSWORD=123456 \
-	mysql
+	mysql \
+	--lower_case_table_names=1
 docker cp mysql.conf jimmer-demo-mysql:/etc/
 docker restart jimmer-demo-mysql
-docker cp maxwell.sql jimmer-demo-mysql:/var/maxwell.sql
 echo "WAIT mysql for 5 seconds"
 sleep 5
+docker cp maxwell.sql jimmer-demo-mysql:/var/maxwell.sql
 docker exec jimmer-demo-mysql /bin/sh -c \
 	'mysql -uroot -p123456 </var/maxwell.sql'
+docker cp jimmer-demo.sql jimmer-demo-mysql:/var/jimmer-demo.sql
+docker exec jimmer-demo-mysql /bin/sh -c \
+        'mysql -uroot -p123456 </var/jimmer-demo.sql'
 
 docker pull zookeeper
 docker run \
@@ -59,3 +63,14 @@ docker run \
 	--producer=kafka \
 	--kafka.bootstrap.servers=jimmer-demo-kafka:9092 \
 	--kafka_topic=maxwell
+
+docker pull redis
+docker run \
+	--restart=always \
+	-d \
+	-it \
+	--name jimmer-demo-redis \
+	--network jimmer-demo-network \
+	--network-alias jimmer-demo-redis \
+	-p 4004:6379 \
+	redis

@@ -10,8 +10,8 @@ import java.util.UUID;
 public interface Author {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.USER, generatorType = UUIDIdGenerator.class)
-    UUID id();
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    long id();
 
     @Key
     String firstName();

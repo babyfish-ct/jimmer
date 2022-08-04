@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:4001/jimmer_demo
+    username: root
+    password: 123456
+  redis:
+    host: localhost
+    port: 4004

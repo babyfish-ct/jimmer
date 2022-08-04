@@ -1,26 +1,25 @@
-drop table tree_node if exists;
-drop table book_author_mapping if exists;
-drop table book if exists;
-drop table author if exists;
-drop table book_store if exists;
+create database jimmer_demo;
+use jimmer_demo;
 
 create table book_store(
-    id identity(100, 1) not null,
+    id bigint unsigned not null auto_increment primary key,
     name varchar(50) not null,
     website varchar(100)
-);
+) engine=innodb;
+alter table book_store auto_increment = 100;
 alter table book_store
     add constraint uq_book_store
         unique(name)
 ;
 
 create table book(
-    id identity(100, 1) not null,
+    id bigint unsigned not null auto_increment primary key,
     name varchar(50) not null,
     edition integer not null,
     price numeric(10, 2) not null,
-    store_id bigint
-);
+    store_id bigint unsigned
+) engine=innodb;
+alter table book_store auto_increment = 100;
 alter table book
     add constraint uq_book
         unique(name, edition)
@@ -32,23 +31,24 @@ alter table book
 ;
 
 create table author(
-    id identity(100, 1) not null,
+    id bigint unsigned not null auto_increment primary key,
     first_name varchar(25) not null,
     last_name varchar(25) not null,
     gender char(1) not null
-);
+) engine=innodb;
+alter table author auto_increment = 100;
 alter table author
     add constraint uq_author
         unique(first_name, last_name)
 ;
 alter table author
     add constraint ck_author_gender
-        check gender in ('M', 'F');
+        check (gender in('M', 'F'));
 
 create table book_author_mapping(
-    book_id bigint not null,
-    author_id bigint not null
-);
+    book_id bigint unsigned not null,
+    author_id bigint unsigned not null
+) engine=innodb;
 alter table book_author_mapping
     add constraint pk_book_author_mapping
         primary key(book_id, author_id)
@@ -65,6 +65,20 @@ alter table book_author_mapping
             references author(id)
                 on delete cascade
 ;
+
+create table tree_node(
+    node_id bigint unsigned not null auto_increment primary key,
+    name varchar(20) not null,
+    parent_id bigint unsigned
+) engine=innodb;
+alter table tree_node auto_increment = 100;
+alter table tree_node
+    add constraint uq_tree_node
+        unique(parent_id, name);
+alter table tree_node
+    add constraint fk_tree_node__parent
+        foreign key(parent_id)
+            references tree_node(node_id);
 
 insert into book_store(id, name) values
     (1, 'O''REILLY'),
@@ -118,19 +132,6 @@ insert into book_author_mapping(book_id, author_id) values
     (11, 5),
     (12, 5)
 ;
-
-create table tree_node(
-    node_id identity(100, 1) not null,
-    name varchar(20) not null,
-    parent_id bigint
-);
-alter table tree_node
-    add constraint uq_tree_node
-        unique(parent_id, name);
-alter table tree_node
-    add constraint fk_tree_node__parent
-        foreign key(parent_id)
-            references tree_node(node_id);
 
 insert into tree_node(
     node_id, name, parent_id
