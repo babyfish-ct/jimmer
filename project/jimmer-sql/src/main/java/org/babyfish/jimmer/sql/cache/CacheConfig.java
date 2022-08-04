@@ -41,7 +41,10 @@ public class CacheConfig {
             }
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.isAssociation() && !associationCacheMap.containsKey(prop)) {
-                    Cache<?, ?> associationCache = cacheFactory.createAssociatedIdCache(prop);
+                    Cache<?, ?> associationCache =
+                            prop.isEntityList() ?
+                                    cacheFactory.createAssociatedIdListCache(prop) :
+                                    cacheFactory.createAssociatedIdCache(prop);
                     if (associationCache != null) {
                         associationCacheMap.put(prop, associationCache);
                     }

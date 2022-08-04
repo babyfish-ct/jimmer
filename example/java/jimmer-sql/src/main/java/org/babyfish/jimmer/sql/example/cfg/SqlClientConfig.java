@@ -1,11 +1,14 @@
 package org.babyfish.jimmer.sql.example.cfg;
 
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
-import org.babyfish.jimmer.sql.example.model.Gender;
+import org.babyfish.jimmer.sql.dialect.MySqlDialect;
+import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DataSourceUtils;
@@ -19,6 +22,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 @Configuration
@@ -27,7 +31,12 @@ public class SqlClientConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqlClientConfig.class);
 
     @Bean
-    public JSqlClient sqlClient(DataSource dataSource) {
+    public JSqlClient sqlClient(
+            DataSource dataSource,
+            @Value("${spring.datasource.url}") String jdbcUrl,
+            Optional<CacheFactory> cacheFactory
+    ) {
+        boolean isH2 = jdbcUrl.startsWith("jdbc:h2:");
         JSqlClient sqlClient = JSqlClient.newBuilder()
                 .setConnectionManager(
                         /*
@@ -47,14 +56,7 @@ public class SqlClientConfig {
                             }
                         }
                 )
-                .setDialect(
-                        new H2Dialect() {
-                            @Override
-                            public String getLastIdentitySql() {
-                                return "call scope_identity()";
-                            }
-                        }// Support sequence
-                )
+                .setDialect(isH2 ? new H2Dialect() : new MySqlDialect())
                 .setExecutor(
                         /*
                          * Log SQL and variables
@@ -65,6 +67,7 @@ public class SqlClientConfig {
                                     Connection con,
                                     String sql,
                                     List<Object> variables,
+                                    StatementFactory statementFactory,
                                     SqlFunction<PreparedStatement, R> block
                             ) {
                                 LOGGER.info("Execute sql : \"{}\", with variables: {}", sql, variables);
@@ -72,11 +75,25 @@ public class SqlClientConfig {
                                         con,
                                         sql,
                                         variables,
+                                        statementFactory,
                                         block
                                 );
                             }
                         }
                 )
+                .setCaches(it -> {
+                    if (cacheFactory.orElse(null) != null) {
+                        it.setCacheFactory(
+                                new Class[]{
+                                        BookStore.class,
+                                        Book.class,
+                                        Author.class,
+                                        TreeNode.class
+                                },
+                                cacheFactory.orElse(null)
+                        );
+                    }
+                })
                 .addScalarProvider(
                         ScalarProvider.enumProviderByString(Gender.class, it ->
                                 it
@@ -85,7 +102,9 @@ public class SqlClientConfig {
                         )
                 )
                 .build();
-        initializeH2Database(sqlClient);
+        if (isH2) {
+            initializeH2Database(sqlClient);
+        }
         return sqlClient;
     }
 
