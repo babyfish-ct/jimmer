@@ -7,3 +7,7 @@ spring:
   redis:
     host: localhost
     port: 4004
+  kafka:
+    consumer:
+      bootstrap-servers: localhost:4003
+      group-id: jimmer-demo/sql
