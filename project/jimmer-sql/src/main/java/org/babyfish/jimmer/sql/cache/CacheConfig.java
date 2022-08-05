@@ -25,11 +25,11 @@ public class CacheConfig {
 
     @OldChain
     public CacheConfig setCacheFactory(Class<?>[] entityTypes, CacheFactory cacheFactory) {
-        if (cacheFactory == null) {
-            throw new IllegalArgumentException("cacheFactory cannot be null");
-        }
         if (entityTypes.length == 0) {
             throw new IllegalArgumentException("vararg \"entityTypes\" cannot be empty");
+        }
+        if (cacheFactory == null) {
+            throw new IllegalArgumentException("cacheFactory cannot bee null");
         }
         for (Class<?> entityType : entityTypes) {
             ImmutableType type = ImmutableType.get(entityType);
