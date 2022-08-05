@@ -8,10 +8,7 @@ import org.babyfish.jimmer.sql.example.cache.chain.LoadingBinder;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.time.Duration;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 // Level-1 Cache
 public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
@@ -20,7 +17,8 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
 
     private final Duration duration;
 
-    private LoadingCache<K, V> loadingCache;
+    // Caffeine does not support null value, use optional as a wrapper
+    private LoadingCache<K, Optional<V>> loadingCache;
 
     public CaffeineBinder(int maximumSize, Duration duration) {
         this.maximumSize = maximumSize;
@@ -37,7 +35,7 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
                         new CacheLoader<K, V>() {
 
                             @Override
-                            public @Nullable V load(K key) throws Exception {
+                            public Optional<V> load(K key) throws Exception {
                                 return chain.loadAll(Collections.singleton(key)).get(key);
                             }
 

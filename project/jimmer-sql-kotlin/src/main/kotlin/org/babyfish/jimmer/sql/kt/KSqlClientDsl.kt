@@ -147,15 +147,15 @@ class KSqlClientDsl internal constructor(
             javaCfg.setCacheFactory(entityTypes.map { it.java }.toTypedArray(), cacheFactory)
         }
 
-        fun <T: Any> setObjectCache(entityType: KClass<T>, cache: Cache<*, T>) {
+        fun <T: Any> setObjectCache(entityType: KClass<T>, cache: Cache<*, T>?) {
             javaCfg.setObjectCache(entityType.java, cache)
         }
 
-        fun setAssociatedIdCache(prop: KProperty1<*, *>, cache: Cache<*, *>) {
+        fun setAssociatedIdCache(prop: KProperty1<*, *>, cache: Cache<*, *>?) {
             javaCfg.setAssociatedIdCache(prop.toImmutableProp(), cache)
         }
 
-        fun setAssociatedListIdCache(prop: KProperty1<*, *>, cache: Cache<*, List<*>>) {
+        fun setAssociatedListIdCache(prop: KProperty1<*, *>, cache: Cache<*, List<*>>?) {
             javaCfg.setAssociatedIdListCache(prop.toImmutableProp(), cache)
         }
     }

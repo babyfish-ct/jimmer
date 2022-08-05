@@ -2,9 +2,11 @@ package org.babyfish.jimmer.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.ObjectCodec;
+import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.core.json.PackageVersion;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.node.TreeTraversingParser;
 import org.babyfish.jimmer.meta.ImmutableProp;
@@ -15,6 +17,8 @@ import org.babyfish.jimmer.runtime.Internal;
 import java.io.IOException;
 
 public class ImmutableDeserializer extends StdDeserializer<Object> {
+
+    private static final boolean VERSION_GE_2_13 = isVersionGe2_13();
 
     private final ImmutableType immutableType;
 
@@ -33,15 +37,11 @@ public class ImmutableDeserializer extends StdDeserializer<Object> {
         return Internal.produce(immutableType, null, draft -> {
             for (ImmutableProp prop : immutableType.getProps().values()) {
                 if (node.has(prop.getName())) {
-                    Object value;
-                    JsonNode childNode = node.get(prop.getName());
-                    if (childNode == null) {
-                        value = null;
-                    } else {
-                        try (TreeTraversingParser p = treeAsTokens(node.get(prop.getName()), ctx)) {
-                            value = ctx.readValue(p, Utils.getJacksonType(prop));
-                        }
-                    }
+                    Object value = readTreeAsValue(
+                            ctx,
+                            node.get(prop.getName()),
+                            Utils.getJacksonType(prop)
+                    );
                     ((DraftSpi)draft).__set(prop.getId(), value);
                 }
             }
@@ -53,8 +53,30 @@ public class ImmutableDeserializer extends StdDeserializer<Object> {
      *
      * Spring my introduce the low version(2.12) of jackson that does not support
      * `DeserializationContext.readTreeAsValue`.
+     */
+    private static Object readTreeAsValue(
+            DeserializationContext ctx,
+            JsonNode n,
+            JavaType targetType
+    ) throws IOException {
+
+        if (VERSION_GE_2_13) {
+            return ctx.readTreeAsValue(n, targetType);
+        }
+
+        if (n == null) {
+            return null;
+        }
+        try (TreeTraversingParser p = treeAsTokens(n, ctx)) {
+            return ctx.readValue(p, targetType);
+        }
+    }
+
+    /*
+     * Copy from `DeserializationContext._treeAsTokens`.
      *
-     * OMG, very unhappy.
+     * Spring my introduce the low version(2.12) of jackson that does not support
+     * `DeserializationContext.readTreeAsValue`.
      */
     private static TreeTraversingParser treeAsTokens(
             JsonNode n,
@@ -67,5 +89,16 @@ public class ImmutableDeserializer extends StdDeserializer<Object> {
         // important: must initialize...
         p.nextToken();
         return p;
+    }
+
+    private static final boolean isVersionGe2_13() {
+        Version version = PackageVersion.VERSION;
+        if (version.getMajorVersion() > 2) {
+            return true;
+        }
+        if (version.getMajorVersion() < 2) {
+            return false;
+        }
+        return version.getMinorVersion() >= 13;
     }
 }
