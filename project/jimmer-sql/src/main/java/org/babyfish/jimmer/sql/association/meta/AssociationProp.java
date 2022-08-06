@@ -103,7 +103,7 @@ public abstract class AssociationProp implements ImmutableProp {
 
         private static final Method GETTER;
 
-        private Column column;
+        private final Column column;
 
         Source(AssociationType declaringType) {
             super(declaringType);
@@ -159,7 +159,7 @@ public abstract class AssociationProp implements ImmutableProp {
 
         private static final Method GETTER;
 
-        private Column column;
+        private final Column column;
 
         Target(AssociationType declaringType) {
             super(declaringType);
