@@ -26,7 +26,7 @@ public class AssociationEvent {
         if (!prop.isAssociation()) {
             throw new IllegalArgumentException("prop must be association");
         }
-        if (sourceId == null || sourceId.getClass() != prop.getDeclaringType().getIdProp().getElementClass()) {
+        if (sourceId == null || !matched(prop.getDeclaringType().getIdProp().getElementClass(), sourceId.getClass())) {
             throw new IllegalArgumentException(
                     "The type of sourceId \"" +
                             sourceId +
@@ -35,8 +35,8 @@ public class AssociationEvent {
                             "\""
             );
         }
-        Class<?> targetIdClass = prop.getTargetType().getIdProp().getElementClass();
-        if (detachedTargetId != null && detachedTargetId.getClass() != targetIdClass) {
+        Class<?> expectedTargetIdClass = prop.getTargetType().getIdProp().getElementClass();
+        if (detachedTargetId != null && !matched(expectedTargetIdClass, detachedTargetId.getClass())) {
             throw new IllegalArgumentException(
                     "The type of detachedTargetId \"" +
                             sourceId +
@@ -45,7 +45,7 @@ public class AssociationEvent {
                             "\""
             );
         }
-        if (attachedTargetId != null && attachedTargetId.getClass() != targetIdClass) {
+        if (attachedTargetId != null && !matched(expectedTargetIdClass, attachedTargetId.getClass())) {
             throw new IllegalArgumentException(
                     "The type of attachedTargetId \"" +
                             sourceId +
@@ -107,5 +107,36 @@ public class AssociationEvent {
                 ", detachedTargetId=" + detachedTargetId +
                 ", attachedTargetId=" + attachedTargetId +
                 '}';
+    }
+
+    private static boolean matched(Class<?> expectedType, Class<?> actualType) {
+        if (expectedType == actualType) {
+            return true;
+        }
+        if (expectedType == boolean.class) {
+            return actualType == Boolean.class;
+        }
+        if (expectedType == char.class) {
+            return actualType == Character.class;
+        }
+        if (expectedType == byte.class) {
+            return actualType == Byte.class;
+        }
+        if (expectedType == short.class) {
+            return actualType == Short.class;
+        }
+        if (expectedType == int.class) {
+            return actualType == Integer.class;
+        }
+        if (expectedType == long.class) {
+            return actualType == Long.class;
+        }
+        if (expectedType == float.class) {
+            return actualType == Float.class;
+        }
+        if (expectedType == double.class) {
+            return actualType == Double.class;
+        }
+        return false;
     }
 }

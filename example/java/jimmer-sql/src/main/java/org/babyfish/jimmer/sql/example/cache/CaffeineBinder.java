@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import org.babyfish.jimmer.sql.cache.chain.CacheChain;
 import org.babyfish.jimmer.sql.cache.chain.LoadingBinder;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.util.*;
@@ -73,7 +74,9 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
     }
 
     @Override
-    public void deleteAll(Collection<K> keys) {
-        loadingCache.invalidateAll(keys);
+    public void deleteAll(@NotNull Collection<K> keys, String reason) {
+        if (reason == null || reason.equals("caffeine")) {
+            loadingCache.invalidateAll(keys);
+        }
     }
 }

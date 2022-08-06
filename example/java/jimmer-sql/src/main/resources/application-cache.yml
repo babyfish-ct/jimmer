@@ -12,5 +12,6 @@ spring:
       bootstrap-servers: localhost:4003
       group-id: jimmer-demo/sql
       enable-auto-commit: false
+      auto-offset-reset: latest
     listener:
-      ack-mode: MANUAL
+      ack-mode: MANUAL_IMMEDIATE

@@ -33,18 +33,19 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         this.node = node;
     }
 
+    @NotNull
     @Override
-    public Map<K, V> getAll(Collection<K> keys, CacheEnvironment<K, V> env) {
+    public Map<K, V> getAll(@NotNull Collection<K> keys, @NotNull CacheEnvironment<K, V> env) {
         return usingCacheLoading(env.getLoader(), () -> node.loadAll(keys));
     }
 
     @Override
-    public void deleteAll(Collection<K> keys) {
-        node.deleteAll(keys);
+    public void deleteAll(@NotNull Collection<K> keys, String reason) {
+        node.deleteAll(keys, reason);
     }
 
     private interface Node<K, V> extends CacheChain<K, V> {
-        void deleteAll(Collection<K> keys);
+        void deleteAll(@NotNull Collection<K> keys, String reason);
     }
 
     private static class LoadingNode<K, V> implements Node<K, V> {
@@ -66,11 +67,11 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         }
 
         @Override
-        public void deleteAll(@NotNull Collection<K> keys) {
+        public void deleteAll(@NotNull Collection<K> keys, String reason) {
             try {
-                operator.deleteAll(keys);
+                operator.deleteAll(keys, reason);
             } finally {
-                next.deleteAll(keys);
+                next.deleteAll(keys, reason);
             }
         }
     }
@@ -112,11 +113,11 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         }
 
         @Override
-        public void deleteAll(@NotNull Collection<K> keys) {
+        public void deleteAll(@NotNull Collection<K> keys, String reason) {
             try {
-                operator.deleteAll(keys);
+                operator.deleteAll(keys, reason);
             } finally {
-                next.deleteAll(keys);
+                next.deleteAll(keys, reason);
             }
         }
     }
@@ -131,7 +132,7 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         }
 
         @Override
-        public void deleteAll(Collection<K> keys) {
+        public void deleteAll(@NotNull Collection<K> keys, String reason) {
         }
     }
 

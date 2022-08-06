@@ -144,7 +144,7 @@ public abstract class AbstractDataLoader {
                                 findTargets(new LinkedHashSet<>(fkMap.values()))
                         )
                 );
-        return Utils.joinCollectionAndMap(sources, this::toSourceId, targetMap, true);
+        return Utils.joinCollectionAndMap(sources, this::toSourceId, targetMap);
     }
 
     @SuppressWarnings("unchecked")
@@ -204,8 +204,7 @@ public abstract class AbstractDataLoader {
         return Utils.joinCollectionAndMap(
                 sources,
                 this::toTargetId,
-                Utils.mergeMap(map1, map2),
-                true
+                Utils.mergeMap(map1, map2)
         );
     }
 
@@ -234,8 +233,7 @@ public abstract class AbstractDataLoader {
         return Utils.joinCollectionAndMap(
                 sources,
                 this::toSourceId,
-                Utils.joinMaps(idMap, targetMap),
-                true
+                Utils.joinMaps(idMap, targetMap)
         );
     }
 
@@ -255,8 +253,7 @@ public abstract class AbstractDataLoader {
         return Utils.joinCollectionAndMap(
                 sources,
                 this::toSourceId,
-                targetMap,
-                true
+                targetMap
         );
     }
 
@@ -293,8 +290,7 @@ public abstract class AbstractDataLoader {
         return Utils.joinCollectionAndMap(
                 sources,
                 this::toSourceId,
-                Utils.joinMultiMapAndMap(idMultiMap, targetMap),
-                true
+                Utils.joinMultiMapAndMap(idMultiMap, targetMap)
         );
     }
 
@@ -314,8 +310,7 @@ public abstract class AbstractDataLoader {
         return Utils.joinCollectionAndMap(
                 sources,
                 this::toSourceId,
-                targetMap,
-                true
+                targetMap
         );
     }
 

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.cache;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -90,8 +91,9 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
         return prop;
     }
 
+    @NotNull
     @Override
-    public Map<K, V> getAll(Collection<K> keys, CacheEnvironment<K, V> env) {
+    public Map<K, V> getAll(@NotNull Collection<K> keys, @NotNull CacheEnvironment<K, V> env) {
         return loading(() -> {
             Map<K, V> valueMap = raw.getAll(keys, env);
             for (V value : valueMap.values()) {
@@ -102,19 +104,8 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
     }
 
     @Override
-    public void delete(K key) {
-        this.<Void>loading(() -> {
-            raw.delete(key);
-            return null;
-        });
-    }
-
-    @Override
-    public void deleteAll(Collection<K> keys) {
-        this.<Void>loading(() -> {
-            raw.deleteAll(keys);
-            return null;
-        });
+    public void deleteAll(@NotNull Collection<K> keys, String reason) {
+        raw.deleteAll(keys, reason);
     }
 
     private <R> R loading(Supplier<R> block) {
