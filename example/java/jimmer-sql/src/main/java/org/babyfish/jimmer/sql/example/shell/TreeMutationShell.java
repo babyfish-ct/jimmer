@@ -9,6 +9,8 @@ import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 
+import java.util.Collections;
+
 @ShellComponent
 public class TreeMutationShell {
 
@@ -63,6 +65,7 @@ public class TreeMutationShell {
             int childCount
     ) {
         if (currentDepth >= maxDepth) {
+            parent.setChildNodes(Collections.emptyList());
             return;
         }
         String prefix = parent.name() + "-";

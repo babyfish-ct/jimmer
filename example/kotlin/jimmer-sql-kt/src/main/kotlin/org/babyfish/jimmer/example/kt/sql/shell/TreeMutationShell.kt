@@ -62,6 +62,7 @@ class TreeMutationShell(
         childCount: Int
     ) {
         if (currentDepth >= maxDepth) {
+            parent.childNodes = emptyList()
             return
         }
         val prefix: String = parent.name + "-"
