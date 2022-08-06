@@ -1,11 +1,13 @@
 package org.babyfish.jimmer.sql.cache;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.Triggers;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -22,6 +24,8 @@ public class CacheConfig {
             new LinkedHashMap<>();
 
     private CacheOperator operator;
+
+    private ObjectMapper binLogObjectMapper;
 
     @OldChain
     public CacheConfig setCacheFactory(Class<?>[] entityTypes, CacheFactory cacheFactory) {
@@ -120,6 +124,12 @@ public class CacheConfig {
         return this;
     }
 
+    @OldChain
+    public CacheConfig setBinLogObjectMapper(ObjectMapper objectMapper) {
+        this.binLogObjectMapper = objectMapper;
+        return this;
+    }
+
     Caches build(Triggers triggers) {
         for (ImmutableProp prop : associationCacheMap.keySet()) {
             if (!objectCacheMap.containsKey(prop.getTargetType())) {
@@ -136,7 +146,8 @@ public class CacheConfig {
                 triggers,
                 objectCacheMap,
                 associationCacheMap,
-                operator
+                operator,
+                new BinLogParser(binLogObjectMapper)
         );
     }
 }

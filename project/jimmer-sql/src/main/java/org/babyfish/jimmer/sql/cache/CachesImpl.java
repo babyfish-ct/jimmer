@@ -8,6 +8,8 @@ import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Triggers;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 
 import java.util.*;
@@ -24,6 +26,8 @@ public class CachesImpl implements Caches {
 
     private final CacheOperator operator;
 
+    private final BinLogParser binLogParser;
+
     private final boolean disableAll;
 
     private final Set<ImmutableType> disabledTypes;
@@ -34,7 +38,8 @@ public class CachesImpl implements Caches {
             Triggers triggers,
             Map<ImmutableType, Cache<?, ?>> objectCacheMap,
             Map<ImmutableProp, Cache<?, ?>> associationCacheMap,
-            CacheOperator operator
+            CacheOperator operator,
+            BinLogParser binLogParser
     ) {
         Map<String, ImmutableType> tableNameTypeMap = new HashMap<>();
         for (ImmutableType type : objectCacheMap.keySet()) {
@@ -88,6 +93,7 @@ public class CachesImpl implements Caches {
         this.associationCacheMap = associationCacheWrapperMap;
         this.tableNameTypeMap = tableNameTypeMap;
         this.operator = operator;
+        this.binLogParser = binLogParser;
         disableAll = false;
         disabledTypes = Collections.emptySet();
         disabledProps = Collections.emptySet();
@@ -102,6 +108,7 @@ public class CachesImpl implements Caches {
         associationCacheMap = base.associationCacheMap;
         tableNameTypeMap = base.tableNameTypeMap;
         operator = base.operator;
+        binLogParser = base.binLogParser;
         disableAll = cfg.isDisableAll();
         disabledTypes = cfg.getDisabledTypes();
         disabledProps = cfg.getDisabledProps();
@@ -129,8 +136,10 @@ public class CachesImpl implements Caches {
     }
 
     @Override
-    public void invalidateByBinData(String tableName, JsonNode data) {
-        if (data == null || data.isNull()) {
+    public void invalidateByBinData(String tableName, JsonNode oldData, JsonNode newData) {
+        boolean isOldNull = oldData == null || oldData.isNull();
+        boolean isNewNull = newData == null || newData.isNull();
+        if (isOldNull && isNewNull) {
             return;
         }
         ImmutableType type = tableNameTypeMap.get(
@@ -144,7 +153,20 @@ public class CachesImpl implements Caches {
             );
         }
         if (type instanceof AssociationType) {
-
+            if (isOldNull) {
+                AssociationType associationType = (AssociationType) type;
+                Tuple2<?, ?> idPair = binLogParser.parseIdPair(associationType, newData);
+                triggers.fireMiddleTableInsert(associationType.getBaseProp(), idPair.get_1(), idPair.get_2());
+            } else {
+                AssociationType associationType = (AssociationType) type;
+                Tuple2<?, ?> idPair = binLogParser.parseIdPair(associationType, oldData);
+                triggers.fireMiddleTableDelete(associationType.getBaseProp(), idPair.get_1(), idPair.get_2());
+            }
+        } else {
+            triggers.fireEntityTableChange(
+                    binLogParser.parseEntity(type, oldData),
+                    binLogParser.parseEntity(type, newData)
+            );
         }
     }
 
