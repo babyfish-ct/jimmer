@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.kt
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig
-import org.babyfish.jimmer.sql.kt.impl.toImmutableProp
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 

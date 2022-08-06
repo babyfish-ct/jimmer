@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection
 import org.babyfish.jimmer.sql.kt.ast.table.KNullableTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KTableEx
-import org.babyfish.jimmer.sql.kt.impl.toImmutableProp
+import org.babyfish.jimmer.sql.kt.toImmutableProp
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1

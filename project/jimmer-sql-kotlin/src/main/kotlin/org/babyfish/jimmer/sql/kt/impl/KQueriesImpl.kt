@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.kt.KQueries
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableRootQueryImpl
+import org.babyfish.jimmer.sql.kt.toImmutableProp
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 

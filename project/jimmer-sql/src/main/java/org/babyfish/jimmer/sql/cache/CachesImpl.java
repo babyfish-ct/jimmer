@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.cache;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
@@ -13,6 +12,7 @@ import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class CachesImpl implements Caches {
 
@@ -136,7 +136,14 @@ public class CachesImpl implements Caches {
     }
 
     @Override
-    public void invalidateByBinData(String tableName, JsonNode oldData, JsonNode newData) {
+    public boolean isAffectedBy(String tableName) {
+        return tableNameTypeMap.containsKey(
+                DatabaseIdentifiers.databaseIdentifier(tableName)
+        );
+    }
+
+    @Override
+    public void invalidateByBinLog(String tableName, JsonNode oldData, JsonNode newData) {
         boolean isOldNull = oldData == null || oldData.isNull();
         boolean isNewNull = newData == null || newData.isNull();
         if (isOldNull && isNewNull) {
@@ -219,5 +226,13 @@ public class CachesImpl implements Caches {
             }
         });
         return wrapper;
+    }
+
+    public static Caches of(Triggers triggers, Consumer<CacheConfig> block) {
+        CacheConfig cfg = new CacheConfig();
+        if (block != null) {
+            block.accept(cfg);
+        }
+        return cfg.build(triggers);
     }
 }

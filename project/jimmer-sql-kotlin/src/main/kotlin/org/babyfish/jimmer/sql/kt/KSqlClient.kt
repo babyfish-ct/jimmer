@@ -31,6 +31,10 @@ interface KSqlClient {
 
     val entities: KEntities
 
+    val caches: KCaches
+
+    val triggers: KTriggers
+
     fun <S: Any, T: Any> getReferenceAssociations(prop: KProperty1<S, T?>): KAssociations
 
     fun <S: Any, T: Any> getListAssociations(prop: KProperty1<S, List<T>>): KAssociations

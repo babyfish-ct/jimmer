@@ -46,6 +46,12 @@ internal class KSqlClientImpl(
     override val entities: KEntities =
         KEntitiesImpl(sqlClient.entities)
 
+    override val caches: KCaches =
+        KCachesImpl(sqlClient.caches)
+
+    override val triggers: KTriggers =
+        KTriggersImpl(sqlClient.triggers)
+
     override fun <S: Any, T: Any> getReferenceAssociations(
         prop: KProperty1<S, T?>
     ): KAssociations =
