@@ -7,9 +7,9 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 
 import java.util.List;
 
-class Utils {
+class PropUtils {
 
-    public static JavaType getJacksonType(ImmutableProp prop) {
+    static JavaType getJacksonType(ImmutableProp prop) {
         if (prop.isEntityList() || prop.isScalarList()) {
             return CollectionType.construct(
                     List.class,

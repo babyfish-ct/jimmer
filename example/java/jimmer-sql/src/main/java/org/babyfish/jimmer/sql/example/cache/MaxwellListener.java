@@ -21,5 +21,6 @@ public class MaxwellListener {
     ) throws JsonProcessingException {
         JsonNode node = MAPPER.readTree(json);
         System.out.println(node);
+        acknowledgment.acknowledge();
     }
 }

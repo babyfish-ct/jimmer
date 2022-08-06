@@ -121,6 +121,17 @@ public class CacheConfig {
     }
 
     Caches build(Triggers triggers) {
+        for (ImmutableProp prop : associationCacheMap.keySet()) {
+            if (!objectCacheMap.containsKey(prop.getTargetType())) {
+                throw new IllegalStateException(
+                        "The cache for association property \"" +
+                                prop +
+                                "\" is configured but there is no cache for the target type \"" +
+                                prop.getTargetType() +
+                                "\""
+                );
+            }
+        }
         return new CachesImpl(
                 triggers,
                 objectCacheMap,

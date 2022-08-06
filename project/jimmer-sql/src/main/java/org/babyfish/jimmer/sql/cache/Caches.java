@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.cache;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ImmutableProps;
@@ -28,6 +30,8 @@ public interface Caches {
     }
 
     <K, V> Cache<K, V> getAssociationCache(ImmutableProp prop);
+
+    void invalidateByBinData(String table, JsonNode jsonNode) throws JsonProcessingException;
 
     static Caches of(Triggers triggers, Consumer<CacheConfig> block) {
         CacheConfig cfg = new CacheConfig();

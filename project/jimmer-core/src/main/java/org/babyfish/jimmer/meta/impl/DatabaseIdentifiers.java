@@ -23,15 +23,15 @@ public class DatabaseIdentifiers {
         return builder.toString();
     }
 
-    public static String standardColumnName(String columName) {
+    public static String standardIdentifier(String identifier) {
         boolean cut = false;
-        if (columName.startsWith("`") && columName.endsWith("`") && columName.length() > 2) {
+        if (identifier.startsWith("`") && identifier.endsWith("`") && identifier.length() > 2) {
             cut = true;
-        } else if (columName.startsWith("\"") && columName.endsWith("\"") && columName.length() > 2) {
+        } else if (identifier.startsWith("\"") && identifier.endsWith("\"") && identifier.length() > 2) {
             cut = true;
-        } else if (columName.startsWith("[") && columName.endsWith("]")) {
+        } else if (identifier.startsWith("[") && identifier.endsWith("]")) {
             cut = true;
         }
-        return (cut ? columName.substring(1, columName.length() - 1) : columName).toUpperCase();
+        return (cut ? identifier.substring(1, identifier.length() - 1) : identifier).toUpperCase();
     }
 }

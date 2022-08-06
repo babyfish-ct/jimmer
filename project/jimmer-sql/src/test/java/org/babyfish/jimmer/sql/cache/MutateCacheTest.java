@@ -31,7 +31,8 @@ public class MutateCacheTest extends AbstractQueryTest {
                             new Class[] {
                                     BookStore.class,
                                     Book.class,
-                                    Author.class
+                                    Author.class,
+                                    Country.class
                             },
                             new CacheFactory() {
                                 @Override
