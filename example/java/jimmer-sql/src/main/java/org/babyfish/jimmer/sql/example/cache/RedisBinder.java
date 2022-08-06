@@ -1,13 +1,8 @@
 package org.babyfish.jimmer.sql.example.cache;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.CollectionType;
-import com.fasterxml.jackson.databind.type.SimpleType;
-import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.cache.ValueSerializer;
 import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,22 +10,16 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.SessionCallback;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+// Level-2 Cache
 public class RedisBinder<K, V> implements SimpleBinder<K, V> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RedisBinder.class);
-
-    private static final byte[] NULL_BYTES = "<null>".getBytes(StandardCharsets.UTF_8);
-
-    private static final ObjectMapper IMMUTABLE_MAPPER = new ObjectMapper()
-            .registerModule(new ImmutableModule());
 
     private final RedisOperations<String, byte[]> operations;
 
@@ -40,7 +29,7 @@ public class RedisBinder<K, V> implements SimpleBinder<K, V> {
 
     private final int randomPercent;
 
-    private final JavaType valueType;
+    private final ValueSerializer<V> valueSerializer;
 
     public RedisBinder(
             RedisOperations<String, byte[]> operations,
@@ -79,23 +68,10 @@ public class RedisBinder<K, V> implements SimpleBinder<K, V> {
         }
         this.duration = duration;
         this.randomPercent = randomPercent;
-        if (prop != null) {
-            JavaType targetIdType = SimpleType.constructUnsafe(
-                    prop.getTargetType().getIdProp().getElementClass()
-            );
-            if (prop.isEntityList()) {
-                this.valueType = CollectionType.construct(
-                        List.class,
-                        null,
-                        null,
-                        null,
-                        targetIdType
-                );
-            } else {
-                this.valueType = targetIdType;
-            }
+        if (type != null) {
+            valueSerializer = new ValueSerializer<>(type);
         } else {
-            this.valueType = SimpleType.constructUnsafe(type.getJavaClass());
+            valueSerializer = new ValueSerializer<>(prop);
         }
     }
 
@@ -111,17 +87,10 @@ public class RedisBinder<K, V> implements SimpleBinder<K, V> {
             Iterator<byte[]> valueItr = values.iterator();
             while (keyItr.hasNext() && valueItr.hasNext()) {
                 K key = keyItr.next();
-                byte[] value = valueItr.next();
-                if (value != null) {
-                    if (Arrays.equals(value, NULL_BYTES)) {
-                        map.put(key, null);
-                    } else {
-                        try {
-                            map.put(key, IMMUTABLE_MAPPER.readValue(value, valueType));
-                        } catch (IOException ex) {
-                            throw new IllegalArgumentException(ex);
-                        }
-                    }
+                byte[] bytes = valueItr.next();
+                if (bytes != null) {
+                    V value = valueSerializer.deserialize(bytes);
+                    map.put(key, value);
                 }
             }
         }
@@ -131,21 +100,19 @@ public class RedisBinder<K, V> implements SimpleBinder<K, V> {
     @SuppressWarnings("unchecked")
     @Override
     public void setAll(Map<K, V> map) {
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("Save {} into redis", map);
-        }
         Map<String, byte[]> convertedMap = new HashMap<>((map.size() * 4 + 2) / 3);
         for (Map.Entry<K, V> e : map.entrySet()) {
-            V value = e.getValue();
-            if (value == null) {
-                convertedMap.put(keyPrefix + e.getKey(), NULL_BYTES);
-            } else {
-                try {
-                    convertedMap.put(keyPrefix + e.getKey(), IMMUTABLE_MAPPER.writeValueAsBytes(value));
-                } catch (JsonProcessingException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
+            convertedMap.put(keyPrefix + e.getKey(), valueSerializer.serialize(e.getValue()));
+        }
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(
+                    "Save into redis: {}",
+                    convertedMap
+                            .entrySet()
+                            .stream()
+                            .map(it -> it.getKey() + ":" + new String(it.getValue()))
+                            .collect(Collectors.joining(", "))
+            );
         }
         long millis = duration.toMillis();
         long min = millis - randomPercent * millis / 100;
@@ -171,9 +138,11 @@ public class RedisBinder<K, V> implements SimpleBinder<K, V> {
     }
 
     @Override
-    public void deleteAll(Collection<K> keys) {
-        operations.delete(
-                keys.stream().map(it -> keyPrefix + it).collect(Collectors.toList())
-        );
+    public void deleteAll(Collection<K> keys, String reason) {
+        if (reason == null || reason.equals("redis")) {
+            Collection<String> redisKeys = keys.stream().map(it -> keyPrefix + it).collect(Collectors.toList());
+            LOGGER.info("delete from redis: {}", redisKeys);
+            operations.delete(redisKeys);
+        }
     }
 }

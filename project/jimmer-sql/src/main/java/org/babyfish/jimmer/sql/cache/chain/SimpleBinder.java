@@ -12,5 +12,5 @@ public interface SimpleBinder<K, V> {
 
     void setAll(@NotNull Map<K, V> map);
 
-    void deleteAll(@NotNull Collection<K> keys);
+    void deleteAll(@NotNull Collection<K> keys, String reason);
 }

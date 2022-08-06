@@ -1,12 +1,16 @@
 package org.babyfish.jimmer.sql.association.spi;
 
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 class Utils {
+
+    private static Logger LOGGER = LoggerFactory.getLogger(Utils.class);
 
     @SafeVarargs
     static <K, V> Map<K, V> mergeMap(Map<K, V> ... maps) {
@@ -60,15 +64,9 @@ class Utils {
     static <K, T, V> Map<K, V> joinCollectionAndMap(
             Collection<K> list,
             Function<K, T> middleKeyExtractor,
-            Map<T, V> map,
-            boolean useIdentityMap
+            Map<T, V> map
     ) {
-        Map<K, V> resultMap;
-        if (useIdentityMap) {
-            resultMap = new IdentityHashMap<>((list.size() * 4 + 2) / 3);
-        } else {
-            resultMap = new LinkedHashMap<>((list.size() * 4 + 2) / 3);
-        }
+        Map<K, V> resultMap = new LinkedHashMap<>((list.size() * 4 + 2) / 3);
         for (K k : list) {
             T t = middleKeyExtractor.apply(k);
             V v = map.get(t);
@@ -83,12 +81,15 @@ class Utils {
             Function<V, K> keyExtractor,
             Collection<V> values
     ) {
-        return values.stream().filter(Objects::nonNull).collect(
-                Collectors.toMap(
-                        keyExtractor,
-                        Function.identity()
-                )
-        );
+        Map<K, V> map = new LinkedHashMap<>((values.size() * 4 + 2) / 3);
+        for (V value : values) {
+            K key = keyExtractor.apply(value);
+            map.put(key, value);
+        }
+        if (map.size() < values.size()) {
+            LOGGER.warn("Utils.toMap() meet duplicated keys, original collection: {}", values);
+        }
+        return map;
     }
 
     static <K, V> Map<K, List<V>> toMultiMap(

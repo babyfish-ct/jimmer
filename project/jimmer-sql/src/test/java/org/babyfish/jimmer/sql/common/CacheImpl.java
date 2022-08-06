@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.common;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.cache.CacheFilter;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -10,8 +11,9 @@ public class CacheImpl<T> implements Cache<Object, T> {
 
     private Map<Object, T> map = new HashMap<>();
 
+    @NotNull
     @Override
-    public Map<Object, T> getAll(Collection<Object> keys, CacheEnvironment<Object, T> env) {
+    public Map<Object, T> getAll(@NotNull Collection<Object> keys, @NotNull CacheEnvironment<Object, T> env) {
         if (!CacheFilter.isEmpty(env.getFilter())) {
             throw new IllegalArgumentException("Object cache does not support filter");
         }
@@ -37,7 +39,7 @@ public class CacheImpl<T> implements Cache<Object, T> {
     }
 
     @Override
-    public void deleteAll(Collection<Object> keys) {
+    public void deleteAll(@NotNull Collection<Object> keys, String reason) {
         map.keySet().removeAll(keys);
     }
 }

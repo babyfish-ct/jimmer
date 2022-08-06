@@ -50,7 +50,7 @@ public class CacheConfig {
                 return new ChainCacheBuilder<>()
                         .add(new CaffeineBinder<>(512, Duration.ofSeconds(1)))
                         .add(
-                                new RedisBinder<>(redisTemplate, type, Duration.ofMinutes(10))
+                                new RedisBinder<>(redisTemplate, type, Duration.ofHours(10))
                         )
                         .build();
             }
@@ -60,7 +60,7 @@ public class CacheConfig {
                 return new ChainCacheBuilder<>()
                         .add(new CaffeineBinder<>(512, Duration.ofSeconds(1)))
                         .add(
-                                new RedisBinder<>(redisTemplate, prop, Duration.ofMinutes(5))
+                                new RedisBinder<>(redisTemplate, prop, Duration.ofHours(5))
                         )
                         .build();
             }
@@ -70,7 +70,7 @@ public class CacheConfig {
                 return new ChainCacheBuilder<Object, List<?>>()
                         .add(new CaffeineBinder<>(64, Duration.ofSeconds(1)))
                         .add(
-                                new RedisBinder<>(redisTemplate, prop, Duration.ofMinutes(5))
+                                new RedisBinder<>(redisTemplate, prop, Duration.ofHours(5))
                         )
                         .build();
             }

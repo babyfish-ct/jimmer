@@ -193,7 +193,7 @@ public class CachesImpl implements Caches {
         triggers.addEntityListener(type, e -> {
             ImmutableSpi oldEntity = e.getOldEntity();
             if (oldEntity != null) {
-                Object id = oldEntity.__get(type.getIdProp().getId());
+                Object id = e.getId();
                 if (operator != null) {
                     operator.delete(wrapper, id);
                 } else {

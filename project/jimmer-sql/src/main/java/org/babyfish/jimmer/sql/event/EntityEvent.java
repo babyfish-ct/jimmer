@@ -7,6 +7,8 @@ import java.util.Objects;
 
 public class EntityEvent<E> {
 
+    private Object id;
+
     private E oldEntity;
 
     private E newEntity;
@@ -21,33 +23,14 @@ public class EntityEvent<E> {
         if (newEntity != null && !(newEntity instanceof ImmutableSpi)) {
             throw new IllegalArgumentException("newEntity is not immutable object");
         }
-        if (oldEntity != null && newEntity != null) {
-            ImmutableSpi oe = (ImmutableSpi) oldEntity;
-            ImmutableSpi ne = (ImmutableSpi) newEntity;
+        ImmutableSpi oe = (ImmutableSpi) oldEntity;
+        ImmutableSpi ne = (ImmutableSpi) newEntity;
+        if (oe != null && ne != null) {
             if (oe.__type() != ne.__type()) {
                 throw new IllegalArgumentException("oldEntity and newEntity must belong to same type");
             }
-            int idPropId = oe.__type().getIdProp().getId();
-            if (!oe.__get(idPropId).equals(ne.__get(idPropId))) {
-                throw new IllegalArgumentException("oldEntity and newEntity must have same id");
-            }
         }
-        this.oldEntity = oldEntity;
-        this.newEntity = newEntity;
-    }
-
-    public E getOldEntity() {
-        return oldEntity;
-    }
-
-    public E getNewEntity() {
-        return newEntity;
-    }
-
-    public Object getId() {
-        ImmutableSpi oe = (ImmutableSpi) this.oldEntity;
-        ImmutableSpi ne = (ImmutableSpi) this.newEntity;
-        int idPropId = getImmutableType().getIdProp().getId();
+        int idPropId = (oe != null ? oe : ne).__type().getIdProp().getId();
         Object oldId = null;
         if (oe != null && oe.__isLoaded(idPropId)) {
             oldId = oe.__get(idPropId);
@@ -63,9 +46,22 @@ public class EntityEvent<E> {
             if (!oldId.equals(newId)) {
                 throw new IllegalStateException("Conflict ids in old entity and new entity");
             }
-            return oldId;
         }
-        return oldId != null ? oldId : newId;
+        this.id = oldId != null ? oldId : newId;
+        this.oldEntity = oldEntity;
+        this.newEntity = newEntity;
+    }
+
+    public E getOldEntity() {
+        return oldEntity;
+    }
+
+    public E getNewEntity() {
+        return newEntity;
+    }
+
+    public Object getId() {
+        return this.id;
     }
 
     public ImmutableType getImmutableType() {

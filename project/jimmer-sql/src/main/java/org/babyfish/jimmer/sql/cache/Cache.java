@@ -1,13 +1,15 @@
 package org.babyfish.jimmer.sql.cache;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
 public interface Cache<K, V> {
-    
-    default Optional<V> get(K key, CacheEnvironment<K, V> env) {
+
+    @NotNull default Optional<V> get(@NotNull K key, @NotNull CacheEnvironment<K, V> env) {
         Map<K, V> map = getAll(Collections.singleton(key), env);
         V value = map.get(key);
         if (value == null && map.containsKey(key)) {
@@ -16,11 +18,19 @@ public interface Cache<K, V> {
         return Optional.ofNullable(value);
     }
 
-    Map<K, V> getAll(Collection<K> keys, CacheEnvironment<K, V> env);
+    @NotNull Map<K, V> getAll(@NotNull Collection<K> keys, @NotNull CacheEnvironment<K, V> env);
 
-    default void delete(K key) {
-        deleteAll(Collections.singleton(key));
+    default void delete(@NotNull K key) {
+        deleteAll(Collections.singleton(key), null);
     }
 
-    void deleteAll(Collection<K> keys);
+    default void delete(@NotNull K key, String reason) {
+        deleteAll(Collections.singleton(key), reason);
+    }
+
+    default void deleteAll(@NotNull Collection<K> keys) {
+        deleteAll(keys, null);
+    }
+
+    void deleteAll(@NotNull Collection<K> keys, String reason);
 }

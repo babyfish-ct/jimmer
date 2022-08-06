@@ -32,7 +32,8 @@ public class MutateCacheTest extends AbstractQueryTest {
                                     BookStore.class,
                                     Book.class,
                                     Author.class,
-                                    Country.class
+                                    Country.class,
+                                    TreeNode.class
                             },
                             new CacheFactory() {
                                 @Override
@@ -429,6 +430,97 @@ public class MutateCacheTest extends AbstractQueryTest {
                                     "from BOOK_AUTHOR_MAPPING as tb_1_ " +
                                     "where tb_1_.AUTHOR_ID = ?"
                     ).variables(danId);
+                }
+        );
+    }
+
+    @Test
+    public void testChangeTreeNode() {
+        executeAndExpect(
+                sqlClient.createQuery(TreeNodeTable.class, (q, treeNode) -> {
+                    q.where(treeNode.parent().isNull());
+                    return q.select(
+                            treeNode.fetch(
+                                    TreeNodeFetcher.$.childNodes(
+                                            TreeNodeFetcher.$.allScalarFields()
+                                    )
+                            )
+                    );
+                }),
+                it -> {
+                    it.sql(
+                            "select tb_1_.NODE_ID " +
+                                    "from TREE_NODE as tb_1_ " +
+                                    "where tb_1_.PARENT_ID is null"
+                    );
+                    it.statement(1).sql(
+                            "select tb_1_.NODE_ID " +
+                                    "from TREE_NODE as tb_1_ " +
+                                    "where tb_1_.PARENT_ID = ?"
+                    );
+                    it.statement(2).sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE as tb_1_ " +
+                                    "where tb_1_.NODE_ID in (?, ?)"
+                    ).variables(2L, 9L);
+                }
+        );
+        executeAndExpect(
+                sqlClient.createQuery(TreeNodeTable.class, (q, treeNode) -> {
+                    q.where(treeNode.parent().isNull());
+                    return q.select(
+                            treeNode.fetch(
+                                    TreeNodeFetcher.$.childNodes(
+                                            TreeNodeFetcher.$.allScalarFields()
+                                    )
+                            )
+                    );
+                }),
+                it -> {
+                    it.sql(
+                            "select tb_1_.NODE_ID " +
+                                    "from TREE_NODE as tb_1_ " +
+                                    "where tb_1_.PARENT_ID is null"
+                    );
+                }
+        );
+        sqlClient.getTriggers().fireEntityTableChange(
+                TreeNodeDraft.$.produce(treeNode -> {
+                    treeNode.setParent(parent -> {
+                        parent.setId(1L);
+                    });
+                }),
+                TreeNodeDraft.$.produce(treeNode -> {
+                    treeNode.setId(9L).setParent((TreeNode) null);
+                })
+        );
+        executeAndExpect(
+                sqlClient.createQuery(TreeNodeTable.class, (q, treeNode) -> {
+                    q.where(treeNode.parent().isNull());
+                    return q.select(
+                            treeNode.fetch(
+                                    TreeNodeFetcher.$.childNodes(
+                                            TreeNodeFetcher.$.allScalarFields()
+                                    )
+                            )
+                    );
+                }),
+                it -> {
+                    it.sql(
+                            "select tb_1_.NODE_ID " +
+                                    "from TREE_NODE as tb_1_ " +
+                                    "where tb_1_.PARENT_ID is null"
+                    );
+                    it.statement(1).sql(
+                            "select tb_1_.NODE_ID " +
+                                    "from TREE_NODE as tb_1_ " +
+                                    "where tb_1_.PARENT_ID = ?"
+                    );
+                    it.statement(2).sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                    "from TREE_NODE as tb_1_ " +
+                                    "where tb_1_.NODE_ID = ?"
+                    ).variables(9L);
                 }
         );
     }
