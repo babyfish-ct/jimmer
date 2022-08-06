@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.type.SimpleType;
+import org.babyfish.jimmer.jackson.DeserializeUtils;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -39,7 +40,8 @@ class BinLogDeserializer extends StdDeserializer<Object> {
                 Object value;
                 if (prop.isAssociation()) {
                     ImmutableProp targetIdProp = prop.getTargetType().getIdProp();
-                    Object valueId = ctx.readTreeAsValue(
+                    Object valueId = DeserializeUtils.readTreeAsValue(
+                            ctx,
                             childNode,
                             SimpleType.constructUnsafe(
                                     targetIdProp.getElementClass()
@@ -58,7 +60,8 @@ class BinLogDeserializer extends StdDeserializer<Object> {
                                     }
                             );
                 } else {
-                    value = ctx.readTreeAsValue(
+                    value = DeserializeUtils.readTreeAsValue(
+                            ctx,
                             childNode,
                             SimpleType.constructUnsafe(
                                     prop.getElementClass()

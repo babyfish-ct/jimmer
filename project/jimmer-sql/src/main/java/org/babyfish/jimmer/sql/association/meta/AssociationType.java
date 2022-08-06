@@ -21,17 +21,17 @@ public class AssociationType implements ImmutableType {
 
     private MiddleTable middleTable;
 
-    private ImmutableProp baseProp;
+    private final ImmutableProp baseProp;
 
-    private ImmutableType sourceType;
+    private final ImmutableType sourceType;
 
-    private ImmutableType targetType;
+    private final ImmutableType targetType;
 
-    private AssociationProp sourceProp;
+    private final AssociationProp sourceProp;
 
-    private AssociationProp targetProp;
+    private final AssociationProp targetProp;
 
-    private Map<String, ImmutableProp> props;
+    private final Map<String, ImmutableProp> props;
 
     public static AssociationType of(ImmutableProp prop) {
         return CACHE.get(prop);
@@ -125,9 +125,9 @@ public class AssociationType implements ImmutableType {
 
     @Override
     public ImmutableProp getPropByColumnName(String columnName) {
-        String scName = DatabaseIdentifiers.standardColumnName(columnName);
+        String scName = DatabaseIdentifiers.standardIdentifier(columnName);
         if (scName.equals(
-                DatabaseIdentifiers.standardColumnName(
+                DatabaseIdentifiers.standardIdentifier(
                         sourceProp.<Column>getStorage().getName()
                 )
             )
@@ -135,7 +135,7 @@ public class AssociationType implements ImmutableType {
             return sourceProp;
         }
         if (scName.equals(
-                DatabaseIdentifiers.standardColumnName(
+                DatabaseIdentifiers.standardIdentifier(
                         targetProp.<Column>getStorage().getName()
                 )
             )

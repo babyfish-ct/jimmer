@@ -91,15 +91,6 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
     }
 
     @Override
-    public V get(K key, CacheEnvironment<K, V> env) {
-        return loading(() -> {
-            V value = raw.get(key, env);
-            validateResult(value);
-            return value;
-        });
-    }
-
-    @Override
     public Map<K, V> getAll(Collection<K> keys, CacheEnvironment<K, V> env) {
         return loading(() -> {
             Map<K, V> valueMap = raw.getAll(keys, env);

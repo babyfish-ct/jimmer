@@ -54,12 +54,12 @@ public class ImmutableSerializer extends StdSerializer<ImmutableSpi> {
                     if (!prop.isEntityList() &&
                             value instanceof ImmutableSpi &&
                             ((ImmutableSpi)value).__type() != immutableType) {
-                        typeSer = provider.findTypeSerializer(Utils.getJacksonType(prop));
+                        typeSer = provider.findTypeSerializer(PropUtils.getJacksonType(prop));
                     }
                     if (typeSer != null) {
                         provider.findValueSerializer(value.getClass()).serializeWithType(value, gen, provider, typeSer);
                     } else {
-                        provider.findValueSerializer(Utils.getJacksonType(prop)).serialize(value, gen, provider);
+                        provider.findValueSerializer(PropUtils.getJacksonType(prop)).serialize(value, gen, provider);
                     }
                 } else {
                     provider.defaultSerializeField(prop.getName(), value, gen);

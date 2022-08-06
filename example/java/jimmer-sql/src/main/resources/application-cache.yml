@@ -11,3 +11,6 @@ spring:
     consumer:
       bootstrap-servers: localhost:4003
       group-id: jimmer-demo/sql
+      enable-auto-commit: false
+    listener:
+      ack-mode: MANUAL

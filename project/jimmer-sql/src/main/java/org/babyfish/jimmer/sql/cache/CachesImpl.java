@@ -1,20 +1,26 @@
 package org.babyfish.jimmer.sql.cache;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Triggers;
+import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.meta.MiddleTable;
 
 import java.util.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class CachesImpl implements Caches {
+
+    private final Triggers triggers;
 
     private final Map<ImmutableType, LocatedCacheImpl<?, ?>> objectCacheMap;
 
     private final Map<ImmutableProp, LocatedCacheImpl<?, ?>> associationCacheMap;
+
+    private final Map<String, ImmutableType> tableNameTypeMap;
 
     private final CacheOperator operator;
 
@@ -30,6 +36,43 @@ public class CachesImpl implements Caches {
             Map<ImmutableProp, Cache<?, ?>> associationCacheMap,
             CacheOperator operator
     ) {
+        Map<String, ImmutableType> tableNameTypeMap = new HashMap<>();
+        for (ImmutableType type : objectCacheMap.keySet()) {
+            String tableName = DatabaseIdentifiers.standardIdentifier(type.getTableName());
+            ImmutableType oldType = tableNameTypeMap.put(tableName, type);
+            if (oldType != null) {
+                throw new IllegalArgumentException(
+                        "Illegal mapping, the table \"" +
+                                tableName +
+                                "\" is shared by both \"" +
+                                oldType +
+                                "\" and \"" +
+                                type +
+                                "\""
+                );
+            }
+        }
+        for (ImmutableProp prop : associationCacheMap.keySet()) {
+            if (prop.getMappedBy() != null) {
+                prop = prop.getMappedBy();
+            }
+            if (prop.getStorage() instanceof MiddleTable) {
+                AssociationType type = AssociationType.of(prop);
+                String tableName = DatabaseIdentifiers.standardIdentifier(type.getTableName());
+                ImmutableType oldType = tableNameTypeMap.put(tableName, type);
+                if (oldType != null && oldType != type) {
+                    throw new IllegalArgumentException(
+                            "Illegal mapping, the table \"" +
+                                    tableName +
+                                    "\" is shared by both \"" +
+                                    oldType +
+                                    "\" and \"" +
+                                    type +
+                                    "\""
+                    );
+                }
+            }
+        }
         Map<ImmutableType, LocatedCacheImpl<?, ?>> objectCacheWrapperMap = new LinkedHashMap<>();
         for (Map.Entry<ImmutableType, Cache<?, ?>> e : objectCacheMap.entrySet()) {
             ImmutableType type = e.getKey();
@@ -40,8 +83,10 @@ public class CachesImpl implements Caches {
             ImmutableProp prop = e.getKey();
             associationCacheWrapperMap.put(prop, wrapAssociationCache(triggers, e.getValue(), prop));
         }
+        this.triggers = triggers;
         this.objectCacheMap = objectCacheWrapperMap;
         this.associationCacheMap = associationCacheWrapperMap;
+        this.tableNameTypeMap = tableNameTypeMap;
         this.operator = operator;
         disableAll = false;
         disabledTypes = Collections.emptySet();
@@ -52,12 +97,14 @@ public class CachesImpl implements Caches {
             CachesImpl base,
             CacheDisableConfig cfg
     ) {
+        triggers = base.triggers;
         objectCacheMap = base.objectCacheMap;
         associationCacheMap = base.associationCacheMap;
+        tableNameTypeMap = base.tableNameTypeMap;
         operator = base.operator;
-        this.disableAll = cfg.isDisableAll();
-        this.disabledTypes = cfg.getDisabledTypes();
-        this.disabledProps = cfg.getDisabledProps();
+        disableAll = cfg.isDisableAll();
+        disabledTypes = cfg.getDisabledTypes();
+        disabledProps = cfg.getDisabledProps();
     }
 
     @SuppressWarnings("unchecked")
@@ -79,6 +126,26 @@ public class CachesImpl implements Caches {
             return null;
         }
         return LocatedCacheImpl.export((LocatedCache<K, V>)associationCacheMap.get(prop));
+    }
+
+    @Override
+    public void invalidateByBinData(String tableName, JsonNode data) {
+        if (data == null || data.isNull()) {
+            return;
+        }
+        ImmutableType type = tableNameTypeMap.get(
+                DatabaseIdentifiers.databaseIdentifier(tableName)
+        );
+        if (type == null) {
+            throw new IllegalArgumentException(
+                    "Illegal table name \"" +
+                            tableName +
+                            "\", it is not managed by cache"
+            );
+        }
+        if (type instanceof AssociationType) {
+
+        }
     }
 
     @SuppressWarnings("unchecked")
