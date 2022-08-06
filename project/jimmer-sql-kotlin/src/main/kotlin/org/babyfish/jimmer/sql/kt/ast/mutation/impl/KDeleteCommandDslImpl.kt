@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.kt.ast.mutation.impl
 import org.babyfish.jimmer.sql.DeleteAction
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand
 import org.babyfish.jimmer.sql.kt.ast.mutation.KDeleteCommandDsl
-import org.babyfish.jimmer.sql.kt.impl.toImmutableProp
+import org.babyfish.jimmer.sql.kt.toImmutableProp
 import kotlin.reflect.KProperty1
 
 internal class KDeleteCommandDslImpl(

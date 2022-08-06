@@ -4,7 +4,6 @@ import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.cache.*
 import org.babyfish.jimmer.sql.dialect.Dialect
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
-import org.babyfish.jimmer.sql.kt.impl.toImmutableProp
 import org.babyfish.jimmer.sql.meta.IdGenerator
 import org.babyfish.jimmer.sql.runtime.*
 import java.lang.IllegalStateException

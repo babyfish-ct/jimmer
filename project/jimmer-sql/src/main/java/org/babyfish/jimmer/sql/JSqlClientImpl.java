@@ -110,7 +110,7 @@ class JSqlClientImpl implements JSqlClient {
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
         this.entities = entities != null ? entities : new EntitiesImpl(this);
-        this.caches = caches != null ? caches : Caches.of(triggers, null);
+        this.caches = caches != null ? caches : CachesImpl.of(triggers, null);
         this.triggers = triggers;
     }
 
@@ -365,7 +365,7 @@ class JSqlClientImpl implements JSqlClient {
         @Override
         @OldChain
         public JSqlClient.Builder setCaches(Consumer<CacheConfig> block) {
-            caches = Caches.of(triggers, block);
+            caches = CachesImpl.of(triggers, block);
             return this;
         }
 
