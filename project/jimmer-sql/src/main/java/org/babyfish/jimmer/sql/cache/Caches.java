@@ -31,7 +31,7 @@ public interface Caches {
 
     <K, V> Cache<K, V> getAssociationCache(ImmutableProp prop);
 
-    void invalidateByBinData(String table, JsonNode jsonNode) throws JsonProcessingException;
+    void invalidateByBinData(String tableName, JsonNode oldData, JsonNode newData);
 
     static Caches of(Triggers triggers, Consumer<CacheConfig> block) {
         CacheConfig cfg = new CacheConfig();

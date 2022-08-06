@@ -45,12 +45,27 @@ public class EntityEvent<E> {
     }
 
     public Object getId() {
-        E oe = this.oldEntity;
+        ImmutableSpi oe = (ImmutableSpi) this.oldEntity;
+        ImmutableSpi ne = (ImmutableSpi) this.newEntity;
         int idPropId = getImmutableType().getIdProp().getId();
-        if (oe != null) {
-            return ((ImmutableSpi) oe).__get(idPropId);
+        Object oldId = null;
+        if (oe != null && oe.__isLoaded(idPropId)) {
+            oldId = oe.__get(idPropId);
         }
-        return ((ImmutableSpi) newEntity).__get(idPropId);
+        Object newId = null;
+        if (ne != null && ne.__isLoaded(idPropId)) {
+            newId = ne.__get(idPropId);
+        }
+        if (oldId == null && newId == null) {
+            throw new IllegalStateException("Id is not specified");
+        }
+        if (oldId != null && newId != null) {
+            if (!oldId.equals(newId)) {
+                throw new IllegalStateException("Conflict ids in old entity and new entity");
+            }
+            return oldId;
+        }
+        return oldId != null ? oldId : newId;
     }
 
     public ImmutableType getImmutableType() {
