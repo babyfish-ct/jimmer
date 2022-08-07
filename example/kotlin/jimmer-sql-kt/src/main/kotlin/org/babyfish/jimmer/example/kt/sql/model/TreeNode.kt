@@ -4,13 +4,10 @@ import org.babyfish.jimmer.sql.*
 
 @Entity
 interface TreeNode {
-    
+
     @Id
     @Column(name = "NODE_ID")
-    @GeneratedValue(
-        strategy = GenerationType.SEQUENCE,
-        sequenceName = "TREE_NODE_ID_SEQ"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long
 
     @Key

@@ -46,7 +46,6 @@ public class CacheConfig {
         return new CacheFactory() {
             @Override
             public Cache<?, ?> createObjectCache(ImmutableType type) {
-
                 return new ChainCacheBuilder<>()
                         .add(new CaffeineBinder<>(512, Duration.ofSeconds(1)))
                         .add(
