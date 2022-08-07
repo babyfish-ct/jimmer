@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -106,7 +107,7 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
     }
 
     @Override
-    public void deleteAll(@NotNull Collection<K> keys, Object reason) {
+    public void deleteAll(@NotNull Collection<K> keys, @Nullable Object reason) {
         raw.deleteAll(keys, reason);
     }
 

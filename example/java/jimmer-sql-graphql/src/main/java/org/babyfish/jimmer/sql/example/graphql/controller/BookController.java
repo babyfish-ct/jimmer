@@ -80,7 +80,7 @@ public class BookController {
 
     @MutationMapping
     @Transactional
-    public int deleteBook(long id) {
+    public int deleteBook(@Argument long id) {
         return sqlClient
                 .getEntities()
                 .delete(Book.class, id)

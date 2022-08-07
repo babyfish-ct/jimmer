@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.cache.CacheFilter;
 import org.babyfish.jimmer.sql.cache.ValueSerializer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -52,7 +53,7 @@ public class CacheImpl<T> implements Cache<Object, T> {
     }
 
     @Override
-    public void deleteAll(@NotNull Collection<Object> keys, Object reason) {
+    public void deleteAll(@NotNull Collection<Object> keys, @Nullable Object reason) {
         map.keySet().removeAll(keys);
     }
 }

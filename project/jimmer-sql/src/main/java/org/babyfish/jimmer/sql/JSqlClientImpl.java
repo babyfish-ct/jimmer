@@ -45,6 +45,8 @@ class JSqlClientImpl implements JSqlClient {
 
     private final ConnectionManager connectionManager;
 
+    private final ConnectionManager slaveConnectionManager;
+
     private final Dialect dialect;
 
     private final Executor executor;
@@ -65,6 +67,7 @@ class JSqlClientImpl implements JSqlClient {
 
     public JSqlClientImpl(
             ConnectionManager connectionManager,
+            ConnectionManager slaveConnectionManager,
             Dialect dialect,
             Executor executor,
             Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
@@ -78,6 +81,7 @@ class JSqlClientImpl implements JSqlClient {
                 connectionManager != null ?
                         connectionManager :
                         ILLEGAL_CONNECTION_MANAGER,
+                slaveConnectionManager,
                 dialect != null ? dialect : DefaultDialect.INSTANCE,
                 executor != null ? executor : DefaultExecutor.INSTANCE,
                 new HashMap<>(scalarProviderMap),
@@ -92,6 +96,7 @@ class JSqlClientImpl implements JSqlClient {
 
     private JSqlClientImpl(
             ConnectionManager connectionManager,
+            ConnectionManager slaveConnectionManager,
             Dialect dialect,
             Executor executor,
             Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
@@ -103,6 +108,7 @@ class JSqlClientImpl implements JSqlClient {
             Triggers triggers
     ) {
         this.connectionManager = connectionManager;
+        this.slaveConnectionManager = slaveConnectionManager;
         this.dialect = dialect;
         this.executor = executor;
         this.scalarProviderMap = scalarProviderMap;
@@ -116,6 +122,15 @@ class JSqlClientImpl implements JSqlClient {
 
     @Override
     public ConnectionManager getConnectionManager() {
+        return connectionManager;
+    }
+
+    @Override
+    public ConnectionManager getSlaveConnectionManager() {
+        ConnectionManager slave = slaveConnectionManager;
+        if (slave != null) {
+            return slave;
+        }
         return connectionManager;
     }
 
@@ -260,6 +275,7 @@ class JSqlClientImpl implements JSqlClient {
         block.accept(cfg);
         return new JSqlClientImpl(
                 connectionManager,
+                slaveConnectionManager,
                 dialect,
                 executor,
                 scalarProviderMap,
@@ -272,9 +288,31 @@ class JSqlClientImpl implements JSqlClient {
         );
     }
 
+    @Override
+    public JSqlClient disableSlaveConnectionManager() {
+        if (slaveConnectionManager == null) {
+            return this;
+        }
+        return new JSqlClientImpl(
+                connectionManager,
+                null,
+                dialect,
+                executor,
+                scalarProviderMap,
+                idGeneratorMap,
+                defaultBatchSize,
+                defaultListBatchSize,
+                entities,
+                caches,
+                triggers
+        );
+    }
+
     public static class BuilderImpl implements JSqlClient.Builder {
 
         private ConnectionManager connectionManager;
+
+        private ConnectionManager slaveConnectionManager;
 
         private Dialect dialect;
 
@@ -298,6 +336,13 @@ class JSqlClientImpl implements JSqlClient {
         @OldChain
         public JSqlClient.Builder setConnectionManager(ConnectionManager connectionManager) {
             this.connectionManager = connectionManager;
+            return this;
+        }
+
+        @Override
+        @OldChain
+        public JSqlClient.Builder setSlaveConnectionManager(ConnectionManager connectionManager) {
+            this.slaveConnectionManager = connectionManager;
             return this;
         }
 
@@ -373,6 +418,7 @@ class JSqlClientImpl implements JSqlClient {
         public JSqlClient build() {
             return new JSqlClientImpl(
                     connectionManager,
+                    slaveConnectionManager,
                     dialect,
                     executor,
                     scalarProviderMap,

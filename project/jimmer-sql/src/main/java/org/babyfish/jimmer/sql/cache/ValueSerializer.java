@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Function;
 
 public class ValueSerializer<T> {
 
@@ -93,6 +94,15 @@ public class ValueSerializer<T> {
         return serializedMap;
     }
 
+    @NotNull
+    public <K1, K2> Map<K2, byte[]> serialize(@NotNull Map<K1, T> map, @NotNull Function<K1, K2> keyMapper) {
+        Map<K2, byte[]> serializedMap = new LinkedHashMap<>((map.size() * 4 + 2) / 3);
+        for (Map.Entry<K1, T> e : map.entrySet()) {
+            serializedMap.put(keyMapper.apply(e.getKey()), serialize(e.getValue()));
+        }
+        return serializedMap;
+    }
+
     public T deserialize(byte[] value) {
         if (!requireNewDraftContext) {
             return deserializeImpl(value, null);
@@ -110,7 +120,25 @@ public class ValueSerializer<T> {
         } else {
             Internal.requiresNewDraftContext(ctx -> {
                 for (Map.Entry<K, byte[]> e : map.entrySet()) {
-                    deserializedMap.put(e.getKey(), deserializeImpl(e.getValue(), null));
+                    deserializedMap.put(e.getKey(), deserializeImpl(e.getValue(), ctx));
+                }
+                return null;
+            });
+        }
+        return deserializedMap;
+    }
+
+    @NotNull
+    public <K1, K2> Map<K2, T> deserialize(@NotNull Map<K1, byte[]> map, @NotNull Function<K1, K2> keyMapper) {
+        Map<K2, T> deserializedMap = new LinkedHashMap<>((map.size() * 4 + 2) / 3);
+        if (!requireNewDraftContext) {
+            for (Map.Entry<K1, byte[]> e : map.entrySet()) {
+                deserializedMap.put(keyMapper.apply(e.getKey()), deserializeImpl(e.getValue(), null));
+            }
+        } else {
+            Internal.requiresNewDraftContext(ctx -> {
+                for (Map.Entry<K1, byte[]> e : map.entrySet()) {
+                    deserializedMap.put(keyMapper.apply(e.getKey()), deserializeImpl(e.getValue(), ctx));
                 }
                 return null;
             });

@@ -46,7 +46,7 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQuery<R>, TypedQueryImplem
     @Override
     public List<R> execute() {
         return sqlClient
-                .getConnectionManager()
+                .getSlaveConnectionManager()
                 .execute(this::executeImpl);
     }
 
@@ -56,7 +56,7 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQuery<R>, TypedQueryImplem
             return executeImpl(con);
         }
         return sqlClient
-                .getConnectionManager()
+                .getSlaveConnectionManager()
                 .execute(this::executeImpl);
     }
 

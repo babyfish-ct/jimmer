@@ -1,11 +1,17 @@
 package org.babyfish.jimmer.sql.example.graphql.cfg;
 
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
+import org.babyfish.jimmer.sql.dialect.MySqlDialect;
+import org.babyfish.jimmer.sql.example.graphql.entities.Author;
+import org.babyfish.jimmer.sql.example.graphql.entities.Book;
+import org.babyfish.jimmer.sql.example.graphql.entities.BookStore;
 import org.babyfish.jimmer.sql.example.graphql.entities.Gender;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +26,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 @Configuration
@@ -28,8 +35,13 @@ public class SqlClientConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqlClientConfig.class);
 
     @Bean
-    public JSqlClient sqlClient(DataSource dataSource) {
-        return JSqlClient.newBuilder()
+    public JSqlClient sqlClient(
+            DataSource dataSource,
+            @Value("${spring.datasource.url}") String jdbcUrl,
+            Optional<CacheFactory> cacheFactory
+    ) {
+        boolean isH2 = jdbcUrl.startsWith("jdbc:h2:");
+        JSqlClient sqlClient = JSqlClient.newBuilder()
                 .setConnectionManager(
                         /*
                          * It's very important to use
@@ -49,7 +61,7 @@ public class SqlClientConfig {
                         }
                 )
                 .setDialect(
-                        new H2Dialect() // Support sequence
+                        isH2 ? new H2Dialect() : new MySqlDialect() // Support sequence
                 )
                 .setExecutor(
                         /*
@@ -61,6 +73,7 @@ public class SqlClientConfig {
                                     Connection con,
                                     String sql,
                                     List<Object> variables,
+                                    StatementFactory statementFactory,
                                     SqlFunction<PreparedStatement, R> block
                             ) {
                                 LOGGER.info("Execute sql : \"{}\", with variables: {}", sql, variables);
@@ -68,11 +81,24 @@ public class SqlClientConfig {
                                         con,
                                         sql,
                                         variables,
+                                        statementFactory,
                                         block
                                 );
                             }
                         }
                 )
+                .setCaches(it -> {
+                    if (cacheFactory.isPresent()) {
+                        it.setCacheFactory(
+                                new Class[] {
+                                        BookStore.class,
+                                        Book.class,
+                                        Author.class
+                                },
+                                cacheFactory.get()
+                        );
+                    }
+                })
                 .addScalarProvider(
                         ScalarProvider.enumProviderByString(Gender.class, it ->
                                 it
@@ -81,34 +107,35 @@ public class SqlClientConfig {
                         )
                 )
                 .build();
+        if (isH2) {
+            initializeH2Database(sqlClient);
+        }
+        return sqlClient;
     }
 
-    @Bean
-    public ApplicationRunner initializeH2DatabaseRunner(JSqlClient sqlClient) {
-        return args -> {
-            sqlClient.getConnectionManager().execute(con -> {
-                InputStream inputStream = JSqlClient.class
-                        .getClassLoader()
-                        .getResourceAsStream("h2-database.sql");
-                if (inputStream == null) {
-                    throw new RuntimeException("no h2-database.sql");
-                }
-                try (Reader reader = new InputStreamReader(inputStream)) {
-                    char[] buf = new char[1024];
-                    StringBuilder builder = new StringBuilder();
-                    while (true) {
-                        int len = reader.read(buf);
-                        if (len == -1) {
-                            break;
-                        }
-                        builder.append(buf, 0, len);
+    private void initializeH2Database(JSqlClient sqlClient) {
+        sqlClient.getConnectionManager().execute(con -> {
+            InputStream inputStream = SqlClientConfig.class
+                    .getClassLoader()
+                    .getResourceAsStream("h2-database.sql");
+            if (inputStream == null) {
+                throw new RuntimeException("no h2-database.sql");
+            }
+            try (Reader reader = new InputStreamReader(inputStream)) {
+                char[] buf = new char[1024];
+                StringBuilder builder = new StringBuilder();
+                while (true) {
+                    int len = reader.read(buf);
+                    if (len == -1) {
+                        break;
                     }
-                    con.createStatement().execute(builder.toString());
-                } catch (IOException | SQLException ex) {
-                    throw new RuntimeException("Cannot initialize h2 database", ex);
+                    builder.append(buf, 0, len);
                 }
-                return null;
-            });
-        };
+                con.createStatement().execute(builder.toString());
+            } catch (IOException | SQLException ex) {
+                throw new RuntimeException("Cannot initialize h2 database", ex);
+            }
+            return null;
+        });
     }
 }

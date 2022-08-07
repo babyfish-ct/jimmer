@@ -63,7 +63,7 @@ class BookController(
 
     @MutationMapping
     @Transactional
-    fun deleteBook(id: Long): Int {
+    fun deleteBook(@Argument id: Long): Int {
         return sqlClient
             .entities
             .delete(Book::class, id)

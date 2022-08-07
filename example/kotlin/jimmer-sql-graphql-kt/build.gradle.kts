@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "org.babyfish.jimmer.example.kt"
-version = "0.1.5"
+version = "0.1.15"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
@@ -18,17 +18,25 @@ repositories {
 
 dependencies {
 
-	implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.1.5")
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.1.5")
+	implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.1.15")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.1.15")
 
 	implementation("org.springframework.boot:spring-boot-starter-graphql")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-jdbc")
 
-	runtimeOnly("com.h2database:h2:2.1.212")
-
 	implementation("com.graphql-java:graphql-java-extended-scalars:18.1")
-	
+
+	implementation("org.springframework.data:spring-data-redis")
+	implementation("org.springframework.kafka:spring-kafka:2.9.0")
+
+	// 3.1.0 has problem
+	implementation("com.github.ben-manes.caffeine:caffeine:3.1.0")
+
+	runtimeOnly("com.h2database:h2:2.1.212")
+	runtimeOnly("mysql:mysql-connector-java:8.0.30")
+	runtimeOnly("io.lettuce:lettuce-core:6.2.0.RELEASE")
+
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
