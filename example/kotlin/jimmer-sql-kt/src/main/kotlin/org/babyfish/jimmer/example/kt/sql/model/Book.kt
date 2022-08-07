@@ -1,16 +1,14 @@
 package org.babyfish.jimmer.example.kt.sql.model
 
 import org.babyfish.jimmer.sql.*
-import org.babyfish.jimmer.sql.meta.UUIDIdGenerator
 import java.math.BigDecimal
-import java.util.*
 
 @Entity
 interface Book {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.USER, generatorType = UUIDIdGenerator::class)
-    val id: UUID
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long
 
     @Key
     val name: String

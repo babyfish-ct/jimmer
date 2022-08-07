@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "org.babyfish.jimmer.example.kt"
-version = "0.1.5"
+version = "0.1.14"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
@@ -18,8 +18,8 @@ repositories {
 
 dependencies {
 
-	implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.1.5")
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.1.5")
+	implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.1.14")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.1.14")
 
 	implementation("org.springframework.boot:spring-boot-starter")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -30,7 +30,15 @@ dependencies {
 	implementation("org.springframework.shell:spring-shell-starter:2.0.1.RELEASE")
 	implementation("org.springframework.boot:spring-boot-starter-jdbc")
 
+	implementation("org.springframework.data:spring-data-redis")
+	implementation("org.springframework.kafka:spring-kafka:2.9.0")
+
+	// 3.1.0 has problem
+	implementation("com.github.ben-manes.caffeine:caffeine:3.1.0")
+
 	runtimeOnly("com.h2database:h2:2.1.212")
+	runtimeOnly("mysql:mysql-connector-java:8.0.30")
+	runtimeOnly("io.lettuce:lettuce-core:6.2.0.RELEASE")
 }
 
 // Without this configuration, gradle command can still run.

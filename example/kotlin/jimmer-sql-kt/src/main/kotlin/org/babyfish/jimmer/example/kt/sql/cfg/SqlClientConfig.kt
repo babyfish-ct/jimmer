@@ -1,11 +1,14 @@
 package org.babyfish.jimmer.example.kt.sql.cfg
 
-import org.babyfish.jimmer.example.kt.sql.model.Gender
+import org.babyfish.jimmer.example.kt.sql.model.*
+import org.babyfish.jimmer.sql.cache.CacheFactory
 import org.babyfish.jimmer.sql.dialect.H2Dialect
+import org.babyfish.jimmer.sql.dialect.MySqlDialect
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.newKSqlClient
-import org.babyfish.jimmer.sql.runtime.*
+import org.babyfish.jimmer.sql.runtime.ScalarProvider
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.jdbc.datasource.DataSourceUtils
@@ -19,8 +22,13 @@ class SqlClientConfig {
     private val LOGGER = LoggerFactory.getLogger(SqlClientConfig::class.java)
 
     @Bean
-    fun sqlClient(dataSource: DataSource): KSqlClient =
-        newKSqlClient {
+    fun sqlClient(
+        dataSource: DataSource,
+        @Value("\${spring.datasource.url}") jdbcUrl: String,
+        cacheFactory: CacheFactory? // Optional dependency
+    ): KSqlClient {
+        val isH2 = jdbcUrl.startsWith("jdbc:h2:")
+        return newKSqlClient {
 
             setConnectionManager {
                 /*
@@ -44,7 +52,21 @@ class SqlClientConfig {
                 proceed()
             }
 
-            setDialect(H2Dialect())
+            setDialect(if (isH2) H2Dialect() else MySqlDialect())
+
+            setCaches {
+                if (cacheFactory != null) {
+                    setCacheFactory(
+                        arrayOf(
+                            BookStore::class,
+                            Book::class,
+                            Author::class,
+                            TreeNode::class
+                        ),
+                        cacheFactory
+                    )
+                }
+            }
 
             addScalarProvider(
                 ScalarProvider.enumProviderByString(
@@ -56,8 +78,11 @@ class SqlClientConfig {
                 }
             )
         }.also {
-            initializeH2Database(it)
+            if (isH2) {
+                initializeH2Database(it)
+            }
         }
+    }
 
     private fun initializeH2Database(sqlClient: KSqlClient) {
         sqlClient.executeNativeSql { con: Connection ->
