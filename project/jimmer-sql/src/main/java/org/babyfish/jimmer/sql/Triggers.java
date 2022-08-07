@@ -51,9 +51,21 @@ public interface Triggers {
 
     void removeAssociationListener(ImmutableProp prop, AssociationListener listener);
 
-    void fireEntityTableChange(Object oldRow, Object newRow);
+    default void fireEntityTableChange(Object oldRow, Object newRow) {
+        fireEntityTableChange(oldRow, newRow, null);
+    }
 
-    void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId);
+    void fireEntityTableChange(Object oldRow, Object newRow, Object reason);
 
-    void fireMiddleTableInsert(ImmutableProp prop, Object sourceId, Object targetId);
+    default void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId) {
+        fireMiddleTableDelete(prop, sourceId, targetId, null);
+    }
+
+    void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId, Object reason);
+
+    default void fireMiddleTableInsert(ImmutableProp prop, Object sourceId, Object targetId) {
+        fireMiddleTableInsert(prop, sourceId, targetId, null);
+    }
+
+    void fireMiddleTableInsert(ImmutableProp prop, Object sourceId, Object targetId, Object reason);
 }

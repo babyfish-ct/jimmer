@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.event;
 
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
@@ -13,7 +14,9 @@ public class EntityEvent<E> {
 
     private E newEntity;
 
-    public EntityEvent(E oldEntity, E newEntity) {
+    private Object reason;
+
+    public EntityEvent(E oldEntity, E newEntity, Object reason) {
         if (oldEntity == null && newEntity == null) {
             throw new IllegalArgumentException("Both oldEntity and newEntity are null");
         }
@@ -50,6 +53,7 @@ public class EntityEvent<E> {
         this.id = oldId != null ? oldId : newId;
         this.oldEntity = oldEntity;
         this.newEntity = newEntity;
+        this.reason = reason;
     }
 
     public E getOldEntity() {
@@ -60,8 +64,13 @@ public class EntityEvent<E> {
         return newEntity;
     }
 
+    @NotNull
     public Object getId() {
         return this.id;
+    }
+
+    public Object getReason() {
+        return this.reason;
     }
 
     public ImmutableType getImmutableType() {
@@ -84,7 +93,7 @@ public class EntityEvent<E> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(oldEntity, newEntity);
+        return Objects.hash(oldEntity, newEntity, reason);
     }
 
     @Override
@@ -92,7 +101,9 @@ public class EntityEvent<E> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         EntityEvent<?> event = (EntityEvent<?>) o;
-        return Objects.equals(oldEntity, event.oldEntity) && Objects.equals(newEntity, event.newEntity);
+        return Objects.equals(oldEntity, event.oldEntity) &&
+                Objects.equals(newEntity, event.newEntity) &&
+                Objects.equals(reason, event.reason);
     }
 
     @Override
@@ -100,6 +111,7 @@ public class EntityEvent<E> {
         return "Event{" +
                 "oldEntity=" + oldEntity +
                 ", newEntity=" + newEntity +
+                ", reason=" + reason +
                 '}';
     }
 }

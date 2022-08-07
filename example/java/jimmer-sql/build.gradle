@@ -6,7 +6,7 @@ plugins {
 }
 
 group 'org.babyfish.jimmer.example.sql'
-version '0.1.11'
+version '0.1.14'
 
 repositories {
     mavenCentral()
@@ -14,14 +14,16 @@ repositories {
 
 dependencies {
 
-    implementation 'org.babyfish.jimmer:jimmer-sql:0.1.11'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.1.11'
+    implementation 'org.babyfish.jimmer:jimmer-sql:0.1.14'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.1.14'
 
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.shell:spring-shell-starter:2.0.1.RELEASE'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'org.springframework.data:spring-data-redis'
     implementation 'org.springframework.kafka:spring-kafka:2.9.0'
+
+    // 3.1.0 has problem
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.0'
 
     runtimeOnly 'com.h2database:h2:2.1.212'

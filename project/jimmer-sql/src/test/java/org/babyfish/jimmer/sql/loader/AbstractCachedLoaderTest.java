@@ -33,17 +33,17 @@ public class AbstractCachedLoaderTest extends AbstractQueryTest {
                         new CacheFactory() {
                             @Override
                             public Cache<?, ?> createObjectCache(ImmutableType type) {
-                                return new CacheImpl<>();
+                                return new CacheImpl<>(type);
                             }
 
                             @Override
-                            public Cache<?, ?> createAssociatedIdCache(ImmutableProp type) {
-                                return new CacheImpl<>();
+                            public Cache<?, ?> createAssociatedIdCache(ImmutableProp prop) {
+                                return new CacheImpl<>(prop);
                             }
 
                             @Override
-                            public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp type) {
-                                return new CacheImpl<>();
+                            public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
+                                return new CacheImpl<>(prop);
                             }
                         }
                 );

@@ -1,15 +1,28 @@
 package org.babyfish.jimmer.sql.common;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.cache.CacheFilter;
+import org.babyfish.jimmer.sql.cache.ValueSerializer;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
 public class CacheImpl<T> implements Cache<Object, T> {
 
-    private Map<Object, T> map = new HashMap<>();
+    private final Map<Object, byte[]> map = new HashMap<>();
+
+    private final ValueSerializer<T> valueSerializer;
+
+    public CacheImpl(ImmutableType type) {
+        valueSerializer = new ValueSerializer<>(type);
+    }
+
+    public CacheImpl(ImmutableProp prop) {
+        valueSerializer = new ValueSerializer<>(prop);
+    }
 
     @NotNull
     @Override
@@ -20,9 +33,9 @@ public class CacheImpl<T> implements Cache<Object, T> {
         Map<Object, T> resultMap = new LinkedHashMap<>();
         Set<Object> missedKeys = new LinkedHashSet<>();
         for (Object key : keys) {
-            T value = map.get(key);
-            resultMap.put(key, value);
-            if (value == null && !map.containsKey(key)) {
+            byte[] bytes = map.get(key);
+            resultMap.put(key, valueSerializer.deserialize(bytes));
+            if (bytes == null) {
                 missedKeys.add(key);
             }
         }
@@ -33,13 +46,13 @@ public class CacheImpl<T> implements Cache<Object, T> {
             }
         }
         for (Object missedKey : missedKeys) {
-            map.put(missedKey, loadedMap.get(missedKey));
+            map.put(missedKey, valueSerializer.serialize(loadedMap.get(missedKey)));
         }
         return resultMap;
     }
 
     @Override
-    public void deleteAll(@NotNull Collection<Object> keys, String reason) {
+    public void deleteAll(@NotNull Collection<Object> keys, Object reason) {
         map.keySet().removeAll(keys);
     }
 }

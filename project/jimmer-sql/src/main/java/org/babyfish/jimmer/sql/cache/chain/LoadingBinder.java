@@ -12,5 +12,5 @@ public interface LoadingBinder<K, V> {
     @NotNull
     Map<K, V> getAll(@NotNull Collection<K> keys);
 
-    void deleteAll(@NotNull Collection<K> keys, String reason);
+    void deleteAll(@NotNull Collection<K> keys, Object reason);
 }

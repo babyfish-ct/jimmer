@@ -16,20 +16,20 @@ class MiddleTableAssociationListenerProxy implements MiddleTableListener {
     }
 
     @Override
-    public void delete(Object sourceId, Object targetId) {
+    public void delete(Object sourceId, Object targetId, Object reason) {
         if (prop.getMappedBy() != null) {
-            listener.onChange(new AssociationEvent(prop, targetId, sourceId, null));
+            listener.onChange(new AssociationEvent(prop, targetId, sourceId, null, reason));
         } else {
-            listener.onChange(new AssociationEvent(prop, sourceId, targetId, null));
+            listener.onChange(new AssociationEvent(prop, sourceId, targetId, null, reason));
         }
     }
 
     @Override
-    public void insert(Object sourceId, Object targetId) {
+    public void insert(Object sourceId, Object targetId, Object reason) {
         if (prop.getMappedBy() != null) {
-            listener.onChange(new AssociationEvent(prop, targetId, null, sourceId));
+            listener.onChange(new AssociationEvent(prop, targetId, null, sourceId, reason));
         } else {
-            listener.onChange(new AssociationEvent(prop, sourceId, null, targetId));
+            listener.onChange(new AssociationEvent(prop, sourceId, null, targetId, reason));
         }
     }
 

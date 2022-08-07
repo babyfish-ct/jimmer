@@ -74,7 +74,7 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
     }
 
     @Override
-    public void deleteAll(@NotNull Collection<K> keys, String reason) {
+    public void deleteAll(@NotNull Collection<K> keys, Object reason) {
         if (reason == null || reason.equals("caffeine")) {
             loadingCache.invalidateAll(keys);
         }
