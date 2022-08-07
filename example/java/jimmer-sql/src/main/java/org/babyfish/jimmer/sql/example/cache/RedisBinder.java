@@ -1,9 +1,7 @@
 package org.babyfish.jimmer.sql.example.cache;
 
-import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.cache.ValueSerializer;
 import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
 import org.slf4j.Logger;
@@ -82,26 +80,7 @@ public class RedisBinder<K, V> implements SimpleBinder<K, V> {
         List<byte[]> values = operations.opsForValue().multiGet(
                 keys.stream().map(it -> keyPrefix + it).collect(Collectors.toList())
         );
-        Map<K, V> map = new HashMap<>((keys.size() * 4 + 2) / 3);
-        if (values != null) {
-            Iterator<K> keyItr = keys.iterator();
-            Iterator<byte[]> valueItr = values.iterator();
-            while (keyItr.hasNext() && valueItr.hasNext()) {
-                K key = keyItr.next();
-                byte[] bytes = valueItr.next();
-                if (bytes != null) {
-                    V value = Internal.requiresNewDraftContext(ctx -> {
-                        V v = valueSerializer.deserialize(bytes);
-                        if (v instanceof Draft) {
-                            return ctx.resolveObject(v);
-                        }
-                        return v;
-                    });
-                    map.put(key, value);
-                }
-            }
-        }
-        return map;
+        return valueSerializer.deserialize(keys, values);
     }
 
     @SuppressWarnings("unchecked")
