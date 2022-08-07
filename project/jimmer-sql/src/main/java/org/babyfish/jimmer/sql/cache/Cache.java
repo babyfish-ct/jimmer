@@ -24,7 +24,7 @@ public interface Cache<K, V> {
         deleteAll(Collections.singleton(key), null);
     }
 
-    default void delete(@NotNull K key, String reason) {
+    default void delete(@NotNull K key, Object reason) {
         deleteAll(Collections.singleton(key), reason);
     }
 
@@ -32,5 +32,5 @@ public interface Cache<K, V> {
         deleteAll(keys, null);
     }
 
-    void deleteAll(@NotNull Collection<K> keys, String reason);
+    void deleteAll(@NotNull Collection<K> keys, Object reason);
 }

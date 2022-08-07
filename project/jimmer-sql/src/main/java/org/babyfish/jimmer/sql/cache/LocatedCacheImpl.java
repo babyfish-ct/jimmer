@@ -1,8 +1,10 @@
 package org.babyfish.jimmer.sql.cache;
 
+import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.runtime.Internal;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -104,7 +106,7 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
     }
 
     @Override
-    public void deleteAll(@NotNull Collection<K> keys, String reason) {
+    public void deleteAll(@NotNull Collection<K> keys, Object reason) {
         raw.deleteAll(keys, reason);
     }
 
@@ -126,6 +128,7 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void validateResult(Object result) {
         if (result != null) {
             if (prop == null) {
@@ -134,6 +137,13 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
                             "Object cache for \"" +
                                     type +
                                     "\" must return object"
+                    );
+                }
+                if (result instanceof Draft) {
+                    throw new IllegalArgumentException(
+                            "Object cache for \"" +
+                                    type +
+                                    "\" cannot return draft"
                     );
                 }
             } else if (prop.isEntityList()) {

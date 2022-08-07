@@ -47,13 +47,13 @@ class ForeignKeyAssociationListenerProxy implements EntityListener<ImmutableSpi>
             return;
         }
         if (fkProp == prop) {
-            listener.onChange(new AssociationEvent(prop, e.getId(), detachedTargetId, attachedTargetId));
+            listener.onChange(new AssociationEvent(prop, e.getId(), detachedTargetId, attachedTargetId, e.getReason()));
         } else {
             if (detachedTargetId != null) {
-                listener.onChange(new AssociationEvent(prop, detachedTargetId, e.getId(), null));
+                listener.onChange(new AssociationEvent(prop, detachedTargetId, e.getId(), null, e.getReason()));
             }
             if (attachedTargetId != null) {
-                listener.onChange(new AssociationEvent(prop, attachedTargetId, null, e.getId()));
+                listener.onChange(new AssociationEvent(prop, attachedTargetId, null, e.getId(), e.getReason()));
             }
         }
     }

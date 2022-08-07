@@ -37,15 +37,15 @@ internal class KTriggersImpl(
         javaTriggers.removeAssociationListener(prop, listener)
     }
 
-    override fun fireEntityTableChange(oldRow: Any, newRow: Any) {
-        javaTriggers.fireEntityTableChange(oldRow, newRow)
+    override fun fireEntityTableChange(oldRow: Any, newRow: Any, reason: Any?) {
+        javaTriggers.fireEntityTableChange(oldRow, newRow, reason)
     }
 
-    override fun fireMiddleTableDelete(prop: ImmutableProp, sourceId: Any, targetId: Any) {
-        javaTriggers.fireMiddleTableDelete(prop, sourceId, targetId)
+    override fun fireMiddleTableDelete(prop: ImmutableProp, sourceId: Any, targetId: Any, reason: Any?) {
+        javaTriggers.fireMiddleTableDelete(prop, sourceId, targetId, reason)
     }
 
-    override fun fireMiddleTableInsert(prop: ImmutableProp, sourceId: Any, targetId: Any) {
-        javaTriggers.fireMiddleTableInsert(prop, sourceId, targetId)
+    override fun fireMiddleTableInsert(prop: ImmutableProp, sourceId: Any, targetId: Any, reason: Any?) {
+        javaTriggers.fireMiddleTableInsert(prop, sourceId, targetId, reason)
     }
 }

@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.sql.example.cache;
 
+import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.cache.ValueSerializer;
 import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
 import org.slf4j.Logger;
@@ -75,7 +77,6 @@ public class RedisBinder<K, V> implements SimpleBinder<K, V> {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Map<K, V> getAll(Collection<K> keys) {
         List<byte[]> values = operations.opsForValue().multiGet(
@@ -89,7 +90,13 @@ public class RedisBinder<K, V> implements SimpleBinder<K, V> {
                 K key = keyItr.next();
                 byte[] bytes = valueItr.next();
                 if (bytes != null) {
-                    V value = valueSerializer.deserialize(bytes);
+                    V value = Internal.requiresNewDraftContext(ctx -> {
+                        V v = valueSerializer.deserialize(bytes);
+                        if (v instanceof Draft) {
+                            return ctx.resolveObject(v);
+                        }
+                        return v;
+                    });
                     map.put(key, value);
                 }
             }
@@ -138,7 +145,7 @@ public class RedisBinder<K, V> implements SimpleBinder<K, V> {
     }
 
     @Override
-    public void deleteAll(Collection<K> keys, String reason) {
+    public void deleteAll(Collection<K> keys, Object reason) {
         if (reason == null || reason.equals("redis")) {
             Collection<String> redisKeys = keys.stream().map(it -> keyPrefix + it).collect(Collectors.toList());
             LOGGER.info("delete from redis: {}", redisKeys);

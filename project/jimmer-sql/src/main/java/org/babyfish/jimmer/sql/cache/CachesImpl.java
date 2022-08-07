@@ -143,7 +143,7 @@ public class CachesImpl implements Caches {
     }
 
     @Override
-    public void invalidateByBinLog(String tableName, JsonNode oldData, JsonNode newData) {
+    public void invalidateByBinLog(String tableName, JsonNode oldData, JsonNode newData, String reason) {
         boolean isOldNull = oldData == null || oldData.isNull();
         boolean isNewNull = newData == null || newData.isNull();
         if (isOldNull && isNewNull) {
@@ -163,16 +163,27 @@ public class CachesImpl implements Caches {
             if (isOldNull) {
                 AssociationType associationType = (AssociationType) type;
                 Tuple2<?, ?> idPair = binLogParser.parseIdPair(associationType, newData);
-                triggers.fireMiddleTableInsert(associationType.getBaseProp(), idPair.get_1(), idPair.get_2());
+                triggers.fireMiddleTableInsert(
+                        associationType.getBaseProp(),
+                        idPair.get_1(),
+                        idPair.get_2(),
+                        reason
+                );
             } else {
                 AssociationType associationType = (AssociationType) type;
                 Tuple2<?, ?> idPair = binLogParser.parseIdPair(associationType, oldData);
-                triggers.fireMiddleTableDelete(associationType.getBaseProp(), idPair.get_1(), idPair.get_2());
+                triggers.fireMiddleTableDelete(
+                        associationType.getBaseProp(),
+                        idPair.get_1(),
+                        idPair.get_2(),
+                        reason
+                );
             }
         } else {
             triggers.fireEntityTableChange(
                     binLogParser.parseEntity(type, oldData),
-                    binLogParser.parseEntity(type, newData)
+                    binLogParser.parseEntity(type, newData),
+                    reason
             );
         }
     }
@@ -195,9 +206,9 @@ public class CachesImpl implements Caches {
             if (oldEntity != null) {
                 Object id = e.getId();
                 if (operator != null) {
-                    operator.delete(wrapper, id);
+                    operator.delete(wrapper, id, e.getReason());
                 } else {
-                    wrapper.delete(id);
+                    wrapper.delete(id, e.getReason());
                 }
             }
         });
@@ -220,9 +231,9 @@ public class CachesImpl implements Caches {
         triggers.addAssociationListener(prop, e -> {
             Object id = e.getSourceId();
             if (operator != null) {
-                operator.delete(wrapper, id);
+                operator.delete(wrapper, id, e.getReason());
             } else {
-                wrapper.delete(id);
+                wrapper.delete(id, e.getReason());
             }
         });
         return wrapper;

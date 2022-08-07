@@ -37,9 +37,9 @@ interface KTriggers {
 
     fun removeAssociationListener(prop: ImmutableProp, listener: AssociationListener)
 
-    fun fireEntityTableChange(oldRow: Any, newRow: Any)
+    fun fireEntityTableChange(oldRow: Any, newRow: Any, reason: Any? = null)
 
-    fun fireMiddleTableDelete(prop: ImmutableProp, sourceId: Any, targetId: Any)
+    fun fireMiddleTableDelete(prop: ImmutableProp, sourceId: Any, targetId: Any, reason: Any? = null)
 
-    fun fireMiddleTableInsert(prop: ImmutableProp, sourceId: Any, targetId: Any)
+    fun fireMiddleTableInsert(prop: ImmutableProp, sourceId: Any, targetId: Any, reason: Any? = null)
 }

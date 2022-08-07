@@ -29,5 +29,9 @@ public interface Caches {
 
     boolean isAffectedBy(String tableName);
 
-    void invalidateByBinLog(String tableName, JsonNode oldData, JsonNode newData);
+    default void invalidateByBinLog(String tableName, JsonNode oldData, JsonNode newData) {
+        invalidateByBinLog(tableName, oldData, newData, null);
+    }
+
+    void invalidateByBinLog(String tableName, JsonNode oldData, JsonNode newData, String reason);
 }

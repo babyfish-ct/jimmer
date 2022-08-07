@@ -95,7 +95,7 @@ public class TriggersImpl implements Triggers {
     }
 
     @Override
-    public void fireEntityTableChange(Object oldRow, Object newRow) {
+    public void fireEntityTableChange(Object oldRow, Object newRow, Object reason) {
         if (oldRow == null && newRow == null) {
             return;
         }
@@ -105,7 +105,7 @@ public class TriggersImpl implements Triggers {
         if (newRow != null && !(newRow instanceof ImmutableSpi)) {
             throw new IllegalArgumentException("newRow must be immutable");
         }
-        EntityEvent<ImmutableSpi> event = new EntityEvent<>((ImmutableSpi)oldRow, (ImmutableSpi) newRow);
+        EntityEvent<ImmutableSpi> event = new EntityEvent<>((ImmutableSpi)oldRow, (ImmutableSpi) newRow, reason);
         List<EntityListener<ImmutableSpi>> listeners =
                 entityTableListenerMultiMap.get(event.getImmutableType());
         if (listeners != null && !listeners.isEmpty()) {
@@ -129,7 +129,7 @@ public class TriggersImpl implements Triggers {
     }
 
     @Override
-    public void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId) {
+    public void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId, Object reason) {
         ImmutableProp primaryAssociationProp = Utils.primaryAssociationProp(prop);
         List<MiddleTableListener> listeners = middleTableListenerMultiMap.get(primaryAssociationProp);
         if (listeners != null && !listeners.isEmpty()) {
@@ -137,7 +137,7 @@ public class TriggersImpl implements Triggers {
             if (prop == primaryAssociationProp) {
                 for (MiddleTableListener listener : listeners) {
                     try {
-                        listener.delete(sourceId, targetId);
+                        listener.delete(sourceId, targetId, reason);
                     } catch (RuntimeException | Error ex) {
                         if (throwable == null) {
                             throwable =ex;
@@ -147,7 +147,7 @@ public class TriggersImpl implements Triggers {
             } else {
                 for (MiddleTableListener listener : listeners) {
                     try {
-                        listener.delete(targetId, sourceId);
+                        listener.delete(targetId, sourceId, reason);
                     } catch (RuntimeException | Error ex) {
                         if (throwable == null) {
                             throwable =ex;
@@ -165,7 +165,7 @@ public class TriggersImpl implements Triggers {
     }
 
     @Override
-    public void fireMiddleTableInsert(ImmutableProp prop, Object sourceId, Object targetId) {
+    public void fireMiddleTableInsert(ImmutableProp prop, Object sourceId, Object targetId, Object reason) {
         ImmutableProp primaryAssociationProp = Utils.primaryAssociationProp(prop);
         List<MiddleTableListener> listeners = middleTableListenerMultiMap.get(primaryAssociationProp);
         if (listeners != null && !listeners.isEmpty()) {
@@ -173,7 +173,7 @@ public class TriggersImpl implements Triggers {
             if (prop == primaryAssociationProp) {
                 for (MiddleTableListener listener : listeners) {
                     try {
-                        listener.insert(sourceId, targetId);
+                        listener.insert(sourceId, targetId, reason);
                     } catch (RuntimeException | Error ex) {
                         if (throwable == null) {
                             throwable =ex;
@@ -183,7 +183,7 @@ public class TriggersImpl implements Triggers {
             } else {
                 for (MiddleTableListener listener : listeners) {
                     try {
-                        listener.insert(targetId, sourceId);
+                        listener.insert(targetId, sourceId, reason);
                     } catch (RuntimeException | Error ex) {
                         if (throwable == null) {
                             throwable =ex;

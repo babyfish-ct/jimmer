@@ -29,7 +29,7 @@ internal class KCachesImpl(
     override fun isAffectedBy(tableName: String): Boolean =
         javaCaches.isAffectedBy(tableName)
 
-    override fun invalidateByBinLog(tableName: String, oldData: JsonNode?, newData: JsonNode?) {
-        javaCaches.invalidateByBinLog(tableName, oldData, newData)
+    override fun invalidateByBinLog(tableName: String, oldData: JsonNode?, newData: JsonNode?, reason: String?) {
+        javaCaches.invalidateByBinLog(tableName, oldData, newData, reason)
     }
 }

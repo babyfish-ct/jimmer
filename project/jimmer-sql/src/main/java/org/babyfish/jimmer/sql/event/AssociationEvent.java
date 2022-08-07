@@ -6,19 +6,22 @@ import java.util.Objects;
 
 public class AssociationEvent {
 
-    private ImmutableProp prop;
+    private final ImmutableProp prop;
 
-    private Object sourceId;
+    private final Object sourceId;
 
-    private Object detachedTargetId;
+    private final Object detachedTargetId;
 
-    private Object attachedTargetId;
+    private final Object attachedTargetId;
+
+    private final Object reason;
 
     public AssociationEvent(
             ImmutableProp prop,
             Object sourceId,
             Object detachedTargetId,
-            Object attachedTargetId
+            Object attachedTargetId,
+            Object reason
     ) {
         if (prop == null) {
             throw new IllegalArgumentException("prop cannot be null");
@@ -58,6 +61,7 @@ public class AssociationEvent {
         this.sourceId = sourceId;
         this.detachedTargetId = detachedTargetId;
         this.attachedTargetId = attachedTargetId;
+        this.reason = reason;
     }
 
     public ImmutableProp getImmutableProp() {
@@ -76,6 +80,10 @@ public class AssociationEvent {
         return attachedTargetId;
     }
 
+    public Object getReason() {
+        return reason;
+    }
+
     public EventType getEventType() {
         if (detachedTargetId == null) {
             return EventType.INSERT;
@@ -88,7 +96,7 @@ public class AssociationEvent {
 
     @Override
     public int hashCode() {
-        return Objects.hash(prop, sourceId, detachedTargetId, attachedTargetId);
+        return Objects.hash(prop, sourceId, detachedTargetId, attachedTargetId, reason);
     }
 
     @Override
@@ -96,7 +104,11 @@ public class AssociationEvent {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         AssociationEvent that = (AssociationEvent) o;
-        return prop.equals(that.prop) && sourceId.equals(that.sourceId) && Objects.equals(detachedTargetId, that.detachedTargetId) && Objects.equals(attachedTargetId, that.attachedTargetId);
+        return prop.equals(that.prop) &&
+                sourceId.equals(that.sourceId) &&
+                Objects.equals(detachedTargetId, that.detachedTargetId) &&
+                Objects.equals(attachedTargetId, that.attachedTargetId) &&
+                Objects.equals(reason, that.reason);
     }
 
     @Override
@@ -106,6 +118,7 @@ public class AssociationEvent {
                 ", sourceId=" + sourceId +
                 ", detachedTargetId=" + detachedTargetId +
                 ", attachedTargetId=" + attachedTargetId +
+                ", reason=" + reason +
                 '}';
     }
 

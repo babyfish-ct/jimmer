@@ -19,5 +19,5 @@ interface KCaches {
 
     fun isAffectedBy(tableName: String): Boolean
 
-    fun invalidateByBinLog(tableName: String, oldData: JsonNode?, newData: JsonNode?)
+    fun invalidateByBinLog(tableName: String, oldData: JsonNode?, newData: JsonNode?, reason: String? = null)
 }

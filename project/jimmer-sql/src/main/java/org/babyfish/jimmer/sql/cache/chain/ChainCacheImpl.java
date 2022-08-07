@@ -40,12 +40,12 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public void deleteAll(@NotNull Collection<K> keys, String reason) {
+    public void deleteAll(@NotNull Collection<K> keys, Object reason) {
         node.deleteAll(keys, reason);
     }
 
     private interface Node<K, V> extends CacheChain<K, V> {
-        void deleteAll(@NotNull Collection<K> keys, String reason);
+        void deleteAll(@NotNull Collection<K> keys, Object reason);
     }
 
     private static class LoadingNode<K, V> implements Node<K, V> {
@@ -67,7 +67,7 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         }
 
         @Override
-        public void deleteAll(@NotNull Collection<K> keys, String reason) {
+        public void deleteAll(@NotNull Collection<K> keys, Object reason) {
             try {
                 operator.deleteAll(keys, reason);
             } finally {
@@ -113,7 +113,7 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         }
 
         @Override
-        public void deleteAll(@NotNull Collection<K> keys, String reason) {
+        public void deleteAll(@NotNull Collection<K> keys, Object reason) {
             try {
                 operator.deleteAll(keys, reason);
             } finally {
@@ -132,7 +132,7 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         }
 
         @Override
-        public void deleteAll(@NotNull Collection<K> keys, String reason) {
+        public void deleteAll(@NotNull Collection<K> keys, Object reason) {
         }
     }
 

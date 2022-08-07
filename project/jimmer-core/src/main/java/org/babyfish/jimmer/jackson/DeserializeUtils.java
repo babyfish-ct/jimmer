@@ -27,12 +27,11 @@ public class DeserializeUtils {
             JavaType targetType
     ) throws IOException {
 
+        if (n == null || n.isNull()) {
+            return null;
+        }
         if (VERSION_GE_2_13) {
             return ctx.readTreeAsValue(n, targetType);
-        }
-
-        if (n == null) {
-            return null;
         }
         try (TreeTraversingParser p = treeAsTokens(n, ctx)) {
             return ctx.readValue(p, targetType);

@@ -8,12 +8,13 @@ import com.fasterxml.jackson.databind.type.SimpleType;
 import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.runtime.DraftContext;
+import org.babyfish.jimmer.runtime.Internal;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class ValueSerializer<T> {
 
@@ -21,7 +22,9 @@ public class ValueSerializer<T> {
 
     private final ObjectMapper mapper;
 
-    private JavaType valueType;
+    private final JavaType valueType;
+
+    private final boolean requireNewDraftContext;
 
     public ValueSerializer(@NotNull ImmutableType type) {
         this(type, null, null);
@@ -66,8 +69,10 @@ public class ValueSerializer<T> {
         } else {
             this.valueType = SimpleType.constructUnsafe(type.getJavaClass());
         }
+        this.requireNewDraftContext = type != null;
     }
 
+    @NotNull
     public byte[] serialize(T value) {
         if (value == null) {
             return NULL_BYTES.clone();
@@ -79,14 +84,80 @@ public class ValueSerializer<T> {
         }
     }
 
+    @NotNull
+    public <K> Map<K, byte[]> serialize(@NotNull Map<K, T> map) {
+        Map<K, byte[]> serializedMap = new LinkedHashMap<>((map.size() * 4 + 2) / 3);
+        for (Map.Entry<K, T> e : map.entrySet()) {
+            serializedMap.put(e.getKey(), serialize(e.getValue()));
+        }
+        return serializedMap;
+    }
+
     public T deserialize(byte[] value) {
+        if (!requireNewDraftContext) {
+            return deserializeImpl(value, null);
+        }
+        return Internal.requiresNewDraftContext(ctx -> deserializeImpl(value, ctx));
+    }
+
+    @NotNull
+    public <K> Map<K, T> deserialize(@NotNull Map<K, byte[]> map) {
+        Map<K, T> deserializedMap = new LinkedHashMap<>((map.size() * 4 + 2) / 3);
+        if (!requireNewDraftContext) {
+            for (Map.Entry<K, byte[]> e : map.entrySet()) {
+                deserializedMap.put(e.getKey(), deserializeImpl(e.getValue(), null));
+            }
+        } else {
+            Internal.requiresNewDraftContext(ctx -> {
+                for (Map.Entry<K, byte[]> e : map.entrySet()) {
+                    deserializedMap.put(e.getKey(), deserializeImpl(e.getValue(), null));
+                }
+                return null;
+            });
+        }
+        return deserializedMap;
+    }
+
+    @NotNull
+    public <K> Map<K, T> deserialize(@NotNull Collection<K> keys, @NotNull Collection<byte[]> values) {
+        Map<K, T> deserializedMap = new LinkedHashMap<>((keys.size() * 4 + 2) / 3);
+        if (!requireNewDraftContext) {
+            Iterator<K> keyItr = keys.iterator();
+            Iterator<byte[]> byteArrItr = values.iterator();
+            while (keyItr.hasNext() && byteArrItr.hasNext()) {
+                K key = keyItr.next();
+                byte[] byteArr = byteArrItr.next();
+                if (byteArr != null) {
+                    deserializedMap.put(key, deserializeImpl(byteArr, null));
+                }
+            }
+        } else {
+            Internal.requiresNewDraftContext(ctx -> {
+                Iterator<K> keyItr = keys.iterator();
+                Iterator<byte[]> byteArrItr = values.iterator();
+                while (keyItr.hasNext() && byteArrItr.hasNext()) {
+                    K key = keyItr.next();
+                    byte[] byteArr = byteArrItr.next();
+                    if (byteArr != null) {
+                        deserializedMap.put(key, deserializeImpl(byteArr, ctx));
+                    }
+                }
+                return null;
+            });
+        }
+        return deserializedMap;
+    }
+
+    private T deserializeImpl(byte[] value, DraftContext ctx) {
         if (value == null || value.length == 0 || Arrays.equals(value, NULL_BYTES)) {
             return null;
         }
+        T deserializedValue;
         try {
-            return mapper.readValue(value, valueType);
+            deserializedValue = mapper.readValue(value, valueType);
         } catch (IOException ex) {
             throw new ValueSerializationException(ex);
         }
+        return ctx != null ? ctx.resolveObject(deserializedValue) : deserializedValue;
     }
 }

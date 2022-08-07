@@ -125,7 +125,8 @@ public class TriggersTest {
                         "--->--->--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
                         "--->--->--->\"name\":\"GraphQL in Action\"," +
                         "--->--->--->\"store\":null" +
-                        "--->--->}" +
+                        "--->--->}, " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 bookEvents
@@ -155,7 +156,8 @@ public class TriggersTest {
                         "--->--->--->\"id\":\"" + graphQLInActionId3 + "\"," +
                         "--->--->--->\"name\":\"GraphQL in Action\"," +
                         "--->--->--->\"store\":{\"id\":\"" + manningId + "\"}" +
-                        "--->--->}" +
+                        "--->--->}, " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 bookEvents
@@ -166,7 +168,8 @@ public class TriggersTest {
                         "--->--->prop=org.babyfish.jimmer.sql.model.Book.store, " +
                         "--->--->sourceId=" + graphQLInActionId3 + ", " +
                         "--->--->detachedTargetId=null, " +
-                        "--->--->attachedTargetId=" + manningId +
+                        "--->--->attachedTargetId=" + manningId + ", " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 bookStoreEvents
@@ -177,7 +180,8 @@ public class TriggersTest {
                         "--->--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
                         "--->--->sourceId=" + manningId + ", " +
                         "--->--->detachedTargetId=null, " +
-                        "--->--->attachedTargetId=" + graphQLInActionId3  +
+                        "--->--->attachedTargetId=" + graphQLInActionId3  + ", " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 storeBookListEvents
@@ -205,7 +209,8 @@ public class TriggersTest {
                         "--->--->--->\"name\":\"GraphQL in Action\"," +
                         "--->--->--->\"store\":{\"id\":\"" + manningId + "\"}" +
                         "--->--->}, " +
-                        "--->--->newEntity=null" +
+                        "--->--->newEntity=null, " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 bookEvents
@@ -216,7 +221,8 @@ public class TriggersTest {
                         "--->--->prop=org.babyfish.jimmer.sql.model.Book.store, " +
                         "--->--->sourceId=" + graphQLInActionId3 + ", " +
                         "--->--->detachedTargetId=" + manningId + ", " +
-                        "--->--->attachedTargetId=null" +
+                        "--->--->attachedTargetId=null, " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 bookStoreEvents
@@ -227,7 +233,8 @@ public class TriggersTest {
                         "--->--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
                         "--->--->sourceId=" + manningId + ", " +
                         "--->--->detachedTargetId=" + graphQLInActionId3 + ", " +
-                        "--->--->attachedTargetId=null" +
+                        "--->--->attachedTargetId=null, " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 storeBookListEvents
@@ -264,7 +271,8 @@ public class TriggersTest {
                         "--->--->--->\"id\":\"" + graphQLInActionId3 + "\"," +
                         "--->--->--->\"name\":\"GraphQL in Action3\"," +
                         "--->--->--->\"store\":{\"id\":\"" + oreillyId + "\"}" +
-                        "--->--->}" +
+                        "--->--->}, " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 bookEvents
@@ -275,7 +283,8 @@ public class TriggersTest {
                         "--->--->prop=org.babyfish.jimmer.sql.model.Book.store, " +
                         "--->--->sourceId=" + graphQLInActionId3 + ", " +
                         "--->--->detachedTargetId=" + manningId + ", " +
-                        "--->--->attachedTargetId=" + oreillyId +
+                        "--->--->attachedTargetId=" + oreillyId + ", " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 bookStoreEvents
@@ -286,13 +295,15 @@ public class TriggersTest {
                         "--->--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
                         "--->--->sourceId=" + manningId + ", " +
                         "--->--->detachedTargetId=" + graphQLInActionId3 + ", " +
-                        "--->--->attachedTargetId=null" +
+                        "--->--->attachedTargetId=null, " +
+                        "--->--->reason=null" +
                         "--->}, " +
                         "--->AssociationEvent{" +
                         "--->--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
                         "--->--->sourceId=" + oreillyId + ", " +
                         "--->--->detachedTargetId=null, " +
-                        "--->--->attachedTargetId=" + graphQLInActionId3 +
+                        "--->--->attachedTargetId=" + graphQLInActionId3 + ", " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 storeBookListEvents
@@ -317,7 +328,8 @@ public class TriggersTest {
                         "--->--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
                         "--->--->sourceId=" + graphQLInActionId3 + ", " +
                         "--->--->detachedTargetId=" + danId + ", " +
-                        "--->--->attachedTargetId=null" +
+                        "--->--->attachedTargetId=null, " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 bookAuthorListEvents
@@ -328,7 +340,8 @@ public class TriggersTest {
                         "--->--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
                         "--->--->sourceId=" + danId + ", " +
                         "--->--->detachedTargetId=" + graphQLInActionId3 + ", " +
-                        "--->--->attachedTargetId=null" +
+                        "--->--->attachedTargetId=null, " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 authorBookListEvents
@@ -351,7 +364,8 @@ public class TriggersTest {
                         "--->--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
                         "--->--->sourceId=" + graphQLInActionId3 + ", " +
                         "--->--->detachedTargetId=null, " +
-                        "--->--->attachedTargetId=" + danId +
+                        "--->--->attachedTargetId=" + danId + ", " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 bookAuthorListEvents
@@ -362,7 +376,8 @@ public class TriggersTest {
                         "--->--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
                         "--->--->sourceId=" + danId + ", " +
                         "--->--->detachedTargetId=null, " +
-                        "--->--->attachedTargetId=" + graphQLInActionId3 +
+                        "--->--->attachedTargetId=" + graphQLInActionId3 + ", " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 authorBookListEvents
@@ -385,7 +400,8 @@ public class TriggersTest {
                         "--->--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
                         "--->--->sourceId=" + graphQLInActionId3 + ", " +
                         "--->--->detachedTargetId=" + danId + ", " +
-                        "--->--->attachedTargetId=null" +
+                        "--->--->attachedTargetId=null, " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 bookAuthorListEvents
@@ -396,7 +412,8 @@ public class TriggersTest {
                         "--->--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
                         "--->--->sourceId=" + danId + ", " +
                         "--->--->detachedTargetId=" + graphQLInActionId3 + ", " +
-                        "--->--->attachedTargetId=null" +
+                        "--->--->attachedTargetId=null, " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 authorBookListEvents
@@ -419,7 +436,8 @@ public class TriggersTest {
                         "--->--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
                         "--->--->sourceId=" + graphQLInActionId3 + ", " +
                         "--->--->detachedTargetId=null, " +
-                        "--->--->attachedTargetId=" + danId +
+                        "--->--->attachedTargetId=" + danId + ", " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 bookAuthorListEvents
@@ -430,7 +448,8 @@ public class TriggersTest {
                         "--->--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
                         "--->--->sourceId=" + danId + ", " +
                         "--->--->detachedTargetId=null, " +
-                        "--->--->attachedTargetId=" + graphQLInActionId3 +
+                        "--->--->attachedTargetId=" + graphQLInActionId3 + ", " +
+                        "--->--->reason=null" +
                         "--->}" +
                         "]",
                 authorBookListEvents
