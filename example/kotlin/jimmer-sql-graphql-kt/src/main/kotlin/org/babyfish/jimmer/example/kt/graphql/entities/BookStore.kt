@@ -8,7 +8,7 @@ import javax.validation.constraints.NotBlank
 interface BookStore {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, sequenceName = "BOOK_STORE_ID_SEQ")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long
 
     @Key

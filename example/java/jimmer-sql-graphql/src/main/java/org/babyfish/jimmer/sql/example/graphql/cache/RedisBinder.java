@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.cache;
+package org.babyfish.jimmer.sql.example.graphql.cache;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;

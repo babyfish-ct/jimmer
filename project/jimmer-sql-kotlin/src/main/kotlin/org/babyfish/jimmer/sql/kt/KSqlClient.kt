@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt
 
+import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
@@ -43,9 +44,13 @@ interface KSqlClient {
 
     fun <S: Any, T: Any> getListLoader(prop: KProperty1<S, List<T>>): KListLoader<S, T>
 
-    fun <R> executeNativeSql(block: (Connection) -> R): R
+    fun <R> executeNativeSql(master: Boolean = false, block: (Connection) -> R): R
 
+    @NewChain
     fun caches(block: KCacheDisableDsl.() -> Unit): KSqlClient
+
+    @NewChain
+    fun disableSlaveConnectionManager(): KSqlClient
 
     val javaClient: JSqlClient
 }

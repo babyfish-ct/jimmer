@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.cache;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -32,5 +33,5 @@ public interface Cache<K, V> {
         deleteAll(keys, null);
     }
 
-    void deleteAll(@NotNull Collection<K> keys, Object reason);
+    void deleteAll(@NotNull Collection<K> keys, @Nullable Object reason);
 }

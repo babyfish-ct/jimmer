@@ -12,10 +12,7 @@ import java.util.List;
 public interface Book {
 
     @Id
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            sequenceName = "BOOK_ID_SEQ"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
     @Key

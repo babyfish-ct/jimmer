@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql;
 
+import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
@@ -31,6 +32,8 @@ public interface JSqlClient {
     }
 
     ConnectionManager getConnectionManager();
+
+    ConnectionManager getSlaveConnectionManager();
 
     Dialect getDialect();
 
@@ -99,12 +102,19 @@ public interface JSqlClient {
 
     Caches getCaches();
 
+    @NewChain
     JSqlClient caches(Consumer<CacheDisableConfig> block);
+
+    @NewChain
+    JSqlClient disableSlaveConnectionManager();
 
     interface Builder {
 
         @OldChain
         Builder setConnectionManager(ConnectionManager connectionManager);
+
+        @OldChain
+        Builder setSlaveConnectionManager(ConnectionManager connectionManager);
 
         @OldChain
         Builder setDialect(Dialect dialect);

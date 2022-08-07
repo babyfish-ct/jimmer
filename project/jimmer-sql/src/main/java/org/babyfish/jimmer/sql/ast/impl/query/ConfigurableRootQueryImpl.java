@@ -128,7 +128,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     public List<R> execute() {
         return getBaseQuery()
                 .getSqlClient()
-                .getConnectionManager()
+                .getSlaveConnectionManager()
                 .execute(this::executeImpl);
     }
 
@@ -139,7 +139,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         }
         return getBaseQuery()
                 .getSqlClient()
-                .getConnectionManager()
+                .getSlaveConnectionManager()
                 .execute(this::executeImpl);
     }
 

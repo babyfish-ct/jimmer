@@ -90,13 +90,26 @@ internal class KSqlClientImpl(
                 KListLoaderImpl(it)
             }
 
-    override fun <R> executeNativeSql(block: (Connection) -> R): R =
-        javaClient.connectionManager.execute(block)
+    override fun <R> executeNativeSql(master: Boolean, block: (Connection) -> R): R =
+        if (master) {
+            javaClient.connectionManager
+        } else {
+            javaClient.slaveConnectionManager
+        }.execute(block)
 
     override fun caches(block: KCacheDisableDsl.() -> Unit): KSqlClient =
         KSqlClientImpl(
             javaClient.caches { block(KCacheDisableDsl(CacheDisableConfig())) }
         )
+
+    override fun disableSlaveConnectionManager(): KSqlClient =
+        javaClient.disableSlaveConnectionManager().let {
+            if (javaClient === it) {
+                this
+            } else {
+                KSqlClientImpl(it)
+            }
+        }
 
     override val javaClient: JSqlClient
         get() = sqlClient

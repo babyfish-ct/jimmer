@@ -9,10 +9,7 @@ import java.util.List;
 public interface Author {
 
     @Id
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            sequenceName = "AUTHOR_ID_SEQ"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
     @Key

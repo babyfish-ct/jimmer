@@ -1,41 +1,26 @@
+drop table tree_node if exists;
 drop table book_author_mapping if exists;
 drop table book if exists;
 drop table author if exists;
 drop table book_store if exists;
 
-drop sequence book_store_id_seq if exists;
-drop sequence book_id_seq if exists;
-drop sequence author_id_seq if exists;
-
-create sequence book_store_id_seq start with 100;
-create sequence book_id_seq start with 100;
-create sequence author_id_seq start with 100;
-
 create table book_store(
-    id bigint not null,
+    id identity(100, 1) not null,
     name varchar(50) not null,
     website varchar(100)
 );
-alter table book_store
-    add constraint pk_book_store
-        primary key(id)
-;
 alter table book_store
     add constraint uq_book_store
         unique(name)
 ;
 
 create table book(
-    id bigint not null,
+    id identity(100, 1) not null,
     name varchar(50) not null,
     edition integer not null,
     price numeric(10, 2) not null,
     store_id bigint
 );
-alter table book
-    add constraint pk_book
-        primary key(id)
-;
 alter table book
     add constraint uq_book
         unique(name, edition)
@@ -47,15 +32,11 @@ alter table book
 ;
 
 create table author(
-    id bigint not null,
+    id identity(100, 1) not null,
     first_name varchar(25) not null,
     last_name varchar(25) not null,
-    gender varchar(6) not null
+    gender char(1) not null
 );
-alter table author
-    add constraint pk_author
-        primary key(id)
-;
 alter table author
     add constraint uq_author
         unique(first_name, last_name)
@@ -136,4 +117,46 @@ insert into book_author_mapping(book_id, author_id) values
     (10, 5),
     (11, 5),
     (12, 5)
+;
+
+create table tree_node(
+    node_id identity(100, 1) not null,
+    name varchar(20) not null,
+    parent_id bigint
+);
+alter table tree_node
+    add constraint uq_tree_node
+        unique(parent_id, name);
+alter table tree_node
+    add constraint fk_tree_node__parent
+        foreign key(parent_id)
+            references tree_node(node_id);
+
+insert into tree_node(
+    node_id, name, parent_id
+) values
+    (1, 'Home', null),
+        (2, 'Food', 1),
+            (3, 'Drinks', 2),
+                (4, 'Coca Cola', 3),
+                (5, 'Fanta', 3),
+            (6, 'Bread', 2),
+                (7, 'Baguette', 6),
+                (8, 'Ciabatta', 6),
+        (9, 'Clothing', 1),
+            (10, 'Woman', 9),
+                (11, 'Casual wear', 10),
+                    (12, 'Dress', 11),
+                    (13, 'Miniskirt', 11),
+                    (14, 'Jeans', 11),
+                (15, 'Formal wear', 10),
+                    (16, 'Suit', 15),
+                    (17, 'Shirt', 15),
+            (18, 'Man', 9),
+                (19, 'Casual wear', 18),
+                    (20, 'Jacket', 19),
+                    (21, 'Jeans', 19),
+                (22, 'Formal wear', 18),
+                    (23, 'Suit', 22),
+                    (24, 'Shirt', 22)
 ;

@@ -96,7 +96,7 @@ public class BookStoreController {
 
     @MutationMapping
     @Transactional
-    public int deleteBookStore(Long id) {
+    public int deleteBookStore(@Argument long id) {
         return sqlClient
                 .getEntities()
                 .delete(BookStore.class, id)
