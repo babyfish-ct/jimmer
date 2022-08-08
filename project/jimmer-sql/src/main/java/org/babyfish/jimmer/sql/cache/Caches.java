@@ -16,16 +16,16 @@ public interface Caches {
 
     <K, V> Cache<K, V> getObjectCache(ImmutableType type);
 
-    default <K, V, ST extends Table<?>> Cache<K, V> getAssociationCache(
+    default <K, V, ST extends Table<?>> Cache<K, V> getPropertyCache(
             Class<ST> sourceTableType,
             Function<ST, ? extends Table<?>> targetTableGetter
     ) {
-        return getAssociationCache(
+        return getPropertyCache(
                 ImmutableProps.join(sourceTableType, targetTableGetter)
         );
     }
 
-    <K, V> Cache<K, V> getAssociationCache(ImmutableProp prop);
+    <K, V> Cache<K, V> getPropertyCache(ImmutableProp prop);
 
     boolean isAffectedBy(String tableName);
 

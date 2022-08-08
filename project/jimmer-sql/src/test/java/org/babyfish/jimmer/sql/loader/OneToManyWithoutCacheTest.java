@@ -17,7 +17,7 @@ public class OneToManyWithoutCacheTest extends AbstractQueryTest {
         Fetcher<BookStore> fetcher = BookStoreFetcher.$.books();
         connectAndExpect(
                 con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("books"))
-                        .load(Entities.BOOK_STORES_FOR_ONE_TO_MANY),
+                        .load(Entities.BOOK_STORES),
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.STORE_ID, tb_1_.ID " +
@@ -40,7 +40,7 @@ public class OneToManyWithoutCacheTest extends AbstractQueryTest {
                                                 "--->{\"id\":\"058ecfd0-047b-4979-a7dc-46ee24d08f08\"}, " +
                                                 "--->{\"id\":\"782b9a9d-eac8-41c4-9f2d-74a5d047f45a\"}" +
                                                 "]",
-                                        map.get(Entities.BOOK_STORES_FOR_ONE_TO_MANY.get(0))
+                                        map.get(Entities.BOOK_STORES.get(0))
                                 );
                                 expect(
                                         "[" +
@@ -48,7 +48,7 @@ public class OneToManyWithoutCacheTest extends AbstractQueryTest {
                                                 "--->{\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"}, " +
                                                 "--->{\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"}" +
                                                 "]",
-                                        map.get(Entities.BOOK_STORES_FOR_ONE_TO_MANY.get(1))
+                                        map.get(Entities.BOOK_STORES.get(1))
                                 );
                             }
                     );
@@ -66,7 +66,7 @@ public class OneToManyWithoutCacheTest extends AbstractQueryTest {
         );
         connectAndExpect(
                 con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("books"))
-                        .load(Entities.BOOK_STORES_FOR_ONE_TO_MANY),
+                        .load(Entities.BOOK_STORES),
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.STORE_ID, tb_1_.ID " +
@@ -84,13 +84,13 @@ public class OneToManyWithoutCacheTest extends AbstractQueryTest {
                                                 "--->{\"id\":\"9eded40f-6d2e-41de-b4e7-33a28b11c8b6\"}, " +
                                                 "--->{\"id\":\"782b9a9d-eac8-41c4-9f2d-74a5d047f45a\"}" +
                                                 "]",
-                                        map.get(Entities.BOOK_STORES_FOR_ONE_TO_MANY.get(0))
+                                        map.get(Entities.BOOK_STORES.get(0))
                                 );
                                 expect(
                                         "[" +
                                                 "--->{\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"}" +
                                                 "]",
-                                        map.get(Entities.BOOK_STORES_FOR_ONE_TO_MANY.get(1))
+                                        map.get(Entities.BOOK_STORES.get(1))
                                 );
                             }
                     );
@@ -105,7 +105,7 @@ public class OneToManyWithoutCacheTest extends AbstractQueryTest {
         );
         connectAndExpect(
                 con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("books"))
-                        .load(Entities.BOOK_STORES_FOR_ONE_TO_MANY),
+                        .load(Entities.BOOK_STORES),
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.STORE_ID, tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
@@ -156,7 +156,7 @@ public class OneToManyWithoutCacheTest extends AbstractQueryTest {
                                                 "--->--->\"edition\":3" +
                                                 "--->}" +
                                                 "]",
-                                        map.get(Entities.BOOK_STORES_FOR_ONE_TO_MANY.get(0))
+                                        map.get(Entities.BOOK_STORES.get(0))
                                 );
                                 expect(
                                         "[" +
@@ -174,7 +174,7 @@ public class OneToManyWithoutCacheTest extends AbstractQueryTest {
                                                 "--->--->\"edition\":3" +
                                                 "--->}" +
                                                 "]",
-                                        map.get(Entities.BOOK_STORES_FOR_ONE_TO_MANY.get(1))
+                                        map.get(Entities.BOOK_STORES.get(1))
                                 );
                             }
                     );
@@ -192,7 +192,7 @@ public class OneToManyWithoutCacheTest extends AbstractQueryTest {
         );
         connectAndExpect(
                 con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("books"))
-                        .load(Entities.BOOK_STORES_FOR_ONE_TO_MANY),
+                        .load(Entities.BOOK_STORES),
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.STORE_ID, tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
@@ -220,7 +220,7 @@ public class OneToManyWithoutCacheTest extends AbstractQueryTest {
                                                 "--->--->\"edition\":3" +
                                                 "--->}" +
                                                 "]",
-                                        map.get(Entities.BOOK_STORES_FOR_ONE_TO_MANY.get(0))
+                                        map.get(Entities.BOOK_STORES.get(0))
                                 );
                                 expect(
                                         "[" +
@@ -230,7 +230,7 @@ public class OneToManyWithoutCacheTest extends AbstractQueryTest {
                                                 "--->--->\"edition\":3" +
                                                 "--->}" +
                                                 "]",
-                                        map.get(Entities.BOOK_STORES_FOR_ONE_TO_MANY.get(1))
+                                        map.get(Entities.BOOK_STORES.get(1))
                                 );
                             }
                     );

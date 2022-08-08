@@ -4,7 +4,6 @@ import org.babyfish.jimmer.sql.DeleteAction;
 import org.babyfish.jimmer.sql.meta.Storage;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 
 public interface ImmutableProp {
 
@@ -37,6 +36,8 @@ public interface ImmutableProp {
     Annotation getAssociationAnnotation();
 
     boolean isTransient();
+
+    boolean hasTransientResolver();
 
     DeleteAction getDeleteAction();
 

@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.kt
+package org.babyfish.jimmer.sql.kt.loader
 
 import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.kt.fetcher.KFilterDsl

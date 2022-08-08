@@ -2,14 +2,30 @@ package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 public interface CacheFactory {
 
-    Cache<?, ?> createObjectCache(ImmutableType type);
+    @Nullable
+    default Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
+        return null;
+    }
 
-    Cache<?, ?> createAssociatedIdCache(ImmutableProp prop);
+    @Nullable
+    default Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+        return null;
+    }
 
-    Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop);
+    @Nullable
+    default Cache<?, List<?>> createAssociatedIdListCache(@NotNull ImmutableProp prop) {
+        return null;
+    }
+
+    @Nullable
+    default Cache<?, ?> createResolverCache(@NotNull ImmutableProp prop) {
+        return null;
+    }
 }

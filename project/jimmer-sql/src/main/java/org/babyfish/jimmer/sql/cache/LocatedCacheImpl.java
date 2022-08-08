@@ -26,8 +26,10 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
         if ((type == null) == (prop == null)) {
             throw new IllegalArgumentException("The nullity of type and prop must be different");
         }
-        if (prop != null && !prop.isAssociation()) {
-            throw new IllegalArgumentException("The prop \"" + prop + "\" is not association");
+        if (prop != null && !prop.isAssociation() && !prop.hasTransientResolver()) {
+            throw new IllegalArgumentException(
+                    "The prop \"" + prop + "\" is neither association nor transient property with resolver"
+            );
         }
         this.raw = Objects.requireNonNull(raw, "raw cannot be null");
         this.type = type;
@@ -131,7 +133,15 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
 
     @SuppressWarnings("unchecked")
     private void validateResult(Object result) {
-        if (result != null) {
+        if (result == null) {
+            if (prop != null && !prop.isEntityList() &&!prop.isNullable()) {
+                throw new IllegalArgumentException(
+                        "Property cache for \"" +
+                                prop +
+                                "\" must return non-null value"
+                );
+            }
+        } else {
             if (prop == null) {
                 if (!(result instanceof ImmutableSpi)) {
                     throw new IllegalArgumentException(
@@ -168,9 +178,9 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
                 }
             } else if (result instanceof ImmutableSpi || result instanceof List<?>) {
                 throw new IllegalArgumentException(
-                        "Association id cache for \"" +
+                        "Property cache for \"" +
                                 prop +
-                                "\" must return simple id value"
+                                "\" must return simple value"
                 );
             }
         }

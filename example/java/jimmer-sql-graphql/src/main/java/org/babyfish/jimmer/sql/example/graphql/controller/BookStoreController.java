@@ -1,13 +1,16 @@
 package org.babyfish.jimmer.sql.example.graphql.controller;
 
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.example.graphql.dal.BookRepository;
 import org.babyfish.jimmer.sql.example.graphql.dal.BookStoreRepository;
 import org.babyfish.jimmer.sql.example.graphql.entities.Book;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStore;
+import org.babyfish.jimmer.sql.example.graphql.entities.BookStoreTable;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStoreTableEx;
 import org.babyfish.jimmer.sql.example.graphql.input.BookStoreInput;
+import org.babyfish.jimmer.sql.loader.impl.Loaders;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.BatchMapping;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -29,16 +32,12 @@ public class BookStoreController {
 
     private final BookStoreRepository bookStoreRepository;
 
-    private final BookRepository bookRepository;
-
     public BookStoreController(
             JSqlClient sqlClient,
-            BookStoreRepository bookStoreRepository,
-            BookRepository bookRepository
+            BookStoreRepository bookStoreRepository
     ) {
         this.sqlClient = sqlClient;
         this.bookStoreRepository = bookStoreRepository;
-        this.bookRepository = bookRepository;
     }
 
     // --- Query ---
@@ -54,7 +53,7 @@ public class BookStoreController {
 
     @BatchMapping
     public Map<BookStore, List<Book>> books(
-            List<BookStore> bookStores
+            List<BookStore> stores
     ) {
         return sqlClient
                 .getListLoader(
@@ -64,26 +63,18 @@ public class BookStoreController {
                 .forFilter(
                         args -> args.orderBy(args.getTable().name())
                 )
-                .batchLoad(bookStores);
+                .batchLoad(stores);
     }
 
     // --- Calculation ---
 
     @BatchMapping
     public Map<BookStore, BigDecimal> avgPrice(List<BookStore> stores) {
-        Map<Long, BigDecimal> avgPriceMap =
-                bookRepository.findAvgPricesByStoreIds(
-                        stores.stream().map(BookStore::id).collect(Collectors.toList())
-                );
-        return stores.stream().collect(
-                Collectors.toMap(
-                        Function.identity(),
-                        it -> {
-                            BigDecimal avgPrice = avgPriceMap.get(it.id());
-                            return avgPrice != null ? avgPrice : BigDecimal.ZERO;
-                        }
-                )
-        );
+        return Loaders.<BookStore, BigDecimal>createValueLoader(
+                sqlClient,
+                ImmutableType.get(BookStore.class).getProp("avgPrice")
+        )
+        .batchLoad(stores);
     }
 
     // --- Mutation ---

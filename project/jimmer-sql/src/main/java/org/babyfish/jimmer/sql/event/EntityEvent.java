@@ -1,20 +1,25 @@
 package org.babyfish.jimmer.sql.event;
 
+import org.babyfish.jimmer.lang.Ref;
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.meta.Column;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public class EntityEvent<E> {
 
-    private Object id;
+    private final Object id;
 
-    private E oldEntity;
+    private final E oldEntity;
 
-    private E newEntity;
+    private final E newEntity;
 
-    private Object reason;
+    private final Object reason;
 
     public EntityEvent(E oldEntity, E newEntity, Object reason) {
         if (oldEntity == null && newEntity == null) {
@@ -56,10 +61,12 @@ public class EntityEvent<E> {
         this.reason = reason;
     }
 
+    @Nullable
     public E getOldEntity() {
         return oldEntity;
     }
 
+    @Nullable
     public E getNewEntity() {
         return newEntity;
     }
@@ -69,10 +76,12 @@ public class EntityEvent<E> {
         return this.id;
     }
 
+    @Nullable
     public Object getReason() {
         return this.reason;
     }
 
+    @NotNull
     public ImmutableType getImmutableType() {
         E oe = this.oldEntity;
         if (oe != null) {
@@ -81,6 +90,7 @@ public class EntityEvent<E> {
         return ((ImmutableSpi) newEntity).__type();
     }
 
+    @NotNull
     public EventType getEventType() {
         if (oldEntity == null) {
             return EventType.INSERT;
@@ -89,6 +99,45 @@ public class EntityEvent<E> {
             return EventType.DELETE;
         }
         return EventType.UPDATE;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nullable
+    public <T> Ref<T> getUnchangedFieldRef(int propId) {
+        ImmutableProp prop = getImmutableType().getProp(propId);
+        if (!(prop.getStorage() instanceof Column)) {
+            throw new IllegalArgumentException(
+                    "Cannot get the unchanged the value of \"" +
+                            prop +
+                            "\" " +
+                            "because it is not a property mapped by column"
+            );
+        }
+        ImmutableSpi oe = (ImmutableSpi) oldEntity;
+        ImmutableSpi ne = (ImmutableSpi) newEntity;
+        boolean oldLoaded = oe != null && oe.__isLoaded(propId);
+        boolean newLoaded = ne != null && ne.__isLoaded(propId);
+        if (!oldLoaded && !newLoaded) {
+            throw new IllegalStateException(
+                    "Cannot get the unchanged the value of \"" +
+                            prop +
+                            "\" " +
+                            "from neither oldEntity nor newEntity"
+            );
+        }
+        if (!oldLoaded) {
+            return Ref.of((T)ne.__get(propId));
+        }
+        if (!newLoaded) {
+            return Ref.of((T)oe.__get(propId));
+        }
+        T oldValue = (T)oe.__get(propId);
+        T newValue = (T)ne.__get(propId);
+        if (valueEqual(prop, oldValue, newValue)) {
+            return Ref.of(oldValue);
+        }
+        // Ignore the waring of Intellij, cannot replace it to "Optional.empty()"
+        return null;
     }
 
     @Override
@@ -113,5 +162,22 @@ public class EntityEvent<E> {
                 ", newEntity=" + newEntity +
                 ", reason=" + reason +
                 '}';
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean valueEqual(ImmutableProp prop, Object a, Object b) {
+        if (!prop.isReference()) {
+            return Objects.equals(a, b);
+        }
+        if (a == b) {
+            return true;
+        }
+        if (a == null || b == null) {
+            return false;
+        }
+        int targetIdPropId = prop.getTargetType().getIdProp().getId();
+        Object targetId1 = ((ImmutableSpi) a).__get(targetIdPropId);
+        Object targetId2 = ((ImmutableSpi) b).__get(targetIdPropId);
+        return targetId1.equals(targetId2);
     }
 }

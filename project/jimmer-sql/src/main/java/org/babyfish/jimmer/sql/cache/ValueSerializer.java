@@ -52,7 +52,9 @@ public class ValueSerializer<T> {
             new ObjectMapper();
         clonedMapper.registerModule(new ImmutableModule());
         this.mapper = clonedMapper;
-        if (prop != null) {
+        if (prop == null) {
+            this.valueType = SimpleType.constructUnsafe(type.getJavaClass());
+        } else if (prop.isAssociation()) {
             JavaType targetIdType = SimpleType.constructUnsafe(
                     prop.getTargetType().getIdProp().getElementClass()
             );
@@ -68,7 +70,7 @@ public class ValueSerializer<T> {
                 this.valueType = targetIdType;
             }
         } else {
-            this.valueType = SimpleType.constructUnsafe(type.getJavaClass());
+            this.valueType = SimpleType.constructUnsafe(prop.getElementClass());
         }
         this.requireNewDraftContext = type != null;
     }

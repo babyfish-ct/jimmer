@@ -3,7 +3,11 @@ package org.babyfish.jimmer.sql;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.association.loader.Loaders;
+import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.loader.ListLoader;
+import org.babyfish.jimmer.sql.loader.ReferenceLoader;
+import org.babyfish.jimmer.sql.loader.ValueLoader;
+import org.babyfish.jimmer.sql.loader.impl.Loaders;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
@@ -61,38 +65,11 @@ class JSqlClientImpl implements JSqlClient {
 
     private final Entities entities;
 
-    private final Triggers triggers;
-
     private final Caches caches;
 
-    public JSqlClientImpl(
-            ConnectionManager connectionManager,
-            ConnectionManager slaveConnectionManager,
-            Dialect dialect,
-            Executor executor,
-            Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
-            Map<Class<?>, IdGenerator> idGeneratorMap,
-            int defaultBatchSize,
-            int defaultListBatchSize,
-            Caches caches,
-            Triggers triggers
-    ) {
-        this(
-                connectionManager != null ?
-                        connectionManager :
-                        ILLEGAL_CONNECTION_MANAGER,
-                slaveConnectionManager,
-                dialect != null ? dialect : DefaultDialect.INSTANCE,
-                executor != null ? executor : DefaultExecutor.INSTANCE,
-                new HashMap<>(scalarProviderMap),
-                new HashMap<>(idGeneratorMap),
-                defaultBatchSize,
-                defaultListBatchSize,
-                null,
-                caches,
-                triggers
-        );
-    }
+    private final Triggers triggers;
+
+    private final TransientResolverManager transientResolverManager;
 
     private JSqlClientImpl(
             ConnectionManager connectionManager,
@@ -105,19 +82,36 @@ class JSqlClientImpl implements JSqlClient {
             int defaultListBatchSize,
             Entities entities,
             Caches caches,
-            Triggers triggers
+            Triggers triggers,
+            TransientResolverManager transientResolverManager
     ) {
-        this.connectionManager = connectionManager;
+        this.connectionManager =
+                connectionManager != null ?
+                        connectionManager :
+                        ILLEGAL_CONNECTION_MANAGER;
         this.slaveConnectionManager = slaveConnectionManager;
-        this.dialect = dialect;
+        this.dialect =
+                dialect != null ?
+                    dialect :
+                    new DefaultDialect();
         this.executor = executor;
         this.scalarProviderMap = scalarProviderMap;
         this.idGeneratorMap = idGeneratorMap;
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
-        this.entities = entities != null ? entities : new EntitiesImpl(this);
-        this.caches = caches != null ? caches : CachesImpl.of(triggers, null);
+        this.entities =
+                entities != null ?
+                        entities :
+                        new EntitiesImpl(this);
+        this.caches =
+                caches != null ?
+                        caches :
+                        CachesImpl.of(triggers, null);
         this.triggers = triggers;
+        this.transientResolverManager =
+                transientResolverManager != null ?
+                        transientResolverManager :
+                        createTransientResolverManager();
     }
 
     @Override
@@ -244,6 +238,24 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
+    public <S, V> ValueLoader<S, V> getValueLoader(ImmutableProp prop) {
+        return Loaders.createValueLoader(this, prop);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <SE, ST extends Table<SE>, V> ValueLoader<SE, V>
+    getValueLoader(Class<ST> sourceTableType, Function<ST, PropExpression<V>> block) {
+        return Loaders.createValueLoader(
+                this,
+                ImmutableProps.get(
+                        sourceTableType,
+                        (Function<ST, PropExpression<?>>) (Function<?, ?>) block
+                )
+        );
+    }
+
+    @Override
     public <SE, ST extends Table<SE>, TE, TT extends Table<TE>> ReferenceLoader<SE, TE, TT>
     getReferenceLoader(Class<ST> sourceTableType, Function<ST, TT> block) {
         return Loaders.createReferenceLoader(
@@ -284,7 +296,8 @@ class JSqlClientImpl implements JSqlClient {
                 defaultListBatchSize,
                 entities,
                 new CachesImpl((CachesImpl) caches, cfg),
-                triggers
+                triggers,
+                transientResolverManager
         );
     }
 
@@ -304,8 +317,33 @@ class JSqlClientImpl implements JSqlClient {
                 defaultListBatchSize,
                 entities,
                 caches,
-                triggers
+                triggers,
+                transientResolverManager
         );
+    }
+
+    @Override
+    public TransientResolver<?, ?> getResolver(ImmutableProp prop) {
+        return transientResolverManager.get(prop);
+    }
+
+    private TransientResolverManager createTransientResolverManager() {
+        TransientResolverManager manager = new TransientResolverManager(this);
+        if (caches != null) { // Important, initialize necessary resolvers
+            for (ImmutableType type : ((CachesImpl)caches).getObjectCacheMap().keySet()) {
+                for (ImmutableProp prop : type.getProps().values()) {
+                    if (prop.hasTransientResolver()) {
+                        manager.get(prop);
+                    }
+                }
+            }
+            for (ImmutableProp prop : ((CachesImpl)caches).getPropCacheMap().keySet()) {
+                if (prop.hasTransientResolver()) {
+                    manager.get(prop);
+                }
+            }
+        }
+        return manager;
     }
 
     public static class BuilderImpl implements JSqlClient.Builder {
@@ -328,7 +366,7 @@ class JSqlClientImpl implements JSqlClient {
 
         private Caches caches;
 
-        private Triggers triggers = new TriggersImpl();
+        private final Triggers triggers = new TriggersImpl();
 
         public BuilderImpl() {}
 
@@ -425,8 +463,10 @@ class JSqlClientImpl implements JSqlClient {
                     idGeneratorMap,
                     defaultBatchSize,
                     defaultListBatchSize,
+                    null,
                     caches,
-                    triggers
+                    triggers,
+                    null
             );
         }
     }

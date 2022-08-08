@@ -125,7 +125,9 @@ public class TableGenerator {
             ImmutableProp prop,
             boolean withJoinType
     ) {
-
+        if (prop.isTransient()) {
+            return;
+        }
         if (withJoinType && !prop.isAssociation()) {
             return;
         }

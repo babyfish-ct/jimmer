@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.model.Author;
 import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.BookStore;
 import org.babyfish.jimmer.sql.model.Country;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.util.List;
@@ -43,6 +44,11 @@ public class AbstractCachedLoaderTest extends AbstractQueryTest {
 
                             @Override
                             public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
+                                return new CacheImpl<>(prop);
+                            }
+
+                            @Override
+                            public Cache<?, ?> createResolverCache(ImmutableProp prop) {
                                 return new CacheImpl<>(prop);
                             }
                         }

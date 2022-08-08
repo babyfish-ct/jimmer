@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 
 import javax.validation.constraints.Null;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,6 +20,9 @@ public interface BookStore {
 
     @Null
     String website();
+
+    @Transient(BookStoreAvgPriceResolver.class)
+    BigDecimal avgPrice();
 
     @OneToMany(mappedBy = "store")
     List<Book> books();

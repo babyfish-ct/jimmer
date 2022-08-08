@@ -31,6 +31,8 @@ class ImmutableTypeImpl implements ImmutableType {
 
     private Map<String, ImmutableProp> props;
 
+    private ImmutableProp[] propArr;
+
     private Map<String, ImmutableProp> columnProps;
 
     private Map<String, ImmutableProp> selectableProps;
@@ -134,6 +136,28 @@ class ImmutableTypeImpl implements ImmutableType {
             );
         }
         return prop;
+    }
+
+    public ImmutableProp getProp(int id) {
+        ImmutableProp[] arr = this.getPropArr();
+        if (id < 1 || id >= arr.length) {
+            throw new IllegalArgumentException(
+                    "There is no property whose id is " + id + " in \"" + this + "\""
+            );
+        }
+        return arr[id];
+    }
+
+    private ImmutableProp[] getPropArr() {
+        ImmutableProp[] arr = propArr;
+        if (arr == null) {
+            arr = new ImmutableProp[getProps().size() + 1];
+            for (ImmutableProp prop : getProps().values()) {
+                arr[prop.getId()] = prop;
+            }
+            propArr = arr;
+        }
+        return arr;
     }
 
     public ImmutableProp getPropByColumnName(String columnName) {

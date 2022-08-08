@@ -6,6 +6,9 @@ import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
+import org.babyfish.jimmer.sql.kt.loader.KListLoader
+import org.babyfish.jimmer.sql.kt.loader.KReferenceLoader
+import org.babyfish.jimmer.sql.kt.loader.KValueLoader
 import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -39,6 +42,8 @@ interface KSqlClient {
     fun <S: Any, T: Any> getReferenceAssociations(prop: KProperty1<S, T?>): KAssociations
 
     fun <S: Any, T: Any> getListAssociations(prop: KProperty1<S, List<T>>): KAssociations
+
+    fun <S: Any, V: Any> getValueLoader(prop: KProperty1<S, V>): KValueLoader<S, V>
 
     fun <S: Any, T: Any> getReferenceLoader(prop: KProperty1<S, T?>): KReferenceLoader<S, T>
 

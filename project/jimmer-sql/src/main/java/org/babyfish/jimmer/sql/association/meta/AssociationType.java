@@ -124,6 +124,20 @@ public class AssociationType implements ImmutableType {
     }
 
     @Override
+    public ImmutableProp getProp(int id) {
+        switch (id) {
+            case 1:
+                return sourceProp;
+            case 2:
+                return targetProp;
+            default:
+                throw new IllegalArgumentException(
+                    "There is no property whose id is " + id + " in \"" + this + "\""
+                );
+        }
+    }
+
+    @Override
     public ImmutableProp getPropByColumnName(String columnName) {
         String scName = DatabaseIdentifiers.standardIdentifier(columnName);
         if (scName.equals(

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.Transient;
 import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.*;
@@ -229,6 +230,13 @@ public class FetcherImpl<E> implements Fetcher<E> {
     private FetcherImpl<E> addImpl(ImmutableProp prop, boolean negative) {
         if (prop.isId()) {
             return this;
+        }
+        if (prop.isTransient() && !prop.hasTransientResolver()) {
+            throw new IllegalArgumentException(
+                    "Cannot fetch \"" +
+                            prop +
+                            "\", it is transient property without resolver"
+            );
         }
         return createChildFetcher(prop, negative);
     }

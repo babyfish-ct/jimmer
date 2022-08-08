@@ -58,6 +58,8 @@ public interface ImmutableType {
 
     ImmutableProp getProp(String name);
 
+    ImmutableProp getProp(int id);
+
     ImmutableProp getPropByColumnName(String columnName);
 
     Map<String, ImmutableProp> getSelectableProps();

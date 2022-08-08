@@ -25,7 +25,7 @@ public interface BookStore {
     @Version
     int version();
 
-    @Transient
+    @Transient(BookStoreAvgPriceResolver.class)
     BigDecimal avgPrice();
 
     @OneToMany(mappedBy = "store")

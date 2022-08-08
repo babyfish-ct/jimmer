@@ -16,7 +16,7 @@ interface BookStore {
 
     val website: String?
 
-    @Transient
+    @Transient(BookStoreAvgPriceResolver::class)
     val avgPrice: BigDecimal
 
     @OneToMany(mappedBy = "store")

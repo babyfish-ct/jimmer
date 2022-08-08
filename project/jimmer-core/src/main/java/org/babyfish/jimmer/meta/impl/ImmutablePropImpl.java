@@ -36,6 +36,8 @@ class ImmutablePropImpl implements ImmutableProp {
 
     private final boolean isTransient;
 
+    private final boolean hasTransientResolver;
+
     private final DeleteAction deleteAction;
 
     private Storage storage;
@@ -105,7 +107,10 @@ class ImmutablePropImpl implements ImmutableProp {
             );
         }
 
-        isTransient = getAnnotation(Transient.class) != null;
+        Transient trans = getAnnotation(Transient.class);
+        isTransient = trans != null;
+        hasTransientResolver = trans != null && trans.value() != void.class;
+
         if (associationType != null) {
             associationAnnotation = getAnnotation(associationType);
         }
@@ -114,50 +119,62 @@ class ImmutablePropImpl implements ImmutableProp {
         deleteAction = onDelete != null ? onDelete.value() : DeleteAction.NONE;
     }
 
+    @Override
     public ImmutableType getDeclaringType() {
         return declaringType;
     }
 
+    @Override
     public int getId() {
         return id;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public ImmutablePropCategory getCategory() {
         return category;
     }
 
+    @Override
     public Class<?> getElementClass() {
         return elementClass;
     }
 
+    @Override
     public boolean isScalar() {
         return this.category == ImmutablePropCategory.SCALAR;
     }
 
+    @Override
     public boolean isScalarList() {
         return this.category == ImmutablePropCategory.SCALAR_LIST;
     }
 
+    @Override
     public boolean isAssociation() {
         return this.category.isAssociation();
     }
 
+    @Override
     public boolean isReference() {
         return this.category == ImmutablePropCategory.REFERENCE;
     }
 
+    @Override
     public boolean isEntityList() {
         return this.category == ImmutablePropCategory.ENTITY_LIST;
     }
 
+    @Override
     public boolean isNullable() {
         return nullable;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
         if (kotlinProp != null) {
@@ -174,6 +191,7 @@ class ImmutablePropImpl implements ImmutableProp {
         return javaGetter.getAnnotation(annotationType);
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <A extends Annotation> A[] getAnnotations(Class<A> annotationType) {
         A[] getterArr = javaGetter.getAnnotationsByType(annotationType);
@@ -194,14 +212,22 @@ class ImmutablePropImpl implements ImmutableProp {
         return mergedArr;
     }
 
+    @Override
     public Annotation getAssociationAnnotation() {
         return associationAnnotation;
     }
 
+    @Override
     public boolean isTransient() {
         return isTransient;
     }
 
+    @Override
+    public boolean hasTransientResolver() {
+        return hasTransientResolver;
+    }
+
+    @Override
     public DeleteAction getDeleteAction() {
         return deleteAction;
     }
@@ -216,14 +242,17 @@ class ImmutablePropImpl implements ImmutableProp {
         return (S)storage;
     }
 
+    @Override
     public boolean isId() {
         return this == declaringType.getIdProp();
     }
 
+    @Override
     public boolean isVersion() {
         return this == declaringType.getVersionProp();
     }
 
+    @Override
     public ImmutableType getTargetType() {
         if (targetTypeResolved) {
             return targetType;
@@ -242,6 +271,7 @@ class ImmutablePropImpl implements ImmutableProp {
         return targetType;
     }
 
+    @Override
     public ImmutableProp getMappedBy() {
         if (mappedByResolved) {
             return mappedBy;
@@ -307,6 +337,7 @@ class ImmutablePropImpl implements ImmutableProp {
         return mappedBy;
     }
 
+    @Override
     public ImmutableProp getOpposite() {
         if (oppositeResolved) {
             return opposite;

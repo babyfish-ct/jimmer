@@ -10,4 +10,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
 @Target(ElementType.METHOD)
-public @interface Transient {}
+public @interface Transient {
+
+    Class<?> value() default void.class;
+}

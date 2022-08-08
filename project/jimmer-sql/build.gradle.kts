@@ -21,9 +21,11 @@ dependencies {
     api(project(":jimmer-core"))
     implementation("org.slf4j:slf4j-api:1.7.36")
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.7.10")
+    implementation("org.jetbrains:annotations:23.0.0")
+    implementation("org.apache.commons:commons-lang3:3.12.0")
 
     testAnnotationProcessor(project(":jimmer-apt"))
-
+    
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 

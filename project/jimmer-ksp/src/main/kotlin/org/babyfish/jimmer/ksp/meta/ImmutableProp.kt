@@ -40,6 +40,9 @@ class ImmutableProp(
 
     private val resolvedType: KSType = propDeclaration.type.resolve()
 
+    val isTransient: Boolean =
+        annotation(Transient::class) !== null
+
     val isList: Boolean =
         (resolvedType.declaration as KSClassDeclaration).asStarProjectedType().let { starType ->
             when {

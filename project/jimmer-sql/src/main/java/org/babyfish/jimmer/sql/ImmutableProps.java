@@ -15,6 +15,7 @@ public class ImmutableProps {
 
     private ImmutableProps() {}
 
+    @SuppressWarnings("unchecked")
     public static <T extends Table<?>> ImmutableProp get(
             Class<T> tableType,
             Function<T, PropExpression<?>> block
@@ -38,6 +39,7 @@ public class ImmutableProps {
         return propExpr.getProp();
     }
 
+    @SuppressWarnings("unchecked")
     public static <ST extends Table<?>> ImmutableProp join(
             Class<ST> sourceTableType,
             Function<ST, ? extends Table<?>> block

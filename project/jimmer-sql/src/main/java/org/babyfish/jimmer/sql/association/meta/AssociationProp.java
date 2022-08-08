@@ -75,6 +75,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public boolean hasTransientResolver() {
+        return false;
+    }
+
+    @Override
     public boolean isId() {
         return false;
     }
@@ -112,7 +117,7 @@ public abstract class AssociationProp implements ImmutableProp {
 
         @Override
         public int getId() {
-            return 0;
+            return 1;
         }
 
         @Override
@@ -168,7 +173,7 @@ public abstract class AssociationProp implements ImmutableProp {
 
         @Override
         public int getId() {
-            return 1;
+            return 2;
         }
 
         @Override

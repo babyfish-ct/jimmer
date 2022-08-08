@@ -69,6 +69,10 @@ class TableGenerator(
         nonNullTable: Boolean,
         outerJoin: Boolean
     ) {
+        if (prop.isTransient) {
+            return
+        }
+
         if (outerJoin && !prop.isAssociation) {
             return
         }

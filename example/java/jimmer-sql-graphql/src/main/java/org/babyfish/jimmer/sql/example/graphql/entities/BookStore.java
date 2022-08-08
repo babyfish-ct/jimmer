@@ -22,7 +22,7 @@ public interface BookStore {
     @NotBlank
     String website();
 
-    @Transient
+    @Transient(BookStoreAvgPriceResolver.class)
     BigDecimal avgPrice();
 
     @OneToMany(mappedBy = "store")
