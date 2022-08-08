@@ -13,9 +13,9 @@ interface KCaches {
 
     fun <K, V> getObjectCache(type: ImmutableType): Cache<K, V>?
 
-    fun <K, V> getAssociationCache(prop: KProperty1<*, *>): Cache<K, V>?
+    fun <K, V> getPropertyCache(prop: KProperty1<*, *>): Cache<K, V>?
 
-    fun <K, V> getAssociationCache(prop: ImmutableProp): Cache<K, V>?
+    fun <K, V> getPropertyCache(prop: ImmutableProp): Cache<K, V>?
 
     fun isAffectedBy(tableName: String): Boolean
 

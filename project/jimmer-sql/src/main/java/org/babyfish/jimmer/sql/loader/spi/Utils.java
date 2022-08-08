@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.association.spi;
+package org.babyfish.jimmer.sql.loader.spi;
 
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.slf4j.Logger;

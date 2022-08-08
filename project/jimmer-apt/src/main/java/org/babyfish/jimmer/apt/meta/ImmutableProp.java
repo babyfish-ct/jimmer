@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.*;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
@@ -48,6 +49,8 @@ public class ImmutableProp {
     private final TypeName draftElementTypeName;
 
     private final TypeMirror elementType;
+
+    private final boolean isTransient;
 
     private final boolean isList;
 
@@ -138,6 +141,8 @@ public class ImmutableProp {
             isList = false;
             elementType = returnType;
         }
+
+        isTransient = executableElement.getAnnotation(Transient.class) != null;
 
         isAssociation = typeUtils.isImmutable(elementType);
 
@@ -234,6 +239,10 @@ public class ImmutableProp {
 
     public TypeName getDraftElementTypeName() {
         return draftElementTypeName;
+    }
+
+    public boolean isTransient() {
+        return isTransient;
     }
 
     public boolean isList() {

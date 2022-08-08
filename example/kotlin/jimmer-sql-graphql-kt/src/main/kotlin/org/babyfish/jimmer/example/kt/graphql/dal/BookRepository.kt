@@ -41,22 +41,4 @@ class BookRepository(
             }
             select(table)
         }.execute()
-
-    fun findAvgPricesByStoreIds(
-        storeIds: Collection<Long>
-    ): Map<Long, BigDecimal> =
-        sqlClient
-            .createQuery(Book::class) {
-                groupBy(table.store.id)
-                select(
-                    table.store.id,
-                    avg(table.price).asNonNull()
-                )
-            }
-            .execute()
-            .associateBy(
-                {it._1}
-            ) {
-                it._2
-            }
 }

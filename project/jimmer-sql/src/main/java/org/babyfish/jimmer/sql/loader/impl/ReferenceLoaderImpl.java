@@ -1,8 +1,8 @@
-package org.babyfish.jimmer.sql.association.loader;
+package org.babyfish.jimmer.sql.loader.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.ReferenceLoader;
+import org.babyfish.jimmer.sql.loader.ReferenceLoader;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -14,13 +14,13 @@ import java.util.Map;
 
 class ReferenceLoaderImpl<SE, TE, TT extends Table<TE>> implements ReferenceLoader<SE, TE, TT> {
 
-    private JSqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
-    private Connection con;
+    private final Connection con;
 
-    private ImmutableProp prop;
+    private final ImmutableProp prop;
 
-    private Filter<?> filter;
+    private final Filter<?> filter;
 
     public ReferenceLoaderImpl(
             JSqlClient sqlClient,

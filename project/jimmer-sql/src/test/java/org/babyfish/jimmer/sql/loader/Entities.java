@@ -39,7 +39,7 @@ public class Entities {
         );
 
     @SuppressWarnings("unchecked")
-    public static final List<ImmutableSpi> BOOK_STORES_FOR_ONE_TO_MANY =
+    public static final List<ImmutableSpi> BOOK_STORES =
             Collections.unmodifiableList(
                     (List<ImmutableSpi>) (List<?>) Arrays.asList(
                             BookStoreDraft.$.produce(store ->

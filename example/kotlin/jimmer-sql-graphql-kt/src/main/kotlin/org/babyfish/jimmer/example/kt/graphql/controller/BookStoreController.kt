@@ -20,8 +20,7 @@ import java.math.BigDecimal
 @Controller
 class BookStoreController(
     private val sqlClient: KSqlClient,
-    private val bookStoreRepository: BookStoreRepository,
-    private val bookRepository: BookRepository
+    private val bookStoreRepository: BookStoreRepository
 ) {
 
     // --- Query ---
@@ -54,15 +53,10 @@ class BookStoreController(
     fun avgPrice(
         // Must use `java.util.List` because Spring-GraphQL has a bug: #454
         stores: java.util.List<BookStore>
-    ): Map<BookStore, BigDecimal?> {
-        val avgPriceMap = bookRepository
-            .findAvgPricesByStoreIds(stores.map { it.id })
-        return stores.associateBy({it}) {
-            avgPriceMap[it.id]
-        }.filterValues {
-            it !== null
-        }
-    }
+    ): Map<BookStore, BigDecimal> =
+        sqlClient
+            .getValueLoader(BookStore::avgPrice)
+            .batchLoad(stores)
 
     // --- Mutation ---
     @MutationMapping

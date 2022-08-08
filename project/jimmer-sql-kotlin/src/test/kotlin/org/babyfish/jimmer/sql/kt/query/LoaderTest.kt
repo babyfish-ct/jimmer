@@ -8,6 +8,8 @@ import org.babyfish.jimmer.sql.kt.model.BookStore
 import org.babyfish.jimmer.sql.kt.model.by
 import org.babyfish.jimmer.sql.kt.model.edition
 import org.junit.Test
+import java.math.BigDecimal
+import kotlin.test.expect
 
 class LoaderTest : AbstractQueryTest() {
 
@@ -88,6 +90,40 @@ class LoaderTest : AbstractQueryTest() {
                     |--->--->"edition":2,
                     |--->--->"price":81.00,
                     |--->--->"store":{"id":2}
+                    |--->}
+                    |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun test() {
+        connectAndExpect({ con ->
+            sqlClient
+                .getValueLoader(BookStore::avgPrice)
+                .forConnection(con)
+                .batchLoad(
+                    listOf(
+                        new(BookStore::class).by {
+                            id = 1L
+                        },
+                        new(BookStore::class).by {
+                            id = 2L
+                        }
+                    )
+                )
+        }) {
+            sql(
+                """select tb_1_.STORE_ID, coalesce(avg(tb_1_.PRICE), ?) 
+                    |from BOOK as tb_1_ 
+                    |where tb_1_.STORE_ID in (?, ?) 
+                    |group by tb_1_.STORE_ID""".trimMargin()
+            )
+            rows(
+                """[
+                    |--->{
+                    |--->--->"{\"id\":1}":58.500000000000,
+                    |--->--->"{\"id\":2}":80.333333333333
                     |--->}
                     |]""".trimMargin()
             )

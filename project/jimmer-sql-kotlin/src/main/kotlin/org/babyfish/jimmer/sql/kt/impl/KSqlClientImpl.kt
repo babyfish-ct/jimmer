@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.kt.impl
 
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.*
-import org.babyfish.jimmer.sql.association.loader.Loaders
+import org.babyfish.jimmer.sql.loader.impl.Loaders
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
 import org.babyfish.jimmer.sql.ast.table.Table
@@ -12,6 +12,12 @@ import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableDeleteImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableUpdateImpl
+import org.babyfish.jimmer.sql.kt.loader.KListLoader
+import org.babyfish.jimmer.sql.kt.loader.KReferenceLoader
+import org.babyfish.jimmer.sql.kt.loader.KValueLoader
+import org.babyfish.jimmer.sql.kt.loader.impl.KListLoaderImpl
+import org.babyfish.jimmer.sql.kt.loader.impl.KReferenceLoaderImpl
+import org.babyfish.jimmer.sql.kt.loader.impl.KValueLoaderImpl
 import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -68,6 +74,14 @@ internal class KSqlClientImpl(
             prop.toImmutableProp()
         ).let {
             KAssociationsImpl(it)
+        }
+
+    override fun <S : Any, V : Any> getValueLoader(prop: KProperty1<S, V>): KValueLoader<S, V> =
+        Loaders.createValueLoader<S, V>(
+            sqlClient,
+            prop.toImmutableProp()
+        ).let {
+            KValueLoaderImpl(it)
         }
 
     override fun <S : Any, T : Any> getReferenceLoader(prop: KProperty1<S, T?>): KReferenceLoader<S, T> =

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.runtime;
 
 import org.babyfish.jimmer.Draft;
+import org.babyfish.jimmer.util.Classes;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -25,7 +26,7 @@ public class ListDraft<E> implements List<E>, Draft {
     @SuppressWarnings("unchecked")
     public ListDraft(DraftContext ctx, Class<E> elementType, List<E> base) {
         this.ctx = ctx;
-        this.elementType = (Class<E>) boxType(elementType);
+        this.elementType = (Class<E>) Classes.boxTypeOf(elementType);
         this.base = base;
     }
 
@@ -276,36 +277,6 @@ public class ListDraft<E> implements List<E>, Draft {
                 }
             }
         }
-    }
-
-    private Class<?> boxType(Class<?> type) {
-        if (type.isPrimitive()) {
-            if (type == boolean.class) {
-                return Boolean.class;
-            }
-            if (type == char.class) {
-                return Character.class;
-            }
-            if (type == byte.class) {
-                return Byte.class;
-            }
-            if (type == short.class) {
-                return Short.class;
-            }
-            if (type == int.class) {
-                return Integer.class;
-            }
-            if (type == long.class) {
-                return Long.class;
-            }
-            if (type == float.class) {
-                return Float.class;
-            }
-            if (type == double.class) {
-                return Double.class;
-            }
-        }
-        return type;
     }
 
     private class Itr implements ListIterator<E> {

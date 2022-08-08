@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.sql.event;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.util.Classes;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -29,7 +32,7 @@ public class AssociationEvent {
         if (!prop.isAssociation()) {
             throw new IllegalArgumentException("prop must be association");
         }
-        if (sourceId == null || !matched(prop.getDeclaringType().getIdProp().getElementClass(), sourceId.getClass())) {
+        if (sourceId == null || !Classes.matches(prop.getDeclaringType().getIdProp().getElementClass(), sourceId.getClass())) {
             throw new IllegalArgumentException(
                     "The type of sourceId \"" +
                             sourceId +
@@ -39,7 +42,7 @@ public class AssociationEvent {
             );
         }
         Class<?> expectedTargetIdClass = prop.getTargetType().getIdProp().getElementClass();
-        if (detachedTargetId != null && !matched(expectedTargetIdClass, detachedTargetId.getClass())) {
+        if (detachedTargetId != null && !Classes.matches(expectedTargetIdClass, detachedTargetId.getClass())) {
             throw new IllegalArgumentException(
                     "The type of detachedTargetId \"" +
                             sourceId +
@@ -48,7 +51,7 @@ public class AssociationEvent {
                             "\""
             );
         }
-        if (attachedTargetId != null && !matched(expectedTargetIdClass, attachedTargetId.getClass())) {
+        if (attachedTargetId != null && !Classes.matches(expectedTargetIdClass, attachedTargetId.getClass())) {
             throw new IllegalArgumentException(
                     "The type of attachedTargetId \"" +
                             sourceId +
@@ -64,26 +67,32 @@ public class AssociationEvent {
         this.reason = reason;
     }
 
+    @NotNull
     public ImmutableProp getImmutableProp() {
         return prop;
     }
 
+    @NotNull
     public Object getSourceId() {
         return sourceId;
     }
 
+    @Nullable
     public Object getDetachedTargetId() {
         return detachedTargetId;
     }
 
+    @Nullable
     public Object getAttachedTargetId() {
         return attachedTargetId;
     }
 
+    @Nullable
     public Object getReason() {
         return reason;
     }
 
+    @NotNull
     public EventType getEventType() {
         if (detachedTargetId == null) {
             return EventType.INSERT;
@@ -120,36 +129,5 @@ public class AssociationEvent {
                 ", attachedTargetId=" + attachedTargetId +
                 ", reason=" + reason +
                 '}';
-    }
-
-    private static boolean matched(Class<?> expectedType, Class<?> actualType) {
-        if (expectedType == actualType) {
-            return true;
-        }
-        if (expectedType == boolean.class) {
-            return actualType == Boolean.class;
-        }
-        if (expectedType == char.class) {
-            return actualType == Character.class;
-        }
-        if (expectedType == byte.class) {
-            return actualType == Byte.class;
-        }
-        if (expectedType == short.class) {
-            return actualType == Short.class;
-        }
-        if (expectedType == int.class) {
-            return actualType == Integer.class;
-        }
-        if (expectedType == long.class) {
-            return actualType == Long.class;
-        }
-        if (expectedType == float.class) {
-            return actualType == Float.class;
-        }
-        if (expectedType == double.class) {
-            return actualType == Double.class;
-        }
-        return false;
     }
 }

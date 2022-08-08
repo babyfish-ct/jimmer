@@ -1,16 +1,28 @@
-package org.babyfish.jimmer.sql.association.loader;
+package org.babyfish.jimmer.sql.loader.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.sql.ListLoader;
-import org.babyfish.jimmer.sql.ReferenceLoader;
+import org.babyfish.jimmer.sql.loader.ListLoader;
+import org.babyfish.jimmer.sql.loader.ReferenceLoader;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.loader.ValueLoader;
 
 public class Loaders {
 
     private Loaders() {}
 
-    @SuppressWarnings("unchecked")
+    public static <S, V>ValueLoader<S, V> createValueLoader(
+            JSqlClient sqlClient,
+            ImmutableProp prop
+    ) {
+        if (!prop.hasTransientResolver()) {
+            throw new IllegalArgumentException(
+                    "Cannot create reference loader for \"" + prop + "\", it is not transient property with resolver"
+            );
+        }
+        return new ValueLoaderImpl<>(sqlClient, prop);
+    }
+
     public static <SE, TE, TT extends Table<TE>> ReferenceLoader<SE, TE, TT> createReferenceLoader(
             JSqlClient sqlClient,
             ImmutableProp prop
@@ -23,7 +35,6 @@ public class Loaders {
         return new ReferenceLoaderImpl<>(sqlClient, prop);
     }
 
-    @SuppressWarnings("unchecked")
     public static <SE, TE, TT extends Table<TE>> ListLoader<SE, TE, TT> createListLoader(
             JSqlClient sqlClient,
             ImmutableProp prop

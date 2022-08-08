@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.association.loader;
+package org.babyfish.jimmer.sql.loader.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -8,10 +8,9 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Filter;
 
 import java.sql.Connection;
-import java.util.Collection;
-import java.util.Map;
+import java.util.Collections;
 
-class BatchCommand<S, T> implements Executable<Map<S, T>> {
+class SingleCommand<T> implements Executable<T> {
 
     private final JSqlClient sqlClient;
 
@@ -21,24 +20,32 @@ class BatchCommand<S, T> implements Executable<Map<S, T>> {
 
     private final Filter<Table<ImmutableSpi>> filter;
 
-    private final Collection<ImmutableSpi> sources;
+    private final int limit;
 
-    public BatchCommand(
+    private final int offset;
+
+    private final ImmutableSpi source;
+
+    public SingleCommand(
             JSqlClient sqlClient,
             Connection con,
             ImmutableProp prop,
             Filter<Table<ImmutableSpi>> filter,
-            Collection<ImmutableSpi> sources
+            int limit,
+            int offset,
+            ImmutableSpi source
     ) {
         this.sqlClient = sqlClient;
         this.con = con;
         this.prop = prop;
         this.filter = filter;
-        this.sources = sources;
+        this.limit = limit;
+        this.offset = offset;
+        this.source = source;
     }
 
     @Override
-    public Map<S, T> execute() {
+    public T execute() {
         if (con != null) {
             return executeImpl(con);
         }
@@ -48,7 +55,7 @@ class BatchCommand<S, T> implements Executable<Map<S, T>> {
     }
 
     @Override
-    public Map<S, T> execute(Connection con) {
+    public T execute(Connection con) {
         if (con != null) {
             return executeImpl(con);
         }
@@ -61,12 +68,14 @@ class BatchCommand<S, T> implements Executable<Map<S, T>> {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<S, T> executeImpl(Connection con) {
-        return (Map<S, T>) new DataLoader(
+    private T executeImpl(Connection con) {
+        return (T) new DataLoader(
                 sqlClient,
                 con,
                 prop,
-                filter
-        ).load(sources);
+                filter,
+                limit,
+                offset
+        ).load(Collections.singleton(source)).get(source);
     }
 }

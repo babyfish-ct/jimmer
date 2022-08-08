@@ -1,10 +1,11 @@
-package org.babyfish.jimmer.sql.association.spi;
+package org.babyfish.jimmer.sql.loader.spi;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
@@ -36,17 +37,19 @@ public abstract class AbstractDataLoader {
 
     private final ImmutableProp prop;
 
-    private final Fetcher<ImmutableSpi> fetcher;
-
     private final Filter<Table<ImmutableSpi>> filter;
 
     private final ImmutableProp thisIdProp;
 
-    private final ImmutableProp targetIdProp;
-
     private final int limit;
 
     private final int offset;
+
+    private final TransientResolver<?, ?> resolver;
+
+    private final Fetcher<ImmutableSpi> fetcher;
+
+    private final ImmutableProp targetIdProp;
 
     @SuppressWarnings("unchecked")
     protected AbstractDataLoader(
@@ -58,22 +61,59 @@ public abstract class AbstractDataLoader {
             int limit,
             int offset
     ) {
-        if (!prop.isAssociation()) {
+        if (!prop.isAssociation() && !prop.hasTransientResolver()) {
             throw new IllegalArgumentException(
-                    "\"" + prop + "\" is not association"
+                    "\"" + prop + "\" is neither association nor transient with resolver"
             );
+        }
+        if (!prop.isAssociation()) {
+            if (fetcher != null) {
+                throw new IllegalArgumentException(
+                        "Cannot specify fetcher for scalar prop \"" +
+                                prop +
+                                "\""
+                );
+            }
+            if (filter != null) {
+                throw new IllegalArgumentException(
+                        "Cannot specify filter for scalar prop \"" +
+                                prop +
+                                "\""
+                );
+            }
+            if (limit != Integer.MAX_VALUE) {
+                throw new IllegalArgumentException(
+                        "Cannot specify limit for scalar prop \"" +
+                                prop +
+                                "\""
+                );
+            }
+            if (offset != 0) {
+                throw new IllegalArgumentException(
+                        "Cannot specify limit for scalar prop \"" +
+                                prop +
+                                "\""
+                );
+            }
         }
         this.sqlClient = sqlClient;
         this.con = con;
         this.prop = prop;
-        this.fetcher = fetcher != null ?
-                (Fetcher<ImmutableSpi>) fetcher :
-                new FetcherImpl<>((Class<ImmutableSpi>) prop.getTargetType().getJavaClass());
         this.filter = (Filter<Table<ImmutableSpi>>) filter;
         this.thisIdProp = prop.getDeclaringType().getIdProp();
-        this.targetIdProp = prop.getTargetType().getIdProp();
         this.limit = limit;
         this.offset = offset;
+        if (prop.isAssociation()) {
+            this.resolver = null;
+            this.fetcher = fetcher != null ?
+                    (Fetcher<ImmutableSpi>) fetcher :
+                    new FetcherImpl<>((Class<ImmutableSpi>) prop.getTargetType().getJavaClass());
+            this.targetIdProp = prop.getTargetType().getIdProp();
+        } else {
+            this.resolver = sqlClient.getResolver(prop);
+            this.fetcher = null;
+            this.targetIdProp = null;
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -83,6 +123,9 @@ public abstract class AbstractDataLoader {
         }
         if (sources.size() > 1 && (limit != Integer.MAX_VALUE || offset != 0)) {
             throw new IllegalArgumentException("Pagination data loader does not support batch loading");
+        }
+        if (resolver != null) {
+            return loadTransients(sources);
         }
         if (prop.getStorage() instanceof Column) {
             return (Map<ImmutableSpi, Object>)(Map<?, ?>) loadParents(sources);
@@ -94,8 +137,37 @@ public abstract class AbstractDataLoader {
     }
 
     @SuppressWarnings("unchecked")
+    private Map<ImmutableSpi, Object> loadTransients(Collection<ImmutableSpi> sources) {
+        Collection<Object> sourceIds = toSourceIds(sources);
+        TransientResolver<Object, Object> typedResolver =
+                ((TransientResolver<Object, Object>)resolver);
+        Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
+        if (cache == null) {
+            return Utils.joinCollectionAndMap(
+                    sources,
+                    this::toSourceId,
+                    typedResolver.resolve(sourceIds, con)
+            );
+        }
+        Map<Object, Object> valueMap = cache.getAll(
+                sourceIds,
+                new CacheEnvironment<>(
+                        sqlClient,
+                        con,
+                        filter,
+                        (ids) -> typedResolver.resolve(ids, con),
+                        false
+                )
+        );
+        return Utils.joinCollectionAndMap(
+                sources,
+                this::toSourceId,
+                valueMap
+        );
+    }
+
     private Map<ImmutableSpi, ImmutableSpi> loadParents(Collection<ImmutableSpi> sources) {
-        Cache<Object, Object> fkCache = sqlClient.getCaches().getAssociationCache(prop);
+        Cache<Object, Object> fkCache = sqlClient.getCaches().getPropertyCache(prop);
         if (fkCache == null) {
             return loadParentsDirectly(sources);
         }
@@ -209,7 +281,7 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<ImmutableSpi, ImmutableSpi> loadTargetMap(Collection<ImmutableSpi> sources) {
-        Cache<Object, Object> cache = sqlClient.getCaches().getAssociationCache(prop);
+        Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
         if (cache == null) {
             return loadTargetMapDirectly(sources);
         }
@@ -258,7 +330,7 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<ImmutableSpi, List<ImmutableSpi>> loadTargetMultiMap(Collection<ImmutableSpi> sources) {
-        Cache<Object, List<Object>> cache = sqlClient.getCaches().getAssociationCache(prop);
+        Cache<Object, List<Object>> cache = sqlClient.getCaches().getPropertyCache(prop);
         if (cache == null) {
             return loadTargetMultiMapDirectly(sources);
         }

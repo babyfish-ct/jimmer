@@ -20,7 +20,7 @@ public class CachesImpl implements Caches {
 
     private final Map<ImmutableType, LocatedCacheImpl<?, ?>> objectCacheMap;
 
-    private final Map<ImmutableProp, LocatedCacheImpl<?, ?>> associationCacheMap;
+    private final Map<ImmutableProp, LocatedCacheImpl<?, ?>> propCacheMap;
 
     private final Map<String, ImmutableType> tableNameTypeMap;
 
@@ -37,7 +37,7 @@ public class CachesImpl implements Caches {
     public CachesImpl(
             Triggers triggers,
             Map<ImmutableType, Cache<?, ?>> objectCacheMap,
-            Map<ImmutableProp, Cache<?, ?>> associationCacheMap,
+            Map<ImmutableProp, Cache<?, ?>> propCacheMap,
             CacheOperator operator,
             BinLogParser binLogParser
     ) {
@@ -57,7 +57,7 @@ public class CachesImpl implements Caches {
                 );
             }
         }
-        for (ImmutableProp prop : associationCacheMap.keySet()) {
+        for (ImmutableProp prop : propCacheMap.keySet()) {
             if (prop.getMappedBy() != null) {
                 prop = prop.getMappedBy();
             }
@@ -83,14 +83,14 @@ public class CachesImpl implements Caches {
             ImmutableType type = e.getKey();
             objectCacheWrapperMap.put(type, wrapObjectCache(triggers, e.getValue(), type));
         }
-        Map<ImmutableProp, LocatedCacheImpl<?, ?>> associationCacheWrapperMap = new LinkedHashMap<>();
-        for (Map.Entry<ImmutableProp, Cache<?, ?>> e : associationCacheMap.entrySet()) {
+        Map<ImmutableProp, LocatedCacheImpl<?, ?>> propCacheWrapperMap = new LinkedHashMap<>();
+        for (Map.Entry<ImmutableProp, Cache<?, ?>> e : propCacheMap.entrySet()) {
             ImmutableProp prop = e.getKey();
-            associationCacheWrapperMap.put(prop, wrapAssociationCache(triggers, e.getValue(), prop));
+            propCacheWrapperMap.put(prop, wrapPropCache(triggers, e.getValue(), prop));
         }
         this.triggers = triggers;
         this.objectCacheMap = objectCacheWrapperMap;
-        this.associationCacheMap = associationCacheWrapperMap;
+        this.propCacheMap = propCacheWrapperMap;
         this.tableNameTypeMap = tableNameTypeMap;
         this.operator = operator;
         this.binLogParser = binLogParser;
@@ -105,13 +105,21 @@ public class CachesImpl implements Caches {
     ) {
         triggers = base.triggers;
         objectCacheMap = base.objectCacheMap;
-        associationCacheMap = base.associationCacheMap;
+        propCacheMap = base.propCacheMap;
         tableNameTypeMap = base.tableNameTypeMap;
         operator = base.operator;
         binLogParser = base.binLogParser;
         disableAll = cfg.isDisableAll();
         disabledTypes = cfg.getDisabledTypes();
         disabledProps = cfg.getDisabledProps();
+    }
+
+    public Map<ImmutableType, LocatedCacheImpl<?, ?>> getObjectCacheMap() {
+        return Collections.unmodifiableMap(objectCacheMap);
+    }
+
+    public Map<ImmutableProp, LocatedCacheImpl<?, ?>> getPropCacheMap() {
+        return Collections.unmodifiableMap(propCacheMap);
     }
 
     @SuppressWarnings("unchecked")
@@ -125,14 +133,14 @@ public class CachesImpl implements Caches {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <K, V> LocatedCache<K, V> getAssociationCache(ImmutableProp prop) {
+    public <K, V> LocatedCache<K, V> getPropertyCache(ImmutableProp prop) {
         if (disableAll ||
                 disabledProps.contains(prop) ||
                 disabledTypes.contains(prop.getTargetType())
         ) {
             return null;
         }
-        return LocatedCacheImpl.export((LocatedCache<K, V>)associationCacheMap.get(prop));
+        return LocatedCacheImpl.export((LocatedCache<K, V>) propCacheMap.get(prop));
     }
 
     @Override
@@ -216,7 +224,7 @@ public class CachesImpl implements Caches {
     }
 
     @SuppressWarnings("unchecked")
-    private LocatedCacheImpl<?, ?> wrapAssociationCache(
+    private LocatedCacheImpl<?, ?> wrapPropCache(
             Triggers triggers,
             Cache<?, ?> cache,
             ImmutableProp prop
@@ -228,18 +236,23 @@ public class CachesImpl implements Caches {
                 (Cache<Object, Object>) cache,
                 prop
         );
-        triggers.addAssociationListener(prop, e -> {
-            Object id = e.getSourceId();
-            if (operator != null) {
-                operator.delete(wrapper, id, e.getReason());
-            } else {
-                wrapper.delete(id, e.getReason());
-            }
-        });
+        if (prop.isAssociation()) {
+            triggers.addAssociationListener(prop, e -> {
+                Object id = e.getSourceId();
+                if (operator != null) {
+                    operator.delete(wrapper, id, e.getReason());
+                } else {
+                    wrapper.delete(id, e.getReason());
+                }
+            });
+        }
         return wrapper;
     }
 
-    public static Caches of(Triggers triggers, Consumer<CacheConfig> block) {
+    public static Caches of(
+            Triggers triggers,
+            Consumer<CacheConfig> block
+    ) {
         CacheConfig cfg = new CacheConfig();
         if (block != null) {
             block.accept(cfg);

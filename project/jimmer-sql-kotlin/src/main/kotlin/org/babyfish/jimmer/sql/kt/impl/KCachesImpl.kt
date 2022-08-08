@@ -20,11 +20,11 @@ internal class KCachesImpl(
     override fun <K, V> getObjectCache(type: ImmutableType): Cache<K, V>? =
         javaCaches.getObjectCache(type)
 
-    override fun <K, V> getAssociationCache(prop: KProperty1<*, *>): Cache<K, V>? =
-        javaCaches.getAssociationCache(prop.toImmutableProp())
+    override fun <K, V> getPropertyCache(prop: KProperty1<*, *>): Cache<K, V>? =
+        javaCaches.getPropertyCache(prop.toImmutableProp())
 
-    override fun <K, V> getAssociationCache(prop: ImmutableProp): Cache<K, V>? =
-        javaCaches.getAssociationCache(prop)
+    override fun <K, V> getPropertyCache(prop: ImmutableProp): Cache<K, V>? =
+        javaCaches.getPropertyCache(prop)
 
     override fun isAffectedBy(tableName: String): Boolean =
         javaCaches.isAffectedBy(tableName)

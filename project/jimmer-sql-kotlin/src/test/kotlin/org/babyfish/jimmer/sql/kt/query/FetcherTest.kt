@@ -593,4 +593,43 @@ class FetcherTest : AbstractQueryTest() {
             )
         }
     }
+
+    @Test
+    fun testCalculation() {
+        executeAndExpect(
+            sqlClient.createQuery(BookStore::class) {
+                select(table.fetchBy {
+                    allScalarFields()
+                    avgPrice()
+                })
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE from BOOK_STORE as tb_1_"""
+            )
+            statement(1).sql(
+                """select tb_1_.STORE_ID, coalesce(avg(tb_1_.PRICE), ?) 
+                    |from BOOK as tb_1_ 
+                    |where tb_1_.STORE_ID in (?, ?) 
+                    |group by tb_1_.STORE_ID""".trimMargin()
+            )
+            rows(
+                """[
+                    |--->{
+                    |--->--->"id":1,
+                    |--->--->"name":"O'REILLY",
+                    |--->--->"version":0,
+                    |--->--->"avgPrice":58.500000000000,
+                    |--->--->"website":null
+                    |--->},{
+                    |--->--->"id":2,
+                    |--->--->"name":"MANNING",
+                    |--->--->"version":0,
+                    |--->--->"avgPrice":80.333333333333,
+                    |--->--->"website":null
+                    |--->}
+                    |]""".trimMargin()
+            )
+        }
+    }
 }

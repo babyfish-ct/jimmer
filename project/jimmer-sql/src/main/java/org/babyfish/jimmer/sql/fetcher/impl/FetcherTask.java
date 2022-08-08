@@ -19,7 +19,7 @@ class FetcherTask {
 
     private final JSqlClient sqlClient;
 
-    private Field field;
+    private final Field field;
 
     private final int batchSize;
 

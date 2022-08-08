@@ -9,10 +9,10 @@ import org.babyfish.jimmer.sql.Triggers;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class CacheConfig {
@@ -20,7 +20,7 @@ public class CacheConfig {
     private final Map<ImmutableType, Cache<?, ?>> objectCacheMap =
             new LinkedHashMap<>();
 
-    private final Map<ImmutableProp, Cache<?, ?>> associationCacheMap =
+    private final Map<ImmutableProp, Cache<?, ?>> propCacheMap =
             new LinkedHashMap<>();
 
     private CacheOperator operator;
@@ -44,13 +44,16 @@ public class CacheConfig {
                 }
             }
             for (ImmutableProp prop : type.getProps().values()) {
-                if (prop.isAssociation() && !associationCacheMap.containsKey(prop)) {
-                    Cache<?, ?> associationCache =
-                            prop.isEntityList() ?
-                                    cacheFactory.createAssociatedIdListCache(prop) :
-                                    cacheFactory.createAssociatedIdCache(prop);
-                    if (associationCache != null) {
-                        associationCacheMap.put(prop, associationCache);
+                if ((prop.isAssociation() || prop.hasTransientResolver()) && !propCacheMap.containsKey(prop)) {
+                    Cache<?, ?> propCache =
+                            prop.hasTransientResolver() ?
+                                    cacheFactory.createResolverCache(prop) : (
+                                            prop.isEntityList() ?
+                                                    cacheFactory.createAssociatedIdListCache(prop) :
+                                                    cacheFactory.createAssociatedIdCache(prop)
+                                    );
+                    if (propCache != null) {
+                        propCacheMap.put(prop, propCache);
                     }
                 }
             }
@@ -86,13 +89,7 @@ public class CacheConfig {
         if (!prop.isReference()) {
             throw new IllegalArgumentException("The prop \"" + prop + "\" is not reference");
         }
-        if (!prop.isNullable()) {
-            throw new IllegalArgumentException(
-                    "Cannot set cache for \"" + prop + "\", " +
-                            "non-null reference association does not support cache"
-            );
-        }
-        associationCacheMap.put(prop, LocatedCacheImpl.unwrap(cache));
+        propCacheMap.put(prop, LocatedCacheImpl.unwrap(cache));
         return this;
     }
 
@@ -114,7 +111,7 @@ public class CacheConfig {
         if (!prop.isReference()) {
             throw new IllegalArgumentException("The prop \"" + prop + "\" is not list");
         }
-        associationCacheMap.put(prop, LocatedCacheImpl.unwrap(cache));
+        propCacheMap.put(prop, LocatedCacheImpl.unwrap(cache));
         return this;
     }
 
@@ -131,8 +128,8 @@ public class CacheConfig {
     }
 
     Caches build(Triggers triggers) {
-        for (ImmutableProp prop : associationCacheMap.keySet()) {
-            if (!objectCacheMap.containsKey(prop.getTargetType())) {
+        for (ImmutableProp prop : propCacheMap.keySet()) {
+            if (prop.isAssociation() && !objectCacheMap.containsKey(prop.getTargetType())) {
                 throw new IllegalStateException(
                         "The cache for association property \"" +
                                 prop +
@@ -145,7 +142,7 @@ public class CacheConfig {
         return new CachesImpl(
                 triggers,
                 objectCacheMap,
-                associationCacheMap,
+                propCacheMap,
                 operator,
                 new BinLogParser(binLogObjectMapper)
         );

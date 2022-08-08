@@ -1,8 +1,8 @@
-package org.babyfish.jimmer.sql.kt.impl
+package org.babyfish.jimmer.sql.kt.loader.impl
 
-import org.babyfish.jimmer.sql.ListLoader
+import org.babyfish.jimmer.sql.loader.ListLoader
 import org.babyfish.jimmer.sql.ast.table.Table
-import org.babyfish.jimmer.sql.kt.KListLoader
+import org.babyfish.jimmer.sql.kt.loader.KListLoader
 import org.babyfish.jimmer.sql.kt.fetcher.KFilterDsl
 import org.babyfish.jimmer.sql.kt.fetcher.impl.LambdaFilterWrapper
 import java.sql.Connection

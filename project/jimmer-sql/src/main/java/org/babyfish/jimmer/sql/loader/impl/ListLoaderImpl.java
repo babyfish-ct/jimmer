@@ -1,8 +1,8 @@
-package org.babyfish.jimmer.sql.association.loader;
+package org.babyfish.jimmer.sql.loader.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.ListLoader;
+import org.babyfish.jimmer.sql.loader.ListLoader;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
