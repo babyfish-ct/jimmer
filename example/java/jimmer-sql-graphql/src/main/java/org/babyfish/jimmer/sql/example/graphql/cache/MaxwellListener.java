@@ -3,8 +3,6 @@ package org.babyfish.jimmer.sql.example.graphql.cache;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.LongNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.cache.Caches;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -39,9 +37,7 @@ public class MaxwellListener {
                     caches.invalidateByBinLog(tableName, null, data);
                     break;
                 case "update":
-                    ObjectNode old = (ObjectNode) node.get("old");
-                    old.set("id", data.get("id"));
-                    caches.invalidateByBinLog(tableName, old, data);
+                    caches.invalidateByBinLog(tableName, node.get("old"), data);
                     break;
                 case "delete":
                     caches.invalidateByBinLog(tableName, data, null);
