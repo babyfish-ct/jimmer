@@ -3,6 +3,9 @@ sidebar_position: 3
 title: Selection
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 The call to method `select` at the end of the query is not only used to generate the select clause of SQL, but also used to express the return type of the query in the Java language.
 
 The method `select` of the query accepts from 1 to 9 parameters. Different number of parameters will lead to different query return types
@@ -27,6 +30,9 @@ So, with such support, 9 columns are enough.
 
 ## Use expressions as the queried columns
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Tuple2<UUID, BigDecimal>> storeIdAndAvgPriceTuples =
     sqlClient.createQuery(BookTable.class, (q, book) -> {
@@ -38,8 +44,27 @@ List<Tuple2<UUID, BigDecimal>> storeIdAndAvgPriceTuples =
                 book.price().avg()
             );
     }).execute();
-storeIdAndAvgPriceTuples.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val storeIdAndAvgPriceTuples: List<Tuple2<UUID, BigDecimal>> = 
+    sqlClient
+        .createQuery(Book::class) {
+            groupBy(table.store.id)
+            // highlight-next-line
+            select(
+                table.store.id,
+                avg(table.price)
+            )
+        }
+        .execute()
+```
+
+</TabItem>
+</Tabs>
 
 The generate SQL as follows
 ```sql
@@ -58,6 +83,9 @@ Tuple2{_1=d38c10da-6be8-4924-b9b9-5e81899612a0, _2=58.500000000000}
 
 ## Use objects as the queried columns
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Tuple2<BookStore, Book>> tuples =
     sqlClient.createQuery(BookTable.class, (q, book) -> {
@@ -69,8 +97,27 @@ List<Tuple2<BookStore, Book>> tuples =
                 book
             );
     }).execute();
-tuples.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val tuples: List<Tuple2<BookStore, Book>> = 
+    sqlClient
+        .createQuery(Book::class) {
+            groupBy(table.store.name eq "MANNING")
+            // highlight-next-line
+            select(
+                table.store,
+                table
+            )
+        }
+        .execute()
+```
+
+</TabItem>
+</Tabs>
 
 The generate SQL as follows
 ```sql

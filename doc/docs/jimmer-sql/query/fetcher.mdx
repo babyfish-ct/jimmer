@@ -3,6 +3,9 @@ sidebar_position: 4
 title: Object Fetcher
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 :::tip
 [Object Fetcher](./fetcher) is a very powerful feature provided by jimmer-sql, comparable to GraphQL.
 
@@ -26,6 +29,9 @@ Object fetcher solve this problem nicely, make queries to return objects that ar
 
 ### Fetch scalar property
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -39,8 +45,29 @@ List<Book> books = sqlClient
             );
     })
     .execute();
-books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            // highlight-next-line
+            table.fetchBy { 
+                name()
+            }
+        )
+    }
+    .execute()
+
+```
+
+</TabItem>
+</Tabs>
 
 :::note
 The annotation processor will automatically generate a fetcher class for each entity interface, in this case, it is `BookFetcher`.
@@ -78,6 +105,9 @@ The printed result is as follows (the original output is compact, formatted here
 
 ### Fetch multiple properties
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -91,8 +121,28 @@ List<Book> books = sqlClient
             );
     })
     .execute();
-books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            table.fetchBy {
+                name()
+                // highlight-next-line
+                price()
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 :::note
 Object fetchers are immutable objects, and each call to chained method  returns a new object fetcher.
@@ -133,6 +183,9 @@ The printed result is as follows (the original output is compact, formatted here
 
 ### allScalarFields
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -146,8 +199,27 @@ List<Book> books = sqlClient
             );
     })
     .execute();
-books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            table.fetchBy {
+                // highlight-next-line
+                allScalarFields()
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 `allScalarFields()` is used to load all scalar fields.
 
@@ -183,6 +255,11 @@ The printed result is as follows (the original output is compact, formatted here
 ### Negative property
 
 The properties mentioned above are all positive properties, and properties to be queried are constantly added. Negative properties are the opposite, removing the specified property from the existing object fetcher.
+
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -200,6 +277,27 @@ List<Book> books = sqlClient
     .execute();
 books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            table.fetchBy {
+                allScalarFields()
+                // highlight-next-line
+                edition(false)
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 `edition(false)` takes the parameter false, which is the negative property.
 
@@ -239,6 +337,9 @@ The printed result is as follows (the original output is compact, formatted here
 
 ### allTableFields
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -252,8 +353,27 @@ List<Book> books = sqlClient
             );
     })
     .execute();
-books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            table.fetchBy {
+                // highlight-next-line
+                allTableFields()
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 `allTableFields()` contains all the properties declared by the entity interface, including scalar properties, and many-to-one properties based on foreign keys (of course, the parent object only has id).
 
@@ -310,6 +430,9 @@ Like the default object format, many-to-one properties based on foreign key are 
 
 We have already explained how to implement this function for foreign key based associations, so let's look at an example of `Book.authors` for many-to-many associations.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -325,8 +448,28 @@ List<Book> books = sqlClient
             );
     })
     .execute();
-books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            table.fetchBy {
+                allScalarFields()
+                // highlight-next-line
+                authors()
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 Here, `authors()` means to fetch many-to-many associations. Note that no parameters are specified, which means that only the id property of the associated object is fetched.
 
@@ -403,6 +546,9 @@ Here, the `in` expression implements a batch query, solving the `N+1` problem.
 
 If a batch is too large, it will be divided into several batches according to a setting called `batchSize`, such as
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -421,6 +567,29 @@ List<Book> books = sqlClient
     })
     .execute();
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            table.fetchBy {
+                allScalarFields()
+                authors({
+                    // highlight-next-line
+                    batch(2)
+                }) {}
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 :::danger
 Here, the batchSize of the association `Book.authors` is set to 2. This configuration will lead to poor performance. This is just for demonstration, please do not set such a small value in actual projects.
@@ -453,6 +622,9 @@ In actual development, batchSize is not set like this in most cases, but the glo
 
 When creating a JSqlClient, you can change the global configuration:
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 JSqlClient sqlClient = JSqlClient
     .newBuilder()
@@ -462,11 +634,28 @@ JSqlClient sqlClient = JSqlClient
     build();
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val sqlClient = newKSqlClient {
+    setDefaultBatchSize(256)
+    setDefaultListBatchSize(32)
+    ....
+}
+```
+
+</TabItem>
+</Tabs>
+
 :::caution
 Neither the object fetcher level `batch Size` nor the global level `batch Size` should exceed 1000, because `in(...)` in Oracle database allows up to 1000 values.
 :::
 
 ### Specify the properties of the associated objects
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 List<Book> books = sqlClient
@@ -476,7 +665,6 @@ List<Book> books = sqlClient
             .select(
                 book.fetch(
                     BookFetcher.$.
-                        .allScalarFields()
                         .allScalarFields()
                         .store(
                             BookStoreFetcher.$
@@ -492,8 +680,34 @@ List<Book> books = sqlClient
             );
     })
     .execute();
-books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            table.fetchBy {
+                allScalarFields()
+                store { 
+                    // highlight-next-line
+                    allScalarFields()
+                }
+                authors { 
+                    // highlight-next-line
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 In this query, we fetch both `Book.store` and `Book.authors`, and further fetch all scalar properties of `BookStore` and `Author`.
 
@@ -592,6 +806,10 @@ Associative-level pagination and batch loading cannot coexist, therefore, associ
 If associative-level pagination is used, `batchSize` must be specified as 1, otherwise it will cause an exception. The purpose of this design is to make it clear to developers and code reviewers that the current code has `N+1` performance risks.
 :::
 
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -611,6 +829,33 @@ List<Book> books = sqlClient
     })
     .execute();
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            // highlight-next-line
+            table.fetchBy {
+                allScalarFields()
+                authors({
+                    batch(1)
+                    // highlight-next-line
+                    limit(90, 10)
+                }) {
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 - Because the associated pagination cannot solve the `N + 1` problem, more SQL is generated
 - Due to different pagination ways in different databases, in order to simplify the discussion, it is assumed that the dialect uses `H2Dialect`
@@ -662,6 +907,9 @@ Here, for comparison, we let the query select two columns, both of type `Book`.
 - Apply filter to the association `Book.autors` of the objects of first column.
 - No filter to the association `Book.autors` of the objects of second column.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Tuple2<Book, Book>> tuples = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -704,6 +952,45 @@ List<Tuple2<Book, Book>> tuples = sqlClient
     .execute();
 tuples.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val tuples: List<Tuple2<Book, Book>> = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+
+            // First column
+            table.fetchBy {
+                allScalarFields()
+                authors({
+                    // Use filter here
+                    // highlight-next-line
+                    filter {
+                        where(table.firstName ilike "a")
+                    }
+                }) {
+                    allScalarFields()
+                }
+            },
+
+            // Second column
+            table.fetchBy {
+                allScalarFields()
+                authors { // No filter here
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+tuples.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
 
 Three SQL statements are generated.
 
@@ -831,16 +1118,20 @@ The difficulty of self-association is that the depth of the object cannot be con
 
 Define entity interface
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 @Entity
 public interface TreeNode {
 
     @Id
-    @Column(name = "NODE_ID", nullable = false)
+    @Column(name = "NODE_ID")
     long id();
 
     String name();
 
+    @Null
     @ManyToOne
     TreeNode parent();
 
@@ -848,6 +1139,30 @@ public interface TreeNode {
     List<TreeNode> childNodes();
 }
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Entity
+interface TreeNode {
+
+    @Id
+    @Column(name = "NODE_ID")
+    val id: Long
+
+    val name: String
+
+    @ManyToOne
+    val parent: TreeNode?
+
+    @OneToMany(mappedBy = "parent")
+    val childNodes: List<TreeNode>
+}
+```
+
+</TabItem>
+</Tabs>
 
 Prepare the database
 ```sql
@@ -901,6 +1216,9 @@ insert into tree_node(
 
 Top down, fetch two layers
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<TreeNode> treeNodes = sqlClient
     .createQuery(TreeNodeTable.class, (q, node) -> {
@@ -920,6 +1238,32 @@ List<TreeNode> treeNodes = sqlClient
     .execute();
 treeNodes.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotln
+val treeNodes = sqlClient
+    .createQuery(TreeNode::class) {
+        where(table.parent.isNull())
+        select(
+            table.fetchBy {
+                allScalarFields()
+                childNodes({
+                    // highlight-next-line
+                    depth(2)
+                }) { 
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+treeNodes.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
 
 Three SQL statements are generated.
 
@@ -989,6 +1333,9 @@ The printed result is as follows (the original output is compact, formatted here
 
 Top-down, fetch infinite layers
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<TreeNode> treeNodes = sqlClient
     .createQuery(TreeNodeTable.class, (q, node) -> {
@@ -1008,6 +1355,32 @@ List<TreeNode> treeNodes = sqlClient
     .execute();
 treeNodes.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNodes = sqlClient
+    .createQuery(TreeNode::class) {
+        where(table.parent.isNull())
+        select(
+            table.fetchBy {
+                allScalarFields()
+                childNodes({
+                    // highlight-next-line
+                    recursive()
+                }) {
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+treeNodes.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
 
 :::note
 In the above code, `it.recursive()` can also be written as `it.depth(Integer.MAX_VALUE)`, the two are completely equivalent
@@ -1170,6 +1543,9 @@ The printed result is as follows (the original output is compact, formatted here
 
 From top to bottom, fetch infinite layers. However, for nodes with the name "Clothing", skip recursion
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<TreeNode> treeNodes = sqlClient
     .createQuery(TreeNodeTable.class, (q, node) -> {
@@ -1180,8 +1556,8 @@ List<TreeNode> treeNodes = sqlClient
                     .name()
                     .childNodes(
                         TreeNodeFetcher.$.name(),
-                        // highlight-next-line
                         it -> it.recursive(args ->
+                            // highlight-next-line
                             !args.getEntity().name().equals("Clothing")
                         )
                     )
@@ -1191,6 +1567,35 @@ List<TreeNode> treeNodes = sqlClient
     .execute();
 treeNodes.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNodes = sqlClient
+    .createQuery(TreeNode::class) {
+        where(table.parent.isNull())
+        select(
+            
+            table.fetchBy {
+                allScalarFields()
+                childNodes({
+                    recursive {
+                        // highlight-next-line
+                        entity.name != "Clothing"
+                    }
+                }) {
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+treeNodes.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
 
 In the above code, the parameter of `it.recursive(args)` is a lambda expression, and its parameter `args` is an object that provides two methods
 
