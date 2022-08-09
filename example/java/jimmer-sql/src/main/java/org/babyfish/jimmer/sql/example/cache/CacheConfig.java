@@ -58,7 +58,7 @@ public class CacheConfig {
                         .build();
             }
 
-            // Id -> TargetId, for one-to-one/one-to-many
+            // Id -> TargetId, for one-to-one/many-to-one
             @Override
             public Cache<?, ?> createAssociatedIdCache(ImmutableProp prop) {
                 return new ChainCacheBuilder<>()

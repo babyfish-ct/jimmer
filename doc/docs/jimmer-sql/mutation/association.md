@@ -1,6 +1,6 @@
 ---
 sidebar_position: 5
-title: Mutable delete table
+title: Mutate middle table
 ---
 
 First, the middle table is hidden by the object model and has no direct corresponding java entity type. This issue has been discussed in the article [Query middle Table](../query/association) and will not be repeated here.
