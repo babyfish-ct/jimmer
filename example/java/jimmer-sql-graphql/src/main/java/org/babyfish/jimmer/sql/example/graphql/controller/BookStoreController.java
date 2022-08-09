@@ -1,16 +1,14 @@
 package org.babyfish.jimmer.sql.example.graphql.controller;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
-import org.babyfish.jimmer.sql.example.graphql.dal.BookRepository;
 import org.babyfish.jimmer.sql.example.graphql.dal.BookStoreRepository;
 import org.babyfish.jimmer.sql.example.graphql.entities.Book;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStore;
-import org.babyfish.jimmer.sql.example.graphql.entities.BookStoreTable;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStoreTableEx;
 import org.babyfish.jimmer.sql.example.graphql.input.BookStoreInput;
-import org.babyfish.jimmer.sql.loader.impl.Loaders;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.BatchMapping;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -22,11 +20,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Controller
 public class BookStoreController {
+
+    private static final ImmutableProp BOOK_STORE_DOT_AVG_PRICE =
+            ImmutableType.get(BookStore.class).getProp("avgPrice");
 
     private final JSqlClient sqlClient;
 
@@ -70,11 +69,9 @@ public class BookStoreController {
 
     @BatchMapping
     public Map<BookStore, BigDecimal> avgPrice(List<BookStore> stores) {
-        return Loaders.<BookStore, BigDecimal>createValueLoader(
-                sqlClient,
-                ImmutableType.get(BookStore.class).getProp("avgPrice")
-        )
-        .batchLoad(stores);
+        return sqlClient
+                .<BookStore, BigDecimal>getValueLoader(BOOK_STORE_DOT_AVG_PRICE)
+                .batchLoad(stores);
     }
 
     // --- Mutation ---
