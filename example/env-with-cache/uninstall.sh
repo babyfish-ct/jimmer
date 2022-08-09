@@ -1,3 +1,5 @@
+docker stop jimmer-demo-redis
+docker rm jimmer-demo-redis
 docker stop jimmer-demo-maxwell
 docker rm jimmer-demo-maxwell
 docker stop jimmer-demo-kafka
