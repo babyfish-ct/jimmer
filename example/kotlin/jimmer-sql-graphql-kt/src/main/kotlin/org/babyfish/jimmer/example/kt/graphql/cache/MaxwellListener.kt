@@ -19,7 +19,7 @@ class MaxwellListener(sqlClient: KSqlClient) {
 
     @KafkaListener(topics = ["maxwell"])
     fun onHandle(
-        json: String?,
+        json: String,
         acknowledgment: Acknowledgment
     ) {
         val node = MAPPER.readTree(json)
