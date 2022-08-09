@@ -47,7 +47,7 @@ class CacheConfig {
                     .add(RedisBinder(redisTemplate, type, Duration.ofMinutes(10)))
                     .build()
 
-            // Id -> TargetId, for one-to-one/one-to-many
+            // Id -> TargetId, for one-to-one/many-to-one
             override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
                 ChainCacheBuilder<Any, Any>()
                     .add(CaffeineBinder(512, Duration.ofSeconds(1)))

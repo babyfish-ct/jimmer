@@ -3,6 +3,9 @@ sidebar_position: 5
 title: Query middle table
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 :::tip
 Querying middle tables is a distinctive small feature of jimmer-sql.
 :::
@@ -11,6 +14,9 @@ Querying middle tables is a distinctive small feature of jimmer-sql.
 
 Let's review this entity interface definition code
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 @Entity
 public interface Book {
@@ -18,17 +24,38 @@ public interface Book {
     @ManyToMany
     @JoinTable(
         // highlight-next-line
-        name = "BOOK_AUTHOR_MAPPING",
-        joinColumns = 
-            @JoinColumn(name = "BOOK_ID"),
-        inverseJoinColumns = 
-            @JoinColumn(name = "AUTHOR_ID")
+        name = "BOOK_AUTHOR_MAPPING", 
+        joinColumnName = "BOOK_ID", 
+        inverseJoinColumnName = "AUTHOR_ID"
     )
     List<Author> authors();
 
     ...omit other code...
 }
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Entity
+interface Book {
+
+    @ManyToMany
+    @JoinTable(
+        // highlight-next-line
+        name = "BOOK_AUTHOR_MAPPING", 
+        joinColumnName = "BOOK_ID", 
+        inverseJoinColumnName = "AUTHOR_ID"
+    )
+    val authors: List<Author>
+
+    ...omit other code...
+}
+```
+
+</TabItem>
+</Tabs>
 
 In the above code, the `BOOK_AUTHOR_MAPPING` table is used as an middle table.
 
@@ -42,6 +69,9 @@ That is, the middle table is hidden by the object model.
 
 jimmer-sql provides an interesting function, even if the middle table is hidden and has no corresponding entity, it can be directly queried.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Association<Book, Author>> associations =
     sqlClient
@@ -51,11 +81,7 @@ List<Association<Book, Author>> associations =
             BookTableEx::authors,
             (q, association) -> {
                 q.where(
-                    association.source().id().eq(
-                        UUID.fromString(
-                            "64873631-5d82-4bae-8eb8-72dd955bfc56"
-                        )
-                    )
+                    association.source().id().eq(3L)
                 );
                 return q.select(association);
             }
@@ -63,7 +89,24 @@ List<Association<Book, Author>> associations =
 associations.forEach(System.out::println);
 ```
 
-Here, `createAssociation` means to create a query based on the middle table, not based on the entity table.
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val associations = sqlClient
+    .queries
+    .forList(Book::authors) {
+        where(table.source.id eq 3L)
+        select(table)
+    }
+    .execute()
+associations.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
+
+Here, `createAssociationQuery` in java or `queries.forList` in kotlin means to create a query based on the middle table, not based on the entity table.
 
 The first two parameters, `BookTableEx.class` and `BookTableEx::authors`, represent the middle table `BOOK_AUTHOR_MAPPING` corresponding to the association `Book.authors`.
 
@@ -84,17 +127,17 @@ The final print result is as follows (the original output is compact, formatted 
 ```
 Association{
     source={
-        "id":"64873631-5d82-4bae-8eb8-72dd955bfc56"
+        "id":3
     }, target={
-        "id":"1e93da94-af84-44f4-82d1-d8a9fd52ea94"
+        "id":1
     }
 }
 Association{
     source={
-        "id":"64873631-5d82-4bae-8eb8-72dd955bfc56"
+        "id":3
     }, 
     target={
-        "id":"fd6bb6cf-336d-416c-8005-1ae11a6694b5"
+        "id":2
     }
 }
 ```
@@ -128,10 +171,14 @@ public class Association<S, T> {
 
 :::note
 
-1. In this example, the object format of the `Association` is not defined using an object fetcher (in fact, the `Association` does not support object fetcher either), so the `source` and `targate` return objects with only id.
+1.  In this example, the object format of the `Association` is not defined using an object fetcher (in fact, the `Association` does not support object fetcher either), so the `source` and `targate` return objects with only id.
 
-2. `Author` also has a inverse many-to-many association `Author.books`, which is a mirror of `Book.authors`.
-    ```
+2.  `Author` also has a inverse many-to-many association `Author.books`, which is a mirror of `Book.authors`.
+    
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
     @Entity
     public interface Author {
 
@@ -142,12 +189,34 @@ public class Association<S, T> {
         ...
     }
     ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```java
+    @Entity
+    interface Author {
+
+        // highlight-next-line
+        @ManyToMany(mappedBy = "authors")
+        val books: List<Book>
+
+        ...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
     Deveoper can also create middle table query based on `Author.books`, but `source` stands for `Author` and `target` stands for `Book`, contrary to the previous example.
 :::
 
 In this example, we only query the middle table itself. So, there are only ids in the `source` and `target` objects.
 
 To get the complete `source` and `target` objects, you can join the tables and return a tuple, like this
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 List<Tuple2<Book, Author>> tuples =
@@ -157,11 +226,7 @@ List<Tuple2<Book, Author>> tuples =
             BookTableEx::authors,
             (q, association) -> {
                 q.where(
-                    association.source().id().eq(
-                        UUID.fromString(
-                            "64873631-5d82-4bae-8eb8-72dd955bfc56"
-                        )
-                    )
+                    association.source().id().eq(3L)
                 );
                 // highlight-next-line
                 return q.select(
@@ -173,18 +238,38 @@ List<Tuple2<Book, Author>> tuples =
 tuples.forEach(System.out::println);
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val associations = sqlClient
+    .queries
+    .forList(Book::authors) {
+        where(table.source.id eq 3L)
+        select(
+            table.source,
+            table.target
+        )
+    }
+    .execute()
+associations.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
+
 The generated SQL is as follows:
 ```sql
 select 
 
-    /* source() */
+    /* source */
     tb_1_.BOOK_ID, 
     tb_2_.NAME, 
     tb_2_.EDITION, 
     tb_2_.PRICE, 
     tb_2_.STORE_ID, 
 
-    /* target() */
+    /* target */
     tb_1_.AUTHOR_ID, 
     tb_3_.FIRST_NAME, 
     tb_3_.LAST_NAME, 
@@ -202,16 +287,16 @@ The final print result is as follows (the original output is compact, formatted 
 ```
 Tuple2{
     _1={
-        "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+        "id":3,
         "name":"Learning GraphQL",
         "edition":3,
         "price":51.00,
         "store":{
-            "id":"d38c10da-6be8-4924-b9b9-5e81899612a0"
+            "id":1
         }
     }, 
     _2={
-        "id":"1e93da94-af84-44f4-82d1-d8a9fd52ea94",
+        "id":1,
         "firstName":"Alex",
         "lastName":"Banks",
         "gender":"MALE"
@@ -219,17 +304,19 @@ Tuple2{
 }
 Tuple2{
     _1={
-        "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+        "id":3,
         "name":"Learning GraphQL",
         "edition":3,
         "price":51.00,
-        "store":{"id":"d38c10da-6be8-4924-b9b9-5e81899612a0"}
+        "store":{
+            "id":1
+        }
     }, 
     _2={
-        "id":"fd6bb6cf-336d-416c-8005-1ae11a6694b5",
+        "id":2,
         "firstName":"Eve",
         "lastName":"Procello",
-        "gender":"MALE"
+        "gender":"FEMALE"
     }
 }
 ```
@@ -238,19 +325,47 @@ Tuple2{
 The association object `Association<S, T>` is simple and special and does not need to support [object fetcher](./fetcher).
 
 Note that this only refers to the `Association<S, T>` object <b> itself</b> does not support, its association property `source` and `target` still support [object fetcher](./fetcher), like this
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 return q.select(
     association
         .source()
         // highlight-next-line
         .fetch(
-            BookFetcher.$.store(
-                BookStoreFetcher.$.allScalarFields()
-            )
+            BookFetcher.$
+                .allScalarFields()
+                .store(
+                    BookStoreFetcher.$.allScalarFields()
+                )
         ),
     association.target()
 );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+select(
+    table
+        .source
+        // highlight-next-line
+        .fetchBy {
+            allScalarFields()
+            store { 
+                allScalarFields()
+            }
+        },
+    table.target
+)
+```
+
+</TabItem>
+</Tabs>
+
 :::
 
 ## Compare with ordinary query
