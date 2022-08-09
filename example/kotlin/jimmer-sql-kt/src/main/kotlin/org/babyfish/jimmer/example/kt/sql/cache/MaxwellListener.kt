@@ -1,8 +1,6 @@
 package org.babyfish.jimmer.example.kt.sql.cache
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ObjectNode
 import org.babyfish.jimmer.sql.kt.KCaches
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -30,11 +28,8 @@ class MaxwellListener(sqlClient: KSqlClient) {
             when (type) {
                 "insert" ->
                     caches.invalidateByBinLog(tableName, null, data)
-                "update" -> {
-                    val old = node["old"] as ObjectNode
-                    old.set<JsonNode>("id", data["id"])
-                    caches.invalidateByBinLog(tableName, old, data)
-                }
+                "update" ->
+                    caches.invalidateByBinLog(tableName, node["old"], data)
                 "delete" ->
                     caches.invalidateByBinLog(tableName, data, null)
             }
