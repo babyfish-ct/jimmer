@@ -4,7 +4,6 @@ import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.cache.CacheConfig;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
@@ -93,12 +92,6 @@ public interface JSqlClient {
     Associations getAssociations(AssociationType associationType);
 
     <S, V> ValueLoader<S, V> getValueLoader(ImmutableProp prop);
-
-    <SE, ST extends Table<SE>, V>
-    ValueLoader<SE, V> getValueLoader(
-            Class<ST> sourceTableType,
-            Function<ST, PropExpression<V>> block
-    );
 
     <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
     ReferenceLoader<SE, TE, TT> getReferenceLoader(

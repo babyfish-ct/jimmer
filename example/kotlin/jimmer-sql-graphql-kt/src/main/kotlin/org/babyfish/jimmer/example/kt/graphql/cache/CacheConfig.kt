@@ -44,36 +44,28 @@ class CacheConfig {
             override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
                 ChainCacheBuilder<Any, Any>()
                     .add(CaffeineBinder(512, Duration.ofSeconds(1)))
-                    .add(
-                        RedisBinder(redisTemplate, type, Duration.ofMinutes(10))
-                    )
+                    .add(RedisBinder(redisTemplate, type, Duration.ofMinutes(10)))
                     .build()
 
             // Id -> TargetId, for one-to-one/one-to-many
             override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
                 ChainCacheBuilder<Any, Any>()
                     .add(CaffeineBinder(512, Duration.ofSeconds(1)))
-                    .add(
-                        RedisBinder(redisTemplate, prop, Duration.ofMinutes(5))
-                    )
+                    .add(RedisBinder(redisTemplate, prop, Duration.ofMinutes(5)))
                     .build()
 
             // Id -> TargetId, for one-to-many/many-to-many
             override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
                 ChainCacheBuilder<Any, List<*>>()
                     .add(CaffeineBinder(64, Duration.ofSeconds(1)))
-                    .add(
-                        RedisBinder(redisTemplate, prop, Duration.ofMinutes(5))
-                    )
+                    .add(RedisBinder(redisTemplate, prop, Duration.ofMinutes(5)))
                     .build()
 
             // Id -> computed value, for transient properties with resolver
             override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? =
                 ChainCacheBuilder<Any, List<*>>()
                     .add(CaffeineBinder(1024, Duration.ofSeconds(1)))
-                    .add(
-                        RedisBinder(redisTemplate, prop, Duration.ofHours(1))
-                    )
+                    .add(RedisBinder(redisTemplate, prop, Duration.ofHours(1)))
                     .build()
         }
 }

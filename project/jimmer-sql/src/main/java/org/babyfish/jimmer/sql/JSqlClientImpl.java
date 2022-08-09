@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.loader.ListLoader;
 import org.babyfish.jimmer.sql.loader.ReferenceLoader;
 import org.babyfish.jimmer.sql.loader.ValueLoader;
@@ -240,19 +239,6 @@ class JSqlClientImpl implements JSqlClient {
     @Override
     public <S, V> ValueLoader<S, V> getValueLoader(ImmutableProp prop) {
         return Loaders.createValueLoader(this, prop);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <SE, ST extends Table<SE>, V> ValueLoader<SE, V>
-    getValueLoader(Class<ST> sourceTableType, Function<ST, PropExpression<V>> block) {
-        return Loaders.createValueLoader(
-                this,
-                ImmutableProps.get(
-                        sourceTableType,
-                        (Function<ST, PropExpression<?>>) (Function<?, ?>) block
-                )
-        );
     }
 
     @Override
