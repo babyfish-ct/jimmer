@@ -3,6 +3,9 @@ sidebar_position: 3
 title: Save command
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 :::tip
 The save command is very powerful and is one of the features that distinguish jimmer-sql from other ORMs.
 
@@ -30,15 +33,16 @@ Therefore, jimmer-sql does not need any static cascade saving configuration of e
 
 By default, the save command performs an upsert operation, that means update or insert.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 SimpleSaveResult<Book> result = sqlClient
     .getEntities()
     .save(
         BookDraft.$.produce(book -> {
             book
-                .setId(
-                    UUID.fromString("80620741-e3a1-4076-bf25-36a0c0238936")
-                )
+                .setId(1L)
                 .setName("SpringBoot in Action")
                 .setEdition(1)
                 .setPrice(new BigDecimal("44.99"));
@@ -46,6 +50,26 @@ SimpleSaveResult<Book> result = sqlClient
     );
 System.out.println("Affected row count: " + result.getTotalAffectedRowCount());
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .save(
+        new(Book::class).by { 
+            id = 1L
+            name = "SpringBoot in Action"
+            edition = 1
+            price = BigDecimal("44.99")
+        }
+    )
+println("Affected row count: " + result.totalAffectedRowCount)
+```
+
+</TabItem>
+</Tabs>
 
 Assuming that the specified object does not exist in the database, these two SQL statement are generated
 
@@ -79,6 +103,9 @@ This behavior, while convenient to use, introduces an extra `select` statement, 
 
 Sometimes, developers know that the operation they want to perform is `insert`, and automatic judgment is not need so that performance can be imporoved.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 SimpleSaveResult<Book> result = sqlClient
     .getEntities()
@@ -100,6 +127,29 @@ SimpleSaveResult<Book> result = sqlClient
     .execute();
 System.out.println("Affected row count: " + result.getTotalAffectedRowCount());
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .save(
+        new(Book::class).by {
+            id = 1L
+            name = "SpringBoot in Action"
+            edition = 1
+            price = BigDecimal("44.99")
+        }
+    ) {
+        // highlight-next-line
+        setMode(SaveMode.INSERT_ONLY)
+    }
+println("Affected row count: " + result.totalAffectedRowCount)
+```
+
+</TabItem>
+</Tabs>
 
 Here, we configure the save command to `insert-only` mode through `setMode(SaveMode.INSERT_ONLY)`, so only one SQL statement for inserting data will be generated
 
@@ -125,6 +175,9 @@ The first way is concise, the second way is configurable.
 
 In the same way, if the developer knows that the operation to be performed must be `update` rather than `insert`, the `update-only` mode can be used
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 SimpleSaveResult<Book> result = sqlClient
     .getEntities()
@@ -146,6 +199,29 @@ SimpleSaveResult<Book> result = sqlClient
     .execute();
 System.out.println("Affected row count: " + result.getTotalAffectedRowCount());
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .save(
+        new(Book::class).by {
+            id = 1L
+            name = "SpringBoot in Action"
+            edition = 1
+            price = BigDecimal("44.99")
+        }
+    ) {
+        // highlight-next-line
+        setMode(SaveMode.UPDATE_ONLY)
+    }
+println("Affected row count: " + result.totalAffectedRowCount)
+```
+
+</TabItem>
+</Tabs>
 
 Only one SQL statement will be generated.
 
@@ -171,13 +247,16 @@ At [Mapping/@key](../mapping#orgbabyfishjimmersqlkey), we explained the @Key ann
 
 Specify the business primary key for the `Book` type
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java title="Book.java"
 @Entity
 public interface Book {
 
     @Id
-    @GeneratedValue(generator = UUIDIdGenerator.FULL_NAME)
-    UUID id();
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    long id();
 
     // highlight-next-line
     @Key
@@ -190,6 +269,32 @@ public interface Book {
     ...Omit other code...
 }
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long
+
+    // highlight-next-line
+    @Key
+    val name: String
+
+    // highlight-next-line
+    @Key
+    val edition: Int
+
+    ...Omit other code...
+}
+```
+
+</TabItem>
+</Tabs>
 
 A [question](#why_select_name_and_edition) was raised earlier, and it can be answered here.
 
@@ -206,6 +311,10 @@ For the save command in upsert mode
 ### Save object without id
 
 Let's see an example of saving an object without id
+
+<Tabs groupId="language">
+
+<TabItem value="java" label="Java">
 
 ```java
 SimpleSaveResult<Book> result = sqlClient
@@ -226,6 +335,30 @@ System.out.println(
     "Modified entity: " + result.getModifiedEntity()
 );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .save(
+        new(Book::class).by {
+            // No id here
+            name = "SpringBoot in Action"
+            edition = 1
+            price = BigDecimal("44.99")
+        }
+    )
+println(
+    "Original entity: " + result.originalEntity
+)
+println(
+    "Modified entity: " + result.modifiedEntity
+)
+```
+</TabItem>
+</Tabs>
 
 The `Book` object to be saved has no id, so query whether the saved object exists in the database according to the business primary key `name` and `edition`.
 
@@ -263,7 +396,7 @@ Original entity: {
     "price":44.99
 }
 Modified entity: {
-    "id":"79c47b20-e23b-47db-b49d-c485e6339ef0",
+    "id":100,
     "name":"SpringBoot in Action",
     "edition":1,
     "price":44.99
@@ -290,6 +423,9 @@ This is useful if your project needs to define different business primary keys f
 
 An example of dynamically defining a business primary key
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 SimpleSaveResult<Book> result = sqlClient
     .getEntities()
@@ -312,6 +448,29 @@ SimpleSaveResult<Book> result = sqlClient
     .execute();
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .save(
+        new(Book::class).by {
+            // No id here
+            name = "SpringBoot in Action"
+            edition = 1
+            price = BigDecimal("44.99")
+        }
+    ) {
+        // highlight-next-line
+        setKeyProps(Book::name, Book::price)
+    }
+println(result)
+```
+
+</TabItem>
+</Tabs>
+
 :::info
 If both the dynamic business primary key is configured for the save command, and the static business primary key is configured for the entity interface, the dynamic configuration takes precedence.
 :::
@@ -322,21 +481,20 @@ The dynamic nature of jimmer-core immutable objects can lead to partial objects,
 
 The partial object is important for the save command, and different data shape result in different behaviors.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<BookStore> stores = Arrays.asList(
     BookStoreDraft.$.produce(store -> {
         store
-            .setId(
-                UUID.fromString("d38c10da-6be8-4924-b9b9-5e81899612a0")
-            )
+            .setId(1L)
             .setName("O'REILLY+");
             // No website here
     }),
     BookStoreDraft.$.produce(store -> {
         store
-            .setId(
-                UUID.fromString("2fa3955e-3e83-49b9-902e-0465c109c779")
-            )
+            .setId(2L)
             .setName("MANNING+")
             .setWebsite(null);
             // Null website here
@@ -348,6 +506,33 @@ sqlClient
     .configure(it -> it.setMode(SaveMode.UPDATE_ONLY))
     .execute();
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val stores = listOf(
+    new(BookStore::class).by {
+        id = 1L
+        name = "O'REILLY+"
+        // No website here
+    },
+    new(BookStore::class).by {
+        id = 2L
+        name = "MANNING+"
+        website = null
+        // Null website here
+    }
+)
+sqlClient
+    .entities
+    .batchSave(stores) {
+        setMode(SaveMode.UPDATE_ONLY)
+    }
+```
+
+</TabItem>
+</Tabs>
 
 Here, we use the method `batchSaveCommand` to save two `BookStore` objects.
 
@@ -385,6 +570,9 @@ Relying on the incompleteness of the object to decide how to save arbitrarily co
 
 To use optimistic locking, first configure it in the entity interface
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java title="BookStore.java"
 @Entity
 public interface BookStore {
@@ -396,22 +584,39 @@ public interface BookStore {
 }
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStore.kt"
+@Entity
+interface BookStore {
+
+    @Version
+    val version: Int
+
+    ... omit other properties ...
+}
+```
+
+</TabItem>
+</Tabs>
+
 :::note
 - For the `insert` operation (whether manually specified or automatically determined), it is allowed to not specify the optimistic lock property, jimmer-sql uses 0 as its default value. Of course, if the developer specifies it, the specified value will be used.
 
 - For the `update` operation (whether manually specified or automatically determined), the optimistic lock field must be specified, otherwise an exception will be thrown.
 :::
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID manningId = UUID.fromString(
-    "2fa3955e-3e83-49b9-902e-0465c109c779"
-);
 SimpleSaveResult<BookStore> result = sqlClient
     .getEntities()
     .saveCommand(
         BookStoreDraft.$.produce(store -> {
             store
-                .setId(manningId)
+                .setId(2)
                 .setWebsite("http://www.manning.com")
                 // highlight-next-line
                 .setVersion(0);
@@ -426,6 +631,33 @@ System.out.println(
     "Modified entity: " + result.getModifiedEntity()
 );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .save(
+        new(BookStore::class).by {
+            id = 2L
+            website = "http://www.manning.com"
+            // highlight-next-line
+            version = 0
+        }
+    ) {
+        setMode(SaveMode.UPDATE_ONLY) 
+    }
+println(
+    "Original entity: " + result.originalEntity
+)
+println(
+    "Modified entity: " + result.modifiedEntity
+)
+```
+
+</TabItem>
+</Tabs>
 
 The generated SQL statement is as follows:
 
@@ -449,12 +681,12 @@ If the versions match and no exception occurs, the output of the above code is (
 
 ```
 Original entity: {
-    "id":"2fa3955e-3e83-49b9-902e-0465c109c779",
+    "id":2,
     "website":"http://www.manning.com",
     "version":0
 }
 Modified entity: {
-    "id":"2fa3955e-3e83-49b9-902e-0465c109c779",
+    "id":2,
     "website":"http://www.manning.com",
     "version":1
 }
@@ -474,16 +706,10 @@ This section focuses on the first usage, saving only the association itself; the
 
 ### Basic usage
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID manningId = UUID.fromString(
-    "2fa3955e-3e83-49b9-902e-0465c109c779"
-);
-UUID alexId = UUID.fromString(
-    "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
-);
-UUID danId = UUID.fromString(
-    "c14665c8-c689-4ac7-b8cc-6f065b8d835d"
-);
 SimpleSaveResult<Book> result = sqlClient
     .getEntities()
     .save(
@@ -494,15 +720,15 @@ SimpleSaveResult<Book> result = sqlClient
                 .setPrice(new BigDecimal("44.99"))
                 // highlight-next-line
                 .setStore(
-                    store -> store.setId(manningId)
+                    store -> store.setId(2L)
                 )
                 // highlight-next-line
                 .addIntoAuthors(
-                    author -> author.setId(alexId)
+                    author -> author.setId(2L)
                 )
                 // highlight-next-line
                 .addIntoAuthors(
-                    author -> author.setId(danId)
+                    author -> author.setId(3L)
                 );
         })
     );
@@ -526,6 +752,48 @@ System.out.println(
         )
 );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .save(
+        new(Book::class).by {
+            name = "SpringBoot in Action"
+            edition = 1
+            price = BigDecimal("44.99")
+            // highlight-next-line
+            store().apply {
+                id = 2L
+            }
+            // highlight-next-line
+            authors().addBy { 
+                id = 2L
+            }
+            // highlight-next-line
+            authors().addBy { 
+                id = 3L
+            }
+        }
+    )
+println("Affected row counts")
+println(
+    "\ttotal: ${result.totalAffectedRowCount}"
+)
+println(
+    "\tBOOK: ${result.affectedRowCount(Book::class)}"
+)
+println(
+    "\tBOOK_AUTHOR_MAPPING: ${
+        result.affectedRowCount(Book::authors)
+    }"
+)
+```
+
+</TabItem>
+</Tabs>
 
 :::note
 Here, the many-to-one property `store` and then many-to-many property `authors` of the `Book` object has been set, but the all associated objects only has `id`.
@@ -618,6 +886,9 @@ As can be seen from the above discussion, the save command may cause the deletio
 
 For one-to-one or one-to-many associations based directly on foreign keys, the situation is a bit more complicated.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 UUID bookId1 = ...;
 UUID bookId2 = ...;
@@ -636,6 +907,28 @@ sqlClient
         })
     );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+val bookId1 = ...
+val bookId2 = ...
+sqlClient
+    .entities
+    .save(
+        new(BookStore::class).by { 
+            name = "TURING"
+            books().addBy { 
+                id = bookId1
+            }
+            books().addBy { 
+                id = bookId2
+            }
+        }
+    )
+
+</TabItem>
+</Tabs>
 
 This code saves a `BookStore` object whose one-to-many property `books` has two `Book` objects: `book1` and `book2`.
 
@@ -689,6 +982,9 @@ All of the situations discussed above require the developer to use the annotatio
 
 However, you can also dynamically specify the `deleteAction` configuration for the save command insteading of using the [@OnDelete](../mapping#orgbabyfishjimmersqlondelete) annotation.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 UUID bookId1 = ...;
 UUID bookId2 = ...;
@@ -717,6 +1013,33 @@ sqlClient
     .execute();
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookId1 = ...
+val bookId2 = ...
+sqlClient
+    .entities
+    .save(
+        new(BookStore::class).by { 
+            name = "TURING"
+            books().addBy { 
+                id = bookId1
+            }
+            books().addBy { 
+                id = bookId2
+            }
+        }
+    ) {
+        // highlight-next-line
+        setDeleteAction(Book::store, DeleteAction.CASCADE)
+    }
+```
+
+</TabItem>
+</Tabs>
+
 Here, calling `setDeleteAction` of save command has the same effect as statically using the annotation [@OnDelete](../mapping#orgbabyfishjimmersqlondelete).
 
 :::info
@@ -731,6 +1054,9 @@ As discussed in the previous section, our example made the associated object onl
 
 In fact, we can make the associated object have properties other than id, as follows
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 sqlClient
     .getEntities()
@@ -744,6 +1070,7 @@ sqlClient
                     store
                         .setName("MANNING")
                         .setWebsite("http://www.manning.com")
+                        .setVersion(0)
                 )
                 .addIntoAuthors(author ->
                     author
@@ -757,6 +1084,37 @@ sqlClient
     .configure(it -> it.setAutoAttachingAll())
     .execute();
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .entities
+    .save(
+        new(Book::class).by { 
+            name = "SpringBoot in Action"
+            edition = 1
+            price = BigDecimal("44.99")
+            store().apply { 
+                name = "MANNING"
+                website = "http://www.manning.com"
+                version = 0
+            }
+            authors().addBy {
+                firstName = "Craig"
+                lastName = "Walls"
+                gender = Gender.MALE
+            }
+        }
+    ) {
+        // highlight-next-line
+        setAutoAttachingAll()
+    }
+```
+
+</TabItem>
+</Tabs>
 
 For such an operation, the generated SQL varies with the state of the database. Listing the possibilities would result in tedious content that would consume a lot of lines of this document. Therefore, only a textual discussion is given here.
 
@@ -773,6 +1131,9 @@ Associated objects are slightly different, are neither controlled by the save mo
 This default behavior is for safety and prevents users from specifying illegal associated objects that do not exist at all.
 
 However, sometimes the user does want to specify non-existing association objects and expect the system to automatically insert these non-existing association objects. At this point, the user can do
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 sqlClient
@@ -796,6 +1157,25 @@ sqlClient
     .execute();
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .entities
+    .save(
+        ...object tree of arbitrary complexity, slightly...
+    ) {
+        // highlight-next-line
+        setAutoAttaching(Book::store)
+        // highlight-next-line
+        setAutoAttaching(Book::authors)
+    }
+```
+
+</TabItem>
+</Tabs>
+
 - The first `setAutoAttaching` means: if the object associated by the property `store` of the current `Book` object does not exist, insert it automatically.
 
 - The second `setAutoAttaching` means: if some element objects in the collection associated by the property `authors` of the current `Book` object do not exist, insert them automatically.
@@ -808,9 +1188,36 @@ Perhaps, it is cumbersome to configure auto attaching behavior of associations o
 
 This is the `setAutoAttachingAll` mentioned above
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-.configure(it -> it.setAutoAttachingAll())
+sqlClient
+    .getEntities()
+    .saveCommand(
+        ...object tree of arbitrary complexity, slightly...
+    )
+    .configure(it -> it.setAutoAttachingAll())
+    .execute()
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+
+sqlClient
+    .entities
+    .save(
+        ...object tree of arbitrary complexity, slightly...
+    ) {
+        setAutoAttachingAll()
+    }
+
+```
+
+</TabItem>
+</Tabs>
 
 You can understand that, after this configuration, the save mode of any associated object becomes UPSERT.
 

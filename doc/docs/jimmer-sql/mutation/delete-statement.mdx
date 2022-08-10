@@ -3,9 +3,15 @@ sidebar_position: 2
 title: Delete statement
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Basic usage
 
 Delete statement usage is as follows
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 int affectedRowCount = sqlClient
@@ -15,6 +21,21 @@ int affectedRowCount = sqlClient
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val affectedRowCount = sqlClient
+    .createDelete(Book::class) {
+        where(table.name eq "Learning GraphQL")
+    }
+    .execute()
+println("Affected row count: $affectedRowCount")
+```
+
+</TabItem>
+</Tabs>
 
 The generated SQL is as follows:
 ```sql
@@ -27,6 +48,9 @@ where tb_1_.NAME = ?
 
 The Delete statement supports table joins, like this
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 int affectedRowCount = sqlClient
     .createDelete(BookTable.class, (d, book) -> {
@@ -35,6 +59,21 @@ int affectedRowCount = sqlClient
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val affectedRowCount = sqlClient
+    .createDelete(Book::class) {
+        where(table.store.name eq "MANNING")
+    }
+    .execute()
+println("Affected row count: $affectedRowCount")
+```
+
+</TabItem>
+</Tabs>
 
 Finally, three SQL statements are generated:
 

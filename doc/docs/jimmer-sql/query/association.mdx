@@ -378,6 +378,9 @@ But that's not the case. Due to the existence of the two optimization features [
 
 In the previous code, we demonstrated a top-level query based on an middle table; this example demonstrates a subquery based on an middle table.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -389,11 +392,13 @@ List<Book> books = sqlClient
                     BookTableEx::authors,
                     (sq, association) -> {
                         sq.where(
-                            association.target() // α
+                            association
+                                .target() // α
                                 .firstName().eq("Alex")
                         );
                         return sq.select(
-                            association.source() // β
+                            association
+                                .source() // β
                                 .id()
                         );
                     }
@@ -402,10 +407,39 @@ List<Book> books = sqlClient
         );
         return q.select(book);
     }).execute();
-books.forEach(System.out::println);
 ```
 
-- `createAssociationSubQuery` is used to create a subquery based on an middle table. The query looks for all books that contain authors whose `firstName` is "Alex".
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(
+            table.id valueIn
+                // highlight-next-line
+                subQueries.forList(Book::authors) {
+                    where(
+                        table
+                        .target // α
+                        .firstName eq "Alex"
+                    )
+                    select(
+                        table
+                        .source // β
+                        .id
+                    )
+                }
+        )
+        select(table)
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+- `createAssociationSubQuery` in java or `subQueries.forList` in kotlin is used to create a subquery based on an middle table. The query looks for all books that contain authors whose `firstName` is "Alex".
 
 - `association.target()` at `α` is a real table join, which will generate a JOIN clause to the `AUTHOR` table in SQL.
 
@@ -435,6 +469,9 @@ where
 
 ### 2. Implement the same functionality based on ordinary subquery
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
         .createQuery(BookTable.class, (q, book) -> {
@@ -458,10 +495,37 @@ List<Book> books = sqlClient
             );
             return q.select(book);
         }).execute();
-books.forEach(System.out::println);
 ```
 
-- `createSubQuery` is used to create a ordinary subquery without using middle table. achieve the exact same functionality.
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(
+            table.id valueIn
+                // highlight-next-line
+                subQuery(Author::class) {
+                    where(
+                        table.firstName eq "Alex"
+                    )
+                    select(
+                        table
+                            .books // α
+                            .id
+                    )
+                }
+        )
+        select(table)
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+- `createSubQuery` in java or `subQuery` in kotlin is used to create a ordinary subquery without using middle table. achieve the exact same functionality.
 
 - `author.books()` at `α` is a [half join](../table-join#half-join), so only need JOIN from `AUTHOR` table to middle table `BOOK_AUTHOR_MAPPING` is generated, without further JOIN to the `BOOK table`.
 
