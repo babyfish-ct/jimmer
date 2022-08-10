@@ -24,8 +24,32 @@ jimmer-sql provides special support for this, providing dedicated API that allow
 
 API related to this
 
-- JSqlClient.getReferenceLoader
-- JSqlClient.getListLoader
+<table>
+    <thead>
+        <tr>
+            <th></th>
+            <th>Java</th>
+            <th>Kotlin</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><b>Computed property</b></td>
+            <td>JSqlClient.getValueLoader</td>
+            <td>KSqlClient.getValueLoader</td>
+        </tr>
+        <tr>
+            <td><b>Reference association</b></td>
+            <td>JSqlClient.getReferenceLoader</td>
+            <td>KSqlClient.getReferenceLoader</td>
+        </tr>
+        <tr>
+            <td><b>List association</b></td>
+            <td>JSqlClient.getListLoader</td>
+            <td>KSqlClient.getListLoader</td>
+        </tr>
+    </tbody>
+</table>
 
 ### JSqlClient.getReferenceLoader
 

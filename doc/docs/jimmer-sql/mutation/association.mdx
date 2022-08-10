@@ -3,6 +3,9 @@ sidebar_position: 5
 title: Mutate middle table
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 First, the middle table is hidden by the object model and has no direct corresponding java entity type. This issue has been discussed in the article [Query middle Table](../query/association) and will not be repeated here.
 
 Also, in the [Save command](./save-command) chapter, we introduced the save command. It can compare the existing data in the database with the new data to be saved by the user. If an associated properties based on the middle table changes, the data of middle table will be modified.
@@ -13,21 +16,31 @@ jimmer-sql allows developers to directly insert and delete data for middle table
 
 ## Insert assciations
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID bookId = UUID.fromString(
-    "780bdf07-05af-48bf-9be9-f8c65236fecc"
-);
-UUID authorId = UUID.fromString(
-    "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
-);
 sqlClient
     .getAssociations(
         BookTableEx.class, 
         BookTableEx::authors
     )
     // highlight-next-line
-    .save(bookId, authorId);
+    .save(12L, 3L);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getListAssociations(Book::authors)
+    // highlight-next-line
+    .save(12L, 3L)
+```
+
+</TabItem>
+</Tabs>
 
 The generated SQL is as follows
 
@@ -44,21 +57,31 @@ This example demonstrates how to use the association property `Book.authors` to 
 
 In the same way, we can also achieve the same purpose through the association property `Authors.books`:
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID bookId = UUID.fromString(
-    "780bdf07-05af-48bf-9be9-f8c65236fecc"
-);
-UUID authorId = UUID.fromString(
-    "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
-);
 sqlClient
     .getAssociations(
         AuthorTableEx.class,
         AuthorTableEx::books
     )
     // highlight-next-line
-    .save(authorId, bookId);
+    .save(3L, 12L);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getListAssociations(Author::books)
+    // highlight-next-line
+    .save(3L, 12L)
+```
+
+</TabItem>
+</Tabs>
 
 Note that the parameter order of the `save` method is different compared to the previous example because the direction of the association is different.
 
@@ -76,6 +99,9 @@ insert into
 ## Inverse transform
 
 For bidirectional associations, you can use `reverse` to switch between positive and negative associations
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 Associations bookToAuthor = sqlClient
@@ -96,30 +122,39 @@ Associations bookToAuthor2 =
     authorToBook.reverse();
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookToAuthor = 
+    sqlClient.getListAssociations(
+        Book::authors
+    )
+val authorToBook = 
+    sqlClient.getListAssociations(
+        Author::books
+    )
+val authorToBook2 = 
+    // highlight-next-line
+    bookToAuthor.reverse()
+val bookToAuthor2 = 
+    // highlight-next-line
+    authorToBook.reverse()
+```
+
+</TabItem>
+</Tabs>
+
 In this code:
 - `bookToAuthor` and `bookToAuthor2` are exactly equivalent
 - `authorToBook` and `authorToBook2` are exactly equivalent
 
 ## Batch insert
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID bookId1 = UUID.fromString(
-    "780bdf07-05af-48bf-9be9-f8c65236fecc"
-);
-UUID bookId2 = UUID.fromString(
-    "914c8595-35cb-4f67-bbc7-8029e9e6245a"
-);
-UUID bookId3 = UUID.fromString(
-    "058ecfd0-047b-4979-a7dc-46ee24d08f08"
-);
-
-UUID authorId1 = UUID.fromString(
-    "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
-);
-UUID authorId2 = UUID.fromString(
-    "c14665c8-c689-4ac7-b8cc-6f065b8d835d"
-);
-
 sqlClient
     .getAssociations(
         BookTableEx.class,
@@ -128,15 +163,39 @@ sqlClient
     // highlight-next-line
     .batchSave(
         Arrays.asList(
-            new Tuple2<>(bookId1, authorId1),
-            new Tuple2<>(bookId1, authorId2),
-            new Tuple2<>(bookId2, authorId1),
-            new Tuple2<>(bookId2, authorId2),
-            new Tuple2<>(bookId3, authorId1),
-            new Tuple2<>(bookId3, authorId2)
+            new Tuple2<>(10L, 1L),
+            new Tuple2<>(11L, 1L),
+            new Tuple2<>(12L, 1L),
+            new Tuple2<>(10L, 3L),
+            new Tuple2<>(11L, 3L),
+            new Tuple2<>(12L, 3L)
         )
     );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getListAssociations(
+        Book::authors
+    ) 
+    // highlight-next-line
+    .batchSave(
+        listOf(
+            Tuple2(10L, 1L),
+            Tuple2(11L, 1L),
+            Tuple2(12L, 1L),
+            Tuple2(10L, 3L),
+            Tuple2(11L, 3L),
+            Tuple2(12L, 3L)
+        )
+    )
+```
+
+</TabItem>
+</Tabs>
 
 There are 3 books, 2 authors, and 6 combinations in total. The `batchSave` method inserts all these 6 combinations into the middle table, and the generated SQL is as follows
 
@@ -158,14 +217,11 @@ The code above is very cumbersome, `3 * 2 = 6` is acceptable, but what about `7 
 
 jimmer-sql provides a shortcut
 
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID bookId1 = ...;
-UUID bookId2 = ...;
-UUID bookId3 = ...;
-
-UUID authorId1 = ...;
-UUID authorId2 = ...;
-
 sqlClient
     .getAssociations(
         BookTableEx.class,
@@ -176,13 +232,31 @@ sqlClient
     // highlight-next-line
     .batchSave(
         Arrays.asList(
-            bookId1, bookId2, bookId3
+            10L, 11L, 12L
         ),
         Arrays.asList(
-            authorId1, authorId2
+            1L, 3L
         )
     );
 ```
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getListAssociations(
+        Book::authors
+    )
+    // Batch save `Cartesian product` 
+    // of two id collections
+    // highlight-next-line
+    .batchSave(
+        listOf(10L, 11L, 12L),
+        listOf(1L, 3L)
+    )
+```
+</TabItem>
+</Tabs>
 
 The `batchSave` method above takes two collection parameters and inserts the Cartesian product of the two collections into the middle table table, so the function is the same as the previous example.
 
@@ -192,34 +266,47 @@ If you insert an existing id tuple into the middle table, the database will repo
 
 To solve this problem, an existence check can be performed.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID bookId1 = UUID.fromString(
-    "780bdf07-05af-48bf-9be9-f8c65236fecc"
-);
-UUID bookId2 = UUID.fromString(
-    "914c8595-35cb-4f67-bbc7-8029e9e6245a"
-);
-UUID bookId3 = UUID.fromString(
-    "058ecfd0-047b-4979-a7dc-46ee24d08f08"
-);
-
-UUID authorId = UUID.fromString(
-    "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
-);
-
 sqlClient
     .getAssociations(
         BookTableEx.class,
         BookTableEx::authors
     )
     .batchSaveCommand(
-        Arrays.asList(bookId1, bookId2, bookId3),
-        Collections.singletonList(authorId)
+        Arrays.asList(
+            10L, 11L, 12L
+        ),
+        Arrays.asList(
+            1L, 3L
+        )
     )
     // highlight-next-line
     .checkExistence()
     .execute();
 ```
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getListAssociations(
+        Book::authors
+    )
+    // Batch save `Cartesian product` 
+    // of two id collections
+    // highlight-next-line
+    .batchSave(
+        listOf(10L, 11L, 12L),
+        listOf(1L, 3L),
+        // highlight-next-line
+        checkExistence = true
+    )
+```
+</TabItem>
+</Tabs>
 
 Here `checkExistence()` means to first check which data to be inserted already exists, and then only insert data that does not exist.
 
@@ -233,6 +320,9 @@ The generated SQL statement is as follows
     where 
         (BOOK_ID, AUTHOR_ID) in(
             (?, ?), 
+            (?, ?),
+            (?, ?),
+            (?, ?),
             (?, ?),
             (?, ?)
         )
@@ -268,21 +358,34 @@ without executing an extra select statement.
 
 ## Delete associations
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID bookId = UUID.fromString(
-    "780bdf07-05af-48bf-9be9-f8c65236fecc"
-);
-UUID authorId = UUID.fromString(
-    "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
-);
 sqlClient
     .getAssociations(
             BookTableEx.class,
             BookTableEx::authors
     )
     // highlight-next-line
-    .delete(bookId, authorId);
+    .delete(12L, 3L);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getListAssociations(
+        Book::authors
+    ) 
+    // highlight-next-line
+    .delete(12L, 3L)
+```
+
+</TabItem>
+
+</Tabs>
 
 The generated SQL is as follows
 
@@ -298,16 +401,10 @@ where
 
 Similar to batch insert, there are two ways to implement batch delete
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID bookId1 = UUID.fromString(
-    "780bdf07-05af-48bf-9be9-f8c65236fecc"
-);
-UUID bookId2 = UUID.fromString(
-    "914c8595-35cb-4f67-bbc7-8029e9e6245a"
-);
-UUID authorId = UUID.fromString(
-    "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
-);
 sqlClient
     .getAssociations(
         BookTableEx.class,
@@ -316,16 +413,19 @@ sqlClient
     // highlight-next-line
     .batchDelete(
         Arrays.asList(
-            new Tuple2<>(bookId1, authorId),
-            new Tuple2<>(bookId2, authorId)
+            new Tuple2<>(10L, 1L),
+            new Tuple2<>(11L, 1L),
+            new Tuple2<>(12L, 1L),
+            new Tuple2<>(10L, 3L),
+            new Tuple2<>(11L, 3L),
+            new Tuple2<>(12L, 3L),
         )
     );
 ```
+
 Or
+
 ```java
-UUID bookId1 = ...;
-UUID bookId2 = ...;
-UUID authorId = ...;
 sqlClient
     .getAssociations(
         BookTableEx.class,
@@ -333,10 +433,48 @@ sqlClient
     )
     // highlight-next-line
     .batchDelete(
-        Arrays.asList(book1, book2),
-        Collections.singletonList(authorId)
+        Arrays.asList(10L, 11L, 12L),
+        Arrays.asList(1L, 3L)
     );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getListAssociations(
+        Book::authors
+    ) 
+    // highlight-next-line
+    .batchDelete(
+        listOf(
+            Tuple2(10L, 1L),
+            Tuple2(11L, 1L),
+            Tuple2(12L, 1L),
+            Tuple2(10L, 3L),
+            Tuple2(11L, 3L),
+            Tuple2(12L, 3L)
+        )
+    )
+```
+
+Or
+
+```kotlin
+sqlClient
+    .getListAssociations(
+        Book::authors
+    ) 
+    // highlight-next-line
+    .batchDelete(
+        listOf(10L, 11L, 12L),
+        listOf(1L, 3L)
+    )
+```
+
+</TabItem>
+</Tabs>
 
 The generated SQL is as follows
 
@@ -344,6 +482,10 @@ The generated SQL is as follows
 delete from BOOK_AUTHOR_MAPPING 
 where 
     (BOOK_ID, AUTHOR_ID) in (
+        (?, ?), 
+        (?, ?),
+        (?, ?), 
+        (?, ?),
         (?, ?), 
         (?, ?)
     )
