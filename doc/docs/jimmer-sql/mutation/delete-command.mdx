@@ -3,29 +3,20 @@ sidebar_position: 4
 title: Delete Command
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Basic usage
 
 The delete command is a relatively simple concept.
 
-```java
-Collection<UUID> ids = Arrays.asList(
-    UUID.fromString(
-        "e110c564-23cc-4811-9e81-d587a13db634"
-    ),
-    UUID.fromString(
-        "8f30bc8a-49f9-481d-beca-5fe2d147c831"
-    ),
-    UUID.fromString(
-        "914c8595-35cb-4f67-bbc7-8029e9e6245a"
-    ),
-    UUID.fromString(
-        "a62f7aa3-9490-4612-98b5-98aae0e77120"
-    )
-);
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
+```java
 DeleteResult result = sqlClient
     .getEntities()
-    .batchDelete(Book.class, ids);
+    .batchDelete(Book.class, Arrays.asList(1L, 2L, 3L, 4L));
 
 System.out.println(
     
@@ -41,6 +32,27 @@ System.out.println(
     )
 );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .batchDelete(Book::class, listOf(1L, 2L, 3L, 4L))
+println(
+    """Affected row count: 
+        |${result.totalAffectedRowCount}
+        |Affected row count of table 'BOOK': 
+        |${result.affectedRowCount(Book::class)}
+        |Affected row count of middle table 'BOOK_AUTHOR_MAPPING': 
+        |${result.affectedRowCount(Book::authors)}
+    """.trimMargin()
+)
+```
+
+</TabItem>
+</Tabs>
 
 The final generated SQL is as follows
 
@@ -62,14 +74,13 @@ As can be seen from the above discussion, the delete command may cause the delet
 
 For one-to-one or one-to-many associations based directly on foreign keys, the situation is a bit more complicated.
 
-```java
-UUID storeId = UUID.fromString(
-    "d38c10da-6be8-4924-b9b9-5e81899612a0"
-);
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
+```java
 DeleteResult result = sqlClient
     .getEntities()
-    .delete(BookStore.class, storeId);
+    .delete(BookStore.class, 1L);
 
 System.out.println(
 
@@ -88,6 +99,29 @@ System.out.println(
             )
 );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .delete(BookStore::class, 1L)
+println(
+    """Affected row count: 
+        |${result.totalAffectedRowCount}
+        |Affected row count of table 'BOOK_STORE': 
+        |${result.affectedRowCount(BookStore::class)}
+        |Affected row count of table 'BOOK': 
+        |${result.affectedRowCount(Book::class)}
+        |Affected row count of middle table 'BOOK_AUTHOR_MAPPING': 
+        |${result.affectedRowCount(Book::authors)}
+    """.trimMargin()
+)
+```
+
+</TabItem>
+</Tabs>
 
 This code deletes a `BookStore` object.
 
@@ -126,11 +160,13 @@ All of the situations discussed above require the developer to use the annotatio
 
 However, you can also dynamically specify the `deleteAction` configuration for the delete command insteading of using the [@OnDelete](../mapping#orgbabyfishjimmersqlondelete) annotation.
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID storeId = ...;
 DeleteResult result = sqlClient
     .getEntities()
-    .deleteCommand(BookStore.class, storeId)
+    .deleteCommand(BookStore.class, 1L)
     .configure(it ->
             it
                 // highlight-next-line
@@ -142,6 +178,24 @@ DeleteResult result = sqlClient
     )
     .execute();
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .delete(BookStore::class, 1L) {
+        // highlight-next-line
+        setDeleteAction(
+            Book::store, 
+            DeleteAction.SET_NULL
+        )
+    }
+```
+
+</TabItem>
+</Tabs>
 
 Here, calling `setDeleteAction` of delete command has the same effect as statically using the annotation [@OnDelete](../mapping#orgbabyfishjimmersqlondelete).
 
