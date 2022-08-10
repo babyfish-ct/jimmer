@@ -69,8 +69,15 @@ public class PaginationQueryShell {
                                 book.fetch(
                                         BookFetcher.$
                                                 .allScalarFields()
-                                                .store(BookStoreFetcher.$.allScalarFields())
-                                                .authors(AuthorFetcher.$.allScalarFields())
+                                                .store(
+                                                        BookStoreFetcher.$
+                                                                .allScalarFields()
+                                                                .avgPrice()
+                                                )
+                                                .authors(
+                                                        AuthorFetcher.$
+                                                                .allScalarFields()
+                                                )
                                 ) :
                                 book,
                             Expression.numeric().sql(

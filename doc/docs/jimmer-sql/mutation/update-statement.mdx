@@ -3,9 +3,15 @@ sidebar_position: 1
 title: Update statement
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Basic udage
 
 Update statement usage is as follows
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 int affectedRowCount = sqlClient
@@ -21,6 +27,25 @@ int affectedRowCount = sqlClient
 System.out.println("Affected row count: " + affectedRowCount);
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val affectedRowCount = sqlClient
+    .createUpdate(Author::class) {
+        set(
+            table.firstName, 
+            concat(table.firstName, value("*"))
+        )
+        where(table.firstName eq "Dan")
+    }
+    .execute()
+println("Affected row count: $affectedRowCount")
+```
+
+</TabItem>
+</Tabs>
+
 The final generated SQL is as follows
 
 ```sql
@@ -32,6 +57,9 @@ where tb_1_.FIRST_NAME = ?
 ## Use table joins
 
 By default, the update statement does not support table join, which results in an exception
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 int affectedRowCount = sqlClient
@@ -53,6 +81,31 @@ int affectedRowCount = sqlClient
 System.out.println("Affected row count: " + affectedRowCount);
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val affectedRowCount = sqlClient
+    .createUpdate(Author::class) {
+        set(
+            table.firstName,
+            concat(table.firstName, value("*"))
+        )
+        where(
+            table
+                // highlight-next-line
+                .books
+                .name 
+                eq "Learning GraphQL"
+        )
+    }
+    .execute()
+println("Affected row count: $affectedRowCount")
+```
+
+</TabItem>
+</Tabs>
+
 The exception information is as follows
 :::caution
 Table joins for update statement is forbidden by the current dialect, but there is a join `'Author.books'`.
@@ -64,6 +117,9 @@ When using MySql or Postgres, the update statement can use the table joins.
 
 First, you need to specify the dialect as MySqlDialect when creating JSqlClient
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 JSqlClient sqlClient = JSqlClient
     .newBuilder()
@@ -74,7 +130,22 @@ JSqlClient sqlClient = JSqlClient
     .build();
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val sqlClient = newKSqlClient {
+    setDialect(org.babyfish.jimmer.sql.dialect.MySqlDialect())
+}
+```
+
+</TabItem>
+</Tabs>
+
 Then, you can use table joins in the update statement
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 int affectedRowCount = sqlClient
@@ -93,16 +164,41 @@ int affectedRowCount = sqlClient
                     author.books().store().name().concat("*")
                 )
                 .where(
-                    author
-                        .books()
-                        .store()
-                        .name()
-                        .eq("MANNING")
+                    author.books().store().name().eq("MANNING")
                 );
         })
         .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val affectedRowCount = sqlClient
+    .createUpdate(Author::class) {
+        set(
+            table.firstName,
+            concat(table.firstName, value("*"))
+        )
+        set(
+            table.books.name,
+            concat(table.books.name, value("*"))
+        )
+        set(
+            table.books.store.name,
+            concat(table.books.store.name, value("*"))
+        )
+        where(
+            table.books.store.name eq "MANNING"
+        )
+    }
+    .execute()
+println("Affected row count: $affectedRowCount")
+```
+
+</TabItem>
+</Tabs>
 
 Finally, the SQL statement for MySQL is generated as follows:
 
@@ -127,6 +223,9 @@ where
 
 First, you need to specify the dialect as PostgresDialect when creating JSqlClient
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 JSqlClient sqlClient = JSqlClient
     .newBuilder()
@@ -137,7 +236,22 @@ JSqlClient sqlClient = JSqlClient
     .build();
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val sqlClient = newKSqlClient {
+    setDialect(org.babyfish.jimmer.sql.dialect.PostgresDialect())
+}
+```
+
+</TabItem>
+</Tabs>
+
 Then, you can use Table joins in the update statement
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 int affectedRowCount = sqlClient
@@ -148,16 +262,33 @@ int affectedRowCount = sqlClient
                 author.firstName().concat("*")
             )
             .where(
-                author
-                    .books()
-                    .store()
-                    .name()
-                    .eq("MANNING")
+                author.books().store().name().eq("MANNING")
             );
     })
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val affectedRowCount = sqlClient
+    .createUpdate(Author::class) {
+        set(
+            table.firstName,
+            concat(table.firstName, value("*"))
+        )
+        where(
+            table.books.store.name eq "MANNING"
+        )
+    }
+    .execute()
+println("Affected row count: $affectedRowCount")
+```
+
+</TabItem>
+</Tabs>
 
 :::note
 Unlike MySql, Table joins using update statement in Postgres has the following limitations

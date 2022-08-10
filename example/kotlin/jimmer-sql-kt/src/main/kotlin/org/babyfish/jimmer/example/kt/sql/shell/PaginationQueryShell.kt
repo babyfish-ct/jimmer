@@ -55,6 +55,7 @@ class PaginationQueryShell(
                         allScalarFields()
                         store {
                             allScalarFields()
+                            avgPrice()
                         }
                         authors {
                             allScalarFields()
