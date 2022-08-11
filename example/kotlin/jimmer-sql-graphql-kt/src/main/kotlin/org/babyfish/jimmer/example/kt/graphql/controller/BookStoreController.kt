@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.example.kt.graphql.controller
 
-import org.babyfish.jimmer.example.kt.graphql.dal.BookRepository
 import org.babyfish.jimmer.example.kt.graphql.dal.BookStoreRepository
 import org.babyfish.jimmer.example.kt.graphql.entities.Book
 import org.babyfish.jimmer.example.kt.graphql.entities.BookStore
