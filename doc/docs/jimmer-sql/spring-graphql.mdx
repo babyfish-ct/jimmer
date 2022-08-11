@@ -51,9 +51,12 @@ API related to this
     </tbody>
 </table>
 
-### JSqlClient.getReferenceLoader
+### ReferenceLoader
 
-This API is used to quickly implement one-to-one or many-to-one associations
+`ReferenceLoadder` is used to quickly implement one-to-one or many-to-one associations
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java title="BookController.java"
 @Controller
@@ -82,9 +85,44 @@ public class BookController {
 }
 ```
 
-### JSqlClient.getListLoader
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
 
-This API is used to quickly implement one-to-many or many-to-many associations
+```kotlin title="BookController.kt"
+@Controller
+class BookController(
+    private val sqlClient: KSqlClient
+) {
+
+    // Many-to-one associaton: Book.store
+    // highlight-next-line
+    @BatchMapping
+    fun store(
+        // Must use `java.util.List` because Spring-GraphQL has a bug: #454
+        books: java.util.List<Book>
+    ): Map<Book, BookStore> =
+        sqlClient
+            // highlight-next-line
+            .getReferenceLoader(Book::store)
+            .batchLoad(books)
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::info
+For kotlin, `java.util.List` must be used implicitly, kotlin list cannot work.
+
+This is a bug of spring-graphql, please view [spring-graphql#454](https://github.com/spring-projects/spring-graphql/issues/454)
+:::
+
+### ListLoader
+
+`ListLoader` is used to quickly implement one-to-many or many-to-many associations
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java title="BookStoreController.java"
 @Controller
@@ -113,6 +151,35 @@ public class BookStoreController {
 }
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreController.kt"
+@Controller
+class BookController(
+    private val sqlClient: KSqlClient
+) {
+
+    // One-to-many associaton: BookStore.books
+    // highlight-next-line
+    @BatchMapping
+    fun books(
+        // Must use `java.util.List` because Spring-GraphQL has a bug: #454
+        stores: java.util.List<BookStore>
+    ): Map<BookStore, List<Book>> =
+        sqlClient
+            // highlight-next-line
+            .getListLoader(BookStore::books)
+            .batchLoad(stores)
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java title="BookController.java"
 @Controller
 public class BookController {
@@ -137,6 +204,35 @@ public class BookController {
     }
 }
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookController.kt"
+@Controller
+class BookController(
+    private val sqlClient: KSqlClient
+) {
+
+    // Many-to-many associaton: Book.authors
+    // highlight-next-line
+    @BatchMapping
+    fun authors(
+        // Must use `java.util.List` because Spring-GraphQL has a bug: #454
+        books: java.util.List<Book>
+    ): Map<Book, List<Author>> =
+        sqlClient
+            // highlight-next-line
+            .getListLoader(Book::authors)
+            .batchLoad(books)
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java title="AuthorController.java"
 @Controller
@@ -164,6 +260,144 @@ public class AuthorController {
     }
 }
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="AuthorController.kt"
+@Controller
+class AuthorController(
+    private val sqlClient: KSqlClient
+) {
+
+    // Many-to-many associaton: Author.books
+    // highlight-next-line
+    @BatchMapping
+    fun books(
+        // Must use `java.util.List` because Spring-GraphQL has a bug: #454
+        authors: java.util.List<Author>
+    ): Map<Author, List<Book>> =
+        sqlClient
+            // highlight-next-line
+            .getListLoader(Author::books)
+            .batchLoad(authors)
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::info
+For kotlin, `java.util.List` must be used implicitly, kotlin list cannot work.
+
+This is a bug of spring-graphql, please view [spring-graphql#454](https://github.com/spring-projects/spring-graphql/issues/454)
+:::
+
+### ValueLoader
+
+`ValueLoader` is used to quickly implement calculation property, in jimmer-sql, it means transient property with resolver, like this
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStore.java"
+@Entity
+public interface BookStore {
+
+    // highlight-next-line
+    @Transient(BookStoreAvgPriceResolver::class)
+    BigDecimal avgPrice();
+
+    ... Omit other properties ...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java title="BookStore.kt"
+@Entity
+interface BookStore {
+
+    // highlight-next-line
+    @Transient(BookStoreAvgPriceResolver::class)
+    val avgPrice: BigDecimal
+
+    ... Omit other properties ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+`ValueLoader` should be used like this
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStoreController.java"
+@Controller
+public class BookStoreController {
+
+    private static final ImmutableProp BOOK_STORE_DOT_AVG_PRICE =
+            ImmutableType
+                .get(BookStore.class)
+                .getProp("avgPrice");
+
+    private final JSqlClient sqlClient;
+
+    public BookController(JSqlClient sqlClient) {
+        this.sqlClient = sqlClient;
+    }
+
+    // Calculation property: BookStore.avgPrice
+    // highlight-next-line
+    @BatchMapping
+    public Map<BookStore, BigDecimal> avgPrice(
+        List<BookStore> stores
+    ) {
+        return sqlClient
+                // highlight-next-line
+                .<BookStore, BigDecimal>getValueLoader(
+                    BOOK_STORE_DOT_AVG_PRICE
+                )
+                .batchLoad(stores);
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreController.kt"
+@Controller
+class BookStoreController(
+    private val sqlClient: KSqlClient
+) {
+
+    // Calculation property: BookStore.avgPrice
+    // hightlight-next-line
+    @BatchMapping
+    fun avgPrice(
+        // Must use `java.util.List` because Spring-GraphQL has a bug: #454
+        stores: java.util.List<BookStore>
+    ): Map<BookStore, BigDecimal> =
+        sqlClient
+            // hightlight-next-line
+            .getValueLoader(BookStore::avgPrice)
+            .batchLoad(stores)
+}
+
+```
+
+</TabItem>
+</Tabs>
+
+:::info
+For kotlin, `java.util.List` must be used implicitly, kotlin list cannot work.
+
+This is a bug of spring-graphql, please view [spring-graphql#454](https://github.com/spring-projects/spring-graphql/issues/454)
+:::
 
 ## Mutation
 
@@ -203,6 +437,9 @@ input BookInput {
 ```
 
 Then, in the Java code, define the corresponding class `BookInput` 
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java title="BookInput.java"
 public class BookInput {
@@ -264,6 +501,44 @@ public class BookInput {
 }
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookInput.kt"
+data class BookInput(
+    val id: Long?, // Optional id
+    val name: String,
+    val edition: Int,
+    val price: BigDecimal,
+    val storeId: Long?,
+    val authorIds: List<Long>
+) {
+
+    // highlight-next-line
+    fun toBook(): Book =
+        new(Book::class).by {
+            val that = this@BookInput
+            that.id?.let {
+                id = it
+            }
+            name = that.name
+            edition = that.edition
+            price = that.price
+            that.storeId?.let {
+                store().id = it
+            }
+            for (authorId in that.authorIds) {
+                authors().addBy {
+                    id = authorId
+                }
+            }
+        }
+}
+```
+
+</TabItem>
+</Tabs>
+
 :::info
 1. The [Save command](./mutation/save-command) of jimmer-sql provides the function of saving object tree with arbitrary complexity into database. Therefore, jimmer-sql focuses on the entity object tree, not the input object. So, we need to provide the method `BookInput.toBook` to convert the static `BookInput` object to a dynamic `Book` object.
 
@@ -282,16 +557,55 @@ Now, we know
 
 Then, the realization of the data mutation business is very simple.
 
-```java
-@MutationMapping
-@Transactional
-public Book saveBook(@Argument BookInput input) {
-    return sqlClient
-        .getEntities()
-        .save(
-            // highlight-next-line
-            input.toBook()
-        )
-        .getModifiedEntity();
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookController.java"
+@Controller
+public class BookController {
+
+    private final JSqlClient sqlClient;
+
+    public BookController(JSqlClient sqlClient) {
+        this.sqlClient = sqlClient;
+    }
+
+    @MutationMapping
+    @Transactional
+    public Book saveBook(@Argument BookInput input) {
+        return sqlClient
+            .getEntities()
+            .save(
+                // highlight-next-line
+                input.toBook()
+            )
+            .getModifiedEntity();
+    }
 }
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookController.kt"
+@Controller
+class BookController(
+    private val sqlClient: KSqlClient
+) {
+
+    @MutationMapping
+    @Transactional
+    fun saveBook(@Argument input: BookInput): Book =
+        sqlClient
+            .entities
+            .save(
+                // highlight-next-line
+                input.toBook()
+            )
+            .modifiedEntity
+}
+
+```
+
+</TabItem>
+</Tabs>
