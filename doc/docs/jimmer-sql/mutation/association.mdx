@@ -340,22 +340,6 @@ The generated SQL statement is as follows
         (?, ?)
     ```
 
-:::tip
-There is an unimplemented optimization due to timing.
-
-In the future, this feature will be improved. Optimized for some specific databases, such as Postgres, MySql.
-
-Taking postgres as an example, you can directly execute
-```sql
-insert into BOOK_AUTHOR_MAPPING(
-    BOOK_ID, AUTHOR_ID
-) values (?, ?), (?, ?), (?, ?)
-on conflict(BOOK_ID, AUTHOR_ID)
-    do nothing;
-```
-without executing an extra select statement.
-:::
-
 ## Delete associations
 
 <Tabs groupId="language">

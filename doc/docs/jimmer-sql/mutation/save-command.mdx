@@ -389,13 +389,14 @@ To insert an object without an id, you must configure `@GeneratedValue` for the 
 
 Finally, we can get the automatically allocated id. The print result of the above code is as follows (the original output is compact, it is formatted here for easy reading):
 
-```
+```json
 Original entity: {
     "name":"SpringBoot in Action",
     "edition":1,
     "price":44.99
 }
 Modified entity: {
+    /* highlight-next-line */
     "id":100,
     "name":"SpringBoot in Action",
     "edition":1,
@@ -679,7 +680,7 @@ If the affected row count is 0, it will throw an exception of type `org.babyfish
 
 If the versions match and no exception occurs, the output of the above code is (the original output is compact, formatted here for readability):
 
-```
+```json
 Original entity: {
     "id":2,
     "website":"http://www.manning.com",
@@ -688,6 +689,7 @@ Original entity: {
 Modified entity: {
     "id":2,
     "website":"http://www.manning.com",
+    /* highlight-next-line */
     "version":1
 }
 ```
@@ -911,6 +913,7 @@ sqlClient
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
+```kotlin
 val bookId1 = ...
 val bookId2 = ...
 sqlClient
@@ -926,6 +929,7 @@ sqlClient
             }
         }
     )
+```
 
 </TabItem>
 </Tabs>
