@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.kt.KTransientResolver
 import org.babyfish.jimmer.sql.kt.ast.expression.avg
 import org.babyfish.jimmer.sql.kt.ast.expression.coalesce
 import org.babyfish.jimmer.sql.kt.ast.expression.valueIn
-import org.babyfish.jimmer.sql.kt.toImmutableProp
+import org.babyfish.jimmer.sql.kt.event.getUnchangedFieldRef
 import java.math.BigDecimal
 import java.sql.Connection
 
@@ -20,15 +20,15 @@ class BookStoreAvgPriceResolver(
 
         // 1. Check whether the association `BookStore.books` is changed.
         sqlClient.triggers.addAssociationListener(BookStore::books) {
-            sqlClient.caches.getPropertyCache<Any, Any>(BOOK_STORE_DOT_AVG_PRICE)?.delete(it.sourceId)
+            sqlClient.caches.getPropertyCache<Any, Any>(BookStore::avgPrice)?.delete(it.sourceId)
         }
 
         sqlClient.triggers.addEntityListener(Book::class) {
-            val storeId = it.getUnchangedFieldRef<BookStore>(BOOK_DOT_STORE.id)?.value?.id
+            val storeId = it.getUnchangedFieldRef(Book::store)?.value?.id
             if (storeId !== null) {
                 // 2. Otherwise, check whether `Book.price` is changed.
-                if (it.getUnchangedFieldRef<BigDecimal>(BOOK_DOT_PRICE.id) === null) {
-                    sqlClient.caches.getPropertyCache<Any, Any>(BOOK_STORE_DOT_AVG_PRICE)?.delete(storeId)
+                if (it.getUnchangedFieldRef(Book::price) === null) {
+                    sqlClient.caches.getPropertyCache<Any, Any>(BookStore::avgPrice)?.delete(storeId)
                 }
             }
         }
@@ -53,13 +53,4 @@ class BookStoreAvgPriceResolver(
             }) {
                 it._2
             }
-
-    companion object {
-
-        private val BOOK_STORE_DOT_AVG_PRICE = BookStore::avgPrice.toImmutableProp()
-
-        private val BOOK_DOT_STORE = Book::store.toImmutableProp()
-
-        private val BOOK_DOT_PRICE = Book::price.toImmutableProp()
-    }
 }
