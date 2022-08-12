@@ -841,8 +841,8 @@ public JSqlClient sqlClient(
         .setCaches(it -> {
             // highlight-next-line
             it.setAssociatedIdListCache(
-                BookTable.class,
-                BookTable::store,
+                BookTableEx.class,
+                BookTableEx::authors,
                 new ChainCacheBuilder<Object, List<?>>()
                     .add(
                         new CaffeineBinder<>(
@@ -877,7 +877,7 @@ fun sqlClient(
         setCaches {
             // highlight-next-line
             setAssociatedIdListCache(
-                Book::store,
+                Book::authors,
                 ChainCacheBuilder<Any, List<Any>>()
                 .add(
                     CaffeineBinder(
