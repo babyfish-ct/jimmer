@@ -10,13 +10,8 @@ import java.util.Map;
 
 public interface Cache<K, V> {
 
-    @Nullable default Ref<V> get(@NotNull K key, @NotNull CacheEnvironment<K, V> env) {
-        Map<K, V> map = getAll(Collections.singleton(key), env);
-        V value = map.get(key);
-        if (value == null && map.containsKey(key)) {
-            return null;
-        }
-        return Ref.of(value);
+    @Nullable default V get(@NotNull K key, @NotNull CacheEnvironment<K, V> env) {
+        return getAll(Collections.singleton(key), env).get(key);
     }
 
     @NotNull Map<K, V> getAll(@NotNull Collection<K> keys, @NotNull CacheEnvironment<K, V> env);

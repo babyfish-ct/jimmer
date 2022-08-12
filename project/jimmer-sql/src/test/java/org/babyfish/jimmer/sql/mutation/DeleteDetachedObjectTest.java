@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.mutation;
 
-import org.babyfish.jimmer.sql.DeleteAction;
+import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.model.*;
@@ -22,10 +22,10 @@ public class DeleteDetachedObjectTest extends AbstractMutationTest {
                             store.addIntoBooks(book -> book.setId(learningGraphQLId3));
                         })
                 ).configure(cfg ->
-                        cfg.setDeleteAction(
+                        cfg.setDissociateAction(
                                 BookTable.class,
                                 BookTable::store,
-                                DeleteAction.CASCADE
+                                DissociateAction.DELETE
                         )
                 ),
                 ctx -> {

@@ -2,16 +2,9 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.runtime.DraftSpi;
-import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.PropExpression;
-import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
-import org.babyfish.jimmer.sql.DeleteAction;
+import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -147,8 +140,8 @@ public class Deleter {
                     mappedByProp != null &&
                     mappedByProp.isReference()
             ) {
-                DeleteAction deleteAction = data.getDeleteAction(mappedByProp);
-                if (deleteAction == DeleteAction.SET_NULL) {
+                DissociateAction dissociateAction = data.getDissociateAction(mappedByProp);
+                if (dissociateAction == DissociateAction.SET_NULL) {
                     updateChildTable(mappedByProp, ids);
                 } else {
                     tryDeleteFromChildTable(prop, ids);
@@ -267,7 +260,7 @@ public class Deleter {
                         }
                 );
         if (!childIds.isEmpty()) {
-            if (data.getDeleteAction(manyToOneProp) != DeleteAction.CASCADE) {
+            if (data.getDissociateAction(manyToOneProp) != DissociateAction.DELETE) {
                 throw new ExecutionException(
                         "Cannot delete entities whose type are \"" +
                                 manyToOneProp.getTargetType().getJavaClass().getName() +

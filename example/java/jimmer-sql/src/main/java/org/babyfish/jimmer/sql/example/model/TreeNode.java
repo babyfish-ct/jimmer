@@ -1,8 +1,6 @@
 package org.babyfish.jimmer.sql.example.model;
 
-import org.babyfish.jimmer.sql.DeleteAction;
 import org.babyfish.jimmer.sql.Key;
-import org.babyfish.jimmer.sql.OnDelete;
 
 import org.babyfish.jimmer.sql.*;
 
@@ -23,7 +21,7 @@ public interface TreeNode {
     @Null // Null property, Java API requires this annotation, but kotlin API does not
     @Key
     @ManyToOne
-    @OnDelete(DeleteAction.CASCADE)
+    @OnDissociate(DissociateAction.DELETE)
     TreeNode parent();
 
     @OneToMany(mappedBy = "parent")

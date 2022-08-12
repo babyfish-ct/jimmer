@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.mutation
 
-import org.babyfish.jimmer.sql.DeleteAction
+import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.Book
 import org.babyfish.jimmer.sql.kt.model.BookStore
@@ -12,7 +12,7 @@ class DeleteCommandTest : AbstractMutationTest() {
     fun test() {
         executeAndExpectResult({ con ->
             sqlClient.entities.delete(BookStore::class, 2L, con) {
-                setDeleteAction(Book::store, DeleteAction.SET_NULL)
+                setDissociateAction(Book::store, DissociateAction.SET_NULL)
             }
         }) {
             statement {

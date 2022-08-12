@@ -1,0 +1,236 @@
+---
+sidebar_position: 7
+title: Calculated properties
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+### Basic usage
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStore.java"
+@Entity
+public interface BookStore {
+
+    @Transient(BookStoreAvgPriceResolver.class)
+    BigDecimal avgPrice();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStore.kt"
+@Entity
+public interface BookStore {
+
+    @Transient(BookStoreAvgPriceResolver::class)
+    val avgPrice: BigDecimal
+}
+```
+
+</TabItem>
+</Tabs>
+
+<table>
+    <thead>
+        <tr>
+            <th></th>
+            <th>Java</th>
+            <th>Kotlin</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><b>Super interface</b></td>
+            <td>org.babyfish.jimmer.sql.TransientResolver</td>
+            <td>org.babyfish.jimmer.sql.kt.KTransientResolver</td>
+        </tr>
+        <tr>
+            <td><b>Optional constructor argument</b></td>
+            <td>org.babyfish.jimmer.sql.JSqlClient</td>
+            <td>org.babyfish.jimmer.sql.kt.KSqlClient</td>
+        </tr>
+    </tbody>
+</table>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStoreAvgPriceResolver.java"
+public class BookStoreAvgPriceResolver 
+implements TransientResolver<Long, BigDecimal> {
+
+    private final JSqlClient sqlClient;
+
+    public BookStoreAvgPriceResolver(JSqlClient sqlClient) {
+        this.sqlClient = sqlClient;
+    }
+
+    @Override
+    public Map<Long, BigDecimal> resolve(
+            Collection<Long> ids, 
+            Connection con
+    ) {
+        List<Tuple2<Long, BigDecimal>> tuples = sqlClient
+                .createQuery(BookTable.class, (q, book) -> {
+                    q.where(book.store().id().in(ids));
+                    q.groupBy(book.store().id());
+                    return q.select(
+                            book.store().id(),
+                            book.price().avg().coalesce(BigDecimal.ZERO)
+                    );
+                })
+                .execute(con); // Important to specify connection
+        return Tuple2.toMap(tuples);
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreAvgPriceResolver.kt"
+class BookStoreAvgPriceResolver(
+    private val sqlClient: KSqlClient
+) : KTransientResolver<Long, BigDecimal> {
+
+    override fun resolve(
+        ids: Collection<Long>,
+        con: Connection
+    ): Map<Long, BigDecimal> =
+        sqlClient
+            .createQuery(Book::class) {
+                where(table.store.id valueIn ids)
+                groupBy(table.store.id)
+                select(
+                    table.store.id,
+                    avg(table.price).coalesce(BigDecimal.ZERO)
+                )
+            }
+            .execute(con) // It's important to specify the connection
+            .associateBy({
+                it._1
+            }) {
+                it._2
+            }
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Cache consistency for calculated property.
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStoreAvgPriceResolver.java"
+public class BookStoreAvgPriceResolver 
+implements TransientResolver<Long, BigDecimal> {
+
+    private static final ImmutableProp BOOK_DOT_STORE =
+            ImmutableProps.join(BookTable.class, BookTable::store);
+
+    private static final ImmutableProp BOOK_DOT_PRICE =
+            ImmutableProps.get(BookTable.class, BookTable::price);
+
+    private static final ImmutableProp BOOK_STORE_DOT_AVG_PRICE =
+            ImmutableType.get(BookStore.class).getProp("avgPrice");
+
+    private final JSqlClient sqlClient;
+
+    public BookStoreAvgPriceResolver(JSqlClient sqlClient) {
+        this.sqlClient = sqlClient;
+
+        // 1. Check whether the association `BookStore.books` is changed
+        sqlClient.getTriggers().addAssociationListener(
+            BookStoreTableEx.class, 
+            BookStoreTableEx::books, // α
+            e -> {
+                sqlClient
+                    .getCaches()
+                    .getPropertyCache(BOOK_STORE_DOT_AVG_PRICE)
+                    .delete(e.getSourceId()); // β
+            }
+        );
+        sqlClient.getTriggers().addEntityListener( 
+            Book.class, // γ
+            e -> {
+                Ref<BookStore> storeRef = // δ
+                    e.getUnchangedFieldRef(BOOK_DOT_STORE.getId()); 
+                if (storeRef != null && storeRef.getValue() != null) { // ε
+                    // 2, Otherwise, check whether `Book.price` is changed
+                    if (e.getUnchangedFieldRef(BOOK_DOT_PRICE.getId()) == null) { // ζ
+                        sqlClient
+                            .getCaches()
+                            .getPropertyCache(BOOK_STORE_DOT_AVG_PRICE)
+                            .delete(storeRef.getValue().id()); // η
+                    }
+                }
+            }
+        );
+    }
+
+    @Override
+    public Map<Long, BigDecimal> resolve(
+            Collection<Long> ids, 
+            Connection con
+    ) {
+        ...omit calculation code...
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreAvgPriceResolver.kt"
+class BookStoreAvgPriceResolver(
+    private val sqlClient: KSqlClient
+) : KTransientResolver<Long, BigDecimal> {
+
+    init {
+        // 1. Check whether the association `BookStore.books` is changed.
+        sqlClient
+            .triggers
+            .addAssociationListener(BookStore::books) { // α
+                sqlClient
+                    .caches
+                    .getPropertyCache<Any, Any>(BookStore::avgPrice) 
+                    ?.delete(it.sourceId) // β
+            }
+
+        sqlClient.triggers.addEntityListener(Book::class) { // γ
+            val storeId = 
+                it 
+                    .getUnchangedFieldRef<BookStore>(Book::store) // δ
+                    ?.value // ε
+                    ?.id
+            if (storeId !== null) {
+                // 2. Otherwise, check whether `Book.price` is changed.
+                if (it.getUnchangedFieldRef<BigDecimal>(Book::price) === null) { // ζ
+                    sqlClient
+                        .caches
+                        .getPropertyCache<Any, Any>(
+                            BookStore::avgPrice
+                        )
+                        ?.delete(storeId) // η
+                }
+            }
+        }
+    }
+
+    override fun resolve(
+        ids: Collection<Long>,
+        con: Connection
+    ): Map<Long, BigDecimal> =
+        ... omit calculation code ...
+}
+```
+
+</TabItem>
+</Tabs>

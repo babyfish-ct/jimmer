@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.mutation;
 
-import org.babyfish.jimmer.sql.DeleteAction;
+import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
@@ -40,16 +40,16 @@ public class DeleteTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testDeleteBookStoreOnDeleteSetNull() {
+    public void testDeleteBookStoreOnDissociateSetNull() {
         executeAndExpectResult(
                 getSqlClient().getEntities().deleteCommand(
                         BookStore.class,
                         manningId
                 ).configure(cfg -> {
-                    cfg.setDeleteAction(
+                    cfg.setDissociateAction(
                             BookTable.class,
                             it -> it.store(),
-                            DeleteAction.SET_NULL
+                            DissociateAction.SET_NULL
                     );
                 }),
                 ctx -> {
@@ -70,16 +70,16 @@ public class DeleteTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testDeleteBookStoreOnDeleteCascade() {
+    public void testDeleteBookStoreOnDissociateDelete() {
         executeAndExpectResult(
                 getSqlClient().getEntities().deleteCommand(
                         BookStore.class,
                         manningId
                 ).configure(cfg -> {
-                    cfg.setDeleteAction(
+                    cfg.setDissociateAction(
                             BookTable.class,
                             it -> it.store(),
-                            DeleteAction.CASCADE
+                            DissociateAction.DELETE
                     );
                 }),
                 ctx -> {

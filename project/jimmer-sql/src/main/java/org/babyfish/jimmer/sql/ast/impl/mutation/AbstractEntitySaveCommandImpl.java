@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.DeleteAction;
+import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JSqlClient;
@@ -38,7 +38,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         if (newData.mode == SaveMode.UPSERT &&
                 newData.keyPropMultiMap.isEmpty() &&
                 !newData.autoAttachingAll &&
-                newData.deleteActionMap.isEmpty() &&
+                newData.dissociateActionMap.isEmpty() &&
                 newData.autoAttachingSet.isEmpty()) {
             return this;
         }
@@ -61,14 +61,14 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         private Set<ImmutableProp> autoAttachingSet;
 
-        private Map<ImmutableProp, DeleteAction> deleteActionMap;
+        private Map<ImmutableProp, DissociateAction> dissociateActionMap;
 
         Data(JSqlClient sqlClient) {
             this.sqlClient = sqlClient;
             this.mode = SaveMode.UPSERT;
             this.keyPropMultiMap = new LinkedHashMap<>();
             this.autoAttachingSet = new LinkedHashSet<>();
-            this.deleteActionMap = new LinkedHashMap<>();
+            this.dissociateActionMap = new LinkedHashMap<>();
         }
 
         Data(Data base) {
@@ -77,7 +77,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.keyPropMultiMap = new LinkedHashMap<>(base.keyPropMultiMap);
             this.autoAttachingAll = base.autoAttachingAll;
             this.autoAttachingSet = new LinkedHashSet<>(base.autoAttachingSet);
-            this.deleteActionMap = new LinkedHashMap<>(base.deleteActionMap);
+            this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
         }
 
         public JSqlClient getSqlClient() {
@@ -100,13 +100,13 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             return autoAttachingAll || autoAttachingSet.contains(prop);
         }
 
-        public DeleteAction getDeleteAction(ImmutableProp prop) {
-            DeleteAction action = deleteActionMap.get(prop);
-            return action != null ? action : prop.getDeleteAction();
+        public DissociateAction getDissociateAction(ImmutableProp prop) {
+            DissociateAction action = dissociateActionMap.get(prop);
+            return action != null ? action : prop.getDissociateAction();
         }
 
-        Map<ImmutableProp, DeleteAction> deleteActionMap() {
-            return deleteActionMap;
+        Map<ImmutableProp, DissociateAction> dissociateActionMap() {
+            return dissociateActionMap;
         }
 
         @Override
@@ -205,41 +205,41 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         }
 
         @Override
-        public Cfg setDeleteAction(ImmutableProp prop, DeleteAction deleteAction) {
+        public Cfg setDissociateAction(ImmutableProp prop, DissociateAction dissociateAction) {
             validate();
 
             if (!prop.isReference() || !(prop.getStorage() instanceof Column)) {
                 throw new IllegalArgumentException("'" + prop + "' must be an reference property bases on foreign key");
             }
-            if (deleteAction == DeleteAction.SET_NULL && !prop.isNullable()) {
+            if (dissociateAction == DissociateAction.SET_NULL && !prop.isNullable()) {
                 throw new IllegalArgumentException(
                         "'" + prop + "' is not nullable so that it does not support 'on delete set null'"
                 );
             }
-            deleteActionMap.put(prop, deleteAction);
+            dissociateActionMap.put(prop, dissociateAction);
             return this;
         }
 
         @Override
-        public Cfg setDeleteAction(
+        public Cfg setDissociateAction(
                 Class<?> entityType,
                 String prop,
-                DeleteAction deleteAction
+                DissociateAction dissociateAction
         ) {
             ImmutableType immutableType = ImmutableType.get(entityType);
             ImmutableProp immutableProp = immutableType.getProp(prop);
-            return setDeleteAction(immutableProp, deleteAction);
+            return setDissociateAction(immutableProp, dissociateAction);
         }
 
         @Override
-        public <T extends Table<?>> Cfg setDeleteAction(
+        public <T extends Table<?>> Cfg setDissociateAction(
                 Class<T> tableType,
                 Function<T, Table<?>> block,
-                DeleteAction deleteAction
+                DissociateAction dissociateAction
         ) {
-            return setDeleteAction(
+            return setDissociateAction(
                     ImmutableProps.join(tableType, block),
-                    deleteAction
+                    dissociateAction
             );
         }
 
@@ -247,7 +247,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             if (!frozen) {
                 keyPropMultiMap = Collections.unmodifiableMap(keyPropMultiMap);
                 autoAttachingSet = Collections.unmodifiableSet(autoAttachingSet);
-                deleteActionMap = Collections.unmodifiableMap(deleteActionMap);
+                dissociateActionMap = Collections.unmodifiableMap(dissociateActionMap);
                 frozen = true;
             }
             return this;

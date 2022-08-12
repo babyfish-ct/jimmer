@@ -295,7 +295,7 @@ This is a bug of spring-graphql, please view [spring-graphql#454](https://github
 
 ### ValueLoader
 
-`ValueLoader` is used to quickly implement calculation property, in jimmer-sql, it means transient property with resolver, like this
+`ValueLoader` is used to quickly implement calculated property, in jimmer-sql, it means transient property with resolver, like this
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -305,7 +305,7 @@ This is a bug of spring-graphql, please view [spring-graphql#454](https://github
 public interface BookStore {
 
     // highlight-next-line
-    @Transient(BookStoreAvgPriceResolver::class)
+    @Transient(BookStoreAvgPriceResolver.class)
     BigDecimal avgPrice();
 
     ... Omit other properties ...
@@ -350,7 +350,7 @@ public class BookStoreController {
         this.sqlClient = sqlClient;
     }
 
-    // Calculation property: BookStore.avgPrice
+    // Calculated property: BookStore.avgPrice
     // highlight-next-line
     @BatchMapping
     public Map<BookStore, BigDecimal> avgPrice(
@@ -375,7 +375,7 @@ class BookStoreController(
     private val sqlClient: KSqlClient
 ) {
 
-    // Calculation property: BookStore.avgPrice
+    // Calculated property: BookStore.avgPrice
     // hightlight-next-line
     @BatchMapping
     fun avgPrice(

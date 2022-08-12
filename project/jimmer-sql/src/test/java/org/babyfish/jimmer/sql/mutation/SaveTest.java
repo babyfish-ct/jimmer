@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.mutation;
 
-import org.babyfish.jimmer.sql.DeleteAction;
+import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.OptimisticLockException;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
@@ -9,7 +9,6 @@ import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.runtime.DbNull;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -367,10 +366,10 @@ public class SaveTest extends AbstractMutationTest {
                             store.addIntoBooks(book -> book.setId(learningGraphQLId3));
                         })
                 ).configure(it ->
-                        it.setDeleteAction(
+                        it.setDissociateAction(
                                 BookTable.class,
                                 BookTable::store,
-                                DeleteAction.SET_NULL
+                                DissociateAction.SET_NULL
                         )
                 ),
                 ctx -> {

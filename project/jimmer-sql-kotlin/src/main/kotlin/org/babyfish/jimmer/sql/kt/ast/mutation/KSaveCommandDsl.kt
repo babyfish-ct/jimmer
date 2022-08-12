@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.mutation
 
 import org.babyfish.jimmer.kt.DslScope
-import org.babyfish.jimmer.sql.DeleteAction
+import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import kotlin.reflect.KProperty1
 
@@ -16,5 +16,5 @@ interface KSaveCommandDsl {
 
     fun setAutoAttaching(prop: KProperty1<*, *>)
 
-    fun setDeleteAction(prop: KProperty1<*, *>, action: DeleteAction)
+    fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction)
 }

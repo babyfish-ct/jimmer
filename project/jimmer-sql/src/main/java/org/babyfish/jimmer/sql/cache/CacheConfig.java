@@ -116,6 +116,18 @@ public class CacheConfig {
     }
 
     @OldChain
+    public CacheConfig setResolverCache(
+            ImmutableProp prop,
+            Cache<?, ?> cache
+    ) {
+        if (!prop.hasTransientResolver()) {
+            throw new IllegalArgumentException("The prop \"" + prop + "\" is transient property with resolver");
+        }
+        propCacheMap.put(prop, LocatedCacheImpl.unwrap(cache));
+        return this;
+    }
+
+    @OldChain
     public CacheConfig setCacheOperator(CacheOperator operator) {
         this.operator = operator;
         return this;

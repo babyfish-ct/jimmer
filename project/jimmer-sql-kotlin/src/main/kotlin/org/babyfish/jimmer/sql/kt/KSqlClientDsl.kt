@@ -157,6 +157,10 @@ class KSqlClientDsl internal constructor(
         fun setAssociatedListIdCache(prop: KProperty1<*, *>, cache: Cache<*, List<*>>?) {
             javaCfg.setAssociatedIdListCache(prop.toImmutableProp(), cache)
         }
+
+        fun <R> setResolverCache(prop: KProperty1<*, R>, cache: Cache<*, R>) {
+            javaCfg.setResolverCache(prop.toImmutableProp(), cache)
+        }
     }
 
     internal fun buildKSqlClient(): KSqlClient =
