@@ -18,17 +18,53 @@ import TabItem from '@theme/TabItem';
 
 此缓存把对象的id映射为实体对象，此对象为简单对象，并不包含深层次关联结构。
 
+例子
+
+|key|value|
+|---|-----|
+|BookStore-1|{"id":1,"name":"O'REILLY","website":null}|
+|Book-1|{"id":1,"name":"Learning GraphQL","edition":1,"price":50.00,"store":{"id":1}}|
+|Book-2|{"id":2,"name":"Learning GraphQL","edition":2,"price":55.00,"store":{"id":1}}|
+|Book-3|{"id":3,"name":"Learning GraphQL","edition":3,"price":51.00,"store":{"id":1}}|
+|Author-1|{"id":1,"firstName":"Eve","lastName":"Procello","gender":"FEMALE"}|
+|Author-2|{"id":2,"firstName":"Alex","lastName":"Banks","gender":"MALE"}|
+|TreeNode-1|{"id":1,"name":"Home","parent":null}|
+|TreeNode-2|{"id":2,"name":"Food","parent":{"id":1}}|
+|TreeNode-9|{"id":9,"name":"Clothing","parent":{"id":1}}|
+
 ### 2. 引用关联缓存
 
 此缓存用于一对一和多对一关联，把当前对象id映射成关联对象的id
 
+例子
+
+|key|value|
+|---|-----|
+|Book.store-1|1|
+|Book.store-2|1|
+|Book.store-3|1|
+|TreeNode.parent-2|1|
+|TreeNode.parent-9|1|
+
 :::info
-注意：如果当前关联是基于外键的多对一关联，且当前对象已经明确包含了外键字段，系统不会使用该缓存
+注意：如果当前关联是基于外键的多对一关联，且当前对象已经明确包含了外键字段，系统不会使用该缓存。
 :::
 
 ### 3. 集合关联缓存
 
 此缓存用于一对多和多对多关联，把当前对象id映射成关联对象的id的列表
+
+例子
+
+|key|value|
+|---|-----|
+|BookStore.books-1|[1, 2, 3]|
+|Book.authors-1|[1, 2]|
+|Book.authors-2|[1, 2]|
+|Book.authors-3|[1, 2]|
+|Author.books-1|[1, 2, 3]|
+|Author.books-2|[1, 2, 3]|
+|TreeNode.childNodes-1|[9, 2]|
 
 ### 4. 计算属性缓存
 
