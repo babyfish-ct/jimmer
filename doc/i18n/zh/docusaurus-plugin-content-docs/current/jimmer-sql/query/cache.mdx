@@ -1,16 +1,24 @@
 ---
 sidebar_position: 6
-title: 缓存
+title: 外部缓存
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-默认情况下，该框架只是一个非常轻量级且功能强大的SQL生成器，没有缓存。 尽管如此，用户仍可以附加任何外部缓存，**并使其与业务系统自己的缓存技术保持一致**。 
+默认情况下，该框架只是一个非常轻量级且功能强大的SQL生成器，没有缓存。 尽管如此，用户仍可以将为其配置外部缓存。
 
-与其他 ORM 不同，它同时支持对象缓存和关联缓存，并可与对象获取器一起使用，尤其是在递归查询自关联属性时。
+1. 对用户的缓存技术选型不做任何假设，开发人员可以选用任何缓存技术。框架只做缓存的管理协调，不做具体缓存实现。
 
-框架提供一种自动保证数据库和缓存之间的一致性的方案。
+2. 与其他ORM不同，不仅支持对象缓存，还支持关联缓存。二者在幕后结合起来，可与对象获取器一起使用，查询深度和广度无限的对象树，尤其是在递归查询自关联属性时极其有效。
+
+对于高性能的复杂数据结构查询而言，以下两个工作会给开发人员造成较大工作量。
+
+1. 从不同的的缓存中查询不同数据碎片，然后手动把他们合并为一个整体后做为结果返回。
+
+2. 保证缓存和数据库之间的一致性。
+
+为了把开发人员从这两个繁重的任务中解脱出来，框架的缓存机制被设计得足够强大，对开发人员透明。
 
 ## 基本概念
 
@@ -69,6 +77,16 @@ import TabItem from '@theme/TabItem';
 ### 4. 计算属性缓存
 
 此缓存用于用户自定义的计算字段，这种缓存会在计算属性一文中详细讲解，本文不予关注。
+
+## 那些功能会使用缓存？
+
+1. 对象抓取器：除根查询外，其余的关联以及关联对象都会使用缓存，这对递归抓取极为有效。
+2. GraphQL查询：除根查询外，其余的关联以及关联对象都会使用缓存。
+3. `sqlClient.entities`中的`findById`、`findByIds`以及`findMapByIds`方法。
+
+:::info
+是否使用缓存，将导致对象抓取器和GraphQL查询这类高级查询生成截然不同的最终SQL。但它们的最终效果是等价的。
+:::
 
 ## 创建缓存
 
@@ -663,22 +681,646 @@ fun rawDataRedisTemplate(
 <TabItem value="java" label="Java">
 
 ```java
-
+@Bean
+public JSqlClient sqlClient(
+    RedisTemplate<String, byte[]> redisTemplate
+) {
+    return JSqlClient
+        .newBuilder()
+        .setCaches(it -> {
+            // highlight-next-line
+            it.setObjectCache(
+                Book.class,
+                new ChainCacheBuilder<>()
+                    .add(
+                        new CaffeineBinder<>(
+                            512, 
+                            Duration.ofSeconds(1)
+                        )
+                    )
+                    .add(
+                        new RedisBinder<>(
+                            redisTemplate, 
+                            type, 
+                            Duration.ofMinutes(10)
+                        )
+                    )
+                    .build()
+            );
+        })
+        ...omit other configuration...
+        .build()
+}
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
+@Bean
+fun sqlClient(
+    redisTemplate: RedisTemplate<String, ByteArray>
+): KSqlClient =
+    newKSqlClient {
+        setCaches {
+            // highlight-next-line
+            setObjectCache(
+                Book::class,
+                ChainCacheBuilder<Any, Any>()
+                .add(
+                    CaffeineBinder(
+                        512, 
+                        Duration.ofSeconds(1)
+                    )
+                )
+                .add(
+                    RedisBinder(
+                        redisTemplate, 
+                        type, 
+                        Duration.ofMinutes(10)
+                    )
+                )
+                .build()
+            )
+        }
+        ...omit other configuration...
+    }
 ```
 
 </TabItem>
 </Tabs>
 
-### 隐式配置
+#### 2. 配置引用关联缓存
 
-## 缓存一致性
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public JSqlClient sqlClient(
+    RedisTemplate<String, byte[]> redisTemplate
+) {
+    return JSqlClient
+        .newBuilder()
+        .setCaches(it -> {
+            // highlight-next-line
+            it.setAssociatedIdCache(
+                BookTable.class,
+                BookTable::store,
+                new ChainCacheBuilder<>()
+                    .add(
+                        new CaffeineBinder<>(
+                            512, 
+                            Duration.ofSeconds(1)
+                        )
+                    )
+                    .add(
+                        new RedisBinder<>(
+                            redisTemplate, 
+                            type, 
+                            Duration.ofMinutes(5)
+                        )
+                    )
+                    .build()
+            );
+        })
+        ...omit other configuration...
+        .build()
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun sqlClient(
+    redisTemplate: RedisTemplate<String, ByteArray>
+): KSqlClient =
+    newKSqlClient {
+        setCaches {
+            // highlight-next-line
+            setAssociatedIdCache(
+                Book::store,
+                ChainCacheBuilder<Any, Any>()
+                .add(
+                    CaffeineBinder(
+                        512, 
+                        Duration.ofSeconds(1)
+                    )
+                )
+                .add(
+                    RedisBinder(
+                        redisTemplate, 
+                        type, 
+                        Duration.ofMinutes(5)
+                    )
+                )
+                .build()
+            )
+        }
+        ...omit other configuration...
+    }
+```
+
+</TabItem>
+</Tabs>
+
+#### 3. 配置集合关联缓存
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public JSqlClient sqlClient(
+    RedisTemplate<String, byte[]> redisTemplate
+) {
+    return JSqlClient
+        .newBuilder()
+        .setCaches(it -> {
+            // highlight-next-line
+            it.setAssociatedIdListCache(
+                BookTable.class,
+                BookTable::store,
+                new ChainCacheBuilder<Object, List<?>>()
+                    .add(
+                        new CaffeineBinder<>(
+                            512, 
+                            Duration.ofSeconds(1)
+                        )
+                    )
+                    .add(
+                        new RedisBinder<>(
+                            redisTemplate, 
+                            type, 
+                            Duration.ofMinutes(5)
+                        )
+                    )
+                    .build()
+            );
+        })
+        ...omit other configuration...
+        .build()
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun sqlClient(
+    redisTemplate: RedisTemplate<String, ByteArray>
+): KSqlClient =
+    newKSqlClient {
+        setCaches {
+            // highlight-next-line
+            setAssociatedIdListCache(
+                Book::store,
+                ChainCacheBuilder<Any, List<Any>>()
+                .add(
+                    CaffeineBinder(
+                        512, 
+                        Duration.ofSeconds(1)
+                    )
+                )
+                .add(
+                    RedisBinder(
+                        redisTemplate, 
+                        type, 
+                        Duration.ofMinutes(5)
+                    )
+                )
+                .build()
+            )
+        }
+        ...omit other configuration...
+    }
+```
+
+</TabItem>
+</Tabs>
+
+#### 4. 配置计算属性缓存
+
+此缓存用于用户自定义的计算字段，这种缓存会在计算属性一文中详细讲解，本文不予关注。
+
+### 隐式配置（推荐方式）
+
+通过前文的描述，我们可以为任何类型指定对象缓存，也可以为任何属性置顶关联缓存。
+
+然而，实际项目中，实体类型和关联属性可能会非常多，逐个配置会显得非常冗长。隐式配置可以横好地应对这种情况。
+
+隐式配置需要借助CacheFactory接口
+
+```java
+public interface CacheFactory {
+
+    @Nullable
+    default Cache<?, ?> createObjectCache(
+        @NotNull ImmutableType type
+    ) {
+        return null;
+    }
+
+    @Nullable
+    default Cache<?, ?> createAssociatedIdCache(
+        @NotNull ImmutableProp prop
+    ) {
+        return null;
+    }
+
+    @Nullable
+    default Cache<?, List<?>> createAssociatedIdListCache(
+        @NotNull ImmutableProp prop
+    ) {
+        return null;
+    }
+
+    @Nullable
+    default Cache<?, ?> createResolverCache(
+        @NotNull ImmutableProp prop
+    ) {
+        return null;
+    }
+}
+```
+
+使用方法如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public JSqlClient sqlClient(
+    RedisTemplate<String, byte[]> redisTemplate
+) {
+    return JSqlClient
+        .newBuilder()
+        .setCaches(it -> {
+            // highlight-next-line
+            setCacheFactory(
+                
+                // Use this array to iterate types, 
+                // association properties, and calculated properties.
+                new Class[] {
+                    BookStore.class,
+                    Book.class,
+                    Author.class,
+                    TreeNode.class
+                }
+
+                // For each type and property, create optional cache.
+                return new CacheFactory() {
+
+                    // Create object cache for types, including:
+                    // `BookStore`
+                    // `Book`
+                    // `Author`
+                    /// `TreeNode` 
+                    @Override
+                    public Cache<?, ?> createObjectCache(ImmutableType type) {
+                        return new ChainCacheBuilder<>()
+                                .add(
+                                    new CaffeineBinder<>(
+                                        512, 
+                                        Duration.ofSeconds(1)
+                                    )
+                                )
+                                .add(
+                                    new RedisBinder<>(
+                                        redisTemplate, 
+                                        type, 
+                                        Duration.ofMinutes(10)
+                                    )
+                                )
+                                .build();
+                    }
+
+                    // Create reference association cache for 
+                    // one-to-one/many-to-one properties, including:
+                    // `Book.store`
+                    // `TreeNode.parent`
+                    @Override
+                    public Cache<?, ?> createAssociatedIdCache(ImmutableProp prop) {
+                        return new ChainCacheBuilder<>()
+                                .add(
+                                    new CaffeineBinder<>(
+                                        512, 
+                                        Duration.ofSeconds(1)
+                                    )
+                                )
+                                .add(
+                                    new RedisBinder<>(
+                                        redisTemplate, 
+                                        prop, 
+                                        Duration.ofMinutes(5)
+                                    )
+                                )
+                                .build();
+                    }
+
+                    // Create list association cache for 
+                    // one-to-many/many-to-many properties, including:
+                    // `BookStore.books`
+                    // `Book.authors`
+                    // `Author.books`
+                    // `TreeNode.childNodes`
+                    @Override
+                    public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
+                        return new ChainCacheBuilder<Object, List<?>>()
+                                .add(
+                                    new CaffeineBinder<>(
+                                        64, 
+                                        Duration.ofSeconds(1)
+                                    )
+                                )
+                                .add(
+                                    new RedisBinder<>(
+                                        redisTemplate, 
+                                        prop, 
+                                        Duration.ofMinutes(5)
+                                    )
+                                )
+                                .build();
+                    }
+
+                    // `createResolverCache` is not overridden,
+                    // it always returns null, because
+                    // calculated property cache will not be 
+                    // discussed in this article.
+                }
+            );
+        })
+        ...omit other configuration...
+        .build()
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun sqlClient(
+    redisTemplate: RedisTemplate<String, ByteArray>
+): KSqlClient =
+    newKSqlClient {
+        // highlight-next-line
+        setCacheFactory(
+
+            // Use this array to iterate types, 
+            // association properties, and calculated properties.
+            arrayOf(
+                BookStore.class,
+                Book.class,
+                Author.class,
+                TreeNode.class
+            ),
+
+            // For each type and property, create optional cache.
+            object : CacheFactory {
+
+                // Create object cache for types, including:
+                // `BookStore`
+                // `Book`
+                // `Author`
+                /// `TreeNode` 
+                override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+                    ChainCacheBuilder<Any, Any>()
+                        .add(
+                            CaffeineBinder(
+                                512, 
+                                Duration.ofSeconds(1)
+                            )
+                        )
+                        .add(
+                            RedisBinder(
+                                redisTemplate, 
+                                type, 
+                                Duration.ofMinutes(10)
+                            )
+                        )
+                        .build()
+
+                // Create reference association cache for 
+                // one-to-one/many-to-one properties, including:
+                // `Book.store`
+                // `TreeNode.parent`
+                override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
+                    ChainCacheBuilder<Any, Any>()
+                        .add(
+                            CaffeineBinder(
+                                512, 
+                                Duration.ofSeconds(1)
+                            )
+                        )
+                        .add(
+                            RedisBinder(
+                                redisTemplate, 
+                                prop, 
+                                Duration.ofMinutes(5)
+                            )
+                        )
+                        .build()
+
+                // Create list association cache for 
+                // one-to-many/many-to-many properties, including:
+                // `BookStore.books`
+                // `Book.authors`
+                // `Author.books`
+                // `TreeNode.childNodes`
+                override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
+                    ChainCacheBuilder<Any, List<*>>()
+                        .add(
+                            CaffeineBinder(
+                                64, 
+                                Duration.ofSeconds(1)
+                            )
+                        )
+                        .add(
+                            RedisBinder(
+                                redisTemplate, 
+                                prop, 
+                                Duration.ofMinutes(5)
+                            )
+                        )
+                        .build()
+
+                // `createResolverCache` is not overridden,
+                // it always returns null, because
+                // calculated property cache will not be 
+                // discussed in this article.
+            }
+        )
+        ...omit other configuration...
+    }
+```
+
+</TabItem>
+</Tabs>
+
+### 显式配置对隐式配置的覆盖
+
+虽然隐式配置可以一次性为所有类型和所有属性配置缓存，是推荐的方式，但是显式配置也有其价值。
+
+如果对某一个类型或属性在显式配置和隐式配置中都存在缓存配置，则显式配置优先。
+
+## 数据一致性
+
+框架提供一种自动保证数据库和缓存之间的一致性的方案。
 
 ### 环境搭建
 
-### 验证数据一致性
+要使用此功能，需要进行搭建以下步骤。
+
+1. 选用支持binlog的的数据库，开始binlog功能。
+2. 安装kafka，建立一个topic。
+3. 使用某些工具，如maxwell, canal或DataBus，将binlog变化发送到上一步建立的kafka topic
+
+你可以点击[这里](https://github.com/babyfish-ct/jimmer/blob/main/example/env-with-cache/install.sh)查看附带例子的docker安装脚本。
+
+### 保证数据一致性
+
+要保证数据一致性非常简单，只需监听kafka相关事件，并调用jimmer-sql的API即可。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Component
+public class MaxwellListener {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private final Caches caches;
+
+    public MaxwellListener(JSqlClient sqlClient) {
+        this.caches = sqlClient.getCaches();
+    }
+
+    @KafkaListener(topics = "maxwell")
+    public void onHandle(
+            String json,
+            Acknowledgment acknowledgment
+    ) throws JsonProcessingException {
+        JsonNode node = MAPPER.readTree(json);
+        String tableName = node.get("table").asText();
+        if (caches.isAffectedBy(tableName)) {
+            String type = node.get("type").asText();
+            JsonNode data = node.get("data");
+            switch (type) {
+                case "insert":
+                    caches.invalidateByBinLog(tableName, null, data);
+                    break;
+                case "update":
+                    caches.invalidateByBinLog(
+                        tableName, 
+                        node.get("old"), 
+                        data
+                    );
+                    break;
+                case "delete":
+                    caches.invalidateByBinLog(tableName, data, null);
+                    break;
+            }
+        }
+        acknowledgment.acknowledge();
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Component
+class MaxwellListener(sqlClient: KSqlClient) {
+
+    private val caches: KCaches = sqlClient.caches
+
+    @KafkaListener(topics = ["maxwell"])
+    fun onHandle(
+        json: String,
+        acknowledgment: Acknowledgment
+    ) {
+        val node = MAPPER.readTree(json)
+        val tableName = node["table"].asText()
+        if (caches.isAffectedBy(tableName)) {
+            val type = node["type"].asText()
+            val data = node["data"]
+            when (type) {
+                "insert" ->
+                    caches.invalidateByBinLog(tableName, null, data)
+                "update" ->
+                    caches.invalidateByBinLog(
+                        tableName, 
+                        node["old"], 
+                        data
+                    )
+                "delete" ->
+                    caches.invalidateByBinLog(tableName, data, null)
+            }
+        }
+        acknowledgment.acknowledge()
+    }
+
+    companion object {
+        private val MAPPER = ObjectMapper()
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 体验数据一致性
+
+截止目前为止，我们所介绍的所有功能都是查询相关的，暂未讨论修改相关的功能。你可以通过任意的数据库工具直接执行修改数据的SQL来验证。
+
+上面的代码中，二级缓存适配器`RedisBinder`内部具有日志打印行为，可以利用此日志快速验证数据一致性。
+
+#### 1. 修改外键
+
+执行
+```sql
+update book set store_id = 2 where id = 4
+```
+
+假设修改之前的外键为1，日志打印结果如下：
+
+```
+delete from redis: [Book-4]
+delete from redis: [BookStore.books-1]
+delete from redis: [BookStore.books-2]
+delete from redis: [Book.store-4]
+```
+
+这表明
+- id为4的`Book`的对象缓存被删除
+- id为1的`BookStore`的一对多关联`BookStore.books`的关联缓存被删除
+- id为2的`BookStore`的一对多关联`BookStore.books`的关联缓存被删除
+- id为4的`Book`的多对一关联`Book.store`的关联缓存被删除
+
+#### 2. 修改多对多关联中间表
+
+执行
+```sql
+insert into book_author_mapping(
+    book_id, author_id
+) values(
+    1, 4
+)
+```
+
+日志打印结果如下：
+```
+delete from redis: [Book.authors-1]
+delete from redis: [Author.books-4]
+```
+
+这表明
+- id为1的`Book`的多对多关联`Book.authors`的关联缓存被删除
+- id为4的`Author`的多对多关联`Author.books`的关联缓存被删除
