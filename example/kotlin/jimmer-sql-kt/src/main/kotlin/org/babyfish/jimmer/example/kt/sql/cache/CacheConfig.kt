@@ -26,9 +26,8 @@ class CacheConfig {
             setConnectionFactory(connectionFactory)
             keySerializer = StringRedisSerializer.UTF_8
 
-            // The nullability in the business sense is different from the nullability of redis values.
-            // Specify a dummy serializer for spring redis and use
-            // `org.babyfish.jimmer.sql.example.cache.ValueSerializer` to handle the values.
+            // Specify a dummy serializer for spring redis because
+            // `org.babyfish.jimmer.sql.example.cache.ValueSerializer` took over the job.
             valueSerializer =
                 object : RedisSerializer<ByteArray?> {
                     override fun serialize(t: ByteArray?): ByteArray? = t
