@@ -35,9 +35,9 @@ class RedisBinder<K, V> private constructor(
         require(!(randomPercent < 0 || randomPercent > 100)) { "randomPercent must between 0 and 100" }
         this.operations = operations
         keyPrefix = if (type != null) {
-            type.javaClass.simpleName + '-'
+            "${type.javaClass.simpleName}-"
         } else {
-            prop!!.declaringType.javaClass.simpleName + '.' + prop.name + '-'
+            "${prop!!.declaringType.javaClass.simpleName}.${prop.name}-"
         }
         this.duration = duration
         this.randomPercent = randomPercent

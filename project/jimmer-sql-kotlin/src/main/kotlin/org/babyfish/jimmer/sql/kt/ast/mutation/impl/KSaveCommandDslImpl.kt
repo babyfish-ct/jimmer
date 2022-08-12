@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.mutation.impl
 
-import org.babyfish.jimmer.sql.DeleteAction
+import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
@@ -29,8 +29,8 @@ internal class KSaveCommandDslImpl(
         javaCfg.setAutoAttaching(prop.toImmutableProp())
     }
 
-    override fun setDeleteAction(prop: KProperty1<*, *>, action: DeleteAction) {
-        javaCfg.setDeleteAction(prop.toImmutableProp(), action)
+    override fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction) {
+        javaCfg.setDissociateAction(prop.toImmutableProp(), action)
     }
 }
 

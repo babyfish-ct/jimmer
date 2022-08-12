@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql;
 
-public enum DeleteAction {
+public enum DissociateAction {
     NONE,
     SET_NULL,
-    CASCADE
+    DELETE
 }

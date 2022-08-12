@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.mutation;
 
-import org.babyfish.jimmer.sql.DeleteAction;
+import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
@@ -256,10 +256,10 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                     });
                         })
                 ).configure(it ->
-                        it.setDeleteAction(
+                        it.setDissociateAction(
                                 BookTable.class,
                                 BookTable::store,
-                                DeleteAction.SET_NULL
+                                DissociateAction.SET_NULL
                         )
                 ),
                 ctx -> {

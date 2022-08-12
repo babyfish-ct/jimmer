@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.meta;
 
-import org.babyfish.jimmer.sql.DeleteAction;
+import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.meta.Storage;
 
 import java.lang.annotation.Annotation;
@@ -39,7 +39,7 @@ public interface ImmutableProp {
 
     boolean hasTransientResolver();
 
-    DeleteAction getDeleteAction();
+    DissociateAction getDissociateAction();
 
     @SuppressWarnings("unchecked")
     <S extends Storage> S getStorage();

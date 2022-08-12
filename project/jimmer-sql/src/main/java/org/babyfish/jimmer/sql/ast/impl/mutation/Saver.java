@@ -5,7 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.DeleteAction;
+import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.OptimisticLockException;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
@@ -168,20 +168,20 @@ class Saver {
                     }
                     addOutput(AffectedTable.of(middleTableProp), rowCount);
                 } else if (childTableOperator != null && currentObjectType != ObjectType.NEW) {
-                    DeleteAction deleteAction = data.getDeleteAction(prop.getMappedBy());
-                    if (deleteAction == DeleteAction.CASCADE) {
+                    DissociateAction dissociateAction = data.getDissociateAction(prop.getMappedBy());
+                    if (dissociateAction == DissociateAction.DELETE) {
                         List<Object> detachedTargetIds = childTableOperator.getDetachedChildIds(
                                 currentId,
                                 associatedObjectIds
                         );
                         Deleter deleter = new Deleter(
-                                new DeleteCommandImpl.Data(data.getSqlClient(), data.deleteActionMap()),
+                                new DeleteCommandImpl.Data(data.getSqlClient(), data.dissociateActionMap()),
                                 con,
                                 affectedRowCountMap
                         );
                         deleter.addPreHandleInput(prop.getTargetType(), detachedTargetIds);
                         deleter.execute();
-                    } else if (deleteAction == DeleteAction.SET_NULL) {
+                    } else if (dissociateAction == DissociateAction.SET_NULL) {
                         int rowCount = childTableOperator.unsetParent(currentId, associatedObjectIds);
                         addOutput(AffectedTable.of(targetType), rowCount);
                     } else {

@@ -14,7 +14,7 @@ public interface TreeNode {
     @Null
     @ManyToOne
     @Key
-    @OnDelete(DeleteAction.CASCADE)
+    @OnDissociate(DissociateAction.DELETE)
     TreeNode parent();
 
     @OneToMany(mappedBy = "parent")

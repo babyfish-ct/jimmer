@@ -14,13 +14,13 @@ import java.lang.annotation.Target;
  * <div>
  *     When the parent object of some child objects is deleted,
  *     <ul>
- *         <li>If the attribute of @OnDelete is NONE, throw exception</li>
+ *         <li>If the attribute of @OnDissociate is NONE, throw exception</li>
  *         <li>
- *             If the attribute of @OnDelete is SET_NULL,
+ *             If the attribute of @OnDissociate is SET_NULL,
  *             they parent properties of child objects will be set null
  *         </li>
  *         <li>
- *             If the attribute of @OnDelete is DELETE,
+ *             If the attribute of @OnDissociate is DELETE,
  *             the child objects will be deleted too.
  *         </li>
  *     </ul>
@@ -45,7 +45,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
 @Target(ElementType.METHOD)
-public @interface OnDelete {
+public @interface OnDissociate {
 
-    DeleteAction value();
+    DissociateAction value();
 }

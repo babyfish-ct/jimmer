@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.mutation.impl
 
-import org.babyfish.jimmer.sql.DeleteAction
+import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand
 import org.babyfish.jimmer.sql.kt.ast.mutation.KDeleteCommandDsl
 import org.babyfish.jimmer.sql.kt.toImmutableProp
@@ -10,7 +10,7 @@ internal class KDeleteCommandDslImpl(
     private val javaCfg: DeleteCommand.Cfg
 ): KDeleteCommandDsl {
 
-    override fun setDeleteAction(prop: KProperty1<*, *>, action: DeleteAction) {
-        javaCfg.setDeleteAction(prop.toImmutableProp(), action)
+    override fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction) {
+        javaCfg.setDissociateAction(prop.toImmutableProp(), action)
     }
 }

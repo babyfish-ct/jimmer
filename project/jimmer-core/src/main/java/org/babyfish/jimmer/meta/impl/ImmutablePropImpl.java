@@ -12,7 +12,6 @@ import org.babyfish.jimmer.sql.meta.Storage;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.stream.Collectors;
 
 class ImmutablePropImpl implements ImmutableProp {
 
@@ -38,7 +37,7 @@ class ImmutablePropImpl implements ImmutableProp {
 
     private final boolean hasTransientResolver;
 
-    private final DeleteAction deleteAction;
+    private final DissociateAction dissociateAction;
 
     private Storage storage;
 
@@ -115,8 +114,8 @@ class ImmutablePropImpl implements ImmutableProp {
             associationAnnotation = getAnnotation(associationType);
         }
 
-        OnDelete onDelete = getAnnotation(OnDelete.class);
-        deleteAction = onDelete != null ? onDelete.value() : DeleteAction.NONE;
+        OnDissociate onDissociate = getAnnotation(OnDissociate.class);
+        dissociateAction = onDissociate != null ? onDissociate.value() : DissociateAction.NONE;
     }
 
     @Override
@@ -228,8 +227,8 @@ class ImmutablePropImpl implements ImmutableProp {
     }
 
     @Override
-    public DeleteAction getDeleteAction() {
-        return deleteAction;
+    public DissociateAction getDissociateAction() {
+        return dissociateAction;
     }
 
     @SuppressWarnings("unchecked")

@@ -10,7 +10,7 @@ interface TreeNode {
 
     @ManyToOne
     @Key
-    @OnDelete(DeleteAction.CASCADE)
+    @OnDissociate(DissociateAction.DELETE)
     val parent: TreeNode?
 
     @OneToMany(mappedBy = "parent")
