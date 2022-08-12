@@ -28,9 +28,8 @@ public class CacheConfig {
         template.setConnectionFactory(connectionFactory);
         template.setKeySerializer(StringRedisSerializer.UTF_8);
 
-        // The nullability in the business sense is different from the nullability of redis values.
-        // Specify a dummy serializer for spring redis and use
-        // `org.babyfish.jimmer.sql.example.cache.ValueSerializer` to handle the values.
+        // Specify a dummy serializer for spring redis because
+        // `org.babyfish.jimmer.sql.example.cache.ValueSerializer` took over the job.
         template.setValueSerializer(
                 new RedisSerializer<byte[]>() {
                     @Override

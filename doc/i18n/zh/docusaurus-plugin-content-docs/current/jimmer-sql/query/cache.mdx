@@ -556,7 +556,88 @@ class RedisBinder<K, V> private constructor(
 
 ## 配置缓存
 
-### 显示配置
+### 构建RedisTemplate
+
+在这个例子中，我们的二级缓存使用了redis，所以要先创建`RedisTemplate`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public RedisTemplate<String, byte[]> rawDataRedisTemplate(
+    // Inject connection factory of spring data redis
+    RedisConnectionFactory connectionFactory
+) {
+    RedisTemplate<String, byte[]> template = new RedisTemplate<>();
+    template.setConnectionFactory(connectionFactory);
+    template.setKeySerializer(StringRedisSerializer.UTF_8);
+
+    // Specify a dummy serializer for spring redis because 
+    // `org.babyfish.jimmer.sql.example.cache.ValueSerializer` took over the job.
+    template.setValueSerializer(
+            new RedisSerializer<byte[]>() {
+                @Override
+                public byte[] serialize(byte[] bytes) throws SerializationException {
+                    return bytes;
+                }
+                @Override
+                public byte[] deserialize(byte[] bytes) throws SerializationException {
+                    return bytes;
+                }
+            }
+    );
+    return template;
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun rawDataRedisTemplate(
+    // Inject connection factory of spring data redis
+    connectionFactory: RedisConnectionFactory
+): RedisTemplate<String, ByteArray> =
+    RedisTemplate<String, ByteArray>().apply {
+        setConnectionFactory(connectionFactory)
+        keySerializer = StringRedisSerializer.UTF_8
+
+        // Specify a dummy serializer for spring redis because
+        // `org.babyfish.jimmer.sql.example.cache.ValueSerializer` took over the job.
+        valueSerializer =
+            object : RedisSerializer<ByteArray?> {
+                override fun serialize(t: ByteArray?): ByteArray? = t
+                override fun deserialize(bytes: ByteArray?): ByteArray? = bytes
+            }
+    }
+```
+
+</TabItem>
+</Tabs>
+
+有两种方法为jimmer-sql配置缓存，显式配置和隐式配置。
+
+### 显式配置
+
+#### 1. 配置对象缓存
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+```
+
+</TabItem>
+</Tabs>
 
 ### 隐式配置
 
