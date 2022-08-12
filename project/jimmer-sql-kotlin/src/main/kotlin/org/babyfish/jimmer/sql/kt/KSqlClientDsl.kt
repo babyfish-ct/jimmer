@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt
 
+import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.cache.*
 import org.babyfish.jimmer.sql.dialect.Dialect
@@ -13,6 +14,7 @@ import java.util.function.Function
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
+@DslScope
 class KSqlClientDsl internal constructor(
     private val javaBuilder: JSqlClient.Builder
 ) {
@@ -54,6 +56,7 @@ class KSqlClientDsl internal constructor(
         }
     }
 
+    @DslScope
     class ConnectionManagerDsl internal constructor(
         private val javaBlock: Function<Connection, *>
     ) {
@@ -89,6 +92,7 @@ class KSqlClientDsl internal constructor(
             }
     }
 
+    @DslScope
     class ExecutorDsl internal constructor(
         val con: Connection,
         val sql: String,
@@ -139,6 +143,7 @@ class KSqlClientDsl internal constructor(
             }
     }
 
+    @DslScope
     class CacheDsl internal constructor(
         private val javaCfg: CacheConfig
     ) {
