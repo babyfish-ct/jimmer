@@ -605,13 +605,13 @@ public interface Book {
 public interface Book {
 
     @ManyToOne
-    @OnDelete(DeleteAction.SET_NULL)
+    @OnDissociate(DissociateAction.SET_NULL)
     BookStore store();
     ...
 }
 ```
 
-DeleteAction具有3个选项，对应数据库的外键行为：
+DissociateAction具有3个选项，对应数据库的外键行为：
 
 - NONE: 当前外键不支持删除动作，阻止其父对象被删除。
 - SET_NULL: 当父对象被删除时，此外键自动清空。对应于SQL的`on delete set null`语句，只能用于可空外键。

@@ -174,12 +174,9 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
 
     private final Duration duration;
 
-    private LoadingCache<
-        K, 
-        // Caffeine does not support null value, 
-        // use `Optional<T>` as a wrapper
-        Optional<V>
-    > loadingCache;
+    // Caffeine does not support null value, 
+    // use `Ref<V>` as a wrapper
+    private LoadingCache<K, Ref<V>> loadingCache;
 
     public CaffeineBinder(int maximumSize, Duration duration) {
         this.maximumSize = maximumSize;
@@ -192,42 +189,39 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
         // data from database or next level cache.
         CacheChain<K, V> chain
     ) {
+        // Create caffeine cache
         loadingCache = Caffeine
                 .newBuilder()
                 .maximumSize(maximumSize)
                 .expireAfterWrite(duration)
                 .build(
-                        new CacheLoader<K, Optional<V>>() {
+                        new CacheLoader<K, Ref<V>>() {
 
                             @Override
-                            public Optional<V> load(K key) {
+                            public Ref<V> load(K key) {
                                 // Load from database or next level cache
-                                Map<K, V> map = chain.loadAll(
-                                    Collections.singleton(key)
-                                );
+                                Map<K, V> map = chain.loadAll(Collections.singleton(key));
                                 V value = map.get(key);
                                 if (value != null || map.containsKey(key)) {
-                                    return Optional.ofNullable(value);
+                                    return Ref.of(value);
                                 }
-                                return Optional.ofNullable(null);
+                                return null;
                             }
 
                             @SuppressWarnings("unchecked")
                             @Override
-                            public Map<? extends K, ? extends Optional<V>> loadAll(
-                                Set<? extends K> keys
-                            ) {
+                            public Map<? extends K, ? extends Ref<V>> loadAll(Set<? extends K> keys) {
                                 // Load from database or next level cache
                                 Map<K, V> map = chain.loadAll((Collection<K>) keys);
                                 return map
-                                    .entrySet()
-                                    .stream()
-                                    .collect(
-                                        Collectors.toMap(
-                                            Map.Entry::getKey,
-                                            e -> Optional.ofNullable(e.getValue())
-                                        )
-                                    );
+                                        .entrySet()
+                                        .stream()
+                                        .collect(
+                                                Collectors.toMap(
+                                                        Map.Entry::getKey,
+                                                        e -> Ref.of(e.getValue())
+                                                )
+                                        );
                             }
                         }
                 );
@@ -235,10 +229,10 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
 
     @Override
     public Map<K, V> getAll(Collection<K> keys) {
-        Map<K, Optional<V>> map = loadingCache.getAll(keys);
+        Map<K, Ref<V>> map = loadingCache.getAll(keys);
         Map<K, V> convertedMap = new HashMap<>((map.size() * 4 + 2) / 3);
-        for (Map.Entry<K, Optional<V>> e : map.entrySet()) {
-            convertedMap.put(e.getKey(), e.getValue().orElse(null));
+        for (Map.Entry<K, Ref<V>> e : map.entrySet()) {
+            convertedMap.put(e.getKey(), e.getValue().getValue());
         }
         return convertedMap;
     }
@@ -264,12 +258,9 @@ class CaffeineBinder<K: Any, V: Any>(
     private val duration: Duration
 ) : LoadingBinder<K, V> {
     
-    private lateinit var loadingCache: LoadingCache<
-        K, 
-        // Caffeine does not support null value, 
-        // use `Optional<V>` as a wrapper
-        Optional<V>
-    >
+    // Caffeine does not support null value, 
+    // use `Ref<V>` as a wrapper
+    private lateinit var loadingCache: LoadingCache<K, Ref<V>>
     
     override fun initialize(
         // `chain` tells caffine how to load the non-existing 
@@ -282,33 +273,30 @@ class CaffeineBinder<K: Any, V: Any>(
             .maximumSize(maximumSize.toLong())
             .expireAfterWrite(duration)
             .build(
-                object : CacheLoader<K, Optional<V>> {
-
-                    override fun load(key: K): Optional<V> {
+                object : CacheLoader<K, Ref<V>> {
+                    override fun load(key: K): Ref<V>? {
                         // Load from database or next level cache
                         val map = chain.loadAll(setOf(key))
                         val value = map[key]
                         return if (value != null || map.containsKey(key)) {
-                            Optional.ofNullable(value)
+                            Ref.of(value)
                         } else {
-                            Optional.ofNullable(null)
+                            null
                         }
                     }
 
-                    override fun loadAll(
-                        keys: Set<K>
-                    ): Map<out K, Optional<V>> =
+                    override fun loadAll(keys: Set<K>): Map<out K, Ref<V>> =
                         // Load from database or next level cache
                         chain.loadAll((keys as Collection<K>)).mapValues {
-                            Optional.ofNullable(it.value)
+                            Ref.of(it.value)
                         }
                 }
             )
     }
 
-    override fun getAll(keys: Collection<K>): Map<K, V> =
+    override fun getAll(keys: Collection<K>): Map<K, V?> =
         loadingCache.getAll(keys).mapValues {
-            it.value.orElse(null)
+            it.value.value
         }
 
     override fun deleteAll(keys: Collection<K>, reason: Any?) {
@@ -1176,7 +1164,7 @@ fun sqlClient(
 
 要使用此功能，需要进行搭建以下步骤。
 
-1. 选用支持binlog的的数据库，开始binlog功能。
+1. 选用支持binlog的的数据库，开启binlog功能。
 2. 安装kafka，建立一个topic。
 3. 使用某些工具，如maxwell, canal或DataBus，将binlog变化发送到上一步建立的kafka topic
 
