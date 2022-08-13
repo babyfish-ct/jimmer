@@ -3,10 +3,10 @@ package org.babyfish.jimmer.example.kt.sql.cache
 import com.github.benmanes.caffeine.cache.CacheLoader
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.LoadingCache
+import org.babyfish.jimmer.lang.Ref
 import org.babyfish.jimmer.sql.cache.chain.CacheChain
 import org.babyfish.jimmer.sql.cache.chain.LoadingBinder
 import java.time.Duration
-import java.util.*
 
 // Level-1 Cache
 class CaffeineBinder<K: Any, V: Any>(
@@ -14,8 +14,8 @@ class CaffeineBinder<K: Any, V: Any>(
     private val duration: Duration
 ) : LoadingBinder<K, V> {
     
-    // Caffeine does not support null value, use optional as a wrapper
-    private lateinit var loadingCache: LoadingCache<K, Optional<V>>
+    // Caffeine does not support null value, use `Ref<V>` as a wrapper
+    private lateinit var loadingCache: LoadingCache<K, Ref<V>>
     
     override fun initialize(chain: CacheChain<K, V>) {
         loadingCache = Caffeine
@@ -23,28 +23,28 @@ class CaffeineBinder<K: Any, V: Any>(
             .maximumSize(maximumSize.toLong())
             .expireAfterWrite(duration)
             .build(
-                object : CacheLoader<K, Optional<V>> {
-                    override fun load(key: K): Optional<V> {
+                object : CacheLoader<K, Ref<V>> {
+                    override fun load(key: K): Ref<V>? {
                         val map = chain.loadAll(setOf(key))
                         val value = map[key]
                         return if (value != null || map.containsKey(key)) {
-                            Optional.ofNullable(value)
+                            Ref.of(value)
                         } else {
-                            Optional.ofNullable(null)
+                            null
                         }
                     }
 
-                    override fun loadAll(keys: Set<K>): Map<out K, Optional<V>> =
+                    override fun loadAll(keys: Set<K>): Map<out K, Ref<V>> =
                         chain.loadAll((keys as Collection<K>)).mapValues {
-                            Optional.ofNullable(it.value)
+                            Ref.of(it.value)
                         }
                 }
             )
     }
 
-    override fun getAll(keys: Collection<K>): Map<K, V> =
+    override fun getAll(keys: Collection<K>): Map<K, V?> =
         loadingCache.getAll(keys).mapValues {
-            it.value.orElse(null)
+            it.value.value
         }
 
     override fun deleteAll(keys: Collection<K>, reason: Any?) {
