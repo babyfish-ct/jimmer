@@ -964,7 +964,7 @@ public interface Book {
 
     @Null
     @ManyToOne
-    @OnDelete(DeleteAction.SET_NULL)
+    @OnDissociate(DissociateAction.SET_NULL)
     BookStore store();
     ...
 }
@@ -978,7 +978,7 @@ public interface Book {
 interface Book {
 
     @ManyToOne
-    @OnDelete(DeleteAction.SET_NULL)
+    @OnDissociate(DissociateAction.SET_NULL)
     val store: BookStore?
     ...
 }
@@ -987,7 +987,7 @@ interface Book {
 </TabItem>
 </Tabs>
 
-DeleteAction has 3 options, corresponding to the foreign key behavior of the database:
+DissociateAction has 3 options, corresponding to the foreign key behavior of the database:
 
 - NONE: The current foreign key does not support delete action, preventing its parent object from being deleted.
 - SET_NULL: The foreign key is automatically cleared when the parent object is deleted. Corresponds to the SQL `on delete set null` statement, which can only be used for nullable foreign keys.

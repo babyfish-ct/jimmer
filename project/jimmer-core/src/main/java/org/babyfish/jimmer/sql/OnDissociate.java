@@ -13,6 +13,7 @@ import java.lang.annotation.Target;
  *
  * <div>
  *     When the parent object of some child objects is deleted,
+ *     or when some child objects of a parent object are discorded,
  *     <ul>
  *         <li>If the attribute of @OnDissociate is NONE, throw exception</li>
  *         <li>
@@ -24,22 +25,6 @@ import java.lang.annotation.Target;
  *             the child objects will be deleted too.
  *         </li>
  *     </ul>
- * </div>
- *
- * <div>
- *     <b>Note:</b>
- *     <p>
- *          Parent object can discard some child objects.
- *          When using the save command, if the parent object in the database
- *          has some child objects, but the user overrides it and the new parent
- *          object argument specified by the user does not contain some existing
- *          child objects, these child objects will be discarded.
- *     </p>
- *     <p>
- *          In this case, although the parent object is not deleted,
- *          the same method is used to clear the parent reference of
- *          the discarded child objects or delete the discarded child objects.
- *     </p>
  * </div>
  */
 @Retention(RetentionPolicy.RUNTIME)

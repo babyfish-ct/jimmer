@@ -99,9 +99,9 @@ System.out.println(
 
 这表示，通过一对多关联`BookStore.books`一定能找到与之对应的多对一关联`Book.store`。
 
-接下来，jimmer-sql会参考多对一关联属性`Book.store`上的[@OnDelete](../mapping#orgbabyfishjimmersqlondelete)注解。
+接下来，jimmer-sql会参考多对一关联属性`Book.store`上的[@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate)注解。
 
-1. 如果`Book.store`所对应的外键被[@OnDelete](../mapping#orgbabyfishjimmersqlondelete)注解配置为`SET_NULL`，则，执行如下SQL
+1. 如果`Book.store`所对应的外键被[@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate)注解配置为`SET_NULL`，则，执行如下SQL
 
     ```sql
     update BOOK set STORE_ID = null where STORE_ID in(?)
@@ -117,14 +117,14 @@ System.out.println(
 
     > 如果查询没有返回任何数据，就忽略后续步骤。
 
-    - 如果`Book.store`所对应的外键被[@OnDelete](../mapping#orgbabyfishjimmersqlondelete)注解配置为`CASCADE`，
+    - 如果`Book.store`所对应的外键被[@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate)注解配置为`DELETE`，
         运用新的delete指令删除这些被抛弃对象，其实这就是delete指令的自动递归执行能力。
 
     - 否则，抛出异常。
 
-上面所讨论的这些情况，都需要开发人员在`Book.store`属性上使用注解[@OnDelete](../mapping#orgbabyfishjimmersqlondelete)。
+上面所讨论的这些情况，都需要开发人员在`Book.store`属性上使用注解[@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate)。
 
-然而，你也可以选择不使用[@OnDelete](../mapping#orgbabyfishjimmersqlondelete)注解，而动态地为delete指令指定deleteAction配置。
+然而，你也可以选择不使用[@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate)注解，而动态地为delete指令指定dissociateAction配置。
 
 ```java
 UUID storeId = ...;
@@ -134,21 +134,21 @@ DeleteResult result = sqlClient
     .configure(it ->
             it
                 // highlight-next-line
-                .setDeleteAction(
+                .setDissociateAction(
                     BookTable.class,
                     BookTable::store,
-                    DeleteAction.SET_NULL
+                    DissociateAction.SET_NULL
                 )
     )
     .execute();
 ```
 
-这里，动态地调用指令的`setDeleteAction`方法，相比于静态地在`Book.store`属性上使用注解[@OnDelete](../mapping#orgbabyfishjimmersqlondelete)并指定级联删除，效果完全一样。
+这里，动态地调用指令的`setDissociateAction`方法，相比于静态地在`Book.store`属性上使用注解[@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate)并指定级联删除，效果完全一样。
 
 :::info
-1. 如果`setDeleteAction`方法最后一个参数为`DeleteAction.SET_NULL`，则被设置关联属性必须可空，否则会导致异常。
+1. 如果`setDissociateAction`方法最后一个参数为`DissociateAction.SET_NULL`，则被设置关联属性必须可空，否则会导致异常。
 
-2. 如果既动态地为save指令配置了删除规则，又静态地在实体接口中通过注解[@OnDelete](../mapping#orgbabyfishjimmersqlondelete)配置了删除规则，则动态配置优先。
+2. 如果既动态地为save指令配置了删除规则，又静态地在实体接口中通过注解[@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate)配置了删除规则，则动态配置优先。
 :::
 
 

@@ -947,9 +947,9 @@ Unlike JPA, jimmer-sql does not allow direct use of `@OneToOne` and `@OneToMany`
 
 This means, through the one-to-many association `BookStore.books`, jimmer-sql can definitely find the corresponding many-to-one association `Book.store`.
 
-Next, jimmer-sql will look at the annotation [@OnDelete](../mapping#orgbabyfishjimmersqlondelete) on the many-to-one association property `Book.store`.
+Next, jimmer-sql will look at the annotation [@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate) on the many-to-one association property `Book.store`.
 
-1. If the foreign key of `Book.store` is configured as `SET_NULL` by the annotated [@OnDelete](../mapping#orgbabyfishjimmersqlondelete), then execute the following SQL
+1. If the foreign key of `Book.store` is configured as `SET_NULL` by the annotated [@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate), then execute the following SQL
 
     ```sql
     update BOOK 
@@ -977,14 +977,14 @@ Next, jimmer-sql will look at the annotation [@OnDelete](../mapping#orgbabyfishj
 
     > If the query returns no data, ignore the next steps.
 
-    - If the foreign key of `Book.store` is configured as `CASCADE` by the annotated [@OnDelete](../mapping#orgbabyfishjimmersqlondelete), Use [delete command](./delete-command) to delete these discarded objects.
+    - If the foreign key of `Book.store` is configured as `DELETE` by the annotated [@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate), Use [delete command](./delete-command) to delete these discarded objects.
 
     - Otherwise, throw an exception.
 
 
-All of the situations discussed above require the developer to use the annotation [@OnDelete](../mapping#orgbabyfishjimmersqlondelete) on the `Book.store` property.
+All of the situations discussed above require the developer to use the annotation [@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate) on the `Book.store` property.
 
-However, you can also dynamically specify the `deleteAction` configuration for the save command insteading of using the [@OnDelete](../mapping#orgbabyfishjimmersqlondelete) annotation.
+However, you can also dynamically specify the `dissociateAction` configuration for the save command insteading of using the [@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate) annotation.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -1008,10 +1008,10 @@ sqlClient
     )
     .configure(it -> 
         // highlight-next-line
-        it.setDeleteAction(
+        it.setDissociateAction(
             BookTable.class, 
             BookTable::store,
-            DeleteAction.CASCADE
+            DissociateAction.DELETE
         )
     )
     .execute();
@@ -1037,19 +1037,19 @@ sqlClient
         }
     ) {
         // highlight-next-line
-        setDeleteAction(Book::store, DeleteAction.CASCADE)
+        setDissociateAction(Book::store, DissociateAction.DELETE)
     }
 ```
 
 </TabItem>
 </Tabs>
 
-Here, calling `setDeleteAction` of save command has the same effect as statically using the annotation [@OnDelete](../mapping#orgbabyfishjimmersqlondelete).
+Here, calling `setDissociateAction` of save command has the same effect as statically using the annotation [@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate).
 
 :::info
-1. If the last parameter of the `setDeleteAction` method is `DeleteAction.SET_NULL`, the association property must be nullable, otherwise an exception will be thrown.
+1. If the last parameter of the `setDissociateAction` method is `DissociateAction.SET_NULL`, the association property must be nullable, otherwise an exception will be thrown.
 
-2. If the delete rule is not only dynamically configured for the save command, but also statically configured in the entity interface through the annotation [@OnDelete](../mapping#orgbabyfishjimmersqlondelete), the dynamic configuration takes precedence.
+2. If the delete rule is not only dynamically configured for the save command, but also statically configured in the entity interface through the annotation [@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate), the dynamic configuration takes precedence.
 :::
 
 ## Save associations and associated objects

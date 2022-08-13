@@ -134,9 +134,9 @@ Unlike JPA, jimmer-sql does not allow direct use of `@OneToOne` and `@OneToMany`
 
 This means, through the one-to-many association `BookStore.books`, jimmer-sql can definitely find the corresponding many-to-one association `Book.store`.
 
-Next, jimmer-sql will look at the annotation [@OnDelete](../mapping#orgbabyfishjimmersqlondelete) on the many-to-one association property `Book.store`.
+Next, jimmer-sql will look at the annotation [@OnDissociate](../mapping#orgbabyfishjimmersqldissociate) on the many-to-one association property `Book.store`.
 
-1. If the foreign key of `Book.store` is configured as `SET_NULL` by the annotated [@OnDelete](../mapping#orgbabyfishjimmersqlondelete), then execute the following SQL
+1. If the foreign key of `Book.store` is configured as `SET_NULL` by the annotated [@OnDissociate](../mapping#orgbabyfishjimmersqldissociate), then execute the following SQL
 
     ```sql
     update BOOK set STORE_ID = null where STORE_ID in(?)
@@ -152,13 +152,13 @@ Next, jimmer-sql will look at the annotation [@OnDelete](../mapping#orgbabyfishj
 
     > If the query returns no data, ignore the next steps.
 
-    - If the foreign key of `Book.store` is configured as `CASCADE` by the annotated [@OnDelete](../mapping#orgbabyfishjimmersqlondelete), Use the new delete command to delete these discarded objects, which is actually the automatic recursive execution capability of the delete command.
+    - If the foreign key of `Book.store` is configured as `DELETE` by the annotated [@OnDissociate](../mapping#orgbabyfishjimmersqldissociate), Use the new delete command to delete these discarded objects, which is actually the automatic recursive execution capability of the delete command.
 
     - Otherwise, throw an exception.
 
-All of the situations discussed above require the developer to use the annotation [@OnDelete](../mapping#orgbabyfishjimmersqlondelete) on the `Book.store` property.
+All of the situations discussed above require the developer to use the annotation [@OnDissociate](../mapping#orgbabyfishjimmersqldissociate) on the `Book.store` property.
 
-However, you can also dynamically specify the `deleteAction` configuration for the delete command insteading of using the [@OnDelete](../mapping#orgbabyfishjimmersqlondelete) annotation.
+However, you can also dynamically specify the `dissociateAction` configuration for the delete command insteading of using the [@OnDissociate](../mapping#orgbabyfishjimmersqldissociate) annotation.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -170,10 +170,10 @@ DeleteResult result = sqlClient
     .configure(it ->
             it
                 // highlight-next-line
-                .setDeleteAction(
+                .setDissociateAction(
                     BookTable.class,
                     BookTable::store,
-                    DeleteAction.SET_NULL
+                    DissociateAction.SET_NULL
                 )
     )
     .execute();
@@ -187,9 +187,9 @@ val result = sqlClient
     .entities
     .delete(BookStore::class, 1L) {
         // highlight-next-line
-        setDeleteAction(
+        setDissociateAction(
             Book::store, 
-            DeleteAction.SET_NULL
+            DissociateAction.SET_NULL
         )
     }
 ```
@@ -197,12 +197,12 @@ val result = sqlClient
 </TabItem>
 </Tabs>
 
-Here, calling `setDeleteAction` of delete command has the same effect as statically using the annotation [@OnDelete](../mapping#orgbabyfishjimmersqlondelete).
+Here, calling `setDissociateAction` of delete command has the same effect as statically using the annotation [@OnDissociate](../mapping#orgbabyfishjimmersqldissociate).
 
 :::info
-1. If the last parameter of the `setDeleteAction` method is `DeleteAction.SET_NULL`, the association property must be nullable, otherwise an exception will be thrown.
+1. If the last parameter of the `setDissociateAction` method is `DissociateAction.SET_NULL`, the association property must be nullable, otherwise an exception will be thrown.
 
-2. If the delete rule is not only dynamically configured for the save command, but also statically configured in the entity interface through the annotation [@OnDelete](../mapping#orgbabyfishjimmersqlondelete), the dynamic configuration takes precedence.
+2. If the delete rule is not only dynamically configured for the save command, but also statically configured in the entity interface through the annotation [@OnDissociate](../mapping#orgbabyfishjimmersqldissociate), the dynamic configuration takes precedence.
 :::
 
 
