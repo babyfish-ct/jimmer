@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.example.cache;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.sql.cache.chain.CacheChain;
 import org.babyfish.jimmer.sql.cache.chain.LoadingBinder;
 import org.jetbrains.annotations.NotNull;
@@ -18,8 +19,8 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
 
     private final Duration duration;
 
-    // Caffeine does not support null value, use optional as a wrapper
-    private LoadingCache<K, Optional<V>> loadingCache;
+    // Caffeine does not support null value, use `Ref` as a wrapper
+    private LoadingCache<K, Ref<V>> loadingCache;
 
     public CaffeineBinder(int maximumSize, Duration duration) {
         this.maximumSize = maximumSize;
@@ -33,21 +34,21 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
                 .maximumSize(maximumSize)
                 .expireAfterWrite(duration)
                 .build(
-                        new CacheLoader<K, Optional<V>>() {
+                        new CacheLoader<K, Ref<V>>() {
 
                             @Override
-                            public Optional<V> load(K key) {
+                            public Ref<V> load(K key) {
                                 Map<K, V> map = chain.loadAll(Collections.singleton(key));
                                 V value = map.get(key);
                                 if (value != null || map.containsKey(key)) {
-                                    return Optional.ofNullable(value);
+                                    return Ref.of(value);
                                 }
-                                return Optional.ofNullable(null);
+                                return null;
                             }
 
                             @SuppressWarnings("unchecked")
                             @Override
-                            public Map<? extends K, ? extends Optional<V>> loadAll(Set<? extends K> keys) {
+                            public Map<? extends K, ? extends Ref<V>> loadAll(Set<? extends K> keys) {
                                 Map<K, V> map = chain.loadAll((Collection<K>) keys);
                                 return map
                                         .entrySet()
@@ -55,7 +56,7 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
                                         .collect(
                                                 Collectors.toMap(
                                                         Map.Entry::getKey,
-                                                        e -> Optional.ofNullable(e.getValue())
+                                                        e -> Ref.of(e.getValue())
                                                 )
                                         );
                             }
@@ -65,10 +66,10 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
 
     @Override
     public Map<K, V> getAll(Collection<K> keys) {
-        Map<K, Optional<V>> map = loadingCache.getAll(keys);
+        Map<K, Ref<V>> map = loadingCache.getAll(keys);
         Map<K, V> convertedMap = new HashMap<>((map.size() * 4 + 2) / 3);
-        for (Map.Entry<K, Optional<V>> e : map.entrySet()) {
-            convertedMap.put(e.getKey(), e.getValue().orElse(null));
+        for (Map.Entry<K, Ref<V>> e : map.entrySet()) {
+            convertedMap.put(e.getKey(), e.getValue().getValue());
         }
         return convertedMap;
     }

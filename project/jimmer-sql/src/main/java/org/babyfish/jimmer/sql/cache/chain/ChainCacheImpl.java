@@ -16,18 +16,18 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
     private final Node<K, V> node;
 
     @SuppressWarnings("unchecked")
-    public ChainCacheImpl(List<Object> operators) {
-        if (operators.isEmpty()) {
-            throw new IllegalArgumentException("operators cannot be empty");
+    public ChainCacheImpl(List<Object> binders) {
+        if (binders.isEmpty()) {
+            throw new IllegalArgumentException("binders cannot be empty");
         }
         Node<K, V> node = new TailNode<>();
-        ListIterator<Object> itr = operators.listIterator(operators.size());
+        ListIterator<Object> itr = binders.listIterator(binders.size());
         while (itr.hasPrevious()) {
-            Object operator = itr.previous();
-            if (operator instanceof LoadingBinder<?, ?>) {
-                node = new LoadingNode<>((LoadingBinder<K, V>) operator, node);
+            Object binder = itr.previous();
+            if (binder instanceof LoadingBinder<?, ?>) {
+                node = new LoadingNode<>((LoadingBinder<K, V>) binder, node);
             } else {
-                node = new SimpleNode<>((SimpleBinder<K, V>) operator, node);
+                node = new SimpleNode<>((SimpleBinder<K, V>) binder, node);
             }
         }
         this.node = node;
@@ -50,26 +50,26 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
 
     private static class LoadingNode<K, V> implements Node<K, V> {
 
-        private final LoadingBinder<K, V> operator;
+        private final LoadingBinder<K, V> binder;
 
         private final Node<K, V> next;
 
-        private LoadingNode(LoadingBinder<K, V> operator, Node<K, V> next) {
-            this.operator = operator;
+        private LoadingNode(LoadingBinder<K, V> binder, Node<K, V> next) {
+            this.binder = binder;
             this.next = next;
-            operator.initialize(next);
+            binder.initialize(next);
         }
 
         @NotNull
         @Override
         public Map<K, V> loadAll(@NotNull Collection<K> keys) {
-            return operator.getAll(keys);
+            return binder.getAll(keys);
         }
 
         @Override
         public void deleteAll(@NotNull Collection<K> keys, Object reason) {
             try {
-                operator.deleteAll(keys, reason);
+                binder.deleteAll(keys, reason);
             } finally {
                 next.deleteAll(keys, reason);
             }
@@ -78,19 +78,19 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
 
     private static class SimpleNode<K, V> implements Node<K, V> {
 
-        private final SimpleBinder<K, V> operator;
+        private final SimpleBinder<K, V> binder;
 
         private final Node<K, V> next;
 
-        private SimpleNode(SimpleBinder<K, V> operator, Node<K, V> next) {
-            this.operator = operator;
+        private SimpleNode(SimpleBinder<K, V> binder, Node<K, V> next) {
+            this.binder = binder;
             this.next = next;
         }
 
         @NotNull
         @Override
         public Map<K, V> loadAll(@NotNull Collection<K> keys) {
-            Map<K, V> map = operator.getAll(keys);
+            Map<K, V> map = binder.getAll(keys);
             if (map.size() < keys.size()) {
                 Set<K> missedKeys = new LinkedHashSet<>();
                 for (K key : keys) {
@@ -106,7 +106,7 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
                         }
                     }
                 }
-                operator.setAll(mapFromNext);
+                binder.setAll(mapFromNext);
                 map.putAll(mapFromNext);
             }
             return map;
@@ -115,7 +115,7 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         @Override
         public void deleteAll(@NotNull Collection<K> keys, Object reason) {
             try {
-                operator.deleteAll(keys, reason);
+                binder.deleteAll(keys, reason);
             } finally {
                 next.deleteAll(keys, reason);
             }
@@ -161,7 +161,7 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         CacheLoader<?, ?> loader = LOADER_LOCAL.get();
         if (loader == null) {
             throw new IllegalStateException(
-                    "Cache operator can only be called by chain cache"
+                    "Cache binder can only be called by chain cache"
             );
         }
         return (CacheLoader<K, V>) loader;
