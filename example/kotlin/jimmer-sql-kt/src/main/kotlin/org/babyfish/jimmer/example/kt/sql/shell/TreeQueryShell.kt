@@ -22,7 +22,7 @@ class TreeQueryShell(
         "Find treeNodes, can optionally exclude child nodes of some nodes" +
             "(Example: tree --no-recursive clothing,drinks)"
     )
-    fun tree(
+    fun trees(
         @ShellOption(defaultValue = "") rootName: String,
         @ShellOption(defaultValue = "") noRecursive: String
     ) {
