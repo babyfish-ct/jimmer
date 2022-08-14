@@ -5,7 +5,7 @@ title: Benchmark
 
 import { Benchmark } from '@site/src/components/Benchmark';
 
-The [source code for benchmark](https://github.com/babyfish-ct/jimmer/tree/main/benchmark) can be found in the project. Using H2's in-memory database, it can run directly without any environment preparation.
+The source code of the benchmark is [here](https://github.com/babyfish-ct/jimmer/tree/main/benchmark), using H2's in-memory database, it can run directly without any environment preparation.
 
 ## Operation count per second
 
@@ -24,3 +24,30 @@ The [source code for benchmark](https://github.com/babyfish-ct/jimmer/tree/main/
 :::note
 This benchmark does not include `JPA(OpenJPA)` as Spring has removed support for OpenJPA.
 :::
+
+## The implementation principle of this benchmark
+
+1. Disable caching for all frameworks
+
+2. All frameworks close the log
+
+3. All frameworks open and close connections/sessions each time without sharing; rely on the connection pool to ensure performance.
+
+4. Use Spring's connection management. Due to different framework APIs, the implementation methods are slightly different.
+    
+    - Some use `getConnection` and `releaseConnection` of [DataSourceUtils](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/jdbc/datasource/DataSourceUtils.html)
+    - Some use [TransactionAwareDataSourceProxy](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/jdbc/datasource/TransactionAwareDataSourceProxy.html)
+    
+    but the end result is the same
+
+5. Don't use transactions
+    
+    `Exposed` is special, its API enforces transactions, provide fake implementation for it.
+
+6. Use the embedded H2 database to compress database consumption as much as possible, highlighting the performance of ORM itself, that is, the performance of mapping.
+
+## Value
+
+A common point of view is that the performance of ORM itself is not important. In actual projects, the database is not embedded memory database, so the time consumption of the ORM itself is negligible compared to the time consumption of the database.
+
+Rebuttal: After the release of Java 19, virtual threads are supported. ORM can complete the mapping as soon as possible, allowing the JVM to schedule more virtual threads.

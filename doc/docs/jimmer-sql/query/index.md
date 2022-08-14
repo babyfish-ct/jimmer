@@ -4,7 +4,9 @@ title: Query
 ---
 
 - [Sub query](./sub-query)
-- [&#128161; Pagination query](./pagination)
+- [Pagination query](./pagination)
 - [Selection](./selection)
-- [&#128161; Object Fetcher](./fetcher)
+- [Object Fetcher](./fetcher)
 - [Query middle table](./association)
+- [External Cache](./cache)
+- [Calculated property and cache](./calculated-prop.mdx)

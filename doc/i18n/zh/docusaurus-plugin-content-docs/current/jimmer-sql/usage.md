@@ -10,8 +10,8 @@ jimmer-sql内容相对较多，后续文章会逐步讲解。本文对其部分�
 ```groovy title="build.gradle"
 depdencies {
     
-    implementation 'org.babyfish.jimmer:jimmer-sql:0.0.35'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.0.35'
+    implementation 'org.babyfish.jimmer:jimmer-sql:0.1.25'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.1.25'
 
     runtimeOnly 'com.h2database:h2:2.1.212'
 }

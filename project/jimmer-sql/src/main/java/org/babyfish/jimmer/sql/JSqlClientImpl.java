@@ -93,7 +93,10 @@ class JSqlClientImpl implements JSqlClient {
                 dialect != null ?
                     dialect :
                     new DefaultDialect();
-        this.executor = executor;
+        this.executor =
+                executor != null ?
+                        executor :
+                        DefaultExecutor.INSTANCE;
         this.scalarProviderMap = scalarProviderMap;
         this.idGeneratorMap = idGeneratorMap;
         this.defaultBatchSize = defaultBatchSize;

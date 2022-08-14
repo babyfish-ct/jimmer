@@ -5,8 +5,9 @@ title: Benchmark
 
 import { Benchmark } from '@site/src/components/Benchmark';
 
-基准测试的源代码可以在项目中找到。 使用H2的内存数据库，无需任何环境准备即可直接运行。
+基准测试的源代码[在此](https://github.com/babyfish-ct/jimmer/tree/main/benchmark)，使用H2的内存数据库，无需任何环境准备即可直接运行。
 
+## Benchmark报告
 ## 每秒操作次数
 
 - 横坐标表示每次从数据库中查询到的数据对象的数量。
@@ -24,3 +25,29 @@ import { Benchmark } from '@site/src/components/Benchmark';
 :::note
 由于Spring移除了对OpenJPA的支持，本基准测试不包含`JPA(OpenJPA)`
 :::
+
+## 这个Benchmark的实现原则
+
+1.  所有框架禁用缓存
+
+2.  所有框架关闭日志
+
+3.  所有框架每次都打开和关闭连接/会话，不做共享；靠连接池保证性能。
+
+4.  接入Spring的连接管理机制。因不同框架API不同，实现方法略有不同。
+    
+    - 有的使用[DataSourceUtils](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/jdbc/datasource/DataSourceUtils.html)的getConnection和releaseConnection
+    - 有的使用[TransactionAwareDataSourceProxy](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/jdbc/datasource/TransactionAwareDataSourceProxy.html)
+    
+    但最终效果都一样
+5.  不使用事务
+    
+    `Exposed`比较特殊，其API强制要求事务，给予假的实现。
+
+6.  使用嵌入的H2内数据库，尽可能压缩数据库的消耗，凸显ORM本身的性能，即映射的性能。
+
+## 价值
+
+一种常见的观点：ORM本身的性能不重要，实际项目中，数据库并非有内嵌内存数据库，所以ORM本身耗时相对于数据库耗时可忽略不计。
+
+反驳：Java19发布后，支持虚拟线程。ORM能尽快完成映射，可以让JVM去调度更多的虚拟线程。
