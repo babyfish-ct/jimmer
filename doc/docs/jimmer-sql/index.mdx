@@ -138,11 +138,19 @@ val rows = sqlClient
 
 ### 4. **External cache**
 
-Work with any external cache. By default, the framework is just a very lightweight and powerful SQL generator without caching. Still, users can attach any external cache, **and keep it consistent with the business system's own cache technology**. Unlike other ORMs, it supports both object cache and also associative cache.
+Work with any external cache. By default, the framework is just a very lightweight and powerful SQL generator without caching. Still, users can attach any external cache
 
-:::warning
-This is an important and brand new feature, we will add the corresponding demo and documentation as soon as possible.
-:::
+1. No assumptions are made about the user's cache technology selection, developers can choose any cache technology. The framework only manages and coordinates the cache, and does not do cache implementation.
+
+2. Unlike other ORMs, it supports not only object caching, but also associative caching. The two are combined behind the scenes and can be used with object fetcher to query object trees of any depth and breadth, especially when recursively querying self-associative properties.
+
+For high-performance complex data structure queries, the following two tasks will cause a large workload for developers.
+
+1. Query different data fragments from different caches, and then manually merge them into a whole and return it.
+
+2. Ensure consistency between cache and database.
+
+In order to relieve the developer from these two heavy tasks, the framework's caching mechanism is designed to be powerful enough and transparent to the developer.
 
 ### 5. **Object Fetcher** 
 
