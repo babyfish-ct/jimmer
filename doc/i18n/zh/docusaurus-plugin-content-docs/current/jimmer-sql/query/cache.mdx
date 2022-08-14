@@ -76,7 +76,7 @@ import TabItem from '@theme/TabItem';
 
 ### 4. 计算属性缓存
 
-此缓存用于用户自定义的计算字段，这种缓存会在计算属性一文中详细讲解，本文不予关注。
+此缓存用于用户自定义的计算字段，这种缓存会在[计算属性](./calculated-prop)一文中详细讲解，本文不予关注。
 
 ## 那些功能会使用缓存？
 
@@ -195,35 +195,37 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
                 .maximumSize(maximumSize)
                 .expireAfterWrite(duration)
                 .build(
-                        new CacheLoader<K, Ref<V>>() {
+                    new CacheLoader<K, Ref<V>>() {
 
-                            @Override
-                            public Ref<V> load(K key) {
-                                // Load from database or next level cache
-                                Map<K, V> map = chain.loadAll(Collections.singleton(key));
-                                V value = map.get(key);
-                                if (value != null || map.containsKey(key)) {
-                                    return Ref.of(value);
-                                }
-                                return null;
+                        @Override
+                        public Ref<V> load(K key) {
+                            // Load from database or next level cache
+                            Map<K, V> map = chain.loadAll(Collections.singleton(key));
+                            V value = map.get(key);
+                            if (value != null || map.containsKey(key)) {
+                                return Ref.of(value);
                             }
-
-                            @SuppressWarnings("unchecked")
-                            @Override
-                            public Map<? extends K, ? extends Ref<V>> loadAll(Set<? extends K> keys) {
-                                // Load from database or next level cache
-                                Map<K, V> map = chain.loadAll((Collection<K>) keys);
-                                return map
-                                        .entrySet()
-                                        .stream()
-                                        .collect(
-                                                Collectors.toMap(
-                                                        Map.Entry::getKey,
-                                                        e -> Ref.of(e.getValue())
-                                                )
-                                        );
-                            }
+                            return null;
                         }
+
+                        @SuppressWarnings("unchecked")
+                        @Override
+                        public Map<? extends K, ? extends Ref<V>> loadAll(
+                            Set<? extends K> keys
+                        ) {
+                            // Load from database or next level cache
+                            Map<K, V> map = chain.loadAll((Collection<K>) keys);
+                            return map
+                                    .entrySet()
+                                    .stream()
+                                    .collect(
+                                            Collectors.toMap(
+                                                    Map.Entry::getKey,
+                                                    e -> Ref.of(e.getValue())
+                                            )
+                                    );
+                        }
+                    }
                 );
     }
 
