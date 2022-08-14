@@ -70,7 +70,7 @@ implements TransientResolver<Long, BigDecimal> {
                             book.price().avg().coalesce(BigDecimal.ZERO)
                     );
                 })
-                .execute(con); // Important to specify connection
+                .execute(con); // 传递JDBC连接
         return Tuple2.toMap(tuples);
     }
 }
@@ -97,7 +97,7 @@ class BookStoreAvgPriceResolver(
                     avg(table.price).coalesce(BigDecimal.ZERO)
                 )
             }
-            .execute(con) // It's important to specify the connection
+            .execute(con) // // 传递JDBC连接
             .associateBy({
                 it._1
             }) {
@@ -134,11 +134,11 @@ class BookStoreAvgPriceResolver(
 
 所以，我们能够通过`BookStore.avgPrice`获取书店中所有书籍的平均价格。
 
-:::info
+:::warning
 计算属性只能通过对象抓取器或GraphQL查询获取，无法作为普通的SQL表达式。
 :::
 
-## 计算缓存
+## 计算属性的缓存
 
 在[外部缓存](./cache)一文中，我们并未讲解计算属性的缓存。因为计算属性引入了开发人员自定义的计算规则，自然需要开发人员帮助框架保证其数据一致性。
 
@@ -174,7 +174,7 @@ public JSqlClient sqlClient(
                 },
                 return new CacheFactory() {
 
-                    // Create cache for calculated properties, including:
+                    // 为计算属性创建缓存，包括:
                     // `BookStore.avgPrice`
                     @Override
                     // highlight-next-line
@@ -196,11 +196,11 @@ public JSqlClient sqlClient(
                                 .build();
                     }
 
-                    ... omit other caches ...
+                    ...省略其他缓存...
                 }
             );
         })
-        ...omit other configuration...
+        ...省略其他配置...
         .build()
 }
 ```
@@ -223,7 +223,7 @@ fun sqlClient(
             ),
             object : CacheFactory {
 
-                // Create cache for calculated properties, including:
+                // // 为计算属性创建缓存，包括:
                 // `BookStore.avgPrice`
                 // highlight-next-line
                 override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? =
@@ -243,11 +243,11 @@ fun sqlClient(
                         )
                         .build()
 
-                ... omit other caches ...
+                ...省略其他缓存...
             }
         )
 
-        ...omit other configuration...
+        ...省略其他配置...
     }
 ```
 
@@ -260,7 +260,7 @@ fun sqlClient(
 
 根据`Book.avgPrice`的计算规则，一下两种情况需要删除缓存
 
-1. 从书籍指向书店的外键被修改时
+1. 外键`Book.store`被修改时
 2. 书籍的价格被修改时
 
 代码如下
@@ -438,6 +438,3 @@ delete from redis: [BookStore.avgPrice-1]
 delete from redis: [BookStore.avgPrice-2]
 # highlight-end
 ```
-
-
-

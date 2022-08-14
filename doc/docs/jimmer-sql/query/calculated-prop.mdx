@@ -1,44 +1,52 @@
 ---
 sidebar_position: 7
-title: Calculated properties
+title: Calculated property and its cache
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-### Basic usage
+## Calculated property
+
+The annotation `@Transient` can accept parameters, such as
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="BookStore.java"
+```java time="BookStore.java"
 @Entity
 public interface BookStore {
 
     @Transient(BookStoreAvgPriceResolver.class)
     BigDecimal avgPrice();
+
+    ...omit other code...
 }
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="BookStore.kt"
+```java time="BookStore.kt"
 @Entity
-public interface BookStore {
+interface BookStore {
 
     @Transient(BookStoreAvgPriceResolver::class)
     val avgPrice: BigDecimal
+
+    ...omit other code...
 }
 ```
 
 </TabItem>
 </Tabs>
 
+Here, `BookStoreAvgPriceResolver` is a user-defined class that calculates the average price of all books in the bookstore.
+
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="BookStoreAvgPriceResolver.java"
+```java title="BookStoreAvgPriceResolver"
 public class BookStoreAvgPriceResolver 
 implements TransientResolver<Long, BigDecimal> {
 
@@ -71,7 +79,7 @@ implements TransientResolver<Long, BigDecimal> {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="BookStoreAvgPriceResolver.kt"
+```kotlin title="BookStoreAvgPriceResolver"
 class BookStoreAvgPriceResolver(
     private val sqlClient: KSqlClient
 ) : KTransientResolver<Long, BigDecimal> {
@@ -101,7 +109,161 @@ class BookStoreAvgPriceResolver(
 </TabItem>
 </Tabs>
 
-### Cache consistency for calculated property.
+For this calculation rule implementation class, the convention is as follows:
+<table>
+    <thead>
+        <tr>
+            <th></th>
+            <th>Java</th>
+            <th>Kotlin</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><b>Super interface</b></td>
+            <td>org.babyfish.jimmer.sql.TransientResolver</td>
+            <td>org.babyfish.jimmer.sql.kt.KTransientResolver</td>
+        </tr>
+        <tr>
+            <td><b>Optional constructor parameter</b></td>
+            <td>org.babyfish.jimmer.sql.JSqlClient</td>
+            <td>org.babyfish.jimmer.sql.kt.KSqlClient</td>
+        </tr>
+    </tbody>
+</table>
+
+So, we can get the average price of all the books in the bookstore via `BookStore.avgPrice`.
+
+:::warning
+Calculated properties can only be retrieved through `Object Fetcher` or `GraphQL`, not as normal SQL expressions.
+:::
+
+## The cache of calculated property.
+
+In the article [External Cache](./cache), we did not cover the cache of calculated properties. Because computed properties introduce developer-defined computing rules, developers are required to help the framework ensure its data consistency.
+
+Example
+
+|key|value|
+|---|-----|
+|BookStore.avgPrice-1|80.333333333333|
+|BookStore.avgPrice-2|58.500000000000|
+
+
+### Configure cache
+
+Taking implicit cache configuration as an example, the code to configure cache for calculated property is as follows
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public JSqlClient sqlClient(
+    RedisTemplate<String, byte[]> redisTemplate
+) {
+    return JSqlClient
+        .newBuilder()
+        .setCaches(it -> {
+            setCacheFactory(
+                new Class[] {
+                    BookStore.class,
+                    Book.class,
+                    Author.class,
+                    TreeNode.class
+                },
+                return new CacheFactory() {
+
+                    // Create cache for calculated properties, including:
+                    // `BookStore.avgPrice`
+                    @Override
+                    // highlight-next-line
+                    public Cache<?, List<?>> createResolverCache(ImmutableProp prop) {
+                        return new ChainCacheBuilder<Object, List<?>>()
+                                .add(
+                                    new CaffeineBinder<>(
+                                        1024, 
+                                        Duration.ofSeconds(1)
+                                    )
+                                )
+                                .add(
+                                    new RedisBinder<>(
+                                        redisTemplate, 
+                                        prop, 
+                                        Duration.ofHours(1)
+                                    )
+                                )
+                                .build();
+                    }
+
+                    ... omit other caches ...
+                }
+            );
+        })
+        ...omit other configuration...
+        .build()
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun sqlClient(
+    redisTemplate: RedisTemplate<String, ByteArray>
+): KSqlClient =
+    newKSqlClient {
+        setCacheFactory(
+            arrayOf(
+                BookStore.class,
+                Book.class,
+                Author.class,
+                TreeNode.class
+            ),
+            object : CacheFactory {
+
+                // Create cache for calculated properties, including:
+                // `BookStore.avgPrice`
+                // highlight-next-line
+                override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? =
+                    ChainCacheBuilder<Any, List<*>>()
+                        .add(
+                            CaffeineBinder(
+                                1024, 
+                                Duration.ofSeconds(1)
+                            )
+                        )
+                        .add(
+                            RedisBinder(
+                                redisTemplate, 
+                                prop, 
+                                Duration.ofHours(1)
+                            )
+                        )
+                        .build()
+
+                ... omit other caches ...
+            }
+        )
+
+        ...omit other configuration...
+    }
+```
+
+</TabItem>
+</Tabs>
+
+### Ensure data consistency
+
+To ensure the consistency of the computed property cache, triggers needs to be added to the constructor of `BookStoreAvgPriceResolver`.
+
+According to the calculation rules of `Book.avgPrice`, the following two cases need to delete the cache
+
+1. When the foreign key `Book.store` is modified
+2. When the price of the book is revised
+
+code show as below
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -212,3 +374,71 @@ class BookStoreAvgPriceResolver(
 
 </TabItem>
 </Tabs>
+
+1.  Handling modification of foreign keys of book
+
+    - α: Listen for changes in one-to-many association `BookStore.books`
+    - β: Remove calculated property cache `BookStore.avgPrice` of `BookStore` objects whose `BookStore.books` has changed
+
+2.  Handling modification of price of book
+
+    - γ: Listen for changes to the entity `Book`
+    - δ: if the foreign key of the book has not changed, continue execution
+    - ε: If the unchanged foreign key is not null, continue execution
+    - ζ: If the price is modified, continue execution
+    - η: Clean up the calculated property cache `BookStore.avgPrice` of the parent object referenced by the foreign key `BookStore.store`
+
+:::info
+The above code uses a special method `getUnchangedFieldRef`. Specify a property, and if the object property has not been modified, create a wrapper for the unchanged value and return it.
+
+- For insert operation
+    Returns a wrapper whose internal value is the value of the specified field in the inserted object
+
+- For delete operation
+    Returns a wrapper whose internal value is the value of the specified field in the deleted object
+
+- For update operation
+    - if the specific field is changed, return null
+    - If the specific field is not changed, returns a wrapper, the internal value is the unchanged value of the specific field in the old and new objects
+
+Notice:
+    - If the wrapper itself is null, it means that the field has been changed, so the unchangd value cannot be obtained.
+    - If the internal value of wrapper is null, it means that the field has not been modified, but the unchanged value is null.
+:::
+
+### Experience data consistency
+
+#### 1. Modify price
+
+Execute
+```sql
+update book set price = price + 2 where id = 1;
+```
+
+Assuming the foreign key is 1, the log print result is as follows:
+
+```shell
+delete from redis: [Book-1]
+#highlight-next-line
+delete from redis: [BookStore.avgPrice-1]
+```
+
+#### 2. Modify foreign key
+
+Execute
+```sql
+update book set store_id = 2 where id = 4
+```
+
+Assuming that the foreign key before modification is 1, the log print result is as follows:
+
+```shell
+delete from redis: [Book-1]
+delete from redis: [BookStore.books-1]
+delete from redis: [BookStore.books-2]
+delete from redis: [Book.store-1]
+# highlight-start
+delete from redis: [BookStore.avgPrice-1]
+delete from redis: [BookStore.avgPrice-2]
+# highlight-end
+```
