@@ -6,14 +6,14 @@ title: SqlClient
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-SqlClient is the entry point jimmer-sql API.
+SqlClient是jimmer-sql所有API的入口。
 
 :::tip
-- For java, it is `org.babyfish.jimmer.sql.JSqlClient`
-- For kotlin, it is `org.babyfish.jimmer.sql.kt.KqlClient`
+- 对于Java而言，它是`org.babyfish.jimmer.sql.JSqlClient`
+- 对于kotlin而言，它是`org.babyfish.jimmer.sql.kt.KqlClient`
 :::
 
-## Create SqlClient
+## 创建SqlClient
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -37,13 +37,13 @@ val sqlClient = newKSqlClient {
 </TabItem>
 </Tabs>
 
-SqlClient requires an instance and should be shared globally.
+SqlClient需要一个实例，应该被全局共享。
 
-- If Spring is not used, it should be shared via static variables.
+- 如果没有使用Spring，应该通过静态变量共享它。
 
-- If Spring is used, it should be used as a Spring singleton bean object.
+- 如果使用了Spring，应该将其作为一个Spring的单例Bean对象。
 
-There is no doubt that using Spring/SpringBoot is a fixed pattern for almost all server-side programs.
+毫无疑问，采用Spring/SpringBoot几乎是所有服务端程序的固定模式。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -80,11 +80,11 @@ class SqlClientConfig {
 </TabItem>
 </Tabs>
 
-Then, the SqlClient object can be injected anywhere to use all the features of jimmer-sql.
+然后，可以在任何地方注入SqlClient对象来使用jimmer-sql的所有功能。
 
 ## ConnectionManager
 
-All executable statements and commands in jimmer-sql inherit from the interface `Executable`(java) or `KExecutable`(kotlin)
+jimmer-sql中一切可执行的语句和指令都继承自`Executable`(Java)或`KExecutable`(kotlin)接口
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -118,10 +118,9 @@ interface KExecutable<R> {
 </TabItem>
 </Tabs>
 
--   `execute(Connection)`: Execution based on user-specified JDBC connection.
+-   `execute(Connection)`：在用户指定的JDBC连接上执行。
 
-    Take the query as an example:
-    
+    以查询为例：
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
     
@@ -152,12 +151,9 @@ interface KExecutable<R> {
     </TabItem>
     </Tabs>
 
--   `execute()` or execute(null): Execution based on automatically acquired JDBC connection.
+-   `execute()`或`execute(null)`：由jimmer-sql自主决定在某个JDBC连接上执行。
 
-    Take the query as an example:
-
-    Take the query as an example:
-    
+    以查询为例：
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
     
@@ -189,14 +185,14 @@ interface KExecutable<R> {
     </Tabs>
 
 :::caution
-To use the first way, no special configuration of SqlClient is required.
+要使用第1种行为，无需对SqlClient做出特别配置。
 
-To use the second way, the ConnectionManager must be configured for SqlClient. Otherwise an exception will be thrown.
+要使用第2种行为，必须为SqlClient配置ConnectionManager。否则将会导致异常。
 
-The second way is recommended, so ConnectionManager is necessary.
+毫无疑问，第2种方式更符合业务系统开发要求，更推荐得使用。所以，强烈建议为SqlClient配置ConnectionManager。
 :::
 
-### Simple ConnectionManager
+### 简单的ConnectionManager
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -235,14 +231,18 @@ var sqlClient = newKSqlClient {
 </Tabs>
 
 :::danger
-This way is only responsible for obtaining connections from DataSource without transaction management.
+`ConnectionManager.simpleConnectionManager`仅负责从DataSource获取连接，并没有事务管理机制。
 
-The next way is recommended.
+这种方式仅适用于没有使用Spring的场合，除学习和尝试外，不建议在实际项目使用simpleConnectionManager。
 :::
 
-### ConnectionManager under Spring transaction management
+### 受Spring事务管理的ConnectionManager
 
-When you use spring, you can implement it based on `org.springframework.jdbc.datasource.DataSourceUtils`, you can get the connection with spring transaction management by it.
+正如前文所说，采用Spring/SpringBoot几乎是所有服务端程序的固定模式。
+
+jimmer-sql只专注于生成SQL和执行SQL，在连接管理和事务管理方面，不想开发和Spring/SpringBoot重复的功能，更不想因此增加和Spring/SpringBoot整合的难度。
+
+当你使用了spring-jdbc后，可以基于`org.springframework.jdbc.datasource.DataSourceUtils`实现ConnectionManager，这样jimmer-sql就受到Spring事务的管理了。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -300,12 +300,12 @@ fun sqlClient(dataSource: DataSource): KSqlClient =
 </Tabs>
 
 :::tip
-Let jimmer-sql be managed by Spring transactions is the recommended usage.
+让jimmer-sql受到Spring事务的管理，是推荐用法。
 :::
 
 ## Dialect
 
-As with most ORMs, different dialects need to be set for different databases. The dialects supported so far are as follows:
+和大部分ORM一样，需要为不同的数据库设置不同的方言。到目前为止，支持的方言如下:
 
 - org.babyfish.jimmer.sql.dialect.H2Dialect
 - org.babyfish.jimmer.sql.dialect.MySqlDialect
@@ -313,7 +313,7 @@ As with most ORMs, different dialects need to be set for different databases. Th
 - org.babyfish.jimmer.sql.dialect.OracleDialect
 - org.babyfish.jimmer.sql.dialect.SqlServerDialect
 
-Taking H2 as an example, the dialect is set as follows
+以H2为例，方言设置如下
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -348,10 +348,10 @@ fun sqlClient(): KSqlClient =
 
 ## Executor
 
-Executor is the entry point for jimmer-sql to execute the final SQL and acts as an interceptor for SQL execution.
+Executor是jimmer-sql执行最终SQL的入口，作为SQL执行的拦截器。
 
 :::note
-Setting the Executor is optional.
+设置Executor是可选行为。
 :::
 
 ```java title="Executor.java"
@@ -373,31 +373,31 @@ public interface Executor {
 }
 ```
 
-This interface has only one method `execute`
+此接口只有一个`execute`方法
 
-1. `con`: SQL is executed based on this connection
+1. `con`: SQL基于此连接执行
 
-2. `sql`: SQL statement to be executed
+2. `sql`: 即将被执行的SQL语句
 
-3. `variables`: JDBC parameters attached to the SQL to be executed
+3. `variables`: 即将被执行的SQL所附带的参数
 
-    > Note:
+    > 注意：
     >
-    > The list does not contain null values, all null values are pre-replaced with objects of type `org.babyfish.jimmer.sql.runtime.DbNull`.
+    > 该列表不可能包含null，所有的null值都被事先替换成了`org.babyfish.jimmer.sql.runtime.DbNull`类型的对象。
 
-4. `factory`: How to create JDBC prepared statement.
+4. `factory`: 如何创建JDBC prepared statement.
 
-5. `block`: Substantial operation to be performed.
+5. `block`: 将要执行的实质性操作。
 
-    > Note:
+    > 注意：
     >
-    > Do not call `block` directly in a custom Executor, instead call the method `execute` of `org.babyfish.jimmer.sql.runtime.DefaultExecutor`.
+    > 不要在自定义Executor中直接调用`block`，应该调用`org.babyfish.jimmer.sql.runtime.DefaultExecutor`的`execute`方法。
 
-The default `DefaultExecutor` is already capable of all jobs, so specifying a custom Exector is optional.
+默认的DefaultExecutor已经可胜任所有工作，所以指定自定义Exector是可选的。
 
-If you encounter one of the following scenarios, you can specify a custom Executor to override the default DefaultExecutor.
+如果遇到以下场景之一，就可以指定自定义Executor，覆盖默认的DefaultExecutor。
 
-### Log SQL and its parameters
+### 在日志中打印SQL语句和其参数
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -488,7 +488,7 @@ private val LOGGER =
 </TabItem>
 </Tabs>
 
-### Collect slow SQL for improvement
+### 搜集执行缓慢的SQL以求改进
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -576,11 +576,11 @@ private val LOGGER =
 </TabItem>
 </Tabs>
 
-## ScalarProvider
+## ScalarProvider。
 
-Multiple `ScalarProvider`s can be added to JSqlClient, each `ScalarProvider` tells the database how to handle a custom data type.
+可以为SqlClient添加多个`ScalarProvider`，每个`ScalarProvider`告诉据库如何处理一种自定义数据类型。
 
-`ScalarProvider` is defined as follows
+`ScalarProvider`定义如下
 
 ```java title="ScalarProvider"
 package org.babyfish.jimmer.sql.runtime;
@@ -600,14 +600,14 @@ public abstract class ScalarProvider<T, S> {
  }
 ```
 
-- Generic parameter `T`: data type in Java
-- Generic parameter `S`: data type in the database
-- Method `toScalar`: Convert the non-null data read from the database to Java data
-- Method `toSql`: converts non-null java data to the data that can be accepted by database
+- 范型参数`T`: Java中数据类型
+- 范型参数`S`: 数据库中数据类型
+- 方法`toScalar`: 把数据库中读取到的非null数据转换为Java数据
+- 方法`toSql`: 把Java的非null数据转换为数据库可接受的数据
 
-### Custom ScalarProvider
+### 自定义ScalarProvider
 
-For example, if current database does not support the UUID type, it can be handled like this
+例如当前数据库不支持UUID类型，可以如此处理
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -670,11 +670,11 @@ fun sqlClient() : KSqlClient =
 </TabItem>
 </Tabs>
 
-### Built-in ScalarProvider
+### 内置的ScalarProvider
 
-jimmer-sql has built-in ScalarProvider for enum.
+jimmer-sql内置了枚举所需的ScalarProvider。
 
-Suppose there is an enum type:
+假设有一个枚举类型：
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -701,7 +701,7 @@ enum class GcObjColor {
 </TabItem>
 </Tabs>
 
-1.  Maps to strings by enum's `name()`
+1.  按枚举的`name()`映射为字符串
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -737,7 +737,7 @@ enum class GcObjColor {
     </TabItem>
     </Tabs>
 
-2.  Maps to string as enum's `name()`, but maps `GRAY` to `GREY`
+2.  按枚举的`name()`映射为字符串，但把`GRAY`映射为`GREY`
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -776,7 +776,7 @@ enum class GcObjColor {
     </TabItem>
     </Tabs>
 
-3.  Maps to integers by enum's `ordinal()`
+3.  按枚举的`ordinal()`映射为整数
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -812,7 +812,7 @@ enum class GcObjColor {
     </TabItem>
     </Tabs>
 
-4.  Maps to integers as enum's `ordinal()`, but maps `BLACK` to `3`*(default is 2)*
+4.  按枚举的`ordinal()`映射为整数，但把`BLACK`映射为`3`*（默认是2）*
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -853,15 +853,15 @@ enum class GcObjColor {
 
 ## IdGenerator
 
-The id generation strategy for objects can be set dynamically.
+可以动态地设置对象的id生成策略。
 
 :::info
 
-Normally, the id generation strategy should be statically configured in the entity interface using the annotation `@org.babyfish.jimmer.sql.GeneratedValue`, you can refer to [mapping](./mapping#generatedvalue) for more information.
+正常情况下，id生成策略应该在实体接口中静态地使用注解`@org.babyfish.jimmer.sql.GeneratedValue`配置，可以参考[映射](./mapping#generatedvalue)以了解更多。
 
-However, we can dynamically specify the id generator in SqlClient?
+既然如此，为什么还要提供在SqlClient中动态指定id生成器的功能呢？
 
-The dynamic configuration can override the annotation's static configuration.
+SqlClient中动态指定IdGenerator可以覆盖实体文件中注解`@org.babyfish.jimmer.sql.GeneratedValue`的静态配置，这对单元测试非常有用。
 :::
 
 <Tabs groupId="language">
@@ -903,7 +903,7 @@ class UnitTestIdGenerator(
 </TabItem>
 </Tabs>
 
-You can use it like this
+然后，你可以如此使用
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -981,9 +981,9 @@ class MyTest {
 </TabItem>
 </Tabs>
 
-## DefaultBatchSize and DefaultListBatchSize
+## DefaultBatchSize和DefaultListBatchSize
 
-JSqlClient supports two configurations: `DefaultBatchSize` and `DefaultListBatchSize`.
+SqlClient支持两个配置：`DefaultBatchSize`和`DefaultListBatchSize`。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -1026,4 +1026,4 @@ fun sqlClient(): KSqlClient =
 </TabItem>
 </Tabs>
 
-The usage is described in detail in [Object Fetcher](./query/fetcher#batchsize), which will not be repeated in this article.
+具体的作用在[对象抓取器](./query/fetcher#batchsize)中做了详细的描述，本文不重复阐述。
