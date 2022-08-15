@@ -70,13 +70,13 @@ To create a literal expression for null, you must use the `nullValue()` method, 
 :::
 
 :::note
-In this example, java code uses the type bootstrap method:
+For java, we use the type bootstrap method:
 1. Expression.string(), for string types.
 2. Expression.numeric(), for numeric types.
 3. Expression.comparble(), for comparable types, that is, types inherited from java.lang.Comparable.
 4. Expression.any(), other types.
 
-The type boostrap method is designed for the inadequacy of the java language and is not our current focus, see [type boot](#type-bootstrap) at the end of this article to learn more.
+Kotlin does not have this problem, its API is unified.
 :::
 
 In most cases, developers do not need to manually create literal expressions.
@@ -362,7 +362,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
 
 ## Like
 
-### Simple case
+### case
 
 1.  like: Case sensitive
 
@@ -437,7 +437,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
 
     Corresponding JDBC parameters: `'%Ab%'`
 
-2. `LikeMode.START`: as a start
+2.  `LikeMode.START`: as a start
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -458,7 +458,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
 
     Corresponding JDBC parameters: `'Ab%'`
 
-3. `LikeMode.END`: as an end
+3.  `LikeMode.END`: as an end
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -479,7 +479,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
 
     Corresponding JDBC parameters: `'%Ab'`
 
-4. `LikeMode.EXACT`: exact match
+4.  `LikeMode.EXACT`: exact match
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -518,8 +518,6 @@ where(table.store.isNull())
 
 </TabItem>
 </Tabs>
-
-Or
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -997,7 +995,9 @@ List<String> results = sqlClient
 var results = sqlClient
     .createQuery(BookStore::class) {
         select(
-            table.website.coalesce() // 1
+            table.website
+                // highlight-next-line
+                .coalesce() // 1
                 .or(table.name) // 2
                 .end()
         )
@@ -1009,7 +1009,7 @@ var results = sqlClient
 
 :::tip
 
-In example, kotlin code and java code are different. there is no expression `3` in kotlin code.
+In this example, kotlin code and java code are different. there is no expression `3` in kotlin code.
 
 Kotlin-API intorduces null-safety of kotlin to SQL, `table.name` is a non-null field, so kotlin forces us to write `end()` to finish this expression. 
 
@@ -1019,7 +1019,7 @@ That means expression `3` in java code will never be used.
 The generated SQL is as follows
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="SQL for java">
 
 ```sql
 select 
@@ -1033,7 +1033,7 @@ from BOOK_STORE as tb_1_
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="kotlin" label="SQL for kotlin">
 
 ```sql
 select 
@@ -1131,7 +1131,6 @@ var fullNames = sqlClient
 
 </TabItem>
 </Tabs>
-
 
 
 The generated SQL is as follows
@@ -1297,6 +1296,7 @@ List<Author> authors = sqlClient.
 val authors = sqlClient
     .createQuery(Author::class) {
         where(
+            // highlight-next-line
             sql(Boolean::class, "regexp_like(%e, %v)") {
                 expression(table.firstName)
                 value("^Ste(v|ph)en$")
