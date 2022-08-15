@@ -19,7 +19,6 @@ package org.babyfish.jimmer.sql.example.model;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.UUID;
 import javax.validation.constraints.Null;
 
 import org.babyfish.jimmer.sql.*;
@@ -28,7 +27,7 @@ import org.babyfish.jimmer.sql.*;
 public interface Book {
 
     @Id
-    UUID id();
+    long id();
 
     String name();
 
@@ -60,7 +59,6 @@ public interface Book {
 package org.babyfish.jimmer.sql.example.model
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 import org.babyfish.jimmer.sql.*;
 
@@ -68,7 +66,7 @@ import org.babyfish.jimmer.sql.*;
 interface Book {
 
     @Id
-    val id: UUID
+    val id: Long
 
     val name: String
 
@@ -145,7 +143,6 @@ package org.babyfish.jimmer.sql.example.model;
 
 import java.lang.Integer;
 import java.math.BigDecimal;
-import java.util.UUID;
 import javax.persistence.criteria.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.PropExpression;
@@ -157,7 +154,7 @@ public class BookTable extends AbstractTableWrapper<Book> {
         super(table);
     }
 
-    public Expression<UUID> id() {
+    public Expression<Long> id() {
         return get("id");
     }
 
@@ -212,7 +209,6 @@ public class BookTableEx extends BookTable implements TableEx<Book> {
 package org.babyfish.jimmer.example.kt.sql.model
 
 import java.math.BigDecimal
-import java.util.UUID
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullablePropExpression
@@ -226,10 +222,10 @@ import org.babyfish.jimmer.sql.kt.ast.table.KTableEx
 /* 
  * Extension for Table<Book>
  */
-public val KTable<Book>.id: KNullablePropExpression<UUID>
+public val KTable<Book>.id: KNullablePropExpression<Long>
     get() = get("id")
 
-public val KNonNullTable<Book>.id: KNonNullPropExpression<UUID>
+public val KNonNullTable<Book>.id: KNonNullPropExpression<Long>
     get() = get("id")
 
 public val KTable<Book>.name: KNullablePropExpression<String>
@@ -525,7 +521,7 @@ There are two ways to break this rule
     <TabItem value="java" label="Java">
     
     ```java
-    List<UUID> bookIds = sqlClient
+    List<Long> bookIds = sqlClient
         .createQuery(BookTable.class, (q, book) -> {
             return q
                 .where(
@@ -571,7 +567,7 @@ There are two ways to break this rule
     <TabItem value="java" label="Java">
     
     ```java
-    List<UUID> bookIds = sqlClient
+    List<Long> bookIds = sqlClient
         .createQuery(BookTable.class, (q, book) -> {
             return q
                 .where(

@@ -52,8 +52,8 @@ group by tb_1_.STORE_ID
 
 打印结果如下
 ```
-Tuple2{_1=2fa3955e-3e83-49b9-902e-0465c109c779, _2=80.333333333333}
-Tuple2{_1=d38c10da-6be8-4924-b9b9-5e81899612a0, _2=58.500000000000}
+Tuple2{_1=2, _2=80.333333333333}
+Tuple2{_1=1, _2=58.500000000000}
 ```
 
 ## 以对象作为被查询列
@@ -99,7 +99,7 @@ where tb_2_.NAME = ?
 ```
 Tuple2{
     _1={
-        "id":"2fa3955e-3e83-49b9-902e-0465c109c779",
+        "id":2,
         "name":"MANNING",
         "website":null
     }, 
@@ -108,12 +108,12 @@ Tuple2{
         "name":"GraphQL in Action",
         "edition":1,
         "price":80.00,
-        "store":{"id":"2fa3955e-3e83-49b9-902e-0465c109c779"}
+        "store":{"id":2}
     }
 }
 Tuple2{
     _1={
-        "id":"2fa3955e-3e83-49b9-902e-0465c109c779",
+        "id":2,
         "name":"MANNING",
         "website":null
     }, 
@@ -122,12 +122,12 @@ Tuple2{
         "name":"GraphQL in Action",
         "edition":2,
         "price":81.00,
-        "store":{"id":"2fa3955e-3e83-49b9-902e-0465c109c779"}
+        "store":{"id":2}
     }
 }
 Tuple2{
     _1={
-        "id":"2fa3955e-3e83-49b9-902e-0465c109c779",
+        "id":2,
         "name":"MANNING",
         "website":null
     }, 
@@ -136,7 +136,7 @@ Tuple2{
         "name":"GraphQL in Action",
         "edition":3,
         "price":80.00,
-        "store":{"id":"2fa3955e-3e83-49b9-902e-0465c109c779"}
+        "store":{"id":2}
     }
 }
 ```

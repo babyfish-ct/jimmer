@@ -400,9 +400,6 @@ public class SqlClientConfig {
     }
 }
 ```
-:::note
-本框架附带例子中没有演示这样的用法，因为附带的例子基于H2，而H2是支持UUID类型的。
-:::
 
 ### 内置的ScalarProvider
 

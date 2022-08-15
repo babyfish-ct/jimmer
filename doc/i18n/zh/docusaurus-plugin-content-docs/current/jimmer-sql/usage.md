@@ -34,7 +34,7 @@ import org.babyfish.jimmer.sql.Key;
 public interface BookStore {
 
     @Id
-    UUID id();
+    long id();
 
     @Key
     String name();
@@ -69,7 +69,7 @@ import org.babyfish.jimmer.sql.Key;
 public interface Book {
 
     @Id
-    UUID id();
+    long id();
 
     @Key
     String name();
@@ -105,7 +105,7 @@ import java.util.UUID;
 public interface Author {
 
     @Id
-    UUID id();
+    long id();
 
     @Key
     String firstName();

@@ -68,7 +68,6 @@ package org.babyfish.jimmer.sql.example.model;
 
 import javax.validation.constraints.Null;
 import java.util.List;
-import java.util.UUID;
 
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.Id;
@@ -79,7 +78,7 @@ import org.babyfish.jimmer.sql.Key;
 public interface BookStore {
 
     @Id
-    UUID id();
+    long id();
 
     @Key
     String name();
@@ -98,8 +97,6 @@ public interface BookStore {
 ```kotlin title="BookStore.kt"
 package org.babyfish.jimmer.sql.example.model
 
-import java.util.UUID
-
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.Id
 import org.babyfish.jimmer.sql.OneToMany
@@ -109,7 +106,7 @@ import org.babyfish.jimmer.sql.Key
 public interface BookStore {
 
     @Id
-    val id: UUID
+    val id: Long
 
     @Key
     val name: String
@@ -137,7 +134,6 @@ package org.babyfish.jimmer.sql.example.model;
 import javax.validation.constraints.Null;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.UUID;
 
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.JoinColumn;
@@ -149,7 +145,7 @@ import org.babyfish.jimmer.sql.ManyToMany;
 public interface Book {
 
     @Id
-    UUID id();
+    long id();
 
     @Key
     String name();
@@ -192,7 +188,7 @@ import org.babyfish.jimmer.sql.ManyToMany
 public interface Book {
 
     @Id
-    val id: UUID
+    val id: Long
 
     @Key
     val name: String
@@ -225,7 +221,6 @@ public interface Book {
 package org.babyfish.jimmer.sql.example.model;
 
 import java.util.List;
-import java.util.UUID;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.ManyToMany;
@@ -234,7 +229,7 @@ import org.babyfish.jimmer.sql.ManyToMany;
 public interface Author {
 
     @Id
-    UUID id();
+    long id();
 
     @Key
     String firstName();
@@ -255,8 +250,6 @@ public interface Author {
 ```java title="Author.kt"
 package org.babyfish.jimmer.sql.example.model
 
-import java.util.UUID
-
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.Key
 import org.babyfish.jimmer.sql.ManyToMany
@@ -265,7 +258,7 @@ import org.babyfish.jimmer.sql.ManyToMany
 public interface Author {
 
     @Id
-    val id: UUID
+    val id: Long
 
     @Key
     val firstName: String
@@ -567,7 +560,7 @@ where tb_1_.ID in (
 ```java
 // Column1: BookStore id
 // Column2: Average book price of each BookStore
-List<Tuple2<UUID, BigDecimal>> tuples = sqlClient
+List<Tuple2<Long, BigDecimal>> tuples = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
         return q
             // highlight-next-line
@@ -1207,7 +1200,7 @@ The actual execution logic of this command depends on the existing data in the d
 <TabItem value="java" label="Java">
 
 ```java
-Collection<UUID> ids = ...
+Collection<Long> ids = ...
 
 DeleteResult result = sqlClient
     .getEntities()
@@ -1232,7 +1225,7 @@ System.out.println(
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-val ids: Collection<UUID> = ...
+val ids: Collection<Long> = ...
 val result = sqlClient
     .entities
     .batchDelete(Book::class, ids)
