@@ -256,7 +256,7 @@ public val KTable<Book>.`store?`: KNullableTable<BookStore>
     get() = outerJoin("store")
 
 /* 
- * Extension for BookTableEx<Book>
+ * Extension for TableEx<Book>
  */
 
 public val KNullableTableEx<Book>.authors: KNullableTableEx<Author>
@@ -367,18 +367,17 @@ val books = sqlClient
                 eq "Store Name"
         )
         /*
-            * However, "table.authors" cannot be used 
-            * because the property "authors" is defined 
-            * in `TableEx<Book>`, not `Table<Book>`.
-            *
-            * That is, compile-time prohibits users 
-            * from joining collections
-            * in top-level queries
-            */
+         * However, "table.authors" cannot be used because
+         * the extension property "authors" is defined 
+         * for `TableEx<Book>`, not `Table<Book>`.
+         *
+         * That is, compile-time prohibits users 
+         * from joining collections
+         * in top-level queries
+         */
         select(table)
     }
     .execute()
-books.forEach(::println)
 ```
 
 </TabItem>
@@ -515,7 +514,7 @@ So, this rule is a soft restriction, not a rigid one. it can be easily broken.
 
 There are two ways to break this rule
 
-1. Use weakly typed API *(not recommended)*
+1.  Use weakly typed API *(not recommended)*
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -535,7 +534,6 @@ There are two ways to break this rule
         })
         .distinct()
         .execute();
-    bookIds.forEach(System.out::println);
     ```
 
     </TabItem>
@@ -555,13 +553,12 @@ There are two ways to break this rule
         }
         .distinct()
         .execute()
-    bookIds.forEach(::println)
     ```
 
     </TabItem>
     </Tabs>
 
-2. Cast Table to TableEx *(recommended)*
+2.  Cast Table to TableEx *(recommended)*
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -581,7 +578,6 @@ There are two ways to break this rule
         })
         .distinct()
         .execute();
-    bookIds.forEach(System.out::println);
     ```
 
     </TabItem>
@@ -600,7 +596,6 @@ There are two ways to break this rule
         }
         .distinct()
         .execute()
-    bookIds.forEach(::println)
     ```
 
     </TabItem>
@@ -623,7 +618,7 @@ inner join AUTHOR as tb_3_
 where lower(tb_3_.FIRST_NAME) like ?
 ```
 
-:::info
+:::tip
 This rule is added, but it's easy to be broken. Why?
 
 When a developer really wants to do it, make sure he understands what he's doing.
