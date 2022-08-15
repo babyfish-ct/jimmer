@@ -3,6 +3,9 @@ sidebar_position: 5
 title: 表连接
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 本文将系统性介绍表之间的join操作。包含四个部分
 
 1. 动态连接
@@ -21,6 +24,9 @@ title: 表连接
 ### 示例
 
 让我们先来看一个动态连接的示范。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 public class BookRepository {
@@ -67,6 +73,48 @@ public class BookRepository {
     }
 }
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+class BookRepository(
+    private val sqlClient: KSqlClient
+) {
+    fun findBooks(
+        name: String?,
+        storeName: String?,
+        storeWebsite: String?
+    ): List<Book> =
+        sqlClient
+            .createQuery(Book::class) {
+                name?.let {
+                    where(table.name eq it)
+                }
+                storeName?.let {
+                    where(
+                        table
+                            // highlight-next-line
+                            .store // α
+                            .name eq it
+                    )
+                }
+                storeName?.let {
+                    where(
+                        table
+                            // highlight-next-line
+                            .store // β
+                            .website eq it
+                    )
+                }
+                select(table)
+            }
+            .execute()
+}
+```
+
+</TabItem>
+</Tabs>
 
 这是一个典型的动态查询，三个查询参数都允许为null。
 
@@ -169,9 +217,13 @@ public class BookRepository {
 
 上面的例子很简单，Java代码中的连接只有一层。事实上，可以创建较深的join对象
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 q.where(
-    store // 假设store是TableEx，允许使用集合关联
+    store // 假设store的类型是是BookStoreTableEx，
+          // 允许使用集合关联
         // highlight-next-line
         .books().authors() // 多层join
         .firstName()
@@ -179,17 +231,53 @@ q.where(
 );
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(
+    table // 假设table的类型是是TableEx<BookStore>，
+          // 允许使用集合关联
+        // highlight-next-line
+        .books.authors // 多层join
+        .firstName eq "X"
+)
+```
+
+</TabItem>
+</Tabs>
+
 或
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 q.where(
-    author // 假设author是TableEx，允许使用集合关联
+    author // 假设author的类型是是AuthorTableEx，
+           // 允许使用集合关联
         // highlight-next-line
         .books().store() // 多层join
         .name()
         .eq("X")
 );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(
+    table // 假设table的类型是是TableEx<Author>，
+          // 允许使用集合关联
+        // highlight-next-line
+        .books.store // 多层join
+        .name eq "X"
+)
+```
+
+</TabItem>
+</Tabs>
 
 由此可见，Java代码创建的join对象，其实是一种长度任意的路径，叫做join路径。join路径包含1到无穷个join节点。
 
@@ -240,10 +328,22 @@ jimmer-sql会根据这棵树来生成最终SQL中的join子句。
 
 另外一个需要说明的规则，就是连接方式。创建join对象的方法具备参数，以指定连接方式，比如，左连接：
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 book.store(JoinType.LEFT);
 ```
-> 如果不指定该参数，默认内连接。
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+book.`store?`
+```
+
+</TabItem>
+</Tabs>
 
 连接方式合并规则如下：
 
@@ -256,6 +356,9 @@ book.store(JoinType.LEFT);
 
 我们先来看一个普通表连接的例子。
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -264,8 +367,22 @@ List<Book> books = sqlClient
             .select(book);
     })
     .execute();
-books.stream().forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.store.name eq "MANNING")
+        select(table)    
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 生成的SQL如下：
 
@@ -287,6 +404,9 @@ where
 
 现在，再来看一个幻连接的例子
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -301,8 +421,28 @@ List<Book> books = sqlClient
             .select(book);
     })
     .execute();
-books.stream().forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(
+            table
+            .store
+            // highlight-next-line
+            .id // 只访问id
+            eq 2L
+        )
+        select(table)
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 这次，生成的SQL如下：
 
@@ -333,8 +473,11 @@ from BOOK as tb_1_
 
 我们先来看一个基于中间表的普通连接。
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-List<UUID> bookIds = sqlClient
+List<Long> bookIds = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
         return q
             .where(
@@ -347,8 +490,27 @@ List<UUID> bookIds = sqlClient
     })
     .distinct()
     .execute();
-bookIds.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookIds = sqlClient
+    .createQuery(Book::class) {
+        where(
+            (table as KNullableTableEx<Book>)
+                .authors
+                .firstName eq "Alex"
+        )
+        select(table.id)
+    }
+    .distinct()
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 生成的SQL如下：
 ```sql
@@ -374,6 +536,9 @@ where tb_3_.FIRST_NAME = ?
 
 接下来，让我们看看半连接的例子
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<UUID> bookIds = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -389,8 +554,29 @@ List<UUID> bookIds = sqlClient
     })
     .distinct()
     .execute();
-bookIds.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookIds = sqlClient
+    .createQuery(Book::class) {
+        where(
+            (table as KNullableTableEx<Book>)
+                .authors
+                // highlight-next-line
+                .id // 只访问id 
+                eq 2L
+        )
+        select(table.id)
+    }
+    .distinct()
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 这次，生成的SQL如下：
 ```sql
@@ -433,6 +619,9 @@ where tb_2_.AUTHOR_ID = ?
 
 为了更好地阐述逆连接，我们先来看看普通的连接。
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 q.where(
     book
@@ -444,13 +633,33 @@ q.where(
 );
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(
+    table
+        // 这是一个普通的正向连接
+        // highlight-next-line
+        .authors
+        .firstName eq "Alex"
+)
+```
+
+</TabItem>
+</Tabs>
+
 与之完全等价的逆连接，有两种写法
 
-1. 弱类型写法
+1.  弱类型写法
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
     ```java
     q.where(
         book
-            // Auhtor.books反过来就是Book.authors
+            // Author.books反过来就是Book.authors
             // highlight-next-line
             .inverseJoin(Author.class, "books")
             .firstName()
@@ -458,21 +667,56 @@ q.where(
     );
     ```
 
-2. 强类型写法
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    where(
+        table
+            // Author.books反过来就是Book.authors
+            // highlight-next-line
+            .inverseJoin(Author::class, "books")
+            .firstName eq "Alex"
+    )
+    ```
+
+    </TabItem>
+    </Tabs>
+
+2.  强类型写法
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
     ```java
     q.where(
         book
-            // Auhtor.books反过来就是Book.authors
-            // highlight-start
+            // Author.books反过来就是Book.authors
+            // highlight-next-line
             .inverseJoin(
                 AuthorTableEx.class, 
                 AuthorTableEx::books
             )
-            // highlight-end
             .firstName()
             .eq("Alex")
     );
     ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    where(
+        table
+            // Author.books反过来就是Book.authors
+            // highlight-next-line
+            .inverseJoin(Author::books)
+            .firstName eq "Alex"
+    )
+    ```
+
+    </TabItem>
+    </Tabs>
 
 :::info
 
