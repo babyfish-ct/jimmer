@@ -418,11 +418,7 @@ List<Book> books = sqlClient
                     .store()
                     // highlight-next-line
                     .id() // Only id is accessed
-                    .eq(
-                        UUID.fromString(
-                            "2fa3955e-3e83-49b9-902e-0465c109c779"
-                        )
-                    )
+                    .eq(2L)
             )
             .select(book);
     })
@@ -440,9 +436,7 @@ val books = sqlClient
             .store
             // highlight-next-line
             .id // Only access id 
-            eq UUID.fromString(
-                "2fa3955e-3e83-49b9-902e-0465c109c779"
-            )
+            eq 2L
         )
         select(table)
     }
@@ -485,7 +479,7 @@ Let's first look at a normal join based on middle table
 <TabItem value="java" label="Java">
 
 ```java
-List<UUID> bookIds = sqlClient
+List<Long> bookIds = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
         return q
             .where(
@@ -556,11 +550,7 @@ List<UUID> bookIds = sqlClient
                     .authors()
                     // highlight-next-line
                     .id() // Only access id
-                    .eq(
-                        UUID.fromString(
-                            "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
-                        )
-                    )
+                    .eq(2L)
             )
             .select(book.id());
     })
@@ -579,9 +569,7 @@ val bookIds = sqlClient
                 .authors
                 // highlight-next-line
                 .id // Only access id 
-                eq UUID.fromString(
-                    "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
-                )
+                eq 2L
         )
         select(table.id)
     }

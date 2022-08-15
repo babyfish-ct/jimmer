@@ -112,9 +112,7 @@ SimpleSaveResult<Book> result = sqlClient
     .saveCommand(
         BookDraft.$.produce(book -> {
             book
-                .setId(
-                    UUID.fromString("80620741-e3a1-4076-bf25-36a0c0238936")
-                )
+                .setId(100L)
                 .setName("SpringBoot in Action")
                 .setEdition(1)
                 .setPrice(new BigDecimal("44.99"));
@@ -136,7 +134,7 @@ val result = sqlClient
     .entities
     .save(
         new(Book::class).by {
-            id = 1L
+            id = 100L
             name = "SpringBoot in Action"
             edition = 1
             price = BigDecimal("44.99")
@@ -184,9 +182,7 @@ SimpleSaveResult<Book> result = sqlClient
     .saveCommand(
         BookDraft.$.produce(book -> {
             book
-                .setId(
-                    UUID.fromString("80620741-e3a1-4076-bf25-36a0c0238936")
-                )
+                .setId(1L)
                 .setName("SpringBoot in Action")
                 .setEdition(1)
                 .setPrice(new BigDecimal("44.99"));
@@ -892,8 +888,8 @@ For one-to-one or one-to-many associations based directly on foreign keys, the s
 <TabItem value="java" label="Java">
 
 ```java
-UUID bookId1 = ...;
-UUID bookId2 = ...;
+Long bookId1 = ...;
+Long bookId2 = ...;
 sqlClient
     .getEntities()
     .save(

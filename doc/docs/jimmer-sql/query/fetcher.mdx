@@ -152,8 +152,8 @@ where tb_1_.ID in (?, ?, ?, ?, ?)
 </TabItem>
 </Tabs>
 
-:::warning
-Producing different SQL for different situations makes it difficult to discuss Object Fetcher in this article.
+:::caution
+Generating different SQL for different situations makes it difficult to discuss Object Fetcher in this article.
 
 Therefore, the SQL mentioned in the rest of this article is only for non-cached scenario.
 :::
@@ -228,7 +228,7 @@ The printed result is as follows (the original output is compact, formatted here
 
 ```
 {
-    "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+    "id":3,
     "name":"Learning GraphQL"
 }
 ...omit the 2nd object...,
@@ -280,7 +280,7 @@ val books = sqlClient
 :::note
 Object fetchers are immutable objects, and each call to chained method  returns a new object fetcher.
 
-That is, in the above code
+That is, in the above **Java** code
 1. `BookFetcher.$`
 2. `BookFetcher.$.name()`
 3. `BookFetcher.$.name().price()`
@@ -305,7 +305,7 @@ The printed result is as follows (the original output is compact, formatted here
 
 ```
 {
-    "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+    "id":3,
     "name":"Learning GraphQL",
     "price":51.00
 }
@@ -375,7 +375,7 @@ where tb_1_.EDITION = ?
 The printed result is as follows (the original output is compact, formatted here for readability):
 ```
 {
-    "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+    "id":3,
     "name":"Learning GraphQL",
     "edition":3,
     "price":51.00
@@ -388,7 +388,6 @@ The printed result is as follows (the original output is compact, formatted here
 ### Negative property
 
 The properties mentioned above are all positive properties, and properties to be queried are constantly added. Negative properties are the opposite, removing the specified property from the existing object fetcher.
-
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -459,7 +458,7 @@ The printed result is as follows (the original output is compact, formatted here
 
 ```
 {
-    "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+    "id":3,
     "name":"Learning GraphQL",
     "price":51.00
 }
@@ -514,7 +513,10 @@ val books = sqlClient
 `allTableFields()` returns the default object format, so the following two examples are equivalent
 
 1. 
-    ```
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
     q.select(
         book.fetch(
             BookFetcher.$.allTableFields()
@@ -522,12 +524,37 @@ val books = sqlClient
     )
     ```
 
-2. 
-    ```
-    q.select(
-        book
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    select(
+        table.fetchBy(
+            allTableFields()
+        )
     )
     ```
+
+    </TabItem>
+    </Tabs>
+
+2. 
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    q.select(book)
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    select(table)
+    ```
+
+    </TabItem>
+    </Tabs>
 :::
 
 The generated SQL is as follows:
@@ -545,7 +572,7 @@ where tb_1_.EDITION = ?
 The printed result is as follows (the original output is compact, formatted here for readability):
 ```
 {
-    "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+    "id":3,
     "name":
     "Learning GraphQL",
     "edition":3,
@@ -604,11 +631,11 @@ val books = sqlClient
 </TabItem>
 </Tabs>
 
-Here, `authors()` means to fetch many-to-many associations. Note that no parameters are specified, which means that only the id property of the associated object is fetched.
+Here, `authors` means to fetch many-to-many associations. Note that no parameters are specified, which means that only the id property of the associated object is fetched.
 
 Two SQL statemenets are generated.
 
-1. Query the aggregate root objects: `Book`
+1.  Query the aggregate root objects: `Book`
     ```sql
     select 
         tb_1_.ID, 
@@ -620,7 +647,7 @@ Two SQL statemenets are generated.
     where tb_1_.EDITION = ?
     ```
 
-2. Query all `Author` objects with only id based on association `Book.authors`
+2.  Query all `Author` objects with only id based on association `Book.authors`
 
     ```sql
     select 
@@ -650,12 +677,12 @@ The printed result is as follows (the original output is compact, formatted here
 
 ```
 {
-    "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+    "id":3,
     "name":"Learning GraphQL",
     "edition":3,
     "price":51.00,
     "authors":[
-        {"id":"1e93da94-af84-44f4-82d1-d8a9fd52ea94"},
+        {"id":2},
         {"id":"fd6bb6cf-336d-416c-8005-1ae11a6694b5"}
     ]
 }
@@ -897,23 +924,23 @@ The printed result is as follows (the original output is compact, formatted here
 
 ```
 {
-    "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+    "id":3,
     "name":"Learning GraphQL",
     "edition":3,
     "price":51.00,
     "store":{
-        "id":"d38c10da-6be8-4924-b9b9-5e81899612a0",
+        "id":1,
         "name":"O'REILLY",
         "website":null
     },
     "authors":[
         {
-            "id":"1e93da94-af84-44f4-82d1-d8a9fd52ea94",
+            "id":2,
             "firstName":"Alex",
             "lastName":"Banks",
             "gender":"MALE"
         },{
-            "id":"fd6bb6cf-336d-416c-8005-1ae11a6694b5",
+            "id":1,
             "firstName":"Eve",
             "lastName":"Procello",
             "gender":"MALE"
@@ -1191,13 +1218,13 @@ The printed result is as follows (the original output is compact, formatted here
 ```
 Tuple2{
     _1={
-        "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+        "id":3,
         "name":"Learning GraphQL",
         "edition":3,
         "price":51.00,
         "authors":[
             {
-                "id":"1e93da94-af84-44f4-82d1-d8a9fd52ea94",
+                "id":2,
                 "firstName":"Alex",
                 "lastName":"Banks",
                 "gender":"MALE"
@@ -1205,13 +1232,13 @@ Tuple2{
         ]
     }, 
     _2={
-        "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+        "id":3,
         "name":"Learning GraphQL",
         "edition":3,
         "price":51.00,
         "authors":[
             {
-                "id":"1e93da94-af84-44f4-82d1-d8a9fd52ea94",
+                "id":2,
                 "firstName":"Alex",
                 "lastName":"Banks",
                 "gender":"MALE"
@@ -1375,7 +1402,7 @@ treeNodes.forEach(System.out::println);
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotln
+```kotlin
 val treeNodes = sqlClient
     .createQuery(TreeNode::class) {
         where(table.parent.isNull())

@@ -17,9 +17,7 @@ jimmer-sql允许开发人员通过最简单也最高效的方式，直接对中�
 UUID bookId = UUID.fromString(
     "780bdf07-05af-48bf-9be9-f8c65236fecc"
 );
-UUID authorId = UUID.fromString(
-    "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
-);
+UUID authorId = 2L;
 sqlClient
     .getAssociations(
         BookTableEx.class, 
@@ -48,9 +46,7 @@ insert into
 UUID bookId = UUID.fromString(
     "780bdf07-05af-48bf-9be9-f8c65236fecc"
 );
-UUID authorId = UUID.fromString(
-    "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
-);
+UUID authorId = UUID.fromString(2L);
 sqlClient
     .getAssociations(
         AuthorTableEx.class,
@@ -115,9 +111,7 @@ UUID bookId3 = UUID.fromString(
     "058ecfd0-047b-4979-a7dc-46ee24d08f08"
 );
 
-UUID authorId1 = UUID.fromString(
-    "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
-);
+UUID authorId1 = UUID.fromString(2L);
 UUID authorId2 = UUID.fromString(
     "c14665c8-c689-4ac7-b8cc-6f065b8d835d"
 );

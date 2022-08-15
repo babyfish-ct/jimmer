@@ -147,8 +147,8 @@ where tb_1_.ID in (?, ?, ?, ?, ?)
 </TabItem>
 </Tabs>
 
-:::warning
-针对这不种情况生产完全不同的SQL，会导致本文难以讨论。
+:::caution
+针对不种情况生成不同的SQL，会导致本文难以讨论对象抓取器。
 
 因此，本文剩余部分提及的SQL，仅针对未使用外部缓存的场景。
 :::
@@ -156,6 +156,9 @@ where tb_1_.ID in (?, ?, ?, ?, ?)
 ## 基本使用
 
 ### 抓取标量字段
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 List<Book> books = sqlClient
@@ -170,8 +173,29 @@ List<Book> books = sqlClient
             );
     })
     .execute();
-books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            // highlight-next-line
+            table.fetchBy { 
+                name()
+            }
+        )
+    }
+    .execute()
+
+```
+
+</TabItem>
+</Tabs>
 
 :::note
 Annotation processor会为每一个实体接口自动生成一个Fetcher类，在这个例子中，就是`BookFetcher`
@@ -199,7 +223,7 @@ id属性被特殊对待，总是会被查询，并不受对象抓取器的控制
 
 ```
 {
-    "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+    "id":3,
     "name":"Learning GraphQL"
 }
 ...省略第2个对象...,
@@ -208,6 +232,9 @@ id属性被特殊对待，总是会被查询，并不受对象抓取器的控制
 ```
 
 ### 抓取多个字段
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 List<Book> books = sqlClient
@@ -222,13 +249,33 @@ List<Book> books = sqlClient
             );
     })
     .execute();
-books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            table.fetchBy {
+                name()
+                // highlight-next-line
+                price()
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 :::note
 对象抓取器是不可变对象，每一次链式调用都会返回一个新的对象抓取器。
 
-即，上述代码中
+即，上述**Java**代码中
 1. `BookFetcher.$`
 2. `BookFetcher.$.name()`
 3. `BookFetcher.$.name().price()`
@@ -253,7 +300,7 @@ where tb_1_.EDITION = ?
 
 ```
 {
-    "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+    "id":3,
     "name":"Learning GraphQL",
     "price":51.00
 }
@@ -263,6 +310,9 @@ where tb_1_.EDITION = ?
 ```
 
 ### allScalarFields
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 List<Book> books = sqlClient
@@ -277,8 +327,27 @@ List<Book> books = sqlClient
             );
     })
     .execute();
-books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            table.fetchBy {
+                // highlight-next-line
+                allScalarFields()
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 `allScalarFields()`用于加载所有非关联字段。
 
@@ -301,7 +370,7 @@ where tb_1_.EDITION = ?
 打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
 ```
 {
-    "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+    "id":3,
     "name":"Learning GraphQL",
     "edition":3,
     "price":51.00
@@ -314,6 +383,10 @@ where tb_1_.EDITION = ?
 ### 负属性
 
 前面讲过的属性都是正属性，不断新增要查询的字段。而负属性则相反，从在已有的对象抓取器的基础上，删除指定属性。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -331,6 +404,27 @@ List<Book> books = sqlClient
     .execute();
 books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            table.fetchBy {
+                allScalarFields()
+                // highlight-next-line
+                edition(false)
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 `edition(false)`使用参数false，这就是负属性。
 
@@ -359,7 +453,7 @@ where tb_1_.EDITION = ?
 
 ```
 {
-    "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+    "id":3,
     "name":"Learning GraphQL",
     "price":51.00
 }
@@ -369,6 +463,9 @@ where tb_1_.EDITION = ?
 ```
 
 ### allTableFields
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 List<Book> books = sqlClient
@@ -383,8 +480,27 @@ List<Book> books = sqlClient
             );
     })
     .execute();
-books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            table.fetchBy {
+                // highlight-next-line
+                allTableFields()
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 `allTableFields()`包含表定义的所有属性，包含标量属性、以及基于外键的多对一属性（当然，父对象只有id）。
 
@@ -392,7 +508,10 @@ books.forEach(System.out::println);
 `allTableFields()`返回的就是默认对象格式，所以以下两个select调用等价
 
 1. 
-    ```
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
     q.select(
         book.fetch(
             BookFetcher.$.allTableFields()
@@ -400,12 +519,37 @@ books.forEach(System.out::println);
     )
     ```
 
-2. 
-    ```
-    q.select(
-        book
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    select(
+        table.fetchBy(
+            allTableFields()
+        )
     )
     ```
+
+    </TabItem>
+    </Tabs>
+
+2. 
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    q.select(book)
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    select(table)
+    ```
+
+    </TabItem>
+    </Tabs>
 :::
 
 生成的SQL如下:
@@ -423,7 +567,7 @@ where tb_1_.EDITION = ?
 打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
 ```
 {
-    "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+    "id":3,
     "name":
     "Learning GraphQL",
     "edition":3,
@@ -441,6 +585,9 @@ where tb_1_.EDITION = ?
 
 针对基于外键的关联如何实现这个功能我们已经讲解过，所以，让我们来看一个针对多对多关联`Book.authors`的例子。
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -456,14 +603,34 @@ List<Book> books = sqlClient
             );
     })
     .execute();
-books.forEach(System.out::println);
 ```
 
-这里，`authors()`表示对多对多关联进行抓取。注意，并未指定任何参数，这表示只抓取关联对象的id属性。
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            table.fetchBy {
+                allScalarFields()
+                // highlight-next-line
+                authors()
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+这里，`authors`表示对多对多关联进行抓取。注意，并未指定任何参数，这表示只抓取关联对象的id属性。
 
 生成两条SQL:
 
-1. 查询`Book`对象本身
+1.  查询`Book`对象本身
     ```sql
     select 
         tb_1_.ID, 
@@ -475,7 +642,7 @@ books.forEach(System.out::println);
     where tb_1_.EDITION = ?
     ```
 
-2. 根据关联`Book.authors`查询仅包含id的所有`Author`对象
+2.  根据关联`Book.authors`查询仅包含id的所有`Author`对象
 
     ```sql
     select 
@@ -505,12 +672,12 @@ books.forEach(System.out::println);
 
 ```
 {
-    "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+    "id":3,
     "name":"Learning GraphQL",
     "edition":3,
     "price":51.00,
     "authors":[
-        {"id":"1e93da94-af84-44f4-82d1-d8a9fd52ea94"},
+        {"id":2},
         {"id":"fd6bb6cf-336d-416c-8005-1ae11a6694b5"}
     ]
 }
@@ -534,6 +701,9 @@ from BOOK_AUTHOR_MAPPING as tb_1_
 
 如果一个批量太大，就会根据一个叫`batchSize`的设置进行分批切割，如
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -552,6 +722,29 @@ List<Book> books = sqlClient
     })
     .execute();
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            table.fetchBy {
+                allScalarFields()
+                authors({
+                    // highlight-next-line
+                    batch(2)
+                }) {}
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 :::danger
 这里，`authors`关联的batchSize被设置为2。此配置会导致性能低下，这里仅仅为了演示，实际项目中请不要设置如此小的值。
@@ -584,6 +777,9 @@ List<Book> books = sqlClient
 
 创建SqlClient时，可以更改全局配置:
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 JSqlClient sqlClient = JSqlClient
     .newBuilder()
@@ -593,12 +789,29 @@ JSqlClient sqlClient = JSqlClient
     build();
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val sqlClient = newKSqlClient {
+    setDefaultBatchSize(256)
+    setDefaultListBatchSize(32)
+    ....
+}
+```
+
+</TabItem>
+</Tabs>
+
 :::caution
 无论是对象抓取器级的batchSize，还是全局级的batchSize，都不要超过1000，因为Oracle数据库中`in(...)`最多允许1000个值。
 :::
 
 
 ### 指定关联对象的字段
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 List<Book> books = sqlClient
@@ -608,7 +821,6 @@ List<Book> books = sqlClient
             .select(
                 book.fetch(
                     BookFetcher.$.
-                        .allScalarFields()
                         .allScalarFields()
                         .store(
                             BookStoreFetcher.$
@@ -624,8 +836,34 @@ List<Book> books = sqlClient
             );
     })
     .execute();
-books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            table.fetchBy {
+                allScalarFields()
+                store { 
+                    // highlight-next-line
+                    allScalarFields()
+                }
+                authors { 
+                    // highlight-next-line
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 在这个查询中，我们对`Book.store`和`Book.authors`两个关联属性都要抓取，而且还进一步抓取`BookStore`和`Author`的所有非关联属性。
 
@@ -679,23 +917,23 @@ books.forEach(System.out::println);
 
 ```
 {
-    "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+    "id":3,
     "name":"Learning GraphQL",
     "edition":3,
     "price":51.00,
     "store":{
-        "id":"d38c10da-6be8-4924-b9b9-5e81899612a0",
+        "id":1,
         "name":"O'REILLY",
         "website":null
     },
     "authors":[
         {
-            "id":"1e93da94-af84-44f4-82d1-d8a9fd52ea94",
+            "id":2,
             "firstName":"Alex",
             "lastName":"Banks",
             "gender":"MALE"
         },{
-            "id":"fd6bb6cf-336d-416c-8005-1ae11a6694b5",
+            "id":1,
             "firstName":"Eve",
             "lastName":"Procello",
             "gender":"MALE"
@@ -721,6 +959,9 @@ books.forEach(System.out::println);
 如果使用了关联级分页，必须把batchSize指定为1，否则会导致异常。此设计的目的在于让开发人员和阅读代码的人很清楚当前代码存在`N + 1`性能风险。
 :::
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -740,6 +981,33 @@ List<Book> books = sqlClient
     })
     .execute();
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            // highlight-next-line
+            table.fetchBy {
+                allScalarFields()
+                authors({
+                    batch(1)
+                    // highlight-next-line
+                    limit(90, 10)
+                }) {
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 - 因关联分页无法解决`N + 1`问题，生成的SQL比较多
 - 因不同数据库分页查询方法不同，为了简化讨论，这里假设方言使用了`H2Dialect`
@@ -791,6 +1059,9 @@ List<Book> books = sqlClient
 - 第一列对象的`Book.autors`使用过滤器
 - 第二列对象的`Book.autors`不使用过滤器
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Tuple2<Book, Book>> tuples = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -833,6 +1104,45 @@ List<Tuple2<Book, Book>> tuples = sqlClient
     .execute();
 tuples.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val tuples: List<Tuple2<Book, Book>> = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+
+            // First column
+            table.fetchBy {
+                allScalarFields()
+                authors({
+                    // Use filter here
+                    // highlight-next-line
+                    filter {
+                        where(table.firstName ilike "a")
+                    }
+                }) {
+                    allScalarFields()
+                }
+            },
+
+            // Second column
+            table.fetchBy {
+                allScalarFields()
+                authors { // No filter here
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+tuples.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
 
 生成三条SQL
 
@@ -900,13 +1210,13 @@ tuples.forEach(System.out::println);
 ```
 Tuple2{
     _1={
-        "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+        "id":3,
         "name":"Learning GraphQL",
         "edition":3,
         "price":51.00,
         "authors":[
             {
-                "id":"1e93da94-af84-44f4-82d1-d8a9fd52ea94",
+                "id":2,
                 "firstName":"Alex",
                 "lastName":"Banks",
                 "gender":"MALE"
@@ -914,13 +1224,13 @@ Tuple2{
         ]
     }, 
     _2={
-        "id":"64873631-5d82-4bae-8eb8-72dd955bfc56",
+        "id":3,
         "name":"Learning GraphQL",
         "edition":3,
         "price":51.00,
         "authors":[
             {
-                "id":"1e93da94-af84-44f4-82d1-d8a9fd52ea94",
+                "id":2,
                 "firstName":"Alex",
                 "lastName":"Banks",
                 "gender":"MALE"
@@ -960,16 +1270,20 @@ Tuple2{
 
 定义实体接口
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 @Entity
 public interface TreeNode {
 
     @Id
-    @Column(name = "NODE_ID", nullable = false)
+    @Column(name = "NODE_ID")
     long id();
 
     String name();
 
+    @Null
     @ManyToOne
     TreeNode parent();
 
@@ -977,6 +1291,30 @@ public interface TreeNode {
     List<TreeNode> childNodes();
 }
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Entity
+interface TreeNode {
+
+    @Id
+    @Column(name = "NODE_ID")
+    val id: Long
+
+    val name: String
+
+    @ManyToOne
+    val parent: TreeNode?
+
+    @OneToMany(mappedBy = "parent")
+    val childNodes: List<TreeNode>
+}
+```
+
+</TabItem>
+</Tabs>
 
 准备数据库
 ```sql
@@ -1030,6 +1368,9 @@ insert into tree_node(
 
 自顶向下，抓取两层
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<TreeNode> treeNodes = sqlClient
     .createQuery(TreeNodeTable.class, (q, node) -> {
@@ -1049,6 +1390,32 @@ List<TreeNode> treeNodes = sqlClient
     .execute();
 treeNodes.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNodes = sqlClient
+    .createQuery(TreeNode::class) {
+        where(table.parent.isNull())
+        select(
+            table.fetchBy {
+                allScalarFields()
+                childNodes({
+                    // highlight-next-line
+                    depth(2)
+                }) { 
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+treeNodes.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
 
 生成3条SQL
 
@@ -1118,6 +1485,9 @@ treeNodes.forEach(System.out::println);
 
 自顶向下，抓取无穷层
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<TreeNode> treeNodes = sqlClient
     .createQuery(TreeNodeTable.class, (q, node) -> {
@@ -1137,6 +1507,32 @@ List<TreeNode> treeNodes = sqlClient
     .execute();
 treeNodes.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNodes = sqlClient
+    .createQuery(TreeNode::class) {
+        where(table.parent.isNull())
+        select(
+            table.fetchBy {
+                allScalarFields()
+                childNodes({
+                    // highlight-next-line
+                    recursive()
+                }) {
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+treeNodes.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
 
 :::note
 上述代码中`it.recursive()`也可以写作`it.depth(Integer.MAX_VALUE)`，二者完全等价
@@ -1299,6 +1695,9 @@ treeNodes.forEach(System.out::println);
 
 自顶向下，抓取无穷层。但是，对名称为“Clothing”的节点，放弃递归
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<TreeNode> treeNodes = sqlClient
     .createQuery(TreeNodeTable.class, (q, node) -> {
@@ -1309,8 +1708,8 @@ List<TreeNode> treeNodes = sqlClient
                     .name()
                     .childNodes(
                         TreeNodeFetcher.$.name(),
-                        // highlight-next-line
                         it -> it.recursive(args ->
+                            // highlight-next-line
                             !args.getEntity().name().equals("Clothing")
                         )
                     )
@@ -1320,6 +1719,35 @@ List<TreeNode> treeNodes = sqlClient
     .execute();
 treeNodes.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNodes = sqlClient
+    .createQuery(TreeNode::class) {
+        where(table.parent.isNull())
+        select(
+            
+            table.fetchBy {
+                allScalarFields()
+                childNodes({
+                    recursive {
+                        // highlight-next-line
+                        entity.name != "Clothing"
+                    }
+                }) {
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+treeNodes.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
 
 上述代码中，`it.recursive(args)`的参数是一个lambda表达式，其参数`args`是一个对象，提供两个属性
 

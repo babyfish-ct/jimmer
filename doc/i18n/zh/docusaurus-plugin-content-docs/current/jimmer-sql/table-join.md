@@ -296,11 +296,7 @@ List<Book> books = sqlClient
                     .store()
                     // highlight-next-line
                     .id() // 只访问id
-                    .eq(
-                        UUID.fromString(
-                            "2fa3955e-3e83-49b9-902e-0465c109c779"
-                        )
-                    )
+                    .eq(2L)
             )
             .select(book);
     })
@@ -387,11 +383,7 @@ List<UUID> bookIds = sqlClient
                     .authors()
                     // highlight-next-line
                     .id() // 只访问id
-                    .eq(
-                        UUID.fromString(
-                            "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
-                        )
-                    )
+                    .eq(2L)
             )
             .select(book.id());
     })

@@ -20,7 +20,7 @@ import java.util.UUID;
 public interface Book {
 
     @Id
-    UUID id();
+    long id();
 
     String name();
 

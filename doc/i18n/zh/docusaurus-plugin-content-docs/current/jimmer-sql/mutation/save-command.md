@@ -36,9 +36,7 @@ SimpleSaveResult<Book> result = sqlClient
     .save(
         BookDraft.$.produce(book -> {
             book
-                .setId(
-                    UUID.fromString("80620741-e3a1-4076-bf25-36a0c0238936")
-                )
+                .setId(100L)
                 .setName("SpringBoot in Action")
                 .setEdition(1)
                 .setPrice(new BigDecimal("44.99"));
@@ -177,7 +175,7 @@ public interface Book {
 
     @Id
     @GeneratedValue(generator = UUIDIdGenerator.FULL_NAME)
-    UUID id();
+    long id();
 
     // highlight-next-line
     @Key
@@ -326,17 +324,13 @@ jimmer-core不可变对象的动态性会导致残缺对象，即，具备未指
 List<BookStore> stores = Arrays.asList(
     BookStoreDraft.$.produce(store -> {
         store
-            .setId(
-                UUID.fromString("d38c10da-6be8-4924-b9b9-5e81899612a0")
-            )
+            .setId(1L)
             .setName("O'REILLY+");
             // No website here
     }),
     BookStoreDraft.$.produce(store -> {
         store
-            .setId(
-                UUID.fromString("2fa3955e-3e83-49b9-902e-0465c109c779")
-            )
+            .setId(2L)
             .setName("MANNING+")
             .setWebsite(null);
             // Null website here
@@ -403,15 +397,12 @@ public interface BookStore {
 :::
 
 ```java
-UUID manningId = UUID.fromString(
-    "2fa3955e-3e83-49b9-902e-0465c109c779"
-);
 SimpleSaveResult<BookStore> result = sqlClient
     .getEntities()
     .saveCommand(
         BookStoreDraft.$.produce(store -> {
             store
-                .setId(manningId)
+                .setId(2L)
                 .setWebsite("http://www.manning.com")
                 // highlight-next-line
                 .setVersion(0);
@@ -449,12 +440,12 @@ and
 
 ```
 Original entity: {
-    "id":"2fa3955e-3e83-49b9-902e-0465c109c779",
+    "id":2,
     "website":"http://www.manning.com",
     "version":0
 }
 Modified entity: {
-    "id":"2fa3955e-3e83-49b9-902e-0465c109c779",
+    "id":2,
     "website":"http://www.manning.com",
     "version":1
 }
@@ -475,15 +466,9 @@ Modified entity: {
 ### 基本用法
 
 ```java
-UUID manningId = UUID.fromString(
-    "2fa3955e-3e83-49b9-902e-0465c109c779"
-);
-UUID alexId = UUID.fromString(
-    "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
-);
-UUID danId = UUID.fromString(
-    "c14665c8-c689-4ac7-b8cc-6f065b8d835d"
-);
+long manningId = 2L;
+long alexId = 2L;
+UUID danId = 3L;
 SimpleSaveResult<Book> result = sqlClient
     .getEntities()
     .save(
