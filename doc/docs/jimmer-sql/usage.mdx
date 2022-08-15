@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-title: First experience
+title: Get started
 ---
 
 import Tabs from '@theme/Tabs';
@@ -120,10 +120,6 @@ public interface BookStore {
 
 </TabItem>
 </Tabs>
-
-:::info
-The annotation `@Key` will be explained in other articles, ignore it please.
-:::
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -307,9 +303,9 @@ enum class Gender {
 
 ## Create JSqlClient
 
-`JSqlClient/KSqlClient` is the entry point of all APIs of jimmer-sql, therefore, JSqlClient needs to be created first.
+`JSqlClient/KSqlClient` is the entry point of all APIs of jimmer-sql, therefore, SqlClient needs to be created first.
 
-:::danger
+:::tip
 
 The entry points of Java API and Kotlin API are different
 
@@ -377,7 +373,7 @@ val sqlClient = newKSqlClient {
 :::note
 This example only let jimmer-sql can automatically create connections based on the connection pool.
 
-For the topic of cooperation with Spring transaction mechanism, please refer to [JSqlClient](./sql-client).
+For the topic of cooperation with Spring transaction mechanism, please refer to [SqlClient](./sql-client).
 :::
 
 ## Query
@@ -518,6 +514,7 @@ books.forEach(System.out::println);
 val books = sqlClient
     .createQuery(Book::class) {
         where(
+            // highlight-next-line
             table.id valueIn subQuery(Author::class) {
                 where(table.firstName eq "Alex")
                 select(table.books.id)
@@ -738,12 +735,14 @@ val tuples = sqlClient
     .createQuery(Book::class) {
         select(
             table,
+            // highlight-next-line
             sql(
                 Int::class,
                 "rank() over(order by %e desc)"
             ) {
                 expression(table.price)
             },
+            // highlight-next-line
             sql(
                 Int::class,
                 "rank() over(partition by %e order by %e desc)"
@@ -818,11 +817,14 @@ books.forEach(System.out::println);
 val books = sqlClient
     .createQuery(Book::class) {
         select(
+            // highlight-next-line
             table.fetchBy { 
                 allScalarFields()
+                // highlight-next-line
                 store { 
                     allScalarFields()
                 }
+                // highlight-next-line
                 authors { 
                     allScalarFields()
                 }

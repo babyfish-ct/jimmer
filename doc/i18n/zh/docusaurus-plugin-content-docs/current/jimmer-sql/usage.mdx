@@ -1,11 +1,17 @@
 ---
 sidebar_position: 1
-title: jimmer-sql初体验
+title: 快速上手
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
 jimmer-sql内容相对较多，后续文章会逐步讲解。本文对其部分功能进行一个简单的罗列，让读者有一个感性的认知。
 
 ## 导入依赖
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```groovy title="build.gradle"
 depdencies {
@@ -17,17 +23,54 @@ depdencies {
 }
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="build.gradle.kts"
+plugins {
+    // Step1: Add ksp plugin
+	id("com.google.devtools.ksp") version "1.7.10-1.0.6"
+
+    ...ommit other plugins...
+}
+depdencies {
+    
+    // Step2: Add jimmer-sql-kotlin
+    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.1.5")
+
+    // Step3: Apply ksp plugin
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.1.5")
+
+    ...ommit other dependency...
+}
+
+// Step4: Add generated sources into compile path.
+// Without this configuration, gradle command can still run.
+// However, Intellij cannot find the generated source.
+kotlin {
+    sourceSets.main {
+        kotlin.srcDir("build/generated/ksp/main/kotlin")
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
 ## 定义实体
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java title="BookStore.java"
 package org.babyfish.jimmer.sql.example.model;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
 import javax.validation.constraints.Null;
 import java.util.List;
-import java.util.UUID;
 
+import org.babyfish.jimmer.sql.Entity;
+import org.babyfish.jimmer.sql.Id;
+import org.babyfish.jimmer.sql.OneToMany;
 import org.babyfish.jimmer.sql.Key;
 
 @Entity
@@ -47,23 +90,51 @@ public interface BookStore {
 }
 ```
 
-:::info
-注意：
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
 
-1. 虽然jimmer-sql使用了一些JPA注解，但是jimmer-sql不是JPA实现，它有自己的API。jimmer-sql和JPA没有任何关系。
+```kotlin title="BookStore.kt"
+package org.babyfish.jimmer.sql.example.model
 
-2. 代码中的注解@Key是org.babyfish.jimmer.sql.Key，它并非JPA注解，而是jimmer-sql的注解。此注解在后续文章会讲解。这里，请读者先忽略之。
-:::
+import org.babyfish.jimmer.sql.Entity
+import org.babyfish.jimmer.sql.Id
+import org.babyfish.jimmer.sql.OneToMany
+import org.babyfish.jimmer.sql.Key
+
+@Entity
+public interface BookStore {
+
+    @Id
+    val id: Long
+
+    @Key
+    val name: String
+
+    val website: String?
+
+    @OneToMany(mappedBy = "store")
+    val books: List<Book>
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java title="Book.java"
 package org.babyfish.jimmer.sql.example.model;
 
-import javax.persistence.*;
+import javax.validation.constraints.Null;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.UUID;
 
+import org.babyfish.jimmer.sql.Entity;
+import org.babyfish.jimmer.sql.JoinColumn;
 import org.babyfish.jimmer.sql.Key;
+import org.babyfish.jimmer.sql.ManyToOne;
+import org.babyfish.jimmer.sql.ManyToMany;
 
 @Entity
 public interface Book {
@@ -79,8 +150,51 @@ public interface Book {
 
     BigDecimal price();
 
+    @Null
     @ManyToOne(optional = true)
     BookStore store();
+
+    @ManyToMany
+    @JoinTable(
+            name = "BOOK_AUTHOR_MAPPING",
+            joinColumnName = "BOOK_ID",
+            inverseJoinColumnName = "AUTHOR_ID"
+    )
+    List<Author> authors();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+package org.babyfish.jimmer.sql.example.model
+
+import java.math.BigDecimal
+import java.util.UUID
+
+import org.babyfish.jimmer.sql.Entity
+import org.babyfish.jimmer.sql.JoinColumn
+import org.babyfish.jimmer.sql.Key
+import org.babyfish.jimmer.sql.ManyToOne
+import org.babyfish.jimmer.sql.ManyToMany
+
+@Entity
+public interface Book {
+
+    @Id
+    val id: Long
+
+    @Key
+    val name: String
+
+    @Key
+    val edition: Int
+
+    val price: BigDecimal
+
+    @ManyToOne(optional = true)
+    val store: BookStore?
 
     @ManyToMany
     @JoinTable(
@@ -88,18 +202,23 @@ public interface Book {
             joinColumns = @JoinColumn(name = "BOOK_ID"),
             inverseJoinColumns = @JoinColumn(name = "AUTHOR_ID")
     )
-    List<Author> authors();
+    val authors: List<Author>
 }
 ```
+
+</TabItem>
+</Tabs>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java title="Author.java"
 package org.babyfish.jimmer.sql.example.model;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.ManyToMany;
 import java.util.List;
-import java.util.UUID;
+import org.babyfish.jimmer.sql.Entity;
+import org.babyfish.jimmer.sql.Key;
+import org.babyfish.jimmer.sql.ManyToMany;
 
 @Entity
 public interface Author {
@@ -120,7 +239,42 @@ public interface Author {
 }
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java title="Author.kt"
+package org.babyfish.jimmer.sql.example.model
+
+import org.babyfish.jimmer.sql.Entity
+import org.babyfish.jimmer.sql.Key
+import org.babyfish.jimmer.sql.ManyToMany
+
+@Entity
+public interface Author {
+
+    @Id
+    val id: Long
+
+    @Key
+    val firstName: String
+
+    @Key
+    val lastName: String
+
+    val gender: Gender
+
+    @ManyToMany(mappedBy = "authors")
+    val books: List<Book>
+}
+```
+
+</TabItem>
+</Tabs>
+
 Author类中使用了一个Gender类型，这是一个枚举类型，其定义如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java title="Gender.java"
 package org.babyfish.jimmer.sql.example.model;
@@ -131,9 +285,35 @@ public enum Gender {
 }
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java title="Gender.kt"
+package org.babyfish.jimmer.sql.example.model
+
+enum class Gender {
+    MALE,
+    FEMALE
+}
+```
+
+</TabItem>
+</Tabs>
+
 ## 创建SqlClient
 
-SqlClient是jimmer-sql所有Api的入口，因此，需要先创建SqlClient。
+JSqlClient/KSqlClient是jimmer-sql所有Api的入口，因此，需要先创建SqlClient。
+
+:::tip
+
+Java API和Kotlin API的入口不同
+
+- Java API的入口是`org.babyfish.jimmer.sql.JSqlClient`
+- Kotlin API的入口是`org.babyfish.jimmer.sql.kt.KSqlClient`
+:::
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 package org.babyfish.jimmer.sql.example;
@@ -162,15 +342,45 @@ JSqlClient sqlClient = JSqlClient
     .build();
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+import org.babyfish.jimmer.example.kt.sql.model.Gender
+import org.babyfish.jimmer.sql.kt.newKSqlClient
+import org.babyfish.jimmer.sql.runtime.ScalarProvider
+import javax.sql.DataSource
+
+val sqlClient = newKSqlClient {
+    setConnectionManager {
+        dataSource.connection.use {
+            proceed(it)
+        }
+        addScalarProvider(
+            ScalarProvider.enumProviderByString(Gender::class.java) {
+                it.map(Gender.MALE, "M")
+                it.map(Gender.FEMALE, "F")
+            }
+        )
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
 :::note
 这个例子，仅仅让jimmer-sql能根据连接池自动创建连接。
 
-关于和Spring事务机制配合的话题，其参见[JSqlClient](./sql-client)
+关于和Spring事务机制配合的话题，其参见[SqlClient](./sql-client)
 :::
 
 ## 查询
 
 ### 简单查询
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 List<Book> books = sqlClient
@@ -182,6 +392,22 @@ List<Book> books = sqlClient
     .execute();
 books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kt
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.name like "Kotlin")
+        select(table)
+    }
+    .execute()
+books.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
 
 最终生成的SQL如下
 
@@ -197,6 +423,9 @@ where tb_1_.NAME like ?
 ```
 
 ### 使用表连接
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 List<Book> books = sqlClient
@@ -215,6 +444,27 @@ List<Book> books = sqlClient
 books.forEach(System.out::println);
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kt
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(
+            table
+                // highlight-next-line
+                .store
+                .name eq "MANNING"
+        )
+        select(table)
+    }
+    .execute()
+books.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
+
 最终生成的SQL如下
 
 ```sql
@@ -231,6 +481,9 @@ where tb_2_.NAME = ?
 ```
 
 ### 使用子查询
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 List<Book> books = sqlClient
@@ -253,6 +506,28 @@ List<Book> books = sqlClient
 books.forEach(System.out::println);
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kt
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(
+            // highlight-next-line
+            table.id valueIn subQuery(Author::class) {
+                where(table.firstName eq "Alex")
+                select(table.books.id)
+            }
+        )
+        select(table)
+    }
+    .execute()
+books.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
+
 最终生成的SQL如下
 
 ```sql
@@ -274,10 +549,14 @@ where tb_1_.ID in (
 ```
 
 ### 分组查询
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 // Column1: BookStore id
 // Column2: Average book price of each BookStore
-List<Tuple2<UUID, BigDecimal>> tuples = sqlClient
+List<Tuple2<Long, BigDecimal>> tuples = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
         return q
             // highlight-next-line
@@ -290,6 +569,27 @@ List<Tuple2<UUID, BigDecimal>> tuples = sqlClient
     }).execute();
 tuples.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val tuples = sqlClient
+    .createQuery(Book::class) {
+        // highlight-next-line
+        groupBy(table.store.id)
+        select(
+            table.store.id,
+            // highlight-next-line
+            avg(table.price)
+        )
+    }
+    .execute()
+tuples.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
 
 最终生成的SQL如下
 
@@ -304,6 +604,10 @@ group by tb_1_.STORE_ID
 ```
 
 ### 分页查询
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 ConfigurableTypedRootQuery<BookTable, Book> bookQuery =
     sqlClient.createQuery(BookTable.class, (q, book) -> {
@@ -323,12 +627,42 @@ TypedRootQuery<Long> countQuery = bookQuery
 int rowCount = countQuery.execute().get(0).intValue();
 System.out.println("Total row count: " + rowCount);
 
-List<Book> top2Rows = bookQuery
+List<Book> rows = bookQuery
     // highlight-next-line
-    .limit(2, 0)
+    .limit(rowCount / 3, rowCount / 3)
     .execute();
 System.out.println("Top 2 rows: " + top2Rows);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookQuery = sqlClient
+    .createQuery(Book::class) {
+        where(table.store.name eq "O'REILLY")
+        orderBy(table.name)
+        select(table)
+    }
+
+val countQuery = bookQuery
+    // highlight-next-line
+    .reselect {
+        select(count(table))
+    }
+    .withoutSortingAndPaging()
+
+val rowCount = countQuery.execute()[0].toInt()
+println("Total row count: $rowCount")
+
+val books = bookQuery
+    .limit(limit = rowCount / 3, offset = rowCount / 3)
+    .execute()
+books.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
 
 最终生成会生成两条SQL
 
@@ -358,6 +692,10 @@ System.out.println("Top 2 rows: " + top2Rows);
     ```
 
 ### 混合Native SQL
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 // Column 1: Book object
 // Column 2: Global price rank
@@ -385,6 +723,41 @@ List<Tuple3<Book, Integer, Integer>> tuples = sqlClient
 tuples.forEach(System.out::println);
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kt
+// Column 1: Book object
+// Column 2: Global price rank
+// Column 3: Local price rank in its BookStore
+val tuples = sqlClient
+    .createQuery(Book::class) {
+        select(
+            table,
+            // highlight-next-line
+            sql(
+                Int::class,
+                "rank() over(order by %e desc)"
+            ) {
+                expression(table.price)
+            },
+            // highlight-next-line
+            sql(
+                Int::class,
+                "rank() over(partition by %e order by %e desc)"
+            ) {
+                expression(table.store.id)
+                expression(table.price)
+            }
+        )
+    }
+    .execute()
+tuples.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
+
 最终生成的SQL如下
 
 ```sql
@@ -405,6 +778,10 @@ from BOOK as tb_1_
 ```
 
 ### 使用对象抓取器
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -431,6 +808,34 @@ List<Book> books = sqlClient
     .execute();
 books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        select(
+            // highlight-next-line
+            table.fetchBy { 
+                allScalarFields()
+                // highlight-next-line
+                store { 
+                    allScalarFields()
+                }
+                // highlight-next-line
+                authors { 
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+books.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
 
 最终生成的三条SQL
 
@@ -481,6 +886,9 @@ jimmer-sql提供两种方式修改数据库，语句和指令
 
 #### update语句
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 int affectedRowCount = sqlClient
     .createUpdate(BookTable.class, (u, book) -> {
@@ -494,6 +902,22 @@ int affectedRowCount = sqlClient
 System.out.println("Affected row count: " + affectedRowCount);
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val affectedRowCount = sqlClient
+    .createUpdate(Book::class) {
+        set(table.price, table.price + BigDecimal(20))
+        where(table.name like "Kotlin")
+    }
+    .execute()
+println("Affected row count: $affectedRowCount")
+```
+
+</TabItem>
+</Tabs>
+
 最终生成如下SQL
 
 ```sql
@@ -504,6 +928,9 @@ where tb_1_.NAME like ?
 
 #### delete语句
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 int affectedRowCount = sqlClient
     .createDelete(BookTable.class, (d, book) -> {
@@ -512,6 +939,21 @@ int affectedRowCount = sqlClient
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val affectedRowCount = sqlClient
+    .createDelete(Book::class) {
+        where(table.name like "Kotlin")
+    }
+    .execute()
+println("Affected row count: $affectedRowCount")
+```
+
+</TabItem>
+</Tabs>
 
 最终生成如下SQL
 
@@ -536,6 +978,9 @@ delete from BOOK as tb_1_ where tb_1_.NAME like ?
 
 ##### 1. 保存单个对象
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 SimpleSaveResult<Book> result = sqlClient
     .getEntities()
@@ -552,6 +997,25 @@ System.out.println(
 );
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .save(
+        new(Book::class).by { 
+            name = "BookName"
+            edition = 1
+            price = BigDecimal(50)
+        }
+    )
+println("Affected row count: ${result.totalAffectedRowCount}")
+```
+
+</TabItem>
+</Tabs>
+
 这条指令的实际执行逻辑依赖于数据库中现有数据，假设数据中不存在`name`为"BookName"且`edition`为1的书籍，则生成如下这些SQL
 
 1.
@@ -567,6 +1031,10 @@ System.out.println(
     ```
 
 ##### 2. 保存对象树
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 SimpleSaveResult<Book> result = sqlClient
     .getEntities()
@@ -617,6 +1085,54 @@ System.out.println(
     )
 );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .save(
+        new(Book::class).by { 
+            name = "BookName"
+            edition = 1
+            price = BigDecimal(50)
+            store().apply { 
+                name = "StoreName"
+            }
+            authors().addBy { 
+                firstName = "AuthorFirstName-1"
+                lastName = "AuthorFirstName-1"
+                gender = Gender.MALE
+            }
+            authors().addBy {
+                firstName = "AuthorFirstName-2"
+                lastName = "AuthorFirstName-2"
+                gender = Gender.FEMALE
+            }
+        }
+    ) {
+        setAutoAttachingAll()
+    }
+println(
+    """Affected row count: ${result.totalAffectedRowCount}
+        |Affected row count of table 'BOOK': ${
+            result.affectedRowCount(Book::class)
+        }
+        |Affected row count of table 'BOOK_STORE': ${
+            result.affectedRowCount(BookStore::class)
+        }
+        |Affected row count of table 'AUTHOR': ${
+            result.affectedRowCount(Author::class)
+        }Affected row count of middle table 'BOOK_AUTHOR_MAPPING': ${
+            result.affectedRowCount(Book::authors)
+        }
+    """.trimMargin()
+)
+```
+
+</TabItem>
+</Tabs>
 
 这条指令的实际执行逻辑依赖于数据库中现有数据，假设对象树中所有对象在数据库中都不存在，则生成如下这些SQL
 
@@ -681,8 +1197,11 @@ System.out.println(
 
 #### Delete指令
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-Collection<UUID> ids = ...
+Collection<Long> ids = ...
 
 DeleteResult result = sqlClient
     .getEntities()
@@ -702,6 +1221,28 @@ System.out.println(
     )
 );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val ids: Collection<Long> = ...
+val result = sqlClient
+    .entities
+    .batchDelete(Book::class, ids)
+println(
+    """Affected row count: ${result.totalAffectedRowCount}
+        |Affected row count of table 'BOOK': ${
+            result.affectedRowCount(Book::class)
+        }Affected row count of middle table 'BOOK_AUTHOR_MAPPING': ${
+            result.affectedRowCount(Book::authors)
+        }
+    """.trimMargin()
+)
+```
+
+</TabItem>
+</Tabs>
 
 最终生成的SQL如下
 
