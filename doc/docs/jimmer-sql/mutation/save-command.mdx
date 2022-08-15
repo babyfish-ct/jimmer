@@ -878,7 +878,7 @@ Affected row counts
 	BOOK_AUTHOR_MAPPING: 2
 ```
 
-### Delete parent object of many-to-one association
+### Abandoned by parent object
 
 As can be seen from the above discussion, the save command may cause the deletion of the data in the many-to-many association based on middle table, which is a relatively simple case.
 
@@ -938,8 +938,7 @@ Assume that the one-to-many associated property `books` of the corresponding `Bo
 
 Obviously, `book3`, `book4` and `book5` are discarded by the new association. But the one-to-many association `BookStore.books` is not based on middle table, but based on the foreign key. How will jimmer-sql drop `book3`, `book4` and `book5`?
 
-Unlike JPA, jimmer-sql does not allow direct use of `@OneToOne` and `@OneToMany` for association mapping, `@OneToOne` and `@OneToMany` must use the `mappedBy` attribute. See [@OneToMany](../mapping#javaxpersistanceonetomany) for more information.
-Unlike JPA, jimmer-sql does not allow direct use of `@OneToOne` and `@OneToMany` for association mapping, `@OneToOne` and `@OneToMany` must use the `mappedBy` attribute. See [@OneToMany](../mapping#javaxpersistanceonetomany) for more information.
+Unlike JPA, jimmer-sql does not allow direct use of `@OneToOne` and `@OneToMany` for association mapping, `@OneToOne` and `@OneToMany` must use the `mappedBy` attribute. See [@OneToMany](../mapping#onetomany) for more information.
 
 This means, through the one-to-many association `BookStore.books`, jimmer-sql can definitely find the corresponding many-to-one association `Book.store`.
 

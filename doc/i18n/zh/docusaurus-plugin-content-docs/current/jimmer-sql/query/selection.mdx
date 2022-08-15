@@ -3,6 +3,9 @@ sidebar_position: 3
 title: 列选取
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 列选取，即查询末尾的select语句，既用于生成SQL的select字句，也用于在Java语言中表示查询的返回类型。
 
 查询的select可接受1到9个参数。不同的参数个数会导致不同的查询返回类型
@@ -27,8 +30,11 @@ title: 列选取
 
 ## 以表达式作为被查询列
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-List<Tuple2<UUID, BigDecimal>> storeIdAndAvgPriceTuples =
+List<Tuple2<Long, BigDecimal>> storeIdAndAvgPriceTuples =
     sqlClient.createQuery(BookTable.class, (q, book) -> {
         return q
             .groupBy(book.store().id())
@@ -38,8 +44,27 @@ List<Tuple2<UUID, BigDecimal>> storeIdAndAvgPriceTuples =
                 book.price().avg()
             );
     }).execute();
-storeIdAndAvgPriceTuples.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val storeIdAndAvgPriceTuples: List<Tuple2<UUID, BigDecimal>> = 
+    sqlClient
+        .createQuery(Book::class) {
+            groupBy(table.store.id)
+            // highlight-next-line
+            select(
+                table.store.id,
+                avg(table.price)
+            )
+        }
+        .execute()
+```
+
+</TabItem>
+</Tabs>
 
 生成SQL如下
 ```sql
@@ -58,6 +83,9 @@ Tuple2{_1=1, _2=58.500000000000}
 
 ## 以对象作为被查询列
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Tuple2<BookStore, Book>> tuples =
     sqlClient.createQuery(BookTable.class, (q, book) -> {
@@ -69,8 +97,27 @@ List<Tuple2<BookStore, Book>> tuples =
                 book
             );
     }).execute();
-tuples.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val tuples: List<Tuple2<BookStore, Book>> = 
+    sqlClient
+        .createQuery(Book::class) {
+            groupBy(table.store.name eq "MANNING")
+            // highlight-next-line
+            select(
+                table.store,
+                table
+            )
+        }
+        .execute()
+```
+
+</TabItem>
+</Tabs>
 
 生成SQL如下
 ```sql
@@ -104,7 +151,7 @@ Tuple2{
         "website":null
     }, 
     _2={
-        "id":"a62f7aa3-9490-4612-98b5-98aae0e77120",
+        "id":10,
         "name":"GraphQL in Action",
         "edition":1,
         "price":80.00,
@@ -118,7 +165,7 @@ Tuple2{
         "website":null
     }, 
     _2={
-        "id":"e37a8344-73bb-4b23-ba76-82eac11f03e6",
+        "id":11,
         "name":"GraphQL in Action",
         "edition":2,
         "price":81.00,
@@ -132,7 +179,7 @@ Tuple2{
         "website":null
     }, 
     _2={
-        "id":"780bdf07-05af-48bf-9be9-f8c65236fecc",
+        "id":12,
         "name":"GraphQL in Action",
         "edition":3,
         "price":80.00,

@@ -3,9 +3,15 @@ sidebar_position: 1
 title: Update语句
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## 基本用法
 
 Update语句用法如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 int affectedRowCount = sqlClient
@@ -21,6 +27,25 @@ int affectedRowCount = sqlClient
 System.out.println("Affected row count: " + affectedRowCount);
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val affectedRowCount = sqlClient
+    .createUpdate(Author::class) {
+        set(
+            table.firstName, 
+            concat(table.firstName, value("*"))
+        )
+        where(table.firstName eq "Dan")
+    }
+    .execute()
+println("Affected row count: $affectedRowCount")
+```
+
+</TabItem>
+</Tabs>
+
 最终生成的SQL
 
 ```sql
@@ -32,6 +57,9 @@ where tb_1_.FIRST_NAME = ?
 ## 使用JOIN
 
 默认情况下，update语句不支持join，这会导致异常
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 int affectedRowCount = sqlClient
@@ -53,6 +81,31 @@ int affectedRowCount = sqlClient
 System.out.println("Affected row count: " + affectedRowCount);
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val affectedRowCount = sqlClient
+    .createUpdate(Author::class) {
+        set(
+            table.firstName,
+            concat(table.firstName, value("*"))
+        )
+        where(
+            table
+                // highlight-next-line
+                .books
+                .name 
+                eq "Learning GraphQL"
+        )
+    }
+    .execute()
+println("Affected row count: $affectedRowCount")
+```
+
+</TabItem>
+</Tabs>
+
 异常信息如下
 :::caution
 Table joins for update statement is forbidden by the current dialect, but there is a join `'Author.books'`.
@@ -64,6 +117,9 @@ Table joins for update statement is forbidden by the current dialect, but there 
 
 首先，需要在创建SqlClient时，指定方言为MySqlDialect
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 JSqlClient sqlClient = JSqlClient
     .newBuilder()
@@ -74,7 +130,22 @@ JSqlClient sqlClient = JSqlClient
     .build();
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val sqlClient = newKSqlClient {
+    setDialect(org.babyfish.jimmer.sql.dialect.MySqlDialect())
+}
+```
+
+</TabItem>
+</Tabs>
+
 然后，就可以在update中使用JOIN了
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 int affectedRowCount = sqlClient
@@ -93,16 +164,41 @@ int affectedRowCount = sqlClient
                     author.books().store().name().concat("*")
                 )
                 .where(
-                    author
-                        .books()
-                        .store()
-                        .name()
-                        .eq("MANNING")
+                    author.books().store().name().eq("MANNING")
                 );
         })
         .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val affectedRowCount = sqlClient
+    .createUpdate(Author::class) {
+        set(
+            table.firstName,
+            concat(table.firstName, value("*"))
+        )
+        set(
+            table.books.name,
+            concat(table.books.name, value("*"))
+        )
+        set(
+            table.books.store.name,
+            concat(table.books.store.name, value("*"))
+        )
+        where(
+            table.books.store.name eq "MANNING"
+        )
+    }
+    .execute()
+println("Affected row count: $affectedRowCount")
+```
+
+</TabItem>
+</Tabs>
 
 最终生成针对MySQL的SQL语句，如下：
 
@@ -127,6 +223,9 @@ where
 
 首先，需要在创建SqlClient时，指定方言为PostgresDialect
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 JSqlClient sqlClient = JSqlClient
     .newBuilder()
@@ -137,7 +236,22 @@ JSqlClient sqlClient = JSqlClient
     .build();
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val sqlClient = newKSqlClient {
+    setDialect(org.babyfish.jimmer.sql.dialect.PostgresDialect())
+}
+```
+
+</TabItem>
+</Tabs>
+
 然后，就可以在update中使用JOIN了
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 int affectedRowCount = sqlClient
@@ -148,16 +262,33 @@ int affectedRowCount = sqlClient
                 author.firstName().concat("*")
             )
             .where(
-                author
-                    .books()
-                    .store()
-                    .name()
-                    .eq("MANNING")
+                author.books().store().name().eq("MANNING")
             );
     })
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val affectedRowCount = sqlClient
+    .createUpdate(Author::class) {
+        set(
+            table.firstName,
+            concat(table.firstName, value("*"))
+        )
+        where(
+            table.books.store.name eq "MANNING"
+        )
+    }
+    .execute()
+println("Affected row count: $affectedRowCount")
+```
+
+</TabItem>
+</Tabs>
 
 :::note
 和MySql不同，在Postgres中使用update语句的JOIN存在如下限制

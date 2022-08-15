@@ -3,9 +3,15 @@ sidebar_position: 2
 title: Delete语句
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## 基本用法
 
 Delete语句用法如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 int affectedRowCount = sqlClient
@@ -15,6 +21,21 @@ int affectedRowCount = sqlClient
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val affectedRowCount = sqlClient
+    .createDelete(Book::class) {
+        where(table.name eq "Learning GraphQL")
+    }
+    .execute()
+println("Affected row count: $affectedRowCount")
+```
+
+</TabItem>
+</Tabs>
 
 生成的SQL如下：
 ```sql
@@ -27,6 +48,9 @@ where tb_1_.NAME = ?
 
 Delete语句用法如下支持JOIN子句，如下
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 int affectedRowCount = sqlClient
     .createDelete(BookTable.class, (d, book) -> {
@@ -35,6 +59,21 @@ int affectedRowCount = sqlClient
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val affectedRowCount = sqlClient
+    .createDelete(Book::class) {
+        where(table.store.name eq "MANNING")
+    }
+    .execute()
+println("Affected row count: $affectedRowCount")
+```
+
+</TabItem>
+</Tabs>
 
 最终生成了3条SQL:
 
