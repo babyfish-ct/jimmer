@@ -7,14 +7,16 @@ import { Benchmark } from '@site/src/components/Benchmark';
 
 The source code of the benchmark is [here](https://github.com/babyfish-ct/jimmer/tree/main/benchmark), using H2's in-memory database, it can run directly without any environment preparation.
 
-## Operation count per second
+## Report
+
+### Operation count per second
 
 - The abscissa represents the count of data objects queried from the database each time.
 - The ordinate represents the operation count per second.
 
 <Benchmark type="OPS"/>
 
-## Time cost per operation
+### Time cost per operation
 
 - The abscissa represents the count of data objects queried from the database each time.
 - The ordinate represents the time cost per operation(μs).
@@ -25,7 +27,7 @@ The source code of the benchmark is [here](https://github.com/babyfish-ct/jimmer
 This benchmark does not include `JPA(OpenJPA)` as Spring has removed support for OpenJPA.
 :::
 
-## The implementation principle of this benchmark
+## Implementation principle
 
 1. Disable caching for all frameworks
 
