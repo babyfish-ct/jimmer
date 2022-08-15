@@ -3,9 +3,16 @@ sidebar_position: 1
 title: 子查询
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## 有类型子查询
 
 ### 基于单列的IN表达式
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -25,8 +32,28 @@ List<Book> books = sqlClient
             .select(book);
     })
     .execute();
-books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where( 
+            // highlight-next-line
+            table.id valueIn subQuery(Author::class) {
+                where(table.firstName eq "Alex")
+                select(table.books.id)
+            }
+        )
+        select(table)    
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 最终生成的SQL如下
 
@@ -54,6 +81,9 @@ where
 
 ### 基于多列的IN表达式
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> newestBooks = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -77,8 +107,34 @@ List<Book> newestBooks = sqlClient
             .select(book);
     })
     .execute();
-newestBooks.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val newestBooks = sqlClient
+    .createQuery(Book::class) {
+        where( 
+            // highlight-next-line
+            tuple(
+                table.name, 
+                table.edition
+            ) valueIn subQuery(Book::class) {
+                groupBy(table.name)
+                select(
+                    table.name,
+                    max(table.edition).asNonNull()
+                )
+            }
+        )
+        select(table)
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 最终生成的SQL如下
 
@@ -103,6 +159,9 @@ where
 
 ### 将子查询视为简单值
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -123,8 +182,30 @@ List<Book> books = sqlClient
             .select(book);
     })
     .execute();
-books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where( 
+            // highlight-next-line
+            table.price gt subQuery(Book::class) {
+                select(
+                    avg(table.price)
+                        .coalesce(BigDecimal.ZERO)
+                )
+            }
+        )
+        select(table)
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 最终生成的SQL如下
 
@@ -147,11 +228,15 @@ where
 
 ### 在select和orderBy子句中使用子查询
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Tuple2<BookStore, BigDecimal>> storeAvgPriceTuples = sqlClient
     .createQuery(BookStoreTable.class, (q, store) -> {
         TypedSubQuery<BigDecimal> avgPriceSubQuery =
             q.createSubQuery(BookTable.class, (sq, book) -> {
+                sq.where(book.store().eq(store))
                 return sq.select(
                     book
                         .price()
@@ -174,6 +259,30 @@ List<Tuple2<BookStore, BigDecimal>> storeAvgPriceTuples = sqlClient
     .execute();
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val storeAvgPriceTuples = sqlClient
+    .createQuery(BookStore::class) {
+        val avgPriceSubQuery = subQuery(Book::class) {
+            where(table.store eq parentTable)
+            select(avg(table.price))
+        }
+        // highlight-next-line
+        orderBy(avgPriceSubQuery)
+        select(
+            table,
+            // highlight-next-line
+            avgPriceSubQuery
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
 最终生成的SQL如下
 
 ```sql
@@ -195,6 +304,9 @@ order by (
 ```
 
 ### 使用any运算符
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 List<Book> books = sqlClient
@@ -223,8 +335,35 @@ List<Book> books = sqlClient
             .select(book);
     })
     .execute();
-books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(
+            // highlight-next-line
+            table.id eq any(
+                subQuery(Author::class) {
+                    where(
+                        table.firstName valueIn listOf(
+                            "Alex",
+                            "Bill"
+                        )
+                    )
+                    select(table.id)
+                }
+            )
+        )
+        select(table)
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 最终生成的SQL如下
 
@@ -251,12 +390,15 @@ where tb_1_.ID =
 
 ### 使用all运算符
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
         return q
             .where(
-                book.id().eq(
+                book.id().ne(
                     q
                         .createSubQuery(
                             AuthorTableEx.class, 
@@ -278,8 +420,35 @@ List<Book> books = sqlClient
             .select(book);
     })
     .execute();
-books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(
+            // highlight-next-line
+            table.id ne all(
+                subQuery(Author::class) {
+                    where(
+                        table.firstName valueIn listOf(
+                            "Alex",
+                            "Bill"
+                        )
+                    )
+                    select(table.id)
+                }
+            )
+        )
+        select(table)
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 最终生成的SQL如下
 
@@ -306,6 +475,9 @@ where tb_1_.ID =
 
 ### 使用exists运算符
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -316,7 +488,7 @@ List<Book> books = sqlClient
                     (sq, author) -> {
                         return sq
                             .where(
-                                    book.eq(author.books()),
+                                    author.books().eq(book),
                                     author.firstName().eq("Alex")
                             )
                             .select(author);
@@ -328,8 +500,33 @@ List<Book> books = sqlClient
             .select(book);
     })
     .execute();
-books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(
+            // highlight-next-line
+            exists(
+                subQuery(Author::class) {
+                    where(
+                        table.books eq parentTable,
+                        table.firstName eq "Alex"
+                    )
+                    select(table)
+                }
+            )
+        )
+        select(table)
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 最终生成的SQL如下
 
@@ -370,6 +567,9 @@ where
 
 因此，jimmer-sql支持无类型子查询(Wild sub query)，和普通子查询不同，无类型子查询实现中，不再需要最后那一句select方法调用，即，不需要返回类型。
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 List<Book> books = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
@@ -380,10 +580,10 @@ List<Book> books = sqlClient
                     AuthorTableEx.class,
                     (sq, author) -> {
                         sq.where(
-                                book.eq(author.books()),
+                                author.books().eq(book),
                                 author.firstName().eq("Alex")
                         );
-                        // 结尾处不需要调用select
+                        // No need to call select at the end
                     }
                 )
                 .exists()
@@ -391,8 +591,32 @@ List<Book> books = sqlClient
             .select(book);
     })
     .execute();
-books.forEach(System.out::println);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(
+            exists(
+                // highlight-next-line
+                wildSubQuery(Author::class) {
+                    where(
+                        table.books eq parentTable,
+                        table.firstName eq "Alex"
+                    )
+                }
+            )
+        )
+        select(table)
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
 
 最终生成的SQL不变，仍然是
 

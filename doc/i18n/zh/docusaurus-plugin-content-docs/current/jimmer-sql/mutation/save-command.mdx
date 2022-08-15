@@ -3,6 +3,9 @@ sidebar_position: 3
 title: Save指令
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 :::tip
 save指令非常强大，是jimmer-sql明显区别于其它ORM的特征之一。
 
@@ -30,13 +33,16 @@ jimmer-sql使用了另外一种截然不同的方式，利用jimmer-core不可�
 
 默认情况下，save指令执行的是upsert操作，即update或insert。例如
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 SimpleSaveResult<Book> result = sqlClient
     .getEntities()
     .save(
         BookDraft.$.produce(book -> {
             book
-                .setId(100L)
+                .setId(1L)
                 .setName("SpringBoot in Action")
                 .setEdition(1)
                 .setPrice(new BigDecimal("44.99"));
@@ -44,6 +50,26 @@ SimpleSaveResult<Book> result = sqlClient
     );
 System.out.println("Affected row count: " + result.getTotalAffectedRowCount());
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .save(
+        new(Book::class).by { 
+            id = 1L
+            name = "SpringBoot in Action"
+            edition = 1
+            price = BigDecimal("44.99")
+        }
+    )
+println("Affected row count: " + result.totalAffectedRowCount)
+```
+
+</TabItem>
+</Tabs>
 
 假设指定的对象在数据库库中不存在，则生成两条SQL
 
@@ -77,15 +103,16 @@ System.out.println("Affected row count: " + result.getTotalAffectedRowCount());
 
 有时，开发人员清楚自己要执行的操作就是insert，为了性能，不需要自动判断。
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 SimpleSaveResult<Book> result = sqlClient
     .getEntities()
     .saveCommand(
         BookDraft.$.produce(book -> {
             book
-                .setId(
-                    UUID.fromString("80620741-e3a1-4076-bf25-36a0c0238936")
-                )
+                .setId(100L)
                 .setName("SpringBoot in Action")
                 .setEdition(1)
                 .setPrice(new BigDecimal("44.99"));
@@ -98,6 +125,29 @@ SimpleSaveResult<Book> result = sqlClient
     .execute();
 System.out.println("Affected row count: " + result.getTotalAffectedRowCount());
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .save(
+        new(Book::class).by {
+            id = 100L
+            name = "SpringBoot in Action"
+            edition = 1
+            price = BigDecimal("44.99")
+        }
+    ) {
+        // highlight-next-line
+        setMode(SaveMode.INSERT_ONLY)
+    }
+println("Affected row count: " + result.totalAffectedRowCount)
+```
+
+</TabItem>
+</Tabs>
 
 这里，我们通过`setMode(SaveMode.INSERT_ONLY)`把save指令配置成`insert-only`模式，最终，只会生成一条插入数据的SQL
 
@@ -123,15 +173,16 @@ sqlClient.getEntities().saveCommand(someObj).execute();
 
 同理，如果开发人员明确自己要执行的操作一定是update而非insert，可以使用update-only模式
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 SimpleSaveResult<Book> result = sqlClient
     .getEntities()
     .saveCommand(
         BookDraft.$.produce(book -> {
             book
-                .setId(
-                    UUID.fromString("80620741-e3a1-4076-bf25-36a0c0238936")
-                )
+                .setId(1L)
                 .setName("SpringBoot in Action")
                 .setEdition(1)
                 .setPrice(new BigDecimal("44.99"));
@@ -144,6 +195,29 @@ SimpleSaveResult<Book> result = sqlClient
     .execute();
 System.out.println("Affected row count: " + result.getTotalAffectedRowCount());
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .save(
+        new(Book::class).by {
+            id = 1L
+            name = "SpringBoot in Action"
+            edition = 1
+            price = BigDecimal("44.99")
+        }
+    ) {
+        // highlight-next-line
+        setMode(SaveMode.UPDATE_ONLY)
+    }
+println("Affected row count: " + result.totalAffectedRowCount)
+```
+
+</TabItem>
+</Tabs>
 
 最终生成的SQL只会有一条
 
@@ -169,12 +243,15 @@ where
 
 现在我们为`Book`类型指定业务主键
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java title="Book.java"
 @Entity
 public interface Book {
 
     @Id
-    @GeneratedValue(generator = UUIDIdGenerator.FULL_NAME)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
     // highlight-next-line
@@ -185,9 +262,35 @@ public interface Book {
     @Key
     int edition();
 
-    ...省略其它属性...
+    ...Omit other code...
 }
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long
+
+    // highlight-next-line
+    @Key
+    val name: String
+
+    // highlight-next-line
+    @Key
+    val edition: Int
+
+    ...Omit other code...
+}
+```
+
+</TabItem>
+</Tabs>
 
 前面提出了一个[问题](#why_select_name_and_edition)，这里可以回答之。
 
@@ -204,6 +307,9 @@ public interface Book {
 ### 保存无id对象
 
 让我们来看一个保存无id的对象的例子
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 SimpleSaveResult<Book> result = sqlClient
@@ -224,6 +330,31 @@ System.out.println(
     "Modified entity: " + result.getModifiedEntity()
 );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .save(
+        new(Book::class).by {
+            // No id here
+            name = "SpringBoot in Action"
+            edition = 1
+            price = BigDecimal("44.99")
+        }
+    )
+println(
+    "Original entity: " + result.originalEntity
+)
+println(
+    "Modified entity: " + result.modifiedEntity
+)
+```
+
+</TabItem>
+</Tabs>
 
 被保存的`Book`对象无id，所以根据业务主键`name`和`edition`来查询被保存对象是否在数据库中存在。
 
@@ -288,6 +419,9 @@ save指令返回类型`SimpleSaveResult<E>`包含两个只读属性
 
 动态定义业务主键的方法
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 SimpleSaveResult<Book> result = sqlClient
     .getEntities()
@@ -310,6 +444,29 @@ SimpleSaveResult<Book> result = sqlClient
     .execute();
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .save(
+        new(Book::class).by {
+            // No id here
+            name = "SpringBoot in Action"
+            edition = 1
+            price = BigDecimal("44.99")
+        }
+    ) {
+        // highlight-next-line
+        setKeyProps(Book::name, Book::price)
+    }
+println(result)
+```
+
+</TabItem>
+</Tabs>
+
 :::info
 如果既为save指令配置了动态业务主键，又为实体接口配置了静态业务主键，则动态配置优先。
 :::
@@ -319,6 +476,9 @@ SimpleSaveResult<Book> result = sqlClient
 jimmer-core不可变对象的动态性会导致残缺对象，即，具备未指定属性的对象。
 
 残缺对象对save指令而言很重要，不同的残缺方式会导致不同的行为。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 List<BookStore> stores = Arrays.asList(
@@ -342,6 +502,33 @@ sqlClient
     .configure(it -> it.setMode(SaveMode.UPDATE_ONLY))
     .execute();
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val stores = listOf(
+    new(BookStore::class).by {
+        id = 1L
+        name = "O'REILLY+"
+        // No website here
+    },
+    new(BookStore::class).by {
+        id = 2L
+        name = "MANNING+"
+        website = null
+        // Null website here
+    }
+)
+sqlClient
+    .entities
+    .batchSave(stores) {
+        setMode(SaveMode.UPDATE_ONLY)
+    }
+```
+
+</TabItem>
+</Tabs>
 
 这里，我们使用`batchSaveCommand`方法保存两个`BookStore`对象。
 
@@ -379,6 +566,9 @@ sqlClient
 
 要使用乐观锁，先要在实体接口中配置
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java title="BookStore.java"
 @Entity
 public interface BookStore {
@@ -386,9 +576,26 @@ public interface BookStore {
     @Version
     int version();
 
-    ... 其它属性略 ...
+    ... omit other properties ...
 }
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStore.kt"
+@Entity
+interface BookStore {
+
+    @Version
+    val version: Int
+
+    ... omit other properties ...
+}
+```
+
+</TabItem>
+</Tabs>
 
 :::note
 - 对于insert操作而言（无论是人为指定还是自动判定），允许不指定乐观锁字段，系统以0作为其默认值。当然，如果开发人员指定了，就用其指定的值。
@@ -396,13 +603,16 @@ public interface BookStore {
 - 对于update操作而言（无论是人为指定还是自动判定），必须指定乐观锁字段，否则会导致异常。
 :::
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 SimpleSaveResult<BookStore> result = sqlClient
     .getEntities()
     .saveCommand(
         BookStoreDraft.$.produce(store -> {
             store
-                .setId(2L)
+                .setId(2)
                 .setWebsite("http://www.manning.com")
                 // highlight-next-line
                 .setVersion(0);
@@ -417,6 +627,33 @@ System.out.println(
     "Modified entity: " + result.getModifiedEntity()
 );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .save(
+        new(BookStore::class).by {
+            id = 2L
+            website = "http://www.manning.com"
+            // highlight-next-line
+            version = 0
+        }
+    ) {
+        setMode(SaveMode.UPDATE_ONLY) 
+    }
+println(
+    "Original entity: " + result.originalEntity
+)
+println(
+    "Modified entity: " + result.modifiedEntity
+)
+```
+
+</TabItem>
+</Tabs>
 
 最终生成的SQL如下:
 
@@ -438,7 +675,7 @@ and
 
 如果版本匹配，没有发生异常，上面的代码输出为（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
 
-```
+```json
 Original entity: {
     "id":2,
     "website":"http://www.manning.com",
@@ -447,6 +684,7 @@ Original entity: {
 Modified entity: {
     "id":2,
     "website":"http://www.manning.com",
+    /* highlight-next-line */
     "version":1
 }
 ```
@@ -465,10 +703,10 @@ Modified entity: {
 
 ### 基本用法
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-long manningId = 2L;
-long alexId = 2L;
-UUID danId = 3L;
 SimpleSaveResult<Book> result = sqlClient
     .getEntities()
     .save(
@@ -479,15 +717,15 @@ SimpleSaveResult<Book> result = sqlClient
                 .setPrice(new BigDecimal("44.99"))
                 // highlight-next-line
                 .setStore(
-                    store -> store.setId(manningId)
+                    store -> store.setId(2L)
                 )
                 // highlight-next-line
                 .addIntoAuthors(
-                    author -> author.setId(alexId)
+                    author -> author.setId(2L)
                 )
                 // highlight-next-line
                 .addIntoAuthors(
-                    author -> author.setId(danId)
+                    author -> author.setId(3L)
                 );
         })
     );
@@ -511,6 +749,48 @@ System.out.println(
         )
 );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .save(
+        new(Book::class).by {
+            name = "SpringBoot in Action"
+            edition = 1
+            price = BigDecimal("44.99")
+            // highlight-next-line
+            store().apply {
+                id = 2L
+            }
+            // highlight-next-line
+            authors().addBy { 
+                id = 2L
+            }
+            // highlight-next-line
+            authors().addBy { 
+                id = 3L
+            }
+        }
+    )
+println("Affected row counts")
+println(
+    "\ttotal: ${result.totalAffectedRowCount}"
+)
+println(
+    "\tBOOK: ${result.affectedRowCount(Book::class)}"
+)
+println(
+    "\tBOOK_AUTHOR_MAPPING: ${
+        result.affectedRowCount(Book::authors)
+    }"
+)
+```
+
+</TabItem>
+</Tabs>
 
 :::note
 这里，用户传递的`Book`对象具备多对一属性`store`和多对多属性`authors`，但是所有关联对象都只有`id`属性。
@@ -596,15 +876,18 @@ Affected row counts
 	BOOK_AUTHOR_MAPPING: 2
 ```
 
-### 删除多对一关联的父对象
+### 被父对象抛弃
 
 从上面的论述可以看到，save指令有可能导致多对多关联中间表的数据的被删除，这是比较简单的情况。
 
 对于直接基于外键的一对一或一对多关联而言，需要处理的情况更复杂一些。
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID bookId1 = ...;
-UUID bookId2 = ...;
+Long bookId1 = ...;
+Long bookId2 = ...;
 sqlClient
     .getEntities()
     .save(
@@ -620,6 +903,30 @@ sqlClient
         })
     );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookId1 = ...
+val bookId2 = ...
+sqlClient
+    .entities
+    .save(
+        new(BookStore::class).by { 
+            name = "TURING"
+            books().addBy { 
+                id = bookId1
+            }
+            books().addBy { 
+                id = bookId2
+            }
+        }
+    )
+```
+
+</TabItem>
+</Tabs>
 
 这段代码保存一个`BookStore`对象，其一对多属性`books`具备两个`Book`对象：`book1`和`book2`。
 
@@ -673,6 +980,9 @@ sqlClient
 
 然而，你也可以选择不使用[@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate)注解，而动态地为save指令指定dissociateAction配置。
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 UUID bookId1 = ...;
 UUID bookId2 = ...;
@@ -701,6 +1011,33 @@ sqlClient
     .execute();
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookId1 = ...
+val bookId2 = ...
+sqlClient
+    .entities
+    .save(
+        new(BookStore::class).by { 
+            name = "TURING"
+            books().addBy { 
+                id = bookId1
+            }
+            books().addBy { 
+                id = bookId2
+            }
+        }
+    ) {
+        // highlight-next-line
+        setDissociateAction(Book::store, DissociateAction.DELETE)
+    }
+```
+
+</TabItem>
+</Tabs>
+
 这里，动态地调用指令的`setDissociateAction`方法，相比于静态地在`Book.store`属性上使用注解[@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate)并指定级联删除，效果完全一样。
 
 :::info
@@ -715,6 +1052,9 @@ sqlClient
 
 事实上，我们可以让关联对象具备id以外的属性，如下
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 sqlClient
     .getEntities()
@@ -728,6 +1068,7 @@ sqlClient
                     store
                         .setName("MANNING")
                         .setWebsite("http://www.manning.com")
+                        .setVersion(0)
                 )
                 .addIntoAuthors(author ->
                     author
@@ -741,6 +1082,37 @@ sqlClient
     .configure(it -> it.setAutoAttachingAll())
     .execute();
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .entities
+    .save(
+        new(Book::class).by { 
+            name = "SpringBoot in Action"
+            edition = 1
+            price = BigDecimal("44.99")
+            store().apply { 
+                name = "MANNING"
+                website = "http://www.manning.com"
+                version = 0
+            }
+            authors().addBy {
+                firstName = "Craig"
+                lastName = "Walls"
+                gender = Gender.MALE
+            }
+        }
+    ) {
+        // highlight-next-line
+        setAutoAttachingAll()
+    }
+```
+
+</TabItem>
+</Tabs>
 
 这样的操作，生成的SQL随着数据库的状态不同而不同。如果罗列各种可能性，将导致以枯燥的内容耗去本文档大量篇幅。因此这里仅作文字讨论。
 
@@ -758,11 +1130,14 @@ sqlClient
 
 然而，有时用户的确想指定不存在的关联对象，并切期望系统自动插入这些不存在的关联对象。这时，用户可以这么做
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 sqlClient
     .getEntities()
     .saveCommand(
-        ...任意复杂度的对象树，略...
+        ...object tree of arbitrary complexity, slightly...
     )
     .configure(it -> 
         it
@@ -780,6 +1155,25 @@ sqlClient
     .execute();
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .entities
+    .save(
+        ...object tree of arbitrary complexity, slightly...
+    ) {
+        // highlight-next-line
+        setAutoAttaching(Book::store)
+        // highlight-next-line
+        setAutoAttaching(Book::authors)
+    }
+```
+
+</TabItem>
+</Tabs>
+
 - 第1个`setAutoAttaching`表示：如果当前`Book`对象的`store`属性所关联的对象不存在，自动插入它。
 
 - 第2个`setAutoAttaching`表示：如果当前`Book`对象的`authors`属性所关联的集合中某些对象不存在，自动插入它们。
@@ -791,9 +1185,36 @@ sqlClient
 或许，这样根据关联一个一个配置auto attaching行为很繁琐。所以提供一个更盲目也更便捷的的API，开启任何关联的auto attaching。
 
 这就是上文的
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-.configure(it -> it.setAutoAttachingAll())
+sqlClient
+    .getEntities()
+    .saveCommand(
+        ...object tree of arbitrary complexity, slightly...
+    )
+    .configure(it -> it.setAutoAttachingAll())
+    .execute()
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+
+sqlClient
+    .entities
+    .save(
+        ...object tree of arbitrary complexity, slightly...
+    ) {
+        setAutoAttachingAll()
+    }
+
+```
+
+</TabItem>
+</Tabs>
 
 你可以如此理解，这样配置后，任何关联对象的保存模式都变成了UPSERT。
 

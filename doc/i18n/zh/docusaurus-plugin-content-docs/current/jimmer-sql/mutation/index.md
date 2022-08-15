@@ -19,6 +19,6 @@ jimmer-sql提供了两种修改方式
 
 - [Update语句](./update-statement)
 - [Delete语句](./delete-statement)
-- [&#128161; Save指令](./save-command)
+- [Save指令](./save-command)
 - [Delete指令](./delete-command)
 - [修改中间表](./association)
