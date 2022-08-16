@@ -1,28 +1,28 @@
 ---
 sidebar_position: 9
-title: Support for Spring GraphQL
+title: 对Spring GraphQL的支持
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Spring Boot 2.7.0 brings Spring GraphQL, and jimmer-sql provides a specialized API to speed up the development of Spring GraphQL.
+Spring Boot 2.7.0带来了Spring GraphQL，jimmer-sql为了提供了专门的API，加快Spring GraphQL的开发。
 
-## Query 
+## 查询 
 
-For fields of type `Query`, i.e. root queries, there is no difference between a GraphQL implementation and a REST implementation, and no special support is required.
+对于Query类型的查询，即根查询，GraphQL实现和REST实现没有区别，无需特殊之处。
 
-The key point is the query for associations between objects. It is a simple concept in itself, but for performance, `DataLoader` is usually used in actual projects, and `DataLoader` has caused great damage to the development experience.
+关键点在于对象之间的关联查询。本身是个简单的概念，但是为了性能，实际项目通常会采用`DataLoader`，`DataLoader`对开发体验产生了较大破坏。
 
 :::note
-Association queries and `DataLoader` increase the difficulty of developing GraphQL services, but because of this, GraphQL services are very powerful from the client's point of view.
+对象之间的关联查询和`DataLoader`增加了GraphQL服务的开发难度，但也正因为如此，在客户端看来，GraphQL服务很强大。
 :::
 
-In order to alleviate the disruption of `DataLoader` to the development experience, Spring GraphQL introduces a new annotation [@BatchMapping](https://docs.spring.io/spring-graphql/docs/current/reference/html/#controllers-batch-mapping).
+为了缓解`DataLoader`对开发体验的破坏，Spring GraphQL引入了新注解[@BatchMapping](https://docs.spring.io/spring-graphql/docs/current/reference/html/#controllers-batch-mapping)。
 
-jimmer-sql provides special support for this, providing dedicated API that allows developers to implement Spring GraphQL's [@BatchMapping](https://docs.spring.io/spring-graphql/docs/current/reference/html/#controllers-batch-mapping) method in one sentence.
+jimmer-sql对此提供了特别支持，提供专用的API，让开发人员可以一句话实现Spring GraphQL的[@BatchMapping](https://docs.spring.io/spring-graphql/docs/current/reference/html/#controllers-batch-mapping)方法。
 
-API related to this
+与此相关的API
 
 <table>
     <thead>
@@ -53,7 +53,7 @@ API related to this
 
 ### ReferenceLoader
 
-`ReferenceLoadder` is used to quickly implement one-to-one or many-to-one associations
+`ReferenceLoader`用于快速实现一对一或多对一关联
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -112,14 +112,14 @@ class BookController(
 </Tabs>
 
 :::warning
-For kotlin, `java.util.List` must be used implicitly, kotlin list cannot work.
+对于kotlin而言，需要显式地使用`java.util.List`，kotlin的集合无法工作
 
-This is a bug of spring-graphql, please view [spring-graphql#454](https://github.com/spring-projects/spring-graphql/issues/454)
+这是spring-graphql的一个bug, 请参考[spring-graphql#454](https://github.com/spring-projects/spring-graphql/issues/454)
 :::
 
 ### ListLoader
 
-`ListLoader` is used to quickly implement one-to-many or many-to-many associations
+`ListLoader`用于快速实现一对多或多对多关联
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -288,16 +288,16 @@ class AuthorController(
 </Tabs>
 
 :::warning
-For kotlin, `java.util.List` must be used implicitly, kotlin list cannot work.
+对于kotlin而言，需要显式地使用`java.util.List`，kotlin的集合无法工作
 
-This is a bug of spring-graphql, please view [spring-graphql#454](https://github.com/spring-projects/spring-graphql/issues/454)
+这是spring-graphql的一个bug, 请参考[spring-graphql#454](https://github.com/spring-projects/spring-graphql/issues/454)
 :::
 
 ### ValueLoader
 
-`ValueLoader` is used to quickly implement calculated property.
+`ValueLoader`用于快速实现, 
 
-jimmer-sql supports calculated property, which means transient property with resolver.
+jimmer-sql支持计算属性，即具备resolver的transient属性
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -325,14 +325,14 @@ interface BookStore {
     @Transient(BookStoreAvgPriceResolver::class)
     val avgPrice: BigDecimal
 
-    ... Omit other properties ...
+    ... 省略其他属性 ...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-`ValueLoader` should be used like this
+`ValueLoader`应该被这样使用
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -396,36 +396,36 @@ class BookStoreController(
 </Tabs>
 
 :::warning
-For kotlin, `java.util.List` must be used implicitly, kotlin list cannot work.
+对于kotlin而言，需要显式地使用`java.util.List`，kotlin的集合无法工作
 
-This is a bug of spring-graphql, please view [spring-graphql#454](https://github.com/spring-projects/spring-graphql/issues/454)
+这是spring-graphql的一个bug, 请参考[spring-graphql#454](https://github.com/spring-projects/spring-graphql/issues/454)
 :::
 
-## Mutation
+## 变更
 
-### Existence value of GraphQL Input type
+### GraphQL Input类型的存在价值
 
-Before introducing the mutation, we need to discuss why the GraphQL protocol introduced the Input type.
+在介绍变更功能之前，需要讨论GraphQL协议为什么要引入Input类型。
 
-From an output perspective, a GraphQL field returns an `Object` type. However, from an input perspective, the parameters of GraphQL fields do not accept `Object` types, only scalar types, `Input` types, and their collection types are acceptable.
+从输出的角度来看，GraphQL字段返回`Object`类型。 但是，从输入的角度来看，GraphQL字段的参数不接受`Object`类型，只能接受标量类型、`Input`类型以及它们的集合类型。
 
-The different between `Object` and `Input`:
+二者之间存在如下差异：
 
-- The `Object` type is <b>dynamic</b>, and the client can freely define the shape of the object.
+- `Object`类型是<b>动态</b>的，客户端可以随意定义对象的形状。
 
-     The dynamic nature of the `Object` type realizes the core value of GraphQL, clients can specify which fields are required and which are not, giving them flexibility in controlling the format of the object tree to query.
+    `Object`类型的动态性实现了GraphQL的核心价值。因为这种动态性，客户端可以指定哪些字段需要，哪些不需要，从而灵活地控制要查询的对象树格式。
 
-- The `Input` type is <b>static</b>, and the client must provide parameters that strictly meet the server's requirements.
+- `Input`类型是<b>静态</b>的，客户端必须提供严格满足服务器要求的参数。
 
-     Different from query, the mutation business often has strict restrictions on the input data format. If the client arbitrarily passes the data format that does not meet the expectations of the server, it may lead to abnormal business.
+    和查询不同，变更业务往往对输入数据格式有严格的限制，如果客户端随意传递不符合服务端期望的数据格式，很可能导致变更业务异常。
 
-     Therefore, the GraphQL protocol introduces the `Input` type, which is static, and the client must pass a data format that strictly conforms to the `Input` type definition before calling the mutation business.
+    因此，GraphQL协议引入`Input`类型，该类型是静态的，客户端必须传递严格符合`Input`类型定义的数据格式，才可以调用变更业务。
 
-This difference is the fundamental reason for the existence of the `Input` type.
+这个动态静态的差异，就是`Input`类型存在的根本原因。
 
-### Define input type
+### 定义Input类型
 
-First, we need to define the input type in the Spring GraphQL convention file `src/main/resources/graphql/schema.graphqls`
+首先，我们需要在Spring GraphQL约定的文件`src/main/resources/graphql/schema.graphqls`中定义input类型
 
 ```graphql
 input BookInput {
@@ -438,7 +438,7 @@ input BookInput {
 }
 ```
 
-Then, in the Java code, define the corresponding class `BookInput` 
+然后，在Java文件中，定义对应的BookInput类型
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -476,9 +476,8 @@ public class BookInput {
         this.authorIds = authorIds;
     }
 
-    // Convert static input object to 
-    // dynamic entity object tree,
-    // no matter how deep it is.
+    // 把静态的input(DTO)对象转化为动态
+    // 的实体对象树, 无论它有多深.
     // highlight-next-line
     public Book toBook() {
         return BookDraft.$.produce(book -> {
@@ -517,9 +516,8 @@ data class BookInput(
     val authorIds: List<Long>
 ) {
 
-    // Convert static input(DTO) object to 
-    // dynamic entity object tree,
-    // no matter how deep it is.
+    // 把静态的input(DTO)对象转化为动态
+    // 的实体对象树, 无论它有多深.
     // highlight-next-line
     fun toBook(): Book =
         new(Book::class).by {
@@ -546,22 +544,22 @@ data class BookInput(
 </Tabs>
 
 :::info
-1. The [Save command](./mutation/save-command) of jimmer-sql provides the function of saving object tree with arbitrary complexity into database. Therefore, jimmer-sql focuses on the entity object tree, not the input object. So, we need to provide the method `BookInput.toBook` to convert the static `BookInput` object to a dynamic `Book` object.
+1. jimmer-sql的[Save指令](./mutation/save-command)提供把任意复杂的对象树保存到数据库的功能，因此，jimmer-sql关注的是实体对象树，而非input对象。所以，我们需要提供`toBook`方法，把静态的`BookInput`对象转换为动态的`Book`对象。
 
-2. The `Book` object is a jimmer-core immutable object, which is dynamic, that is, the format of `Book` is ever-changing and all-encompassing. So, no matter how `BookInput` type is defined, and whether `BookInput` has deep data nesting, it can be converted to `Book` type. It can never happen that `BookInput` cannot be converted to `Book`.
+2. `Book`对象是jimmer-core不可变对象，本身具备动态性，即，`Book`的数据格式千变万化，包罗万象。所以，无论如何定义`BookInput`类型，以及`BookInput`是否存在较深数据镶套，都可以将之转换为`Book`类型。根本不存在`BookInput`和`Book`因格式不兼容而无法转换的问题。
 
-3. The core value of the `BookInput` is to conform to the GraphQL protocol and impose format constraints on the input data passed by the client. Howerver, for jimmer-sql, `BookInput` only has the responsibility of creating `Book` object. So, apart from the `toBook` method, the class `BookInput` in java code does not define any other methods, not even a getter methods, because this is unnessary (of course, if you want to cooperate with the debugger display function, you can define a `toString` for it).
+3. `BookInput`类型存在的价值是为了符合GraphQL协议，对客户端传递的输入数据进行格式约束。但对jimmer-sql而言，`BookInput`类型的唯一价值就是创建`Book`对象。所以，除了`toBook`方法外，Java代码中的`BookInput`类没有定义任何其它方法，甚至连getter方法都没有，因为不需要（当然，如果想配合调试器的展示功能，你可以为其定义一个`toString`方法）。
 :::
 
-### Implement mutation business
+### 实现变更业务
 
-Now, we know
+现在我们知道
 
-1. The [Save command](./mutation/save-command) of jimmer-sql allows developers to use one sentence to save any complex entity object tree into the database.
+1. jimmer-sql的[Save指令](./mutation/save-command)，允许开发使人使用一句话，把任意复杂的实体对象树保存到数据库。
 
-2. The `BookInput` defined above can be converted to an entity object tree of `Book` through its  method `toBook`.
+2. 上面定义的`BookInput`类型，可以通过其`toBook`方法，转换为`Book`类型的实体对象树。
 
-Then, the realization of the data mutation business is very simple.
+那么，数据变更业务的实现就很简单了。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">

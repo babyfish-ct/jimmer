@@ -39,9 +39,7 @@ interface KSqlClient {
 
     val triggers: KTriggers
 
-    fun <S: Any, T: Any> getReferenceAssociations(prop: KProperty1<S, T?>): KAssociations
-
-    fun <S: Any, T: Any> getListAssociations(prop: KProperty1<S, List<T>>): KAssociations
+    fun getAssociations(prop: KProperty1<*, *>): KAssociations
 
     fun <S: Any, V: Any> getValueLoader(prop: KProperty1<S, V>): KValueLoader<S, V>
 

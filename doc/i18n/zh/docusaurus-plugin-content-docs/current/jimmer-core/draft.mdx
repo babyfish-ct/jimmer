@@ -3,42 +3,110 @@ sidebar_position: 3
 title: Draft代理
 ---
 
-## 使用AnnotationProcessor
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 使用AnnotationProcessor/KSP plugin
 
 用户定义不可变数据接口
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java title="TreeNode.java"
 package yourpackage;
 
-import org.babyfish.jimmer.Immutable;
-
+import javax.validation.constraints.Null;
 import java.util.List;
+
+import org.babyfish.jimmer.Immutable;
 
 @Immutable
 public interface TreeNode {
+    
     String name();
+
+    @Null
     TreeNode parent();
+
     List<TreeNode> childNodes();
 }
 ```
 
-由于gradle配置文件中存在Annotation Processor
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="TreeNode.kt"
+package yourpackage
+
+import org.babyfish.jimmer.Immutable
+
+@Immutable
+interface TreeNode {
+
+    val name: String
+
+    val parent: TreeNode?
+
+    val childNodes: List<TreeNode>
+}
+```
+
+</TabItem>
+</Tabs>
+
+由于gradle配置文件中存在Annotation Processor/KSP plugin
+
+<Tabs groupId="language">
+<TabItem value="java" label="For java project">
 
 ```groovy title="build.gradle"
 dependencies {
 
-    implementation 'org.babyfish.jimmer:jimmer-core:0.1.25'
+    implementation 'org.babyfish.jimmer:jimmer-core:0.1.26'
 
     // highlight-next-line
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.1.25'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.1.26'
     // This annotation processor generates source code
     // for INTERFACEs marked by
     // `@org.babyfish.jimmer.Immutable` or
-    // `@javax.persistance.Entity`
+    // `@org.babyfish.jimmer.sql.Entity`
 }
 ```
 
-此Annotation Processor将生成如下一个名称为`TreeNodeDraft`的接口类型：
+</TabItem>
+<TabItem value="kotlin" label="For kotlin project">
+
+```kotlin title="build.gradle.kts"
+plugins {
+    id("com.google.devtools.ksp") version "1.7.10-1.0.6"
+    ... other code...
+}
+dependencies {
+
+    implementation("org.babyfish.jimmer:jimmer-core-kotlin:0.1.26")
+    // highlight-next-line
+    ksp("org.babyfish.jimmer:jimmer-ksp:0.1.26")
+    // The ksp plugin generates source code
+    // for INTERFACEs marked by
+    // `@org.babyfish.jimmer.Immutable` or
+    // `@org.babyfish.jimmer.sql.Entity`
+}
+
+kotlin {
+    sourceSets.main {
+        kotlin.srcDir("build/generated/ksp/main/kotlin")
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+此Annotation Processor/KSP plugin将生成如下一个名称为`TreeNodeDraft`的接口类型：
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java title="TreeNodeDraft.java"
 package org.babyfish.jimmer.example.core.model;
@@ -102,43 +170,115 @@ public interface TreeNodeDraft extends TreeNode, Draft {
             TreeNode base, 
             DraftConsumer<TreeNodeDraft> block
         ) {
-            ...省略...
+            ...omit...
         }
 
-        ...省略其它代码...
+        ...省略其他代码...
     }
 
-    ...省略其它代码...
+    ...省略其他代码...
 }
-
 ```
 
-:::info
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
 
-1. `TreeNode`是不可变对象；而`TreeNodeDraft`是可变代理。
+```kotlin title="TreeNodeDraft.kt"
+@DslScope
+public interface TreeNodeDraft : TreeNode {
+    public override var name: String
 
-2. Java代码中的`@OldChain`已经在[和开发人员的约定](../intro#和开发人员的约定)中被解释。
-:::
+    public override var parent: TreeNode?
 
-其中，`TreeNodeDraft.$`是一个重要的静态只读字段，它提供两个重要的API
+    public override var childNodes: List<TreeNode>
 
-1. 从头创建全新的对象
+    public fun parent(): TreeNodeDraft
 
+    public fun childNodes(): MutableList<TreeNodeDraft>
+
+    public object `$` {
+        
+        ...省略其他代码...
+
+        public fun produce(
+            base: TreeNode? = null, 
+            block: TreeNodeDraft.() -> Unit
+        ): TreeNode {
+            ...omit code...
+        }
+    }
+
+    ...省略其他代码...
+}
+
+// highlight-next-line
+public fun ImmutableCreator<TreeNode>.`by`(
+    base: TreeNode? = null, 
+    block: TreeNodeDraft.() -> Unit
+): TreeNode = 
+    TreeNodeDraft.`$`.produce(base, block)
+
+public fun MutableList<TreeNodeDraft>.addBy(
+    base: TreeNode? = null,
+    block: TreeNodeDraft.() -> Unit
+): MutableList<TreeNodeDraft> {
+    add(TreeNodeDraft.`$`.produce(base, block) as TreeNodeDraft)
+    return this
+}
+```
+
+</TabItem>
+</Tabs>
+
+你可以这样使用
+
+1.  从头创建全新的对象
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
     ```java
     TreeNode oldTreeNode = TreeNodeDraft.$
         .produce(treeNodeDraft -> {
-            ...代码省略...
+            ...省略...
         });
     ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    vak oldTreeNode = new(TreeNode::class).by {
+        ...省略...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
 
 2. 根据已有的对象，进行某些“变更”后，创建新的对象
 
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
     ```java
     TreeNode newTreeNode = TreeNodeDraft.$
         .produce(oldTreeNode, treeNodeDraft -> {
-            ...代码省略...
+            ...省略...
         });
     ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    val newTreeNode = new(TreeNode::class).by(oldTreeNode) {
+        ...省略...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
 
 :::note
 这两种用法的完整的代码已经在[jimmer-core初体验](./usage)中已经被示范，所以，这里省略了lambda表达式内部的代码，不做重复粘贴。
@@ -148,24 +288,59 @@ public interface TreeNodeDraft extends TreeNode, Draft {
 
 `TreeNode.name`是一个标量属性。`TreeNodeDraft`会定义如下一个`setter方法/可写属性`
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java title="TreeNodeDraft.java"
 public interface TreeNodeDraft extends TreeNode, Draft {
 
     @OldChain
     TreeNodeDraft setName(String name);
 
-    ...省略其它代码...
+    ...省略其他代码...
 }
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="TreeNodeDraft.kt"
+@DslScope
+public interface TreeNodeDraft : TreeNode {
+    
+    // var, not val
+    public override var name: String
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
 开发人员可以通过此方法设置draft代理的`name`属性
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-TreeNode oldTreeNode = TreeNodeDraft.$
+TreeNode treeNode = TreeNodeDraft.$
     .produce(draft -> {
         draft.setName("Root Node");
     });
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNode = new(TreeNode::class).by {
+    name = "Root Node"
+} 
+```
+
+</TabItem>
+</Tabs>
 
 ## 引用关联
 
@@ -175,14 +350,33 @@ TreeNode oldTreeNode = TreeNodeDraft.$
 
 ### 覆盖getter `parent()`
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java title="TreeNodeDraft.java"
 public interface TreeNodeDraft extends TreeNode, Draft {
 
     TreeNodeDraft parent();
 
-    ...省略其它代码...
+    ...省略其他代码...
 }
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="TreeNodeDraft.kt"
+@DslScope
+public interface TreeNodeDraft : TreeNode {
+    
+    public fun parent(): TreeNodeDraft
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
 
 :::info
 注意，此方法的返回类型是`TreeNodeDraft`，而非`TreeNode`。
@@ -190,24 +384,64 @@ public interface TreeNodeDraft extends TreeNode, Draft {
 即，如果draft对象的引用关联被设置过且被设置为非null，那么该方法一定返回draft对象。这样，用户就可以直接修改更深的关联对象。
 :::
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 TreeNode newTreeNode = TreeNodeDraft.$
-    .produce(oldTreeNode, draft -> {
+    .produce(treeNode, draft -> {
         draft.parent().setName("Daddy");
         draft.parent().parent().setName("Grandpa");
     });
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@DslScope
+var newTreeNode = new(TreeNode::class).by(treeNode) {
+    parent().name = "Daddy"
+    parent().parent().name = "Grandpa"
+}
+```
+
+</TabItem>
+</Tabs>
+
 ### 新增getter `parent(boolean)`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java title="TreeNodeDraft.java"
 public interface TreeNodeDraft extends TreeNode, Draft {
 
-    List<TreeNodeDraft> childNodes(boolean autoCreate);
+    TreeNode parent(boolean autoCreate);
 
-    ...省略其它代码...
+    ...省略其他代码...
 }
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="TreeNodeDraft.kt"
+@DslScope
+public interface TreeNodeDraft : TreeNode {
+
+    // 这个属性的getter等价于Java的`parent(false)` 
+    override fun parent: TreeNode
+    
+    // 这个函数等价于Java的`parent(true)` 
+    public fun parent(): TreeNodeDraft
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
 
 `parent(false)`和`parent()`等价，具备以下两个问题：
 
@@ -216,15 +450,34 @@ public interface TreeNodeDraft extends TreeNode, Draft {
 
 `parent(true)`可以解决以上的问题，如果上述任何一种情况满足，就自动创建并设置一个关联对象，然后允许用户修改。这是一个实用的功能，尤其是从头创建对象时。
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-TreeNode oldTreeNode = TreeNodeDraft.$
-    .produce(/* No `oldTreeNode` here */ draft -> {
+TreeNode treeNode = TreeNodeDraft.$
+    .produce(/* No `base` here */ draft -> {
         draft.parent(true).setName("Daddy");
         draft.parent(true).parent(true).setName("Grandpa");
     });
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNode = new(TreeNode::class).by /* No `base` here */ {
+    parent().setName("Daddy");
+    parent().parent().setName("Grandpa");
+}
+```
+
+</TabItem>
+</Tabs>
+
 ### 新增`setParent`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java title="TreeNodeDraft.java"
 public interface TreeNodeDraft extends TreeNode, Draft {
@@ -232,14 +485,34 @@ public interface TreeNodeDraft extends TreeNode, Draft {
     @OldChain
     TreeNodeDraft setParent(TreeNode parent);
 
-    ...省略其它代码...
+    ...省略其他代码...
 }
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="TreeNodeDraft.kt"
+@DslScope
+public interface TreeNodeDraft : TreeNode, Draft {
+
+    // var, not val
+    public var parent: TreeNode
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
 该setter允许用户替换整个关联对象。
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-TreeNode oldTreeNode = TreeNodeDraft.$
+TreeNode treeNode = TreeNodeDraft.$
     .produce(draft -> {
         draft.setParent(
             TreeNodeDraft.$.produce(daddyDraft -> {
@@ -248,6 +521,20 @@ TreeNode oldTreeNode = TreeNodeDraft.$
         )
     });
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+var treeNode = new(TreeNode::class).by {
+    parent = new(TreeNode::class).by {
+        name = "Daddy"
+    }
+}
+```
+
+</TabItem>
+</Tabs>
 
 ### 新增基于lambda的`setParent`
 
@@ -309,11 +596,24 @@ public interface TreeNodeDraft extends TreeNode, Draft {
 
 ### 继承getter `childNodes()`
 
-`TreeNodeDraft`无法覆盖`childNodes()`方法，从语法层面上讲，只能继承`TreeNode`的`childNodes()`方法。
+无论对Java还是kotlin，`TreeNodeDraft`无法覆盖`childNodes()`方法，从语法层面上讲，只能继承`TreeNode`的`childNodes()`方法。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 List<TreeNode> childNodes();
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+var childNodes: List<TreeNode>
+```
+
+</TabItem>
+</Tabs>
 
 :::caution
 虽然这个的方法在`TreeNode`接口中定义的返回类型是`List<TreeNode>`，但是，被`TreeNodeDraft`接口继承后，应该将其返回类型理解成`List<TreeNodeDraft>`。
@@ -325,9 +625,12 @@ List<TreeNode> childNodes();
 如果draft对象的集合关联被设置过，返回的集合中的所有元素都是draft。这样，用户就可以直接修改集合中更深的关联对象。
 :::
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 TreeNode newTreeNode = TreeNodeDraft.$
-    .produce(oldTreeNode, draft -> {
+    .produce(treeNode, draft -> {
         ((TreeNodeDraft)
             draft
                 .childNodes().get(0)
@@ -340,6 +643,21 @@ TreeNode newTreeNode = TreeNodeDraft.$
     });
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val newTreeNode = new(TreeNode::class).by(treeNode) {
+    (childNodes[0] as TreeNodeDraft)
+        .name = "Son"
+    (childNodes[0].childNodes[0] as TreeNodeDraft)
+        .name = "Son"
+}
+```
+
+</TabItem>
+</Tabs>
+
 :::danger
 上述代码中，两个强制类型转换对开发体验产生了显著的破坏，所以，不推荐在实际项目中如此使用。
 
@@ -348,22 +666,48 @@ TreeNode newTreeNode = TreeNodeDraft.$
 
 ### 新增getter `childNodes(boolean)`
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java title="TreeNodeDraft.java"
 public interface TreeNodeDraft extends TreeNode, Draft {
 
     List<TreeNodeDraft> childNodes(boolean autoCreate);
 
-    ...省略其它代码...
+    ...省略其他代码...
 }
 ```
 
 `childNodes(false)`和`childNodes()`等价，如果draft对象的属性`childNodes`未被设置，访问它会导致异常。
-
 `childNodes(true)`会解决这个问题，如果集合关联属性还未被设置，则自动创建并设置一个集合，然后允许用户修改该集合。
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="TreeNodeDraft.kt"
+@DslScope
+public interface TreeNodeDraft : TreeNode, Draft {
+
+    override var childNodes: List<TreeNode>
+    
+    fun childNodes(): MutableList<TreeNode>
+
+    ...省略其他代码...
+}
+```
+- `childNodes`属性的getter等价于Java的`childNodes(false)`。如果可变代理的此属性未被设置, 访问它会导致异常。
+- `childNodes()`函数等价于Java的`childNodes(true)`，如果属性未被设置则自动创建, 允许用户修改该集合。
+   
+
+</TabItem>
+</Tabs>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 TreeNode newTreeNode = TreeNodeDraft.$
-    .produce(oldTreeNode, draft -> {
+    .produce(treeNode, draft -> {
         draft
             .childNodes(false)
             .get(0)
@@ -378,14 +722,32 @@ TreeNode newTreeNode = TreeNodeDraft.$
 ```
 
 :::tip
-诚然，`childNodes(boolean)`在参数为true时，具备在`childNodes`属性未被指定时自动创建集合的功能。
+It is true that `childNodes(boolean)`, when the parameter is true, has the ability to automatically create a collection when the `childNodes` property is not specified.
 
-然而，参数为false时一样很有用。因为这个方法的返回类型时`List<TreeNodeDraft>`而非`List<TreeNode>`，上一个例子中那种开发体验不友好的代码将会因此而消失。
+However, it is also useful when the parameter is false. Because the return type of this method is `List<TreeNodeDraft>` instead of `List<TreeNode>`, the developer-unfriendly code in the previous example will disappear.
 
-本例子如此，[jimmer-core初体验](./usage)中亦如此。
+This is the case in this example, as well as in [First experience](./usage).
+:::
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val newTreeNode = new(TreeNode::class).by(treeNode) {
+    childNodes()[0].name = "Son"
+    childNodes()[0].childNodes()[0].name = "Grandson"
+}
+```
+
+</TabItem>
+</Tabs>
+
 :::
 
 ### 新增`setChildNodes`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java title="TreeNodeDraft.java"
 public interface TreeNodeDraft extends TreeNode, Draft {
@@ -393,14 +755,34 @@ public interface TreeNodeDraft extends TreeNode, Draft {
     @OldChain
     TreeNodeDraft setChildNodes(List<TreeNode> childNodes);
 
-    ...省略其它代码...
+    ...省略其他代码...
 }
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="TreeNodeDraft.kt"
+@DslScope
+public interface TreeNodeDraft : TreeNode, Draft {
+
+    // var, not val
+    overrie var childNodes: List<TreeNode>
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
 该setter允许用户替换整个关联集合。
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-TreeNode oldTreeNode = TreeNodeDraft.$
+TreeNode treeNode = TreeNodeDraft.$
     .produce(draft -> {
         draft.setChildNodes(
             Arrays.asList(
@@ -415,6 +797,25 @@ TreeNode oldTreeNode = TreeNodeDraft.$
     });
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNode = new(TreeNode::class).by {
+    childNodes = listOf(
+        new(TreeNode::class).by {
+            name = "Eldest son"
+        },
+        new(TreeNode::class).by {
+            name = "Second son"
+        }
+    )
+}
+```
+
+</TabItem>
+</Tabs>
+
 :::info
 略显繁琐，更推荐下面即将介绍的`addIntoChildNodes`
 :::
@@ -423,7 +824,10 @@ TreeNode oldTreeNode = TreeNodeDraft.$
 
 上面的例子中，我们使用`setChildNodes`替换了整个集合，但是还可以选择以逐个添加集合元素，而非一次性替换整个集合。
 
-为此，`TreeNodeDraft`接口支持两个adder方法。
+生成代码如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java title="TreeNodeDraft.java"
 public interface TreeNodeDraft extends TreeNode, Draft {
@@ -439,14 +843,42 @@ public interface TreeNodeDraft extends TreeNode, Draft {
         DraftConsumer<TreeNodeDraft> block
     );
 
-    ...省略其它代码...
+    ...省略其他代码...
 }
 ```
 
-这两个adder用于简化的代码。由于两个方法的用法高度相似，仅以第一个举例。
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="TreeNodeDraft.java"
+@DslScope
+public interface TreeNodeDraft : TreeNode, Draft {
+
+    public fun childNodes(): MutableList<TreeNodeDraft>
+
+    ...省略其他代码...
+}
+
+// highlight-next-line
+public fun MutableList<TreeNodeDraft>.addBy(
+    base: TreeNode? = null,
+    block: TreeNodeDraft.() -> Unit
+): MutableList<TreeNodeDraft> {
+    ...omit...
+    return this;
+}
+```
+
+</TabItem>
+</Tabs>
+
+你应该如此使用。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
-TreeNode oldTreeNode = TreeNodeDraft.$
+TreeNode treeNode = TreeNodeDraft.$
     .produce(draft -> {
         draft
             .addIntoChildNodes(childDraft ->
@@ -457,6 +889,23 @@ TreeNode oldTreeNode = TreeNodeDraft.$
             )
     });
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNode = new(TreeNode::class).by {
+    childNodes().addBy {
+        name = "Eldest son"
+    }
+    childNodes().addBy {
+        name = "Second son"
+    }
+}
+```
+
+</TabItem>
+</Tabs>
 
 :::info
 这种写法隐含了一个功能，draft对象的属性`childNodes`未被设置，自动创建集合。即，内置了一个`childNodes(true)`。

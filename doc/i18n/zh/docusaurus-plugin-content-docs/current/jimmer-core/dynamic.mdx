@@ -3,7 +3,10 @@ sidebar_position: 4
 title: 动态性
 ---
 
-## Jimmer和JACKSON
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## Jimmer和Jackson
 
 jimmer不可变对象是动态的，并不是对象的所有属性都需要初始化，它允许缺少一些属性。
 
@@ -14,6 +17,9 @@ jimmer不可变对象是动态的，并不是对象的所有属性都需要初�
 
 jimmer-core定了一个jackson模块：`org.babyfish.jimmer.jackson.ImmutableModule`，利用该模块可以为jackson增加序列化/反序列化jimmer不可变对象的能力。
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 ObjectMapper mapper = new ObjectMapper()
     // highlight-next-line
@@ -23,26 +29,69 @@ TreeNode treeNode = TreeNodeDraft.$.produce(
     draft -> draft.setName("Root Node")
 );
 
-// Serialization
+// 系列化
 String json = mapper.writeValueAsString(treeNode);
 
-// Deserialization
+// 反序列化
 TreeNode deserializedTreeNode = 
-    mapper.readValue(json, TreeNode);
+    mapper.readValue(json, TreeNode.class);
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val mapper = ObjectMapper()
+    // highlight-next-line
+    .registerModule(ImmutableModule())
+
+val treeNode = new(TreeNode::class).by {
+    name = "Root Node"
+}
+
+// 系列化
+val json = mapper.writeValueAsString(treeNode);
+
+// 反序列化
+TreeNode deserializedTreeNode = 
+    mapper.readValue(json, TreeNode::class.java);
+```
+
+</TabItem>
+</Tabs>
+
 对于序列化操作而言，有一个便捷方式，就是jimmer对象的`toString`方法。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 TreeNode treeNode = TreeNodeDraft.$.produce(
     draft -> draft.setName("Root Node")
 );
 String json = 
-    // Shortcut for JSON serialization
+    // 系列化捷径
     // highlight-next-line
     treeNode.toString()
 System.out.println(json);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNode = new(TreeNode::class).by {
+    name = "Root Node"
+}
+val json = 
+    // 系列化捷径
+    // highlight-next-line
+    treeNode.toString()
+println(json)
+```
+
+</TabItem>
+</Tabs>
 
 :::info
 由于调用`toString`方法的代码很简单，本文后续例子都使用它，而非调用jackson的API。
@@ -52,11 +101,14 @@ System.out.println(json);
 
 未被指定的属性在JSON序列化中会被忽略，然而，直接用代码访问将会异常：`org.babyfish.jimmer.UnloadedException`。
 
-:::note
+:::tip
 这种访问未设置属性抛出异常的行为，和ORM框架类似，例如：`org.hibernate.LazyInitializationException`。
 :::
 
-### 示范一：单个对象
+### 示范一：孤单对象
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 TreeNode treeNode = TreeNodeDraft.$
@@ -95,8 +147,44 @@ try {
 }
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNode = new(TreeNode::class).by {
+    name = "Current Node"
+}
+
+println("JSON serialization: $treeNode")
+
+println("this.name: ${treeNode.name}")
+
+try {
+    println("this.name: ${treeNode.parent}")
+} catch (ex: UnloadedException) {
+    println(
+        "UnloadedException message: " +
+            ex.message
+    )
+}
+
+try {
+    println("this.name: ${treeNode.childNodes}")
+} catch (ex: UnloadedException) {
+    println(
+        "UnloadedException message: " +
+            ex.message
+    )
+}
+```
+
+</TabItem>
+</Tabs>
+
 :::note
 打印结果如下
+
+---
 
 JSON serialization: {"name":"Current Node"}
 
@@ -107,7 +195,10 @@ UnloadedException message: The property "yourpackage.TreeNode.parent" is unloade
 UnloadedException message: The property "yourpackage.TreeNode.childNodes" is unloaded
 :::
 
-### 示范二：多个对象
+### 示范二：对象树
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 TreeNode treeNode = TreeNodeDraft.$
@@ -152,7 +243,7 @@ try {
     );
 } catch (UnloadedException ex) {
     System.out.println(
-        "The message of UnloadedException of this.parent().parent(): " +
+        "The message of UnloadedException of this.parent.parent: " +
             ex.getMessage()
     );
 }
@@ -164,7 +255,7 @@ try {
     );
 } catch (UnloadedException ex) {
     System.out.println(
-        "The message of UnloadedException of this.parent().childNodes(): " +
+        "The message of UnloadedException of this.parent.childNodes: " +
             ex.getMessage()
     );
 }
@@ -182,7 +273,7 @@ try {
     );
 } catch (UnloadedException ex) {
     System.out.println(
-        "The message of UnloadedException of this.childNodes.get(0).parent(): " +
+        "The message of UnloadedException of this.childNodes[0].parent: " +
             ex.getMessage()
     );
 }
@@ -194,14 +285,83 @@ try {
     );
 } catch (UnloadedException ex) {
     System.out.println(
-        "The message of UnloadedException of this.childNodes.get(0).childNodes(): " +
+        "The message of UnloadedException of this.childNodes[0].childNodes: " +
             ex.getMessage()
     );
 }
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNode = new(TreeNode::class).by {
+    name = "Current Node"
+    parent().apply {
+        name = "Parent Node"
+    }
+    childNodes().addBy {
+        name = "Child Node"
+    }
+}
+
+println("JSON serialization: $treeNode")
+
+println("this.name: ${treeNode.name}")
+
+println("this.parent: ${treeNode.parent}")
+
+println("this.childNodes: ${treeNode.childNodes}")
+
+println("this.parent.name: ${treeNode.parent?.name}")
+
+try {
+    println("this.parent.parent: ${treeNode.parent?.parent}")
+} catch (ex: UnloadedException) {
+    println(
+        "The message of UnloadedException of this.parent.parent: " +
+            ex.message
+    )
+}
+
+try {
+    println("this.parent.childNodes: ${treeNode.parent?.childNodes}")
+} catch (ex: UnloadedException) {
+    println(
+        "The message of UnloadedException of this.parent.childNodes: " +
+            ex.message
+    )
+}
+
+
+println("this.childNodes[0].name: ${treeNode.childNodes[0].name}")
+
+try {
+    println("this.childNodes[0].parent: ${treeNode.childNodes[0].parent}")
+} catch (ex: UnloadedException) {
+    println(
+        "The message of UnloadedException of this.childNodes[0].parent: " +
+            ex.message
+    )
+}
+
+try {
+    println("this.childNodes[0].childNodes: ${treeNode.childNodes[0].childNodes}")
+} catch (ex: UnloadedException) {
+    println(
+        "The message of UnloadedException of this.childNodes[0].childNodes: " +
+            ex.message
+    )
+}
+```
+
+</TabItem>
+</Tabs>
+
 :::note
 打印结果如下
+
+---
 
 JSON serialization: {"name":"Current Node","parent":{"name":"Parent Node"},"childNodes":[{"name":"Child Node"}]}
 
@@ -262,6 +422,9 @@ jimmer为开发人员确立了这样一个法则：**聚合根**设计滞后化�
 
 ### 演示
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 TreeNode aggregateRoot = TreeNodeDraft.$
     .produce(aggregateRootDraft ->
@@ -270,12 +433,33 @@ TreeNode aggregateRoot = TreeNodeDraft.$
             .addIntoChildNodes(childDraft ->
                 childDraft
                     .setName("Child")
-                    // CircularReferenceException will be thrown
+                    // 抛出CircularReferenceException
                     // highlight-next-line
                     .setParent(aggregateRootDraft)
             )
     );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val aggregateRoot = new(TreeNode::class).by {
+
+    val that = this
+
+    name = "Aggregate root"
+    childNodes().addBy {
+        name = "Child"
+        // 抛出CircularReferenceException
+        // highlight-next-line
+        parent = that
+    }
+}
+```
+
+</TabItem>
+</Tabs>
 
 :::caution
 这段代码会导致异常：org.babyfish.jimmer.CircularReferenceException。

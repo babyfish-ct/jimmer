@@ -3,6 +3,9 @@ sidebar_position: 5
 title: 修改中间表
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 首先，中间表被对象模型隐藏，没有与之直接对应的实体类型。此问题已在[查询中间表](../query/association)一文中被阐述，此处不作重复。
 
 另外，在[Save指令](./save-command)章节中，我们介绍了save指令。它能对比数据库现有数据和用户要保存的新数据，如果某个基于中间表的关联属性发生了变化，中间表就会被修改。
@@ -13,19 +16,31 @@ jimmer-sql允许开发人员通过最简单也最高效的方式，直接对中�
 
 ## 插入关联
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID bookId = UUID.fromString(
-    "780bdf07-05af-48bf-9be9-f8c65236fecc"
-);
-UUID authorId = 2L;
 sqlClient
     .getAssociations(
         BookTableEx.class, 
         BookTableEx::authors
     )
     // highlight-next-line
-    .save(bookId, authorId);
+    .save(12L, 3L);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getAssociations(Book::authors)
+    // highlight-next-line
+    .save(12L, 3L)
+```
+
+</TabItem>
+</Tabs>
 
 生成的SQL如下
 
@@ -42,19 +57,31 @@ insert into
 
 同理我们也可以通过关联属性`Authors.books`达到相同目的：
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID bookId = UUID.fromString(
-    "780bdf07-05af-48bf-9be9-f8c65236fecc"
-);
-UUID authorId = UUID.fromString(2L);
 sqlClient
     .getAssociations(
         AuthorTableEx.class,
         AuthorTableEx::books
     )
     // highlight-next-line
-    .save(authorId, bookId);
+    .save(3L, 12L);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getAssociations(Author::books)
+    // highlight-next-line
+    .save(3L, 12L)
+```
+
+</TabItem>
+</Tabs>
 
 注意，和上一个例子相比，因为关联的方向不同，所以`save`方法的参数顺序不同。
 
@@ -75,6 +102,9 @@ insert into
 
 对于双向关联，可以使用`reverse`在正反关联之间切换
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
 Associations bookToAuthor = sqlClient
     .getAssociations(
@@ -94,28 +124,39 @@ Associations bookToAuthor2 =
     authorToBook.reverse();
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookToAuthor = 
+    sqlClient.getAssociations(
+        Book::authors
+    )
+val authorToBook = 
+    sqlClient.getAssociations(
+        Author::books
+    )
+val authorToBook2 = 
+    // highlight-next-line
+    bookToAuthor.reverse()
+val bookToAuthor2 = 
+    // highlight-next-line
+    authorToBook.reverse()
+```
+
+</TabItem>
+</Tabs>
+
 这段代码中：
 - `bookToAuthor`和`bookToAuthor2`完全等价
 - `authorToBook`和`authorToBook2`完全等价
 
 ## 批量插入
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID bookId1 = UUID.fromString(
-    "780bdf07-05af-48bf-9be9-f8c65236fecc"
-);
-UUID bookId2 = UUID.fromString(
-    "914c8595-35cb-4f67-bbc7-8029e9e6245a"
-);
-UUID bookId3 = UUID.fromString(
-    "058ecfd0-047b-4979-a7dc-46ee24d08f08"
-);
-
-UUID authorId1 = UUID.fromString(2L);
-UUID authorId2 = UUID.fromString(
-    "c14665c8-c689-4ac7-b8cc-6f065b8d835d"
-);
-
 sqlClient
     .getAssociations(
         BookTableEx.class,
@@ -124,15 +165,39 @@ sqlClient
     // highlight-next-line
     .batchSave(
         Arrays.asList(
-            new Tuple2<>(bookId1, authorId1),
-            new Tuple2<>(bookId1, authorId2),
-            new Tuple2<>(bookId2, authorId1),
-            new Tuple2<>(bookId2, authorId2),
-            new Tuple2<>(bookId3, authorId1),
-            new Tuple2<>(bookId3, authorId2)
+            new Tuple2<>(10L, 1L),
+            new Tuple2<>(11L, 1L),
+            new Tuple2<>(12L, 1L),
+            new Tuple2<>(10L, 3L),
+            new Tuple2<>(11L, 3L),
+            new Tuple2<>(12L, 3L)
         )
     );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getAssociations(
+        Book::authors
+    ) 
+    // highlight-next-line
+    .batchSave(
+        listOf(
+            Tuple2(10L, 1L),
+            Tuple2(11L, 1L),
+            Tuple2(12L, 1L),
+            Tuple2(10L, 3L),
+            Tuple2(11L, 3L),
+            Tuple2(12L, 3L)
+        )
+    )
+```
+
+</TabItem>
+</Tabs>
 
 这里有3本书，两个作者，共6种组合方式。`batchSave`方法把这6种组合全部插入到中间表中，生成的SQL如下
 
@@ -154,31 +219,43 @@ insert into BOOK_AUTHOR_MAPPING(
 
 jimmer-sql提供一种快捷写法
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID bookId1 = ...;
-UUID bookId2 = ...;
-UUID bookId3 = ...;
-
-UUID authorId1 = ...;
-UUID authorId2 = ...;
-
 sqlClient
     .getAssociations(
         BookTableEx.class,
         BookTableEx::authors
     )
-    // Batch save `Cartesian product` 
-    // of two id collections
+    // 保存两个id集合的笛卡尔乘积
     // highlight-next-line
     .batchSave(
         Arrays.asList(
-            bookId1, bookId2, bookId3
+            10L, 11L, 12L
         ),
         Arrays.asList(
-            authorId1, authorId2
+            1L, 3L
         )
     );
 ```
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getAssociations(
+        Book::authors
+    )
+    // 保存两个id集合的笛卡尔乘积
+    // highlight-next-line
+    .batchSave(
+        listOf(10L, 11L, 12L),
+        listOf(1L, 3L)
+    )
+```
+</TabItem>
+</Tabs>
 
 上面的`batchSave`方法接受两个集合参数，把这两个集合形成的笛卡尔乘积插入中间表，所以，功能和上一个例子的相同。
 
@@ -188,34 +265,45 @@ sqlClient
 
 为了解决这个问题，可以进行存在性检查。
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID bookId1 = UUID.fromString(
-    "780bdf07-05af-48bf-9be9-f8c65236fecc"
-);
-UUID bookId2 = UUID.fromString(
-    "914c8595-35cb-4f67-bbc7-8029e9e6245a"
-);
-UUID bookId3 = UUID.fromString(
-    "058ecfd0-047b-4979-a7dc-46ee24d08f08"
-);
-
-UUID authorId = UUID.fromString(
-    "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
-);
-
 sqlClient
     .getAssociations(
         BookTableEx.class,
         BookTableEx::authors
     )
     .batchSaveCommand(
-        Arrays.asList(bookId1, bookId2, bookId3),
-        Collections.singletonList(authorId)
+        Arrays.asList(
+            10L, 11L, 12L
+        ),
+        Arrays.asList(
+            1L, 3L
+        )
     )
     // highlight-next-line
     .checkExistence()
     .execute();
 ```
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getAssociations(
+        Book::authors
+    )
+    // highlight-next-line
+    .batchSave(
+        listOf(10L, 11L, 12L),
+        listOf(1L, 3L),
+        // highlight-next-line
+        checkExistence = true
+    )
+```
+</TabItem>
+</Tabs>
 
 这里`checkExistence()`表示先检查要插入的数据有哪些已经存在，然后只插入不存在的数据。
 
@@ -246,39 +334,35 @@ sqlClient
         (?, ?)
     ```
 
-:::tip
-由于时间关系，有一个未实现的优化。
-
-未来，此功能会改进。针对某些特定的数据库进行优化，如Postgres, MySql。
-
-以Postgres为例，可以直接执行
-```sql
-insert into BOOK_AUTHOR_MAPPING(
-    BOOK_ID, AUTHOR_ID
-) values (?, ?), (?, ?), (?, ?)
-on conflict(BOOK_ID, AUTHOR_ID)
-    do nothing;
-```
-而无需执行一条额外的select语句。
-:::
-
 ## 删除关联
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID bookId = UUID.fromString(
-    "780bdf07-05af-48bf-9be9-f8c65236fecc"
-);
-UUID authorId = UUID.fromString(
-    "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
-);
 sqlClient
     .getAssociations(
             BookTableEx.class,
             BookTableEx::authors
     )
     // highlight-next-line
-    .delete(bookId, authorId);
+    .delete(12L, 3L);
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getAssociations(
+        Book::authors
+    ) 
+    // highlight-next-line
+    .delete(12L, 3L)
+```
+
+</TabItem>
+</Tabs>
 
 生成的SQL如下
 
@@ -294,16 +378,10 @@ where
 
 和批量插入类似，有两种批量删除的写法
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID bookId1 = UUID.fromString(
-    "780bdf07-05af-48bf-9be9-f8c65236fecc"
-);
-UUID bookId2 = UUID.fromString(
-    "914c8595-35cb-4f67-bbc7-8029e9e6245a"
-);
-UUID authorId = UUID.fromString(
-    "1e93da94-af84-44f4-82d1-d8a9fd52ea94"
-);
 sqlClient
     .getAssociations(
         BookTableEx.class,
@@ -312,16 +390,46 @@ sqlClient
     // highlight-next-line
     .batchDelete(
         Arrays.asList(
-            new Tuple2<>(bookId1, authorId),
-            new Tuple2<>(bookId2, authorId)
+            new Tuple2<>(10L, 1L),
+            new Tuple2<>(11L, 1L),
+            new Tuple2<>(12L, 1L),
+            new Tuple2<>(10L, 3L),
+            new Tuple2<>(11L, 3L),
+            new Tuple2<>(12L, 3L),
         )
     );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getAssociations(
+        Book::authors
+    ) 
+    // highlight-next-line
+    .batchDelete(
+        listOf(
+            Tuple2(10L, 1L),
+            Tuple2(11L, 1L),
+            Tuple2(12L, 1L),
+            Tuple2(10L, 3L),
+            Tuple2(11L, 3L),
+            Tuple2(12L, 3L)
+        )
+    )
+```
+
+</TabItem>
+</Tabs>
+
 或
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java
-UUID bookId1 = ...;
-UUID bookId2 = ...;
-UUID authorId = ...;
 sqlClient
     .getAssociations(
         BookTableEx.class,
@@ -329,10 +437,28 @@ sqlClient
     )
     // highlight-next-line
     .batchDelete(
-        Arrays.asList(book1, book2),
-        Collections.singletonList(authorId)
+        Arrays.asList(10L, 11L, 12L),
+        Arrays.asList(1L, 3L)
     );
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getAssociations(
+        Book::authors
+    ) 
+    // highlight-next-line
+    .batchDelete(
+        listOf(10L, 11L, 12L),
+        listOf(1L, 3L)
+    )
+```
+
+</TabItem>
+</Tabs>
 
 生成的SQL如下
 

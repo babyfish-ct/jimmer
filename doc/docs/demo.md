@@ -5,7 +5,7 @@ title: Demos
 
 This framework comes with 3 examples, each example provides two projects for Java and Kotlin, a total of 6 projects.
 
-|Java|Kotlin|描述|
+|Java|Kotlin|Description|
 |----|------|---|
 |[example/java/jimmer-core](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-core)|[example/kotlin/jimmer-core-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-core-kt)|Show jimmer-core related functions|
 |[example/java/jimmer-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql)|[example/kotlin/jimmer-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt)|Show jimmer-sql related functions|
