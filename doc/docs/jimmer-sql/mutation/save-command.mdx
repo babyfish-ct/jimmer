@@ -7,8 +7,6 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 :::tip
-The save command is very powerful and is one of the features that distinguish jimmer-sql from other ORMs.
-
 If GraphQL is a powerful dynamic tree output solution, then the save command is a dynamic tree input solution.
 :::
 
@@ -235,7 +233,7 @@ where
 
 ### Statically define business primary key
 
-At [Mapping/@key](../mapping#orgbabyfishjimmersqlkey), we explained the @Key annotation.
+At [Mapping/@key](../mapping#key), we explained the @Key annotation.
 
 - @Id: Technical primary key, which often stores some unique data that has no business meaning, such as automatic numbering, serial value, UUID, snowflake id. But it's simple enough to minimize table joins and improve performance.
 
@@ -942,9 +940,9 @@ Unlike JPA, jimmer-sql does not allow direct use of `@OneToOne` and `@OneToMany`
 
 This means, through the one-to-many association `BookStore.books`, jimmer-sql can definitely find the corresponding many-to-one association `Book.store`.
 
-Next, jimmer-sql will look at the annotation [@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate) on the many-to-one association property `Book.store`.
+Next, jimmer-sql will look at the annotation [@OnDissociate](../mapping#ondissociate) on the many-to-one association property `Book.store`.
 
-1. If the foreign key of `Book.store` is configured as `SET_NULL` by the annotated [@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate), then execute the following SQL
+1. If the foreign key of `Book.store` is configured as `SET_NULL` by the annotated [@OnDissociate](../mapping#ondissociate), then execute the following SQL
 
     ```sql
     update BOOK 
@@ -972,14 +970,14 @@ Next, jimmer-sql will look at the annotation [@OnDissociate](../mapping#orgbabyf
 
     > If the query returns no data, ignore the next steps.
 
-    - If the foreign key of `Book.store` is configured as `DELETE` by the annotated [@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate), Use [delete command](./delete-command) to delete these discarded objects.
+    - If the foreign key of `Book.store` is configured as `DELETE` by the annotated [@OnDissociate](../mapping#ondissociate), Use [delete command](./delete-command) to delete these discarded objects.
 
     - Otherwise, throw an exception.
 
 
-All of the situations discussed above require the developer to use the annotation [@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate) on the `Book.store` property.
+All of the situations discussed above require the developer to use the annotation [@OnDissociate](../mapping#ondissociate) on the `Book.store` property.
 
-However, you can also dynamically specify the `dissociateAction` configuration for the save command insteading of using the [@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate) annotation.
+However, you can also dynamically specify the `dissociateAction` configuration for the save command insteading of using the [@OnDissociate](../mapping#ondissociate) annotation.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -1039,12 +1037,12 @@ sqlClient
 </TabItem>
 </Tabs>
 
-Here, calling `setDissociateAction` of save command has the same effect as statically using the annotation [@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate).
+Here, calling `setDissociateAction` of save command has the same effect as statically using the annotation [@OnDissociate](../mapping#ondissociate).
 
 :::info
 1. If the last parameter of the `setDissociateAction` method is `DissociateAction.SET_NULL`, the association property must be nullable, otherwise an exception will be thrown.
 
-2. If the delete rule is not only dynamically configured for the save command, but also statically configured in the entity interface through the annotation [@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate), the dynamic configuration takes precedence.
+2. If the delete rule is not only dynamically configured for the save command, but also statically configured in the entity interface through the annotation [@OnDissociate](../mapping#ondissociate), the dynamic configuration takes precedence.
 :::
 
 ## Save associations and associated objects

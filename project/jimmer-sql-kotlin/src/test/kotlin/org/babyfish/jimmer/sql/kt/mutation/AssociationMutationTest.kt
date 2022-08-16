@@ -11,7 +11,7 @@ class AssociationMutationTest : AbstractMutationTest() {
     fun testInsert() {
         executeAndExpectRowCount({ con ->
             sqlClient
-                .getListAssociations(Book::authors)
+                .getAssociations(Book::authors)
                 .save(3L, 5L, con = con)
         }) {
             statement {
@@ -29,7 +29,7 @@ class AssociationMutationTest : AbstractMutationTest() {
     fun testUpsert() {
         executeAndExpectRowCount({ con ->
             sqlClient
-                .getListAssociations(Book::authors)
+                .getAssociations(Book::authors)
                 .batchSave(
                     listOf(4L, 5L, 6L),
                     listOf(5L),
@@ -60,7 +60,7 @@ class AssociationMutationTest : AbstractMutationTest() {
     fun testDelete() {
         executeAndExpectRowCount({ con ->
             sqlClient
-                .getListAssociations(Author::books)
+                .getAssociations(Author::books)
                 .forConnection(con)
                 .delete(5L, 12L)
         }) {

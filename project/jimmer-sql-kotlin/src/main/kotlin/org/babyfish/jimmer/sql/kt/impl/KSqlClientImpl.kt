@@ -58,17 +58,8 @@ internal class KSqlClientImpl(
     override val triggers: KTriggers =
         KTriggersImpl(sqlClient.triggers)
 
-    override fun <S: Any, T: Any> getReferenceAssociations(
-        prop: KProperty1<S, T?>
-    ): KAssociations =
-        sqlClient.getAssociations(
-            prop.toImmutableProp()
-        ).let {
-            KAssociationsImpl(it)
-        }
-
-    override fun <S: Any, T: Any> getListAssociations(
-        prop: KProperty1<S, List<T>>
+    override fun getAssociations(
+        prop: KProperty1<*, *>
     ): KAssociations =
         sqlClient.getAssociations(
             prop.toImmutableProp()

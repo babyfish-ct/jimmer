@@ -1,7 +1,10 @@
 ---
 sidebar_position: 2
-title: jimmer-core初体验
+title: 快熟上手
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
 ## 引入依赖
 
@@ -11,8 +14,8 @@ title: jimmer-core初体验
 ```groovy title="build.gradle"
 depdencies {
     
-    implementation 'org.babyfish.jimmer:jimmer-sql:0.1.25'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.1.25'
+    implementation 'org.babyfish.jimmer:jimmer-sql:0.1.26'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.1.26'
 
     runtimeOnly 'com.h2database:h2:2.1.212'
 }
@@ -54,15 +57,25 @@ kotlin {
 
 ## 声明不可变模型
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
 ```java title="TreeNode.java"
 package yourpackage;
+
+import javax.validation.constraints.Null;
+import java.util.List;
 
 import org.babyfish.jimmer.Immutable;
 
 @Immutable
 public interface TreeNode {
+    
     String name();
+
+    @Null // Nullable property, Java-API needs it, but kotlin-API does not.
     TreeNode parent();
+
     List<TreeNode> childNodes();
 }
 ```
@@ -77,9 +90,34 @@ public interface TreeNode {
 无论采用哪种风格，都应该保证单个项目内部风格一致。
 :::
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="TreeNode.kt"
+package yourpackage
+
+import org.babyfish.jimmer.Immutable
+
+@Immutable
+interface TreeNode {
+
+    val name: String
+
+    val parent: TreeNode?
+
+    val childNodes: List<TreeNode>
+}
+```
+
+</TabItem>
+</Tabs>
+
 ## 使用
 
 jimmer-core使用java annotation processor生成可变代理（下面代码中的TreeNodeDraft）。利用可变代理，开发人员可以使用命令式的代码简单地“修改”不可变对象。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 // 第一步，从头构建全新的数据
@@ -91,7 +129,7 @@ TreeNode treeNode = TreeNodeDraft.$.produce(root -> {
                 drink
                     .setName("Drink")
                     .addIntoChildNodes(cococola -> {
-                        cococola.setName("Coco Cola");
+                        cococola.setName("Cococola");
                     })
                     .addIntoChildNodes(fanta -> {
                         fanta.setName("Fanta");
@@ -105,19 +143,59 @@ TreeNode treeNode = TreeNodeDraft.$.produce(root -> {
 // 第二步，基于现有数据对象，做某些“变更”，创建新的数据对象。
 TreeNode newTreeNode = TreeNodeDraft.$.produce(
         // highlight-next-line
-        treeNode, // 现有的数据对象
+        treeNode, // existing data
         root -> {
             root
                 .childNodes(false).get(0) // Food
                 .childNodes(false).get(0) // Drink
-                .childNodes(false).get(0) // Coco Cola
-                .setName("Coco Cola plus");
+                .childNodes(false).get(0) // Cococola
+                .setName("Cococola plus");
         }
 );
 
 System.out.println("treeNode:" + treeNode);
 System.out.println("newTreeNode:" + newTreeNode);
 ```
+
+</TabItem>
+
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+// 第一步，从头构建全新的数据
+val treeNode = new(TreeNode::class).by {
+    name = "Root"
+    childNodes().addBy {
+        name = "Food"
+        childNodes().addBy {
+            name = "Drinks"
+            childNodes().addBy {
+                name = "Cococola"
+            }
+            childNodes().addBy {
+                name = "Fanta"
+            }
+        }
+    }
+}
+
+// 第二步，基于现有数据对象，做某些“变更”，创建新的数据对象。
+val newTreeNode = new(TreeNode::class).by(
+    // highlight-next-line
+    treeNode // existing data
+) {
+    childNodes()[0] // Food
+        .childNodes()[0] // Drinks
+        .childNodes()[0] // Cococola
+        .name += " plus"
+}
+
+println("treeNode: $treeNode")
+println("newTreeNode: $newTreeNode")
+```
+
+</TabItem>
+</Tabs>
 
 输出结果（实际打印结果是紧凑的，但为了方便阅读，这里进行了格式化）
 

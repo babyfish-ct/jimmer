@@ -7,8 +7,6 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 :::tip
-save指令非常强大，是jimmer-sql明显区别于其它ORM的特征之一。
-
 如果说GraphQL是一个强大的动态树输出手段，那么save指令就是一个动态树输入手段。
 :::
 
@@ -235,7 +233,7 @@ where
 
 ### 静态定义业务主键
 
-在[映射/@key](../mapping#orgbabyfishjimmersqlkey)处，我们曾经讲解了@Key注解。
+在[映射/@key](../mapping#key)处，我们曾经讲解了@Key注解。
 
 - @Id: 技术型主键，往往存储一些和实际业务无关的唯一性数据，比如自动编号，序列值，UUID，雪花id。但它足够简单，可以最大程度地简化表之间的连接，优化性能。
 
@@ -936,13 +934,13 @@ sqlClient
 
 很明显，`book3`、`book4`和`book5`被新的关联抛弃了。但是一对多关联`BookStore.books`不是基于中间表的映射，而是基于外键映射。jimmer-sql将如何抛弃`book3`、`book4`和`book5`呢？
 
-和JPA不同，jimmer-sql的不允许直接使用`@OneToOne`和`@OneToMany`进行关系映射，`@OneToOne`和`@OneToMany`必须使用`mappedBy`属性。可以参考[@OneToMany](../mapping#javaxpersistanceonetomany)以了解更多。
+和JPA不同，jimmer-sql的不允许直接使用`@OneToOne`和`@OneToMany`进行关系映射，`@OneToOne`和`@OneToMany`必须使用`mappedBy`属性。可以参考[@OneToMany](../mapping#onetomany)以了解更多。
 
 这表示，通过一对多关联`BookStore.books`一定能找到与之对应的多对一关联`Book.store`。
 
-接下来，jimmer-sql会参考多对一关联属性`Book.store`上的[@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate)注解。
+接下来，jimmer-sql会参考多对一关联属性`Book.store`上的[@OnDissociate](../mapping#ondissociate)注解。
 
-1. 如果`Book.store`所对应的外键被[@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate)注解配置为`SET_NULL`，则，执行如下SQL
+1. 如果`Book.store`所对应的外键被[@OnDissociate](../mapping#ondissociate)注解配置为`SET_NULL`，则，执行如下SQL
 
     ```sql
     update BOOK 
@@ -970,15 +968,15 @@ sqlClient
 
     > 如果查询没有返回任何数据，就忽略后续步骤。
 
-    - 如果`Book.store`所对应的外键被[@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate)注解配置为`DELETE`，
+    - 如果`Book.store`所对应的外键被[@OnDissociate](../mapping#ondissociate)注解配置为`DELETE`，
         使用[delete指令](./delete-command)删除这些被抛弃对象。
 
     - 否则，抛出异常
 
 
-上面所讨论的这些情况，都需要开发人员在`Book.store`属性上使用注解[@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate)。
+上面所讨论的这些情况，都需要开发人员在`Book.store`属性上使用注解[@OnDissociate](../mapping#ondissociate)。
 
-然而，你也可以选择不使用[@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate)注解，而动态地为save指令指定dissociateAction配置。
+然而，你也可以选择不使用[@OnDissociate](../mapping#ondissociate)注解，而动态地为save指令指定dissociateAction配置。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -1038,12 +1036,12 @@ sqlClient
 </TabItem>
 </Tabs>
 
-这里，动态地调用指令的`setDissociateAction`方法，相比于静态地在`Book.store`属性上使用注解[@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate)并指定级联删除，效果完全一样。
+这里，动态地调用指令的`setDissociateAction`方法，相比于静态地在`Book.store`属性上使用注解[@OnDissociate](../mapping#ondissociate)并指定级联删除，效果完全一样。
 
 :::info
 1. 如果`setDissociateAction`方法最后一个参数为`DissociateAction.SET_NULL`，则被设置关联属性必须可空，否则会导致异常。
 
-2. 如果既动态地为save指令配置了删除规则，又静态地在实体接口中通过注解[@OnDissociate](../mapping#orgbabyfishjimmersqlondissociate)配置了删除规则，则动态配置优先。
+2. 如果既动态地为save指令配置了删除规则，又静态地在实体接口中通过注解[@OnDissociate](../mapping#ondissociate)配置了删除规则，则动态配置优先。
 :::
 
 ## 保存关联和关联对象

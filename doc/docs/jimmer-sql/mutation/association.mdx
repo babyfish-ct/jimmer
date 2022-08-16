@@ -34,7 +34,7 @@ sqlClient
 
 ```kotlin
 sqlClient
-    .getListAssociations(Book::authors)
+    .getAssociations(Book::authors)
     // highlight-next-line
     .save(12L, 3L)
 ```
@@ -75,7 +75,7 @@ sqlClient
 
 ```kotlin
 sqlClient
-    .getListAssociations(Author::books)
+    .getAssociations(Author::books)
     // highlight-next-line
     .save(3L, 12L)
 ```
@@ -127,11 +127,11 @@ Associations bookToAuthor2 =
 
 ```kotlin
 val bookToAuthor = 
-    sqlClient.getListAssociations(
+    sqlClient.getAssociations(
         Book::authors
     )
 val authorToBook = 
-    sqlClient.getListAssociations(
+    sqlClient.getAssociations(
         Author::books
     )
 val authorToBook2 = 
@@ -178,7 +178,7 @@ sqlClient
 
 ```kotlin
 sqlClient
-    .getListAssociations(
+    .getAssociations(
         Book::authors
     ) 
     // highlight-next-line
@@ -244,7 +244,7 @@ sqlClient
 
 ```kotlin
 sqlClient
-    .getListAssociations(
+    .getAssociations(
         Book::authors
     )
     // Batch save `Cartesian product` 
@@ -292,11 +292,9 @@ sqlClient
 
 ```kotlin
 sqlClient
-    .getListAssociations(
+    .getAssociations(
         Book::authors
     )
-    // Batch save `Cartesian product` 
-    // of two id collections
     // highlight-next-line
     .batchSave(
         listOf(10L, 11L, 12L),
@@ -360,7 +358,7 @@ sqlClient
 
 ```kotlin
 sqlClient
-    .getListAssociations(
+    .getAssociations(
         Book::authors
     ) 
     // highlight-next-line
@@ -368,7 +366,6 @@ sqlClient
 ```
 
 </TabItem>
-
 </Tabs>
 
 The generated SQL is as follows
@@ -407,7 +404,34 @@ sqlClient
     );
 ```
 
-Or
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getAssociations(
+        Book::authors
+    ) 
+    // highlight-next-line
+    .batchDelete(
+        listOf(
+            Tuple2(10L, 1L),
+            Tuple2(11L, 1L),
+            Tuple2(12L, 1L),
+            Tuple2(10L, 3L),
+            Tuple2(11L, 3L),
+            Tuple2(12L, 3L)
+        )
+    )
+```
+
+</TabItem>
+</Tabs>
+
+or
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 sqlClient
@@ -427,27 +451,7 @@ sqlClient
 
 ```kotlin
 sqlClient
-    .getListAssociations(
-        Book::authors
-    ) 
-    // highlight-next-line
-    .batchDelete(
-        listOf(
-            Tuple2(10L, 1L),
-            Tuple2(11L, 1L),
-            Tuple2(12L, 1L),
-            Tuple2(10L, 3L),
-            Tuple2(11L, 3L),
-            Tuple2(12L, 3L)
-        )
-    )
-```
-
-Or
-
-```kotlin
-sqlClient
-    .getListAssociations(
+    .getAssociations(
         Book::authors
     ) 
     // highlight-next-line
