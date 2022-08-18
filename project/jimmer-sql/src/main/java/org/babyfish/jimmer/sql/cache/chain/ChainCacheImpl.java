@@ -69,9 +69,9 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         @Override
         public void deleteAll(@NotNull Collection<K> keys, Object reason) {
             try {
-                binder.deleteAll(keys, reason);
-            } finally {
                 next.deleteAll(keys, reason);
+            } finally {
+                binder.deleteAll(keys, reason);
             }
         }
     }
@@ -115,9 +115,9 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         @Override
         public void deleteAll(@NotNull Collection<K> keys, Object reason) {
             try {
-                binder.deleteAll(keys, reason);
-            } finally {
                 next.deleteAll(keys, reason);
+            } finally {
+                binder.deleteAll(keys, reason);
             }
         }
     }
