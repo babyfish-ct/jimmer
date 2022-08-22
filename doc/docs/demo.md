@@ -95,8 +95,8 @@ The command parameters are as follows
 |Parameter|Description|Mandatory|Default|
 |---|----|---|-----|
 |--root-name <string_value>|The name of the root node of the tree to save|Yes||
-|--depth <int_value>|the depth of the tree to save|No|2|
-|--breadth <int_value>|The number of children of each node in the tree to save|No|2|
+|--depth <int_value>|The depth of the tree to save, excluding the root node itself|No|2|
+|--breadth <int_value>|The number of children of each node except leaf nodes|No|2|
 
 For example
 ```

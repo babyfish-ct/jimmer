@@ -543,7 +543,7 @@ val saved = sqlClient
 <details>
 <summary>Save shallow object tree</summary>
 
-If the associated objects of the saved object only have id, then only the current object and its relationship with other objects can be modified (this may cause the middle table to be modified), not the associated objects themselves.
+If the associated objects of the saved object only have id, then only the current object and its associations with other objects can be modified (this may cause the middle table to be modified), not the associated objects themselves.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -603,7 +603,7 @@ val saved = sqlClient
 
 If the associated objects of the saved object contains non-id properties, then
 
-- Not only the current object and its relationship to other objects can be modified (which may cause the intermediate table to be modified), but also the associated objects can be further modified.
+- Not only the current object and its associations to other objects can be modified (which may cause the intermediate table to be modified), but also the associated objects can be further modified.
 
 - The depth of the saved object tree can be unlimited. However, no matter how deep it is, the framework can handle all the details inside it.
 
