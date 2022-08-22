@@ -33,5 +33,5 @@ public interface Caches {
         invalidateByBinLog(tableName, oldData, newData, null);
     }
 
-    void invalidateByBinLog(String tableName, JsonNode oldData, JsonNode newData, String reason);
+    void invalidateByBinLog(String tableName, JsonNode oldData, JsonNode newData, Object reason);
 }

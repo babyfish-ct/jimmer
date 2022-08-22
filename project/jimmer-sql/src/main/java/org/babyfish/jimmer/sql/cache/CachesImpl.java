@@ -151,7 +151,7 @@ public class CachesImpl implements Caches {
     }
 
     @Override
-    public void invalidateByBinLog(String tableName, JsonNode oldData, JsonNode newData, String reason) {
+    public void invalidateByBinLog(String tableName, JsonNode oldData, JsonNode newData, Object reason) {
         boolean isOldNull = oldData == null || oldData.isNull();
         boolean isNewNull = newData == null || newData.isNull();
         if (isOldNull && isNewNull) {
