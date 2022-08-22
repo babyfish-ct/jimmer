@@ -934,7 +934,7 @@ sqlClient
 
 很明显，`book3`、`book4`和`book5`被新的关联抛弃了。但是一对多关联`BookStore.books`不是基于中间表的映射，而是基于外键映射。jimmer-sql将如何抛弃`book3`、`book4`和`book5`呢？
 
-和JPA不同，jimmer-sql的不允许直接使用`@OneToOne`和`@OneToMany`进行关系映射，`@OneToOne`和`@OneToMany`必须使用`mappedBy`属性。可以参考[@OneToMany](../mapping#onetomany)以了解更多。
+和JPA不同，jimmer-sql的不允许直接使用`@OneToOne`和`@OneToMany`进行关联映射，`@OneToOne`和`@OneToMany`必须使用`mappedBy`属性。可以参考[@OneToMany](../mapping#onetomany)以了解更多。
 
 这表示，通过一对多关联`BookStore.books`一定能找到与之对应的多对一关联`Book.store`。
 

@@ -95,8 +95,8 @@ title: 附带demo
 |参数|描述|必需|默认值|
 |---|----|---|-----|
 |--root-name <string_value>|要保存的树的根节点的名称|是||
-|--depth <int_value>|要保存的树的深度|否|2|
-|--breadth <int_value>|要保存的树中每个节点的子节点个数|否|2|
+|--depth <int_value>|要保存的树的深度，不包含根节点|否|2|
+|--breadth <int_value>|除叶子节点外，每个节点的子节点个数|否|2|
 
 例如
 ```
