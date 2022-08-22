@@ -1,2 +1,2 @@
-rootProject.name = "java-core-kt"
+rootProject.name = "jimmer-core-kt"
 
