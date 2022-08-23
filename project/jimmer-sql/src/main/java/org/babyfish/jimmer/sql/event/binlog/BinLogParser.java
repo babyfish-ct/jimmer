@@ -5,8 +5,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
@@ -16,15 +18,23 @@ public class BinLogParser {
 
     private final ObjectMapper mapper;
 
-    public BinLogParser() {
-        this(null);
+    public BinLogParser(
+            Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap
+    ) {
+        this(scalarProviderMap, null);
     }
 
-    public BinLogParser(ObjectMapper mapper) {
+    public BinLogParser(
+            Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
+            ObjectMapper mapper
+    ) {
+        if (scalarProviderMap == null) {
+            throw new IllegalArgumentException("scalarProviderMap cannot be null");
+        }
         ObjectMapper clonedMapper = mapper != null ?
                 new ObjectMapper(mapper) {} :
                 new ObjectMapper();
-        clonedMapper.registerModule(new BinLogModule());
+        clonedMapper.registerModule(new BinLogModule(scalarProviderMap));
         this.mapper = clonedMapper;
     }
 

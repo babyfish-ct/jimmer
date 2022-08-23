@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.Triggers;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
+import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -139,7 +140,7 @@ public class CacheConfig {
         return this;
     }
 
-    Caches build(Triggers triggers) {
+    Caches build(Triggers triggers, Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap) {
         for (ImmutableProp prop : propCacheMap.keySet()) {
             if (prop.isAssociation() && !objectCacheMap.containsKey(prop.getTargetType())) {
                 throw new IllegalStateException(
@@ -156,7 +157,7 @@ public class CacheConfig {
                 objectCacheMap,
                 propCacheMap,
                 operator,
-                new BinLogParser(binLogObjectMapper)
+                new BinLogParser(scalarProviderMap, binLogObjectMapper)
         );
     }
 }

@@ -108,7 +108,7 @@ class JSqlClientImpl implements JSqlClient {
         this.caches =
                 caches != null ?
                         caches :
-                        CachesImpl.of(triggers, null);
+                        CachesImpl.of(triggers, scalarProviderMap, null);
         this.triggers = triggers;
         this.transientResolverManager =
                 transientResolverManager != null ?
@@ -437,7 +437,7 @@ class JSqlClientImpl implements JSqlClient {
         @Override
         @OldChain
         public JSqlClient.Builder setCaches(Consumer<CacheConfig> block) {
-            caches = CachesImpl.of(triggers, block);
+            caches = CachesImpl.of(triggers, scalarProviderMap, block);
             return this;
         }
 

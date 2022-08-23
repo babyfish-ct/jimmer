@@ -3,23 +3,49 @@ package org.babyfish.jimmer.sql.binlog;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
-import org.babyfish.jimmer.sql.model.AuthorTableEx;
-import org.babyfish.jimmer.sql.model.BookTableEx;
-import org.babyfish.jimmer.sql.model.TreeNode;
+import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.UUID;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 public class BinLogTest {
 
+    private Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap =
+            Collections.singletonMap(
+                    Gender.class,
+                    ScalarProvider.enumProviderByString(Gender.class, it -> {
+                        it.map(Gender.MALE, "M");
+                        it.map(Gender.FEMALE, "F");
+                    })
+            );
+
     @Test
-    public void test() {
+    public void testTreeNode() {
         String json = "{\"Node_Id\": 2, \"[Name]\": 3, \"`Parent_Id`\": 1}";
-        TreeNode treeNode = new BinLogParser().parseEntity(TreeNode.class, json);
+        TreeNode treeNode = new BinLogParser(scalarProviderMap).parseEntity(TreeNode.class, json);
         Assertions.assertEquals(
                 "{\"id\":2,\"name\":\"3\",\"parent\":{\"id\":1}}",
                 treeNode.toString()
+        );
+    }
+
+    @Test
+    public void testAuthor() {
+        String json = "{\"id\": \"" +
+                alexId +
+                "\", \"[First_name]\": \"Alex\", \"[last_Name]\": \"Banks\", \"`GenDER`\": \"M\"}";
+        Author author = new BinLogParser(scalarProviderMap).parseEntity(Author.class, json);
+        Assertions.assertEquals(
+                "{\"id\":\"" +
+                        alexId +
+                        "\",\"firstName\":\"Alex\",\"lastName\":\"Banks\",\"gender\":\"MALE\"}",
+                author.toString()
         );
     }
 
@@ -30,7 +56,7 @@ public class BinLogTest {
                 "\", \"`Author_Id`\": \"" +
                 danId +
                 "\"}";
-        Tuple2<Long, Long> idPair = new BinLogParser()
+        Tuple2<Long, Long> idPair = new BinLogParser(scalarProviderMap)
                 .parseIdPair(
                         ImmutableProps.join(BookTableEx.class, BookTableEx::authors),
                         json
@@ -52,7 +78,7 @@ public class BinLogTest {
                 "\", \"`Author_Id`\": \"" +
                 danId +
                 "\"}";
-        Tuple2<Long, Long> idPair = new BinLogParser()
+        Tuple2<Long, Long> idPair = new BinLogParser(scalarProviderMap)
                 .parseIdPair(
                         ImmutableProps.join(AuthorTableEx.class, AuthorTableEx::books),
                         json
