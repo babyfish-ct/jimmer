@@ -138,6 +138,16 @@ means to save (create or replace) such a tree
 }
 ```
 
+### delete-tree
+
+Delete a tree node, including all its subordinate nodes
+
+The command parameters are as follows
+
+|Parameter|Description|
+|---|----|
+|--id <int_value>|node id|
+
 ## [jimmer-sql-graphql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql) and [jimmer-sql-graphql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt)
 
 These two projects are GraphQL services. After startup, you can use your browser to visit http://localhost:8080/graphiql.
