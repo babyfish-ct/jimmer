@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.cache;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
@@ -10,6 +11,7 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
+import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -25,7 +27,7 @@ public class CachesImpl implements Caches {
     private final Map<String, ImmutableType> tableNameTypeMap;
 
     private final CacheOperator operator;
-
+    
     private final BinLogParser binLogParser;
 
     private final boolean disableAll;
@@ -94,9 +96,9 @@ public class CachesImpl implements Caches {
         this.tableNameTypeMap = tableNameTypeMap;
         this.operator = operator;
         this.binLogParser = binLogParser;
-        disableAll = false;
-        disabledTypes = Collections.emptySet();
-        disabledProps = Collections.emptySet();
+        this.disableAll = false;
+        this.disabledTypes = Collections.emptySet();
+        this.disabledProps = Collections.emptySet();
     }
 
     public CachesImpl(
@@ -251,12 +253,13 @@ public class CachesImpl implements Caches {
 
     public static Caches of(
             Triggers triggers,
+            Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
             Consumer<CacheConfig> block
     ) {
         CacheConfig cfg = new CacheConfig();
         if (block != null) {
             block.accept(cfg);
         }
-        return cfg.build(triggers);
+        return cfg.build(triggers, scalarProviderMap);
     }
 }

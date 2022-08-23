@@ -1,10 +1,8 @@
 package org.babyfish.jimmer.example.kt.sql.shell
 
-import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectWriter
 import org.babyfish.jimmer.example.kt.sql.model.TreeNode
 import org.babyfish.jimmer.example.kt.sql.model.TreeNodeDraft
-import org.babyfish.jimmer.example.kt.sql.model.TreeNodeDraft.`$`.produce
 import org.babyfish.jimmer.example.kt.sql.model.addBy
 import org.babyfish.jimmer.example.kt.sql.model.by
 import org.babyfish.jimmer.kt.new
@@ -21,7 +19,6 @@ class TreeMutationShell(
 ) {
 
     @ShellMethod("Save tree into database(Example: save-tree --root-name Hello)")
-    @Throws(JsonProcessingException::class)
     fun saveTree(
         rootName: String,
         @ShellOption(defaultValue = "2") depth: Int,
@@ -77,5 +74,10 @@ class TreeMutationShell(
                 )
             }
         }
+    }
+
+    @ShellMethod("Delete tree by id(Example: delete-tree --id 100")
+    fun deleteTree(id: Long) {
+        sqlClient.entities.delete(TreeNode::class, id)
     }
 }
