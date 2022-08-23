@@ -82,4 +82,9 @@ public class TreeMutationShell {
             });
         }
     }
+
+    @ShellMethod("Delete tree by id(Example: save-tree --id 100)")
+    public void deleteTree(long id) {
+        sqlClient.getEntities().delete(TreeNode.class, id);
+    }
 }

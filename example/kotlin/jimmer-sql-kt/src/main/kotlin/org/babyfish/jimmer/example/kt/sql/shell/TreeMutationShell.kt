@@ -76,7 +76,7 @@ class TreeMutationShell(
         }
     }
 
-    @ShellMethod("Delete tree by id(Example: delete-tree --id 100")
+    @ShellMethod("Delete tree by id(Example: save-tree --id 100)")
     fun deleteTree(id: Long) {
         sqlClient.entities.delete(TreeNode::class, id)
     }
