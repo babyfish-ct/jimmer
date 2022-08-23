@@ -138,6 +138,16 @@ save-tree --root-name MyNode --depth 2 --breadth 2
 }
 ```
 
+### delete-tree
+
+删除某个树节点，包含其所有下级节点
+
+该命令参数如下
+
+|参数|描述|
+|---|----|
+|--id <int_value>|节点id|
+
 ## [jimmer-sql-graphql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql)和[jimmer-sql-graphql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt)
 
 这两个项目是GraphQL服务。启动后，可以使用浏览器访问http://localhost:8080/graphiql。
