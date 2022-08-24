@@ -6,10 +6,6 @@ title: 教程介绍
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-:::tip
-对于中文版，从本文档中挑取最重要的一部分，形成[B站视频集](https://www.bilibili.com/video/BV1dA4y1R7pV/?vd_source=60313648ad86e28e629f98e944f7fa2a)
-:::
-
 目的
 
 - 强大的不可变对象模型
@@ -163,6 +159,15 @@ Jimmer可以帮助你
 - Jackson 序列化过程中会自动忽略缺失属性，并且不会导致异常。
 
 ## 第二部分：基于不可变数据模型的革命性的ORM
+
+ORM设计需要考虑三个方面：
+1.查询。
+2. 更新。
+3.缓存。
+
+对于 jimmer-sql而言，每个方面都是针对具有任意深度的对象树，而不是简单的对象。
+
+这种独特的设计带来了其他流行解决方案无法比拟的便利。
 
 ### 1. 极致性能
 

@@ -93,7 +93,7 @@ class PaginationQueryShell(
             val offset = (pageSize * (pageNo - 1)).toInt()
             val rows = query.limit(pageSize, offset).execute()
             for ((book, globalRank, partitionRank) in rows) {
-                println("Book: $book")
+                println("Book: ${prettyWriter.writeValueAsString(book)}")
                 println("Global rank: $globalRank")
                 println("Partition rank: $partitionRank")
             }

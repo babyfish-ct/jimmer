@@ -14,6 +14,15 @@ If you have already read the first part-ii of the homepage, you can skip this ar
 
 ## Revolutionary ORM Based on the Immutable Data Model
 
+Three aspects should be considered in ORM design: 
+1. Query.
+2. Update.
+3. Cache. 
+
+For jimmer-sql, each aspect is aimed at object trees with arbitrary depth rather than simple objects. 
+
+This distinctive design brings convenience unmatched by other popular solutions.
+
 ### 1. Ultimate performance
 
 Benchmark report is [here](../Benchmark), benchmark source code is [here](https://github.com/babyfish-ct/jimmer/tree/main/benchmark)
@@ -144,7 +153,7 @@ Work with any external cache. By default, the framework is just a very lightweig
 
 2.  Unlike other ORMs, jimmer supports not only object cache, but also associative cache. The two are combined behind the scenes and can be used with object fetcher and GraphQL.
 
-    So, external cache is designed for object trees arbitrary depth, rather than simple objects.
+    So, external cache is designed for object trees with arbitrary depth, rather than simple objects.
 
 For high-performance complex data structure queries, the following two tasks will cause a large workload for developers.
 

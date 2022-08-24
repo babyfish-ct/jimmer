@@ -57,7 +57,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
                     q.groupBy(book.store().id());
                     return q.select(
                             book.store().id(),
-                            book.price().avg().coalesce(BigDecimal.ZERO)
+                            book.price().avg()
                     );
                 })
                 .execute(con); // Important to specify connection
