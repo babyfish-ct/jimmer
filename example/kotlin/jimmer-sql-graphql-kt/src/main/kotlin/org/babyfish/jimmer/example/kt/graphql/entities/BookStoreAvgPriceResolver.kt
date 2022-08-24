@@ -2,8 +2,8 @@ package org.babyfish.jimmer.example.kt.graphql.entities
 
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.KTransientResolver
+import org.babyfish.jimmer.sql.kt.ast.expression.asNonNull
 import org.babyfish.jimmer.sql.kt.ast.expression.avg
-import org.babyfish.jimmer.sql.kt.ast.expression.coalesce
 import org.babyfish.jimmer.sql.kt.ast.expression.valueIn
 import org.babyfish.jimmer.sql.kt.event.getUnchangedFieldRef
 import java.math.BigDecimal
@@ -44,7 +44,7 @@ class BookStoreAvgPriceResolver(
                 groupBy(table.store.id)
                 select(
                     table.store.id,
-                    avg(table.price).coalesce(BigDecimal.ZERO)
+                    avg(table.price).asNonNull()
                 )
             }
             .execute(con) // It's important to specify the connection
