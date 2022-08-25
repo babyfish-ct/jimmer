@@ -5,7 +5,7 @@ A powerful java framework for Java and Kotlin.
 - Immutable data model
 - ORM based on immutable data model
 
-## 1，Vedio
+## 1，Video
 https://www.youtube.com/watch?v=Rt5zNv0YR2E
 
 ## 2. Bechmark
