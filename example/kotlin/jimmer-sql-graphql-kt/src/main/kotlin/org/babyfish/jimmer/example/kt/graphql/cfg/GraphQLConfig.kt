@@ -11,11 +11,10 @@ import org.springframework.graphql.execution.RuntimeWiringConfigurer
 class GraphQLConfig {
 
     @Bean
-    fun runtimeWiringConfigurer(): RuntimeWiringConfigurer? {
-        return RuntimeWiringConfigurer { wiringBuilder: RuntimeWiring.Builder ->
-            wiringBuilder
+    fun runtimeWiringConfigurer(): RuntimeWiringConfigurer =
+        RuntimeWiringConfigurer {
+            it
                 .scalar(ExtendedScalars.GraphQLLong)
                 .scalar(ExtendedScalars.GraphQLBigDecimal)
         }
-    }
 }
