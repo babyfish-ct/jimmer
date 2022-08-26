@@ -822,7 +822,11 @@ fun findBooks(
 当以上两个条件都满足时，在最终生成的SQL中，`Book::store`的表连接只会出现一次，而非两次。
 </details>
 
-### 9. 对Spring GraphQL的支持
+### 9. 非常轻量
+
+无反射，无动态字节码生成，保证对Graal友好。
+
+## 第三部分: 对Spring GraphQL的支持
 
 为spring boot2.7引入的Spring GraphQL提供快速开发支持。
 
@@ -896,10 +900,6 @@ fun authors(
 :::tip
 该功能可以和外部缓存一起工作
 :::
-
-### 10. 非常轻量
-
-无反射，无动态字节码生成，保证对Graal友好。
 
 ## 其他亮点
 
