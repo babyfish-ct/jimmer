@@ -822,7 +822,11 @@ Obviously, the above code implements a dynamic query, and different parameters w
 When the above two conditions are met, in the final generated SQL, the table join of `Book::store` will only appear once, not twice. 
 </details>
 
-### 9. Support for Spring GraphQL
+### 9. Extreme lightweight. 
+
+No reflection, no dynamic bytecode generation, guarantee to be Graal friendly.
+
+## Part-III: Support for Spring GraphQL
 
 Provide rapid development support for Spring GraphQL introduced in spring boot 2.7
 
@@ -896,10 +900,6 @@ fun authors(
 :::tip
 This feature can work with external cache
 :::
-
-### 10. Extreme lightweight. 
-
-No reflection, no dynamic bytecode generation, guarantee to be Graal friendly.
 
 ## Other highlights
 
