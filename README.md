@@ -1,9 +1,11 @@
 
 [![logo](logo.png)](https://babyfish-ct.github.io/jimmer/)
 
-A powerful java framework for Java and Kotlin.
+A revolutionary ORM framework for both java and kotlin.
+
 - Immutable data model
 - ORM based on immutable data model
+- The ORM also provides a specialized API to speed up the development of Spring GraphQL
 
 ## 1，Video
 https://www.youtube.com/watch?v=Rt5zNv0YR2E
