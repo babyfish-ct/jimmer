@@ -53,4 +53,21 @@ class BookStoreAvgPriceResolver(
             }) {
                 it._2
             }
+            .ensureKeys(ids, BigDecimal.ZERO)
+}
+
+private fun <K, V> Map<K, V>.ensureKeys(
+    keys: Collection<K>,
+    defaultValue: V
+): Map<K, V> {
+    val missedKeys = keys.toSet() - this.keys
+    return if (missedKeys.isEmpty()) {
+        this
+    } else {
+        toMutableMap().apply {
+            for (missedKey in missedKeys) {
+                this[missedKey] = defaultValue
+            }
+        }
+    }
 }
