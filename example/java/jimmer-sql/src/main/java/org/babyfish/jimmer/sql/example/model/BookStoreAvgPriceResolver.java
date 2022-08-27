@@ -59,6 +59,25 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
                     );
                 })
                 .execute(con); // Important to specify connection
-        return Tuple2.toMap(tuples);
+        return ensureKeys(
+                Tuple2.toMap(tuples),
+                ids,
+                BigDecimal.ZERO
+        );
+    }
+
+    private static <K, V> Map<K, V> ensureKeys(
+            Map<K, V> map,
+            Collection<K> keys,
+            V defaultValue
+    ) {
+        Set<K> missedKeys = new HashSet<>(keys);
+        missedKeys.removeAll(map.keySet());
+        if (!missedKeys.isEmpty()) {
+            for (K missedKey : missedKeys) {
+                map.put(missedKey, defaultValue);
+            }
+        }
+        return map;
     }
 }
