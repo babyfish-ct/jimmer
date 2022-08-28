@@ -10,7 +10,7 @@ A revolutionary ORM framework for both java and kotlin.
 ## 1，Video links
 
 - English: https://www.youtube.com/watch?v=Rt5zNv0YR2E
-- Chinese: https://www.bilibili.com/video/BV1kd4y1A7K3/?vd_source=60313648ad86e28e629f98e944f7fa2a
+- Chinese: https://www.bilibili.com/video/BV1kd4y1A7K3
 
 ## 2. Bechmark
 
