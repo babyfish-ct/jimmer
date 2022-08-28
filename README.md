@@ -7,8 +7,10 @@ A revolutionary ORM framework for both java and kotlin.
 - ORM based on immutable data model
 - The ORM also provides a specialized API to speed up the development of Spring GraphQL
 
-## 1，Video
-https://www.youtube.com/watch?v=Rt5zNv0YR2E
+## 1，Video links
+
+- English: https://www.youtube.com/watch?v=Rt5zNv0YR2E
+- Chinese: https://www.bilibili.com/video/BV1kd4y1A7K3/?vd_source=60313648ad86e28e629f98e944f7fa2a
 
 ## 2. Bechmark
 
