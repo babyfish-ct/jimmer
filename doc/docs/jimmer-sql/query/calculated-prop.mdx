@@ -214,38 +214,40 @@ fun sqlClient(
     redisTemplate: RedisTemplate<String, ByteArray>
 ): KSqlClient =
     newKSqlClient {
-        setCacheFactory(
-            arrayOf(
-                BookStore.class,
-                Book.class,
-                Author.class,
-                TreeNode.class
-            ),
-            object : CacheFactory {
+        setCaches {
+            setCacheFactory(
+                arrayOf(
+                    BookStore.class,
+                    Book.class,
+                    Author.class,
+                    TreeNode.class
+                ),
+                object : CacheFactory {
 
-                // Create cache for calculated properties, including:
-                // `BookStore.avgPrice`
-                // highlight-next-line
-                override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? =
-                    ChainCacheBuilder<Any, List<*>>()
-                        .add(
-                            CaffeineBinder(
-                                1024, 
-                                Duration.ofSeconds(1)
+                    // Create cache for calculated properties, including:
+                    // `BookStore.avgPrice`
+                    // highlight-next-line
+                    override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? =
+                        ChainCacheBuilder<Any, List<*>>()
+                            .add(
+                                CaffeineBinder(
+                                    1024, 
+                                    Duration.ofSeconds(1)
+                                )
                             )
-                        )
-                        .add(
-                            RedisBinder(
-                                redisTemplate, 
-                                prop, 
-                                Duration.ofHours(1)
+                            .add(
+                                RedisBinder(
+                                    redisTemplate, 
+                                    prop, 
+                                    Duration.ofHours(1)
+                                )
                             )
-                        )
-                        .build()
+                            .build()
 
-                ... omit other caches ...
-            }
-        )
+                    ... omit other caches ...
+                }
+            )
+        }
 
         ...omit other configuration...
     }

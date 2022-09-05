@@ -1061,93 +1061,95 @@ fun sqlClient(
     redisTemplate: RedisTemplate<String, ByteArray>
 ): KSqlClient =
     newKSqlClient {
-        // highlight-next-line
-        setCacheFactory(
+        setCaches {
+            // highlight-next-line
+            setCacheFactory(
 
-            // Use this array to iterate types, 
-            // association properties, and calculated properties.
-            arrayOf(
-                BookStore.class,
-                Book.class,
-                Author.class,
-                TreeNode.class
-            ),
+                // Use this array to iterate types, 
+                // association properties, and calculated properties.
+                arrayOf(
+                    BookStore.class,
+                    Book.class,
+                    Author.class,
+                    TreeNode.class
+                ),
 
-            // For each type and property, create optional cache.
-            object : CacheFactory {
+                // For each type and property, create optional cache.
+                object : CacheFactory {
 
-                // Create object cache for types, including:
-                // `BookStore`
-                // `Book`
-                // `Author`
-                /// `TreeNode` 
-                override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
-                    ChainCacheBuilder<Any, Any>()
-                        .add(
-                            CaffeineBinder(
-                                512, 
-                                Duration.ofSeconds(1)
+                    // Create object cache for types, including:
+                    // `BookStore`
+                    // `Book`
+                    // `Author`
+                    /// `TreeNode` 
+                    override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+                        ChainCacheBuilder<Any, Any>()
+                            .add(
+                                CaffeineBinder(
+                                    512, 
+                                    Duration.ofSeconds(1)
+                                )
                             )
-                        )
-                        .add(
-                            RedisBinder(
-                                redisTemplate, 
-                                type, 
-                                Duration.ofMinutes(10)
+                            .add(
+                                RedisBinder(
+                                    redisTemplate, 
+                                    type, 
+                                    Duration.ofMinutes(10)
+                                )
                             )
-                        )
-                        .build()
+                            .build()
 
-                // Create reference association cache for 
-                // one-to-one/many-to-one properties, including:
-                // `Book.store`
-                // `TreeNode.parent`
-                override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
-                    ChainCacheBuilder<Any, Any>()
-                        .add(
-                            CaffeineBinder(
-                                512, 
-                                Duration.ofSeconds(1)
+                    // Create reference association cache for 
+                    // one-to-one/many-to-one properties, including:
+                    // `Book.store`
+                    // `TreeNode.parent`
+                    override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
+                        ChainCacheBuilder<Any, Any>()
+                            .add(
+                                CaffeineBinder(
+                                    512, 
+                                    Duration.ofSeconds(1)
+                                )
                             )
-                        )
-                        .add(
-                            RedisBinder(
-                                redisTemplate, 
-                                prop, 
-                                Duration.ofMinutes(5)
+                            .add(
+                                RedisBinder(
+                                    redisTemplate, 
+                                    prop, 
+                                    Duration.ofMinutes(5)
+                                )
                             )
-                        )
-                        .build()
+                            .build()
 
-                // Create list association cache for 
-                // one-to-many/many-to-many properties, including:
-                // `BookStore.books`
-                // `Book.authors`
-                // `Author.books`
-                // `TreeNode.childNodes`
-                override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
-                    ChainCacheBuilder<Any, List<*>>()
-                        .add(
-                            CaffeineBinder(
-                                64, 
-                                Duration.ofSeconds(1)
+                    // Create list association cache for 
+                    // one-to-many/many-to-many properties, including:
+                    // `BookStore.books`
+                    // `Book.authors`
+                    // `Author.books`
+                    // `TreeNode.childNodes`
+                    override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
+                        ChainCacheBuilder<Any, List<*>>()
+                            .add(
+                                CaffeineBinder(
+                                    64, 
+                                    Duration.ofSeconds(1)
+                                )
                             )
-                        )
-                        .add(
-                            RedisBinder(
-                                redisTemplate, 
-                                prop, 
-                                Duration.ofMinutes(5)
+                            .add(
+                                RedisBinder(
+                                    redisTemplate, 
+                                    prop, 
+                                    Duration.ofMinutes(5)
+                                )
                             )
-                        )
-                        .build()
+                            .build()
 
-                // `createResolverCache` is not overridden,
-                // it always returns null, because
-                // calculated property cache will not be 
-                // discussed in this article.
-            }
-        )
+                    // `createResolverCache` is not overridden,
+                    // it always returns null, because
+                    // calculated property cache will not be 
+                    // discussed in this article.
+                }
+            )
+        }
         ...omit other configuration...
     }
 ```

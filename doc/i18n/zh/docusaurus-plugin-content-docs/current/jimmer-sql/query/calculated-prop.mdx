@@ -214,38 +214,40 @@ fun sqlClient(
     redisTemplate: RedisTemplate<String, ByteArray>
 ): KSqlClient =
     newKSqlClient {
-        setCacheFactory(
-            arrayOf(
-                BookStore.class,
-                Book.class,
-                Author.class,
-                TreeNode.class
-            ),
-            object : CacheFactory {
+        setCaches {
+            setCacheFactory(
+                arrayOf(
+                    BookStore.class,
+                    Book.class,
+                    Author.class,
+                    TreeNode.class
+                ),
+                object : CacheFactory {
 
-                // // 为计算属性创建缓存，包括:
-                // `BookStore.avgPrice`
-                // highlight-next-line
-                override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? =
-                    ChainCacheBuilder<Any, List<*>>()
-                        .add(
-                            CaffeineBinder(
-                                1024, 
-                                Duration.ofSeconds(1)
+                    // // 为计算属性创建缓存，包括:
+                    // `BookStore.avgPrice`
+                    // highlight-next-line
+                    override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? =
+                        ChainCacheBuilder<Any, List<*>>()
+                            .add(
+                                CaffeineBinder(
+                                    1024, 
+                                    Duration.ofSeconds(1)
+                                )
                             )
-                        )
-                        .add(
-                            RedisBinder(
-                                redisTemplate, 
-                                prop, 
-                                Duration.ofHours(1)
+                            .add(
+                                RedisBinder(
+                                    redisTemplate, 
+                                    prop, 
+                                    Duration.ofHours(1)
+                                )
                             )
-                        )
-                        .build()
+                            .build()
 
-                ...省略其他缓存...
-            }
-        )
+                    ...省略其他缓存...
+                }
+            )
+        }
 
         ...省略其他配置...
     }
