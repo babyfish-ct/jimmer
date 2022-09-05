@@ -51,8 +51,8 @@ This framework provides three examples
 
 ## 5. Discuss
 
--  **Discord channel for english**
-   https://discord.com/channels/1016206034827743283/
+### Discord channel for english**
+https://discord.com/channels/1016206034827743283/
 
--  **Wechat group for chinese**
-   ![wechat-group](./doc/static/img/wechat.jpeg)
+### Wechat group for chinese**
+![wechat-group](./doc/static/img/wechat.jpeg)
