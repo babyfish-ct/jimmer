@@ -51,8 +51,6 @@ This framework provides three examples
 
 ## 5. Discuss
 
-### Discord channel for english
-https://discord.com/channels/1016206034827743283/
-
-### Wechat group for chinese
-<img src="doc/static/img/wechat.jpeg" height=300/>
+|Language|Entry point|
+|English|https://discord.com/channels/1016206034827743283/|
+|Chinese|<img src="doc/static/img/wechat.jpeg" height=300/>|
