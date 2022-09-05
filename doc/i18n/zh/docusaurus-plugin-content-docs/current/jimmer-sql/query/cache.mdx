@@ -1051,88 +1051,90 @@ fun sqlClient(
     redisTemplate: RedisTemplate<String, ByteArray>
 ): KSqlClient =
     newKSqlClient {
-        // highlight-next-line
-        setCacheFactory(
+        setCaches {
+            // highlight-next-line
+            setCacheFactory(
 
-            // 利用此数组，遍历所有类型、关联属性、计算属性
-            arrayOf(
-                BookStore.class,
-                Book.class,
-                Author.class,
-                TreeNode.class
-            ),
+                // 利用此数组，遍历所有类型、关联属性、计算属性
+                arrayOf(
+                    BookStore.class,
+                    Book.class,
+                    Author.class,
+                    TreeNode.class
+                ),
 
-            // 对于每一个类型或属性，创建可选的缓存
-            object : CacheFactory {
+                // 对于每一个类型或属性，创建可选的缓存
+                object : CacheFactory {
 
-                // 对类型创建对象缓存，包括
-                // `BookStore`
-                // `Book`
-                // `Author`
-                /// `TreeNode` 
-                override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
-                    ChainCacheBuilder<Any, Any>()
-                        .add(
-                            CaffeineBinder(
-                                512, 
-                                Duration.ofSeconds(1)
+                    // 对类型创建对象缓存，包括
+                    // `BookStore`
+                    // `Book`
+                    // `Author`
+                    /// `TreeNode` 
+                    override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+                        ChainCacheBuilder<Any, Any>()
+                            .add(
+                                CaffeineBinder(
+                                    512, 
+                                    Duration.ofSeconds(1)
+                                )
                             )
-                        )
-                        .add(
-                            RedisBinder(
-                                redisTemplate, 
-                                type, 
-                                Duration.ofMinutes(10)
+                            .add(
+                                RedisBinder(
+                                    redisTemplate, 
+                                    type, 
+                                    Duration.ofMinutes(10)
+                                )
                             )
-                        )
-                        .build()
+                            .build()
 
-                // 为一对一或多对一属性创建关联缓存，包括:
-                // `Book.store`
-                // `TreeNode.parent`
-                override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
-                    ChainCacheBuilder<Any, Any>()
-                        .add(
-                            CaffeineBinder(
-                                512, 
-                                Duration.ofSeconds(1)
+                    // 为一对一或多对一属性创建关联缓存，包括:
+                    // `Book.store`
+                    // `TreeNode.parent`
+                    override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
+                        ChainCacheBuilder<Any, Any>()
+                            .add(
+                                CaffeineBinder(
+                                    512, 
+                                    Duration.ofSeconds(1)
+                                )
                             )
-                        )
-                        .add(
-                            RedisBinder(
-                                redisTemplate, 
-                                prop, 
-                                Duration.ofMinutes(5)
+                            .add(
+                                RedisBinder(
+                                    redisTemplate, 
+                                    prop, 
+                                    Duration.ofMinutes(5)
+                                )
                             )
-                        )
-                        .build()
+                            .build()
 
-                // // 为一对多或多对多属性创建关联缓存，包括:
-                // `BookStore.books`
-                // `Book.authors`
-                // `Author.books`
-                // `TreeNode.childNodes`
-                override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
-                    ChainCacheBuilder<Any, List<*>>()
-                        .add(
-                            CaffeineBinder(
-                                64, 
-                                Duration.ofSeconds(1)
+                    // // 为一对多或多对多属性创建关联缓存，包括:
+                    // `BookStore.books`
+                    // `Book.authors`
+                    // `Author.books`
+                    // `TreeNode.childNodes`
+                    override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
+                        ChainCacheBuilder<Any, List<*>>()
+                            .add(
+                                CaffeineBinder(
+                                    64, 
+                                    Duration.ofSeconds(1)
+                                )
                             )
-                        )
-                        .add(
-                            RedisBinder(
-                                redisTemplate, 
-                                prop, 
-                                Duration.ofMinutes(5)
+                            .add(
+                                RedisBinder(
+                                    redisTemplate, 
+                                    prop, 
+                                    Duration.ofMinutes(5)
+                                )
                             )
-                        )
-                        .build()
+                            .build()
 
-                // `createResolverCache` 未被覆盖，总是返回null,
-                // 计算属性的缓存并非本文要讨论的内容.
-            }
-        )
+                    // `createResolverCache` 未被覆盖，总是返回null,
+                    // 计算属性的缓存并非本文要讨论的内容.
+                }
+            )
+        }
         ...omit other configuration...
     }
 ```
