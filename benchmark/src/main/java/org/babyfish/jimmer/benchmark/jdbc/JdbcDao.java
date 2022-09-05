@@ -33,6 +33,7 @@ public class JdbcDao {
                         data.setValue7(rs.getInt(8));
                         data.setValue8(rs.getInt(9));
                         data.setValue9(rs.getInt(10));
+                        list.add(data);
                     }
                 }
             }
@@ -57,6 +58,7 @@ public class JdbcDao {
                         data.setValue7(rs.getInt("VALUE_7"));
                         data.setValue8(rs.getInt("VALUE_8"));
                         data.setValue9(rs.getInt("VALUE_9"));
+                        list.add(data);
                     }
                 }
             }
