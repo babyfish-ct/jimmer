@@ -48,3 +48,11 @@ This framework provides three examples
    - [example/kotlin/jimmer-core-kt](example/kotlin/jimmer-core-kt): How to use immutable objects
    - [example/kotlin/jimmer-sql-kt](example/kotlin/jimmer-sql-kt): How to use ORM framework
    - [example/kotlin/jimmer-sql-graphql-kt](example/kotlin/jimmer-sql-graphql-kt): How to quickly develop [Spring GraphQL](https://spring.io/projects/spring-graphql) services based on jimmer.
+
+## 5. Discuss
+
+### Discord link for english
+https://discord.com/channels/1016206034827743283/
+
+### Wechat group for chinese
+![wechat-group](./doc/static/img/wechat.jpeg)
