@@ -49,14 +49,14 @@ public class JdbcDao {
                         JdbcData data = new JdbcData();
                         data.setId(rs.getLong("ID"));
                         data.setValue1(rs.getInt("VALUE_1"));
-                        data.setValue1(rs.getInt("VALUE_2"));
-                        data.setValue1(rs.getInt("VALUE_3"));
-                        data.setValue1(rs.getInt("VALUE_4"));
-                        data.setValue1(rs.getInt("VALUE_5"));
-                        data.setValue1(rs.getInt("VALUE_6"));
-                        data.setValue1(rs.getInt("VALUE_7"));
-                        data.setValue1(rs.getInt("VALUE_8"));
-                        data.setValue1(rs.getInt("VALUE_9"));
+                        data.setValue2(rs.getInt("VALUE_2"));
+                        data.setValue3(rs.getInt("VALUE_3"));
+                        data.setValue4(rs.getInt("VALUE_4"));
+                        data.setValue5(rs.getInt("VALUE_5"));
+                        data.setValue6(rs.getInt("VALUE_6"));
+                        data.setValue7(rs.getInt("VALUE_7"));
+                        data.setValue8(rs.getInt("VALUE_8"));
+                        data.setValue9(rs.getInt("VALUE_9"));
                     }
                 }
             }
