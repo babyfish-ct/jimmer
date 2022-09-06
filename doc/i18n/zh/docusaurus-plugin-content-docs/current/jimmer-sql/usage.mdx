@@ -11,7 +11,10 @@ jimmer-sql内容相对较多，后续文章会逐步讲解。本文对其部分�
 ## 导入依赖
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java项目">
+
+<Tabs groupId="buildTool">
+<TabItem value="gralde" label="Gralde">
 
 ```groovy title="build.gradle"
 depdencies {
@@ -24,7 +27,48 @@ depdencies {
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="maven" label="Maven">
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.babyfish.jimmer</groupId>
+        <artifactId>jimmer-sql</artifactId>
+        <version>0.1.29</version>
+    </dependency>
+    <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>2.1.212</version>
+        <scope>runtime</scope>
+    </dependency>
+</dependencies>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.0</version>
+            <configuration>
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>org.babyfish.jimmer</groupId>
+                        <artifactId>jimmer-apt</artifactId>
+                        <version>0.1.29</version>
+                    </path>
+                </annotationProcessorPaths>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+</TabItem>
+</Tabs>
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin项目">
 
 ```kotlin title="build.gradle.kts"
 plugins {
@@ -40,6 +84,8 @@ depdencies {
 
     // Step3: Apply ksp plugin
 	ksp("org.babyfish.jimmer:jimmer-ksp:0.1.29")
+
+    runtimeOnly("com.h2database:h2:2.1.212")
 
     ...ommit other dependency...
 }

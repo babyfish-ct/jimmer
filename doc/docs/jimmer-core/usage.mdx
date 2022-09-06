@@ -9,18 +9,56 @@ import TabItem from '@theme/TabItem';
 ## Add dependencies
 
 <Tabs groupId="language">
-<TabItem value="java" label="For java project">
+<TabItem value="java" label="Java project">
+
+<Tabs groupId="buildTool">
+<TabItem value="gralde" label="Gralde">
 
 ```groovy title="build.gradle"
-dependencies {
-
+depdencies {
+    
     implementation 'org.babyfish.jimmer:jimmer-core:0.1.29'
     annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.1.29'
 }
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="For kotlin project">
+<TabItem value="maven" label="Maven">
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.babyfish.jimmer</groupId>
+        <artifactId>jimmer-core</artifactId>
+        <version>0.1.29</version>
+    </dependency>
+</dependencies>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.0</version>
+            <configuration>
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>org.babyfish.jimmer</groupId>
+                        <artifactId>jimmer-apt</artifactId>
+                        <version>0.1.29</version>
+                    </path>
+                </annotationProcessorPaths>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+</TabItem>
+</Tabs>
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin project">
 
 ```kotlin title="build.gradle.kts"
 plugins {
