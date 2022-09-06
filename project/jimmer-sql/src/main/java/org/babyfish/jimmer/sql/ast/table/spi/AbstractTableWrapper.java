@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
 import java.util.function.Function;
@@ -88,6 +89,11 @@ public abstract class AbstractTableWrapper<E> implements Table<E> {
     @Override
     public Selection<E> fetch(Fetcher<E> fetcher) {
         return raw.fetch(fetcher);
+    }
+
+    @Override
+    public TableEx<E> asTableEx() {
+        return raw.asTableEx();
     }
 
     public Table<E> __unwrap() {

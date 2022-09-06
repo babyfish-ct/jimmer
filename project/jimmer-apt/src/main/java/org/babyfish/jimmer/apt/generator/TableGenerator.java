@@ -93,6 +93,7 @@ public class TableGenerator {
                     addProperty(prop, true);
                 }
             }
+            addAsTableEx();
             return typeBuilder.build();
         } finally {
             typeBuilder = oldTypeBuilder;
@@ -188,6 +189,22 @@ public class TableGenerator {
         } else {
             builder.addStatement("return get($S)", prop.getName());
         }
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addAsTableEx() {
+        if (isTableEx) {
+            return;
+        }
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("asTableEx")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .returns(type.getTableExClassName())
+                .addStatement(
+                        "return ($T)super.asTableEx()",
+                        type.getTableExClassName()
+                );
         typeBuilder.addMethod(builder.build());
     }
 }

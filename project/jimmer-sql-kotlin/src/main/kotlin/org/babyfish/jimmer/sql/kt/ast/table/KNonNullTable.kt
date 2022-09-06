@@ -17,6 +17,8 @@ interface KNonNullTable<E: Any> : KTable<E>, Selection<E> {
     override fun <X: Any> inverseJoinList(backProp: KProperty1<X, List<E>>): KNonNullTable<X>
 
     fun fetch(fetcher: Fetcher<E>): Selection<E>
+
+    override fun asTableEx(): KNonNullTableEx<E>
 }
 
 val <S: Any, T: Any> KNonNullTable<Association<S, T>>.source: KNonNullTable<S>

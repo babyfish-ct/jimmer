@@ -512,96 +512,53 @@ For example, users do not query the entire object, but query individual fields, 
 
 So, this rule is a soft restriction, not a rigid one. it can be easily broken.
 
-There are two ways to break this rule
 
-1.  Use weakly typed API *(not recommended)*
 
-    <Tabs groupId="language">
-    <TabItem value="java" label="Java">
-    
-    ```java
-    List<Long> bookIds = sqlClient
-        .createQuery(BookTable.class, (q, book) -> {
-            return q
-                .where(
-                    book
-                        // highlight-next-line
-                        .<AuthorTable>join("authors")
-                        .firstName()
-                        .ilike("A%")
-                )
-                .select(book.id());
-        })
-        .distinct()
-        .execute();
-    ```
 
-    </TabItem>
-    <TabItem value="kotlin" label="Kotlin">
-    
-    ```kotlin
-    val bookIds = sqlClient
-        .createQuery(Book::class) {
-            where(
-                table 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+List<Long> bookIds = sqlClient
+    .createQuery(BookTable.class, (q, book) -> {
+        return q
+            .where(
+                book
                     // highlight-next-line
-                    .join<Author>("Authors")
-                    .firstName
-                    ilike "A%"
+                    .asTableEx()
+                    .authors()
+                    .firstName()
+                    .ilike("A%")
             )
-            select(table.id)
-        }
-        .distinct()
-        .execute()
-    ```
+            .select(book.id());
+    })
+    .distinct()
+    .execute();
+```
 
-    </TabItem>
-    </Tabs>
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
 
-2.  Cast Table to TableEx *(recommended)*
-
-    <Tabs groupId="language">
-    <TabItem value="java" label="Java">
-    
-    ```java
-    List<Long> bookIds = sqlClient
-        .createQuery(BookTable.class, (q, book) -> {
-            return q
-                .where(
-                    // highlight-next-line
-                    ((BookTableEx)book)
-                        .authors()
-                        .firstName()
-                        .ilike("A%")
-                )
-                .select(book.id());
-        })
-        .distinct()
-        .execute();
-    ```
-
-    </TabItem>
-    <TabItem value="kotlin" label="Kotlin">
-    
-    ```kotlin
-    val bookIds = sqlClient
-        .createQuery(Book::class) {
-            where(
+```kotlin
+val bookIds = sqlClient
+    .createQuery(Book::class) {
+        where(
+            table
                 // highlight-next-line
-                (table as KNonNullTableEx<Book>)
-                    .authors
-                    .firstName ilike "A%"
-            )
-            select(table.id)
-        }
-        .distinct()
-        .execute()
-    ```
+                .asTableEx()
+                .authors
+                .firstName ilike "A%"
+        )
+        select(table.id)
+    }
+    .distinct()
+    .execute()
+```
 
-    </TabItem>
-    </Tabs>
+</TabItem>
+</Tabs>
 
-Either way, you can break through this soft limitation and use collection associations in top-level queries.
+This method `asTableEx` casts `Table` to `TableEx`, so you can use collection associations in top-level queries.
 
 The final generated SQL is as follows
 

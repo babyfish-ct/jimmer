@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
@@ -301,6 +302,11 @@ class TableImpl<E> implements TableImplementor<E> {
             );
         }
         return new FetcherSelectionImpl<>(this, fetcher);
+    }
+
+    @Override
+    public TableEx<E> asTableEx() {
+        return TableWrappers.wrap(this);
     }
 
     @Override

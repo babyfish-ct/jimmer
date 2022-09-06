@@ -33,17 +33,18 @@ public class JoinTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient().createQuery(BookStoreTable.class, (q, store) -> {
                     q.where(
-                            store.<BookTable>join("books", JoinType.LEFT).price()
+                            store.asTableEx().books(JoinType.LEFT).price()
                                     .ge(new BigDecimal(20))
                     );
                     q.where(
-                            store.<BookTable>join("books").price()
+                            store.asTableEx().books().price()
                                     .le(new BigDecimal(30))
                     );
                     q.where(
                             store
-                                    .<BookTable>join("books")
-                                    .<AuthorTable>join("authors")
+                                    .asTableEx()
+                                    .books()
+                                    .authors()
                                     .firstName()
                                     .ilike("Alex")
                     );
@@ -71,19 +72,22 @@ public class JoinTest extends AbstractQueryTest {
                 getSqlClient().createQuery(AuthorTable.class, (q, author) -> {
                     q.where(
                             author
-                                    .<BookTable>join("books", JoinType.LEFT)
+                                    .asTableEx()
+                                    .books(JoinType.LEFT)
                                     .price()
                                     .ge(new BigDecimal(20))
                     );
                     q.where(
                             author
-                                    .<BookTable>join("books")
+                                    .asTableEx()
+                                    .books()
                                     .price()
                                     .le(new BigDecimal(30))
                     );
                     q.where(
                             author
-                                    .<BookTable>join("books")
+                                    .asTableEx()
+                                    .books()
                                     .store()
                                     .name()
                                     .ilike("MANNING")
@@ -127,7 +131,9 @@ public class JoinTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(
-                            book.<AuthorTable>join("authors")
+                            book
+                                    .asTableEx()
+                                    .authors()
                                     .id()
                                     .in(Arrays.asList(alexId, borisId))
                     );
@@ -151,7 +157,8 @@ public class JoinTest extends AbstractQueryTest {
                 getSqlClient().createQuery(AuthorTable.class, (q, author) -> {
                     q.where(
                             author
-                                    .<BookTable>join("books")
+                                    .asTableEx()
+                                    .books()
                                     .id()
                                     .in(Arrays.asList(learningGraphQLId1, learningGraphQLId2))
                     );
@@ -175,7 +182,8 @@ public class JoinTest extends AbstractQueryTest {
                 getSqlClient().createQuery(BookStoreTable.class, (q, store) -> {
                     q.where(
                             store
-                                    .<BookTable>join("books")
+                                    .asTableEx()
+                                    .books()
                                     .id()
                                     .in(Arrays.asList(learningGraphQLId1, learningGraphQLId2))
                     );

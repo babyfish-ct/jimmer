@@ -121,6 +121,7 @@ public class InverseJoinTest extends AbstractQueryTest {
                                     .firstName()
                                     .eq("Alex").or(
                                             store
+                                                    .asTableEx()
                                                     .<BookTable>join("books", JoinType.LEFT)
                                                     .<AuthorTable>join("authors", JoinType.LEFT)
                                                     .firstName()

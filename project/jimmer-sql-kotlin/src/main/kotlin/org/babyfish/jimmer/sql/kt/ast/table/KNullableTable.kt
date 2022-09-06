@@ -16,4 +16,6 @@ interface KNullableTable<E: Any> : KTable<E>, Selection<E?> {
     override fun <X: Any> inverseJoinList(backProp: KProperty1<X, List<E>>): KNullableTable<X>
 
     fun fetch(fetcher: Fetcher<E>): Selection<E?>
+
+    override fun asTableEx(): KNullableTableEx<E>
 }
