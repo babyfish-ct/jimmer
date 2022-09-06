@@ -8,11 +8,8 @@ import TabItem from '@theme/TabItem';
 
 ## Add dependencies
 
-<Tabs groupId="language">
-<TabItem value="java" label="Java project">
-
-<Tabs groupId="buildTool">
-<TabItem value="gralde" label="Gralde">
+<Tabs groupId="buildScript">
+<TabItem value="java" label="Java(Gradle)">
 
 ```groovy title="build.gradle"
 depdencies {
@@ -23,9 +20,9 @@ depdencies {
 ```
 
 </TabItem>
-<TabItem value="maven" label="Maven">
+<TabItem value="java-maven" label="Java(Maven)">
 
-```xml
+```xml title="pom.xml"
 <dependencies>
     <dependency>
         <groupId>org.babyfish.jimmer</groupId>
@@ -55,10 +52,8 @@ depdencies {
 ```
 
 </TabItem>
-</Tabs>
 
-</TabItem>
-<TabItem value="kotlin" label="Kotlin project">
+<TabItem value="kotlin" label="Kotlin(Gradle)">
 
 ```kotlin title="build.gradle.kts"
 plugins {
@@ -83,6 +78,63 @@ kotlin {
         kotlin.srcDir("build/generated/ksp/main/kotlin")
     }
 }
+```
+
+</TabItem>
+<TabItem value="kotlin-maven" label="Kotlin(Maven)">
+
+```xml title="pom.xml"
+<dependency>
+    <groupId>org.babyfish.jimmer</groupId>
+    <artifactId>jimmer-core-kotlin</artifactId>
+    <version>0.1.29</version>
+</dependency>
+
+<build>
+    <sourceDirectory>src/main/kotlin</sourceDirectory>
+    <testSourceDirectory>src/test/kotlin</testSourceDirectory>
+
+    <plugins>
+        <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <version>${kotlin.version}</version>
+            <executions>
+                <execution>
+                    <id>compile</id>
+                    <phase>compile</phase>
+                    <goals>
+                        <goal>compile</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>test-compile</id>
+                    <phase>test-compile</phase>
+                    <goals>
+                        <goal>test-compile</goal>
+                    </goals>
+                </execution>
+            </executions>
+            <configuration>
+                <compilerPlugins>
+                    <compilerPlugin>ksp</compilerPlugin>
+                </compilerPlugins>
+            </configuration>
+            <dependencies>
+                <dependency>
+                    <groupId>com.dyescape</groupId>
+                    <artifactId>kotlin-maven-symbol-processing</artifactId>
+                    <version>1.3</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.babyfish.jimmer</groupId>
+                    <artifactId>jimmer-ksp</artifactId>
+                    <version>0.1.29</version>
+                </dependency>
+            </dependencies>
+        </plugin>
+    </plugins>
+</build>
 ```
 
 </TabItem>
