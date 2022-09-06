@@ -6,7 +6,9 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullablePropExpressionImpl
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KNullableTableEx
+import org.babyfish.jimmer.sql.kt.ast.table.KTableEx
 import org.babyfish.jimmer.sql.kt.toImmutableProp
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -49,4 +51,7 @@ internal class KNullableTableExImpl<E: Any>(
 
     override fun fetch(fetcher: Fetcher<E>): Selection<E?> =
         javaTable.fetch(fetcher)
+
+    override fun asTableEx(): KNullableTableEx<E> =
+        KNullableTableExImpl(javaTable.asTableEx() as TableImplementor<E>)
 }

@@ -50,4 +50,6 @@ public interface Table<E> extends Selection<E> {
     );
 
     Selection<E> fetch(Fetcher<E> fetcher);
+
+    TableEx<E> asTableEx();
 }

@@ -27,6 +27,8 @@ interface KTable<E: Any> {
     fun <X: Any> inverseOuterJoin(targetType: KClass<X>, backProp: String): KNullableTable<X>
     fun <X: Any> inverseOuterJoinReference(backProp: KProperty1<X, E?>): KNullableTable<X>
     fun <X: Any> inverseOuterJoinList(backProp: KProperty1<X, List<E>>): KNullableTable<X>
+
+    fun asTableEx(): KTableEx<E>
 }
 
 fun KTable<*>.isNull(): KNonNullExpression<Boolean> {

@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullablePropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
+import org.babyfish.jimmer.sql.kt.ast.table.KTableEx
 import org.babyfish.jimmer.sql.kt.toImmutableProp
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -57,4 +58,7 @@ internal class KNonNullTableExImpl<E: Any>(
 
     override fun fetch(fetcher: Fetcher<E>): Selection<E> =
         javaTable.fetch(fetcher)
+
+    override fun asTableEx(): KNonNullTableEx<E> =
+        KNonNullTableExImpl(javaTable.asTableEx() as TableImplementor<E>)
 }
