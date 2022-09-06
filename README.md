@@ -32,7 +32,7 @@ A revolutionary ORM framework for both java and kotlin.
 
 The project provides complete documentation.
 
-Please view [**jimmer documentation**](https://babyfish-ct.github.io/jimmer/) to know everything.
+Please view [**documentation**](https://babyfish-ct.github.io/jimmer/)*(Both english & chinese)* to know everything.
 
 ## 4. Examples:
 
