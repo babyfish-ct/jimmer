@@ -9,12 +9,15 @@ import TabItem from '@theme/TabItem';
 ## 引入依赖
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java项目">
+
+<Tabs groupId="buildTool">
+<TabItem value="gralde" label="Gralde">
 
 ```groovy title="build.gradle"
 depdencies {
     
-    implementation 'org.babyfish.jimmer:jimmer-sql:0.1.29'
+    implementation 'org.babyfish.jimmer:jimmer-core:0.1.29'
     annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.1.29'
 
     runtimeOnly 'com.h2database:h2:2.1.212'
@@ -22,7 +25,42 @@ depdencies {
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="maven" label="Maven">
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.babyfish.jimmer</groupId>
+        <artifactId>jimmer-core</artifactId>
+        <version>0.1.29</version>
+    </dependency>
+</dependencies>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.0</version>
+            <configuration>
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>org.babyfish.jimmer</groupId>
+                        <artifactId>jimmer-apt</artifactId>
+                        <version>0.1.29</version>
+                    </path>
+                </annotationProcessorPaths>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+</TabItem>
+</Tabs>
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin项目">
 
 ```kotlin title="build.gradle.kts"
 plugins {
@@ -34,7 +72,7 @@ plugins {
 depdencies {
     
     // 第二步: 添加jimmer-sql-kotlin
-    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.1.29")
+    implementation("org.babyfish.jimmer:jimmer-core-kotlin:0.1.29")
 
     // 第三步: 应用ksp插件
 	ksp("org.babyfish.jimmer:jimmer-ksp:0.1.29")
