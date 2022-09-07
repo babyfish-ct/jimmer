@@ -24,7 +24,7 @@ abstract class ComparisonPredicate extends AbstractPredicate {
     @Override
     public void accept(@NotNull AstVisitor visitor) {
         ((Ast) left).accept(visitor);
-        ((Ast) left).accept(visitor);
+        ((Ast) right).accept(visitor);
     }
 
     @Override

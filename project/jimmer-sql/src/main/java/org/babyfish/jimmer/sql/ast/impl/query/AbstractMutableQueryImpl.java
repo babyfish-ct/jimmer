@@ -217,6 +217,7 @@ public abstract class AbstractMutableQueryImpl
         private void handle(TableImplementor<?> table, boolean isId) {
             if (table.getDestructive() != TableRowCountDestructive.NONE) {
                 if (isId) {
+                    getSqlBuilder().useTableId(table);
                     use(table.getParent());
                 } else {
                     use(table);

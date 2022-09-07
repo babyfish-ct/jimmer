@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.query
 import org.babyfish.jimmer.sql.ast.query.OrderMode
 import org.babyfish.jimmer.sql.kt.ast.expression.count
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
+import org.babyfish.jimmer.sql.kt.ast.expression.ilike
 import org.babyfish.jimmer.sql.kt.ast.expression.sql
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.*
@@ -283,6 +284,38 @@ class QueryTest : AbstractQueryTest() {
                     it.toString()
                 )
             }
+        }
+    }
+
+    @Test
+    fun testUnusedQuery() {
+        executeAndExpect(
+            sqlClient.createQuery(BookStore::class) {
+                table.asTableEx().books
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
+                    |from BOOK_STORE as tb_1_""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testUsedQuery() {
+        executeAndExpect(
+            sqlClient.createQuery(BookStore::class) {
+                where(table.asTableEx().books.name ilike "sql")
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
+                    |from BOOK_STORE as tb_1_ 
+                    |inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID 
+                    |where lower(tb_2_.NAME) like ?""".trimMargin()
+            )
         }
     }
 }
