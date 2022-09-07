@@ -21,6 +21,7 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.dialect.UpdateJoin;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -165,7 +166,7 @@ public class MutableUpdateImpl
         boolean withTargetPrefix =
                 updateJoin != null &&
                         updateJoin.isJoinedTableUpdatable() &&
-                        table.getChildren().stream().anyMatch(it -> builder.isTableUsed(it));
+                        table.getChildren().stream().anyMatch(it -> builder.getTableUsedState(it) == TableUsedState.USED);
         String separator = "";
         for (Map.Entry<Target, Expression<?>> e : assignmentMap.entrySet()) {
             builder.sql(separator);
@@ -185,7 +186,7 @@ public class MutableUpdateImpl
 
     private void renderTables(SqlBuilder builder) {
         TableImplementor<?> table = TableImplementor.unwrap(this.table);
-        if (table.getChildren().stream().anyMatch(it -> builder.isTableUsed(it))) {
+        if (table.getChildren().stream().anyMatch(it -> builder.getTableUsedState(it) == TableUsedState.USED)) {
             switch (getSqlClient().getDialect().getUpdateJoin().getFrom()) {
                 case AS_ROOT:
                     table.renderTo(builder);
@@ -207,7 +208,7 @@ public class MutableUpdateImpl
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         if (updateJoin != null &&
                 updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
-                table.getChildren().stream().anyMatch(it -> builder.isTableUsed(it))
+                table.getChildren().stream().anyMatch(it -> builder.getTableUsedState(it) == TableUsedState.USED)
         ) {
             for (TableImplementor<?> child : table.getChildren()) {
                 child.renderJoinAsFrom(builder, TableImplementor.RenderMode.DEEPER_JOIN_ONLY);
@@ -221,7 +222,7 @@ public class MutableUpdateImpl
         String separator = " where ";
         if (updateJoin != null &&
                 updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
-                table.getChildren().stream().anyMatch(builder::isTableUsed)
+                table.getChildren().stream().anyMatch(it -> builder.getTableUsedState(it) == TableUsedState.USED)
         ) {
             for (TableImplementor<?> child : table.getChildren()) {
                 builder.sql(separator);
@@ -290,7 +291,7 @@ public class MutableUpdateImpl
         }
 
         private void validateTable(TableImplementor<?> tableImpl) {
-            if (getSqlBuilder().isTableUsed(tableImpl)) {
+            if (getSqlBuilder().getTableUsedState(tableImpl) == TableUsedState.USED) {
                 if (tableImpl.getParent() != null && dialect.getUpdateJoin() == null) {
                     throw new ExecutionException(
                             "Table joins for update statement is forbidden by the current dialect, " +

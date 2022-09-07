@@ -21,6 +21,7 @@ public class UseTableVisitor extends AstVisitor {
                 use(tableImpl);
             }
         } else if (prop.isId()) {
+            getSqlBuilder().useTableId(tableImpl);
             use(tableImpl.getParent());
         } else {
             use(tableImpl);

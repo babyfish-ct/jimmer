@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.runtime;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 
@@ -13,7 +14,7 @@ public class SqlBuilder {
 
     private JSqlClient sqlClient;
 
-    private Set<Table<?>> usedTables;
+    private Map<Table<?>, TableUsedState> tableUsedStateMap;
 
     private SqlBuilder parent;
 
@@ -27,24 +28,27 @@ public class SqlBuilder {
 
     public SqlBuilder(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
-        this.usedTables = new HashSet<>();
+        this.tableUsedStateMap = new HashMap<>();
     }
 
     private SqlBuilder(SqlBuilder parent) {
         this.sqlClient = parent.sqlClient;
-        this.usedTables = parent.usedTables;
+        this.tableUsedStateMap = parent.tableUsedStateMap;
         this.parent = parent;
         parent.childBuilderCount++;
     }
 
-    public void useTable(Table<?> table) {
-        if (table != null) {
-            usedTables.add(table);
-        }
+    public void useTableId(Table<?> table) {
+        tableUsedStateMap.computeIfAbsent(table, t -> TableUsedState.ID_ONLY);
     }
 
-    public boolean isTableUsed(Table<?> table) {
-        return usedTables.contains(table);
+    public void useTable(Table<?> table) {
+        tableUsedStateMap.put(table, TableUsedState.USED);
+    }
+
+    public TableUsedState getTableUsedState(Table<?> table) {
+        TableUsedState state = tableUsedStateMap.get(table);
+        return state != null ? state : TableUsedState.NONE;
     }
 
     public SqlBuilder sql(String sql) {

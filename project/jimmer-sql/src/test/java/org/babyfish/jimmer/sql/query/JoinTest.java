@@ -29,6 +29,35 @@ public class JoinTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testUnused() {
+        executeAndExpect(
+                getSqlClient().createQuery(BookStoreTable.class, (q, store) -> {
+                    store.asTableEx().books();
+                    return q.select(store);
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                    "from BOOK_STORE as tb_1_"
+                    );
+                }
+        );
+        executeAndExpect(
+                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                    ((BookTableEx)book).authors();
+                    return q.select(book);
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_"
+                    );
+                }
+        );
+    }
+
+    @Test
     public void testMergedJoinFromParentToChild() {
         executeAndExpect(
                 getSqlClient().createQuery(BookStoreTable.class, (q, store) -> {

@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -322,7 +323,8 @@ class TableImpl<E> implements TableImplementor<E> {
         if (mode == RenderMode.NORMAL) {
             throw new IllegalStateException("Internal bug: renderJoinAsFrom does not accept render mode ALL");
         }
-        if (builder.isTableUsed(this)) {
+        TableUsedState usedState = builder.getTableUsedState(this);
+        if (usedState != TableUsedState.NONE) {
             renderSelf(builder, mode);
             if (mode == RenderMode.DEEPER_JOIN_ONLY) {
                 for (TableImpl<?> childTable : childTableMap.values()) {
@@ -334,8 +336,9 @@ class TableImpl<E> implements TableImplementor<E> {
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        renderSelf(builder, RenderMode.NORMAL);
-        if (parent == null || builder.isTableUsed(this)) {
+        TableUsedState usedState = builder.getTableUsedState(this);
+        if (parent == null || usedState != TableUsedState.NONE) {
+            renderSelf(builder, RenderMode.NORMAL);
             for (TableImpl<?> childTable : childTableMap.values()) {
                 childTable.renderTo(builder);
             }
@@ -359,7 +362,7 @@ class TableImpl<E> implements TableImplementor<E> {
     private void renderJoin(SqlBuilder builder, RenderMode mode) {
 
         if (joinProp instanceof AssociationProp) {
-            if (builder.isTableUsed(this)) {
+            if (builder.getTableUsedState(this) == TableUsedState.USED) {
                 renderJoinImpl(
                         builder,
                         joinType,
@@ -378,7 +381,7 @@ class TableImpl<E> implements TableImplementor<E> {
         JoinType joinType = this.joinType;
         MiddleTable middleTable = null;
         if (joinProp.getStorage() instanceof MiddleTable) {
-            middleTable = (MiddleTable) joinProp.getStorage();
+            middleTable = joinProp.getStorage();
         }
 
         if (middleTable != null) {
@@ -392,7 +395,7 @@ class TableImpl<E> implements TableImplementor<E> {
                     middleTable.getJoinColumnName(),
                     mode
             );
-            if (builder.isTableUsed(this) && (
+            if (builder.getTableUsedState(this) == TableUsedState.USED && (
                     mode == RenderMode.NORMAL ||
                             mode == RenderMode.DEEPER_JOIN_ONLY)
             ) {
@@ -407,7 +410,7 @@ class TableImpl<E> implements TableImplementor<E> {
                         RenderMode.NORMAL
                 );
             }
-        } else if (builder.isTableUsed(this)) {
+        } else if (builder.getTableUsedState(this) == TableUsedState.USED) {
             renderJoinImpl(
                     builder,
                     joinType,
@@ -427,7 +430,7 @@ class TableImpl<E> implements TableImplementor<E> {
         JoinType joinType = this.joinType;
         MiddleTable middleTable = null;
         if (joinProp.getStorage() instanceof MiddleTable) {
-            middleTable = (MiddleTable) joinProp.getStorage();
+            middleTable = joinProp.getStorage();
         }
 
         if (middleTable != null) {
@@ -441,7 +444,7 @@ class TableImpl<E> implements TableImplementor<E> {
                     middleTable.getTargetJoinColumnName(),
                     mode
             );
-            if (sqlBuilder.isTableUsed(this) && (
+            if (sqlBuilder.getTableUsedState(this) == TableUsedState.USED && (
                     mode == RenderMode.NORMAL ||
                             mode == RenderMode.DEEPER_JOIN_ONLY)
             ) {
