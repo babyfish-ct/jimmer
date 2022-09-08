@@ -171,7 +171,7 @@ public class SubQueryTest extends AbstractQueryTest {
                                         book.price().avg().coalesce(BigDecimal.ZERO)
                                 );
                             });
-                    q.orderBy(subQuery, OrderMode.DESC);
+                    q.orderBy(subQuery.desc());
                     return q.select(store, subQuery);
                 }),
                 ctx -> {

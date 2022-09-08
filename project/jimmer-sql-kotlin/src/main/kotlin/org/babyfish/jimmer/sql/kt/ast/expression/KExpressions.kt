@@ -1,8 +1,12 @@
 package org.babyfish.jimmer.sql.kt.ast.expression
 
+import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.LikeMode
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection
+import org.babyfish.jimmer.sql.ast.query.NullOrderMode
+import org.babyfish.jimmer.sql.ast.query.Order
+import org.babyfish.jimmer.sql.ast.query.OrderMode
 import org.babyfish.jimmer.sql.ast.tuple.*
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.*
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.ConstantExpression
@@ -480,3 +484,11 @@ fun exists(subQuery: KMutableSubQuery<*, *>): KNonNullExpression<Boolean> =
 
 fun notExists(subQuery: KMutableSubQuery<*, *>): KNonNullExpression<Boolean> =
     ExistsPredicate(true, subQuery.select(constant(1)))
+
+
+
+fun KExpression<*>.asc() =
+    Order(this as Expression<*>, OrderMode.ASC, NullOrderMode.UNSPECIFIED)
+
+fun KExpression<*>.desc() =
+    Order(this as Expression<*>, OrderMode.DESC, NullOrderMode.UNSPECIFIED)

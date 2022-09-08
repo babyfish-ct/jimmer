@@ -1,10 +1,6 @@
 package org.babyfish.jimmer.sql.kt.query
 
-import org.babyfish.jimmer.sql.ast.query.OrderMode
-import org.babyfish.jimmer.sql.kt.ast.expression.count
-import org.babyfish.jimmer.sql.kt.ast.expression.eq
-import org.babyfish.jimmer.sql.kt.ast.expression.ilike
-import org.babyfish.jimmer.sql.kt.ast.expression.sql
+import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.*
 import kotlin.test.Test
@@ -64,7 +60,7 @@ class QueryTest : AbstractQueryTest() {
             sqlClient.createQuery(Book::class) {
                 where(table.store.name eq "MANNING")
                 orderBy(table.name)
-                orderBy(table.edition, OrderMode.DESC)
+                orderBy(table.edition.desc())
                 select(table)
             }
         ) {

@@ -34,12 +34,12 @@ public abstract class AbstractMutableQueryImpl
     protected AbstractMutableQueryImpl(
             TableAliasAllocator tableAliasAllocator,
             JSqlClient sqlClient,
-            ImmutableType immutableType
+            ImmutableType immutableType,
+            boolean wrapTable
     ) {
         super(tableAliasAllocator, sqlClient);
-        this.table = TableWrappers.wrap(
-                TableImplementor.create(this, immutableType)
-        );
+        TableImplementor<?> table = TableImplementor.create(this, immutableType);
+        this.table = wrapTable ? TableWrappers.wrap(table) : table;
     }
 
     @Override
@@ -70,21 +70,18 @@ public abstract class AbstractMutableQueryImpl
     }
 
     @Override
-    public AbstractMutableQueryImpl orderBy(Expression<?> expression) {
+    public AbstractMutableQueryImpl orderBy(Expression<?> ... expressions) {
         validateMutable();
-        return (AbstractMutableQueryImpl)MutableQuery.super.orderBy(expression);
+        return (AbstractMutableQueryImpl)MutableQuery.super.orderBy(expressions);
     }
 
     @Override
-    public AbstractMutableQueryImpl orderBy(Expression<?> expression, OrderMode orderMode) {
-        validateMutable();
-        return (AbstractMutableQueryImpl) MutableQuery.super.orderBy(expression, orderMode);
-    }
-
-    @Override
-    public AbstractMutableQueryImpl orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
-        validateMutable();
-        this.orders.add(new Order(expression, orderMode, nullOrderMode));
+    public Sortable orderBy(Order... orders) {
+        for (Order order : orders) {
+            if (order != null) {
+                this.orders.add(order);
+            }
+        }
         return this;
     }
 
@@ -95,9 +92,12 @@ public abstract class AbstractMutableQueryImpl
     }
 
     @Override
-    public void freeze() {
+    public boolean freeze() {
+        if (!super.freeze()) {
+            return false;
+        }
         havingPredicates = mergePredicates(havingPredicates);
-        super.freeze();
+        return true;
     }
 
     void accept(
@@ -123,11 +123,11 @@ public abstract class AbstractMutableQueryImpl
         if (withoutSortingAndPaging) {
             AstVisitor ignoredVisitor = new UseJoinOfIgnoredClauseVisitor(visitor.getSqlBuilder());
             for (Order order : orders) {
-                ((Ast)order.expression).accept(ignoredVisitor);
+                ((Ast)order.getExpression()).accept(ignoredVisitor);
             }
         } else {
             for (Order order : orders) {
-                ((Ast)order.expression).accept(visitor);
+                ((Ast)order.getExpression()).accept(visitor);
             }
         }
         if (overriddenSelections != null) {
@@ -166,16 +166,17 @@ public abstract class AbstractMutableQueryImpl
             String separator = " order by ";
             for (Order order : orders) {
                 builder.sql(separator);
-                ((Ast)order.expression).renderTo(builder);
-                if (order.orderMode == OrderMode.ASC) {
+                ((Ast)order.getExpression()).renderTo(builder);
+                if (order.getOrderMode() == OrderMode.ASC) {
                     builder.sql(" asc");
                 } else {
                     builder.sql(" desc");
                 }
-                if (order.nullOrderMode == NullOrderMode.NULLS_FIRST) {
-                    builder.sql(" nulls first");
-                } else if (order.nullOrderMode == NullOrderMode.NULLS_LAST) {
-                    builder.sql(" nulls last");
+                switch (order.getNullOrderMode()) {
+                    case NULLS_FIRST:
+                        builder.sql(" nulls first");
+                    case NULLS_LAST:
+                        builder.sql(" nulls last");
                 }
                 separator = ", ";
             }
@@ -184,18 +185,6 @@ public abstract class AbstractMutableQueryImpl
 
     protected boolean isGroupByClauseUsed() {
         return !this.groupByExpressions.isEmpty();
-    }
-
-    private static class Order {
-        Expression<?> expression;
-        OrderMode orderMode;
-        NullOrderMode nullOrderMode;
-
-        public Order(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
-            this.expression = expression;
-            this.orderMode = orderMode;
-            this.nullOrderMode = nullOrderMode;
-        }
     }
 
     private static class UseJoinOfIgnoredClauseVisitor extends AstVisitor {

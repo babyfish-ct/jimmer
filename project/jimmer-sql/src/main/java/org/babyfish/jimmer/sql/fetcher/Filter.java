@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.query.NullOrderMode;
+import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.CacheFilter;
@@ -165,9 +166,11 @@ public interface Filter<T extends Table<?>> extends CacheFilter {
             public void apply(FilterArgs<T> args) {
                 for (SortedField sortedField : sortedFields) {
                     args.orderBy(
-                            args.getTable().get(sortedField.prop),
-                            sortedField.orderMode,
-                            sortedField.nullOrderMode
+                            new Order(
+                                args.getTable().get(sortedField.prop),
+                                sortedField.orderMode,
+                                sortedField.nullOrderMode
+                            )
                     );
                 }
             }

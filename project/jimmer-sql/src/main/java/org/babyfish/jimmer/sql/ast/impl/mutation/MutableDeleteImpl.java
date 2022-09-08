@@ -28,7 +28,7 @@ public class MutableDeleteImpl
 
     public MutableDeleteImpl(JSqlClient sqlClient, ImmutableType immutableType) {
         super(new TableAliasAllocator(), sqlClient);
-        deleteQuery = new MutableRootQueryImpl<>(sqlClient, immutableType);
+        deleteQuery = new MutableRootQueryImpl<>(sqlClient, immutableType, true);
     }
 
     @SuppressWarnings("unchecked")

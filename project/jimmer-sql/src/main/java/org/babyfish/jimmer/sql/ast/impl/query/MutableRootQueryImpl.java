@@ -6,10 +6,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
-import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
-import org.babyfish.jimmer.sql.ast.query.NullOrderMode;
-import org.babyfish.jimmer.sql.ast.query.OrderMode;
+import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 
@@ -22,9 +19,10 @@ public class MutableRootQueryImpl<T extends Table<?>>
 
     public MutableRootQueryImpl(
             JSqlClient sqlClient,
-            ImmutableType immutableType
+            ImmutableType immutableType,
+            boolean wrapTable
     ) {
-        super(new TableAliasAllocator(), sqlClient, immutableType);
+        super(new TableAliasAllocator(), sqlClient, immutableType, wrapTable);
     }
 
     @Override
@@ -182,19 +180,13 @@ public class MutableRootQueryImpl<T extends Table<?>>
 
     @SuppressWarnings("unchecked")
     @Override
-    public MutableRootQueryImpl<T> orderBy(Expression<?> expression) {
-        return (MutableRootQueryImpl<T>) super.orderBy(expression);
+    public MutableRootQueryImpl<T> orderBy(Expression<?> ... expressions) {
+        return (MutableRootQueryImpl<T>) super.orderBy(expressions);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public MutableRootQueryImpl<T> orderBy(Expression<?> expression, OrderMode orderMode) {
-        return (MutableRootQueryImpl<T>) super.orderBy(expression, orderMode);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public MutableRootQueryImpl<T> orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
-        return (MutableRootQueryImpl<T>) super.orderBy(expression, orderMode, nullOrderMode);
+    public MutableRootQueryImpl<T> orderBy(Order... orders) {
+        return (MutableRootQueryImpl<T>) super.orderBy(orders);
     }
 }

@@ -3,6 +3,9 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.query.NullOrderMode;
+import org.babyfish.jimmer.sql.ast.query.Order;
+import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 
 import java.util.Arrays;
@@ -106,5 +109,15 @@ public interface ExpressionImplementor<T> extends Expression<T> {
     @Override
     default CoalesceBuilder<T> coalesceBuilder() {
         return new CoalesceBuilder<>(this);
+    }
+
+    @Override
+    default Order asc() {
+        return new Order(this, OrderMode.ASC, NullOrderMode.UNSPECIFIED);
+    }
+
+    @Override
+    default Order desc() {
+        return new Order(this, OrderMode.DESC, NullOrderMode.UNSPECIFIED);
     }
 }

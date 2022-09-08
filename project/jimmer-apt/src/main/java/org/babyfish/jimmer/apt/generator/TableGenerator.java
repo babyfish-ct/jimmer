@@ -85,7 +85,8 @@ public class TableGenerator {
                     )
             );
         }
-        addConstructor();
+        addDefaultConstructor();
+        addParameterizedConstructor();
         try {
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.isList() == isTableEx) {
@@ -100,7 +101,16 @@ public class TableGenerator {
         }
     }
 
-    private void addConstructor() {
+    private void addDefaultConstructor() {
+        MethodSpec.Builder builder = MethodSpec
+                .constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
+                .addComment("For fluent-API")
+                .addStatement("super(null)");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addParameterizedConstructor() {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
                 .addModifiers(Modifier.PUBLIC);

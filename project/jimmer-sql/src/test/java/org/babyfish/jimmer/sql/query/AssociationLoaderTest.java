@@ -109,7 +109,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                                 BookStoreTableEx::books
                         )
                         .forFilter(args -> {
-                            args.orderBy(args.getTable().edition(), OrderMode.DESC);
+                            args.orderBy(args.getTable().edition().desc());
                         })
                         .loadCommand(
                                 BookStoreDraft.$.produce(store -> {

@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.cache.CacheConfig;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.cache.Caches;
+import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.babyfish.jimmer.sql.loader.ListLoader;
 import org.babyfish.jimmer.sql.loader.ReferenceLoader;
 import org.babyfish.jimmer.sql.loader.ValueLoader;
@@ -49,6 +50,8 @@ public interface JSqlClient {
     int getDefaultBatchSize();
 
     int getDefaultListBatchSize();
+
+    Fluent newFluent();
 
     <T extends Table<?>, R> ConfigurableRootQuery<T, R> createQuery(
             Class<T> tableType,

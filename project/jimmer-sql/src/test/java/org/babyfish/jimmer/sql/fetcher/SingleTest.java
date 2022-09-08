@@ -68,7 +68,7 @@ public class SingleTest extends AbstractQueryTest {
                                             it -> it.batch(1).limit(3, 1).filter(args -> {
                                                 args
                                                         .orderBy(args.getTable().name())
-                                                        .orderBy(args.getTable().edition(), OrderMode.DESC);
+                                                        .orderBy(args.getTable().edition().desc());
                                             })
                                     )
                             )
@@ -160,7 +160,7 @@ public class SingleTest extends AbstractQueryTest {
                                     AuthorFetcher.$.firstName().lastName().books(
                                             BookFetcher.$.name().edition(),
                                             it -> it.batch(1).limit(2).filter(args -> {
-                                                args.orderBy(args.getTable().edition(), OrderMode.DESC);
+                                                args.orderBy(args.getTable().edition().desc());
                                             })
                                     )
                             )

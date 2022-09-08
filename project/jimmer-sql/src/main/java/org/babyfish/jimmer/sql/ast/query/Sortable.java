@@ -11,32 +11,17 @@ public interface Sortable extends Filterable {
     Sortable where(Predicate... predicates);
 
     @OldChain
-    default Sortable orderBy(
-            Expression<?> expression
-    ) {
-        return orderBy(
-                expression,
-                OrderMode.ASC,
-                NullOrderMode.UNSPECIFIED
-        );
+    default Sortable orderBy(Expression<?> ... expressions) {
+        Order[] orders = new Order[expressions.length];
+        for (int i = orders.length - 1; i >= 0; --i) {
+            Expression<?> expression = expressions[i];
+            if (expression != null) {
+                orders[i] = new Order(expression, OrderMode.ASC, NullOrderMode.UNSPECIFIED);
+            }
+        }
+        return orderBy(orders);
     }
 
     @OldChain
-    default Sortable orderBy(
-            Expression<?> expression,
-            OrderMode orderMode
-    ) {
-        return orderBy(
-                expression,
-                orderMode,
-                NullOrderMode.UNSPECIFIED
-        );
-    }
-
-    @OldChain
-    Sortable orderBy(
-            Expression<?> expression,
-            OrderMode orderMode,
-            NullOrderMode nullOrderMode
-    );
+    Sortable orderBy(Order ... orders);
 }

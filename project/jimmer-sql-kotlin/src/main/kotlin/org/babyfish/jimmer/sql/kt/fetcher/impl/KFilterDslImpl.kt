@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.fetcher.impl
 import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl
 import org.babyfish.jimmer.sql.ast.query.NullOrderMode
+import org.babyfish.jimmer.sql.ast.query.Order
 import org.babyfish.jimmer.sql.ast.query.OrderMode
 import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
@@ -23,20 +24,24 @@ internal class KFilterDslImpl<E: Any>(
     override val table: KNonNullTableEx<E> =
         KNonNullTableExImpl(javaQuery.getTable())
 
-    override fun where(vararg predicates: KNonNullExpression<Boolean>) {
-        javaQuery.where(*predicates.map { it.toJavaPredicate() }.toTypedArray())
+    override fun where(vararg predicates: KNonNullExpression<Boolean>?) {
+        javaQuery.where(*predicates.mapNotNull { it?.toJavaPredicate() }.toTypedArray())
     }
 
-    override fun orderBy(expression: KExpression<*>, orderMode: OrderMode, nullOrderMode: NullOrderMode) {
-        javaQuery.orderBy(expression as Expression<*>, orderMode, nullOrderMode)
+    override fun orderBy(vararg expressions: KExpression<*>?) {
+        javaQuery.orderBy(*expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
+    }
+
+    override fun orderBy(vararg orders: Order?) {
+        javaQuery.orderBy(*orders)
     }
 
     override fun groupBy(vararg expressions: KExpression<*>) {
         javaQuery.groupBy(*expressions.map { it as Expression<*> }.toTypedArray())
     }
 
-    override fun having(vararg predicates: KNonNullExpression<Boolean>) {
-        javaQuery.having(*predicates.map { it.toJavaPredicate() }.toTypedArray())
+    override fun having(vararg predicates: KNonNullExpression<Boolean>?) {
+        javaQuery.having(*predicates.mapNotNull { it?.toJavaPredicate() }.toTypedArray())
     }
 
     override val subQueries: KSubQueries<E> by lazy {

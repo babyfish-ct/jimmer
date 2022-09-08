@@ -41,7 +41,7 @@ class ComplexExprTest : AbstractQueryTest() {
             sqlClient.createQuery(Book::class) {
                 where(table.name ilike "TYPEscript")
                 orderBy(table.name)
-                orderBy(table.edition, OrderMode.DESC)
+                orderBy(table.edition.desc())
                 select(
                     table.name,
                     case()
