@@ -9,8 +9,19 @@ A revolutionary ORM framework for both java and kotlin.
 
 ## 1，Video links
 
-- English: https://www.youtube.com/watch?v=Rt5zNv0YR2E
-- Chinese: https://www.bilibili.com/video/BV1kd4y1A7K3
+<table>
+   <tr>
+      <td>English</td>
+      <td>https://www.youtube.com/watch?v=Rt5zNv0YR2E</td>
+   </tr>
+   <tr>
+      <td rowspan="2">Chinese</td>
+      <td>Global introduction: https://www.bilibili.com/video/BV1kd4y1A7K3</td>
+   </tr>
+   <tr>
+      <td>Table Join Topci: https://www.bilibili.com/video/BV19t4y177PX</td>
+   </tr>
+<table>
 
 ## 2. Bechmark
 
