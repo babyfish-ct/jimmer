@@ -3,6 +3,8 @@ package org.babyfish.jimmer.sql;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.fluent.Fluent;
+import org.babyfish.jimmer.sql.fluent.FluentImpl;
 import org.babyfish.jimmer.sql.loader.ListLoader;
 import org.babyfish.jimmer.sql.loader.ReferenceLoader;
 import org.babyfish.jimmer.sql.loader.ValueLoader;
@@ -166,6 +168,11 @@ class JSqlClientImpl implements JSqlClient {
     @Override
     public int getDefaultListBatchSize() {
         return defaultListBatchSize;
+    }
+
+    @Override
+    public Fluent newFluent() {
+        return new FluentImpl(this);
     }
 
     @Override

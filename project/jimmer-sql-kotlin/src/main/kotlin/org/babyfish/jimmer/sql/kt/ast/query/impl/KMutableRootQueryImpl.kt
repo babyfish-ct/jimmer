@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery
 import org.babyfish.jimmer.sql.ast.query.NullOrderMode
+import org.babyfish.jimmer.sql.ast.query.Order
 import org.babyfish.jimmer.sql.ast.query.OrderMode
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.ast.tuple.*
@@ -28,12 +29,16 @@ internal class KMutableRootQueryImpl<E: Any>(
     override val table: KNonNullTable<E> =
         KNonNullTableExImpl(javaQuery.getTable())
 
-    override fun where(vararg predicates: KNonNullExpression<Boolean>) {
-        javaQuery.where(*predicates.map { it.toJavaPredicate() }.toTypedArray())
+    override fun where(vararg predicates: KNonNullExpression<Boolean>?) {
+        javaQuery.where(*predicates.mapNotNull { it?.toJavaPredicate() }.toTypedArray())
     }
 
-    override fun orderBy(expression: KExpression<*>, orderMode: OrderMode, nullOrderMode: NullOrderMode) {
-        javaQuery.orderBy(expression as Expression<*>, orderMode, nullOrderMode)
+    override fun orderBy(vararg expressions: KExpression<*>?) {
+        javaQuery.orderBy(*expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
+    }
+
+    override fun orderBy(vararg orders: Order?) {
+        javaQuery.orderBy(*orders)
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -41,8 +46,8 @@ internal class KMutableRootQueryImpl<E: Any>(
         javaQuery.groupBy(*expressions.map { it as Expression<*>}.toTypedArray())
     }
 
-    override fun having(vararg predicates: KNonNullExpression<Boolean>) {
-        javaQuery.having(*predicates.map { it.toJavaPredicate() }.toTypedArray())
+    override fun having(vararg predicates: KNonNullExpression<Boolean>?) {
+        javaQuery.having(*predicates.mapNotNull { it?.toJavaPredicate() }.toTypedArray())
     }
 
     override fun <T> select(selection: Selection<T>): KConfigurableRootQuery<E, T> =

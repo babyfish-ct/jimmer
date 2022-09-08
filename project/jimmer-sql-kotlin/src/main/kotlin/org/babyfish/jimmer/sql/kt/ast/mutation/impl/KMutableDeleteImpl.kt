@@ -18,8 +18,8 @@ internal class KMutableDeleteImpl<E: Any>(
     override val table: KNonNullTableEx<E> =
         KNonNullTableExImpl(javaDelete.getTable())
 
-    override fun where(vararg predicates: KNonNullExpression<Boolean>) {
-        javaDelete.where(*predicates.map { it.toJavaPredicate() }.toTypedArray())
+    override fun where(vararg predicates: KNonNullExpression<Boolean>?) {
+        javaDelete.where(*predicates.map { it?.toJavaPredicate() }.toTypedArray())
     }
 
     override val subQueries: KSubQueries<E> =

@@ -15,20 +15,13 @@ public interface MutableRootQuery<T extends Table<?>> extends MutableQuery, Root
     @OldChain
     @SuppressWarnings("unchecked")
     @Override
-    default MutableRootQuery<T> orderBy(Expression<?> expression) {
-        return (MutableRootQuery<T>) MutableQuery.super.orderBy(expression);
-    }
-
-    @OldChain
-    @SuppressWarnings("unchecked")
-    @Override
-    default MutableRootQuery<T> orderBy(Expression<?> expression, OrderMode orderMode) {
-        return (MutableRootQuery<T>) MutableQuery.super.orderBy(expression, orderMode);
+    default MutableRootQuery<T> orderBy(Expression<?> ... expressions) {
+        return (MutableRootQuery<T>) MutableQuery.super.orderBy(expressions);
     }
 
     @OldChain
     @Override
-    MutableRootQuery<T> orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode);
+    MutableRootQuery<T> orderBy(Order ... orders);
 
     @OldChain
     @Override

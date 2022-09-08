@@ -13,20 +13,13 @@ public interface MutableSubQuery extends MutableQuery, SubSelectable {
 
     @OldChain
     @Override
-    default MutableSubQuery orderBy(Expression<?> expression) {
-        return (MutableSubQuery) MutableQuery.super.orderBy(expression);
-    }
-
-    @SuppressWarnings("unchecked")
-    @OldChain
-    @Override
-    default MutableSubQuery orderBy(Expression<?> expression, OrderMode orderMode) {
-        return (MutableSubQuery) MutableQuery.super.orderBy(expression, orderMode);
+    default MutableSubQuery orderBy(Expression<?> ... expressions) {
+        return (MutableSubQuery) MutableQuery.super.orderBy(expressions);
     }
 
     @OldChain
     @Override
-    MutableSubQuery orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode);
+    MutableSubQuery orderBy(Order ... orders);
 
     @OldChain
     @Override

@@ -4,10 +4,7 @@ import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
-import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery
-import org.babyfish.jimmer.sql.ast.query.MutableSubQuery
-import org.babyfish.jimmer.sql.ast.query.NullOrderMode
-import org.babyfish.jimmer.sql.ast.query.OrderMode
+import org.babyfish.jimmer.sql.ast.query.*
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.ast.tuple.*
 import org.babyfish.jimmer.sql.kt.KSubQueries
@@ -36,20 +33,24 @@ internal class KMutableSubQueryImpl<P: Any, E: Any>(
     override val parentTable: KNonNullTableEx<P> =
         KNonNullTableExImpl(javaSubQuery.parent.getTable())
 
-    override fun where(vararg predicates: KNonNullExpression<Boolean>) {
-        javaSubQuery.where(*predicates.map { it.toJavaPredicate() }.toTypedArray())
+    override fun where(vararg predicates: KNonNullExpression<Boolean>?) {
+        javaSubQuery.where(*predicates.mapNotNull { it?.toJavaPredicate() }.toTypedArray())
     }
 
-    override fun orderBy(expression: KExpression<*>, orderMode: OrderMode, nullOrderMode: NullOrderMode) {
-        javaSubQuery.orderBy(expression as Expression<*>, orderMode, nullOrderMode)
+    override fun orderBy(vararg expressions: KExpression<*>?) {
+        javaSubQuery.orderBy(*expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
+    }
+
+    override fun orderBy(vararg orders: Order?) {
+        javaSubQuery.orderBy(*orders)
     }
 
     override fun groupBy(vararg expressions: KExpression<*>) {
         javaSubQuery.groupBy(*expressions.map { it as Expression<*>}.toTypedArray())
     }
 
-    override fun having(vararg predicates: KNonNullExpression<Boolean>) {
-        javaSubQuery.having(*predicates.map { it.toJavaPredicate() }.toTypedArray())
+    override fun having(vararg predicates: KNonNullExpression<Boolean>?) {
+        javaSubQuery.having(*predicates.mapNotNull { it?.toJavaPredicate() }.toTypedArray())
     }
 
     override fun <T : Any> select(

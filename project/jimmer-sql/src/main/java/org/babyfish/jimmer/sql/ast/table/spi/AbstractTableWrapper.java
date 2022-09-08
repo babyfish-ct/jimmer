@@ -8,10 +8,11 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fluent.FluentSource;
 
 import java.util.function.Function;
 
-public abstract class AbstractTableWrapper<E> implements Table<E> {
+public abstract class AbstractTableWrapper<E> implements Table<E>, FluentSource<E> {
 
     protected Table<E> _raw;
 
@@ -19,12 +20,17 @@ public abstract class AbstractTableWrapper<E> implements Table<E> {
         this._raw = raw;
     }
 
+    // For fluent-API
+    @Override
     public void bind(Table<E> raw) {
         if (_raw != null) {
             throw new IllegalStateException("The current table wrapper has been bound");
         }
         if (raw == null) {
             throw new IllegalArgumentException("raw cannot be null");
+        }
+        if (raw instanceof AbstractTableWrapper<?>) {
+            throw new IllegalArgumentException("raw cannot be table wrapper");
         }
         _raw = raw;
     }

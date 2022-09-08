@@ -77,20 +77,14 @@ public class FilterArgsImpl<T extends Table<?>> implements FilterArgs<T> {
 
     @Override
     @OldChain
-    public Sortable orderBy(Expression<?> expression) {
-        return query.orderBy(expression);
+    public Sortable orderBy(Expression<?> ... expressions) {
+        return query.orderBy(expressions);
     }
 
     @Override
     @OldChain
-    public Sortable orderBy(Expression<?> expression, OrderMode orderMode) {
-        return query.orderBy(expression, orderMode);
-    }
-
-    @Override
-    @OldChain
-    public Sortable orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
-        return query.orderBy(expression, orderMode, nullOrderMode);
+    public Sortable orderBy(Order ... orders) {
+        return query.orderBy(orders);
     }
 
     @Override

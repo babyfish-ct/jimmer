@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast;
 
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 
@@ -78,6 +79,10 @@ public interface Expression<T> extends Selection<T> {
     Expression<T> coalesce(Expression<T> defaultExpr);
 
     CoalesceBuilder<T> coalesceBuilder();
+
+    Order asc();
+
+    Order desc();
 
     static <N extends Number> NumericExpression<N> constant(N value) {
         return Constants.number(value);

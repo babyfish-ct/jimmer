@@ -10,7 +10,7 @@ interface KFilterable<E: Any> {
 
     val table: KNonNullTable<E>
 
-    fun where(vararg predicates: KNonNullExpression<Boolean>)
+    fun where(vararg predicates: KNonNullExpression<Boolean>?)
 
     fun <X: Any, R, SQ: KConfigurableSubQuery<R>> subQuery(
         entityType: KClass<X>,

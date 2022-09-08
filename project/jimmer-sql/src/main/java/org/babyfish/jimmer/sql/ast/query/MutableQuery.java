@@ -8,36 +8,6 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 public interface MutableQuery extends Sortable {
 
     @OldChain
-    default MutableQuery orderBy(
-            Expression<?> expression
-    ) {
-        return orderBy(
-                expression,
-                OrderMode.ASC,
-                NullOrderMode.UNSPECIFIED
-        );
-    }
-
-    @OldChain
-    default MutableQuery orderBy(
-            Expression<?> expression,
-            OrderMode orderMode
-    ) {
-        return orderBy(
-                expression,
-                orderMode,
-                NullOrderMode.UNSPECIFIED
-        );
-    }
-
-    @OldChain
-    MutableQuery orderBy(
-            Expression<?> expression,
-            OrderMode orderMode,
-            NullOrderMode nullOrderMode
-    );
-
-    @OldChain
     MutableQuery groupBy(Expression<?> ... expressions);
 
     @OldChain

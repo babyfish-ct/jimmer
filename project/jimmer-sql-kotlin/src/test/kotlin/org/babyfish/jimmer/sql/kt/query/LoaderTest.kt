@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.query
 
 import org.babyfish.jimmer.kt.new
-import org.babyfish.jimmer.sql.ast.query.OrderMode
+import org.babyfish.jimmer.sql.kt.ast.expression.desc
 import org.babyfish.jimmer.sql.kt.ast.expression.ne
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.BookStore
@@ -62,7 +62,7 @@ class LoaderTest : AbstractQueryTest() {
                 .getListLoader(BookStore::books)
                 .forConnection(con)
                 .forFilter {
-                    orderBy(table.edition, OrderMode.DESC)
+                    orderBy(table.edition.desc())
                     where(table.edition ne 1)
                 }
                 .load(new(BookStore::class).by {

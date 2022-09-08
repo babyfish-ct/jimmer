@@ -6,10 +6,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.ExistsPredicate;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
-import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
-import org.babyfish.jimmer.sql.ast.query.NullOrderMode;
-import org.babyfish.jimmer.sql.ast.query.OrderMode;
+import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 
@@ -24,12 +21,14 @@ public class MutableSubQueryImpl
 
     public MutableSubQueryImpl(
             AbstractMutableStatementImpl parent,
-            ImmutableType immutableType
+            ImmutableType immutableType,
+            boolean wrapTable
     ) {
         super(
                 parent.getTableAliasAllocator(),
                 parent.getSqlClient(),
-                immutableType
+                immutableType,
+                wrapTable
         );
         this.parent = parent;
     }
@@ -54,18 +53,13 @@ public class MutableSubQueryImpl
     }
 
     @Override
-    public MutableSubQueryImpl orderBy(Expression<?> expression) {
-        return (MutableSubQueryImpl) super.orderBy(expression);
+    public MutableSubQueryImpl orderBy(Expression<?> ... expressions) {
+        return (MutableSubQueryImpl) super.orderBy(expressions);
     }
 
     @Override
-    public MutableSubQueryImpl orderBy(Expression<?> expression, OrderMode orderMode) {
-        return (MutableSubQueryImpl) super.orderBy(expression, orderMode);
-    }
-
-    @Override
-    public MutableSubQueryImpl orderBy(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
-        return (MutableSubQueryImpl) super.orderBy(expression, orderMode, nullOrderMode);
+    public MutableSubQueryImpl orderBy(Order... orders) {
+        return (MutableSubQueryImpl) super.orderBy(orders);
     }
 
     @Override
