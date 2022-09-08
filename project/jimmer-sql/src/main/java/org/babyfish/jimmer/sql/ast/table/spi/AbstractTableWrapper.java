@@ -13,60 +13,70 @@ import java.util.function.Function;
 
 public abstract class AbstractTableWrapper<E> implements Table<E> {
 
-    protected Table<E> raw;
+    protected Table<E> _raw;
 
     public AbstractTableWrapper(Table<E> raw) {
-        this.raw = raw;
+        this._raw = raw;
+    }
+
+    public void bind(Table<E> raw) {
+        if (_raw != null) {
+            throw new IllegalStateException("The current table wrapper has been bound");
+        }
+        if (raw == null) {
+            throw new IllegalArgumentException("raw cannot be null");
+        }
+        _raw = raw;
     }
 
     @Override
     public Predicate eq(Table<E> other) {
-        return raw.eq(other);
+        return raw().eq(other);
     }
 
     @Override
     public Predicate isNull() {
-        return raw.isNull();
+        return raw().isNull();
     }
 
     @Override
     public Predicate isNotNull() {
-        return raw.isNotNull();
+        return raw().isNotNull();
     }
 
     @Override
     public NumericExpression<Long> count() {
-        return raw.count();
+        return raw().count();
     }
 
     @Override
     public NumericExpression<Long> count(boolean distinct) {
-        return raw.count(distinct);
+        return raw().count(distinct);
     }
 
     @Override
     public <XE extends Expression<?>> XE get(String prop) {
-        return raw.get(prop);
+        return raw().get(prop);
     }
 
     @Override
     public <XT extends Table<?>> XT join(String prop) {
-        return raw.join(prop);
+        return raw().join(prop);
     }
 
     @Override
     public <XT extends Table<?>> XT join(String prop, JoinType joinType) {
-        return raw.join(prop, joinType);
+        return raw().join(prop, joinType);
     }
 
     @Override
     public <XE, XT extends Table<XE>> XT inverseJoin(Class<XE> targetType, String backProp) {
-        return raw.inverseJoin(targetType, backProp);
+        return raw().inverseJoin(targetType, backProp);
     }
 
     @Override
     public <XE, XT extends Table<XE>> XT inverseJoin(Class<XE> targetType, String backProp, JoinType joinType) {
-        return raw.inverseJoin(targetType, backProp, joinType);
+        return raw().inverseJoin(targetType, backProp, joinType);
     }
 
     @Override
@@ -74,7 +84,7 @@ public abstract class AbstractTableWrapper<E> implements Table<E> {
             Class<XT> targetTableType,
             Function<XT, ? extends Table<E>> backPropBlock
     ) {
-        return raw.inverseJoin(targetTableType, backPropBlock);
+        return raw().inverseJoin(targetTableType, backPropBlock);
     }
 
     @Override
@@ -83,35 +93,43 @@ public abstract class AbstractTableWrapper<E> implements Table<E> {
             Function<XT, ? extends Table<E>> backPropBlock,
             JoinType joinType
     ) {
-        return raw.inverseJoin(targetTableType, backPropBlock, joinType);
+        return raw().inverseJoin(targetTableType, backPropBlock, joinType);
     }
 
     @Override
     public Selection<E> fetch(Fetcher<E> fetcher) {
-        return raw.fetch(fetcher);
+        return raw().fetch(fetcher);
     }
 
     @Override
     public TableEx<E> asTableEx() {
-        return raw.asTableEx();
+        return raw().asTableEx();
     }
 
     public Table<E> __unwrap() {
-        return raw;
+        return raw();
     }
 
     @Override
     public int hashCode() {
-        return raw.hashCode();
+        return raw().hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
-        return raw.equals(obj);
+        return raw().equals(obj);
     }
 
     @Override
     public String toString() {
-        return raw.toString();
+        return raw().toString();
+    }
+
+    private Table<E> raw() {
+        Table<E> raw = _raw;
+        if (raw == null) {
+            throw new IllegalStateException("TableWrapper has not been bound");
+        }
+        return raw;
     }
 }

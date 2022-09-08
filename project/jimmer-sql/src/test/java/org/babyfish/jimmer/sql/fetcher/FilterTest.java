@@ -46,7 +46,24 @@ public class FilterTest extends AbstractQueryTest {
                                         "where tb_3_.STORE_ID in (?, ?) " +
                                         "group by tb_3_.NAME" +
                                     ")");
-                    ctx.rows(System.out::println);
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\",\"name\":\"O'REILLY\"," +
+                                    "--->--->\"books\":[" +
+                                    "--->--->--->{\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\",\"name\":\"Learning GraphQL\",\"edition\":3}," +
+                                    "--->--->--->{\"id\":\"9eded40f-6d2e-41de-b4e7-33a28b11c8b6\",\"name\":\"Effective TypeScript\",\"edition\":3}," +
+                                    "--->--->--->{\"id\":\"782b9a9d-eac8-41c4-9f2d-74a5d047f45a\",\"name\":\"Programming TypeScript\",\"edition\":3}" +
+                                    "--->--->]" +
+                                    "--->}," +
+                                    "--->{" +
+                                    "--->--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
+                                    "--->--->\"name\":\"MANNING\"," +
+                                    "--->--->\"books\":[" +
+                                    "--->--->--->{\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\",\"name\":\"GraphQL in Action\",\"edition\":3}" +
+                                    "--->--->]" +
+                                    "--->}" +
+                                    "]");
                 }
         );
     }

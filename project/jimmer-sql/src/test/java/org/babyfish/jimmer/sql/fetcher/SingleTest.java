@@ -37,7 +37,21 @@ public class SingleTest extends AbstractQueryTest {
                                     "from BOOK_STORE as tb_1_ " +
                                     "where tb_1_.ID = ?"
                     ).variables(manningId);
-                    ctx.rows(System.out::println);
+                    ctx.rows(
+                            "[" +
+                                    "{" +
+                                    "--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\",\"name\":\"GraphQL in Action\"," +
+                                    "--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\",\"name\":\"MANNING\"}" +
+                                    "}," +
+                                    "{" +
+                                    "--->\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\",\"name\":\"GraphQL in Action\"," +
+                                    "--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\",\"name\":\"MANNING\"}" +
+                                    "}," +
+                                    "{" +
+                                    "--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\",\"name\":\"GraphQL in Action\"," +
+                                    "--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\",\"name\":\"MANNING\"}" +
+                                    "}" +
+                                    "]");
                 }
         );
     }

@@ -5,6 +5,7 @@ drop table author if exists;
 drop table country if exists;
 drop table book_store if exists;
 drop table tree_node if exists;
+drop table primitive if exists;
 drop sequence tree_node_id_seq if exists;
 
 create table book_store(
@@ -112,6 +113,26 @@ alter table author_country_mapping
             references country(code)
                 on delete cascade;
 
+create table primitive(
+    id bigint not null,
+    boolean_value boolean not null,
+    boolean_ref boolean null,
+    char_value char(1) not null,
+    char_ref char(1) null,
+    byte_value tinyint not null,
+    byte_ref tinyint null,
+    short_value smallint not null,
+    short_ref smallint null,
+    int_value int not null,
+    int_ref int null,
+    long_value bigint not null,
+    long_ref bigint null,
+    float_value float not null,
+    float_ref float null,
+    double_value double not null,
+    double_ref double null
+);
+
 insert into book_store(id, name, version) values
     (1, 'O''REILLY', 0),
     (2, 'MANNING', 0)
@@ -218,4 +239,19 @@ insert into tree_node(node_id, name, parent_id) values
                 (22, 'Formal wear', 18),
                     (23, 'Suit', 22),
                     (24, 'Shirt', 22)
+;
+
+insert into primitive(
+    id,
+    boolean_value, boolean_ref,
+    char_value, char_ref,
+    byte_value, byte_ref,
+    short_value, short_ref,
+    int_value, int_ref,
+    long_value, long_ref,
+    float_value, float_ref,
+    double_value, double_ref
+) values
+    (1, true, true, 'X', 'X', 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8),
+    (2, true, null, 'X', null, 3, null, 4, null, 5, null, 6, null, 7, null, 8, null)
 ;

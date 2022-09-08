@@ -101,7 +101,7 @@ class ImplGenerator(
                             if (prop.isPrimitive) {
                                 when (prop.typeName()) {
                                     BOOLEAN -> "false"
-                                    CHAR -> "'\\0'"
+                                    CHAR -> "0.toChar()"
                                     FLOAT -> "0F"
                                     DOUBLE -> "0.0"
                                     else -> "0"
