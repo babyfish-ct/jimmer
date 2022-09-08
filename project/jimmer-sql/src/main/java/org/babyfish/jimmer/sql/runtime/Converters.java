@@ -54,6 +54,12 @@ public class Converters {
                 return BigDecimal.valueOf(num.doubleValue());
             }
         }
+        if (value instanceof Boolean && expectedType == boolean.class) {
+            return value;
+        }
+        if (value instanceof String && expectedType == char.class || expectedType == Character.class) {
+            return ((String)value).charAt(0);
+        }
         if (value instanceof Instant) {
             return tryConvertInstant((Instant) value, expectedType);
         }
