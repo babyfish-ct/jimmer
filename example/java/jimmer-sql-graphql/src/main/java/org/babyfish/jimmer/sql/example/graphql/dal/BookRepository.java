@@ -35,11 +35,11 @@ public class BookRepository {
                 .query(book)
                 .whereIf(
                         StringUtils.hasText(name),
-                        () -> book.name().ilike(name, LikeMode.START)
+                        () -> book.name().ilike(name)
                 )
                 .whereIf(
                         StringUtils.hasText(storeName),
-                        () -> book.store().name().ilike(storeName, LikeMode.START)
+                        () -> book.store().name().ilike(storeName)
                 )
                 .whereIf(
                         StringUtils.hasText(authorName),
@@ -47,8 +47,8 @@ public class BookRepository {
                                 .subQuery(author)
                                 .where(
                                         Predicate.or(
-                                                author.firstName().ilike(authorName, LikeMode.START),
-                                                author.lastName().ilike(authorName, LikeMode.START)
+                                                author.firstName().ilike(authorName),
+                                                author.lastName().ilike(authorName)
                                         )
                                 )
                                 .select(author.books().id())

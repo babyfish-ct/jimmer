@@ -15,7 +15,7 @@ class BookStoreRepository(
     fun find(name: String?): List<BookStore> =
         sqlClient.createQuery(BookStore::class) {
             name?.let {
-                where(table.name.ilike(it, LikeMode.START))
+                where(table.name ilike it)
             }
             select(table)
         }.execute()

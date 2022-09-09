@@ -29,7 +29,7 @@ public class BookStoreRepository {
                 .query(store)
                 .whereIf(
                         StringUtils.hasText(name),
-                        () -> store.name().ilike(name, LikeMode.START)
+                        () -> store.name().ilike(name)
                 )
                 .orderBy(store.name())
                 .select(store)

@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.example.kt.graphql.dal
 
 import org.babyfish.jimmer.example.kt.graphql.entities.*
-import org.babyfish.jimmer.sql.ast.LikeMode
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.expression.ilike
 import org.babyfish.jimmer.sql.kt.ast.expression.or
@@ -17,8 +16,8 @@ class AuthorRepository(
             name?.let {
                 where(
                     or(
-                        table.firstName.ilike(it, LikeMode.START),
-                        table.lastName.ilike(it, LikeMode.START)
+                        table.firstName ilike it,
+                        table.lastName ilike it
                     )
                 )
             }

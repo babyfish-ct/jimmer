@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.example.graphql.dal;
 
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.LikeMode;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.example.graphql.entities.Author;
 import org.babyfish.jimmer.sql.example.graphql.entities.AuthorTable;
@@ -30,8 +29,8 @@ public class AuthorRepository {
                 .whereIf(
                         StringUtils.hasText(name),
                         () -> Predicate.or(
-                                author.firstName().ilike(name, LikeMode.START),
-                                author.lastName().ilike(name, LikeMode.START)
+                                author.firstName().ilike(name),
+                                author.lastName().ilike(name)
                         )
                 )
                 .orderBy(author.firstName(), author.lastName())
