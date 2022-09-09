@@ -35,11 +35,7 @@ public class FluentImpl implements Fluent {
             throw new IllegalArgumentException("Top-level query cannot be created inside another statement");
         }
         ImmutableType immutableType = ImmutableType.get(table.getClass());
-        MutableRootQueryImpl<T> query = new MutableRootQueryImpl<>(
-                sqlClient,
-                immutableType,
-                false
-        );
+        MutableRootQueryImpl<T> query = new MutableRootQueryImpl<>(sqlClient, immutableType);
         table.bind(query.getTable());
         stack.add(query);
         return new FluentRootQueryImpl<T>(query, () -> pop(query));
@@ -53,11 +49,7 @@ public class FluentImpl implements Fluent {
         }
         Filterable parent = stack.get(stack.size() - 1);
         ImmutableType immutableType = ImmutableType.get(table.getClass());
-        MutableSubQueryImpl subQuery = new MutableSubQueryImpl(
-                (AbstractMutableStatementImpl) parent,
-                immutableType,
-                false
-        );
+        MutableSubQueryImpl subQuery = new MutableSubQueryImpl((AbstractMutableStatementImpl) parent, immutableType);
         table.bind(subQuery.getTable());
         stack.add(subQuery);
         return new FluentSubQueryImpl(subQuery, () -> pop(subQuery));
@@ -70,7 +62,7 @@ public class FluentImpl implements Fluent {
             throw new IllegalArgumentException("Update statement cannot be created inside another statement");
         }
         ImmutableType immutableType = ImmutableType.get(table.getClass());
-        MutableUpdateImpl update = new MutableUpdateImpl(sqlClient, immutableType, false);
+        MutableUpdateImpl update = new MutableUpdateImpl(sqlClient, immutableType);
         table.bind(update.getTable());
         stack.add(update);
         return new FluentUpdateImpl(update, () -> pop(update));
@@ -83,7 +75,7 @@ public class FluentImpl implements Fluent {
             throw new IllegalArgumentException("Delete statement cannot be created inside another statement");
         }
         ImmutableType immutableType = ImmutableType.get(table.getClass());
-        MutableDeleteImpl delete = new MutableDeleteImpl(sqlClient, immutableType, false);
+        MutableDeleteImpl delete = new MutableDeleteImpl(sqlClient, immutableType);
         table.bind(delete.getTable());
         stack.add(delete);
         return new FluentDeleteImpl(delete, () -> pop(delete));

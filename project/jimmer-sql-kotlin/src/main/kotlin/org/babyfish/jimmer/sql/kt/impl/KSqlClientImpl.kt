@@ -30,7 +30,7 @@ internal class KSqlClientImpl(
         entityType: KClass<E>,
         block: KMutableUpdate<E>.() -> Unit
     ): KExecutable<Int> {
-        val update = MutableUpdateImpl(sqlClient, ImmutableType.get(entityType.java), false)
+        val update = MutableUpdateImpl(sqlClient, ImmutableType.get(entityType.java))
         block(KMutableUpdateImpl(update))
         update.freeze()
         return KExecutableImpl(update)
@@ -40,7 +40,7 @@ internal class KSqlClientImpl(
         entityType: KClass<E>,
         block: KMutableDelete<E>.() -> Unit
     ): KExecutable<Int> {
-        val delete = MutableDeleteImpl(sqlClient, ImmutableType.get(entityType.java), false)
+        val delete = MutableDeleteImpl(sqlClient, ImmutableType.get(entityType.java))
         block(KMutableDeleteImpl(delete))
         delete.freeze()
         return KExecutableImpl(delete)

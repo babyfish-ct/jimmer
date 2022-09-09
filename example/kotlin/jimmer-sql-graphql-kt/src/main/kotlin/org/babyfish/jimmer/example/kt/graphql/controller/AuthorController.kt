@@ -8,6 +8,7 @@ import org.babyfish.jimmer.example.kt.graphql.entities.name
 import org.babyfish.jimmer.example.kt.graphql.input.AuthorInput
 import org.babyfish.jimmer.sql.ast.query.OrderMode
 import org.babyfish.jimmer.sql.kt.KSqlClient
+import org.babyfish.jimmer.sql.kt.ast.expression.desc
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.BatchMapping
 import org.springframework.graphql.data.method.annotation.MutationMapping
@@ -39,7 +40,7 @@ class AuthorController(
             .getListLoader(Author::books)
             .forFilter {
                 orderBy(table.name)
-                orderBy(table.edition, OrderMode.DESC)
+                orderBy(table.edition.desc())
             }
             .batchLoad(authors)
 

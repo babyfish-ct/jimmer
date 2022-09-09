@@ -48,7 +48,7 @@ class PaginationQueryShell(
                 )
             }
             orderBy(table.name)
-            orderBy(table.edition, OrderMode.DESC)
+            orderBy(table.edition.desc())
             select(
                 if (fetch) {
                     table.fetchBy {

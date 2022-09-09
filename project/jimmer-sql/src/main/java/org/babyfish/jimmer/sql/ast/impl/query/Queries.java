@@ -31,8 +31,7 @@ public class Queries {
         ImmutableType immutableType = ImmutableType.get(tableType);
         MutableRootQueryImpl<T> query = new MutableRootQueryImpl<>(
                 sqlClient,
-                immutableType,
-                true
+                immutableType
         );
         ConfigurableRootQuery<T, R> typedQuery = block.apply(query, (T)query.getTable());
         query.freeze();
@@ -48,8 +47,7 @@ public class Queries {
         ImmutableType immutableType = ImmutableType.get(tableType);
         MutableSubQueryImpl query = new MutableSubQueryImpl(
                 (AbstractMutableStatementImpl) parent,
-                immutableType,
-                true
+                immutableType
         );
         ConfigurableSubQuery<R> typedQuery = block.apply(query, (T)query.getTable());
         query.freeze();
@@ -65,8 +63,7 @@ public class Queries {
         ImmutableType immutableType = ImmutableType.get(tableType);
         MutableSubQueryImpl query = new MutableSubQueryImpl(
                 (AbstractMutableStatementImpl) parent,
-                immutableType,
-                true
+                immutableType
         );
         block.accept(query, (T)query.getTable());
         query.freeze();
@@ -81,8 +78,7 @@ public class Queries {
     ) {
         MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(
                 sqlClient,
-                immutableType,
-                true
+                immutableType
         );
         ConfigurableRootQuery<Table<?>, R> typedQuery = block.apply(query, query.getTable());
         query.freeze();
@@ -106,8 +102,7 @@ public class Queries {
         );
         MutableRootQueryImpl<AssociationTable<SE, ST, TE, TT>> query = new MutableRootQueryImpl<>(
                 sqlClient,
-                associationType,
-                true
+                associationType
         );
         ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R> typedQuery =
                 block.apply(query, (AssociationTable<SE, ST, TE, TT>)query.getTable());
@@ -132,8 +127,7 @@ public class Queries {
         );
         MutableSubQueryImpl subQuery = new MutableSubQueryImpl(
                 (AbstractMutableStatementImpl) parent,
-                associationType,
-                true
+                associationType
         );
         ConfigurableSubQuery<R> typedSubQuery =
                 block.apply(subQuery, (AssociationTableEx<SE, ST, TE, TT>)subQuery.getTable());
@@ -157,8 +151,7 @@ public class Queries {
         );
         MutableSubQueryImpl subQuery = new MutableSubQueryImpl(
                 (AbstractMutableStatementImpl) parent,
-                associationType,
-                true
+                associationType
         );
         block.accept(subQuery, (AssociationTableEx<SE, ST, TE, TT>)subQuery.getTable());
         subQuery.freeze();
@@ -177,8 +170,7 @@ public class Queries {
     ) {
         MutableRootQueryImpl<AssociationTable<?, ?, ?, ?>> query = new MutableRootQueryImpl<>(
                 sqlClient,
-                associationType,
-                true
+                associationType
         );
         ConfigurableRootQuery<AssociationTable<?, ?, ?, ?>, R> typedQuery =
                 block.apply(query, (AssociationTable<?, ?, ?, ?>)query.getTable());

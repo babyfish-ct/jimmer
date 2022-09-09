@@ -4,8 +4,8 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
+import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -84,7 +84,7 @@ class AbstractConfigurableTypedQueryImpl<R> implements TypedQueryImplementor {
                 TableSelection<?> tableSelection = (TableSelection<?>) selection;
                 renderAllProps(tableSelection, builder);
             } else if (selection instanceof Table<?>) {
-                TableSelection<?> tableSelection = TableImplementor.unwrap((Table<?>)selection);
+                TableSelection<?> tableSelection = TableWrappers.unwrap((Table<?>)selection);
                 renderAllProps(tableSelection, builder);
             } else {
                 Ast.from(selection).renderTo(builder);

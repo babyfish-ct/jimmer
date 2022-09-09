@@ -19,19 +19,17 @@ public class MutableRootQueryImpl<T extends Table<?>>
 
     public MutableRootQueryImpl(
             JSqlClient sqlClient,
-            ImmutableType immutableType,
-            boolean wrapTable
+            ImmutableType immutableType
     ) {
-        super(new TableAliasAllocator(), sqlClient, immutableType, wrapTable);
+        super(new TableAliasAllocator(), sqlClient, immutableType);
     }
 
     public MutableRootQueryImpl(
             TableAliasAllocator aliasAllocator,
             JSqlClient sqlClient,
-            ImmutableType immutableType,
-            boolean wrapTable
+            ImmutableType immutableType
     ) {
-        super(aliasAllocator, sqlClient, immutableType, wrapTable);
+        super(aliasAllocator, sqlClient, immutableType);
     }
 
     @Override

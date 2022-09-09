@@ -120,7 +120,7 @@ class TableImpl<E> implements TableImplementor<E> {
 
     @Override
     public Predicate eq(Table<E> other) {
-        if (TableImplementor.unwrap(other).getImmutableType() != immutableType) {
+        if (TableWrappers.unwrap(other).getImmutableType() != immutableType) {
             throw new IllegalArgumentException("Cannot compare tables of different types");
         }
         String idPropName = immutableType.getIdProp().getName();

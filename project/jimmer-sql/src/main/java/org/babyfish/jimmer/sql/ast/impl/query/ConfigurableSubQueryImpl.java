@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.ExistsPredicate;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.SubQueryFunctionExpression;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
@@ -33,7 +33,7 @@ public class ConfigurableSubQueryImpl<R>
             case 1:
                 Selection<?> selection = selections.get(0);
                 if (selection instanceof Table<?>) {
-                    type = (Class<R>) TableImplementor.unwrap((Table<?>) selection).getImmutableType().getJavaClass();
+                    type = (Class<R>) TableWrappers.unwrap((Table<?>) selection).getImmutableType().getJavaClass();
                 } else {
                     type = (Class<R>)((ExpressionImplementor<?>)selection).getType();
                 }

@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.example.model.*;
+import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
@@ -39,33 +40,36 @@ public class PaginationQueryShell {
             @ShellOption(defaultValue = "2") int pageSize,
             @ShellOption(defaultValue = "false") boolean fetch
     ) throws JsonProcessingException {
-        ConfigurableRootQuery<BookTable, Tuple3<Book, Integer, Integer>> query =
-                sqlClient.createQuery(BookTable.class, (q, book) -> {
-                    if (name != null && !name.isEmpty()) {
-                        q.where(book.name().ilike(name));
-                    }
-                    if (storeName != null && !storeName.isEmpty()) {
-                        q.where(book.store().name().ilike(storeName));
-                    }
-                    if (authorName != null && !authorName.isEmpty()) {
-                        q.where(
-                                book.id().in(
-                                        q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
-                                            sq.where(
-                                                    Predicate.or(
-                                                            author.firstName().ilike(authorName),
-                                                            author.lastName().ilike(authorName)
-                                                    )
-                                            );
-                                            return sq.select(author.books().id());
-                                        })
+
+        Fluent fluent = sqlClient.createFluent();
+        BookTable book = new BookTable();
+        AuthorTableEx author = new AuthorTableEx();
+
+        ConfigurableRootQuery<BookTable, Tuple3<Book, Integer, Integer>> query = fluent
+                .query(book)
+                .whereIf(
+                        name != null && !name.isEmpty(),
+                        () -> book.name().ilike(name)
+                )
+                .whereIf(
+                        storeName != null && !storeName.isEmpty(),
+                        () -> book.store().name().ilike(storeName)
+                )
+                .whereIf(
+                        authorName != null && !authorName.isEmpty(),
+                        () -> book.id().in(fluent
+                                .subQuery(author)
+                                .where(
+                                        Predicate.or(
+                                                author.firstName().ilike(authorName),
+                                                author.lastName().ilike(authorName)
+                                        )
                                 )
-                        );
-                    }
-                    q.orderBy(book.name());
-                    q.orderBy(book.edition(), OrderMode.DESC);
-                    return q.select(
-                            fetch ?
+                                .select(author.books().id())
+                        )
+                )
+                .select(
+                        fetch ?
                                 book.fetch(
                                         BookFetcher.$
                                                 .allScalarFields()
@@ -80,23 +84,21 @@ public class PaginationQueryShell {
                                                 )
                                 ) :
                                 book,
-                            Expression.numeric().sql(
-                                    Integer.class,
-                                    "rank() over(order by %e desc)",
-                                    it -> it.expression(book.price())
-                            ),
-                            Expression.numeric().sql(
-                                    Integer.class,
-                                    "rank() over(partition by %e order by %e desc)",
-                                    it -> it
-                                            .expression(book.store().id())
-                                            .expression(book.price())
-                            )
-                    );
-                });
-
+                        Expression.numeric().sql(
+                                Integer.class,
+                                "rank() over(order by %e desc)",
+                                it -> it.expression(book.price())
+                        ),
+                        Expression.numeric().sql(
+                                Integer.class,
+                                "rank() over(partition by %e order by %e desc)",
+                                it -> it
+                                        .expression(book.store().id())
+                                        .expression(book.price())
+                        )
+                );
         TypedRootQuery<Long> countQuery = query
-                .reselect((oldQuery, book) -> oldQuery.select(book.count()))
+                .reselect((q, t) -> q.select(t.count()))
                 .withoutSortingAndPaging();
 
         int rowCount = countQuery.execute().get(0).intValue();

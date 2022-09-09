@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.fluent.Fluent;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -49,15 +50,16 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 
     @Override
     public Map<Long, BigDecimal> resolve(Collection<Long> ids, Connection con) {
-        List<Tuple2<Long, BigDecimal>> tuples = sqlClient
-                .createQuery(BookTable.class, (q, book) -> {
-                    q.where(book.store().id().in(ids));
-                    q.groupBy(book.store().id());
-                    return q.select(
-                            book.store().id(),
-                            book.price().avg()
-                    );
-                })
+        Fluent fluent = sqlClient.createFluent();
+        BookTable book = new BookTable();
+        List<Tuple2<Long, BigDecimal>> tuples = fluent
+                .query(book)
+                .where(book.store().id().in(ids))
+                .groupBy(book.store().id())
+                .select(
+                        book.store().id(),
+                        book.price().avg()
+                )
                 .execute(con); // Important to specify connection
         return ensureKeys(
                 Tuple2.toMap(tuples),

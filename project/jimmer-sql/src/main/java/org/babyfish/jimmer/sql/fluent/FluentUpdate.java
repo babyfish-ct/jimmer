@@ -6,6 +6,8 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 
+import java.util.function.Supplier;
+
 public interface FluentUpdate extends FluentFilterable, Executable<Integer> {
 
     @OldChain
@@ -14,8 +16,8 @@ public interface FluentUpdate extends FluentFilterable, Executable<Integer> {
 
     @OldChain
     @Override
-    default FluentUpdate whereIf(boolean condition, Predicate... predicates) {
-        return (FluentUpdate) FluentFilterable.super.whereIf(condition, predicates);
+    default FluentUpdate whereIf(boolean condition, Supplier<Predicate> predicateSupplier) {
+        return (FluentUpdate) FluentFilterable.super.whereIf(condition, predicateSupplier);
     }
 
     @OldChain

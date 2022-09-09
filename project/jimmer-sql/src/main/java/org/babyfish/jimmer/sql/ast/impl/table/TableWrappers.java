@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTableWrapper;
 import org.babyfish.jimmer.util.StaticCache;
@@ -62,5 +63,15 @@ public class TableWrappers {
         } catch (NoSuchMethodException ex) {
             return null;
         }
+    }
+
+    public static TableImplementor<?> unwrap(Table<?> table) {
+        if (table instanceof TableImplementor<?>) {
+            return (TableImplementor<?>) table;
+        }
+        if (table instanceof AbstractTableWrapper<?>) {
+            return unwrap(((AbstractTableWrapper<?>) table).__unwrap());
+        }
+        throw new IllegalArgumentException("Unknown table implementation");
     }
 }

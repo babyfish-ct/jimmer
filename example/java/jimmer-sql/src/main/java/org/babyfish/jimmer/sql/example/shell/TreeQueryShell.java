@@ -6,9 +6,11 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.example.model.TreeNode;
 import org.babyfish.jimmer.sql.example.model.TreeNodeFetcher;
 import org.babyfish.jimmer.sql.example.model.TreeNodeTable;
+import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
+import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -47,34 +49,34 @@ public class TreeQueryShell {
                     .collect(Collectors.toSet());
         }
 
-        List<TreeNode> rootNodes = sqlClient
-                .createQuery(TreeNodeTable.class, (q, treeNode) -> {
-                    q
-                            .where(treeNode.parent().isNull())
-                            .orderBy(treeNode.name());
-                    if (!rootName.isEmpty()) {
-                        q.where(treeNode.name().ilike(rootName));
-                    }
-                    return q.select(
-                            treeNode.fetch(
-                                    TreeNodeFetcher.$
-                                            .allScalarFields()
-                                            .childNodes(
-                                                    TreeNodeFetcher.$
-                                                            .allScalarFields(),
-                                                    it -> it
-                                                            .recursive(args ->
-                                                                    !noRecursiveNames.contains(
-                                                                            args.getEntity().name().toLowerCase()
-                                                                    )
-                                                            )
-                                                            .filter(args ->
-                                                                    args.orderBy(args.getTable().name())
-                                                            )
-                                            )
-                            )
-                    );
-                })
+        Fluent fluent = sqlClient.createFluent();
+        TreeNodeTable treeNode = new TreeNodeTable();
+        List<TreeNode> rootNodes = fluent
+                .query(treeNode)
+                .where(treeNode.parent().isNull())
+                .whereIf(
+                        !rootName.isEmpty(),
+                        () -> treeNode.name().ilike(rootName)
+                )
+                .select(
+                        treeNode.fetch(
+                                TreeNodeFetcher.$
+                                        .allScalarFields()
+                                        .childNodes(
+                                                TreeNodeFetcher.$
+                                                        .allScalarFields(),
+                                                it -> it
+                                                        .recursive(args ->
+                                                                !noRecursiveNames.contains(
+                                                                        args.getEntity().name().toLowerCase()
+                                                                )
+                                                        )
+                                                        .filter(args ->
+                                                                args.orderBy(args.getTable().name())
+                                                        )
+                                        )
+                        )
+                )
                 .execute();
 
         for (TreeNode rootNode : rootNodes) {

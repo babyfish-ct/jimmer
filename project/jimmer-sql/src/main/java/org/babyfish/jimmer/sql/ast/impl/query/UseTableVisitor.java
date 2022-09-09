@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -15,7 +16,7 @@ public class UseTableVisitor extends AstVisitor {
     @Override
     public void visitTableReference(Table<?> table, ImmutableProp prop) {
 
-        TableImplementor<?> tableImpl = TableImplementor.unwrap(table);
+        TableImplementor<?> tableImpl = TableWrappers.unwrap(table);
         if (prop == null) {
             if (tableImpl.getImmutableType().getSelectableProps().size() > 1) {
                 use(tableImpl);

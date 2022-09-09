@@ -34,12 +34,12 @@ public abstract class AbstractMutableQueryImpl
     protected AbstractMutableQueryImpl(
             TableAliasAllocator tableAliasAllocator,
             JSqlClient sqlClient,
-            ImmutableType immutableType,
-            boolean wrapTable
+            ImmutableType immutableType
     ) {
         super(tableAliasAllocator, sqlClient);
-        TableImplementor<?> table = TableImplementor.create(this, immutableType);
-        this.table = wrapTable ? TableWrappers.wrap(table) : table;
+        this.table = TableWrappers.wrap(
+                TableImplementor.create(this, immutableType)
+        );
     }
 
     @Override
@@ -143,7 +143,7 @@ public abstract class AbstractMutableQueryImpl
         Predicate predicate = getPredicate();
         Predicate havingPredicate = havingPredicates.isEmpty() ? null : havingPredicates.get(0);
 
-        TableImplementor<?> table = TableImplementor.unwrap(this.table);
+        TableImplementor<?> table = TableWrappers.unwrap(this.table);
         table.renderTo(builder);
 
         if (predicate != null) {
@@ -200,7 +200,7 @@ public abstract class AbstractMutableQueryImpl
 
         @Override
         public void visitTableReference(Table<?> table, ImmutableProp prop) {
-            handle(TableImplementor.unwrap(table), prop != null && prop.isId());
+            handle(TableWrappers.unwrap(table), prop != null && prop.isId());
         }
 
         private void handle(TableImplementor<?> table, boolean isId) {

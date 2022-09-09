@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
+import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -134,7 +135,7 @@ class ResultMapper {
             return map(immutableType, null);
         }
         if (selection instanceof Table<?>) {
-            ImmutableType immutableType = TableImplementor
+            ImmutableType immutableType = TableWrappers
                     .unwrap((Table<?>)selection)
                     .getImmutableType();
             if (immutableType instanceof AssociationType) {

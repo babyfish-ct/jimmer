@@ -51,7 +51,7 @@ public interface JSqlClient {
 
     int getDefaultListBatchSize();
 
-    Fluent newFluent();
+    Fluent createFluent();
 
     <T extends Table<?>, R> ConfigurableRootQuery<T, R> createQuery(
             Class<T> tableType,

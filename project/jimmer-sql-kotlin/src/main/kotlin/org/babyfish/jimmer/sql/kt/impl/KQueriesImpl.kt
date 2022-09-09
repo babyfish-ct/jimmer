@@ -27,8 +27,7 @@ internal class KQueriesImpl(
     ): KConfigurableRootQuery<E, R> {
         val query = MutableRootQueryImpl<Table<*>>(
             sqlClient,
-            ImmutableType.get(entityType.java),
-            false
+            ImmutableType.get(entityType.java)
         )
         val typedQuery = KMutableRootQueryImpl(
             query as MutableRootQueryImpl<Table<E>>
@@ -60,8 +59,7 @@ internal class KQueriesImpl(
         val query: MutableRootQueryImpl<AssociationTable<S, Table<S>, T, Table<T>>> =
             MutableRootQueryImpl(
                 sqlClient,
-                associationType,
-                false
+                associationType
             )
         val typedQuery = KMutableRootQueryImpl(
             query as MutableRootQueryImpl<Table<Association<S, T>>>
