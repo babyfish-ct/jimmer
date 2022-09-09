@@ -8,11 +8,11 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fluent.FluentSource;
+import org.babyfish.jimmer.sql.fluent.FluentTable;
 
 import java.util.function.Function;
 
-public abstract class AbstractTableWrapper<E> implements Table<E>, FluentSource<E> {
+public abstract class AbstractTableWrapper<E> implements Table<E>, FluentTable<E> {
 
     protected Table<E> _raw;
 

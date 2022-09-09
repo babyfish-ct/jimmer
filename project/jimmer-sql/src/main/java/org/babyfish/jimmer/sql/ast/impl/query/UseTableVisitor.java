@@ -8,7 +8,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 public class UseTableVisitor extends AstVisitor {
 
-    protected UseTableVisitor(SqlBuilder sqlBuilder) {
+    public UseTableVisitor(SqlBuilder sqlBuilder) {
         super(sqlBuilder);
     }
 

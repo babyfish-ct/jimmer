@@ -4,7 +4,7 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.fluent.Fluent;
-import org.babyfish.jimmer.sql.fluent.FluentImpl;
+import org.babyfish.jimmer.sql.fluent.impl.FluentImpl;
 import org.babyfish.jimmer.sql.loader.ListLoader;
 import org.babyfish.jimmer.sql.loader.ReferenceLoader;
 import org.babyfish.jimmer.sql.loader.ValueLoader;

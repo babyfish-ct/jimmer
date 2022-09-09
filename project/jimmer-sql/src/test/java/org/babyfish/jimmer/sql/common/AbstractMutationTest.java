@@ -237,7 +237,8 @@ public abstract class AbstractMutationTest extends AbstractTest {
 
         public void sql(String value) {
             Assertions.assertEquals(
-                    value, execution.getSql(),
+                    value.replace("--->", ""),
+                    execution.getSql(),
                     "statements[" + index + "].sql"
             );
         }

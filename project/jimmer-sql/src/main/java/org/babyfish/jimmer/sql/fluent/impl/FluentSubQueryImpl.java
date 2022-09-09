@@ -1,102 +1,55 @@
-package org.babyfish.jimmer.sql.fluent;
+package org.babyfish.jimmer.sql.fluent.impl;
 
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.query.*;
-import org.babyfish.jimmer.sql.ast.table.AssociationTableEx;
-import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.tuple.*;
+import org.babyfish.jimmer.sql.fluent.FluentSubQuery;
 
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-
-class FluentSubQueryProxy implements MutableSubQuery {
+class FluentSubQueryImpl implements FluentSubQuery {
 
     private final MutableSubQuery raw;
 
     private final Runnable onTerminate;
 
-    FluentSubQueryProxy(MutableSubQuery raw, Runnable onTerminate) {
+    public FluentSubQueryImpl(MutableSubQuery raw, Runnable onTerminate) {
         this.raw = raw;
         this.onTerminate = onTerminate;
     }
 
     @Override
-    public <T extends Table<?>, R> ConfigurableSubQuery<R> createSubQuery(
-            Class<T> tableType,
-            BiFunction<MutableSubQuery, T, ConfigurableSubQuery<R>> block
-    ) {
-        throw new UnsupportedOperationException(
-                "FluentQuery does not support subQuery, please call `fluent.subQuery`"
-        );
-    }
-
-    @Override
-    public <T extends Table<?>> MutableSubQuery createWildSubQuery(
-            Class<T> tableType,
-            BiConsumer<MutableSubQuery, T> block
-    ) {
-        throw new UnsupportedOperationException(
-                "FluentQuery does not support subQuery, please call `fluent.subQuery`"
-        );
-    }
-
-    @Override
-    public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R> ConfigurableSubQuery<R> createAssociationSubQuery(
-            Class<ST> sourceTableType,
-            Function<ST, TT> targetTableGetter,
-            BiFunction<MutableSubQuery, AssociationTableEx<SE, ST, TE, TT>, ConfigurableSubQuery<R>> block
-    ) {
-        throw new UnsupportedOperationException(
-                "FluentQuery does not support subQuery, please call `fluent.subQuery`"
-        );
-    }
-
-    @Override
-    public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R> MutableSubQuery createAssociationWildSubQuery(
-            Class<ST> sourceTableType,
-            Function<ST, TT> targetTableGetter, BiConsumer<MutableSubQuery, AssociationTableEx<SE, ST, TE, TT>> block
-    ) {
-        throw new UnsupportedOperationException(
-                "FluentQuery does not support subQuery, please call `fluent.subQuery`"
-        );
-    }
-
-    @Override
     @OldChain
-    public MutableSubQuery where(Predicate... predicates) {
+    public FluentSubQuery where(Predicate... predicates) {
         raw.where(predicates);
         return this;
     }
 
     @Override
     @OldChain
-    public MutableSubQuery orderBy(Expression<?> ... expressions) {
+    public FluentSubQuery orderBy(Expression<?> ... expressions) {
         raw.orderBy(expressions);
         return this;
     }
 
     @Override
     @OldChain
-    public MutableSubQuery orderBy(Order... orders) {
+    public FluentSubQuery orderBy(Order... orders) {
         raw.orderBy(orders);
         return this;
     }
 
     @Override
     @OldChain
-    public MutableSubQuery groupBy(Expression<?>... expressions) {
+    public FluentSubQuery groupBy(Expression<?>... expressions) {
         raw.groupBy(expressions);
         return this;
     }
 
     @Override
     @OldChain
-    public MutableSubQuery having(Predicate... predicates) {
+    public FluentSubQuery having(Predicate... predicates) {
         raw.having(predicates);
         return this;
     }
