@@ -48,7 +48,7 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
 
                             @SuppressWarnings("unchecked")
                             @Override
-                            public Map<? extends K, ? extends Ref<V>> loadAll(Set<? extends K> keys) {
+                            public Map<K, Ref<V>> loadAll(Iterable<? extends K> keys) {
                                 Map<K, V> map = chain.loadAll((Collection<K>) keys);
                                 return map
                                         .entrySet()

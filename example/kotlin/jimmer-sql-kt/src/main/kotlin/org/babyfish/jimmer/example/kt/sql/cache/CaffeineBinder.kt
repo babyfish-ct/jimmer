@@ -34,7 +34,7 @@ class CaffeineBinder<K: Any, V: Any>(
                         }
                     }
 
-                    override fun loadAll(keys: Set<K>): Map<out K, Ref<V>> =
+                    override fun loadAll(keys: Iterable<out K>): Map<K, Ref<V>> =
                         chain.loadAll((keys as Collection<K>)).mapValues {
                             Ref.of(it.value)
                         }

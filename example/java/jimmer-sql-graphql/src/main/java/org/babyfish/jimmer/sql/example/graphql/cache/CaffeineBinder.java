@@ -6,6 +6,7 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.sql.cache.chain.CacheChain;
 import org.babyfish.jimmer.sql.cache.chain.LoadingBinder;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -48,7 +49,7 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
 
                             @SuppressWarnings("unchecked")
                             @Override
-                            public Map<? extends K, ? extends Ref<V>> loadAll(Set<? extends K> keys) {
+                            public Map<K, Ref<V>> loadAll(Iterable<? extends K> keys) {
                                 Map<K, V> map = chain.loadAll((Collection<K>) keys);
                                 return map
                                         .entrySet()
