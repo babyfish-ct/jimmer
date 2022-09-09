@@ -35,15 +35,15 @@ public class TreeController {
     @GetMapping("/trees")
     public List<TreeNode> trees(
             @RequestParam(defaultValue = "") String rootName,
-            @RequestParam(defaultValue = "") String noRecursive
+            @RequestParam(defaultValue = "") String noRecursiveNames
     ) throws JsonProcessingException {
 
-        Set<String> noRecursiveNames;
-        if (noRecursive.isEmpty()) {
-            noRecursiveNames = Collections.emptySet();
+        Set<String> excludedNames;
+        if (noRecursiveNames.isEmpty()) {
+            excludedNames = Collections.emptySet();
         } else {
-            noRecursiveNames = Arrays
-                    .stream(noRecursive.trim().split("\\s*,\\s*"))
+            excludedNames = Arrays
+                    .stream(noRecursiveNames.trim().split("\\s*,\\s*"))
                     .map(String::toLowerCase)
                     .collect(Collectors.toSet());
         }
@@ -66,7 +66,7 @@ public class TreeController {
                                                         .allScalarFields(),
                                                 it -> it
                                                         .recursive(args ->
-                                                                !noRecursiveNames.contains(
+                                                                !excludedNames.contains(
                                                                         args.getEntity().name().toLowerCase()
                                                                 )
                                                         )

@@ -1,11 +1,9 @@
 package org.babyfish.jimmer.example.kt.graphql.dal
 
 import org.babyfish.jimmer.example.kt.graphql.entities.*
-import org.babyfish.jimmer.sql.ast.LikeMode
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.springframework.stereotype.Repository
-import java.math.BigDecimal
 
 @Repository
 class BookRepository(
@@ -19,10 +17,10 @@ class BookRepository(
     ): List<Book> =
         sqlClient.createQuery(Book::class) {
             name?.let {
-                where(table.name.ilike(it, LikeMode.START))
+                where(table.name ilike it)
             }
             storeName?.let {
-                where(table.store.name.ilike(it, LikeMode.START))
+                where(table.store.name ilike it)
             }
             authorName?.let {
                 where(
@@ -31,8 +29,8 @@ class BookRepository(
                             where(
                                 table.books eq parentTable,
                                 or(
-                                    table.firstName.ilike(it, LikeMode.START),
-                                    table.lastName.ilike(it, LikeMode.START)
+                                    table.firstName ilike it,
+                                    table.lastName ilike it
                                 )
                             )
                         }
