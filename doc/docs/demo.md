@@ -55,9 +55,9 @@ These two projects are the simplest examples and do not involve database operati
 
 ## [jimmer-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql) and [jimmer-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt)
 
-These two projects are Spring Shell programs, each of them supports three commands
+These two projects are Spring Shell programs, each of them supports 4 urls
 
-### books
+### GET /books
 
 Find all books
 
@@ -65,17 +65,14 @@ The command has multiple optional parameters, as follows
 
 |Parameter|Description|Default value|
 |---|----|-----|
-|--fetch|The first column of the SQL query is an object of type `Book`. If this parameter is specified, it means `Book.store`, `Book.store.avgPrice` and `Book.authors` are also required.||
-|--name <string_value>|The filter of `Book.name`||
-|--store-name <string_value>|The fitler of `Book.store.name`||
-|--author-name <string_value>|The filter of `Book.authors.firstName` or `Book.authors.lastName`||
-|--page-size <int_value>|Number of records per page|2|
+|fetch <boolean>|The first column of the SQL query is an object of type `Book`. If this parameter is specified, it means `Book.store`, `Book.store.avgPrice` and `Book.authors` are also required.||
+|name <string>|The filter of `Book.name`||
+|storeName <string>|The fitler of `Book.store.name`||
+|authorName <string>|The filter of `Book.authors.firstName` or `Book.authors.lastName`||
+|pageIndex <int>|Page index|0|
+|pageSize <int>|Number of records per page|5|
 
-:::warning
-There is no value after the `--fetch`, do not enter true or false after it
-:::
-
-### trees
+### GET /trees
 
 Query all root (`parent` is null) nodes and recursively fetch all child nodes, no matter how deep
 
@@ -83,10 +80,10 @@ The command has multiple optional parameters, as follows
 
 |Parameter|Description|Default value|
 |---|----|-----|
-|--root-name <string_value>|The filter of `TreeNode.name`||
-|--no-recursive <string_value>|Node names that do not require recursion, if there are multiple, separate them with commas||
+|rootName <string>|The filter of `TreeNode.name`||
+|noRecursiveNames <string>|Node names that do not require recursion, if there are multiple, separate them with commas||
 
-### save-tree
+### PUT /tree
 
 Save (create or replace) a tree with any depth and breadth
 
@@ -94,13 +91,13 @@ The command parameters are as follows
 
 |Parameter|Description|Mandatory|Default|
 |---|----|---|-----|
-|--root-name <string_value>|The name of the root node of the tree to save|Yes||
-|--depth <int_value>|The depth of the tree to save, excluding the root node itself|No|2|
-|--breadth <int_value>|The number of children of each node except leaf nodes|No|2|
+|rootName <string>|The name of the root node of the tree to save|Yes||
+|depth <int>|The depth of the tree to save, excluding the root node itself|No|2|
+|breadth <int>|The number of children of each node except leaf nodes|No|2|
 
 For example
 ```
-save-tree --root-name MyNode --depth 2 --breadth 2
+PUT /tree rootName=`MyNode`&depth=`2`&breadth=`3`
 ```
 means to save (create or replace) such a tree
 ```json
@@ -138,15 +135,9 @@ means to save (create or replace) such a tree
 }
 ```
 
-### delete-tree
+### DELETE /tree/{id}
 
-Delete a tree node, including all its subordinate nodes
-
-The command parameters are as follows
-
-|Parameter|Description|
-|---|----|
-|--id <int_value>|node id|
+Delete tree node by root node id, including all its subordinate nodes
 
 ## [jimmer-sql-graphql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql) and [jimmer-sql-graphql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt)
 
