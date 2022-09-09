@@ -30,8 +30,8 @@ dependencies {
 	implementation("org.springframework.data:spring-data-redis")
 	implementation("org.springframework.kafka:spring-kafka:2.9.0")
 
-	// 3.1.0 has problem
-	implementation("com.github.ben-manes.caffeine:caffeine:3.1.0")
+	// In order to work with java-8, caffeine 2.x mus be used
+	implementation("com.github.ben-manes.caffeine:caffeine:2.9.1")
 
 	runtimeOnly("com.h2database:h2:2.1.212")
 	runtimeOnly("mysql:mysql-connector-java:8.0.30")
