@@ -55,9 +55,9 @@ title: 附带demo
 
 ## [jimmer-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql)和[jimmer-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt)
 
-这两个项目是Spring Shell程序，支持三条命令
+这两个项目是Spring REST程序，支持如下操作
 
-### books
+### GET /books
 
 查询所有的书籍
 
@@ -65,17 +65,14 @@ title: 附带demo
 
 |参数|描述|默认值|
 |---|----|-----|
-|--fetch|SQL查询的第一列是`Book`类型的对象，如果指定了此参数，表示附带查询`Book.store`、`Book.store.avgPrice`和`Book.authors`。||
-|--name <string_value>|`Book.name`的过滤条件||
-|--store-name <string_value>|`Book.store.name`的过滤条件||
-|--author-name <string_value>|`Book.authors.firstName`或`Book.authors.lastName`的过滤条件||
-|--page-size <int_value>|每一页记录条数|2|
+|fetch|SQL查询的第一列是`Book`类型的对象，如果指定了此参数，表示附带查询`Book.store`、`Book.store.avgPrice`和`Book.authors`。||
+|name <string>|`Book.name`的过滤条件||
+|storeName <string>|`Book.store.name`的过滤条件||
+|authorName <string>|`Book.authors.firstName`或`Book.authors.lastName`的过滤条件||
+|pageIndex <int>|分页索引|0|
+|pageSize <int>|分页大小|5|
 
-:::warning
-`--fetch`参数后面没有值，不要在其后输入true或false
-:::
-
-### trees
+### GET /trees
 
 查询所有的根（`parent`为null）节点，并递归抓取所有子节点，无论多深
 
@@ -83,10 +80,10 @@ title: 附带demo
 
 |参数|描述|默认值|
 |---|----|-----|
-|--root-name <string_value>|`TreeNode.name`的过滤条件||
-|--no-recursive <string_value>|不需要递归的节点名称，如果有多个，用逗号分隔||
+|rootName <string>|`TreeNode.name`的过滤条件||
+|norecursiveNames <string>|不需要递归的节点名称，如果有多个，用逗号分隔||
 
-### save-tree
+### PUT /tree
 
 保存（新建或替换）一颗树，深度和广度不限
 
@@ -94,13 +91,13 @@ title: 附带demo
 
 |参数|描述|必需|默认值|
 |---|----|---|-----|
-|--root-name <string_value>|要保存的树的根节点的名称|是||
-|--depth <int_value>|要保存的树的深度，不包含根节点|否|2|
-|--breadth <int_value>|除叶子节点外，每个节点的子节点个数|否|2|
+|rootName <string>|要保存的树的根节点的名称|是||
+|depth <int>|要保存的树的深度，不包含根节点|否|2|
+|breadth <int>|除叶子节点外，每个节点的子节点个数|否|2|
 
 例如
 ```
-save-tree --root-name MyNode --depth 2 --breadth 2
+PUT /tree rootName=MyNode&depth=2&breadth=2
 ```
 表示，保存（新建或替换）这样一颗树
 ```json
@@ -138,15 +135,9 @@ save-tree --root-name MyNode --depth 2 --breadth 2
 }
 ```
 
-### delete-tree
+### DELETE /tree/{id}
 
-删除某个树节点，包含其所有下级节点
-
-该命令参数如下
-
-|参数|描述|
-|---|----|
-|--id <int_value>|节点id|
+根据根节点id删除某个树，包含其所有下级节点
 
 ## [jimmer-sql-graphql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql)和[jimmer-sql-graphql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt)
 
