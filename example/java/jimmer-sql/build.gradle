@@ -1,6 +1,6 @@
 plugins {
     // Spring Shell Boot report errors on 2.7.0, so use 2.5.7
-    id 'org.springframework.boot' version '2.5.7'
+    id 'org.springframework.boot' version '2.7.0'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
 }
@@ -18,10 +18,11 @@ dependencies {
     annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.2.3'
 
     implementation 'org.springframework.boot:spring-boot-starter'
-    implementation 'org.springframework.shell:spring-shell-starter:2.0.1.RELEASE'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'org.springframework.data:spring-data-redis'
     implementation 'org.springframework.kafka:spring-kafka:2.9.0'
+    implementation 'org.springdoc:springdoc-openapi-ui:1.6.11'
 
     // In order to work with java-8, caffeine 2.x mus be used
     implementation 'com.github.ben-manes.caffeine:caffeine:2.9.1'
