@@ -134,7 +134,7 @@ public abstract class AbstractTableWrapper<E> implements Table<E>, FluentTable<E
     private Table<E> raw() {
         Table<E> raw = _raw;
         if (raw == null) {
-            throw new IllegalStateException("TableWrapper has not been bound");
+            throw new IllegalStateException("FluentTable has not been bound");
         }
         return raw;
     }
