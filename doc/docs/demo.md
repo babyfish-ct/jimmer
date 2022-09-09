@@ -65,12 +65,12 @@ The command has multiple optional parameters, as follows
 
 |Parameter|Description|Default value|
 |---|----|-----|
-|fetch <boolean>|The first column of the SQL query is an object of type `Book`. If this parameter is specified, it means `Book.store`, `Book.store.avgPrice` and `Book.authors` are also required.||
-|name <string>|The filter of `Book.name`||
-|storeName <string>|The fitler of `Book.store.name`||
-|authorName <string>|The filter of `Book.authors.firstName` or `Book.authors.lastName`||
-|pageIndex <int>|Page index|0|
-|pageSize <int>|Number of records per page|5|
+|fetch|The first column of the SQL query is an object of type `Book`. If this parameter is specified, it means `Book.store`, `Book.store.avgPrice` and `Book.authors` are also required.||
+|name|The filter of `Book.name`||
+|storeName|The fitler of `Book.store.name`||
+|authorName|The filter of `Book.authors.firstName` or `Book.authors.lastName`||
+|pageIndex|Page index|0|
+|pageSize|Number of records per page|5|
 
 ### GET /trees
 
@@ -80,8 +80,8 @@ The command has multiple optional parameters, as follows
 
 |Parameter|Description|Default value|
 |---|----|-----|
-|rootName <string>|The filter of `TreeNode.name`||
-|noRecursiveNames <string>|Node names that do not require recursion, if there are multiple, separate them with commas||
+|rootName|The filter of `TreeNode.name`||
+|noRecursiveNames|Node names that do not require recursion, if there are multiple, separate them with commas||
 
 ### PUT /tree
 
@@ -91,9 +91,9 @@ The command parameters are as follows
 
 |Parameter|Description|Mandatory|Default|
 |---|----|---|-----|
-|rootName <string>|The name of the root node of the tree to save|Yes||
-|depth <int>|The depth of the tree to save, excluding the root node itself|No|2|
-|breadth <int>|The number of children of each node except leaf nodes|No|2|
+|rootName|The name of the root node of the tree to save|Yes||
+|depth|The depth of the tree to save, excluding the root node itself|No|2|
+|breadth|The number of children of each node except leaf nodes|No|2|
 
 For example
 ```
