@@ -66,11 +66,11 @@ title: 附带demo
 |参数|描述|默认值|
 |---|----|-----|
 |fetch|SQL查询的第一列是`Book`类型的对象，如果指定了此参数，表示附带查询`Book.store`、`Book.store.avgPrice`和`Book.authors`。||
-|name <string>|`Book.name`的过滤条件||
-|storeName <string>|`Book.store.name`的过滤条件||
-|authorName <string>|`Book.authors.firstName`或`Book.authors.lastName`的过滤条件||
-|pageIndex <int>|分页索引|0|
-|pageSize <int>|分页大小|5|
+|name|`Book.name`的过滤条件||
+|storeName|`Book.store.name`的过滤条件||
+|authorName|`Book.authors.firstName`或`Book.authors.lastName`的过滤条件||
+|pageIndex|分页索引|0|
+|pageSize|分页大小|5|
 
 ### GET /trees
 
@@ -80,8 +80,8 @@ title: 附带demo
 
 |参数|描述|默认值|
 |---|----|-----|
-|rootName <string>|`TreeNode.name`的过滤条件||
-|norecursiveNames <string>|不需要递归的节点名称，如果有多个，用逗号分隔||
+|rootName|`TreeNode.name`的过滤条件||
+|norecursiveNames|不需要递归的节点名称，如果有多个，用逗号分隔||
 
 ### PUT /tree
 
@@ -91,9 +91,9 @@ title: 附带demo
 
 |参数|描述|必需|默认值|
 |---|----|---|-----|
-|rootName <string>|要保存的树的根节点的名称|是||
-|depth <int>|要保存的树的深度，不包含根节点|否|2|
-|breadth <int>|除叶子节点外，每个节点的子节点个数|否|2|
+|rootName|要保存的树的根节点的名称|是||
+|depth|要保存的树的深度，不包含根节点|否|2|
+|breadth|除叶子节点外，每个节点的子节点个数|否|2|
 
 例如
 ```
