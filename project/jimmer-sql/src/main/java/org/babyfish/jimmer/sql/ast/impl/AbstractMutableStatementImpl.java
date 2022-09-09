@@ -50,7 +50,8 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
         if (predicates.size() > 1) {
             predicates = mergePredicates(predicates);
         }
-        return frozen = true;
+        frozen = true;
+        return true;
     }
 
     public void validateMutable() {

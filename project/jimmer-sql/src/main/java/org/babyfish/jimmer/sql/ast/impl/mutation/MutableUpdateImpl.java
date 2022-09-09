@@ -36,11 +36,10 @@ public class MutableUpdateImpl
 
     private Table<?> table;
 
-    public MutableUpdateImpl(JSqlClient sqlClient, ImmutableType immutableType) {
+    public MutableUpdateImpl(JSqlClient sqlClient, ImmutableType immutableType, boolean wrapTable) {
         super(new TableAliasAllocator(), sqlClient);
-        table = TableWrappers.wrap(
-                TableImplementor.create(this, immutableType)
-        );
+        TableImplementor<?> table = TableImplementor.create(this, immutableType);
+        this.table = wrapTable ? TableWrappers.wrap(table) : table;
     }
 
     @SuppressWarnings("unchecked")

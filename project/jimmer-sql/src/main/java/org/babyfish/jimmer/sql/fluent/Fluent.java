@@ -16,9 +16,9 @@ import java.util.function.Function;
  */
 public interface Fluent {
 
-    <T extends AbstractTableWrapper<?>> MutableRootQuery<T> query(T table);
+    <T extends FluentTable<?>> FluentRootQuery<T> query(T table);
 
-    MutableSubQuery subQuery(AbstractTableWrapper<?> table);
+    FluentSubQuery subQuery(FluentTable<?> table);
 
     <SE, ST extends Table<SE>, TE, TT extends Table<TE>> MutableRootQuery<AssociationTable<SE, ST, TE, TT>> query(
             Class<ST> sourceTableType,
@@ -29,4 +29,8 @@ public interface Fluent {
             Class<ST> sourceTableType,
             Function<ST, TT> targetTableGetter
     );
+
+    FluentUpdate update(FluentTable<?> table);
+
+    FluentDelete delete(FluentTable<?> table);
 }

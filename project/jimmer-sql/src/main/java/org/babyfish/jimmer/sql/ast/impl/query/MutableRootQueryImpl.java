@@ -25,6 +25,15 @@ public class MutableRootQueryImpl<T extends Table<?>>
         super(new TableAliasAllocator(), sqlClient, immutableType, wrapTable);
     }
 
+    public MutableRootQueryImpl(
+            TableAliasAllocator aliasAllocator,
+            JSqlClient sqlClient,
+            ImmutableType immutableType,
+            boolean wrapTable
+    ) {
+        super(aliasAllocator, sqlClient, immutableType, wrapTable);
+    }
+
     @Override
     public <R> ConfigurableRootQuery<T, R> select(Selection<R> selection) {
         return new ConfigurableRootQueryImpl<>(
