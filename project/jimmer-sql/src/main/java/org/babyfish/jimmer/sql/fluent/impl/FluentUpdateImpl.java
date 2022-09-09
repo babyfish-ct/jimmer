@@ -8,7 +8,7 @@ import org.babyfish.jimmer.sql.fluent.FluentUpdate;
 
 import java.sql.Connection;
 
-public class FluentUpdateImpl implements FluentUpdate {
+class FluentUpdateImpl implements FluentUpdate {
 
     private final MutableUpdateImpl raw;
 

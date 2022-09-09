@@ -7,4 +7,12 @@ public interface FluentFilterable {
 
     @OldChain
     FluentFilterable where(Predicate... predicates);
+
+    @OldChain
+    default FluentFilterable whereIf(boolean condition, Predicate... predicates) {
+        if (condition) {
+            where(predicates);
+        }
+        return this;
+    }
 }

@@ -18,4 +18,6 @@ public interface AssociationTable<
     default TT target() {
         return (TT)join("target");
     }
+
+
 }

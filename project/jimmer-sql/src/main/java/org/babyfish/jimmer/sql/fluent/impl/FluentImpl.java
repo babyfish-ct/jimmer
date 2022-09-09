@@ -8,17 +8,12 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.Filterable;
-import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
-import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
-import org.babyfish.jimmer.sql.ast.table.AssociationTable;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fluent.*;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 
 public class FluentImpl implements Fluent {
 
@@ -66,16 +61,6 @@ public class FluentImpl implements Fluent {
         table.bind(subQuery.getTable());
         stack.add(subQuery);
         return new FluentSubQueryImpl(subQuery, () -> pop(subQuery));
-    }
-
-    @Override
-    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>> MutableRootQuery<AssociationTable<SE, ST, TE, TT>> query(Class<ST> sourceTableType, Function<ST, TT> targetTableGetter) {
-        return null;
-    }
-
-    @Override
-    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>> MutableSubQuery subQuery(Class<ST> sourceTableType, Function<ST, TT> targetTableGetter) {
-        return null;
     }
 
     @Override

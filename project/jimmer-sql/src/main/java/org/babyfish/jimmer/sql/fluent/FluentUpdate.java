@@ -13,6 +13,12 @@ public interface FluentUpdate extends FluentFilterable, Executable<Integer> {
     FluentUpdate where(Predicate... predicates);
 
     @OldChain
+    @Override
+    default FluentUpdate whereIf(boolean condition, Predicate... predicates) {
+        return (FluentUpdate) FluentFilterable.super.whereIf(condition, predicates);
+    }
+
+    @OldChain
     <X> FluentUpdate set(PropExpression<X> path, X value);
 
     @OldChain
