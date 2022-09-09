@@ -36,10 +36,11 @@ public class MutableUpdateImpl
 
     private Table<?> table;
 
-    public MutableUpdateImpl(JSqlClient sqlClient, ImmutableType immutableType, boolean wrapTable) {
+    public MutableUpdateImpl(JSqlClient sqlClient, ImmutableType immutableType) {
         super(new TableAliasAllocator(), sqlClient);
-        TableImplementor<?> table = TableImplementor.create(this, immutableType);
-        this.table = wrapTable ? TableWrappers.wrap(table) : table;
+        this.table = TableWrappers.wrap(
+                TableImplementor.create(this, immutableType)
+        );
     }
 
     @SuppressWarnings("unchecked")
@@ -69,7 +70,7 @@ public class MutableUpdateImpl
         }
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         boolean joinedTableUpdatable = updateJoin != null && updateJoin.isJoinedTableUpdatable();
-        if (!joinedTableUpdatable && target.tableImpl != TableImplementor.unwrap(table)) {
+        if (!joinedTableUpdatable && target.tableImpl != TableWrappers.unwrap(table)) {
             throw new IllegalArgumentException(
                     "The current dialect '" +
                             getSqlClient().getDialect().getClass().getName() +
@@ -137,7 +138,7 @@ public class MutableUpdateImpl
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        TableImplementor<?> table = TableImplementor.unwrap(this.table);
+        TableImplementor<?> table = TableWrappers.unwrap(this.table);
         Dialect dialect = getSqlClient().getDialect();
         this.accept(new VisitorImpl(builder, dialect));
         builder
@@ -160,7 +161,7 @@ public class MutableUpdateImpl
     }
 
     private void renderAssignments(SqlBuilder builder) {
-        TableImplementor<?> table = TableImplementor.unwrap(this.table);
+        TableImplementor<?> table = TableWrappers.unwrap(this.table);
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         boolean withTargetPrefix =
                 updateJoin != null &&
@@ -184,7 +185,7 @@ public class MutableUpdateImpl
     }
 
     private void renderTables(SqlBuilder builder) {
-        TableImplementor<?> table = TableImplementor.unwrap(this.table);
+        TableImplementor<?> table = TableWrappers.unwrap(this.table);
         if (table.getChildren().stream().anyMatch(it -> builder.getTableUsedState(it) == TableUsedState.USED)) {
             switch (getSqlClient().getDialect().getUpdateJoin().getFrom()) {
                 case AS_ROOT:
@@ -203,7 +204,7 @@ public class MutableUpdateImpl
     }
 
     private void renderDeeperJoins(SqlBuilder builder) {
-        TableImplementor<?> table = TableImplementor.unwrap(this.table);
+        TableImplementor<?> table = TableWrappers.unwrap(this.table);
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         if (updateJoin != null &&
                 updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
@@ -216,7 +217,7 @@ public class MutableUpdateImpl
     }
 
     private void renderPredicates(SqlBuilder builder) {
-        TableImplementor<?> table = TableImplementor.unwrap(this.table);
+        TableImplementor<?> table = TableWrappers.unwrap(this.table);
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         String separator = " where ";
         if (updateJoin != null &&
@@ -252,7 +253,7 @@ public class MutableUpdateImpl
 
         static Target of(PropExpression<?> expr) {
             PropExpressionImpl<?> exprImpl = (PropExpressionImpl<?>) expr;
-            TableImplementor<?> targetTable = TableImplementor.unwrap(exprImpl.getTableImplementor());
+            TableImplementor<?> targetTable = TableWrappers.unwrap(exprImpl.getTableImplementor());
             if (targetTable.getParent() != null && exprImpl.getProp().isId()) {
                 return new Target(targetTable.getParent(), targetTable.getJoinProp(), expr);
             } else {
@@ -286,7 +287,7 @@ public class MutableUpdateImpl
         @Override
         public void visitTableReference(Table<?> table, ImmutableProp prop) {
             super.visitTableReference(table, prop);
-            validateTable(TableImplementor.unwrap(table));
+            validateTable(TableWrappers.unwrap(table));
         }
 
         private void validateTable(TableImplementor<?> tableImpl) {

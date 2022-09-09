@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
@@ -51,7 +51,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         AstVisitor visitor = new ReselectValidator();
         for (Selection<?> selection : getData().getSelections()) {
             if (selection instanceof Table<?>) {
-                ((Ast) TableImplementor.unwrap((Table<?>) selection)).accept(visitor);
+                ((Ast) TableWrappers.unwrap((Table<?>) selection)).accept(visitor);
             } else {
                 ((Ast) selection).accept(visitor);
             }

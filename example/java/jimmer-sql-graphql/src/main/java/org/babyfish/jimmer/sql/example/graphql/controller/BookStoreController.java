@@ -60,7 +60,10 @@ public class BookStoreController {
                         BookStoreTableEx::books
                 )
                 .forFilter(
-                        args -> args.orderBy(args.getTable().name())
+                        args -> args.orderBy(
+                                args.getTable().name().asc(),
+                                args.getTable().edition().desc()
+                        )
                 )
                 .batchLoad(stores);
     }

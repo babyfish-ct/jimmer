@@ -171,7 +171,7 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
-    public Fluent newFluent() {
+    public Fluent createFluent() {
         return new FluentImpl(this);
     }
 

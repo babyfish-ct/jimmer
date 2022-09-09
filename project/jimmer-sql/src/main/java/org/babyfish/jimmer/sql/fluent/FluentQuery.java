@@ -4,23 +4,25 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.query.Order;
 
+import java.util.function.Supplier;
+
 public interface FluentQuery extends FluentFilterable {
 
     @Override
     FluentQuery where(Predicate... predicates);
 
     @Override
-    default FluentQuery whereIf(boolean condition, Predicate... predicates) {
-        return (FluentQuery) FluentFilterable.super.whereIf(condition, predicates);
+    default FluentQuery whereIf(boolean condition, Supplier<Predicate> predicateSupplier) {
+        return (FluentQuery) FluentFilterable.super.whereIf(condition, predicateSupplier);
     }
 
     FluentQuery groupBy(Expression<?>... expressions);
 
     FluentQuery having(Predicate... predicates);
 
-    default FluentQuery havingIf(boolean condition, Predicate... predicates) {
+    default FluentQuery havingIf(boolean condition, Supplier<Predicate> predicateSupplier) {
         if (condition) {
-            having(predicates);
+            having(predicateSupplier.get());
         }
         return this;
     }

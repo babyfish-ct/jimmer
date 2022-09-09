@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.example.graphql.entities.AuthorTableEx;
 import org.babyfish.jimmer.sql.example.graphql.entities.Book;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookTable;
+import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
@@ -26,31 +27,38 @@ public class BookRepository {
             @Nullable String storeName,
             @Nullable String authorName
     ) {
-        return sqlClient.createQuery(BookTable.class, (q, book) -> {
-            if (StringUtils.hasText(name)) {
-                q.where(book.name().ilike(name, LikeMode.START));
-            }
-            if (StringUtils.hasText(storeName)) {
-                q.where(book.store().name().ilike(storeName, LikeMode.START));
-            }
-            if (StringUtils.hasText(authorName)) {
-                q.where(
-                        book.id().in(
-                                q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
-                                    sq.where(
-                                            Predicate.or(
+        Fluent fluent = sqlClient.createFluent();
+        BookTable book = new BookTable();
+        AuthorTableEx author = new AuthorTableEx();
+
+        return fluent
+                .query(book)
+                .whereIf(
+                        StringUtils.hasText(name),
+                        () -> book.name().ilike(name, LikeMode.START)
+                )
+                .whereIf(
+                        StringUtils.hasText(storeName),
+                        () -> book.store().name().ilike(storeName, LikeMode.START)
+                )
+                .whereIf(
+                        StringUtils.hasText(authorName),
+                        () -> book.id().in(fluent
+                                .subQuery(author)
+                                .where(
+                                        Predicate.or(
                                                 author.firstName().ilike(authorName, LikeMode.START),
                                                 author.lastName().ilike(authorName, LikeMode.START)
-                                            )
-                                    );
-                                    return sq.select(author.books().id());
-                                })
+                                        )
+                                )
+                                .select(author.books().id())
                         )
-                );
-            }
-            return q
-                    .orderBy(book.name())
-                    .select(book);
-        }).execute();
+                )
+                .orderBy(
+                        book.name().asc(),
+                        book.edition().desc()
+                )
+                .select(book)
+                .execute();
     }
 }

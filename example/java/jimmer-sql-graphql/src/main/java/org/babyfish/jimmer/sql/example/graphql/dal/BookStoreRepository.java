@@ -4,6 +4,8 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.LikeMode;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStore;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStoreTable;
+import org.babyfish.jimmer.sql.example.graphql.entities.BookTable;
+import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
@@ -20,11 +22,17 @@ public class BookStoreRepository {
     }
 
     public List<BookStore> find(@Nullable String name) {
-        return sqlClient.createQuery(BookStoreTable.class, (q, store) -> {
-            if (StringUtils.hasText(name)) {
-                q.where(store.name().ilike(name, LikeMode.START));
-            }
-            return q.select(store);
-        }).execute();
+        Fluent fluent = sqlClient.createFluent();
+        BookStoreTable store = new BookStoreTable();
+
+        return fluent
+                .query(store)
+                .whereIf(
+                        StringUtils.hasText(name),
+                        () -> store.name().ilike(name, LikeMode.START)
+                )
+                .orderBy(store.name())
+                .select(store)
+                .execute();
     }
 }

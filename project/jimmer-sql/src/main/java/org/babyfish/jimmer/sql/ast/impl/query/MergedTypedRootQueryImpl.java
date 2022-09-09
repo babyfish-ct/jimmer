@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -134,8 +134,8 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQuery<R>, TypedQueryImplem
 
     private static boolean isSameType(Selection<?> a, Selection<?> b) {
         if (a instanceof Table<?> && b instanceof Table<?>) {
-            return TableImplementor.unwrap((Table<?>) a).getImmutableType() ==
-                    TableImplementor.unwrap((Table<?>) b).getImmutableType();
+            return TableWrappers.unwrap((Table<?>) a).getImmutableType() ==
+                    TableWrappers.unwrap((Table<?>) b).getImmutableType();
         }
         if (a instanceof Expression<?> && b instanceof Expression<?>) {
             return ((ExpressionImplementor<?>) a).getType() ==

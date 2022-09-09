@@ -23,7 +23,7 @@ internal class KSubQueriesImpl<P: Any>(
         block: KMutableSubQuery<P, E>.() -> SQ
     ): SQ {
         val immutableType = ImmutableType.get(entityType.java)
-        val subQuery = MutableSubQueryImpl(parent, immutableType, true)
+        val subQuery = MutableSubQueryImpl(parent, immutableType)
         val typedSubQuery = KMutableSubQueryImpl<P, E>(subQuery).block()
         subQuery.freeze()
         return typedSubQuery
@@ -48,7 +48,7 @@ internal class KSubQueriesImpl<P: Any>(
         block: KMutableSubQuery<P, Association<S, T>>.() -> SQ
     ): SQ {
         val associationType = AssociationType.of(immutableProp)
-        val subQuery = MutableSubQueryImpl(parent, associationType, true)
+        val subQuery = MutableSubQueryImpl(parent, associationType)
         val typedSubQuery = KMutableSubQueryImpl<P, Association<S, T>>(subQuery).block()
         subQuery.freeze()
         return typedSubQuery

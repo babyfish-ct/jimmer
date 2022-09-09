@@ -21,14 +21,12 @@ public class MutableSubQueryImpl
 
     public MutableSubQueryImpl(
             AbstractMutableStatementImpl parent,
-            ImmutableType immutableType,
-            boolean wrapTable
+            ImmutableType immutableType
     ) {
         super(
                 parent.getTableAliasAllocator(),
                 parent.getSqlClient(),
-                immutableType,
-                wrapTable
+                immutableType
         );
         this.parent = parent;
     }

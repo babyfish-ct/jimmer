@@ -55,7 +55,7 @@ public class ImmutableProps {
                     "The lambda expression of ImmutableProps.join cannot return null"
             );
         }
-        TableImplementor<?> joinedTableImpl = TableImplementor.unwrap(joinedTable);
+        TableImplementor<?> joinedTableImpl = TableWrappers.unwrap(joinedTable);
         if (joinedTableImpl.getParent() != tableImpl) {
             throw new IllegalStateException(
                     "The lambda expression of ImmutableProps.join must return an child table bases on its argument"

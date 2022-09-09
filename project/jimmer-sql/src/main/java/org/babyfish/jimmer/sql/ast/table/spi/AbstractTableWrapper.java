@@ -5,6 +5,8 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -29,10 +31,7 @@ public abstract class AbstractTableWrapper<E> implements Table<E>, FluentTable<E
         if (raw == null) {
             throw new IllegalArgumentException("raw cannot be null");
         }
-        if (raw instanceof AbstractTableWrapper<?>) {
-            throw new IllegalArgumentException("raw cannot be table wrapper");
-        }
-        _raw = raw;
+        _raw = (Table<E>) TableWrappers.unwrap(raw);
     }
 
     @Override

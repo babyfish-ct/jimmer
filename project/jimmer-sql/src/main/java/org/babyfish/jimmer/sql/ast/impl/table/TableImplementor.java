@@ -31,17 +31,6 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection<E> 
 
     void renderJoinAsFrom(SqlBuilder builder, TableImplementor.RenderMode mode);
 
-    @SuppressWarnings("unchecked")
-    static TableImplementor<?> unwrap(Table<?> table) {
-        if (table instanceof TableImplementor<?>) {
-            return (TableImplementor<?>) table;
-        }
-        if (table instanceof AbstractTableWrapper<?>) {
-            return unwrap(((AbstractTableWrapper<?>) table).__unwrap());
-        }
-        throw new IllegalArgumentException("Unknown table implementation");
-    }
-
     static TableImplementor<?> create(
             AbstractMutableStatementImpl statement,
             ImmutableType immutableType

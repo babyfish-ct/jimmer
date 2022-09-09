@@ -12,7 +12,7 @@ public class FluentDMLTest extends AbstractMutationTest {
 
     @Test
     public void testUpdate() {
-        Fluent fluent = getSqlClient().newFluent();
+        Fluent fluent = getSqlClient().createFluent();
         BookTable book = new BookTable();
         AuthorTableEx author = new AuthorTableEx();
         executeAndExpectRowCount(
@@ -46,7 +46,7 @@ public class FluentDMLTest extends AbstractMutationTest {
 
     @Test
     public void testDelete() {
-        Fluent fluent = getSqlClient().newFluent();
+        Fluent fluent = getSqlClient().createFluent();
         BookTable book = new BookTable();
         AuthorTableEx author = new AuthorTableEx();
 

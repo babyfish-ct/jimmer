@@ -6,6 +6,8 @@ import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.selectable.RootSelectable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
+import java.util.function.Supplier;
+
 public interface FluentRootQuery<T extends Table<?>> extends FluentQuery, RootSelectable<T> {
 
     @Override
@@ -13,8 +15,8 @@ public interface FluentRootQuery<T extends Table<?>> extends FluentQuery, RootSe
 
     @SuppressWarnings("unchecked")
     @Override
-    default FluentRootQuery<T> whereIf(boolean condition, Predicate... predicates) {
-        return (FluentRootQuery<T>) FluentQuery.super.whereIf(condition, predicates);
+    default FluentRootQuery<T> whereIf(boolean condition, Supplier<Predicate> predicateSupplier) {
+        return (FluentRootQuery<T>) FluentQuery.super.whereIf(condition, predicateSupplier);
     }
 
     FluentRootQuery<T> groupBy(Expression<?>... expressions);
@@ -23,13 +25,14 @@ public interface FluentRootQuery<T extends Table<?>> extends FluentQuery, RootSe
 
     @SuppressWarnings("unchecked")
     @Override
-    default FluentRootQuery<T> havingIf(boolean condition, Predicate... predicates) {
-        return (FluentRootQuery<T>) FluentQuery.super.havingIf(condition, predicates);
+    default FluentRootQuery<T> havingIf(boolean condition, Supplier<Predicate> predicateSupplier) {
+        return (FluentRootQuery<T>) FluentQuery.super.havingIf(condition, predicateSupplier);
     }
 
     @SuppressWarnings("unchecked")
     FluentRootQuery<T> orderBy(Expression<?>... expressions);
 
+    @SuppressWarnings("unchecked")
     @Override
     default FluentRootQuery<T> orderByIf(boolean condition, Expression<?>... expressions) {
         return (FluentRootQuery<T>) FluentQuery.super.orderByIf(condition, expressions);

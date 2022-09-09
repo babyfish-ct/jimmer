@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
@@ -27,13 +28,12 @@ public class MutableDeleteImpl
 
     private MutableRootQueryImpl<TableEx<?>> deleteQuery;
 
-    public MutableDeleteImpl(JSqlClient sqlClient, ImmutableType immutableType, boolean wrapTable) {
+    public MutableDeleteImpl(JSqlClient sqlClient, ImmutableType immutableType) {
         super(new TableAliasAllocator(), sqlClient);
         deleteQuery = new MutableRootQueryImpl<>(
                 this.getTableAliasAllocator(),
                 sqlClient,
-                immutableType,
-                wrapTable
+                immutableType
         );
     }
 
@@ -69,7 +69,7 @@ public class MutableDeleteImpl
     @SuppressWarnings("unchecked")
     private Integer executeImpl(Connection con) {
         JSqlClient sqlClient = getSqlClient();
-        TableImplementor<?> table = TableImplementor.unwrap(deleteQuery.getTable());
+        TableImplementor<?> table = TableWrappers.unwrap(deleteQuery.getTable());
         if (table.getChildren().isEmpty()) {
             SqlBuilder builder = new SqlBuilder(sqlClient);
             Ast ast = (Ast) deleteQuery.getPredicate();
@@ -100,7 +100,7 @@ public class MutableDeleteImpl
     }
 
     private void renderDirectly(SqlBuilder builder) {
-        TableImplementor<?> table = TableImplementor.unwrap(deleteQuery.getTable());
+        TableImplementor<?> table = TableWrappers.unwrap(deleteQuery.getTable());
         builder.sql("delete from ");
         builder.sql(table.getImmutableType().getTableName());
         builder.sql(" as ");

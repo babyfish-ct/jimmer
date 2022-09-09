@@ -15,7 +15,7 @@ public class FluentQueryTest extends AbstractQueryTest {
     @Test
     public void testSimpleQuery() {
 
-        Fluent fluent = getSqlClient().newFluent();
+        Fluent fluent = getSqlClient().createFluent();
         BookTable book = new BookTable();
 
         executeAndExpect(
@@ -60,7 +60,7 @@ public class FluentQueryTest extends AbstractQueryTest {
 
     @Test
     public void testSubQuery() {
-        Fluent fluent = getSqlClient().newFluent();
+        Fluent fluent = getSqlClient().createFluent();
         BookTable book = new BookTable();
         AuthorTableEx author = new AuthorTableEx();
 
@@ -119,7 +119,7 @@ public class FluentQueryTest extends AbstractQueryTest {
 
     @Test
     public void testWildSubQuery() {
-        Fluent fluent = getSqlClient().newFluent();
+        Fluent fluent = getSqlClient().createFluent();
         BookTable book = new BookTable();
         AuthorTableEx author = new AuthorTableEx();
 
@@ -179,7 +179,7 @@ public class FluentQueryTest extends AbstractQueryTest {
 
     @Test
     public void testAsTableEx() {
-        Fluent fluent = getSqlClient().newFluent();
+        Fluent fluent = getSqlClient().createFluent();
         BookTable book = new BookTable();
 
         executeAndExpect(
@@ -209,7 +209,7 @@ public class FluentQueryTest extends AbstractQueryTest {
     @Test
     public void testIllegalArgument() {
         IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            getSqlClient().newFluent().query(new BookTableEx());
+            getSqlClient().createFluent().query(new BookTableEx());
         });
         Assertions.assertEquals("Top-level query does not accept TableEx", ex.getMessage());
     }
