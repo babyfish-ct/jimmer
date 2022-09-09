@@ -9,10 +9,10 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class JacksonConfig {
 
+    // This module is important,
+    // it tells spring how to serialize/deserialize jimmer objects.
     @Bean
-    public ObjectWriter prettyWriter() {
-        return new ObjectMapper()
-                .registerModule(new ImmutableModule())
-                .writerWithDefaultPrettyPrinter();
+    public ImmutableModule immutableModule() {
+        return new ImmutableModule();
     }
 }
