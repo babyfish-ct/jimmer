@@ -87,7 +87,7 @@ kotlin没有这个问题，其API是统一的。
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     book.name().eq(
         Expression.string().value("Java in Action")
     )
@@ -112,7 +112,7 @@ where(
 <TabItem value="java" label="Java">
 
 ```java
-q.where(book.name().eq("Java in Action"));
+where(book.name().eq("Java in Action"));
 ```
 
 </TabItem>
@@ -193,7 +193,7 @@ from BOOK as tb_1_
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.name().eq("SQL in Action"));
+    where(book.name().eq("SQL in Action"));
     ```
 
     </TabItem>
@@ -212,7 +212,7 @@ from BOOK as tb_1_
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.name().ne("SQL in Action"));
+    where(book.name().ne("SQL in Action"));
     ```
 
     </TabItem>
@@ -231,7 +231,7 @@ from BOOK as tb_1_
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.price().gt(new BigDecimal(50)));
+    where(book.price().gt(new BigDecimal(50)));
     ```
 
     </TabItem>
@@ -250,7 +250,7 @@ from BOOK as tb_1_
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.price().ge(new BigDecimal(50)));
+    where(book.price().ge(new BigDecimal(50)));
     ```
 
     </TabItem>
@@ -269,7 +269,7 @@ from BOOK as tb_1_
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.price().lt(new BigDecimal(50)));
+    where(book.price().lt(new BigDecimal(50)));
     ```
 
     </TabItem>
@@ -288,7 +288,7 @@ from BOOK as tb_1_
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.price().le(new BigDecimal(50)));
+    where(book.price().le(new BigDecimal(50)));
     ```
 
     </TabItem>
@@ -307,7 +307,7 @@ from BOOK as tb_1_
     <TabItem value="java" label="Java">
     
     ```java
-    q.where(
+    where(
         book.price().between(
             new BigDecimal(40), 
             new BigDecimal(40)
@@ -336,7 +336,7 @@ from BOOK as tb_1_
     <TabItem value="java" label="Java">
     
     ```java
-    q.where(
+    where(
         book.price().notBetween(
             new BigDecimal(40), 
             new BigDecimal(40)
@@ -369,7 +369,7 @@ from BOOK as tb_1_
     <TabItem value="java" label="Java">
     
     ```java
-    q.where(book.name().like("Ab"));
+    where(book.name().like("Ab"));
     ```
 
     </TabItem>
@@ -394,7 +394,7 @@ from BOOK as tb_1_
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.name().ilike("Ab"));
+    where(book.name().ilike("Ab"));
     ```
 
     </TabItem>
@@ -421,7 +421,7 @@ from BOOK as tb_1_
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.name().like("Ab", LikeMode.ANYWHERE));
+    where(book.name().like("Ab", LikeMode.ANYWHERE));
     ```
 
     </TabItem>
@@ -442,7 +442,7 @@ from BOOK as tb_1_
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.name().like("Ab", LikeMode.START));
+    where(book.name().like("Ab", LikeMode.START));
     ```
 
     </TabItem>
@@ -463,7 +463,7 @@ from BOOK as tb_1_
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.name().like("Ab", LikeMode.END));
+    where(book.name().like("Ab", LikeMode.END));
     ```
 
     </TabItem>
@@ -484,7 +484,7 @@ from BOOK as tb_1_
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.name().like("Ab", LikeMode.EXACT));
+    where(book.name().like("Ab", LikeMode.EXACT));
     ```
 
     </TabItem>
@@ -505,7 +505,7 @@ from BOOK as tb_1_
 <TabItem value="java" label="Java">
 
 ```java
-q.where(book.store().isNull());
+where(book.store().isNull());
 ```
 
 </TabItem>
@@ -522,7 +522,7 @@ where(table.store.isNull())
 <TabItem value="java" label="Java">
 
 ```java
-q.where(book.store().isNotNull());
+where(book.store().isNotNull());
 ```
 
 </TabItem>
@@ -543,7 +543,7 @@ where(table.store.isNotNull())
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     book.name().in(
         Arrays.asList(
             "SQL in Action",
@@ -579,7 +579,7 @@ where tb_1_.NAME in (?, ?)
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     Expression.tuple(
         book.name(),
         book.edition()
@@ -635,7 +635,7 @@ where (tb_1_.NAME, tb_1_.EDITION) in (
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     Predicate.and(
         book.name().like("Ab"),
         book.price().ge(new BigDecimal(40)),
@@ -670,7 +670,7 @@ where(
     <TabItem value="java" label="Java">
     
     ```java
-    q.where(
+    where(
         book.name().like("Ab"),
         book.price().ge(new BigDecimal(40)),
         book.price().lt(new BigDecimal(60))
@@ -722,7 +722,7 @@ where(
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     // highlight-next-line
     Predicate.or(
         book.name().like("Ab"),
@@ -755,7 +755,7 @@ where(
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     book.name().like("Ab").not()
 );
 ```
@@ -783,7 +783,7 @@ where(
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     book.price().ge(new BigDecimal(40)).not()
 );
 ```
