@@ -31,7 +31,8 @@ List<
             Expression.any().value("String"),
             Expression.nullValue(Boolean.class)
         );
-    }).execute();
+    })
+    .execute();
 ```
 
 </TabItem>
@@ -99,7 +100,7 @@ where(
 
 ```kotlin
 where(
-    table.name eq value("Java in Action"))
+    table.name eq value("Java in Action")
 )
 ```
 
@@ -1056,6 +1057,7 @@ from BOOK_STORE as tb_1_
 List<String> results = sqlClient
     .createQuery(BookStoreTable.class, (q, store) -> {
         return q.select(
+            // highlight-next-line
             store.website().coalesce(store.name())
         );
     })
@@ -1069,6 +1071,7 @@ List<String> results = sqlClient
 var results = sqlClient
     .createQuery(BookStore::class) {
         select(
+            // highlight-next-line
             table.website.coalesce(table.name)
         )
     }
@@ -1102,7 +1105,9 @@ Contact表达式用于字符串拼接。
 List<String> fullNames = sqlClient
     .createQuery(AuthorTable.class, (q, author) -> {
         return q.select(
-            author.firstName()
+            author
+                .firstName()
+                // highlight-next-line
                 .concat(
                         Expression.string().value(" "),
                         author.lastName()
@@ -1118,6 +1123,7 @@ List<String> fullNames = sqlClient
 var fullNames = sqlClient
     .createQuery(Author::class) {
         select(
+            // highlight-next-line
             concat(
                 table.firstName,
                 value(" "),
@@ -1135,6 +1141,7 @@ var fullNames = sqlClient
 
 ```sql
 select 
+    /* highlight-next-line */
     concat(
         tb_1_.FIRST_NAME, 
         ?, 
