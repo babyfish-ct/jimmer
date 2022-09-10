@@ -836,7 +836,107 @@ val saved = sqlClient
 
 </details>
 
-### 7. Paging
+### 7. **Implicit & dynamic table joins**
+
+Jimmer's table joins are designed for very complex queries, it have the following features:
+
+1.  Without explicitly creating table joins, the natural fluent property reference path represents complex multi-table joins, such as:
+
+    `where(table.books.authors.company.city.name eq "ChengDu")`
+
+2.  Table joins that are never used are automatically ignored and do not appear in the final SQL.
+
+3.  For joined associated object, if only its id property is accessed, jimmer will further ignore more unnecessary join. See [Phantom join](./jimmer-sql/table-join#phantom-join) and [Half join](./jimmer-sql/table-join#half-join).
+
+4.  Conflicting table joins in different paths will be automatically merged. See [Dynamic join](./jimmer-sql/table-join#dynamic-join).
+
+<details>
+<summary>Quick view</summary>
+
+This example shows automatic merge conflicting table joins.
+
+For simplicity, only the simplest two-table joins is demonstrated.
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+public List<Book> findBooks(
+    @Nullable String storeName,
+    @Nullable String storeWebsite
+) {
+    Fluent fluent = sqlClient.createFluent();
+    BookTable book = new BookTable();
+    
+    return fluent
+        .query(book)
+        .whereIf(
+            storeName != null,
+            () -> book.store().name().like(storeName)
+        )
+        .whereIf(
+            storeWebsite != null,
+            () -> book.store().website().like(storeWebsite)
+        )
+        .select(book)
+        .execute();
+}
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
+
+```java
+public List<Book> findBooks(
+    @Nullable String storeName,
+    @Nullable String storeWebsite
+) {
+    return sqlClient
+        .createQuery(BookTable.class, (q, book) -> {
+            if (storeName != null) {
+                q.where(book.store().name().like(storeName));
+            }
+            if (storeWebsite != null) {
+                q.where(book.store().website().like(storeWebsite));
+            }
+            return q.select(book);
+        })
+        .execute();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+fun findBooks(
+    storeName: String?,
+    storeWebsite: String?
+): List<Book> =
+    sqlClient
+        .createQuery(Book::class) {
+            storeName?.let { 
+                where(table.store.name like it)
+            }
+            storeWebsite?.let { 
+                where(table.store.website like it)
+            }
+            select(table)
+        }
+        .execute()
+```
+
+</TabItem>
+</Tabs>
+
+Taking the above code as an example, `book.store()` in the Java code and `table.store` in the kotlin code represent the inner join of the association `Book::store`.
+
+Obviously, the above code implements a dynamic query, and different parameters will cause different SQL to be generated.
+
+When the above two conditions are met, in the final generated SQL, the table join of `Book::store` will only appear once, not twice. 
+</details>
+
+### 8. Paging
 
 In the paging scenario, developers only need to focus on querying the actual data, and the query on the number of rows is automatically generated and optimized by the framework.
 
@@ -934,94 +1034,6 @@ val books = query
 
 </TabItem>
 </Tabs>
-</details>
-
-### 8. Dynamic table joins
-
-Implicit dynamic table joins: automatically merge conflicting table joins in different code logic branches for complex dynamic queries *(Even with the highly controllable myBatis, it is difficult to implement this feature)*;
-
-<details>
-<summary>Quick view</summary>
-
-<Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
-
-```java
-public List<Book> findBooks(
-    @Nullable String storeName,
-    @Nullable String storeWebsite
-) {
-    Fluent fluent = sqlClient.createFluent();
-    BookTable book = new BookTable();
-    
-    return fluent
-        .query(book)
-        .whereIf(
-            storeName != null,
-            () -> book.store().name().like(storeName)
-        )
-        .whereIf(
-            storeWebsite != null,
-            () -> book.store().website().like(storeWebsite)
-        )
-        .select(book)
-        .execute();
-}
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-public List<Book> findBooks(
-    @Nullable String storeName,
-    @Nullable String storeWebsite
-) {
-    return sqlClient
-        .createQuery(BookTable.class, (q, book) -> {
-            if (storeName != null) {
-                q.where(book.store().name().like(storeName));
-            }
-            if (storeWebsite != null) {
-                q.where(book.store().website().like(storeWebsite));
-            }
-            return q.select(book);
-        })
-        .execute();
-}
-```
-
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
-
-```kotlin
-fun findBooks(
-    storeName: String?,
-    storeWebsite: String?
-): List<Book> =
-    sqlClient
-        .createQuery(Book::class) {
-            storeName?.let { 
-                where(table.store.name like it)
-            }
-            storeWebsite?.let { 
-                where(table.store.website like it)
-            }
-            select(table)
-        }
-        .execute()
-```
-
-</TabItem>
-</Tabs>
-
-In jimmer-sql table joins are implicit.
-
-Taking the above code as an example, `book.store()` in the Java code and `table.store` in the kotlin code represent the inner join of the association `Book::store`.
-
-Obviously, the above code implements a dynamic query, and different parameters will cause different SQL to be generated.
-
-When the above two conditions are met, in the final generated SQL, the table join of `Book::store` will only appear once, not twice. 
 </details>
 
 ### 9. Extreme lightweight. 
