@@ -1,0 +1,51 @@
+---
+sidebar_position: 2
+title: Get started
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## Youtube video
+
+https://www.youtube.com/watch?v=Rt5zNv0YR2E
+
+## Tutorual pages
+
+1. [jimmer-core](./jimmer-core/usage.mdx)
+2. [jimmer-sql](./jimmer-sql/usage.mdx)
+
+## Quick experience
+
+Use intellij to open [&lt;jimmer-home&gt;/example/java/java-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql/) or [&lt;jimmer-home&gt;/example/kotlin/java-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt/), start it
+
+Access http://localhost:8080/ui
+
+For more information, please view [Demos](./demo)
+
+## Note 
+
+If you use Spring REST, not Spring GraphQL, you need to enable Jackson to support serialization and deserialization of Jimmer objects, like this, 
+
+<Tabs groupId="buildScript">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public ImmutableModule immutableModule() {
+    return new ImmutableModule();
+}
+```
+</TabItem>
+
+<TabItem value="kotlin" label="Kotin">
+
+```kotlin
+@Bean
+fun immutableModule() = ImmutableModule()
+```
+
+</TabItem>
+</Tabs>
+
+please view [Jimmer and Jackson](jimmer-core/dynamic/#jimmer-and-jackson)
