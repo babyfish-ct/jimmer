@@ -11,7 +11,34 @@ import TabItem from '@theme/TabItem';
 Let's look at an example first *(This query has no actual business meaning, just for demonstration)*
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<
+    Tuple5<
+        String,
+        Long,
+        OffsetDateTime,
+        String,
+        Boolean
+        >
+> tuples = fluent
+    .query(book)
+    .select(
+        Expression.string().value("String"),
+        Expression.numeric().value(3L),
+        Expression.comparable().value(OffsetDateTime.now()),
+        Expression.any().value("String"),
+        Expression.nullValue(Boolean.class)
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<
@@ -31,7 +58,8 @@ List<
             Expression.any().value("String"),
             Expression.nullValue(Boolean.class)
         );
-    }).execute();
+    })
+    .execute();
 ```
 
 </TabItem>
@@ -99,7 +127,7 @@ where(
 
 ```kotlin
 where(
-    table.name eq value("Java in Action"))
+    table.name eq value("Java in Action")
 )
 ```
 
@@ -134,7 +162,24 @@ However, this cannot be done 100%. In rare cases, developers are still required 
 Constant expressions are highly similar to literal expressions, let's look at the example first *(this query has no actual business meaning, just for demonstration)*
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<Integer> constants = fluent
+    .query(book)
+    .select(
+        // highlight-next-line
+        Expression.constant(1)
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Integer> constants = sqlClient
@@ -907,7 +952,36 @@ jimmer-sql tries to avoid using `not` directly in SQL, but anyway, in the end th
 ## Aggregate
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<
+    Tuple6<
+        Long,
+        Long,
+        BigDecimal,
+        BigDecimal,
+        BigDecimal,
+        BigDecimal
+    >
+> tuples = fluent
+    .query(book)
+    .select(
+        book.count(),
+        book.id().count(/* disintct */ true),
+        book.price().sum(),
+        book.price().min(),
+        book.price().max(),
+        book.price().avg()
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<
@@ -972,7 +1046,27 @@ from BOOK as tb_1_
 The `coalesce` expression returns the first non-null value in a sequence of expressions.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookStoreTable store = new BookStoreTable();
+
+List<String> results = fluent
+    .query(store)
+    .select(
+        store.website() // 1
+            // highlight-next-line
+            .coalesceBuilder()
+            .or(store.name()) // 2
+            .or("Default Value") // 3
+            .build()
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<String> results = sqlClient
@@ -1051,12 +1145,29 @@ from BOOK_STORE as tb_1_
 In particular, if the SQL `coalesce` function has only two parameters, that is, the `or()` method will only be called once, there is a shortcut:
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookStoreTable store = new BookStoreTable();
+
+List<String> results = fluent
+    .query(store)
+    .select(
+        // highlight-next-line
+        store.website().coalesce(store.name())
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<String> results = sqlClient
     .createQuery(BookStoreTable.class, (q, store) -> {
         return q.select(
+            // highlight-next-line
             store.website().coalesce(store.name())
         );
     })
@@ -1070,6 +1181,7 @@ List<String> results = sqlClient
 var results = sqlClient
     .createQuery(BookStore::class) {
         select(
+            // highlight-next-line
             table.website.coalesce(table.name)
         )
     }
@@ -1097,13 +1209,36 @@ Contact expressions are used for string concatenation.
 This example uses a space as separator to concat the author's firstName and lastName
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+AuthorTable author = new AuthorTable();
+
+List<String> results = fluent
+    .query(author)
+    .select(
+        author
+            .firstName()
+            // highlight-next-line
+            .concat(
+                Expression.string().value(" "),
+                author.lastName()
+            )
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<String> fullNames = sqlClient
     .createQuery(AuthorTable.class, (q, author) -> {
         return q.select(
-            author.firstName()
+            author
+                .firstName()
+                // highlight-next-line
                 .concat(
                         Expression.string().value(" "),
                         author.lastName()
@@ -1119,6 +1254,7 @@ List<String> fullNames = sqlClient
 var fullNames = sqlClient
     .createQuery(Author::class) {
         select(
+            // highlight-next-line
             concat(
                 table.firstName,
                 value(" "),
@@ -1137,6 +1273,7 @@ The generated SQL is as follows
 
 ```sql
 select 
+    /* highlight-next-line */
     concat(
         tb_1_.FIRST_NAME, 
         ?, 
@@ -1154,7 +1291,27 @@ There are two types of case expressions, simple case and ordinary case
 A simple case expression needs to specify an expression at the beginning, and each subsequent judgment branch specifies an expected value to check whether a target expression of one branch matches an expected value.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<String> results = fluent
+    .query(book)
+    .select(
+        Expression.string()
+            // highlight-next-line
+            .caseBuilder(book.name())
+            .when("Java in Action", "Matched")
+            .when("SQL in Action", "Matched")
+            .otherwise("Not matched")
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<String> results = sqlClient
@@ -1209,7 +1366,33 @@ from BOOK as tb_1_
 Ordinary case expressions do not need to specify any parameters at the beginning, but each subsequent judgment branch can specify a logical judgment expression of arbitrary complexity to check whether the branch is matched.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<String> results = fluent
+    .query(book)
+    .select(
+        Expression.string()
+            // highlight-next-line
+            .caseBuilder()
+            .when(
+                book.price().lt(new BigDecimal(30)),
+                "Cheap"
+            )
+            .when(
+                book.price().gt(new BigDecimal(70)),
+                "Expensive"
+            )
+            .otherwise("Appropriate")
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<String> results = sqlClient
@@ -1271,7 +1454,28 @@ NativeSQL expression is an important function. Database products always have uni
 This example demonstrates how to use regular match expression of Oracle and HSQLDB.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+AuthorTable author = new AuthorTable();
+
+List<Author> authors = fluent
+    .query(author)
+    .where(
+        Predicate.sql(
+            "regexp_like(%e, %v)",
+            it -> it
+                .expression(author.firstName())
+                .value("^Ste(v|ph)en$")
+        )
+    )
+    .select(author)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Author> authors = sqlClient.
