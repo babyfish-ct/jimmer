@@ -20,9 +20,59 @@ This article will introduce the table joins, it contains four parts
 Let's look at an example of a dynamic join.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
 
 ```java
+@Repository
+public class BookRepository {
+
+    private final JSqlClient sqlClient;
+
+    public BookRepository(JSqlClient sqlClient) {
+        this.sqlClient = sqlClient;
+    }
+
+    public List<Book> findBooks(
+        @Nullable String name,
+        @Nullable String storeName,
+        @Nullable String storeWebsite
+    ) {
+        Fluent fluent = sqlClient.createFluent();
+        BookTable book = new BookTable();
+        
+        return fluent
+            .query(book)
+            .whereIf(
+                name != null,
+                () -> book.name().eq(name)
+            )
+            .whereIf(
+                storeName != null,
+                () -> book
+                    // highlight-next-line
+                    .store() // α
+                    .name()
+                    .eq(storeName)
+            )
+            .whereIf(
+                storeWebsite != null,
+                () -> book
+                    // highlight-next-line
+                    .store() // β
+                    .website()
+                    .eq(storeWebsite)
+            )
+            .select(book)
+            .execute();
+    }
+}
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
+
+```java
+@Repository
 public class BookRepository {
 
     private final JSqlClient sqlClient;
@@ -72,6 +122,7 @@ public class BookRepository {
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
+@Repository
 class BookRepository(
     private val sqlClient: KSqlClient
 ) {
@@ -351,7 +402,21 @@ Phantom join is a very simple optimization concept, which can be understood by c
 Let's first look at an example of a ordinary table join.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<Book> books = fluent
+    .query(book)
+    .where(book.store().name().eq("MANNING"))
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Book> books = sqlClient
@@ -399,7 +464,27 @@ where
 Now, let's look at an example of phantom join
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<Book> books = fluent
+    .query(book)
+    .where(
+        book
+        .store()
+        // highlight-next-line
+        .id() // Only id is accessed
+        .eq(2L)
+    )
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Book> books = sqlClient
@@ -468,14 +553,36 @@ Half join is a similar concept to a phantom join, but for associations based on 
 Let's first look at a normal join based on middle table
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<Long> bookIds = fluent
+    .query(book)
+    .where(
+        book
+            .asTableEx()
+            .authors()
+            .firstName()
+            .eq("Alex")
+    )
+    .select(book.id())
+    .distinct()
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Long> bookIds = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
         return q
             .where(
-                ((BookTableEx)book)
+                book
+                    .asTableEx()
                     .authors()
                     .firstName()
                     .eq("Alex")
@@ -493,7 +600,8 @@ List<Long> bookIds = sqlClient
 val bookIds = sqlClient
     .createQuery(Book::class) {
         where(
-            (table as KNullableTableEx<Book>)
+            table
+                .asTableEx()
                 .authors
                 .firstName eq "Alex"
         )
@@ -531,14 +639,37 @@ We see that the association based on the middle table will generate two SQL join
 Next, let's look at half join
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<Long> bookIds = fluent
+    .query(book)
+    .where(
+        book
+            .asTableEx()
+            .authors()
+            // highlight-next-line
+            .id() // Only access id
+            .eq(2L)
+    )
+    .select(book.id())
+    .distinct()
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<UUID> bookIds = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
         return q
             .where(
-                ((BookTableEx)book)
+                book
+                    .asTableEx()
                     .authors()
                     // highlight-next-line
                     .id() // Only access id
@@ -615,7 +746,7 @@ Admittedly, subqueries can solve all problems. However, jimmer-sql still allows 
 To better illustrate the inverse join, let's first look at normal join.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 q.where(
