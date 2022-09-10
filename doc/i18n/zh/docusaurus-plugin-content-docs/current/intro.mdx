@@ -182,7 +182,28 @@ Benchmark报告[在此](./benchmark)，Benchmark源码在此(https://github.com/
 <summary>快速预览</summary>
     
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+AuthorTableEx author = new AuthorTableEx();
+
+List<Book> books = fluent
+    .query(book)
+    .where(
+        book.id().in(fluent
+            .subQuery(author)
+            .where(author.firstName().eq("Alex"))
+            .select(author.books().id())
+        )
+    )
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lamba" label="Java(Lambda)">
 
 ```java
 List<Book> books = sqlClient
@@ -714,8 +735,8 @@ ConfigurableRootQuery<Book> query = sqlClient
 
 // 对行数的查询由框架自动生成和优化。
 TypedRootQuery<Long> countQuery = query
-    .reselect((oldQuery, book) -> 
-        oldQuery.select(book.count())
+    .reselect((q, t) -> 
+        q.select(t.count())
     )
     .withoutSortingAndPaging();
 
