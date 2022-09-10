@@ -793,7 +793,6 @@ List<Book> books = fluent
             author.firstName().eq("Alex")
         )
         // No select clause here
-        // highlight-next-line
         .exists()
     )
     .select(book)
