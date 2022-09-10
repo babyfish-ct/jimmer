@@ -1,0 +1,52 @@
+---
+sidebar_position: 2
+title: 快速上手
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## B站视频
+
+- 全局介绍：https://www.bilibili.com/video/BV1kd4y1A7K3
+- 多表连接专题：https://www.bilibili.com/video/BV19t4y177PX
+
+## 快速上手页面
+
+1. [jimmer-core](./jimmer-core/usage.mdx)
+2. [jimmer-sql](./jimmer-sql/usage.mdx)
+
+## 快速体验
+
+用Intellij打开[&lt;jimmer-home&gt;/example/java/java-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql/)或[&lt;jimmer-home&gt;/example/kotlin/java-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt/)，启动。
+
+访问http://localhost:8080/ui。
+
+更多信息，请参考[附带demo](./demo)
+
+## 注意事项
+
+如果你使用Spring REST而非Spring GraphQL，需要让Jackson支持Jimmer对象的序列化与反序列化，如下。
+
+<Tabs groupId="buildScript">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public ImmutableModule immutableModule() {
+    return new ImmutableModule();
+}
+```
+</TabItem>
+
+<TabItem value="kotlin" label="Kotin">
+
+```kotlin
+@Bean
+fun immutableModule() = ImmutableModule()
+```
+
+</TabItem>
+</Tabs>
+
+详情请参考[Jimmer和Jackson](./jimmer-core/dynamic#jimmer和jackson)
