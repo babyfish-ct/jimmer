@@ -247,8 +247,7 @@ List<Tuple2<BookStore, BigDecimal>> storeAvgPriceTuples = sqlClient
         return q
                 .orderBy(
                     // highlight-next-line
-                    avgPriceSubQuery,
-                    OrderMode.DESC
+                    avgPriceSubQuery.desc()
                 )
                 .select(
                     store,
@@ -269,8 +268,11 @@ val storeAvgPriceTuples = sqlClient
             where(table.store eq parentTable)
             select(avg(table.price))
         }
-        // highlight-next-line
-        orderBy(avgPriceSubQuery)
+        
+        orderBy(
+            // highlight-next-line
+            avgPriceSubQuery.desc()
+        )
         select(
             table,
             // highlight-next-line
@@ -282,6 +284,12 @@ val storeAvgPriceTuples = sqlClient
 
 </TabItem>
 </Tabs>
+
+:::tip
+这个例子很特殊，子查询被多次重复使用。
+
+这种情况下，对Java而言，lambda风格优于fluent风格。
+:::
 
 最终生成的SQL如下
 
@@ -321,8 +329,7 @@ List<Book> books = sqlClient
                                 return sq
                                     .where(
                                         author.firstName().in(
-                                            "Alex", 
-                                            "Bill"
+                                            Arrays.asList("Alex", "Bill")
                                         )
                                     )
                                     .select(author.books().id());
@@ -583,7 +590,7 @@ List<Book> books = sqlClient
                                 author.books().eq(book),
                                 author.firstName().eq("Alex")
                         );
-                        // No need to call select at the end
+                        // 此处无select
                     }
                 )
                 .exists()
@@ -607,6 +614,7 @@ val books = sqlClient
                         table.books eq parentTable,
                         table.firstName eq "Alex"
                     )
+                    // 此处无select
                 }
             )
         )

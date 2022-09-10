@@ -11,7 +11,28 @@ import TabItem from '@theme/TabItem';
 ### IN subquery based on single column
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+AuthorTableEx author = new AuthorTableEx();
+
+List<Book> books = fluent
+    .query(book)
+    .where(
+        book.id().in(fluent
+            .subQuery(author)
+            .where(author.firstName().eq("Alex"))
+            .select(author.books().id())
+        )
+    )
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Book> books = sqlClient
@@ -82,7 +103,34 @@ where
 ### IN subquery based on multiple columns
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+BookTable book2 = new BookTable();
+
+List<Book> newestBooks = fluent
+    .query(book)
+    .where(
+        Expression.tuple(
+            book.name(),
+            book.edition()
+        ).in(fluent
+            .subQuery(book2)
+            .groupBy(book2.name())
+            .select(
+                book2.name(),
+                book2.edition().max()
+            )
+        )
+    )
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Book> newestBooks = sqlClient
@@ -171,7 +219,33 @@ where
 ### Treat subquery as simple value
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+BookTable book2 = new BookTable();
+
+List<Book> newestBooks = fluent
+    .query(book)
+    .where(
+        book.price().gt(fluent
+            .subQuery(book2)
+            .groupBy(book2.name())
+            .select(
+                book2
+                    .price()
+                    .avg()
+                    .coalesce(BigDecimal.ZERO)
+            )
+        )
+    )
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Book> books = sqlClient
@@ -240,7 +314,42 @@ where
 ### Using subqueries in select and orderBy clauses
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookStoreTable store = new BookStoreTable();
+BookTable book = new BookTable();
+
+FluentRootQuery<BookStoreTable> query =
+    fluent.query(store);
+TypedSubQuery<BigDecimal> subQuery =
+    fluent
+        .subQuery(book)
+        .where(book.store().eq(store))
+        .select(
+            book
+                .price()
+                .avg()
+                .coalesce(BigDecimal.ZERO)
+        );
+List<Tuple2<BookStore, BigDecimal>> storeAvgPriceTuples =
+    query
+        
+        .orderBy(
+            // highlight-next-line
+            subQuery.desc()
+        )
+        .select(
+            store, 
+            // highlight-next-line
+            subQuery
+        )
+        .execute(con);
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Tuple2<BookStore, BigDecimal>> storeAvgPriceTuples = sqlClient
@@ -258,8 +367,7 @@ List<Tuple2<BookStore, BigDecimal>> storeAvgPriceTuples = sqlClient
         return q
                 .orderBy(
                     // highlight-next-line
-                    avgPriceSubQuery,
-                    OrderMode.DESC
+                    avgPriceSubQuery.desc()
                 )
                 .select(
                     store,
@@ -280,8 +388,10 @@ val storeAvgPriceTuples = sqlClient
             where(table.store eq parentTable)
             select(avg(table.price))
         }
-        // highlight-next-line
-        orderBy(avgPriceSubQuery)
+        orderBy(
+            // highlight-next-line
+            avgPriceSubQuery.desc()
+        )
         select(
             table,
             // highlight-next-line
@@ -294,8 +404,10 @@ val storeAvgPriceTuples = sqlClient
 </TabItem>
 </Tabs>
 
-:::note
-Kotlin code uses `parentTable` to get the table of parent query.
+:::tip
+This example is special, the subquery is reused multiple times.
+
+In this case, lambda style is better than fluent style for Java.
 :::
 
 The final generated SQL is as follows
@@ -323,7 +435,34 @@ order by (
 ### Using the ANY operator
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+AuthorTableEx author = new AuthorTableEx();
+
+List<Book> books = fluent
+    .query(book)
+    .where(
+        book.id().eq(fluent
+            .subQuery(author)
+            .where(
+                author.firstName().in(
+                    Arrays.asList("Alex", "Bill")
+                )
+            )
+            .select(author.books().id())
+            // highlight-next-line
+            .any()
+        )
+    )
+    .select(book)
+    .execute(con);
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Book> books = sqlClient
@@ -338,8 +477,7 @@ List<Book> books = sqlClient
                                 return sq
                                     .where(
                                         author.firstName().in(
-                                            "Alex", 
-                                            "Bill"
+                                            Arrays.asList("Alex", "Bill")
                                         )
                                     )
                                     .select(author.books().id());
@@ -408,7 +546,34 @@ where tb_1_.ID =
 ### Using the ALL operator
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+AuthorTableEx author = new AuthorTableEx();
+
+List<Book> books = fluent
+    .query(book)
+    .where(
+        book.id().ne(fluent
+            .subQuery(author)
+            .where(
+                author.firstName().in(
+                    Arrays.asList("Alex", "Bill")
+                )
+            )
+            .select(author.books().id())
+            // highlight-next-line
+            .all()
+        )
+    )
+    .select(book)
+    .execute(con);
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Book> books = sqlClient
@@ -423,8 +588,7 @@ List<Book> books = sqlClient
                                 return sq
                                     .where(
                                         author.firstName().in(
-                                            "Alex", 
-                                            "Bill"
+                                            Arrays.asList("Alex", "Bill")
                                         )
                                     )
                                     .select(author.books().id());
@@ -493,7 +657,31 @@ where tb_1_.ID <>
 ### Using the EXISTS operator
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+AuthorTableEx author = new AuthorTableEx();
+
+List<Book> books = fluent
+    .query(book)
+    .where(fluent
+        .subQuery(author)
+        .where(
+            author.books().eq(book),
+            author.firstName().eq("Alex")
+        )
+        .select(author)
+        // highlight-next-line
+        .exists()
+    )
+    .select(book)
+    .execute(con);
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Book> books = sqlClient
@@ -589,7 +777,31 @@ That being the case, why specify the selection columns for the `exists` subquery
 Therefore, jimmer-sql supports untyped sub-query: wild-sub-query, which is different from ordinary sub-query. In the implementation of wild sub-query, the call to method `select` is no longer required, that is, no return type is required.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+AuthorTableEx author = new AuthorTableEx();
+
+List<Book> books = fluent
+    .query(book)
+    .where(fluent
+        .subQuery(author)
+        .where(
+            author.books().eq(book),
+            author.firstName().eq("Alex")
+        )
+        // No select clause here
+        // highlight-next-line
+        .exists()
+    )
+    .select(book)
+    .execute(con);
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Book> books = sqlClient
@@ -604,7 +816,7 @@ List<Book> books = sqlClient
                                 author.books().eq(book),
                                 author.firstName().eq("Alex")
                         );
-                        // No need to call select at the end
+                        // No select clause here
                     }
                 )
                 .exists()
@@ -628,6 +840,7 @@ val books = sqlClient
                         table.books eq parentTable,
                         table.firstName eq "Alex"
                     )
+                    // No select clause here
                 }
             )
         )
