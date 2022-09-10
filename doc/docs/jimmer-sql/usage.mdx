@@ -405,7 +405,7 @@ enum class Gender {
 </TabItem>
 </Tabs>
 
-## Create JSqlClient
+## Create SqlClient
 
 `JSqlClient/KSqlClient` is the entry point of all APIs of jimmer-sql, therefore, SqlClient needs to be created first.
 
@@ -485,7 +485,21 @@ For the topic of cooperation with Spring transaction mechanism, please refer to 
 ### Basic query
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<Book> books = fluent
+    .query(book)
+    .where(book.name().like("Java"))
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Book> books = sqlClient
@@ -495,7 +509,6 @@ List<Book> books = sqlClient
             .select(book);
     })
     .execute();
-books.forEach(System.out::println);
 ```
 
 </TabItem>
@@ -508,7 +521,6 @@ val books = sqlClient
         select(table)
     }
     .execute()
-books.forEach(::println)
 ```
 
 </TabItem>
@@ -530,7 +542,27 @@ where tb_1_.NAME like ?
 ### Use table join
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<Book> books = fluent
+    .query(book)
+    .where(
+        book
+            // highlight-next-line
+            .store()
+            .name()
+            .eq("MANNING")
+    )
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Book> books = sqlClient
@@ -546,7 +578,6 @@ List<Book> books = sqlClient
             .select(book);
     })
     .execute();
-books.forEach(System.out::println);
 ```
 
 </TabItem>
@@ -564,7 +595,6 @@ val books = sqlClient
         select(table)
     }
     .execute()
-books.forEach(::println)
 ```
 
 </TabItem>
@@ -588,7 +618,29 @@ where tb_2_.NAME = ?
 ### Sub query
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+AuthorTableEx author = new AuthorTableEx();
+
+List<Book> books = fluent
+    .query(book)
+    .where(
+        book.id().in(fluent
+            //highlight-next-line
+            .subQuery(author)
+            .where(author.firstName().like("Alex"))
+            .select(author.books().id())
+        )
+    )
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java">
 
 ```java
 List<Book> books = sqlClient
@@ -608,7 +660,6 @@ List<Book> books = sqlClient
             )
             .select(book);
     }).execute();
-books.forEach(System.out::println);
 ```
 
 </TabItem>
@@ -627,7 +678,6 @@ val books = sqlClient
         select(table)
     }
     .execute()
-books.forEach(::println)
 ```
 
 </TabItem>
@@ -656,7 +706,28 @@ where tb_1_.ID in (
 ### Group query
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+// Column1: BookStore id
+// Column2: Average book price of each BookStore
+List<Tuple2<Long, BigDecimal>> tuples = fluent
+    .query(book)
+    // highlight-next-line
+    .groupBy(book.store().id())
+    .select(
+        book.store().id(),
+        // highlight-next-line
+        book.price().avg()
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java">
 
 ```java
 // Column1: BookStore id
@@ -672,13 +743,14 @@ List<Tuple2<Long, BigDecimal>> tuples = sqlClient
                 book.price().avg()
             );
     }).execute();
-tuples.forEach(System.out::println);
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
+// Column1: BookStore id
+// Column2: Average book price of each BookStore
 val tuples = sqlClient
     .createQuery(Book::class) {
         // highlight-next-line
@@ -686,11 +758,10 @@ val tuples = sqlClient
         select(
             table.store.id,
             // highlight-next-line
-            avg(table.price)
+            avg(table.price).asNonNull()
         )
     }
     .execute()
-tuples.forEach(::println)
 ```
 
 </TabItem>
@@ -711,7 +782,36 @@ group by tb_1_.STORE_ID
 ### Pagination query
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+ConfigurableRootQuery<BookTable, Book> bookQuery = 
+    fluent
+        .query(book)
+        .where(book.store().name().eq("O'REILLY"))
+        .orderBy(book.name())
+        .select(book);
+
+TypedRootQuery<Long> countQuery = bookQuery
+    // highlight-next-line
+    .reselect((q, t) ->
+        q.select(t.count())
+    )
+    .withoutSortingAndPaging();
+
+int rowCount = countQuery.execute().get(0).intValue();
+
+List<Book> rows = bookQuery
+    // highlight-next-line
+    .limit(rowCount / 3, rowCount / 3)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 ConfigurableTypedRootQuery<BookTable, Book> bookQuery =
@@ -724,19 +824,17 @@ ConfigurableTypedRootQuery<BookTable, Book> bookQuery =
 
 TypedRootQuery<Long> countQuery = bookQuery
     // highlight-next-line
-    .reselect((oldQuery, book) ->
-        oldQuery.select(book.count())
+    .reselect((q, t) ->
+        q.select(t.count())
     )
     .withoutSortingAndPaging();
 
 int rowCount = countQuery.execute().get(0).intValue();
-System.out.println("Total row count: " + rowCount);
 
 List<Book> rows = bookQuery
     // highlight-next-line
     .limit(rowCount / 3, rowCount / 3)
     .execute();
-System.out.println("Top 2 rows: " + top2Rows);
 ```
 
 </TabItem>
@@ -758,12 +856,10 @@ val countQuery = bookQuery
     .withoutSortingAndPaging()
 
 val rowCount = countQuery.execute()[0].toInt()
-println("Total row count: $rowCount")
 
 val books = bookQuery
     .limit(limit = rowCount / 3, offset = rowCount / 3)
     .execute()
-books.forEach(::println)
 ```
 
 </TabItem>
@@ -799,7 +895,39 @@ Two SQL statements are genearted
 ### Mix Native SQL
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+// Column 1: Book object
+// Column 2: Global price rank
+// Column 3: Local price rank in its BookStore
+List<Tuple3<Book, Integer, Integer>> tuples = fluent
+    .query(book)
+    .select(
+        book,
+        // highlight-next-line
+        Expression.numeric().sql(
+            Integer.class,
+            "rank() over(order by %e desc)",
+            it -> it.expression(book.price())
+        ),
+        // highlight-next-line
+        Expression.numeric().sql(
+            Integer.class,
+            "rank() over(partition by %e order by %e desc)",
+            it -> it
+                .expression(book.store().id())
+                .expression(book.price())
+        )
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 // Column 1: Book object
@@ -824,8 +952,8 @@ List<Tuple3<Book, Integer, Integer>> tuples = sqlClient
                         .expression(book.price())
             )
         );
-    }).execute();
-tuples.forEach(System.out::println);
+    })
+    .execute();
 ```
 
 </TabItem>
@@ -857,7 +985,6 @@ val tuples = sqlClient
         )
     }
     .execute()
-tuples.forEach(::println)
 ```
 
 </TabItem>
@@ -885,7 +1012,36 @@ from BOOK as tb_1_
 ### Use object fetcher
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<Book> books = fluent
+    .query(book)
+    .select(
+        // highlight-next-line
+        book.fetch(
+            BookFetcher.$
+                .allScalarFields()
+                // highlight-next-line
+                .store(
+                    BookStoreFetcher.$
+                        .allScalarFields()
+                )
+                // highlight-next-line
+                .authors(
+                    AuthorFetcher.$
+                        .allScalarFields()
+                )
+        )
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Book> books = sqlClient
@@ -911,7 +1067,6 @@ List<Book> books = sqlClient
             );
     })
     .execute();
-books.forEach(System.out::println);
 ```
 
 </TabItem>
@@ -936,7 +1091,6 @@ val books = sqlClient
         )
     }
     .execute()
-books.forEach(::println)
 ```
 
 </TabItem>
@@ -992,10 +1146,30 @@ jimmer-sql provides two ways to modify the database, statement and command
 #### update statement
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+int affectedRowCount = fluent
+    // highlight-next-line
+    .update(book)
+    .set(
+        book.price(),
+        book.price().plus(new BigDecimal(10))
+    )
+    .where(book.name().like("Java"))
+    .execute();
+System.out.println("Affected row count: " + affectedRowCount);
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 int affectedRowCount = sqlClient
+    // highlight-next-line
     .createUpdate(BookTable.class, (u, book) -> {
         u.set(
             book.price(), 
@@ -1012,6 +1186,7 @@ System.out.println("Affected row count: " + affectedRowCount);
 
 ```kotlin
 val affectedRowCount = sqlClient
+    // highlight-next-line
     .createUpdate(Book::class) {
         set(table.price, table.price + BigDecimal(20))
         where(table.name like "Kotlin")
@@ -1034,10 +1209,26 @@ where tb_1_.NAME like ?
 #### delete statement
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+int affectedRowCount = fluent
+    // highlight-next-line
+    .delete(book)
+    .where(book.name().like("Java"))
+    .execute();
+System.out.println("Affected row count: " + affectedRowCount);
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 int affectedRowCount = sqlClient
+    // highlight-next-line
     .createDelete(BookTable.class, (d, book) -> {
         d.where(book.name().like("Java"));
     })
@@ -1050,6 +1241,7 @@ System.out.println("Affected row count: " + affectedRowCount);
 
 ```kotlin
 val affectedRowCount = sqlClient
+    // highlight-next-line
     .createDelete(Book::class) {
         where(table.name like "Kotlin")
     }
