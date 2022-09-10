@@ -122,7 +122,21 @@ interface KExecutable<R> {
 
     以查询为例：
     <Tabs groupId="language">
-    <TabItem value="java" label="Java">
+    <TabItem value="java" label="Java(Fluent)">
+
+    ```java
+    Fluent fluent = sqlClient.createFluent();
+    BookTable book = new BookTable();
+
+    List<Book> books = fluent
+        .query(book)
+        .select(book)
+        // highlight-next-line
+        .execute(con);
+    ```
+
+    </TabItem>
+    <TabItem value="java-lambda" label="Java(Lambda)">
     
     ```java
     public List<Book> findBooks(Connection con) {
@@ -155,7 +169,23 @@ interface KExecutable<R> {
 
     以查询为例：
     <Tabs groupId="language">
-    <TabItem value="java" label="Java">
+    <TabItem value="java" label="Java(Fluent)">
+
+    ```java
+    public List<Book> findBooks() {
+        Fluent fluent = sqlClient.createFluent();
+        BookTable book = new BookTable();
+
+        List<Book> books = fluent
+            .query(book)
+            .select(book)
+            // highlight-next-line
+            .execute();
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="java-lambda" label="Java(Lambda)">
     
     ```java
     public List<Book> findBooks() {
