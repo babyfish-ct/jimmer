@@ -87,7 +87,7 @@ Take the equality judgment to be discussed below as an example, this is the rela
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     book.name().eq(
         Expression.string().value("Java in Action")
     )
@@ -112,7 +112,7 @@ It can be replaced by a more convenient way, like this
 <TabItem value="java" label="Java">
 
 ```java
-q.where(book.name().eq("Java in Action"));
+where(book.name().eq("Java in Action"));
 ```
 
 </TabItem>
@@ -194,7 +194,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.name().eq("SQL in Action"));
+    where(book.name().eq("SQL in Action"));
     ```
 
     </TabItem>
@@ -213,7 +213,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.name().ne("SQL in Action"));
+    where(book.name().ne("SQL in Action"));
     ```
 
     </TabItem>
@@ -232,7 +232,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.price().gt(new BigDecimal(50)));
+    where(book.price().gt(new BigDecimal(50)));
     ```
 
     </TabItem>
@@ -251,7 +251,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.price().ge(new BigDecimal(50)));
+    where(book.price().ge(new BigDecimal(50)));
     ```
 
     </TabItem>
@@ -270,7 +270,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.price().lt(new BigDecimal(50)));
+    where(book.price().lt(new BigDecimal(50)));
     ```
 
     </TabItem>
@@ -289,7 +289,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.price().le(new BigDecimal(50)));
+    where(book.price().le(new BigDecimal(50)));
     ```
 
     </TabItem>
@@ -308,7 +308,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="java" label="Java">
     
     ```java
-    q.where(
+    where(
         book.price().between(
             new BigDecimal(40), 
             new BigDecimal(40)
@@ -337,7 +337,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="java" label="Java">
     
     ```java
-    q.where(
+    where(
         book.price().notBetween(
             new BigDecimal(40), 
             new BigDecimal(40)
@@ -370,7 +370,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="java" label="Java">
     
     ```java
-    q.where(book.name().like("Ab"));
+    where(book.name().like("Ab"));
     ```
 
     </TabItem>
@@ -395,7 +395,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.name().ilike("Ab"));
+    where(book.name().ilike("Ab"));
     ```
 
     </TabItem>
@@ -422,7 +422,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.name().like("Ab", LikeMode.ANYWHERE));
+    where(book.name().like("Ab", LikeMode.ANYWHERE));
     ```
 
     </TabItem>
@@ -443,7 +443,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.name().like("Ab", LikeMode.START));
+    where(book.name().like("Ab", LikeMode.START));
     ```
 
     </TabItem>
@@ -464,7 +464,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.name().like("Ab", LikeMode.END));
+    where(book.name().like("Ab", LikeMode.END));
     ```
 
     </TabItem>
@@ -485,7 +485,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(book.name().like("Ab", LikeMode.EXACT));
+    where(book.name().like("Ab", LikeMode.EXACT));
     ```
 
     </TabItem>
@@ -506,7 +506,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
 <TabItem value="java" label="Java">
 
 ```java
-q.where(book.store().isNull());
+where(book.store().isNull());
 ```
 
 </TabItem>
@@ -523,7 +523,7 @@ where(table.store.isNull())
 <TabItem value="java" label="Java">
 
 ```java
-q.where(book.store().isNotNull());
+where(book.store().isNotNull());
 ```
 
 </TabItem>
@@ -544,7 +544,7 @@ where(table.store.isNotNull())
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     book.name().in(
         Arrays.asList(
             "SQL in Action",
@@ -580,7 +580,7 @@ where tb_1_.NAME in (?, ?)
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     Expression.tuple(
         book.name(),
         book.edition()
@@ -636,7 +636,7 @@ This part of the content will be introduced in detail in the related documents o
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     Predicate.and(
         book.name().like("Ab"),
         book.price().ge(new BigDecimal(40)),
@@ -671,7 +671,7 @@ Note that if the logical AND expression is directly used as the parameter of the
     <TabItem value="java" label="Java">
     
     ```java
-    q.where(
+    where(
         book.name().like("Ab"),
         book.price().ge(new BigDecimal(40)),
         book.price().lt(new BigDecimal(60))
@@ -723,7 +723,7 @@ Therefore, the direct use of `and` should not be common in actual projects.
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     // highlight-next-line
     Predicate.or(
         book.name().like("Ab"),
@@ -756,7 +756,7 @@ where(
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     book.name().like("Ab").not()
 );
 ```
@@ -784,7 +784,7 @@ Even if the developer explicitly uses `not()`, the `not` expression does not nec
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     book.price().ge(new BigDecimal(40)).not()
 );
 ```

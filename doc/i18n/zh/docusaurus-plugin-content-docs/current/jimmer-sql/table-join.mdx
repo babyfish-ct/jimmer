@@ -266,7 +266,7 @@ class BookRepository(
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     store // 假设store的类型是是BookStoreTableEx，
           // 允许使用集合关联
         // highlight-next-line
@@ -298,7 +298,7 @@ where(
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     author // 假设author的类型是是AuthorTableEx，
            // 允许使用集合关联
         // highlight-next-line
@@ -747,7 +747,7 @@ where tb_2_.AUTHOR_ID = ?
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     book
         // 这是一个普通的正向连接
         // highlight-next-line
@@ -781,7 +781,7 @@ where(
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(
+    where(
         book
             // Author.books反过来就是Book.authors
             // highlight-next-line
@@ -813,7 +813,7 @@ where(
     <TabItem value="java" label="Java">
     
     ```java
-    q.where(
+    where(
         book
             // Author.books反过来就是Book.authors
             // highlight-next-line

@@ -266,7 +266,7 @@ The above example is very simple, the table join in has only one layer. In fact,
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     store // Assuming that the type of `store` is 
           // BookStoreTableEx, so collection join is allowed
         // highlight-next-line
@@ -298,7 +298,7 @@ Or
 <TabItem value="java" label="Java">
 
 ```java
-q.where(
+where(
     author // Assuming that the type of `author` is 
            // BookStoreTableEx, and collection join is allowed
         // highlight-next-line
@@ -749,7 +749,7 @@ To better illustrate the inverse join, let's first look at normal join.
 <TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
-q.where(
+where(
     book
         // Normal join
         // highlight-next-line
@@ -790,7 +790,7 @@ There are two ways to write the inverse join that is completely equivalent to it
     <TabItem value="java" label="Java">
 
     ```java
-    q.where(
+    where(
         book
             // Reverse `Auhtor.books`,
             // it's actually `Book.authors`
@@ -824,7 +824,7 @@ There are two ways to write the inverse join that is completely equivalent to it
     <TabItem value="java" label="Java">
     
     ```java
-    q.where(
+    where(
         book
             // Reverse `Auhtor.books`,
             // it's actually `Book.authors`
