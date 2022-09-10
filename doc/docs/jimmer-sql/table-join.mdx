@@ -6,12 +6,24 @@ title: Table joins
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+Jimmer's table joins are designed for very complex queries, it have the following features:
+
+1.  Without explicitly creating table joins, the natural fluent property reference path represents complex multi-table joins, such as:
+
+    `where(table.books.authors.company.city.name eq "ChengDu")`
+
+2.  Table joins that are never used are automatically ignored and do not appear in the final SQL.
+
+3.  For joined associated object, if only its id property is accessed, jimmer will further ignore more unnecessary join.
+
+4.  Conflicting table joins in different paths will be automatically merged.
+
 This article will introduce the table joins, it contains four parts
 
-1. Dynamic join
-2. Phantom join
-3. Half join
-4. Inverse join
+-   Dynamic join
+-   Phantom join
+-   Half join
+-   Inverse join
 
 ## Dynamic join
 
