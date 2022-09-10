@@ -20,7 +20,56 @@ import TabItem from '@theme/TabItem';
 让我们先来看一个动态连接的示范。
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+@Repository
+public class BookRepository {
+
+    private final JSqlClient sqlClient;
+
+    public BookRepository(JSqlClient sqlClient) {
+        this.sqlClient = sqlClient;
+    }
+
+    public List<Book> findBooks(
+        @Nullable String name,
+        @Nullable String storeName,
+        @Nullable String storeWebsite
+    ) {
+        Fluent fluent = sqlClient.createFluent();
+        BookTable book = new BookTable();
+        
+        return fluent
+            .query(book)
+            .whereIf(
+                name != null,
+                () -> book.name().eq(name)
+            )
+            .whereIf(
+                storeName != null,
+                () -> book
+                    // highlight-next-line
+                    .store() // α
+                    .name()
+                    .eq(storeName)
+            )
+            .whereIf(
+                storeWebsite != null,
+                () -> book
+                    // highlight-next-line
+                    .store() // β
+                    .website()
+                    .eq(storeWebsite)
+            )
+            .select(book)
+            .execute();
+    }
+}
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 @Repository
@@ -353,7 +402,21 @@ book.`store?`
 我们先来看一个普通表连接的例子。
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<Book> books = fluent
+    .query(book)
+    .where(book.store().name().eq("MANNING"))
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Book> books = sqlClient
@@ -401,7 +464,27 @@ where
 现在，再来看一个幻连接的例子
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<Book> books = fluent
+    .query(book)
+    .where(
+        book
+        .store()
+        // highlight-next-line
+        .id() // 只访问id
+        .eq(2L)
+    )
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-labmda" label="Java(Lambda)">
 
 ```java
 List<Book> books = sqlClient
@@ -470,7 +553,28 @@ from BOOK as tb_1_
 我们先来看一个基于中间表的普通连接。
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<Long> bookIds = fluent
+    .query(book)
+    .where(
+        book
+            .asTableEx()
+            .authors()
+            .firstName()
+            .eq("Alex")
+    )
+    .select(book.id())
+    .distinct()
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Long> bookIds = sqlClient
@@ -535,7 +639,29 @@ where tb_3_.FIRST_NAME = ?
 接下来，让我们看看半连接的例子
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<Long> bookIds = fluent
+    .query(book)
+    .where(
+        book
+            .asTableEx()
+            .authors()
+            // highlight-next-line
+            .id() // 只访问id
+            .eq(2L)
+    )
+    .select(book.id())
+    .distinct()
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<UUID> bookIds = sqlClient
