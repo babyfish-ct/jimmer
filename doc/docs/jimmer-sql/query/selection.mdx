@@ -31,10 +31,28 @@ So, with such support, 9 columns are enough.
 ## Use expressions as the queried columns
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
 
 ```java
-List<Tuple2<Long, BigDecimal>> storeIdAndAvgPriceTuples =
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<Tuple2<Long, BigDecimal>> tuples = fluent
+    .query(book)
+    .groupBy(book.store().id())
+    // highlight-next-line
+    .select(
+        book.store().id(),
+        book.price().avg()
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
+
+```java
+List<Tuple2<Long, BigDecimal>> tuples =
     sqlClient.createQuery(BookTable.class, (q, book) -> {
         return q
             .groupBy(book.store().id())
@@ -50,7 +68,7 @@ List<Tuple2<Long, BigDecimal>> storeIdAndAvgPriceTuples =
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-val storeIdAndAvgPriceTuples: List<Tuple2<UUID, BigDecimal>> = 
+val tuples: List<Tuple2<UUID, BigDecimal>> = 
     sqlClient
         .createQuery(Book::class) {
             groupBy(table.store.id)
@@ -84,7 +102,25 @@ Tuple2{_1=1L, _2=58.500000000000}
 ## Use objects as the queried columns
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+List<Tuple2<BookStore, Book>> tuples = fluent
+    .query(book)
+    .where(book.store().name().eq("MANNING"))
+    // highlight-next-line
+    .select(
+        book.store(),
+        book
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Tuple2<BookStore, Book>> tuples =
