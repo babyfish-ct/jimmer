@@ -1283,6 +1283,8 @@ BookTable book = new BookTable();
 List<Book> books = fluent
     .query(book)
     .select(
+        
+        // First column
         book.fetch(
             BookFetcher.$
                 .allScalarFields()
@@ -1298,6 +1300,18 @@ List<Book> books = fluent
                                 .firstName().ilike("a")
                         );
                     })
+                )
+        ),
+
+        // Second column
+        book.fetch(
+            BookFetcher.$
+                .allScalarFields()
+                .authors(
+                    AuthorFetcher.$
+                            .allScalarFields()
+
+                    // No filter here
                 )
         )
     )
