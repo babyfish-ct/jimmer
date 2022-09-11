@@ -492,7 +492,6 @@ class SqlClientConfig {
     @Bean
     fun sqlClient() = 
         newKSqlClient {
-        return JSqlClient
             setConnectionManager { ... }
             setDialect(H2Dialect())
             // highlight-next-line
@@ -582,11 +581,10 @@ class SqlClientConfig {
     @Bean
     fun sqlClient(): KSqlClient = 
         newKSqlClient {
-        return JSqlClient
-            .setConnectionManager { ... }
-            .setDialect(H2Dialect())
+            setConnectionManager { ... }
+            setDialect(H2Dialect())
             // highlight-next-line
-            .setExecutor {
+            setExecutor {
                 val millis = System.currentTimeMillis()
                 // Call DefaultExecutor
                 // highlight-next-line
