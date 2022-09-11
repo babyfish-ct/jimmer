@@ -65,7 +65,7 @@ title: 附带demo
 
 |参数|描述|默认值|
 |---|----|-----|
-|fetch|SQL查询的第一列是`Book`类型的对象，如果指定了此参数，表示附带查询`Book.store`、`Book.store.avgPrice`和`Book.authors`。||
+|fetch|查询返回`Book`类型的对象。如果指定了此参数，表示附带查询`Book.store`、`Book.store.avgPrice`和`Book.authors`。||
 |name|`Book.name`的过滤条件||
 |storeName|`Book.store.name`的过滤条件||
 |authorName|`Book.authors.firstName`或`Book.authors.lastName`的过滤条件||
