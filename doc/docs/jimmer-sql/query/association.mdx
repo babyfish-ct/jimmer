@@ -102,6 +102,10 @@ associations.forEach(::println)
 </TabItem>
 </Tabs>
 
+:::tip
+For Java, middle table query only supports lambda style, not fluent style.
+:::
+
 Here, `createAssociationQuery` in java or `queries.forList` in kotlin means to create a query based on the middle table, not based on the entity table.
 
 The first two parameters, `BookTableEx.class` and `BookTableEx::authors`, represent the middle table `BOOK_AUTHOR_MAPPING` corresponding to the association `Book.authors`.
@@ -466,31 +470,55 @@ where
 ### 2. Implement the same functionality based on ordinary subquery
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+AuthorTableEx author = new AuthorTableEx();
+
+List<Book> books = fluent
+    .query(book)
+    .where(
+        book.id().in(fluent
+            // highlight-next-line
+            .subQuery(author)
+            .where(
+                author.firstName().eq("Alex")
+            )
+            .select(author.books().id())
+        )
+    )
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Book> books = sqlClient
-        .createQuery(BookTable.class, (q, book) -> {
-            q.where(
-                book.id().in(
-                    // highlight-next-line
-                    q.createSubQuery(
-                        AuthorTableEx.class,
-                        (sq, author) -> {
-                            sq.where(
-                                author.firstName()
-                                    .eq("Alex")
-                            );
-                            return sq.select(
-                                author.books() // α
-                                    .id()
-                            );
-                        }
-                    )
+    .createQuery(BookTable.class, (q, book) -> {
+        q.where(
+            book.id().in(
+                // highlight-next-line
+                q.createSubQuery(
+                    AuthorTableEx.class,
+                    (sq, author) -> {
+                        sq.where(
+                            author.firstName()
+                                .eq("Alex")
+                        );
+                        return sq.select(
+                            author.books() // α
+                                .id()
+                        );
+                    }
                 )
-            );
-            return q.select(book);
-        }).execute();
+            )
+        );
+        return q.select(book);
+    }).execute();
 ```
 
 </TabItem>

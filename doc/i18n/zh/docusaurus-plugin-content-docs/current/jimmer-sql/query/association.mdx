@@ -102,6 +102,10 @@ associations.forEach(::println)
 </TabItem>
 </Tabs>
 
+:::warning
+对于Java而言，中间表查询只支持Lambda风格，不支持Fluent风格。
+:::
+
 这里，`createAssociation`表示基于中间表创建查询，而非基于实体表。
 
 前两个参数，`BookTableEx.class`和`BookTableEx::authors`表示，查询关联`Book.authors`所对应的中间表`BOOK_AUTHOR_MAPPING`。
@@ -326,7 +330,7 @@ Tuple2{
 注意，这里仅指`Association<S, T>`对象<b>本身</b>不支持，其关联属性`source`和`target`仍然支持[对象抓取器](./fetcher)，如：
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 return q.select(
@@ -468,7 +472,31 @@ where
 ### 2. 不基于中间表子查询实现同样的功能
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+AuthorTableEx author = new AuthorTableEx();
+
+List<Book> books = fluent
+    .query(book)
+    .where(
+        book.id().in(fluent
+            // highlight-next-line
+            .subQuery(author)
+            .where(
+                author.firstName().eq("Alex")
+            )
+            .select(author.books().id())
+        )
+    )
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 List<Book> books = sqlClient
