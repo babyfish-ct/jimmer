@@ -345,7 +345,7 @@ List<Tuple2<BookStore, BigDecimal>> storeAvgPriceTuples =
             // highlight-next-line
             subQuery
         )
-        .execute(con);
+        .execute();
 ```
 
 </TabItem>
@@ -458,7 +458,7 @@ List<Book> books = fluent
         )
     )
     .select(book)
-    .execute(con);
+    .execute();
 ```
 
 </TabItem>
@@ -569,7 +569,7 @@ List<Book> books = fluent
         )
     )
     .select(book)
-    .execute(con);
+    .execute();
 ```
 
 </TabItem>
@@ -677,7 +677,7 @@ List<Book> books = fluent
         .exists()
     )
     .select(book)
-    .execute(con);
+    .execute();
 ```
 
 </TabItem>
@@ -796,7 +796,7 @@ List<Book> books = fluent
         .exists()
     )
     .select(book)
-    .execute(con);
+    .execute();
 ```
 
 </TabItem>

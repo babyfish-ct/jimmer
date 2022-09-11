@@ -31,8 +31,8 @@ ConfigurableTypedRootQuery<BookTable, Book> query = sqlClient
 // β
 TypedRootQuery<Long> countQuery = query
     // highlight-next-line
-    .reselect((oldQuery, book) ->
-        oldQuery.select(book.count())
+    .reselect((q, t) ->
+        q.select(t.count())
     )
     // highlight-next-line
     .withoutSortingAndPaging();
@@ -175,8 +175,8 @@ ConfigurableTypedRootQuery<BookTable, Book> query =
     });
 
 TypedRootQuery<Long> countQuery = query
-    .reselect((oldQuery, book) ->
-        oldQuery.select(book.count())
+    .reselect((q, t) ->
+        q.select(t.count())
     )
     .withoutSortingAndPaging();
 
@@ -260,8 +260,8 @@ ConfigurableTypedRootQuery<BookTable, Book> query =
     });
 
 TypedRootQuery<Long> countQuery = query
-    .reselect((oldQuery, book) ->
-        oldQuery.select(book.count())
+    .reselect((q, t) ->
+        q.t(book.count())
     )
     .withoutSortingAndPaging();
 

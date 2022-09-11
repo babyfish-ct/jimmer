@@ -15,7 +15,39 @@ These two SQL statements have both the same parts and different parts, and it is
 jimmer-sql is specially designed for paging queries. Developers only need to write data-query, and jimmer-sql will automatically create count-query.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+
+// α
+ConfigurableRootQuery<Book> query = fluent
+    .query(book)
+    ... Omit some code logic, including: ...
+    ... 1. Arbitrarily complex dynamic conditions ...
+    ... 2. Arbitrarily complex dynamic sorting ...
+    ... 3. Arbitrarily complex subqueries ...
+    .select(book);
+
+// β
+TypedRootQuery<Long> countQuery = query
+    // highlight-next-line
+    .reselect((q, t) ->
+        q.select(t.count())
+    )
+    // highlight-next-line
+    .withoutSortingAndPaging();
+
+// γ
+int rowCount = countQuery.execute().get(0).intValue();
+List<Book> books = query
+    .limit(rowCount / 3, rowCount / 3)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 // α
@@ -31,8 +63,8 @@ ConfigurableTypedRootQuery<BookTable, Book> query = sqlClient
 // β
 TypedRootQuery<Long> countQuery = query
     // highlight-next-line
-    .reselect((oldQuery, book) ->
-        oldQuery.select(book.count())
+    .reselect((q, t) ->
+        q.select(t.count())
     )
     // highlight-next-line
     .withoutSortingAndPaging();
@@ -156,7 +188,37 @@ In summary, to determine whether a table join copied from the original data-quer
 ### Scenario that cannot be optimized
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+AuthorTableEx author = new AuthorTableEx();
+
+ConfigurableRootQuery<BookTable, Book> query = fluent
+    .query(book)
+    .where(
+        book.price().between(
+            new BigDecimal(20),
+            new BigDecimal(30)
+        )
+    )
+    // highlight-next-line
+    .orderBy(book.store().name())
+    .orderBy(book.name())
+    .select(book);
+
+TypedRootQuery<Long> countQuery = query
+    .reselect((q, t) ->
+        q.select(t.count())
+    )
+    .withoutSortingAndPaging();
+
+int rowCount = countQuery.execute().get(0).intValue();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 ConfigurableTypedRootQuery<BookTable, Book> query = 
@@ -175,8 +237,8 @@ ConfigurableTypedRootQuery<BookTable, Book> query =
     });
 
 TypedRootQuery<Long> countQuery = query
-    .reselect((oldQuery, book) ->
-        oldQuery.select(book.count())
+    .reselect((q, t) ->
+        q.select(t.count())
     )
     .withoutSortingAndPaging();
 
@@ -241,7 +303,37 @@ For the situation discussed above that cannot be optimized, any of the following
 Here, we choose the second option, use the left outer join
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+AuthorTableEx author = new AuthorTableEx();
+
+ConfigurableRootQuery<BookTable, Book> query = fluent
+    .query(book)
+    .where(
+        book.price().between(
+            new BigDecimal(20),
+            new BigDecimal(30)
+        )
+    )
+    // highlight-next-line
+    .orderBy(book.store(JoinType.LEFT).name())
+    .orderBy(book.name())
+    .select(book);
+
+TypedRootQuery<Long> countQuery = query
+    .reselect((q, t) ->
+        q.select(t.count())
+    )
+    .withoutSortingAndPaging();
+
+int rowCount = countQuery.execute().get(0).intValue();
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
 ConfigurableTypedRootQuery<BookTable, Book> query = 
@@ -260,8 +352,8 @@ ConfigurableTypedRootQuery<BookTable, Book> query =
     });
 
 TypedRootQuery<Long> countQuery = query
-    .reselect((oldQuery, book) ->
-        oldQuery.select(book.count())
+    .reselect((q, t) ->
+        q.select(t.count())
     )
     .withoutSortingAndPaging();
 
