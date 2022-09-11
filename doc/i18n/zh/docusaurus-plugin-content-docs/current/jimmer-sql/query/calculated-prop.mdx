@@ -44,9 +44,44 @@ interface BookStore {
 这里，`BookStoreAvgPriceResolver`是用户定义的一个类，用于计算书店中所有书籍的平均价格。
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java(Fluent)">
 
-```java title="BookStoreAvgPriceResolver"
+```java title="BookStoreAvgPriceResolver.java"
+public class BookStoreAvgPriceResolver
+    implements TransientResolver<Long, BigDecimal> {
+
+    private final JSqlClient sqlClient;
+
+    public BookStoreAvgPriceResolver(JSqlClient sqlClient) {
+        this.sqlClient = sqlClient;
+    }
+
+    @Override
+    public Map<Long, BigDecimal> resolve(
+        Collection<Long> ids,
+        Connection con
+    ) {
+        Fluent fluent = sqlClient.createFluent();
+        BookTable book = new BookTable();
+        
+        List<Tuple2<Long, BigDecimal>> tuples = fluent
+            .query(book)
+            .where(book.store().id().in(ids))
+            .groupBy(book.store().id())
+            .select(
+                book.store().id(),
+                book.price().avg()
+            )
+            .execute(con); // 传递JDBC连接
+        return Tuple2.toMap(tuples);
+    }
+}
+```
+
+</TabItem>
+<TabItem value="java-lambda" label="Java(Lambda)">
+
+```java title="BookStoreAvgPriceResolver.java"
 public class BookStoreAvgPriceResolver 
 implements TransientResolver<Long, BigDecimal> {
 
@@ -67,7 +102,7 @@ implements TransientResolver<Long, BigDecimal> {
                     q.groupBy(book.store().id());
                     return q.select(
                             book.store().id(),
-                            book.price().avg().coalesce(BigDecimal.ZERO)
+                            book.price().avg()
                     );
                 })
                 .execute(con); // 传递JDBC连接
@@ -79,7 +114,7 @@ implements TransientResolver<Long, BigDecimal> {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="BookStoreAvgPriceResolver"
+```kotlin title="BookStoreAvgPriceResolver.kt"
 class BookStoreAvgPriceResolver(
     private val sqlClient: KSqlClient
 ) : KTransientResolver<Long, BigDecimal> {
@@ -94,10 +129,10 @@ class BookStoreAvgPriceResolver(
                 groupBy(table.store.id)
                 select(
                     table.store.id,
-                    avg(table.price).coalesce(BigDecimal.ZERO)
+                    avg(table.price).asNonNull()
                 )
             }
-            .execute(con) // // 传递JDBC连接
+            .execute(con) // 传递JDBC连接
             .associateBy({
                 it._1
             }) {
