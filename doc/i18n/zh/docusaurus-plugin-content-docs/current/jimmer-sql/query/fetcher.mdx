@@ -402,7 +402,6 @@ List<Book> books = sqlClient
             );
     })
     .execute();
-books.forEach(System.out::println);
 ```
 
 </TabItem>
@@ -512,7 +511,7 @@ val books = sqlClient
     <TabItem value="java" label="Java">
     
     ```java
-    q.select(
+    select(
         book.fetch(
             BookFetcher.$.allTableFields()
         )
@@ -538,7 +537,7 @@ val books = sqlClient
     <TabItem value="java" label="Java">
 
     ```java
-    q.select(book)
+    select(book)
     ```
 
     </TabItem>
@@ -949,7 +948,7 @@ val books = sqlClient
 从这个例子，我们可以看到，对象抓取器是一颗树，所以，关联对象的抓取深度没有限制。
 :::
 
-## 关联级分页
+### 关联级分页
 
 对于集合关联，可以在抓取属性时指定`limit(limit, offset)`，即关联级别的分页
 
@@ -1050,7 +1049,7 @@ val books = sqlClient
 
     同上，略
 
-## 过滤器
+### 过滤器
 
 在抓取关联属性时，可以指定过滤器，为关联对象指定过滤条件。
 
@@ -1102,7 +1101,6 @@ List<Tuple2<Book, Book>> tuples = sqlClient
             );
     })
     .execute();
-tuples.forEach(System.out::println);
 ```
 
 </TabItem>
@@ -1138,7 +1136,6 @@ val tuples: List<Tuple2<Book, Book>> = sqlClient
         )
     }
     .execute()
-tuples.forEach(::println)
 ```
 
 </TabItem>
@@ -1388,7 +1385,6 @@ List<TreeNode> treeNodes = sqlClient
         );
     })
     .execute();
-treeNodes.forEach(System.out::println);
 ```
 
 </TabItem>
@@ -1411,7 +1407,6 @@ val treeNodes = sqlClient
         )
     }
     .execute()
-treeNodes.forEach(::println)
 ```
 
 </TabItem>
@@ -1505,7 +1500,6 @@ List<TreeNode> treeNodes = sqlClient
         );
     })
     .execute();
-treeNodes.forEach(System.out::println);
 ```
 
 </TabItem>
@@ -1528,7 +1522,6 @@ val treeNodes = sqlClient
         )
     }
     .execute()
-treeNodes.forEach(::println)
 ```
 
 </TabItem>
@@ -1717,7 +1710,6 @@ List<TreeNode> treeNodes = sqlClient
         );
     })
     .execute();
-treeNodes.forEach(System.out::println);
 ```
 
 </TabItem>
@@ -1743,7 +1735,6 @@ val treeNodes = sqlClient
         )
     }
     .execute()
-treeNodes.forEach(::println)
 ```
 
 </TabItem>
