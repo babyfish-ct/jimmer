@@ -65,7 +65,7 @@ The command has multiple optional parameters, as follows
 
 |Parameter|Description|Default value|
 |---|----|-----|
-|fetch|The first column of the SQL query is an object of type `Book`. If this parameter is specified, it means `Book.store`, `Book.store.avgPrice` and `Book.authors` are also required.||
+|fetch|The return type of query is `Book`. If this parameter is specified, it means `Book.store`, `Book.store.avgPrice` and `Book.authors` are also required.||
 |name|The filter of `Book.name`||
 |storeName|The fitler of `Book.store.name`||
 |authorName|The filter of `Book.authors.firstName` or `Book.authors.lastName`||
