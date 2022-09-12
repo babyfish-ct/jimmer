@@ -94,13 +94,6 @@ public class SqlClientConfig {
                         );
                     }
                 })
-                .addScalarProvider(
-                        ScalarProvider.enumProviderByString(Gender.class, it ->
-                                it
-                                        .map(Gender.MALE, "M")
-                                        .map(Gender.FEMALE, "F")
-                        )
-                )
                 .build();
         if (isH2) {
             initializeH2Database(sqlClient);

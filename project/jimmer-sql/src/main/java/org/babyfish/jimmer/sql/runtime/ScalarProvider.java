@@ -43,13 +43,13 @@ public abstract class ScalarProvider<T, S> {
         return builder.build();
     }
 
-    static <E extends Enum<E>> ScalarProvider<E, Integer> enumProviderByInt(
+    public static <E extends Enum<E>> ScalarProvider<E, Integer> enumProviderByInt(
             Class<E> enumType
     ) {
         return enumProviderByInt(enumType, null);
     }
 
-    static <E extends Enum<E>> ScalarProvider<E, Integer> enumProviderByInt(
+    public static <E extends Enum<E>> ScalarProvider<E, Integer> enumProviderByInt(
             Class<E> enumType,
             Consumer<EnumProviderBuilder<E, Integer>> block
     ) {

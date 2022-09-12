@@ -76,11 +76,8 @@ public class BookController {
                                 ) :
                                 book
                 );
-        TypedRootQuery<Long> countQuery = query
-                .reselect((q, t) -> q.select(t.count()))
-                .withoutSortingAndPaging();
 
-        int rowCount = countQuery.execute().get(0).intValue();
+        int rowCount = query.count();
         int pageCount = (rowCount + pageSize - 1) / pageSize;
         List<Book> books = query
                 .limit(pageSize, pageIndex * pageSize)

@@ -67,16 +67,6 @@ class SqlClientConfig {
                     )
                 }
             }
-
-            addScalarProvider(
-                ScalarProvider.enumProviderByString(
-                    Gender::class.java
-                ) {
-                    it
-                        .map(Gender.MALE, "M")
-                        .map(Gender.FEMALE, "F")
-                }
-            )
         }.also {
             if (isH2) {
                 initializeH2Database(it)

@@ -38,12 +38,6 @@ abstract class AbstractTest {
                 _executions.add(Execution(sql, variables))
                 proceed()
             }
-            addScalarProvider(
-                ScalarProvider.enumProviderByString(Gender::class.java) {
-                    it.map(Gender.MALE, "M")
-                    it.map(Gender.FEMALE, "F")
-                }
-            )
             block()
         }
 

@@ -1,5 +1,12 @@
 package org.babyfish.jimmer.sql.kt.model
 
+import org.babyfish.jimmer.sql.EnumItem
+
 enum class Gender {
-    MALE, FEMALE
+
+    @EnumItem(name = "M")
+    MALE,
+
+    @EnumItem(name = "F")
+    FEMALE
 }

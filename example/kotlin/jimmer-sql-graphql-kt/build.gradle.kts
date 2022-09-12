@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "org.babyfish.jimmer.example.kt"
-version = "0.2.3"
+version = "0.2.4"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
@@ -18,8 +18,8 @@ repositories {
 
 dependencies {
 
-	implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.2.3")
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.2.3")
+	implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.2.4")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.2.4")
 
 	implementation("org.springframework.boot:spring-boot-starter-graphql")
 	implementation("org.springframework.boot:spring-boot-starter-web")
@@ -30,7 +30,7 @@ dependencies {
 	implementation("org.springframework.data:spring-data-redis")
 	implementation("org.springframework.kafka:spring-kafka:2.9.0")
 
-	// In order to work with java-8, caffeine 2.x mus be used
+	// In order to work with java-8, caffeine 2.x must be used
 	implementation("com.github.ben-manes.caffeine:caffeine:2.9.1")
 
 	runtimeOnly("com.h2database:h2:2.1.212")

@@ -3,9 +3,22 @@ package org.babyfish.jimmer.sql.ast.query;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
+import java.sql.Connection;
 import java.util.function.BiFunction;
 
 public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQuery<R> {
+
+    default int count() {
+        return count(null);
+    }
+
+    default int count(Connection con) {
+        return reselect((q, t) -> q.select(t.count()))
+            .withoutSortingAndPaging()
+            .execute(con)
+            .get(0)
+            .intValue();
+    }
 
     @NewChain
     <X> ConfigurableRootQuery<T, X> reselect(
