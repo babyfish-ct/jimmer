@@ -1455,24 +1455,19 @@ NativeSQL表达式是一个重要的功能，数据库产品总会有特有的�
 
 ```java
 Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+AuthorTable author = new AuthorTable();
 
-List<String> results = fluent
-    .query(book)
-    .select(
-        Expression.string()
-            // highlight-next-line
-            .caseBuilder()
-            .when(
-                book.price().lt(new BigDecimal(30)),
-                "Cheap"
-            )
-            .when(
-                book.price().gt(new BigDecimal(70)),
-                "Expensive"
-            )
-            .otherwise("Appropriate")
+List<Author> authors = fluent
+    .query(author)
+    .where(
+        Predicate.sql(
+            "regexp_like(%e, %v)",
+            it -> it
+                .expression(author.firstName())
+                .value("^Ste(v|ph)en$")
+        )
     )
+    .select(author)
     .execute();
 ```
 
