@@ -64,14 +64,7 @@ public class AbstractTest {
 
     protected JSqlClient getSqlClient(Consumer<JSqlClient.Builder> block) {
         JSqlClient.Builder builder = JSqlClient.newBuilder()
-                .setExecutor(new ExecutorImpl())
-                .addScalarProvider(
-                        ScalarProvider.enumProviderByString(Gender.class, it -> {
-                            it
-                                    .map(Gender.MALE, "M")
-                                    .map(Gender.FEMALE, "F");
-                        })
-                );
+                .setExecutor(new ExecutorImpl());
         if (block != null) {
             block.accept(builder);
         }

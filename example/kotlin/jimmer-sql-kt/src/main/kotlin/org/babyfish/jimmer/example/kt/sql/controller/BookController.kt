@@ -62,13 +62,7 @@ class BookController(
             )
         }
 
-        val countQuery = query
-            .reselect {
-                select(count(table))
-            }
-            .withoutSortingAndPaging()
-
-        val rowCount = countQuery.execute()[0].toInt()
+        val rowCount = query.count()
         val pageCount = (rowCount + pageSize - 1) / pageSize
         val books = query
             .limit(limit = pageSize, offset = pageIndex * pageSize)

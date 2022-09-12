@@ -145,7 +145,10 @@ class JSqlClientImpl implements JSqlClient {
     @SuppressWarnings("unchecked")
     @Override
     public <T, S> ScalarProvider<T, S> getScalarProvider(Class<T> scalarType) {
-        return (ScalarProvider<T, S>) scalarProviderMap.get(scalarType);
+        ScalarProvider<T, S> provider = (ScalarProvider<T, S>) scalarProviderMap.get(scalarType);
+        return provider != null ?
+            provider :
+            (ScalarProvider<T, S>)DefaultScalarProviders.getProvider(scalarType);
     }
 
     @Override
