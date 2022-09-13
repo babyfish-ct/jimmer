@@ -9,4 +9,4 @@ title: 讨论
 
 该公众号内部提供微信群二维码，仅此用途。
 
-![wechat-group](@site/static/img/public-wechat.jpeg)
+![wechat-group](@site/static/img/public-wechat.jpg)
