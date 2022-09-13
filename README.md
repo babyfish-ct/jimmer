@@ -63,6 +63,6 @@ This framework provides three examples
 ## 5. Discuss
 
 |Language|Entry point|
-|---|---|
+|---|---|---|
 |English|https://discord.com/channels/1016206034827743283/|
-|Chinese|<img src="doc/static/img/wechat.jpeg" height=300/>|
+|Chinese|<img src="doc/static/img/public-wechat.jpeg" height=300/>|
