@@ -2,7 +2,6 @@ package org.babyfish.jimmer.apt.generator;
 
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.CircularReferenceException;
-import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftContext;
@@ -15,7 +14,6 @@ import javax.validation.constraints.Email;
 import javax.validation.constraints.Pattern;
 
 import java.util.ArrayList;
-import java.util.Collections;
 
 import static org.babyfish.jimmer.apt.generator.Constants.*;
 
@@ -402,12 +400,26 @@ public class DraftImplGenerator {
             if (castTo == null) {
                 castTo = prop.getTypeName();
             }
-            builder.addStatement(
-                    "case $L: $L(($T)value);break",
-                    arg,
-                    prop.getSetterName(),
-                    castTo
-            );
+            if (prop.getTypeName().isPrimitive()) {
+                builder.addStatement(
+                        "case $L: \n" +
+                                "if (value == null) throw new $T($S);\n" +
+                                "$L(($T)value);\n" +
+                                "break",
+                        arg,
+                        IllegalArgumentException.class,
+                        "'" + prop.getName() + "' cannot be null",
+                        prop.getSetterName(),
+                        castTo
+                );
+            } else {
+                builder.addStatement(
+                        "case $L: $L(($T)value);break",
+                        arg,
+                        prop.getSetterName(),
+                        castTo
+                );
+            }
         }
         builder.addStatement(
                 "default: throw new IllegalArgumentException($S + prop + $S)",

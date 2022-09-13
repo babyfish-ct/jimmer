@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.Triggers;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -13,7 +14,6 @@ import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class CacheConfig {
@@ -45,11 +45,11 @@ public class CacheConfig {
                 }
             }
             for (ImmutableProp prop : type.getProps().values()) {
-                if ((prop.isAssociation() || prop.hasTransientResolver()) && !propCacheMap.containsKey(prop)) {
+                if ((prop.isAssociation(TargetLevel.ENTITY) || prop.hasTransientResolver()) && !propCacheMap.containsKey(prop)) {
                     Cache<?, ?> propCache =
                             prop.hasTransientResolver() ?
                                     cacheFactory.createResolverCache(prop) : (
-                                            prop.isEntityList() ?
+                                            prop.isReferenceList(TargetLevel.ENTITY) ?
                                                     cacheFactory.createAssociatedIdListCache(prop) :
                                                     cacheFactory.createAssociatedIdCache(prop)
                                     );
@@ -87,8 +87,8 @@ public class CacheConfig {
             ImmutableProp prop,
             Cache<?, ?> cache
     ) {
-        if (!prop.isReference()) {
-            throw new IllegalArgumentException("The prop \"" + prop + "\" is not reference");
+        if (!prop.isReference(TargetLevel.ENTITY)) {
+            throw new IllegalArgumentException("The prop \"" + prop + "\" is not entity reference");
         }
         propCacheMap.put(prop, LocatedCacheImpl.unwrap(cache));
         return this;
@@ -109,8 +109,8 @@ public class CacheConfig {
             ImmutableProp prop,
             Cache<?, List<?>> cache
     ) {
-        if (!prop.isReference()) {
-            throw new IllegalArgumentException("The prop \"" + prop + "\" is not list");
+        if (!prop.isReferenceList(TargetLevel.ENTITY)) {
+            throw new IllegalArgumentException("The prop \"" + prop + "\" is not entity list");
         }
         propCacheMap.put(prop, LocatedCacheImpl.unwrap(cache));
         return this;
@@ -142,7 +142,7 @@ public class CacheConfig {
 
     Caches build(Triggers triggers, Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap) {
         for (ImmutableProp prop : propCacheMap.keySet()) {
-            if (prop.isAssociation() && !objectCacheMap.containsKey(prop.getTargetType())) {
+            if (prop.isAssociation(TargetLevel.ENTITY) && !objectCacheMap.containsKey(prop.getTargetType())) {
                 throw new IllegalStateException(
                         "The cache for association property \"" +
                                 prop +

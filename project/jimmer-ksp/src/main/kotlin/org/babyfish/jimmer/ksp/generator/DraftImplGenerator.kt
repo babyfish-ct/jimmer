@@ -315,7 +315,10 @@ class DraftImplGenerator(
                                 } else {
                                     add("%S", prop.name)
                                 }
-                                add(" -> %L = value as %T", prop.name, prop.typeName())
+                                add(" -> %L = value as %T?", prop.name, prop.typeName(overrideNullable = false))
+                                if (!prop.isNullable) {
+                                    add("\n    ?: throw IllegalArgumentException(%S)", "'${prop.name} cannot be null")
+                                }
                                 add("\n")
                             }
                             addElseBranchForProp(argType)

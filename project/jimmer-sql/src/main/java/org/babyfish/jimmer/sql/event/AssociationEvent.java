@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.event;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.util.Classes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,7 +30,7 @@ public class AssociationEvent {
         if (prop == null) {
             throw new IllegalArgumentException("prop cannot be null");
         }
-        if (!prop.isAssociation()) {
+        if (!prop.isAssociation(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException("prop must be association");
         }
         if (sourceId == null || !Classes.matches(prop.getDeclaringType().getIdProp().getElementClass(), sourceId.getClass())) {

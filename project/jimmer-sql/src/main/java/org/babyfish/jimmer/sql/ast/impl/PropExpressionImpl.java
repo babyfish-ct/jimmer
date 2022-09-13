@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
@@ -30,7 +31,7 @@ public class PropExpressionImpl<T>
     }
 
     PropExpressionImpl(TableImplementor<?> table, ImmutableProp prop) {
-        if (prop.isAssociation()) {
+        if (prop.isAssociation(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException("prop '" + prop + "' cannot be association property");
         }
         if (!(prop.getStorage() instanceof Column)) {

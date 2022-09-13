@@ -443,7 +443,7 @@ class ImmutableTypeImpl implements ImmutableType {
             if (associationType == OneToOne.class || associationType == ManyToOne.class) {
                 category = ImmutablePropCategory.REFERENCE;
             } else if (associationType == OneToMany.class || associationType == ManyToMany.class) {
-                category = ImmutablePropCategory.ENTITY_LIST;
+                category = ImmutablePropCategory.REFERENCE_LIST;
             } else {
                 throw new IllegalArgumentException("Invalid association type");
             }

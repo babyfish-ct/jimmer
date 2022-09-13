@@ -3,8 +3,8 @@ package org.babyfish.jimmer.sql.cache;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.runtime.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,9 +26,9 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
         if ((type == null) == (prop == null)) {
             throw new IllegalArgumentException("The nullity of type and prop must be different");
         }
-        if (prop != null && !prop.isAssociation() && !prop.hasTransientResolver()) {
+        if (prop != null && !prop.isAssociation(TargetLevel.ENTITY) && !prop.hasTransientResolver()) {
             throw new IllegalArgumentException(
-                    "The prop \"" + prop + "\" is neither association nor transient property with resolver"
+                    "The prop \"" + prop + "\" is neither entity association nor transient property with resolver"
             );
         }
         this.raw = Objects.requireNonNull(raw, "raw cannot be null");
@@ -134,7 +134,7 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
     @SuppressWarnings("unchecked")
     private void validateResult(Object result) {
         if (result == null) {
-            if (prop != null && !prop.isEntityList() &&!prop.isNullable()) {
+            if (prop != null && !prop.isReferenceList(TargetLevel.OBJECT) &&!prop.isNullable()) {
                 throw new IllegalArgumentException(
                         "Property cache for \"" +
                                 prop +
@@ -157,22 +157,22 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
                                     "\" cannot return draft"
                     );
                 }
-            } else if (prop.isEntityList()) {
+            } else if (prop.isReferenceList(TargetLevel.OBJECT)) {
                 if (!(result instanceof List<?>)) {
                     throw new IllegalArgumentException(
                             "Association id list cache for \"" +
                                     prop +
-                                    "\" must return id list"
+                                    "\" must return list"
                     );
                 }
-                List<Object> ids = (List<Object>) result;
-                for (Object id : ids) {
-                    if (id instanceof ImmutableSpi || id instanceof List<?>) {
+                List<Object> rows = (List<Object>) result;
+                for (Object row : rows) {
+                    if (row instanceof ImmutableSpi || row instanceof List<?>) {
                         throw new IllegalArgumentException(
                                 "Association id list cache for \"" +
                                         prop +
                                         "\" returns a list " +
-                                        "but some elements is not simple id value"
+                                        "but some elements are not simple id values"
                         );
                     }
                 }

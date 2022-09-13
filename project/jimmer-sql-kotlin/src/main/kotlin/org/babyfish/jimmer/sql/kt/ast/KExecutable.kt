@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.kt
+package org.babyfish.jimmer.sql.kt.ast
 
 import java.sql.Connection
 

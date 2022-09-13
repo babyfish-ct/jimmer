@@ -5,7 +5,7 @@ public enum ImmutablePropCategory {
     SCALAR(false, false),
     SCALAR_LIST(false, true),
     REFERENCE(true, false),
-    ENTITY_LIST(true, true);
+    REFERENCE_LIST(true, true);
 
     private boolean isAssociation;
 

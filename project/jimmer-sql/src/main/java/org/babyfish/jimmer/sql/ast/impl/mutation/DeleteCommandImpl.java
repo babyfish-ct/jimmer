@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.JSqlClient;
@@ -156,8 +157,8 @@ class DeleteCommandImpl implements DeleteCommand {
                 throw new IllegalStateException("The configuration is frozen");
             }
 
-            if (!prop.isReference() || !(prop.getStorage() instanceof Column)) {
-                throw new IllegalArgumentException("'" + prop + "' must be an reference property bases on foreign key");
+            if (!prop.isReference(TargetLevel.ENTITY) || !(prop.getStorage() instanceof Column)) {
+                throw new IllegalArgumentException("'" + prop + "' must be an entity reference property bases on foreign key");
             }
             if (dissociateAction == DissociateAction.SET_NULL && !prop.isNullable()) {
                 throw new IllegalArgumentException(
@@ -176,9 +177,9 @@ class DeleteCommandImpl implements DeleteCommand {
         ) {
             ImmutableType immutableType = ImmutableType.get(entityType);
             ImmutableProp immutableProp = immutableType.getProps().get(prop);
-            if (immutableProp == null || !immutableProp.isReference()) {
+            if (immutableProp == null || !immutableProp.isReference(TargetLevel.ENTITY)) {
                 throw new IllegalArgumentException(
-                        "'" + prop + "' is not reference property of \"" + entityType.getName() + "\""
+                        "'" + prop + "' is not entity reference property of \"" + entityType.getName() + "\""
                 );
             }
             return setDissociateAction(immutableProp, dissociateAction);

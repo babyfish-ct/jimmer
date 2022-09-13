@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.Transient;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.*;
@@ -61,7 +61,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
         this.limit = Integer.MAX_VALUE;
         this.offset = 0;
         this.recursionStrategy = null;
-        if (negative || !prop.isAssociation()) {
+        if (negative || !prop.isAssociation(TargetLevel.ENTITY)) {
             this.childFetcher = null;
         } else {
             this.childFetcher = new FetcherImpl<>(prop.getTargetType().getJavaClass());
@@ -82,8 +82,8 @@ public class FetcherImpl<E> implements Fetcher<E> {
             FieldConfigImpl<?, Table<?>> loaderImpl = (FieldConfigImpl<?, Table<?>>) fieldConfig;
             this.filter = loaderImpl.getFilter();
             this.batchSize = loaderImpl.getBatchSize();
-            this.limit = prop.isEntityList() ? loaderImpl.getLimit() : Integer.MAX_VALUE;
-            this.offset = prop.isAssociation() ? loaderImpl.getOffset() : 0;
+            this.limit = prop.isReferenceList(TargetLevel.ENTITY) ? loaderImpl.getLimit() : Integer.MAX_VALUE;
+            this.offset = prop.isAssociation(TargetLevel.ENTITY) ? loaderImpl.getOffset() : 0;
             this.recursionStrategy = loaderImpl.getRecursionStrategy();
             this.childFetcher = standardChildFetcher(loaderImpl);
         } else {
@@ -159,7 +159,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
     public Fetcher<E> allScalarFields() {
         FetcherImpl<E> fetcher = this;
         for (ImmutableProp prop : immutableType.getSelectableProps().values()) {
-            if (!prop.isAssociation()) {
+            if (!prop.isAssociation(TargetLevel.OBJECT)) {
                 fetcher = fetcher.addImpl(prop, null);
             }
         }
@@ -203,11 +203,11 @@ public class FetcherImpl<E> implements Fetcher<E> {
     ) {
         Objects.requireNonNull(prop, "'prop' cannot be null");
         ImmutableProp immutableProp = immutableType.getProp(prop);
-        if (!immutableProp.isAssociation()) {
+        if (!immutableProp.isAssociation(TargetLevel.OBJECT)) {
             throw new IllegalArgumentException(
                     "Cannot load scalar property \"" +
                             immutableProp +
-                            "\", please call get function"
+                            "\" with child fetcher"
             );
         }
         if (childFetcher != null && immutableProp.getTargetType().getJavaClass() != childFetcher.getJavaClass()) {

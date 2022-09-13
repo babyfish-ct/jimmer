@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.association.meta;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutablePropCategory;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.meta.Column;
@@ -35,12 +36,12 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
-    public boolean isAssociation() {
+    public boolean isAssociation(TargetLevel level) {
         return true;
     }
 
     @Override
-    public boolean isReference() {
+    public boolean isReference(TargetLevel level) {
         return true;
     }
 
@@ -55,7 +56,7 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
-    public boolean isEntityList() {
+    public boolean isReferenceList(TargetLevel level) {
         return false;
     }
 

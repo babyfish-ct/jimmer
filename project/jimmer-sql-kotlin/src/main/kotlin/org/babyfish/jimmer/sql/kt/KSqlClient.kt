@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt
 
 import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.*
+import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery

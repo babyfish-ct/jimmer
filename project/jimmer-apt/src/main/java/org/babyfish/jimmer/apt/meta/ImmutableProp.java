@@ -148,12 +148,14 @@ public class ImmutableProp {
 
         if (declaringElement.getAnnotation(Entity.class) != null &&
                 (isAssociation || isList) &&
-                !typeUtils.isEntity(elementType)
+                !typeUtils.isEntity(elementType) &&
+                executableElement.getAnnotation(Transient.class) == null
         ) {
             throw new MetaException(
                     "Illegal property \"" +
                             this +
-                            "\", association property of entity interface must reference to entity type"
+                            "\", association property of entity interface " +
+                            "must reference to entity type or decorated by @Transient"
             );
         }
 

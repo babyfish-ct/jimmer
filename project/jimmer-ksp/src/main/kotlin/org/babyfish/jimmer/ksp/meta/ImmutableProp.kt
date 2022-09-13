@@ -67,8 +67,25 @@ class ImmutableProp(
         }.declaration as KSClassDeclaration
 
     val isAssociation: Boolean =
-        targetDeclaration.classKind === ClassKind.INTERFACE &&
-            ctx.typeAnnotationOf(targetDeclaration) != null
+        (targetDeclaration.classKind === ClassKind.INTERFACE)
+            ?.takeIf {
+                it
+            }
+            ?.let {
+                ctx.typeAnnotationOf(targetDeclaration)
+            }
+            ?.let {
+                if (it.fullName != Entity::class.qualifiedName && !isTransient) {
+                    throw MetaException(
+                        "Illegal property \"" +
+                            this +
+                            "\", association property of entity interface " +
+                            "must reference to entity type or decorated by @Transient"
+                    )
+                }
+                true
+            }
+            ?: false
 
     val isNullable: Boolean =
         if (isList) {

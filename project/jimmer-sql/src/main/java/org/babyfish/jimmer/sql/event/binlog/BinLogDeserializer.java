@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.type.SimpleType;
 import org.babyfish.jimmer.jackson.DeserializeUtils;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
@@ -46,7 +47,7 @@ class BinLogDeserializer extends StdDeserializer<Object> {
                 JsonNode childNode = fieldEntry.getValue();
                 ImmutableProp prop = immutableType.getPropByColumnName(columnName);
                 Object value;
-                if (prop.isAssociation()) {
+                if (prop.isAssociation(TargetLevel.ENTITY)) {
                     ImmutableProp targetIdProp = prop.getTargetType().getIdProp();
                     Object valueId = DeserializeUtils.readTreeAsValue(
                             ctx,

@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.common
 
-import org.babyfish.jimmer.sql.kt.KExecutable
+import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutationResult
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult

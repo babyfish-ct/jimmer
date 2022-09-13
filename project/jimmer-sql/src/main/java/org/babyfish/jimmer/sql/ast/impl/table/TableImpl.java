@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
@@ -169,7 +170,7 @@ class TableImpl<E> implements TableImplementor<E> {
     @Override
     public <XT extends Table<?>> XT join(String prop, JoinType joinType) {
         ImmutableProp immutableProp = immutableType.getProps().get(prop);
-        if (immutableProp == null || !immutableProp.isAssociation()) {
+        if (immutableProp == null || !immutableProp.isAssociation(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException(
                     "\"" +
                             prop +
@@ -581,7 +582,7 @@ class TableImpl<E> implements TableImplementor<E> {
         } else {
             prop = joinProp;
         }
-        if (prop.isEntityList()) {
+        if (prop.isReferenceList(TargetLevel.ENTITY)) {
             return TableRowCountDestructive.BREAK_REPEATABILITY;
         }
         if (prop.isNullable() && joinType != JoinType.LEFT) {

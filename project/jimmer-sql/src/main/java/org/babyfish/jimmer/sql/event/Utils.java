@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.event;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.TargetLevel;
 
 class Utils {
 
@@ -11,7 +12,7 @@ class Utils {
         if (mappedBy != null) {
             return mappedBy;
         }
-        if (!prop.isAssociation()) {
+        if (!prop.isAssociation(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException("\"" + prop + "\" is not association");
         }
         return prop;
