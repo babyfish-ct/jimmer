@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Triggers;
@@ -238,7 +239,7 @@ public class CachesImpl implements Caches {
                 (Cache<Object, Object>) cache,
                 prop
         );
-        if (prop.isAssociation()) {
+        if (prop.isAssociation(TargetLevel.ENTITY)) {
             triggers.addAssociationListener(prop, e -> {
                 Object id = e.getSourceId();
                 if (operator != null) {

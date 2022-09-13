@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.loader.spi;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -61,12 +62,12 @@ public abstract class AbstractDataLoader {
             int limit,
             int offset
     ) {
-        if (!prop.isAssociation() && !prop.hasTransientResolver()) {
+        if (!prop.isAssociation(TargetLevel.ENTITY) && !prop.hasTransientResolver()) {
             throw new IllegalArgumentException(
                     "\"" + prop + "\" is neither association nor transient with resolver"
             );
         }
-        if (!prop.isAssociation()) {
+        if (!prop.isAssociation(TargetLevel.ENTITY)) {
             if (fetcher != null) {
                 throw new IllegalArgumentException(
                         "Cannot specify fetcher for scalar prop \"" +
@@ -103,7 +104,7 @@ public abstract class AbstractDataLoader {
         this.thisIdProp = prop.getDeclaringType().getIdProp();
         this.limit = limit;
         this.offset = offset;
-        if (prop.isAssociation()) {
+        if (prop.isAssociation(TargetLevel.ENTITY)) {
             this.resolver = null;
             this.fetcher = fetcher != null ?
                     (Fetcher<ImmutableSpi>) fetcher :
@@ -130,7 +131,7 @@ public abstract class AbstractDataLoader {
         if (prop.getStorage() instanceof Column) {
             return (Map<ImmutableSpi, Object>)(Map<?, ?>) loadParents(sources);
         }
-        if (prop.isEntityList()) {
+        if (prop.isReferenceList(TargetLevel.ENTITY)) {
             return (Map<ImmutableSpi, Object>)(Map<?, ?>) loadTargetMultiMap(sources);
         }
         return (Map<ImmutableSpi, Object>)(Map<?, ?>) loadTargetMap(sources);

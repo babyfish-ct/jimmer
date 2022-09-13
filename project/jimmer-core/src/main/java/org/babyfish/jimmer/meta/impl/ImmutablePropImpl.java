@@ -3,10 +3,7 @@ package org.babyfish.jimmer.meta.impl;
 import kotlin.reflect.KClass;
 import kotlin.reflect.KProperty1;
 import kotlin.reflect.full.KClasses;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutablePropCategory;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.ModelException;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.Storage;
 
@@ -154,18 +151,21 @@ class ImmutablePropImpl implements ImmutableProp {
     }
 
     @Override
-    public boolean isAssociation() {
-        return this.category.isAssociation();
+    public boolean isAssociation(TargetLevel level) {
+        return this.category.isAssociation() &&
+                (level == TargetLevel.OBJECT || !isTransient);
     }
 
     @Override
-    public boolean isReference() {
-        return this.category == ImmutablePropCategory.REFERENCE;
+    public boolean isReference(TargetLevel level) {
+        return this.category == ImmutablePropCategory.REFERENCE &&
+                (level == TargetLevel.OBJECT || !isTransient);
     }
 
     @Override
-    public boolean isEntityList() {
-        return this.category == ImmutablePropCategory.ENTITY_LIST;
+    public boolean isReferenceList(TargetLevel level) {
+        return this.category == ImmutablePropCategory.REFERENCE_LIST &&
+                (level == TargetLevel.OBJECT || !isTransient);
     }
 
     @Override
@@ -256,7 +256,7 @@ class ImmutablePropImpl implements ImmutableProp {
         if (targetTypeResolved) {
             return targetType;
         }
-        if (isAssociation()) {
+        if (isAssociation(TargetLevel.OBJECT)) {
             targetType = Metadata.tryGet(elementClass);
             if (targetType == null) {
                 throw new ModelException(
@@ -275,7 +275,7 @@ class ImmutablePropImpl implements ImmutableProp {
         if (mappedByResolved) {
             return mappedBy;
         }
-        if (isAssociation()) {
+        if (isAssociation(TargetLevel.ENTITY)) {
             String mappedBy = "";
             OneToOne oneToOne = getAnnotation(OneToOne.class);
             if (oneToOne != null) {
@@ -304,7 +304,7 @@ class ImmutablePropImpl implements ImmutableProp {
                                     "\""
                     );
                 }
-                if (resolved.isReference() &&
+                if (resolved.isReference(TargetLevel.ENTITY) &&
                         associationAnnotation.annotationType() != OneToOne.class &&
                         associationAnnotation.annotationType() != OneToMany.class
                 ) {
@@ -317,7 +317,7 @@ class ImmutablePropImpl implements ImmutableProp {
                                     "\" is reference"
                     );
                 }
-                if (resolved.isEntityList() &&
+                if (resolved.isReferenceList(TargetLevel.ENTITY) &&
                         associationAnnotation.annotationType() != ManyToMany.class
                 ) {
                     throw new ModelException(
@@ -341,7 +341,7 @@ class ImmutablePropImpl implements ImmutableProp {
         if (oppositeResolved) {
             return opposite;
         }
-        if (isAssociation()) {
+        if (isAssociation(TargetLevel.ENTITY)) {
             opposite = getMappedBy();
             if (opposite == null) {
                 for (ImmutableProp backProp : getTargetType().getProps().values()) {

@@ -1,9 +1,7 @@
 package org.babyfish.jimmer.apt.generator;
 
 import com.squareup.javapoet.*;
-import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.UnloadedException;
-import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.NonSharedList;

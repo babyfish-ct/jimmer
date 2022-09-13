@@ -32,4 +32,7 @@ public interface Author {
             inverseJoinColumnName = "COUNTRY_CODE"
     )
     Country country();
+
+    @Transient
+    Organization organization();
 }

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.type.SimpleType;
 import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -54,11 +55,15 @@ public class ValueSerializer<T> {
         this.mapper = clonedMapper;
         if (prop == null) {
             this.valueType = SimpleType.constructUnsafe(type.getJavaClass());
-        } else if (prop.isAssociation()) {
+        } else if (prop.isAssociation(TargetLevel.OBJECT)) {
+            ImmutableProp targetIdProp = prop.getTargetType().getIdProp();
+            if (targetIdProp == null) {
+                throw new IllegalArgumentException("Transient association property is not supported");
+            }
             JavaType targetIdType = SimpleType.constructUnsafe(
-                    prop.getTargetType().getIdProp().getElementClass()
+                    targetIdProp.getElementClass()
             );
-            if (prop.isEntityList()) {
+            if (prop.isReferenceList(TargetLevel.ENTITY)) {
                 this.valueType = CollectionType.construct(
                         List.class,
                         null,

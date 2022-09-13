@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.DissociateAction;
@@ -136,9 +137,9 @@ public class Deleter {
             if (middleTable != null) {
                 deleteFromMiddleTable(middleTableProp, middleTable, ids);
             }
-            if (prop.isEntityList() &&
+            if (prop.isReferenceList(TargetLevel.ENTITY) &&
                     mappedByProp != null &&
-                    mappedByProp.isReference()
+                    mappedByProp.isReference(TargetLevel.ENTITY)
             ) {
                 DissociateAction dissociateAction = data.getDissociateAction(mappedByProp);
                 if (dissociateAction == DissociateAction.SET_NULL) {

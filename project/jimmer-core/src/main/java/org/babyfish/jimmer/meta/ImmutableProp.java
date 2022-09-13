@@ -21,11 +21,11 @@ public interface ImmutableProp {
 
     boolean isScalarList();
 
-    boolean isAssociation();
+    boolean isAssociation(TargetLevel level);
 
-    boolean isReference();
+    boolean isReference(TargetLevel level);
 
-    boolean isEntityList();
+    boolean isReferenceList(TargetLevel level);
 
     boolean isNullable();
 

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.loader.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.loader.spi.AbstractDataLoader;
 import org.babyfish.jimmer.sql.fetcher.Filter;
@@ -37,7 +38,7 @@ class DataLoader extends AbstractDataLoader {
                 sqlClient,
                 con,
                 prop,
-                prop.isAssociation() ?
+                prop.isAssociation(TargetLevel.ENTITY) ?
                         new FetcherImpl<>(prop.getTargetType().getJavaClass()).allTableFields() :
                         null,
                 filter,

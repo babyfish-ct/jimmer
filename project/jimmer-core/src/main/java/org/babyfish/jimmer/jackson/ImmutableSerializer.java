@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 
 import java.io.IOException;
@@ -48,10 +49,10 @@ public class ImmutableSerializer extends StdSerializer<ImmutableSpi> {
         for (ImmutableProp prop : immutableType.getProps().values()) {
             if (immutable.__isLoaded(prop.getId())) {
                 Object value = immutable.__get(prop.getId());
-                if ((prop.isAssociation() || prop.isScalarList()) && value != null) {
+                if ((prop.isAssociation(TargetLevel.OBJECT) || prop.isScalarList()) && value != null) {
                     gen.writeFieldName(prop.getName());
                     TypeSerializer typeSer = null;
-                    if (!prop.isEntityList() &&
+                    if (!prop.isReferenceList(TargetLevel.OBJECT) &&
                             value instanceof ImmutableSpi &&
                             ((ImmutableSpi)value).__type() != immutableType) {
                         typeSer = provider.findTypeSerializer(PropUtils.getJacksonType(prop));

@@ -7,11 +7,7 @@ import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
-import org.babyfish.jimmer.sql.model.Author;
-import org.babyfish.jimmer.sql.model.Book;
-import org.babyfish.jimmer.sql.model.BookStore;
-import org.babyfish.jimmer.sql.model.Country;
-import org.jetbrains.annotations.Nullable;
+import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.util.List;

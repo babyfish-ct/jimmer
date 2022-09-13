@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -82,7 +83,7 @@ class Saver {
     @SuppressWarnings("unchecked")
     private void saveAssociations(DraftSpi currentDraftSpi, ObjectType currentObjectType, boolean forParent) {
         for (ImmutableProp prop : currentDraftSpi.__type().getProps().values()) {
-            if (prop.isAssociation() &&
+            if (prop.isAssociation(TargetLevel.ENTITY) &&
                     prop.getStorage() instanceof Column == forParent &&
                     currentDraftSpi.__isLoaded(prop.getId())
             ) {
@@ -311,7 +312,7 @@ class Saver {
             if (prop.getStorage() instanceof Column && draftSpi.__isLoaded(prop.getId())) {
                 props.add(prop);
                 Object value = draftSpi.__get(prop.getId());
-                if (value != null && prop.isReference()) {
+                if (value != null && prop.isReference(TargetLevel.ENTITY)) {
                     value = ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getId());
                 }
                 values.add(value);
@@ -418,7 +419,7 @@ class Saver {
                 } else if (!prop.isId() && !excludeProps.contains(prop)) {
                     updatedProps.add(prop);
                     Object value = draftSpi.__get(prop.getId());
-                    if (value != null && prop.isReference()) {
+                    if (value != null && prop.isReference(TargetLevel.ENTITY)) {
                         value = ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getId());
                     }
                     updatedValues.add(value);
@@ -521,7 +522,7 @@ class Saver {
 
         List<ImmutableSpi> rows = Queries.createQuery(data.getSqlClient(), type, (q, table) -> {
             for (ImmutableProp keyProp : actualKeyProps) {
-                if (keyProp.isReference()) {
+                if (keyProp.isReference(TargetLevel.ENTITY)) {
                     ImmutableProp targetIdProp = keyProp.getTargetType().getIdProp();
                     Expression<Object> targetIdExpression =
                             table

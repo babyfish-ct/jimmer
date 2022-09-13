@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.loader.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.loader.ListLoader;
 import org.babyfish.jimmer.sql.loader.ReferenceLoader;
 import org.babyfish.jimmer.sql.JSqlClient;
@@ -27,9 +28,9 @@ public class Loaders {
             JSqlClient sqlClient,
             ImmutableProp prop
     ) {
-        if (!prop.isReference()) {
+        if (!prop.isReference(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException(
-                    "Cannot create reference loader for \"" + prop + "\", it is not reference association"
+                    "Cannot create reference loader for \"" + prop + "\", it is not entity reference association"
             );
         }
         return new ReferenceLoaderImpl<>(sqlClient, prop);
@@ -39,9 +40,9 @@ public class Loaders {
             JSqlClient sqlClient,
             ImmutableProp prop
     ) {
-        if (!prop.isEntityList()) {
+        if (!prop.isReferenceList(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException(
-                    "Cannot create list loader for \"" + prop + "\", it is not list association"
+                    "Cannot create list loader for \"" + prop + "\", it is not entity list association"
             );
         }
         return new ListLoaderImpl<>(sqlClient, prop);

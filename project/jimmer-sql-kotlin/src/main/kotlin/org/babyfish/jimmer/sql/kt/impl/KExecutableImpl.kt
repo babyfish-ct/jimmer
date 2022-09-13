@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.impl
 
 import org.babyfish.jimmer.sql.ast.Executable
-import org.babyfish.jimmer.sql.kt.KExecutable
+import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import java.sql.Connection
 
 internal class KExecutableImpl<R>(

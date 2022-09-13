@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.ImmutableProps;
@@ -131,7 +132,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                         throw new IllegalArgumentException(
                                 "'" + prop + "' cannot be key property because it is version property"
                         );
-                    } else if (prop.isAssociation() || !(prop.getStorage() instanceof Column)) {
+                    } else if (prop.isAssociation(TargetLevel.ENTITY) || !(prop.getStorage() instanceof Column)) {
                         throw new IllegalArgumentException(
                                 "'" + prop + "' cannot be key property because it is not a scalar property with storage"
                         );
@@ -208,7 +209,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         public Cfg setDissociateAction(ImmutableProp prop, DissociateAction dissociateAction) {
             validate();
 
-            if (!prop.isReference() || !(prop.getStorage() instanceof Column)) {
+            if (!prop.isReference(TargetLevel.ENTITY) || !(prop.getStorage() instanceof Column)) {
                 throw new IllegalArgumentException("'" + prop + "' must be an reference property bases on foreign key");
             }
             if (dissociateAction == DissociateAction.SET_NULL && !prop.isNullable()) {

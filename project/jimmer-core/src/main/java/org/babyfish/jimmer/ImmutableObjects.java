@@ -2,12 +2,18 @@ package org.babyfish.jimmer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.Table;
 import org.babyfish.jimmer.sql.meta.Column;
+
+import java.text.SimpleDateFormat;
+import java.util.function.Function;
 
 public class ImmutableObjects {
 
@@ -47,6 +53,20 @@ public class ImmutableObjects {
             return ((ImmutableSpi) immutable).__isLoaded(prop);
         }
         throw new IllegalArgumentException("The first argument is immutable object created by jimmer");
+    }
+
+    /**
+     * Jimmer object is dynamic, none properties are mandatory.
+     *
+     * This method can ask whether a property of the object is specified.
+     *
+     * @param immutable Object instance
+     * @param prop Property
+     * @return Whether the property of the object is specified.
+     * @exception IllegalArgumentException The first argument is immutable object created by jimmer
+     */
+    public static boolean isLoaded(Object immutable, ImmutableProp prop) {
+        return isLoaded(immutable, prop.getId());
     }
 
     /**
@@ -91,6 +111,24 @@ public class ImmutableObjects {
         throw new IllegalArgumentException("The first argument is immutable object created by jimmer");
     }
 
+    /**
+     * Get the property value of immutable object,
+     * if the property is not loaded, exception will be thrown.
+     *
+     * @param immutable Object instance
+     * @param prop Property
+     * @return Whether the property of the object is specified.
+     * @exception IllegalArgumentException There are two possibilities
+     *      <ul>
+     *          <li>The first argument is immutable object created by jimmer</li>
+     *          <li>The second argument is not a valid property name of immutable object</li>
+     *      </ul>
+     * @exception UnloadedException The property is not loaded
+     */
+    public static Object get(Object immutable, ImmutableProp prop) {
+        return get(immutable, prop.getId());
+    }
+
     public static boolean isIdOnly(Object immutable) {
         if (immutable == null) {
             return false;
@@ -121,7 +159,7 @@ public class ImmutableObjects {
             ImmutableSpi spi = (ImmutableSpi) immutable;
             ImmutableType type = spi.__type();
             for (ImmutableProp prop : type.getProps().values()) {
-                if (prop.isAssociation()) {
+                if (prop.isAssociation(TargetLevel.OBJECT)) {
                     if (spi.__isLoaded(prop.getId())) {
                         if (prop.getStorage() instanceof Column) {
                             ImmutableSpi target = (ImmutableSpi) spi.__get(prop.getId());
@@ -168,6 +206,7 @@ public class ImmutableObjects {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.registerModule(new ImmutableModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         MAPPER = mapper;
     }
 }

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -183,7 +184,7 @@ class FetcherTask {
         }
         int size = field.getBatchSize();
         if (size == 0) {
-            if (field.getProp().isEntityList()) {
+            if (field.getProp().isReferenceList(TargetLevel.ENTITY)) {
                 return sqlClient.getDefaultListBatchSize();
             }
             return sqlClient.getDefaultBatchSize();
@@ -192,7 +193,7 @@ class FetcherTask {
     }
 
     private void setDraftProp(DraftSpi draft, Object value) {
-        if (value == null && field.getProp().isEntityList()) {
+        if (value == null && field.getProp().isReferenceList(TargetLevel.ENTITY)) {
             draft.__set(field.getProp().getId(), Collections.emptyList());
         } else {
             draft.__set(field.getProp().getId(), value);

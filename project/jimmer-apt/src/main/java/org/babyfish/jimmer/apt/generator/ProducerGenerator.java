@@ -109,7 +109,7 @@ public class ProducerGenerator {
             ImmutablePropCategory category;
             if (prop.isList()) {
                 category = prop.isAssociation() ?
-                        ImmutablePropCategory.ENTITY_LIST :
+                        ImmutablePropCategory.REFERENCE_LIST :
                         ImmutablePropCategory.SCALAR_LIST;
             } else if (prop.isAssociation()) {
                 category = ImmutablePropCategory.REFERENCE;

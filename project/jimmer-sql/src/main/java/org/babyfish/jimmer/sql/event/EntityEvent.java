@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.event;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.jetbrains.annotations.NotNull;
@@ -101,6 +102,11 @@ public class EntityEvent<E> {
         return EventType.UPDATE;
     }
 
+    @Nullable
+    public <T> Ref<T> getUnchangedFieldRef(ImmutableProp prop) {
+        return getUnchangedFieldRef(prop.getId());
+    }
+
     @SuppressWarnings("unchecked")
     @Nullable
     public <T> Ref<T> getUnchangedFieldRef(int propId) {
@@ -166,7 +172,7 @@ public class EntityEvent<E> {
 
     @SuppressWarnings("unchecked")
     private boolean valueEqual(ImmutableProp prop, Object a, Object b) {
-        if (!prop.isReference()) {
+        if (!prop.isReference(TargetLevel.ENTITY)) {
             return Objects.equals(a, b);
         }
         if (a == b) {

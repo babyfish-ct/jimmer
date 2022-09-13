@@ -4,13 +4,14 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.SimpleType;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.TargetLevel;
 
 import java.util.List;
 
 class PropUtils {
 
     static JavaType getJacksonType(ImmutableProp prop) {
-        if (prop.isEntityList() || prop.isScalarList()) {
+        if (prop.isReferenceList(TargetLevel.OBJECT) || prop.isScalarList()) {
             return CollectionType.construct(
                     List.class,
                     null,

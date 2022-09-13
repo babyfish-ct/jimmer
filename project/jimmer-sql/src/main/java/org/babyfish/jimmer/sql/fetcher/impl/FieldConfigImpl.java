@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
@@ -23,13 +24,16 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
     private RecursionStrategy<E> recursionStrategy;
 
     FieldConfigImpl(ImmutableProp prop, FetcherImpl<?> childFetcher) {
+        if (childFetcher != null && !prop.isAssociation(TargetLevel.ENTITY)) {
+            throw new IllegalArgumentException("'" + prop + "' is not entity association");
+        }
         this.prop = prop;
         this.childFetcher = childFetcher;
     }
 
     @Override
     public RecursiveListFieldConfig<E, T> filter(Filter<T> filter) {
-        if (filter != null && prop.isReference() && !prop.isNullable()) {
+        if (filter != null && prop.isReference(TargetLevel.ENTITY) && !prop.isNullable()) {
             throw new IllegalArgumentException(
                     "Cannot set filter for non-null one-to-one/many-to-one property \"" + prop + "\""
             );
@@ -49,7 +53,7 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
 
     @Override
     public RecursiveListFieldConfig<E, T> limit(int limit, int offset) {
-        if (!prop.isEntityList()) {
+        if (!prop.isReferenceList(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException(
                     "Cannot set limit because current property \"" +
                             prop +
