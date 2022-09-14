@@ -4,14 +4,16 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.core.json.PackageVersion;
+import com.fasterxml.jackson.databind.BeanProperty;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TreeTraversingParser;
+import com.fasterxml.jackson.databind.util.ClassUtil;
 
 import java.io.IOException;
 
-public class DeserializeUtils {
+class PropDeserializeUtils {
 
     private static final boolean VERSION_GE_2_13 = isVersionGe2_13();
 
@@ -24,17 +26,17 @@ public class DeserializeUtils {
     public static Object readTreeAsValue(
             DeserializationContext ctx,
             JsonNode n,
-            JavaType targetType
+            BeanProperty beanProp
     ) throws IOException {
 
         if (n == null || n.isNull()) {
             return null;
         }
         if (VERSION_GE_2_13) {
-            return ctx.readTreeAsValue(n, targetType);
+            return readTreeAsValue(n, beanProp, ctx);
         }
         try (TreeTraversingParser p = treeAsTokens(n, ctx)) {
-            return ctx.readValue(p, targetType);
+            return readValue(p, beanProp, ctx);
         }
     }
 
@@ -66,5 +68,26 @@ public class DeserializeUtils {
             return false;
         }
         return version.getMinorVersion() >= 13;
+    }
+
+    private static Object readTreeAsValue(JsonNode n, BeanProperty beanProp, DeserializationContext ctx) throws IOException {
+        if (n == null) {
+            return null;
+        }
+        try (TreeTraversingParser p = treeAsTokens(n, ctx)) {
+            return readValue(p, beanProp, ctx);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T readValue(JsonParser p, BeanProperty beanProp, DeserializationContext ctx) throws IOException {
+        JsonDeserializer<Object> deser = ctx.findContextualValueDeserializer(beanProp.getType(), beanProp);
+        if (deser == null) {
+            return ctx.reportBadDefinition(beanProp.getType(),
+                    "Could not find JsonDeserializer for type "+
+                            ClassUtil.getTypeDescription(beanProp.getType())
+            );
+        }
+        return (T) deser.deserialize(p, ctx);
     }
 }

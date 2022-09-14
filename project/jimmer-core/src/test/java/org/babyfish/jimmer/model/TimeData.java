@@ -23,15 +23,9 @@ public interface TimeData {
     @JsonFormat(pattern = "yyyy/MM/dd HH:mm")
     LocalDateTime time4();
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    OffsetDateTime time5();
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    LocalDate time5();
 
-    @JsonFormat(pattern = "yyyy/MM/dd HH:mm")
-    OffsetDateTime time6();
-
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    LocalDate time7();
-
-    @JsonFormat(pattern = "yyyy/MM/dd HH:mm")
-    LocalDate time8();
+    @JsonFormat(pattern = "yyyy/MM/dd")
+    LocalDate time6();
 }

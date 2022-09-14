@@ -8,9 +8,9 @@ import org.babyfish.jimmer.meta.TargetLevel;
 
 import java.util.List;
 
-class PropUtils {
+public class PropUtils {
 
-    static JavaType getJacksonType(ImmutableProp prop) {
+    public static JavaType getJacksonType(ImmutableProp prop) {
         if (prop.isReferenceList(TargetLevel.OBJECT) || prop.isScalarList()) {
             return CollectionType.construct(
                     List.class,
