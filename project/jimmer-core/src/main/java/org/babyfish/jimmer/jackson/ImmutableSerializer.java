@@ -1,16 +1,25 @@
 package org.babyfish.jimmer.jackson;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
+import com.fasterxml.jackson.databind.ser.std.DateSerializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.OffsetDateTimeSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.ZonedDateTimeSerializer;
+import org.babyfish.jimmer.jackson.meta.BeanProps;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
 
 public class ImmutableSerializer extends StdSerializer<ImmutableSpi> {
 
@@ -45,11 +54,18 @@ public class ImmutableSerializer extends StdSerializer<ImmutableSpi> {
         gen.writeEndObject();
     }
 
+    @SuppressWarnings("unchecked")
     private void serializeFields(ImmutableSpi immutable, JsonGenerator gen, SerializerProvider provider) throws IOException {
         for (ImmutableProp prop : immutableType.getProps().values()) {
+            JsonIgnore ignore = prop.getAnnotation(JsonIgnore.class);
+            if (ignore != null && ignore.value()) {
+                continue;
+            }
             if (immutable.__isLoaded(prop.getId())) {
                 Object value = immutable.__get(prop.getId());
-                if ((prop.isAssociation(TargetLevel.OBJECT) || prop.isScalarList()) && value != null) {
+                if (value == null) {
+                    provider.defaultSerializeField(prop.getName(), null, gen);
+                } else if (prop.isAssociation(TargetLevel.OBJECT) || prop.isScalarList()) {
                     gen.writeFieldName(prop.getName());
                     TypeSerializer typeSer = null;
                     if (!prop.isReferenceList(TargetLevel.OBJECT) &&
@@ -63,7 +79,39 @@ public class ImmutableSerializer extends StdSerializer<ImmutableSpi> {
                         provider.findValueSerializer(PropUtils.getJacksonType(prop)).serialize(value, gen, provider);
                     }
                 } else {
-                    provider.defaultSerializeField(prop.getName(), value, gen);
+                    gen.writeFieldName(prop.getName());
+                    JsonSerializer<?> serializer = provider.findTypedValueSerializer(
+                            prop.getElementClass(),
+                            true,
+                            null
+                    );
+                    if (serializer instanceof DateSerializer) {
+                        serializer = ((DateSerializer) serializer).createContextual(
+                                provider,
+                                BeanProps.get(provider.getTypeFactory(), prop)
+                        );
+                    } else if (serializer instanceof LocalDateSerializer) {
+                        serializer = ((LocalDateSerializer) serializer).createContextual(
+                                provider,
+                                BeanProps.get(provider.getTypeFactory(), prop)
+                        );
+                    } else if (serializer instanceof LocalDateTimeSerializer) {
+                        serializer = ((LocalDateTimeSerializer) serializer).createContextual(
+                                provider,
+                                BeanProps.get(provider.getTypeFactory(), prop)
+                        );
+                    } else if (serializer instanceof OffsetDateTimeSerializer) {
+                        serializer = ((OffsetDateTimeSerializer) serializer).createContextual(
+                                provider,
+                                BeanProps.get(provider.getTypeFactory(), prop)
+                        );
+                    } else if (serializer instanceof ZonedDateTimeSerializer) {
+                        serializer = ((ZonedDateTimeSerializer) serializer).createContextual(
+                                provider,
+                                BeanProps.get(provider.getTypeFactory(), prop)
+                        );
+                    }
+                    ((JsonSerializer<Object>)serializer).serialize(value, gen, provider);
                 }
             }
         }

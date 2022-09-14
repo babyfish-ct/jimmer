@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.node.TreeTraversingParser;
+import org.babyfish.jimmer.jackson.meta.BeanProps;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -35,10 +36,10 @@ public class ImmutableDeserializer extends StdDeserializer<Object> {
         return Internal.produce(immutableType, null, draft -> {
             for (ImmutableProp prop : immutableType.getProps().values()) {
                 if (node.has(prop.getName())) {
-                    Object value = DeserializeUtils.readTreeAsValue(
+                    Object value = PropDeserializeUtils.readTreeAsValue(
                             ctx,
                             node.get(prop.getName()),
-                            PropUtils.getJacksonType(prop)
+                            BeanProps.get(ctx.getTypeFactory(), prop)
                     );
                     ((DraftSpi)draft).__set(prop.getId(), value);
                 }

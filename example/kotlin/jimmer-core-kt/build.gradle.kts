@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "org.babyfish.jimmer.example.kt"
-version = "0.2.3"
+version = "0.2.4"
 
 repositories {
     mavenCentral()
@@ -14,7 +14,7 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib"))
 
-    implementation("org.babyfish.jimmer:jimmer-core-kotlin:0.2.3")
+    implementation("org.babyfish.jimmer:jimmer-core-kotlin:0.2.4")
     ksp("org.babyfish.jimmer:jimmer-ksp:0.2.3")
 }
 
