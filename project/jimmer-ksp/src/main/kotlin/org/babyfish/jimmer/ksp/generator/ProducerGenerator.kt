@@ -115,7 +115,7 @@ class ProducerGenerator(
                     prop.name,
                     IMMUTABLE_PROP_CATEGORY_CLASS_NAME,
                     when {
-                        prop.isList && prop.isAssociation -> "ENTITY_LIST"
+                        prop.isList && prop.isAssociation -> "REFERENCE_LIST"
                         prop.isList && !prop.isAssociation -> "SCALAR_LIST"
                         prop.isAssociation -> "REFERENCE"
                         else -> "SCALAR"
