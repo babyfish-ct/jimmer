@@ -75,7 +75,7 @@ class ImmutableProp(
                 ctx.typeAnnotationOf(targetDeclaration)
             }
             ?.let {
-                if (it.fullName != Entity::class.qualifiedName && !isTransient) {
+                if (declaringType.isEntity && it.fullName != Entity::class.qualifiedName && !isTransient) {
                     throw MetaException(
                         "Illegal property \"" +
                             this +
