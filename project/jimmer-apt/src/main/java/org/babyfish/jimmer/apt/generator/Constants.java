@@ -3,8 +3,9 @@ package org.babyfish.jimmer.apt.generator;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.DraftConsumer;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftContext;
+import org.babyfish.jimmer.validation.Validator;
 
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -19,7 +20,10 @@ class Constants {
             ClassName.get(DraftConsumer.class);
 
     public static final ClassName RUNTIME_TYPE_CLASS_NAME =
-            ClassName.get(ImmutableType.class);
+            ClassName.get(org.babyfish.jimmer.meta.ImmutableType.class);
+
+    public static final ClassName VALIDATOR_CLASS_NAME =
+            ClassName.get(Validator.class);
 
     public static final ClassName TABLE_CLASS_NAME =
             ClassName.get(
@@ -166,9 +170,45 @@ class Constants {
             "__resolving";
 
     public static final String DRAFT_FIELD_EMAIL_PATTERN =
-            "__email_pattern";
+            "__EMAIL_PATTERN__";
 
     public static String regexpPatternFieldName(ImmutableProp prop, int index) {
-        return "__" + prop.getName() + "_pattern" + (index == 0 ? "" : "_" + index);
+        return "__" + upper(prop.getName()) + "_PATTER" + (index == 0 ? "" : "_" + index);
+    }
+
+    public static String validatorFieldName(ImmutableType type, ClassName annotationClassName) {
+        return "__" +
+                upper(annotationClassName.simpleName()) +
+                "_VALIDATOR_" +
+                Math.abs(annotationClassName.hashCode());
+    }
+
+    public static String validatorFieldName(ImmutableProp prop, ClassName annotationClassName) {
+        return "__" +
+                upper(prop.getName()) +
+                "_" +
+                upper(annotationClassName.simpleName()) +
+                "_VALIDATOR_" +
+                Math.abs(annotationClassName.hashCode());
+    }
+
+    private static String upper(String text) {
+        boolean prevUpper = true;
+        StringBuilder builder = new StringBuilder();
+        int size = text.length();
+        for (int i = 0; i < size; i++) {
+            char c = text.charAt(i);
+            boolean upper = Character.isUpperCase(c);
+            if (upper) {
+                if (!prevUpper) {
+                    builder.append('_');
+                }
+                builder.append(c);
+            } else {
+                builder.append(Character.toUpperCase(c));
+            }
+            prevUpper = upper;
+        }
+        return builder.toString();
     }
 }

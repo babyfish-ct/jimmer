@@ -19,13 +19,13 @@ import java.util.function.BiFunction;
 
 class ImmutableTypeImpl implements ImmutableType {
 
-    private Class<?> javaClass;
+    private final Class<?> javaClass;
 
     private KClass<?> kotlinClass;
 
-    private ImmutableType superType;
+    private final ImmutableType superType;
 
-    private BiFunction<DraftContext, Object, Draft> draftFactory;
+    private final BiFunction<DraftContext, Object, Draft> draftFactory;
 
     private Map<String, ImmutableProp> declaredProps = new LinkedHashMap<>();
 
