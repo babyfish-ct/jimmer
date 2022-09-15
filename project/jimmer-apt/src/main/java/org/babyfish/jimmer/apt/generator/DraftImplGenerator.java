@@ -14,6 +14,7 @@ import javax.validation.constraints.Email;
 import javax.validation.constraints.Pattern;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 import static org.babyfish.jimmer.apt.generator.Constants.*;
 
@@ -37,7 +38,7 @@ public class DraftImplGenerator {
                 .addSuperinterface(draftSpiClassName)
                 .addSuperinterface(type.getDraftClassName());
         addFields();
-        addPatternFields();
+        addStaticFields();
         addConstructor();
         addReadonlyMethods();
         for (ImmutableProp prop : type.getProps().values()) {
@@ -96,7 +97,7 @@ public class DraftImplGenerator {
         );
     }
 
-    private void addPatternFields() {
+    private void addStaticFields() {
         boolean hasEmail = false;
         for (ImmutableProp prop : type.getProps().values()) {
             Email[] emails = prop.getAnnotations(Email.class);
@@ -141,6 +142,51 @@ public class DraftImplGenerator {
                             "^[^@]+@[^@]+$"
                     );
             typeBuilder.addField(builder.build());
+        }
+        for (Map.Entry<ClassName, String> e : type.getValidationMessageMap().entrySet()) {
+            FieldSpec.Builder builder = FieldSpec
+                    .builder(
+                            ParameterizedTypeName.get(
+                                    VALIDATOR_CLASS_NAME,
+                                    type.getClassName()
+                            ),
+                            Constants.validatorFieldName(type, e.getKey()),
+                            Modifier.PRIVATE,
+                            Modifier.STATIC,
+                            Modifier.FINAL
+                    )
+                    .initializer(
+                            "\n    new $T<>($T.class, $S, $T.class, null)",
+                            VALIDATOR_CLASS_NAME,
+                            e.getKey(),
+                            e.getValue(),
+                            type.getClassName()
+                    );
+            typeBuilder.addField(builder.build());
+        }
+        for (ImmutableProp prop : type.getProps().values()) {
+            for (Map.Entry<ClassName, String> e : prop.getValidationMessageMap().entrySet()) {
+                FieldSpec.Builder builder = FieldSpec
+                        .builder(
+                                ParameterizedTypeName.get(
+                                        VALIDATOR_CLASS_NAME,
+                                        prop.getTypeName()
+                                ),
+                                Constants.validatorFieldName(prop, e.getKey()),
+                                Modifier.PRIVATE,
+                                Modifier.STATIC,
+                                Modifier.FINAL
+                        )
+                        .initializer(
+                                "\n    new $T<>($T.class, $S, $T.class, $L)",
+                                VALIDATOR_CLASS_NAME,
+                                e.getKey(),
+                                e.getValue(),
+                                type.getClassName(),
+                                prop.getId()
+                        );
+                typeBuilder.addField(builder.build());
+            }
         }
     }
 

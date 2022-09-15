@@ -42,6 +42,7 @@ class ValidationGenerator(
         generateBound()
         generateEmail()
         generatePattern()
+        generateConstraints()
     }
 
     private fun generateNotEmpty() {
@@ -280,6 +281,12 @@ class ValidationGenerator(
         }
     }
 
+    private fun generateConstraints() {
+        for (e in prop.constraintMap) {
+            parent.addStatement("/* $e */")
+        }
+    }
+
     private fun validate(
         condition: String,
         args: Array<Any>,
@@ -330,7 +337,7 @@ class ValidationGenerator(
 
     private fun validateBound(bound: Long, cmp: String, message: String?) {
         val bigNumLiteral = when {
-            prop.typeName() == BIG_DECIMAL_CLASS_NAME ->
+            prop.typeName(overrideNullable = false) == BIG_DECIMAL_CLASS_NAME ->
                 when (bound) {
                     0L -> "%T.ZERO"
                     1L -> "%T.ONE"
@@ -338,7 +345,7 @@ class ValidationGenerator(
                     10L -> "%T.TEN"
                     else -> "%T.valueOf($bound)"
                 }
-            prop.typeName() == BIG_INTEGER_CLASS_NAME ->
+            prop.typeName(overrideNullable = false) == BIG_INTEGER_CLASS_NAME ->
                 when (bound) {
                     -1L -> "%T.NEGATIVE_ONE"
                     0L -> "%T.ZERO"
@@ -357,7 +364,7 @@ class ValidationGenerator(
                 "%L %L %L"
             },
             if (bigNumLiteral != null) {
-                arrayOf(prop.name, prop.typeName(), cmp)
+                arrayOf(prop.name, prop.typeName(overrideNullable = false), cmp)
             }
             else {
                 arrayOf(prop.name, cmp, bound)

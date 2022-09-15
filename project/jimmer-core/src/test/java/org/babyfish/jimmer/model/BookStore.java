@@ -2,10 +2,8 @@ package org.babyfish.jimmer.model;
 
 import org.babyfish.jimmer.Immutable;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Null;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.*;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Immutable
@@ -20,4 +18,8 @@ public interface BookStore {
     String website();
 
     List<Book> books();
+
+    @Null
+    @PositiveOrZero
+    BigDecimal avgPrice();
 }

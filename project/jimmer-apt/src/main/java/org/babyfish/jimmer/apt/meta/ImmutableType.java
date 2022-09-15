@@ -62,6 +62,8 @@ public class ImmutableType {
 
     private final ClassName fetcherClassName;
 
+    private final Map<ClassName, String> validationMessageMap;
+
     public ImmutableType(
             TypeUtils typeUtils,
             TypeElement typeElement
@@ -277,6 +279,8 @@ public class ImmutableType {
         tableClassName = toClassName(name -> name + "Table");
         tableExClassName = toClassName(name -> name + "TableEx");
         fetcherClassName = toClassName(name -> name + "Fetcher");
+
+        validationMessageMap = ValidationMessages.parseMessageMap(typeElement);
     }
 
     public TypeElement getTypeElement() {
@@ -401,5 +405,9 @@ public class ImmutableType {
                 transform != null ? transform.apply(name) : name,
                 moreSimpleNames
         );
+    }
+
+    public Map<ClassName, String> getValidationMessageMap() {
+        return validationMessageMap;
     }
 }

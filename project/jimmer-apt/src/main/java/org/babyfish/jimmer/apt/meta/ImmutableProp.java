@@ -9,9 +9,7 @@ import org.babyfish.jimmer.sql.*;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 
-import javax.lang.model.element.AnnotationValue;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -59,6 +57,8 @@ public class ImmutableProp {
     private final boolean isNullable;
 
     private Annotation associationAnnotation;
+
+    private final Map<ClassName, String> validationMessageMap;
 
     public ImmutableProp(
             TypeUtils typeUtils,
@@ -189,6 +189,7 @@ public class ImmutableProp {
         }
 
         this.isNullable = determineNullable();
+        this.validationMessageMap = ValidationMessages.parseMessageMap(executableElement);
     }
 
     public int getId() {
@@ -638,6 +639,10 @@ public class ImmutableProp {
             return new ImplicitNullable(true, "its type is box type");
         }
         return null;
+    }
+
+    public Map<ClassName, String> getValidationMessageMap() {
+        return validationMessageMap;
     }
 
     private static class ImplicitNullable {

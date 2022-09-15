@@ -6,6 +6,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.MetaException;
+import org.babyfish.jimmer.apt.meta.ValidationMessages;
 
 import javax.validation.ValidationException;
 import javax.validation.constraints.*;
@@ -53,6 +54,7 @@ public class ValidationGenerator {
         generateBound();
         generateEmail();
         generatePattern();
+        generateConstraints();
     }
 
     private void generateNotEmpty() {
@@ -291,6 +293,10 @@ public class ValidationGenerator {
                             "'"
             );
         }
+    }
+
+    private void generateConstraints() {
+
     }
 
     private void validate(
