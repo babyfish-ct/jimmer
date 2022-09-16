@@ -3,7 +3,7 @@ package org.babyfish.jimmer.apt.generator;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.DraftConsumer;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
-import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.validation.Validator;
 
@@ -24,6 +24,21 @@ class Constants {
 
     public static final ClassName VALIDATOR_CLASS_NAME =
             ClassName.get(Validator.class);
+
+    public static final ClassName SCALAR_CLASS_NAME =
+            ClassName.get(TypedProp.Scalar.class);
+
+    public static final ClassName SCALAR_LIST_CLASS_NAME =
+            ClassName.get(TypedProp.ScalarList.class);
+
+    public static final ClassName REFERENCE_CLASS_NAME =
+            ClassName.get(TypedProp.Reference.class);
+
+    public static final ClassName REFERENCE_LIST_CLASS_NAME =
+            ClassName.get(TypedProp.ReferenceList.class);
+
+    public static final ClassName TYPED_PROP_CLASS_NAME =
+            ClassName.get(TypedProp.class);
 
     public static final ClassName TABLE_CLASS_NAME =
             ClassName.get(
@@ -173,42 +188,22 @@ class Constants {
             "__EMAIL_PATTERN__";
 
     public static String regexpPatternFieldName(ImmutableProp prop, int index) {
-        return "__" + upper(prop.getName()) + "_PATTER" + (index == 0 ? "" : "_" + index);
+        return "__" + Strings.upper(prop.getName()) + "_PATTER" + (index == 0 ? "" : "_" + index);
     }
 
-    public static String validatorFieldName(ImmutableType type, ClassName annotationClassName) {
+    public static String validatorFieldName(ClassName annotationClassName) {
         return "__" +
-                upper(annotationClassName.simpleName()) +
+                Strings.upper(annotationClassName.simpleName()) +
                 "_VALIDATOR_" +
                 Math.abs(annotationClassName.hashCode());
     }
 
     public static String validatorFieldName(ImmutableProp prop, ClassName annotationClassName) {
         return "__" +
-                upper(prop.getName()) +
+                Strings.upper(prop.getName()) +
                 "_" +
-                upper(annotationClassName.simpleName()) +
+                Strings.upper(annotationClassName.simpleName()) +
                 "_VALIDATOR_" +
                 Math.abs(annotationClassName.hashCode());
-    }
-
-    private static String upper(String text) {
-        boolean prevUpper = true;
-        StringBuilder builder = new StringBuilder();
-        int size = text.length();
-        for (int i = 0; i < size; i++) {
-            char c = text.charAt(i);
-            boolean upper = Character.isUpperCase(c);
-            if (upper) {
-                if (!prevUpper) {
-                    builder.append('_');
-                }
-                builder.append(c);
-            } else {
-                builder.append(Character.toUpperCase(c));
-            }
-            prevUpper = upper;
-        }
-        return builder.toString();
     }
 }

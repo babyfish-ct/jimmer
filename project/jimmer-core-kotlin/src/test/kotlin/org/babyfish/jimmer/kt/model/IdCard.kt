@@ -5,4 +5,6 @@ import javax.validation.Constraint
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.PROPERTY)
 @Constraint(validatedBy = [IdCardValidator::class])
-annotation class IdCard
+annotation class IdCard(
+    val message: String
+)

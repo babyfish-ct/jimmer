@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.Storage;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -21,17 +22,17 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
-    public ImmutableType getDeclaringType() {
+    public @NotNull ImmutableType getDeclaringType() {
         return declaringType;
     }
 
     @Override
-    public ImmutablePropCategory getCategory() {
+    public @NotNull ImmutablePropCategory getCategory() {
         return ImmutablePropCategory.REFERENCE;
     }
 
     @Override
-    public DissociateAction getDissociateAction() {
+    public @NotNull DissociateAction getDissociateAction() {
         return DissociateAction.NONE;
     }
 
@@ -122,12 +123,12 @@ public abstract class AssociationProp implements ImmutableProp {
         }
 
         @Override
-        public String getName() {
+        public @NotNull String getName() {
             return "source";
         }
 
         @Override
-        public Class<?> getElementClass() {
+        public @NotNull Class<?> getElementClass() {
             return declaringType.getSourceType().getJavaClass();
         }
 
@@ -178,12 +179,12 @@ public abstract class AssociationProp implements ImmutableProp {
         }
 
         @Override
-        public String getName() {
+        public @NotNull String getName() {
             return "target";
         }
 
         @Override
-        public Class<?> getElementClass() {
+        public @NotNull Class<?> getElementClass() {
             return declaringType.getTargetType().getJavaClass();
         }
 

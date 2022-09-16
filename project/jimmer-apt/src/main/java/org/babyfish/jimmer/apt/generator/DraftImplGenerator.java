@@ -150,7 +150,7 @@ public class DraftImplGenerator {
                                     VALIDATOR_CLASS_NAME,
                                     type.getClassName()
                             ),
-                            Constants.validatorFieldName(type, e.getKey()),
+                            Constants.validatorFieldName(e.getKey()),
                             Modifier.PRIVATE,
                             Modifier.STATIC,
                             Modifier.FINAL
@@ -618,7 +618,7 @@ public class DraftImplGenerator {
                 .addStatement("return base")
                 .endControlFlow();
         for (Map.Entry<ClassName, String> e : type.getValidationMessageMap().entrySet()) {
-            builder.addStatement("$L.validate(modified)", Constants.validatorFieldName(type, e.getKey()));
+            builder.addStatement("$L.validate(modified)", Constants.validatorFieldName(e.getKey()));
         }
         builder.addStatement("return modified");
     }

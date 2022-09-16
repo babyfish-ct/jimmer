@@ -8,6 +8,7 @@ import com.squareup.kotlinpoet.ClassName
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.FETCHER_DSL
+import org.babyfish.jimmer.ksp.generator.parseValidationMessages
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.Id
 import org.babyfish.jimmer.sql.MappedSuperclass
@@ -146,6 +147,9 @@ class ImmutableType(
                 throw MetaException("Version property '$it' is not declared in super type")
             }
         }
+
+    val validationMessages: Map<ClassName, String> =
+        parseValidationMessages(classDeclaration)
 
     override fun toString(): String =
         classDeclaration.fullName

@@ -6,6 +6,7 @@ import kotlin.reflect.full.KClasses;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.Storage;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -115,6 +116,7 @@ class ImmutablePropImpl implements ImmutableProp {
         dissociateAction = onDissociate != null ? onDissociate.value() : DissociateAction.NONE;
     }
 
+    @NotNull
     @Override
     public ImmutableType getDeclaringType() {
         return declaringType;
@@ -125,16 +127,19 @@ class ImmutablePropImpl implements ImmutableProp {
         return id;
     }
 
+    @NotNull
     @Override
     public String getName() {
         return name;
     }
 
+    @NotNull
     @Override
     public ImmutablePropCategory getCategory() {
         return category;
     }
 
+    @NotNull
     @Override
     public Class<?> getElementClass() {
         return elementClass;
@@ -226,6 +231,7 @@ class ImmutablePropImpl implements ImmutableProp {
         return hasTransientResolver;
     }
 
+    @NotNull
     @Override
     public DissociateAction getDissociateAction() {
         return dissociateAction;

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.impl
 
+import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.association.Association
@@ -9,7 +10,6 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableSubQuery
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableSubQueryImpl
-import org.babyfish.jimmer.sql.kt.toImmutableProp
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 

@@ -4,12 +4,12 @@ import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.ksp.*
+import org.babyfish.jimmer.ksp.generator.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.ID_FULL_NAME
 import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
 import org.babyfish.jimmer.ksp.generator.VERSION_FULL_NAME
 import org.babyfish.jimmer.sql.*
-import javax.validation.Constraint
 import kotlin.reflect.KClass
 
 class ImmutableProp(
@@ -323,26 +323,8 @@ class ImmutableProp(
     fun annotations(predicate: (KSAnnotation) -> Boolean): List<KSAnnotation> =
         propDeclaration.annotations(predicate)
 
-    val constraintMap: Map<String, Any> =
-       propDeclaration.annotations { true }.map { it.annotationType.resolve().declaration }.let { annos ->
-           val map = mutableMapOf<String, Any>()
-           for (anno in annos) {
-               val validatedBy = anno
-                   .annotations
-                   .firstOrNull {
-                       it.fullName == Constraint::class.qualifiedName
-                   }
-                   ?.arguments
-                   ?.firstOrNull { it.name?.asString() == "validatedBy" }
-                   ?.let { it.value as List<Any> }
-                   ?.takeIf { it.isNotEmpty() }
-                   ?.map { (it as KSType).declaration.fullName }
-               if (validatedBy != null) {
-                   map[anno.fullName] = validatedBy
-               }
-           }
-           map
-       }
+    val validationMessages: Map<ClassName, String> =
+       parseValidationMessages(propDeclaration)
 
     override fun toString(): String =
         "${declaringType}.${propDeclaration.name}"

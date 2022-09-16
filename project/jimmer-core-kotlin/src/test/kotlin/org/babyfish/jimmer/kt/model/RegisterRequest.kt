@@ -12,6 +12,6 @@ interface RegisterRequest {
 
     val passwordAgain: String
 
-    @IdCard
+    @IdCard(message = "{i18n.idCardError}")
     val idCard: String
 }

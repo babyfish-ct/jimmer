@@ -2,19 +2,24 @@ package org.babyfish.jimmer.meta;
 
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.meta.Storage;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
 
 public interface ImmutableProp {
 
+    @NotNull
     ImmutableType getDeclaringType();
 
     int getId();
 
+    @NotNull
     String getName();
 
+    @NotNull
     ImmutablePropCategory getCategory();
 
+    @NotNull
     Class<?> getElementClass();
 
     boolean isScalar();
@@ -39,6 +44,7 @@ public interface ImmutableProp {
 
     boolean hasTransientResolver();
 
+    @NotNull
     DissociateAction getDissociateAction();
 
     @SuppressWarnings("unchecked")
