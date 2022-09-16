@@ -58,6 +58,7 @@ For kotlin, the value of `@Immutable` is always ignored.
 
 In addition to Nullity, jimmer implements partial JSR380 validation. As of now, the supported validation rules are
 
+- Any custom validation annotation, the custom annotation itself needs to be decorated by `@javax.validation.constraints.Constraint`
 - `@javax.validation.constraints.NotEmpty`
 - `@javax.validation.constraints.NotBlank`
 - `@javax.validation.constraints.Size`

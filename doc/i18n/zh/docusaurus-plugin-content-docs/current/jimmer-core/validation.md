@@ -20,11 +20,7 @@ jimmer使用如下手段判断字段是否允许为null。
     - 是否被`@javax.validation.constraints.NotNull`修饰。
     - 是否被`@org.jetbrains.annotations.NotNull`修饰。
     - 是否被`@org.springframework.lang.NonNull`修饰。
-    - 是否被`@javax.persistence.Id`修饰。
-    - 是否被`@javax.persistence.ManyToOne(optional = false)`修饰。
-    - 是否被`@javax.persistence.OneToOne(optional = false)`修饰。
-    - 是否被`@javax.persistence.Column(nullable = false)`修饰。
-    - 是否被`@javax.persistence.JoinColumn(nullable = false)`修饰。
+    - 是否被`@org.babyfish.jimmer.sql.Id`修饰（jimmer-sql部分的内容）。
     - 是否是集合类型属性。
     - 是否是原生类型`boolean`、`char`、`byte`、`short`、`int`、`long`、`float`和`double`之一。
 
@@ -33,10 +29,6 @@ jimmer使用如下手段判断字段是否允许为null。
     - 是否被`@javax.validation.constraints.Null`修饰。
     - 是否被`@org.jetbrains.annotations.Nullable`修饰。
     - 是否被`@org.springframework.lang.Nullable`修饰。
-    - 是否被`@javax.persistence.ManyToOne(optional = true)`修饰。
-    - 是否被`@javax.persistence.OneToOne(optional = true)`修饰。
-    - 是否被`@javax.persistence.Column(nullable = true)`修饰。
-    - 是否被`@javax.persistence.JoinColumn(nullable = true)`修饰。
     - 是否是基于中间表映射的多对一关联（jimmer-sql部分的内容）。
     - 是否是原生类型的装箱类型`java.lang.Boolean`、`java.lang.Character`、`java.lang.Byte`、`java.lang.Short`、`java.lang.Integer`、`java.lang.Long`、`java.lang.Float`和`java.lang.Double`之一。
 
@@ -53,6 +45,7 @@ jimmer使用如下手段判断字段是否允许为null。
 
 除了Nullity外，jimmer实现了部分JSR380的验证。截止到目前为止，支持的验证规则有
 
+- 任意的自定义验证注解，自定义注解本身需要被`@javax.validation.constraints.Constraint`修饰
 - `@javax.validation.constraints.NotEmpty`
 - `@javax.validation.constraints.NotBlank`
 - `@javax.validation.constraints.Size`
