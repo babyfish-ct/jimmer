@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt
 
 import org.babyfish.jimmer.kt.DslScope
+import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.cache.*
 import org.babyfish.jimmer.sql.dialect.Dialect

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.table.impl
 
+import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
@@ -7,7 +8,6 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection
 import org.babyfish.jimmer.sql.kt.ast.table.KNullableTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KTableEx
-import org.babyfish.jimmer.sql.kt.toImmutableProp
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1

@@ -1,10 +1,10 @@
 package org.babyfish.jimmer.sql.kt.ast.mutation.impl
 
+import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
-import org.babyfish.jimmer.sql.kt.toImmutableProp
 import kotlin.reflect.KProperty1
 
 internal class KSaveCommandDslImpl(

@@ -1,12 +1,12 @@
 package org.babyfish.jimmer.sql.kt.impl
 
 import com.fasterxml.jackson.databind.JsonNode
+import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.cache.Cache
 import org.babyfish.jimmer.sql.cache.Caches
 import org.babyfish.jimmer.sql.kt.KCaches
-import org.babyfish.jimmer.sql.kt.toImmutableProp
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
