@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -296,7 +297,13 @@ public class ValidationGenerator {
     }
 
     private void generateConstraints() {
-
+        for (Map.Entry<ClassName, String> e : prop.getValidationMessageMap().entrySet()) {
+            methodBuilder.addStatement(
+                    "$L.validate($L)",
+                    Constants.validatorFieldName(prop, e.getKey()),
+                    prop.getName()
+            );
+        }
     }
 
     private void validate(

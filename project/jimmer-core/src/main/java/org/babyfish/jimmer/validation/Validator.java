@@ -10,6 +10,7 @@ import javax.validation.ConstraintValidator;
 import javax.validation.ValidationException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,6 +33,18 @@ public class Validator<T> {
             @Nullable Integer propId
     ) {
         ImmutableProp prop = propId != null ? ImmutableType.get(type).getProp(propId) : null;
+
+        Annotation annotation;
+        if (prop != null) {
+            annotation = prop.getAnnotation(annotationType);
+        } else {
+            annotation = type.getAnnotation(annotationType);
+        }
+
+        if (message.isEmpty()) {
+            message = tryGetDefaultMessage(annotation);
+        }
+
         if (!message.isEmpty()) {
             this.message = translateMessage(message);
         } else if (prop != null) {
@@ -46,12 +59,6 @@ public class Validator<T> {
                     "'" +
                             type.getName() +
                             "' does not match the validation rule of @" + annotationType.getName();
-        }
-        Annotation annotation;
-        if (prop != null) {
-            annotation = prop.getAnnotation(annotationType);
-        } else {
-            annotation = type.getAnnotation(annotationType);
         }
         Constraint constraint = annotationType.getAnnotation(Constraint.class);
         List<ConstraintValidator<?, T>> constraintValidators = new ArrayList<>();
@@ -90,6 +97,23 @@ public class Validator<T> {
             if (!constraintValidator.isValid(value, null)) {
                 throw new ValidationException(message);
             }
+        }
+    }
+
+    private static String tryGetDefaultMessage(Annotation annotation) {
+        Method method;
+        try {
+            method = annotation.annotationType().getMethod("message");
+        } catch (NoSuchMethodException ex) {
+            return "";
+        }
+        if (method.getReturnType() != String.class) {
+            return "";
+        }
+        try {
+            return (String)method.invoke(annotation);
+        } catch (IllegalAccessException | InvocationTargetException ex) {
+            throw new AssertionError("Internal bug", ex);
         }
     }
 
