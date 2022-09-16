@@ -7,6 +7,6 @@ public class IdCardValidator implements ConstraintValidator<IdCard, String> {
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-        return false;
+        return value.length() == 15 || value.length() == 18;
     }
 }

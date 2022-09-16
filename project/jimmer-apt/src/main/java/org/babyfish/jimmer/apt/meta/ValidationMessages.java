@@ -5,6 +5,8 @@ import org.babyfish.jimmer.meta.ModelException;
 
 import javax.lang.model.element.*;
 import javax.validation.Constraint;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.*;
 
 public class ValidationMessages {
@@ -16,7 +18,7 @@ public class ValidationMessages {
     public static Map<ClassName, String> parseMessageMap(Element element) {
         Map<ClassName, String> map = new LinkedHashMap<>();
         for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
-            if (hasConstraint(annotationMirror.getAnnotationType().asElement())) {
+            if (hasConstraint((TypeElement) annotationMirror.getAnnotationType().asElement())) {
                 TypeElement typeElement = (TypeElement) annotationMirror.getAnnotationType().asElement();
                 ClassName className = ClassName.get(
                         ((PackageElement)typeElement.getEnclosingElement()).getQualifiedName().toString(),
@@ -42,10 +44,20 @@ public class ValidationMessages {
         return Collections.unmodifiableMap(map);
     }
 
-    private static boolean hasConstraint(Element element) {
+    private static boolean hasConstraint(TypeElement element) {
         for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
             TypeElement annoElement = (TypeElement) mirror.getAnnotationType().asElement();
             if (annoElement.getQualifiedName().toString().equals(CONSTRAINT_FULL_NAME)) {
+                Retention retention = element.getAnnotation(Retention.class);
+                if (retention == null || retention.value() != RetentionPolicy.RUNTIME) {
+                    throw new ModelException(
+                            "The annotation @" +
+                                    element.getQualifiedName().toString() +
+                                    " is decorated by @" +
+                                    Constraint.class.getName() +
+                                    " but its retention is not runtime"
+                    );
+                }
                 for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e :
                     mirror.getElementValues().entrySet()) {
                     if (e.getKey().getSimpleName().toString().equals("validatedBy")) {

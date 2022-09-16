@@ -616,9 +616,11 @@ public class DraftImplGenerator {
                         ImmutableSpi.class
                 )
                 .addStatement("return base")
-                .endControlFlow()
-                .addStatement("return modified");
-
+                .endControlFlow();
+        for (Map.Entry<ClassName, String> e : type.getValidationMessageMap().entrySet()) {
+            builder.addStatement("$L.validate(modified)", Constants.validatorFieldName(type, e.getKey()));
+        }
+        builder.addStatement("return modified");
     }
 
     private void addModified() {
