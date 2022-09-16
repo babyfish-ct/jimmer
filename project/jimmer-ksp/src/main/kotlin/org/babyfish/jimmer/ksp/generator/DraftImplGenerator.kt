@@ -2,6 +2,7 @@ package org.babyfish.jimmer.ksp.generator
 
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
@@ -412,6 +413,9 @@ class DraftImplGenerator(
                             )
                             addStatement("return base")
                             endControlFlow()
+                            for ((className, _) in type.validationMessages) {
+                                addStatement("%L.validate(modified)", validatorFieldName(className))
+                            }
                             addStatement("return modified")
                             nextControlFlow("finally")
                             addStatement("__resolving = false")
@@ -435,7 +439,11 @@ class DraftImplGenerator(
                 it.annotations(Pattern::class)
             }
             .filterValues { it.isNotEmpty() }
-        if (emailPropMap.isNotEmpty() || patternPropMultiMap.isNotEmpty()) {
+        if (emailPropMap.isNotEmpty() ||
+            patternPropMultiMap.isNotEmpty() ||
+            type.validationMessages.isNotEmpty() ||
+            type.properties.values.any { it.validationMessages.isNotEmpty() }
+        ) {
             addType(
                 TypeSpec
                     .companionObjectBuilder()
@@ -454,6 +462,49 @@ class DraftImplGenerator(
                                     PropertySpec
                                         .builder(regexpPatternFieldName(prop, i), PATTERN_CLASS_NAME, KModifier.PRIVATE)
                                         .initializer("%T.compile(%S)", PATTERN_CLASS_NAME, patterns[i].get<String>("regexp"))
+                                        .build()
+                                )
+                            }
+                        }
+                        for ((className, message) in type.validationMessages) {
+                            addProperty(
+                                PropertySpec
+                                    .builder(
+                                        validatorFieldName(className),
+                                        VALIDATOR_CLASS_NAME.parameterizedBy(
+                                            type.className
+                                        ),
+                                        KModifier.PRIVATE
+                                    )
+                                    .initializer(
+                                        "%T(%T::class.java, %S, %T::class.java, null)",
+                                        VALIDATOR_CLASS_NAME,
+                                        className,
+                                        message,
+                                        type.className
+                                    )
+                                    .build()
+                            )
+                        }
+                        for (prop in type.properties.values) {
+                            for ((className, message) in prop.validationMessages) {
+                                addProperty(
+                                    PropertySpec
+                                        .builder(
+                                            validatorFieldName(prop, className),
+                                            VALIDATOR_CLASS_NAME.parameterizedBy(
+                                                prop.typeName()
+                                            ),
+                                            KModifier.PRIVATE
+                                        )
+                                        .initializer(
+                                            "%T(%T::class.java, %S, %T::class.java, %L)",
+                                            VALIDATOR_CLASS_NAME,
+                                            className,
+                                            message,
+                                            type.className,
+                                            prop.id.toString()
+                                        )
                                         .build()
                                 )
                             }

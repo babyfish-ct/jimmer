@@ -10,6 +10,7 @@ import org.babyfish.jimmer.meta.ImmutablePropCategory
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.*
 import org.babyfish.jimmer.sql.*
+import org.babyfish.jimmer.validation.Validator
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.util.regex.Pattern
@@ -41,6 +42,7 @@ internal val DSL_SCOPE_CLASS_NAME = ClassName("org.babyfish.jimmer.kt", "DslScop
 internal val BIG_DECIMAL_CLASS_NAME = BigDecimal::class.asClassName()
 internal val BIG_INTEGER_CLASS_NAME = BigInteger::class.asClassName()
 internal val PATTERN_CLASS_NAME = Pattern::class.asClassName()
+internal val VALIDATOR_CLASS_NAME = Validator::class.asClassName()
 internal val ONE_TO_ONE_CLASS_NAME = OneToOne::class.asClassName()
 internal val MANY_TO_ONE_CLASS_NAME = ManyToOne::class.asClassName()
 internal val ONE_TO_MANY_CLASS_NAME = OneToMany::class.asClassName()

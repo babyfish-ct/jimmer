@@ -9,7 +9,8 @@ public class SamePasswordValidator implements ConstraintValidator<SamePassword, 
 
     @Override
     public boolean isValid(RegisterRequest value, ConstraintValidatorContext context) {
-        if (ImmutableObjects.isLoaded(value, "password") && ImmutableObjects.isLoaded(value, "passwordAgain")) {
+        if (ImmutableObjects.isLoaded(value, RegisterRequestProps.PASSWORD) &&
+                ImmutableObjects.isLoaded(value, RegisterRequestProps.PASSWORD_AGAIN)) {
             return value.password().equals(value.passwordAgain());
         }
         return true;

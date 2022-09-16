@@ -282,8 +282,12 @@ class ValidationGenerator(
     }
 
     private fun generateConstraints() {
-        for (e in prop.constraintMap) {
-            parent.addStatement("/* $e */")
+        for (e in prop.validationMessages) {
+            parent.addStatement(
+                "%L.validate(%L)",
+                validatorFieldName(prop, e.key),
+                prop.name
+            )
         }
     }
 
