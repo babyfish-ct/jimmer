@@ -6,7 +6,7 @@ plugins {
 }
 
 group 'org.babyfish.jimmer.example.sql'
-version '0.2.5'
+version '0.2.8'
 
 repositories {
     mavenCentral()
@@ -14,8 +14,8 @@ repositories {
 
 dependencies {
 
-    implementation 'org.babyfish.jimmer:jimmer-sql:0.2.5'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.2.5'
+    implementation 'org.babyfish.jimmer:jimmer-sql:0.2.8'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.2.8'
     annotationProcessor 'org.projectlombok:lombok:1.18.24'
 
     implementation 'org.springframework.boot:spring-boot-starter'
@@ -26,7 +26,7 @@ dependencies {
     implementation 'org.springdoc:springdoc-openapi-ui:1.6.11'
     implementation 'org.projectlombok:lombok:1.18.24'
 
-    // In order to work with java-8, caffeine 2.x mus be used
+    // In order to work with java-8, caffeine 2.x must be used
     implementation 'com.github.ben-manes.caffeine:caffeine:2.9.1'
 
     runtimeOnly 'com.h2database:h2:2.1.212'
