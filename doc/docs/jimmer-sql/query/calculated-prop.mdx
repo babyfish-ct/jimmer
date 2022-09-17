@@ -309,15 +309,6 @@ code show as below
 public class BookStoreAvgPriceResolver 
 implements TransientResolver<Long, BigDecimal> {
 
-    private static final ImmutableProp BOOK_DOT_STORE =
-            ImmutableProps.join(BookTable.class, BookTable::store);
-
-    private static final ImmutableProp BOOK_DOT_PRICE =
-            ImmutableProps.get(BookTable.class, BookTable::price);
-
-    private static final ImmutableProp BOOK_STORE_DOT_AVG_PRICE =
-            ImmutableType.get(BookStore.class).getProp("avgPrice");
-
     private final JSqlClient sqlClient;
 
     public BookStoreAvgPriceResolver(JSqlClient sqlClient) {
@@ -325,26 +316,25 @@ implements TransientResolver<Long, BigDecimal> {
 
         // 1. Check whether the association `BookStore.books` is changed
         sqlClient.getTriggers().addAssociationListener(
-            BookStoreTableEx.class, 
-            BookStoreTableEx::books, // α
+            BookStoreProps.BOOKS, // α
             e -> {
                 sqlClient
                     .getCaches()
-                    .getPropertyCache(BOOK_STORE_DOT_AVG_PRICE)
+                    .getPropertyCache(BookStoreProps.AVG_PRICE)
                     .delete(e.getSourceId()); // β
             }
         );
-        sqlClient.getTriggers().addEntityListener( 
+        sqlClient.getTriggers().addEntityListener(
             Book.class, // γ
             e -> {
                 Ref<BookStore> storeRef = // δ
-                    e.getUnchangedFieldRef(BOOK_DOT_STORE.getId()); 
+                    e.getUnchangedFieldRef(BookProps.STORE);
                 if (storeRef != null && storeRef.getValue() != null) { // ε
                     // 2, Otherwise, check whether `Book.price` is changed
-                    if (e.getUnchangedFieldRef(BOOK_DOT_PRICE.getId()) == null) { // ζ
+                    if (e.getUnchangedFieldRef(BookProps.PRICE) == null) { // ζ
                         sqlClient
                             .getCaches()
-                            .getPropertyCache(BOOK_STORE_DOT_AVG_PRICE)
+                            .getPropertyCache(BookStoreProps.AVG_PRICE)
                             .delete(storeRef.getValue().id()); // η
                     }
                 }
