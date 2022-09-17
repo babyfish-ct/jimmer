@@ -4,6 +4,7 @@ import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.jetbrains.annotations.NotNull;
@@ -105,6 +106,11 @@ public class EntityEvent<E> {
     @Nullable
     public <T> Ref<T> getUnchangedFieldRef(ImmutableProp prop) {
         return getUnchangedFieldRef(prop.getId());
+    }
+
+    @Nullable
+    public <T> Ref<T> getUnchangedFieldRef(TypedProp<?, ?> prop) {
+        return getUnchangedFieldRef(prop.unwrap().getId());
     }
 
     @SuppressWarnings("unchecked")

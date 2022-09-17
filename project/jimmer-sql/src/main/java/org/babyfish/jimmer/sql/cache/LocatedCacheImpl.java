@@ -60,7 +60,7 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
         }
         if (cache instanceof LocatedCache<?, ?>) {
             LocatedCacheImpl<K, V> wrapper = (LocatedCacheImpl<K, V>) cache;
-            if (wrapper.type == type && wrapper.prop == prop) {
+            if (wrapper.type == type && wrapper.prop.equals(prop)) {
                 return wrapper;
             }
             cache = ((LocatedCacheImpl<K, V>) cache).raw;

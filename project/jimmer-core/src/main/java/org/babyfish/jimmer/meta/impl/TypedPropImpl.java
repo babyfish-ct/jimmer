@@ -1,152 +1,16 @@
 package org.babyfish.jimmer.meta.impl;
 
 import org.babyfish.jimmer.meta.*;
-import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.meta.Storage;
-import org.jetbrains.annotations.NotNull;
-
-import java.lang.annotation.Annotation;
-import java.util.Objects;
 
 public class TypedPropImpl<S, T> implements TypedProp<S, T> {
 
     protected final ImmutableProp prop;
 
     protected TypedPropImpl(ImmutableProp prop) {
+        if (prop instanceof TypedProp<?, ?>) {
+            throw new IllegalArgumentException("TypedProp can only wrap raw prop");
+        }
         this.prop = prop;
-    }
-
-    @Override
-    @NotNull
-    public ImmutableType getDeclaringType() {
-        return prop.getDeclaringType();
-    }
-
-    @Override
-    public int getId() {
-        return prop.getId();
-    }
-
-    @Override
-    @NotNull
-    public String getName() {
-        return prop.getName();
-    }
-
-    @Override
-    @NotNull
-    public ImmutablePropCategory getCategory() {
-        return prop.getCategory();
-    }
-
-    @Override
-    @NotNull
-    public Class<?> getElementClass() {
-        return prop.getElementClass();
-    }
-
-    @Override
-    public boolean isScalar() {
-        return prop.isScalar();
-    }
-
-    @Override
-    public boolean isScalarList() {
-        return prop.isScalarList();
-    }
-
-    @Override
-    public boolean isAssociation(TargetLevel level) {
-        return prop.isAssociation(level);
-    }
-
-    @Override
-    public boolean isReference(TargetLevel level) {
-        return prop.isReference(level);
-    }
-
-    @Override
-    public boolean isReferenceList(TargetLevel level) {
-        return prop.isReferenceList(level);
-    }
-
-    @Override
-    public boolean isNullable() {
-        return prop.isNullable();
-    }
-
-    @Override
-    public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
-        return prop.getAnnotation(annotationType);
-    }
-
-    @Override
-    public <A extends Annotation> A[] getAnnotations(Class<A> annotationType) {
-        return prop.getAnnotations(annotationType);
-    }
-
-    @Override
-    public Annotation getAssociationAnnotation() {
-        return prop.getAssociationAnnotation();
-    }
-
-    @Override
-    public boolean isTransient() {
-        return prop.isTransient();
-    }
-
-    @Override
-    public boolean hasTransientResolver() {
-        return prop.hasTransientResolver();
-    }
-
-    @Override
-    @NotNull
-    public DissociateAction getDissociateAction() {
-        return prop.getDissociateAction();
-    }
-
-    @Override
-    public <S extends Storage> S getStorage() {
-        return prop.getStorage();
-    }
-
-    @Override
-    public boolean isId() {
-        return prop.isId();
-    }
-
-    @Override
-    public boolean isVersion() {
-        return prop.isVersion();
-    }
-
-    @Override
-    public ImmutableType getTargetType() {
-        return prop.getTargetType();
-    }
-
-    @Override
-    public ImmutableProp getMappedBy() {
-        return prop.getMappedBy();
-    }
-
-    @Override
-    public ImmutableProp getOpposite() {
-        return prop.getOpposite();
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(prop);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        TypedPropImpl<?, ?> typedProp = (TypedPropImpl<?, ?>) o;
-        return Objects.equals(prop, typedProp.prop);
     }
 
     @Override

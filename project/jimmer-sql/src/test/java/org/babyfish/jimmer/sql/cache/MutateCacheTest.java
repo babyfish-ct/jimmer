@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
@@ -249,7 +248,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }
         );
         sqlClient.getTriggers().fireMiddleTableInsert(
-                ImmutableProps.join(BookTableEx.class, BookTableEx::authors),
+                BookProps.AUTHORS,
                 graphQLInActionId3,
                 danId
         );
@@ -372,7 +371,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }
         );
         sqlClient.getTriggers().fireMiddleTableInsert(
-                ImmutableProps.join(AuthorTableEx.class, AuthorTableEx::books),
+                AuthorProps.BOOKS,
                 danId,
                 graphQLInActionId3
         );

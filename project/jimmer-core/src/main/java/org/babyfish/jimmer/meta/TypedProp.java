@@ -2,7 +2,11 @@ package org.babyfish.jimmer.meta;
 
 import org.babyfish.jimmer.meta.impl.TypedPropImpl;
 
-public interface TypedProp<S, T> extends ImmutableProp {
+/*
+ * TypedProp<S, T> does not delete the wrapped ImmutableProp.
+ * because the raw behavior of hashCode/equals of ImmutableProp is very important.
+ */
+public interface TypedProp<S, T> {
 
     interface Single<S, T> extends TypedProp<S, T> {}
 

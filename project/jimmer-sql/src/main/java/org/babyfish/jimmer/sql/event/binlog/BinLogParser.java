@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -131,8 +132,16 @@ public class BinLogParser {
         return parseIdPair(associationType, data);
     }
 
+    public <S, T> Tuple2<S, T> parseIdPair(@NotNull TypedProp<?, ?> prop, JsonNode data) {
+        return parseIdPair(AssociationType.of(prop.unwrap()), data);
+    }
+
     public <S, T> Tuple2<S, T> parseIdPair(@NotNull ImmutableProp prop, JsonNode data) {
         return parseIdPair(AssociationType.of(prop), data);
+    }
+
+    public <S, T> Tuple2<S, T> parseIdPair(@NotNull TypedProp<?, ?> prop, String json) {
+        return parseIdPair(AssociationType.of(prop.unwrap()), json);
     }
 
     public <S, T> Tuple2<S, T> parseIdPair(@NotNull ImmutableProp prop, String json) {
