@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.babyfish.jimmer.sql.fluent.impl.FluentImpl;
 import org.babyfish.jimmer.sql.loader.ListLoader;
@@ -12,7 +13,7 @@ import org.babyfish.jimmer.sql.loader.impl.Loaders;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
-import org.babyfish.jimmer.sql.ast.impl.mutation.EntitiesImpl;
+import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
@@ -250,8 +251,8 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
-    public <S, V> ValueLoader<S, V> getValueLoader(ImmutableProp prop) {
-        return Loaders.createValueLoader(this, prop);
+    public <S, V> ValueLoader<S, V> getValueLoader(TypedProp.Scalar<S, V> prop) {
+        return Loaders.createValueLoader(this, prop.unwrap());
     }
 
     @Override

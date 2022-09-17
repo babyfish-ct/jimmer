@@ -73,7 +73,7 @@ class Literals {
         }
     }
 
-    private static class Num<N extends Number> extends Any<N> implements NumberExpressionImplementor<N> {
+    private static class Num<N extends Number> extends Any<N> implements NumericExpressionImplementor<N> {
         public Num(N value) {
             super(value);
         }

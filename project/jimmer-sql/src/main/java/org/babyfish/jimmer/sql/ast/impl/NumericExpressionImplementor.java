@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 
 import java.math.BigDecimal;
 
-interface NumberExpressionImplementor<N extends Number> extends NumericExpression<N>, ExpressionImplementor<N> {
+interface NumericExpressionImplementor<N extends Number> extends NumericExpression<N>, ExpressionImplementor<N> {
 
     @Override
     default NumericExpression<N> plus(Expression<N> other) {

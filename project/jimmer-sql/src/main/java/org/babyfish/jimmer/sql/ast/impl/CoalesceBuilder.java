@@ -168,7 +168,7 @@ public class CoalesceBuilder<T> {
         }
     }
 
-    private static class NumExpr<N extends Number> extends Expr<N> implements NumberExpressionImplementor<N> {
+    private static class NumExpr<N extends Number> extends Expr<N> implements NumericExpressionImplementor<N> {
 
         public NumExpr(List<Expression<?>> expressions) {
             super(expressions);
