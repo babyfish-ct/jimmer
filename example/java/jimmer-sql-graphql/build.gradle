@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'org.babyfish.jimmer.sql.example'
-version = '0.2.4'
+version = '0.2.8'
 
 java {
 	sourceCompatibility = JavaVersion.VERSION_1_8
@@ -18,8 +18,8 @@ repositories {
 
 dependencies {
 
-	implementation 'org.babyfish.jimmer:jimmer-sql:0.2.4'
-	annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.2.4'
+	implementation 'org.babyfish.jimmer:jimmer-sql:0.2.8'
+	annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.2.8'
 	annotationProcessor 'org.projectlombok:lombok:1.18.24'
 
 	implementation 'org.springframework.boot:spring-boot-starter-graphql'
@@ -31,7 +31,7 @@ dependencies {
 
 	implementation 'com.graphql-java:graphql-java-extended-scalars:18.1'
 
-	// In order to work with java-8, caffeine 2.x mus be used
+	// In order to work with java-8, caffeine 2.x must be used
 	implementation 'com.github.ben-manes.caffeine:caffeine:2.9.1'
 
 	runtimeOnly 'com.h2database:h2:2.1.212'
