@@ -8,6 +8,7 @@ import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Table;
 import org.babyfish.jimmer.sql.meta.Column;
@@ -67,6 +68,20 @@ public class ImmutableObjects {
      */
     public static boolean isLoaded(Object immutable, ImmutableProp prop) {
         return isLoaded(immutable, prop.getId());
+    }
+
+    /**
+     * Jimmer object is dynamic, none properties are mandatory.
+     *
+     * This method can ask whether a property of the object is specified.
+     *
+     * @param immutable Object instance
+     * @param prop Property
+     * @return Whether the property of the object is specified.
+     * @exception IllegalArgumentException The first argument is immutable object created by jimmer
+     */
+    public static boolean isLoaded(Object immutable, TypedProp<?, ?> prop) {
+        return isLoaded(immutable, prop.unwrap().getId());
     }
 
     /**

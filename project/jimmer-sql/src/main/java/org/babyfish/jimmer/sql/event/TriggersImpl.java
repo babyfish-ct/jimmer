@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.event;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Triggers;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
@@ -62,6 +63,10 @@ public class TriggersImpl implements Triggers {
     public boolean hasListeners(ImmutableType type) {
         List<EntityListener<ImmutableSpi>> listeners = entityTableListenerMultiMap.get(type);
         return listeners != null && !listeners.isEmpty();
+    }
+
+    public boolean hasListeners(TypedProp<?, ?> prop) {
+        return hasListeners(prop.unwrap());
     }
 
     public boolean hasListeners(ImmutableProp prop) {

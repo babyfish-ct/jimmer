@@ -43,7 +43,7 @@ public class BeanProps {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Key key = (Key) o;
-            return typeFactory.equals(key.typeFactory) && prop.equals(key.prop);
+            return typeFactory.equals(key.typeFactory) && prop == key.prop;
         }
 
         @Override

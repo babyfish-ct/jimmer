@@ -346,7 +346,7 @@ public class EntitiesImpl implements Entities {
             example.applyTo(query);
         }
         for (TypedProp.Scalar<?, ?> sortedProp : sortedProps) {
-            if (sortedProp.getDeclaringType() != type) {
+            if (sortedProp.unwrap().getDeclaringType() != type) {
                 throw new IllegalArgumentException(
                         "The sorted field \"" +
                                 sortedProp +
@@ -355,9 +355,9 @@ public class EntitiesImpl implements Entities {
                 );
             }
             if (sortedProp instanceof TypedProp.Scalar.Desc<?, ?>) {
-                query.orderBy(table.get(sortedProp.getName()).desc());
+                query.orderBy(table.get(sortedProp.unwrap().getName()).desc());
             } else {
-                query.orderBy(table.get(sortedProp.getName()).asc());
+                query.orderBy(table.get(sortedProp.unwrap().getName()).asc());
             }
         }
         return query.select(

@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.example.model;
 
 import org.babyfish.jimmer.lang.Ref;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -13,15 +10,6 @@ import java.sql.Connection;
 import java.util.*;
 
 public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDecimal> {
-
-    private static final ImmutableProp BOOK_DOT_STORE =
-            ImmutableProps.join(BookTable.class, BookTable::store);
-
-    private static final ImmutableProp BOOK_DOT_PRICE =
-            ImmutableProps.get(BookTable.class, BookTable::price);
-
-    private static final ImmutableProp BOOK_STORE_DOT_AVG_PRICE =
-            ImmutableType.get(BookStore.class).getProp("avgPrice");
 
     private final JSqlClient sqlClient;
 
@@ -34,14 +22,14 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 
         // 1. Check whether the association `BookStore.books` is changed
         sqlClient.getTriggers().addAssociationListener(BookStoreTableEx.class, BookStoreTableEx::books, e -> {
-            sqlClient.getCaches().getPropertyCache(BOOK_STORE_DOT_AVG_PRICE).delete(e.getSourceId());
+            sqlClient.getCaches().getPropertyCache(BookStoreProps.AVG_PRICE).delete(e.getSourceId());
         });
         sqlClient.getTriggers().addEntityListener(Book.class, e -> {
-            Ref<BookStore> storeRef = e.getUnchangedFieldRef(BOOK_DOT_STORE.getId());
+            Ref<BookStore> storeRef = e.getUnchangedFieldRef(BookProps.STORE.getId());
             if (storeRef != null && storeRef.getValue() != null) {
                 // 2, Otherwise, check whether `Book.price` is changed
-                if (e.getUnchangedFieldRef(BOOK_DOT_PRICE.getId()) == null) {
-                    sqlClient.getCaches().getPropertyCache(BOOK_STORE_DOT_AVG_PRICE).delete(storeRef.getValue().id());
+                if (e.getUnchangedFieldRef(BookProps.PRICE) == null) {
+                    sqlClient.getCaches().getPropertyCache(BookStoreProps.AVG_PRICE).delete(storeRef.getValue().id());
                 }
             }
         });

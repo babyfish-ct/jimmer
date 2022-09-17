@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.binlog;
 
-import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
 import org.babyfish.jimmer.sql.model.*;
@@ -58,7 +57,7 @@ public class BinLogTest {
                 "\"}";
         Tuple2<Long, Long> idPair = new BinLogParser(scalarProviderMap)
                 .parseIdPair(
-                        ImmutableProps.join(BookTableEx.class, BookTableEx::authors),
+                        BookProps.AUTHORS,
                         json
                 );
         Assertions.assertEquals(
@@ -80,7 +79,7 @@ public class BinLogTest {
                 "\"}";
         Tuple2<Long, Long> idPair = new BinLogParser(scalarProviderMap)
                 .parseIdPair(
-                        ImmutableProps.join(AuthorTableEx.class, AuthorTableEx::books),
+                        AuthorProps.BOOKS,
                         json
                 );
         Assertions.assertEquals(

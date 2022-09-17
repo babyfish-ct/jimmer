@@ -2,8 +2,8 @@ package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.AssociationListener;
 import org.babyfish.jimmer.sql.event.EntityListener;
 
@@ -25,29 +25,15 @@ public interface Triggers {
 
     void removeEntityListener(ImmutableType immutableType, EntityListener<ImmutableSpi> listener);
 
-    default <ST extends Table<?>> void addAssociationListener(
-            Class<ST> sourceTableType,
-            Function<ST, ? extends Table<?>> targetTableGetter,
-            AssociationListener listener
-    ) {
-        addAssociationListener(
-                ImmutableProps.join(sourceTableType, targetTableGetter),
-                listener
-        );
-    }
-
-    default <ST extends Table<?>> void removeAssociationListener(
-            Class<ST> sourceTableType,
-            Function<ST, ? extends Table<?>> targetTableGetter,
-            AssociationListener listener
-    ) {
-        removeAssociationListener(
-                ImmutableProps.join(sourceTableType, targetTableGetter),
-                listener
-        );
+    default void addAssociationListener(TypedProp<?, ?> prop, AssociationListener listener) {
+        addAssociationListener(prop.unwrap(), listener);
     }
 
     void addAssociationListener(ImmutableProp prop, AssociationListener listener);
+
+    default void removeAssociationListener(TypedProp<?, ?> prop, AssociationListener listener) {
+        removeAssociationListener(prop.unwrap(), listener);
+    }
 
     void removeAssociationListener(ImmutableProp prop, AssociationListener listener);
 
@@ -57,11 +43,27 @@ public interface Triggers {
 
     void fireEntityTableChange(Object oldRow, Object newRow, Object reason);
 
+    default void fireMiddleTableDelete(TypedProp<?, ?> prop, Object sourceId, Object targetId) {
+        fireMiddleTableDelete(prop.unwrap(), sourceId, targetId, null);
+    }
+
+    default void fireMiddleTableDelete(TypedProp<?, ?> prop, Object sourceId, Object targetId, Object reason) {
+        fireMiddleTableDelete(prop.unwrap(), sourceId, targetId, reason);
+    }
+
     default void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId) {
         fireMiddleTableDelete(prop, sourceId, targetId, null);
     }
 
     void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId, Object reason);
+
+    default void fireMiddleTableInsert(TypedProp<?, ?> prop, Object sourceId, Object targetId) {
+        fireMiddleTableInsert(prop.unwrap(), sourceId, targetId, null);
+    }
+
+    default void fireMiddleTableInsert(TypedProp<?, ?> prop, Object sourceId, Object targetId, Object reason) {
+        fireMiddleTableInsert(prop.unwrap(), sourceId, targetId, reason);
+    }
 
     default void fireMiddleTableInsert(ImmutableProp prop, Object sourceId, Object targetId) {
         fireMiddleTableInsert(prop, sourceId, targetId, null);
