@@ -1,6 +1,10 @@
 package org.babyfish.jimmer.sql.kt.impl
 
+import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.Entities
+import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
+import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KEntities
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
@@ -9,6 +13,8 @@ import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KDeleteCommandDslImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KDeleteResultImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KSaveCommandDslImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KSimpleSaveResultImpl
+import org.babyfish.jimmer.sql.kt.ast.query.FindDsl
+import org.babyfish.jimmer.sql.kt.ast.query.KExample
 import java.sql.Connection
 import kotlin.reflect.KClass
 
@@ -63,6 +69,53 @@ internal class KEntitiesImpl(
         ids: Collection<ID>
     ): Map<ID, E> =
         javaEntities.findMapByIds(fetcher, ids)
+
+    override fun <E : Any> findAll(type: KClass<E>, block: (FindDsl<E>.() -> Unit)?): List<E> =
+        find(ImmutableType.get(type.java), null, null, block)
+
+    override fun <E : Any> findAll(fetcher: Fetcher<E>, block: (FindDsl<E>.() -> Unit)?): List<E> =
+        find(fetcher.immutableType, fetcher, null, block)
+
+    override fun <E : Any> findByExample(
+        example: KExample<E>,
+        fetcher: Fetcher<E>?,
+        block: (FindDsl<E>.() -> Unit)?
+    ): List<E> =
+        find(example.type, fetcher, example, block)
+
+    private fun <E: Any> find(
+        type: ImmutableType,
+        fetcher: Fetcher<E>?,
+        example: KExample<E>?,
+        block: (FindDsl<E>.() -> Unit)?
+    ): List<E> {
+        if (fetcher !== null && fetcher.immutableType !== type) {
+            throw IllegalArgumentException(
+                "The type \"${fetcher.immutableType}\" of fetcher does not match the query type \"$type\""
+            )
+        }
+        if (example !== null && example.type !== type) {
+            throw IllegalArgumentException(
+                "The type \"${example.type}\" of example does not match the query type \"$type\""
+            )
+        }
+        val entities = javaEntities as EntitiesImpl
+        val query = MutableRootQueryImpl<Table<E>>(entities.sqlClient, type)
+        val table = query.getTable<Table<E>>()
+        example?.applyTo(query)
+        if (block !== null) {
+            val dsl = FindDsl<E>()
+            dsl.block()
+            dsl.applyTo(query)
+        }
+        return query.select(
+            if (fetcher !== null) {
+                table.fetch(fetcher)
+            } else {
+                table
+            }
+        ).execute(entities.con)
+    }
 
     override fun <E : Any> save(
         entity: E,

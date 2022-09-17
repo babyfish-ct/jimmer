@@ -49,6 +49,14 @@ public class EntitiesImpl implements Entities {
         this.con = con;
     }
 
+    public JSqlClient getSqlClient() {
+        return sqlClient;
+    }
+
+    public Connection getCon() {
+        return con;
+    }
+
     @Override
     public Entities forUpdate() {
         if (forUpdate) {
