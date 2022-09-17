@@ -19,7 +19,7 @@ A revolutionary ORM framework for both java and kotlin.
       <td>Global introduction: https://www.bilibili.com/video/BV1kd4y1A7K3</td>
    </tr>
    <tr>
-      <td>Table Join Top: https://www.bilibili.com/video/BV19t4y177PX</td>
+      <td>Table Join Topic: https://www.bilibili.com/video/BV19t4y177PX</td>
    </tr>
 <table>
 
