@@ -10,7 +10,7 @@ public class Constants {
         return new Num<>(value);
     }
 
-    private static class Num<N extends Number> extends AbstractExpression<N> implements NumberExpressionImplementor<N> {
+    private static class Num<N extends Number> extends AbstractExpression<N> implements NumericExpressionImplementor<N> {
 
         private N value;
 

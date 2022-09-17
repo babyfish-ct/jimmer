@@ -8,13 +8,13 @@ import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import java.sql.Connection;
 import java.util.function.Consumer;
 
-class SimpleEntitySaveCommandImpl<E>
+public class SimpleEntitySaveCommandImpl<E>
         extends AbstractEntitySaveCommandImpl
         implements SimpleEntitySaveCommand<E> {
 
-    private E entity;
+    private final E entity;
 
-    SimpleEntitySaveCommandImpl(
+    public SimpleEntitySaveCommandImpl(
             JSqlClient sqlClient,
             Connection con,
             E entity

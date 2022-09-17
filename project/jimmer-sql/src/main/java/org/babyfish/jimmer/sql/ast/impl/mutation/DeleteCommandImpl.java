@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-class DeleteCommandImpl implements DeleteCommand {
+public class DeleteCommandImpl implements DeleteCommand {
 
     private final JSqlClient sqlClient;
 

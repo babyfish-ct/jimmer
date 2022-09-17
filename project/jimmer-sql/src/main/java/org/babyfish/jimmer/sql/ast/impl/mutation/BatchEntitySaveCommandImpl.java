@@ -12,13 +12,13 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-class BatchEntitySaveCommandImpl<E>
+public class BatchEntitySaveCommandImpl<E>
         extends AbstractEntitySaveCommandImpl
         implements BatchEntitySaveCommand<E> {
 
     private Collection<E> entities;
 
-    BatchEntitySaveCommandImpl(JSqlClient sqlClient, Connection con, Collection<E> entities) {
+    public BatchEntitySaveCommandImpl(JSqlClient sqlClient, Connection con, Collection<E> entities) {
         super(sqlClient, con, null);
         for (E entity : entities) {
             if (!(entity instanceof ImmutableSpi)) {

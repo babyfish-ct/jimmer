@@ -8,7 +8,11 @@ public interface TypedProp<S, T> extends ImmutableProp {
 
     interface Multiple<S, T> extends TypedProp<S, T> {}
 
-    interface Scalar<S, T> extends TypedProp<S, T>, Single<S, T> {}
+    interface Scalar<S, T> extends TypedProp<S, T>, Single<S, T> {
+        Scalar<S, T> asc();
+        Scalar<S, T> desc();
+        interface Desc<S, T> extends Scalar<S, T> {}
+    }
 
     interface ScalarList<S, T> extends TypedProp<S, T>, Multiple<S, T> {}
 
@@ -33,4 +37,6 @@ public interface TypedProp<S, T> extends ImmutableProp {
     static <S, T> ReferenceList<S, T> referenceList(ImmutableProp prop) {
         return new TypedPropImpl.ReferenceList<>(prop);
     }
+
+    ImmutableProp unwrap();
 }

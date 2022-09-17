@@ -1,16 +1,16 @@
 package org.babyfish.jimmer.meta.impl;
 
-import org.apache.commons.lang3.reflect.Typed;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
+import java.util.Objects;
 
 public class TypedPropImpl<S, T> implements TypedProp<S, T> {
 
-    private final ImmutableProp prop;
+    protected final ImmutableProp prop;
 
     protected TypedPropImpl(ImmutableProp prop) {
         this.prop = prop;
@@ -136,6 +136,29 @@ public class TypedPropImpl<S, T> implements TypedProp<S, T> {
         return prop.getOpposite();
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(prop);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TypedPropImpl<?, ?> typedProp = (TypedPropImpl<?, ?>) o;
+        return Objects.equals(prop, typedProp.prop);
+    }
+
+    @Override
+    public String toString() {
+        return prop.toString();
+    }
+
+    @Override
+    public ImmutableProp unwrap() {
+        return prop;
+    }
+
     public static class Scalar<S, T> extends TypedPropImpl<S, T> implements TypedProp.Scalar<S, T> {
 
         public Scalar(ImmutableProp prop) {
@@ -146,6 +169,33 @@ public class TypedPropImpl<S, T> implements TypedProp<S, T> {
                                 prop +
                                 "\" is not scalar property"
                 );
+            }
+        }
+
+        @Override
+        public TypedProp.Scalar<S, T> asc() {
+            return this;
+        }
+
+        @Override
+        public TypedProp.Scalar<S, T> desc() {
+            return new Desc<S, T>(prop);
+        }
+
+        static class Desc<S, T> extends TypedPropImpl.Scalar<S, T> implements TypedProp.Scalar.Desc<S,  T> {
+
+            public Desc(ImmutableProp prop) {
+                super(prop);
+            }
+
+            @Override
+            public TypedProp.Scalar<S, T> asc() {
+                return new TypedPropImpl.Scalar<>(prop);
+            }
+
+            @Override
+            public TypedProp.Scalar<S, T> desc() {
+                return this;
             }
         }
     }

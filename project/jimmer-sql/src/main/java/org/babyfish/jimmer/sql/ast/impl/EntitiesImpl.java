@@ -1,16 +1,22 @@
-package org.babyfish.jimmer.sql.ast.impl.mutation;
+package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.impl.mutation.BatchEntitySaveCommandImpl;
+import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteCommandImpl;
+import org.babyfish.jimmer.sql.ast.impl.mutation.SimpleEntitySaveCommandImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
+import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
@@ -278,6 +284,77 @@ public class EntitiesImpl implements Entities {
             query = query.forUpdate();
         }
         return query.execute(con);
+    }
+
+    @Override
+    public <E> List<E> findAll(Class<E> type, TypedProp.Scalar<?, ?>... sortedProps) {
+        return find(ImmutableType.get(type), null, null, sortedProps);
+    }
+
+    @Override
+    public <E> List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<?, ?>... sortedProps) {
+        return find(fetcher.getImmutableType(), fetcher, null, sortedProps);
+    }
+
+    @Override
+    public <E> List<E> findByExample(Example<E> example, TypedProp.Scalar<?, ?>... sortedProps) {
+        ExampleImpl<E> exampleImpl = (ExampleImpl<E>) example;
+        return find(exampleImpl.type(), null, exampleImpl, sortedProps);
+    }
+
+    @Override
+    public <E> List<E> findByExample(Example<E> example, Fetcher<E> fetcher, TypedProp.Scalar<?, ?>... sortedProps) {
+        ExampleImpl<E> exampleImpl = (ExampleImpl<E>) example;
+        return find(exampleImpl.type(), fetcher, exampleImpl, sortedProps);
+    }
+
+    private <E> List<E> find(
+            ImmutableType type,
+            Fetcher<E> fetcher,
+            ExampleImpl<E> example,
+            TypedProp.Scalar<?, ?>... sortedProps
+    ) {
+        if (fetcher != null && fetcher.getImmutableType() != type) {
+            throw new IllegalArgumentException(
+                    "The type of fetcher is \"" +
+                            fetcher.getImmutableType() +
+                            "\", it does not match the query root type \"" +
+                            type +
+                            "\""
+            );
+        }
+        if (example != null && example.type() != type) {
+            throw new IllegalArgumentException(
+                    "The type of example is \"" +
+                            fetcher.getImmutableType() +
+                            "\", it does not match the query root type \"" +
+                            type +
+                            "\""
+            );
+        }
+        MutableRootQueryImpl<Table<E>> query = new MutableRootQueryImpl<Table<E>>(sqlClient, type);
+        Table<E> table = query.getTable();
+        if (example != null) {
+            example.applyTo(query);
+        }
+        for (TypedProp.Scalar<?, ?> sortedProp : sortedProps) {
+            if (sortedProp.getDeclaringType() != type) {
+                throw new IllegalArgumentException(
+                        "The sorted field \"" +
+                                sortedProp +
+                                "\" does not belong to the type \"" +
+                                "\""
+                );
+            }
+            if (sortedProp instanceof TypedProp.Scalar.Desc<?, ?>) {
+                query.orderBy(table.get(sortedProp.getName()).desc());
+            } else {
+                query.orderBy(table.get(sortedProp.getName()).asc());
+            }
+        }
+        return query.select(
+                fetcher != null ? table.fetch(fetcher) : table
+        ).execute(con);
     }
 
     @Override

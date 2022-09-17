@@ -43,7 +43,7 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
         return 0;
     }
 
-    static class Count extends AggregationExpression<Long> implements NumberExpressionImplementor<Long> {
+    static class Count extends AggregationExpression<Long> implements NumericExpressionImplementor<Long> {
 
         public Count(Expression<?> expression) {
             super(expression);
@@ -72,7 +72,7 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
         }
     }
 
-    static class Sum<N extends Number> extends AggregationExpression<N> implements NumberExpressionImplementor<N> {
+    static class Sum<N extends Number> extends AggregationExpression<N> implements NumericExpressionImplementor<N> {
 
         public Sum(Expression<?> expression) {
             super(expression);
@@ -90,7 +90,7 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
         }
     }
 
-    static class Min<N extends Number> extends AggregationExpression<N> implements NumberExpressionImplementor<N> {
+    static class Min<N extends Number> extends AggregationExpression<N> implements NumericExpressionImplementor<N> {
 
         public Min(Expression<?> expression) {
             super(expression);
@@ -108,7 +108,7 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
         }
     }
 
-    static class Max<N extends Number> extends AggregationExpression<N> implements NumberExpressionImplementor<N> {
+    static class Max<N extends Number> extends AggregationExpression<N> implements NumericExpressionImplementor<N> {
 
         public Max(Expression<?> expression) {
             super(expression);
@@ -126,7 +126,7 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
         }
     }
 
-    static class Avg extends AggregationExpression<BigDecimal> implements NumberExpressionImplementor<BigDecimal> {
+    static class Avg extends AggregationExpression<BigDecimal> implements NumericExpressionImplementor<BigDecimal> {
 
         public Avg(Expression<? extends Number> expression) {
             super(expression);

@@ -203,7 +203,7 @@ public class CaseBuilder<T> {
         }
     }
     
-    private static class NumExpr<N extends Number> extends AnyExpr<N> implements NumberExpressionImplementor<N> {
+    private static class NumExpr<N extends Number> extends AnyExpr<N> implements NumericExpressionImplementor<N> {
 
         NumExpr(
                 Class<N> type,

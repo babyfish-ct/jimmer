@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.lang.NewChain;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.mutation.*;
+import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
 import java.sql.Connection;
@@ -28,6 +30,14 @@ public interface Entities {
     <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids);
 
     <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids);
+
+    <E> List<E> findAll(Class<E> type, TypedProp.Scalar<?, ?> ... sortedProps);
+
+    <E> List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... sortedProps);
+
+    <E> List<E> findByExample(Example<E> example, TypedProp.Scalar<?, ?> ... sortedProps);
+
+    <E> List<E> findByExample(Example<E> example, Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... sortedProps);
 
     <E> SimpleSaveResult<E> save(E entity);
     

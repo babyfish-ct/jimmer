@@ -22,7 +22,7 @@ public class PropExpressionImpl<T>
             return new StrImpl(table, prop);
         }
         if (elementClass.isPrimitive() || Number.class.isAssignableFrom(elementClass)) {
-            return new NumImpl(table, prop);
+            return new NumImpl<>(table, prop);
         }
         if (Comparable.class.isAssignableFrom(elementClass)) {
             return new CmpImpl<>(table, prop);
@@ -101,7 +101,7 @@ public class PropExpressionImpl<T>
 
     private static class NumImpl<N extends Number>
             extends PropExpressionImpl<N>
-            implements PropExpression.Num<N>, NumberExpressionImplementor<N> {
+            implements PropExpression.Num<N>, NumericExpressionImplementor<N> {
 
         NumImpl(TableImplementor<?> table, ImmutableProp prop) {
             super(table, prop);
@@ -109,17 +109,17 @@ public class PropExpressionImpl<T>
 
         @Override
         public NumericExpression<N> coalesce(N defaultValue) {
-            return NumberExpressionImplementor.super.coalesce(defaultValue);
+            return NumericExpressionImplementor.super.coalesce(defaultValue);
         }
 
         @Override
         public NumericExpression<N> coalesce(Expression<N> defaultExpr) {
-            return NumberExpressionImplementor.super.coalesce(defaultExpr);
+            return NumericExpressionImplementor.super.coalesce(defaultExpr);
         }
 
         @Override
         public CoalesceBuilder.Num<N> coalesceBuilder() {
-            return NumberExpressionImplementor.super.coalesceBuilder();
+            return NumericExpressionImplementor.super.coalesceBuilder();
         }
     }
 

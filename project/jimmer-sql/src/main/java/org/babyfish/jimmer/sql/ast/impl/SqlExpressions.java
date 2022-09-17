@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -148,7 +147,7 @@ public class SqlExpressions {
         }
     }
 
-    private static class Num<N extends Number> extends Any<N> implements NumberExpressionImplementor<N> {
+    private static class Num<N extends Number> extends Any<N> implements NumericExpressionImplementor<N> {
 
         Num(Class<N> type, String sql, List<Expression<?>> expressions, List<Object> values) {
             super(type, sql, expressions, values);

@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
-abstract class BinaryExpression<N extends Number> extends AbstractExpression<N> implements NumberExpressionImplementor<N> {
+abstract class BinaryExpression<N extends Number> extends AbstractExpression<N> implements NumericExpressionImplementor<N> {
 
     private Class<N> type;
     
