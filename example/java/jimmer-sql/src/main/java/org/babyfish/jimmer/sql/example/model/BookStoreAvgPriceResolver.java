@@ -22,14 +22,14 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 
         // 1. Check whether the association `BookStore.books` is changed
         sqlClient.getTriggers().addAssociationListener(BookStoreProps.BOOKS, e -> {
-            sqlClient.getCaches().getPropertyCache(BookStoreProps.AVG_PRICE.unwrap()).delete(e.getSourceId());
+            sqlClient.getCaches().getPropertyCache(BookStoreProps.AVG_PRICE).delete(e.getSourceId());
         });
         sqlClient.getTriggers().addEntityListener(Book.class, e -> {
             Ref<BookStore> storeRef = e.getUnchangedFieldRef(BookProps.STORE);
             if (storeRef != null && storeRef.getValue() != null) {
                 // 2, Otherwise, check whether `Book.price` is changed
                 if (e.getUnchangedFieldRef(BookProps.PRICE) == null) {
-                    sqlClient.getCaches().getPropertyCache(BookStoreProps.AVG_PRICE.unwrap()).delete(storeRef.getValue().id());
+                    sqlClient.getCaches().getPropertyCache(BookStoreProps.AVG_PRICE).delete(storeRef.getValue().id());
                 }
             }
         });

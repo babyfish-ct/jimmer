@@ -3,10 +3,7 @@ package org.babyfish.jimmer.sql.cache;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.ImmutableProps;
-import org.babyfish.jimmer.sql.ast.table.Table;
-
-import java.util.function.Function;
+import org.babyfish.jimmer.meta.TypedProp;
 
 public interface Caches {
 
@@ -16,13 +13,8 @@ public interface Caches {
 
     <K, V> Cache<K, V> getObjectCache(ImmutableType type);
 
-    default <K, V, ST extends Table<?>> Cache<K, V> getPropertyCache(
-            Class<ST> sourceTableType,
-            Function<ST, ? extends Table<?>> targetTableGetter
-    ) {
-        return getPropertyCache(
-                ImmutableProps.join(sourceTableType, targetTableGetter)
-        );
+    default <K, V> Cache<K, V> getPropertyCache(TypedProp<?, ?> prop) {
+        return getPropertyCache(prop.unwrap());
     }
 
     <K, V> Cache<K, V> getPropertyCache(ImmutableProp prop);
