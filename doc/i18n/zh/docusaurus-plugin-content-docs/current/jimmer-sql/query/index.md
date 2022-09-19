@@ -7,6 +7,7 @@ title: 查询
 - [分页查询](./pagination)
 - [列选择](./selection)
 - [对象抓取器](./fetcher)
+- [简单查询](./find)
 - [查询中间表](./association)
 - [外部缓存](./cache)
 - [计算属性及其缓存](./calculated-prop.mdx)

@@ -1,0 +1,365 @@
+---
+sidebar_position: 5
+title: 简单查询
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+之前讨论过的查询DSL可以应对足够复杂的情况，然而实际项目中有很多查询是简单的查询。为此，Jimmer对简单查询提供了API支持。
+
+本文讨论三个话题
+
+1. findAll
+2. findById
+3. findByExample
+
+## findAll
+
+### 按类型查询
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+List<Book> books = sqlClient.getEntities()
+    .findAll(
+        
+        // 查询Book
+        Book.class,
+
+        // 可选变参，排序方式
+        BookProps.NAME,
+        BookProps.EDITION.desc()
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient.entities
+    .findAll(Book::class) {
+        asc(Book::name)
+        desc(Book::edition)
+    }
+```
+
+</TabItem>
+</Tabs>
+
+### 按对象抓取器查询
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+List<Book> books = sqlClient.getEntities()
+    .findAll(
+        
+        // highlight-next-line
+        BookFetcher.$
+            .allScalarFields()
+            .store(
+                BookStoreFetcher.$.allScalarFields()
+            )
+            .authors(
+                AuthorFetcher.$.allScalarFields()
+            ),
+
+        BookProps.NAME,
+        BookProps.EDITION.desc()
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient.entities
+    .findAll(
+        // highlight-next-line
+        newFetcher(Book::class).by { 
+            allScalarFields()
+            store { 
+                allScalarFields()
+            }
+            authors { 
+                allScalarFields()
+            }
+        }
+    ) {
+        asc(Book::name)
+        desc(Book::edition)
+    }
+```
+
+</TabItem>
+</Tabs>
+
+## findById
+
+Jimmer的`sqlClient.entities`提供如下六个方法用于按id查询对象
+
+|函数名|参数1|参数2|返回类型|描述|
+|-----|----|----|-------|---|
+|findById|Class或KClass|单个id|单个对象或null|按照id查询一个简单对象；没匹配数据时返回null|
+|findById|对象抓取器|单个id|单个对象或null|按照id查询一个对象，其格式由对象抓取器指定；没匹配数据时返回null|
+|findByIds|Class或KClass|id集合|对象集合|按照id集合查询一批简单对象；由于某些数据可能无法匹配，返回的对象列表的长度可能比传入的id集合长度小|
+|findByIds|对象抓取器|id集合|对象集合|按照id集合查询一批对象，其格式由对象抓取器指定；由于某些数据可能无法匹配，返回的对象列表的长度可能比传入的id集合长度小|
+|findMapByIds|Class或KClass|id集合|由id和对象组成的有序Map|一个Map，键为id，值为简单对象，此Map不会改变传入id集合的顺序；由于某些数据可能无法匹配，返回的Map的长度可能比传入的id集合长度小|
+|findMapByIds|对象抓取器|id集合|由id和对象组成的有序Map|一个Map，键为id，值为对象，值的格式由对象抓取器指定，此Map不会改变传入id集合的顺序；由于某些数据可能无法匹配，返回的Map的长度可能比传入的id集合长度小|
+
+:::tip
+这些按照id查询数据的API会利用[外部缓存](./cache)
+:::
+
+接下来，以`findMapByIds`为例
+
+### 按类型查询
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Map<Long, Book> bookMap = sqlClient.getEntities()
+    .findMapByIds(
+        Book.class,
+        Arrays.asList(2L, 3L, 4L)
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookMap = sqlClient.entities
+    .findMapByIds(
+        Book::class,
+        listOf(2L, 3L, 4L)
+    )
+```
+
+</TabItem>
+</Tabs>
+
+### 按对象抓取器查询
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Map<Long, Book> bookMap = sqlClient.getEntities()
+    .findMapByIds(
+        BookFetcher.$
+            .allScalarFields()
+            .store(
+                BookStoreFetcher.$.allScalarFields()
+            )
+            .authors(
+                AuthorFetcher.$.allScalarFields()
+            ),
+        Arrays.asList(2L, 3L, 4L)
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookMap = sqlClient.entities
+    .findMapByIds(
+        newFetcher(Book::class).by {
+            allScalarFields()
+            store {
+                allScalarFields()
+            }
+            authors {
+                allScalarFields()
+            }
+        },
+        listOf(2L, 3L, 4L)
+    )
+```
+
+</TabItem>
+</Tabs>
+
+## findByExample
+
+`findByExample`实现了QBE(Query By Example)查询。
+
+所谓QBE查询，就是用户传入一个样板对象，ORM查询与之相似的对象。
+
+由于Jimmer对象是动态的，所以Jimmer的QBE查询非常灵活。
+
+-   如果样板对象的某些属性缺失，未被指定的属性**不**会用于生成SQL过滤条件
+-   如果样板对象某属性为指定为null，会生成SQL的`IS NULL`过滤条件
+-   如果样板对象某属性为指定为非null，默认情况下，会生成SQL的`=`过滤条件
+    :::note
+    对于指定为非null的字符串属性，用户可以将通过配置改为模糊过滤条件，这将在后文中介绍。
+    :::
+
+### 简单QBE
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
+    draft.setParent((TreeNode) null);
+    draft.setName("Hello");
+});
+List<TreeNode> treeNodes = sqlClient.getEntities()
+    .findByExample(
+            // highlight-next-line
+            Example.of(treeNode),
+            TreeNodeProps.NAME.asc()
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNode = new(TreeNode::class).by { 
+    parent = null
+    name = "Hello"
+}
+val treeNodes = sqlClient.entities
+    .findByExample(
+        example(treeNode)
+    ) {
+        asc(TreeNode::name)
+    }
+```
+
+</TabItem>
+</Tabs>
+
+:::warning
+样板对象只允许指定基于简单列或外键的属性，否则会导致异常
+:::
+
+最终成的SQL如下
+
+```sql
+select 
+    tb_1_.NODE_ID, 
+    tb_1_.NAME, 
+    tb_1_.PARENT_ID 
+from TREE_NODE as tb_1_ 
+where
+    /* highlight-next-line */
+    tb_1_.NAME = ? 
+and 
+    /* highlight-next-line */
+    tb_1_.PARENT_ID is null 
+order by tb_1_.NAME asc
+```
+
+### 使用模糊匹配
+
+默认情况下，样板对象的非null属性将会生成`=`，然而，我们可以通过配置来改变这种默认行为。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
+    draft.setParent((TreeNode) null);
+    draft.setName("Hello");
+});
+List<TreeNode> treeNodes = sqlClient.getEntities()
+    .findByExample(
+        Example.of(treeNode)
+            // highlight-next-line
+            .like(TreeNodeProps.NAME),
+        TreeNodeProps.NAME.asc()
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNode = new(TreeNode::class).by {
+    parent = null
+    name = "Hello"
+}
+val treeNodes = sqlClient.entities
+    .findByExample(
+        example(treeNode) {
+            // highlight-next-line
+            like(TreeNode::name)
+        },
+    ) {
+        asc(TreeNode::name)
+    }
+```
+
+</TabItem>
+</Tabs>
+
+最终成的SQL如下
+
+```sql
+select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID 
+from TREE_NODE as tb_1_ 
+where 
+    /* highlight-next-line */
+    tb_1_.NAME like ? 
+and 
+    tb_1_.PARENT_ID is null 
+order by tb_1_.NAME asc
+```
+
+### 使用对象抓取器
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
+    draft.setParent((TreeNode) null);
+    draft.setName("Hello");
+});
+List<TreeNode> treeNodes = sqlClient.getEntities()
+    .findByExample(
+        Example.of(treeNode),
+        // highlight-next-line
+        TreeNodeFetcher.$
+            .allScalarFields()
+            .childNodes(
+                TreeNodeFetcher.$.allScalarFields(),
+                it -> it.recursive()
+            ),
+        TreeNodeProps.NAME.asc()
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNodes = sqlClient.entities
+    .findByExample(
+        example(treeNode),
+        // highlight-next-line
+        newFetcher(TreeNode::class).by { 
+            allScalarFields()
+            childNodes({
+                filter { 
+                    recursive()
+                }
+            }) {
+                allScalarFields()
+            }
+        }
+    ) {
+        asc(TreeNode::name)
+    }
+```
+
+</TabItem>
+</Tabs>

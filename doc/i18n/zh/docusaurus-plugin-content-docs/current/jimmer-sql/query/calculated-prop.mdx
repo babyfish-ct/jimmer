@@ -1,5 +1,5 @@
 ---
-sidebar_position: 7
+sidebar_position: 8
 title: 计算属性及其缓存
 ---
 
@@ -312,6 +312,7 @@ implements TransientResolver<Long, BigDecimal> {
     private final JSqlClient sqlClient;
 
     public BookStoreAvgPriceResolver(JSqlClient sqlClient) {
+        
         this.sqlClient = sqlClient;
 
         // 1. Check whether the association `BookStore.books` is changed
