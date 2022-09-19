@@ -8,6 +8,14 @@ import TabItem from '@theme/TabItem';
 
 Spring Boot 2.7.0带来了Spring GraphQL，jimmer-sql为了提供了专门的API，加快Spring GraphQL的开发。
 
+:::note
+注意: 
+
+GraphQL和Object Fetcher是达到相似目的的两种手段。Object Fetcher侧重于在SQL层面支持这种能力，GraphQL侧重于把这种能力暴露出去。
+
+一旦决定采用Spring GraphQL，就不要重复使用Object Fetcher，控制器各查询方法只需返回孤单对象或其集合，GraphQL会肩负起和Object Fetcher类似的责任。
+:::
+
 ## 查询 
 
 对于Query类型的查询，即根查询，GraphQL实现和REST实现没有区别，无需特殊之处。
