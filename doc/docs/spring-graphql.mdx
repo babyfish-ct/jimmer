@@ -8,6 +8,13 @@ import TabItem from '@theme/TabItem';
 
 Spring Boot 2.7.0 brings Spring GraphQL, and jimmer-sql provides a specialized API to speed up the development of Spring GraphQL.
 
+:::note
+Notice: 
+
+GraphQL and Object Fetcher are two ways to a similar end. Object Fetcher focuses on supporting this capability at the SQL level, and GraphQL focuses on exposing this capability.
+
+Once you decide to use Spring GraphQL, don't use Object Fetcher, each query method of the controller only needs to return a single object or its collection, GraphQL will shoulder similar responsibilities as Object Fetcher.
+:::
 ## Query 
 
 For fields of type `Query`, i.e. root queries, there is no difference between a GraphQL implementation and a REST implementation, and no special support is required.
