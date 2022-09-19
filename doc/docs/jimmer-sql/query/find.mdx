@@ -1,0 +1,365 @@
+---
+sidebar_position: 5
+title: Simple Query
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+The query DSL discussed earlier can handle sufficiently complex situations, however many queries in real projects are simple queries. To this end, Jimmer provides API support for simple queries.
+
+This article discusses three topics
+
+1. findAll
+2. findById
+3. findByExample
+
+## findAll
+
+### Query by type
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+List<Book> books = sqlClient.getEntities()
+    .findAll(
+        
+        // Query books
+        Book.class,
+
+        // Optional variadic arguments, sorting mode
+        BookProps.NAME,
+        BookProps.EDITION.desc()
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient.entities
+    .findAll(Book::class) {
+        asc(Book::name)
+        desc(Book::edition)
+    }
+```
+
+</TabItem>
+</Tabs>
+
+### Query by object fetcher
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+List<Book> books = sqlClient.getEntities()
+    .findAll(
+        
+        // highlight-next-line
+        BookFetcher.$
+            .allScalarFields()
+            .store(
+                BookStoreFetcher.$.allScalarFields()
+            )
+            .authors(
+                AuthorFetcher.$.allScalarFields()
+            ),
+
+        BookProps.NAME,
+        BookProps.EDITION.desc()
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient.entities
+    .findAll(
+        // highlight-next-line
+        newFetcher(Book::class).by { 
+            allScalarFields()
+            store { 
+                allScalarFields()
+            }
+            authors { 
+                allScalarFields()
+            }
+        }
+    ) {
+        asc(Book::name)
+        desc(Book::edition)
+    }
+```
+
+</TabItem>
+</Tabs>
+
+## findById
+
+Jimmer's `sqlClient.entities` provides the following 6 methods for querying object(s) by id(s)
+
+|MethodName|Arugment 1|Arguemnt 2|Return Type|Description|
+|-----|----|----|-------|---|
+|findById|Class or KClass|Single id|Single object or null|Query a simple object by id; returns null if there is no matching data|
+|findById|Object Fetcher|Single id|Single object or null|Query an object by id, Its format is specified by the object fetcher; returns null if there is no matching data|
+|findByIds|Class or KClass|Collection of ids|Collection of objects|Query a batch of simple objects according to the id collection, since some data may not match, the length of the returned object list may be smaller than the length of the passed in id collection|
+|findByIds|Object Fetcher|Collection of ids|Collection of objects|Query a batch of objects according to the id collection, Its format is specified by the object fetcher; since some data may not match, the length of the returned object list may be smaller than the length of the passed in id collection|
+|findMapByIds|Class or KClass|Collection of ids|Ordered Map consisting of ids and objects|A Map with keys as ids and simple objects as values, this map does not change the order of the incoming id collection; since some data may not match, the length of the returned map may be smaller than the length of the incoming id collection|
+|findMapByIds|Object Fetcher|Collection of ids|Ordered Map consisting of ids and objects|A Map with keys as ids and objects as values, the format of the value is specified by the object fetcher, this map does not change the order of the incoming id collection; since some data may not match, the length of the returned map may be smaller than the length of the incoming id collection|
+
+:::tip
+These APIs that query data by id will use [External cache](./cache)
+:::
+
+Next, take `findMapByIds` as an example
+
+### Query by type
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Map<Long, Book> bookMap = sqlClient.getEntities()
+    .findMapByIds(
+        Book.class,
+        Arrays.asList(2L, 3L, 4L)
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookMap = sqlClient.entities
+    .findMapByIds(
+        Book::class,
+        listOf(2L, 3L, 4L)
+    )
+```
+
+</TabItem>
+</Tabs>
+
+### Query by object fetcher
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Map<Long, Book> bookMap = sqlClient.getEntities()
+    .findMapByIds(
+        BookFetcher.$
+            .allScalarFields()
+            .store(
+                BookStoreFetcher.$.allScalarFields()
+            )
+            .authors(
+                AuthorFetcher.$.allScalarFields()
+            ),
+        Arrays.asList(2L, 3L, 4L)
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookMap = sqlClient.entities
+    .findMapByIds(
+        newFetcher(Book::class).by {
+            allScalarFields()
+            store {
+                allScalarFields()
+            }
+            authors {
+                allScalarFields()
+            }
+        },
+        listOf(2L, 3L, 4L)
+    )
+```
+
+</TabItem>
+</Tabs>
+
+## findByExample
+
+`findByExample` implements the QBE (Query By Example) query.
+
+The so-called QBE query is that the user passes in an example object, and the ORM queries similar objects.
+
+Since Jimmer objects are dynamic, Jimmer's QBE queries are very flexible.
+
+-   If some properties of the example object are missing, unspecified properties will not be used to generate SQL filter conditions
+-   If an attribute of the example object is specified as null, the SQL `IS NULL` filter condition will be generated
+-   If an attribute of the example object is specified as non-null, by default, the SQL `=` filter condition will be generated
+    :::note
+    For string properties specified as non-null, users can change the configuration to use fuzzy filter conditions, which will be described later.
+    :::
+
+### Simple QBE
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
+    draft.setParent((TreeNode) null);
+    draft.setName("Hello");
+});
+List<TreeNode> treeNodes = sqlClient.getEntities()
+    .findByExample(
+            // highlight-next-line
+            Example.of(treeNode),
+            TreeNodeProps.NAME.asc()
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNode = new(TreeNode::class).by { 
+    parent = null
+    name = "Hello"
+}
+val treeNodes = sqlClient.entities
+    .findByExample(
+        example(treeNode)
+    ) {
+        asc(TreeNode::name)
+    }
+```
+
+</TabItem>
+</Tabs>
+
+:::warning
+The boilerplate object only allows specifying properties based on simple column or foreign key, otherwise it will cause an exception
+:::
+
+The final SQL is as follows
+
+```sql
+select 
+    tb_1_.NODE_ID, 
+    tb_1_.NAME, 
+    tb_1_.PARENT_ID 
+from TREE_NODE as tb_1_ 
+where
+    /* highlight-next-line */
+    tb_1_.NAME = ? 
+and 
+    /* highlight-next-line */
+    tb_1_.PARENT_ID is null 
+order by tb_1_.NAME asc
+```
+
+### Use fuzzy matching
+
+By default, non-null properties of example object will generate `=`, however, we can change this default behavior through configuration.
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
+    draft.setParent((TreeNode) null);
+    draft.setName("Hello");
+});
+List<TreeNode> treeNodes = sqlClient.getEntities()
+    .findByExample(
+        Example.of(treeNode)
+            // highlight-next-line
+            .like(TreeNodeProps.NAME),
+        TreeNodeProps.NAME.asc()
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNode = new(TreeNode::class).by {
+    parent = null
+    name = "Hello"
+}
+val treeNodes = sqlClient.entities
+    .findByExample(
+        example(treeNode) {
+            // highlight-next-line
+            like(TreeNode::name)
+        },
+    ) {
+        asc(TreeNode::name)
+    }
+```
+
+</TabItem>
+</Tabs>
+
+The final SQL is as follows
+
+```sql
+select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID 
+from TREE_NODE as tb_1_ 
+where 
+    /* highlight-next-line */
+    tb_1_.NAME like ? 
+and 
+    tb_1_.PARENT_ID is null 
+order by tb_1_.NAME asc
+```
+
+### Use object fetcher
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
+    draft.setParent((TreeNode) null);
+    draft.setName("Hello");
+});
+List<TreeNode> treeNodes = sqlClient.getEntities()
+    .findByExample(
+        Example.of(treeNode),
+        // highlight-next-line
+        TreeNodeFetcher.$
+            .allScalarFields()
+            .childNodes(
+                TreeNodeFetcher.$.allScalarFields(),
+                it -> it.recursive()
+            ),
+        TreeNodeProps.NAME.asc()
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNodes = sqlClient.entities
+    .findByExample(
+        example(treeNode),
+        // highlight-next-line
+        newFetcher(TreeNode::class).by { 
+            allScalarFields()
+            childNodes({
+                filter { 
+                    recursive()
+                }
+            }) {
+                allScalarFields()
+            }
+        }
+    ) {
+        asc(TreeNode::name)
+    }
+```
+
+</TabItem>
+</Tabs>
