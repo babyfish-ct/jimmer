@@ -38,7 +38,7 @@ public class FluentImpl implements Fluent {
         MutableRootQueryImpl<T> query = new MutableRootQueryImpl<>(sqlClient, immutableType);
         table.bind(query.getTable());
         stack.add(query);
-        return new FluentRootQueryImpl<T>(query, () -> pop(query));
+        return new FluentRootQueryImpl<>(query, () -> pop(query));
     }
 
     @Override

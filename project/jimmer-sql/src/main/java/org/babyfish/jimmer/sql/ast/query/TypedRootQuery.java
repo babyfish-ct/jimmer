@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.validation.constraints.NotNull;
 import java.sql.Connection;
 import java.util.List;
+import java.util.Optional;
 
 public interface TypedRootQuery<R> extends Executable<List<R>> {
 
@@ -50,5 +51,15 @@ public interface TypedRootQuery<R> extends Executable<List<R>> {
             throw new ExecutionException("Too much data is returned");
         }
         return list.get(0);
+    }
+
+    @NotNull
+    default Optional<R> fetchOptional() {
+        return Optional.ofNullable(fetchOneOrNull());
+    }
+
+    @NotNull
+    default Optional<R> fetchOptional(Connection con) {
+        return Optional.ofNullable(fetchOneOrNull(con));
     }
 }

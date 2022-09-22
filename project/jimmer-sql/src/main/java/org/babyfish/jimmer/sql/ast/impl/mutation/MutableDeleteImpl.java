@@ -101,7 +101,12 @@ public class MutableDeleteImpl
 
     private void renderDirectly(SqlBuilder builder) {
         TableImplementor<?> table = TableWrappers.unwrap(deleteQuery.getTable());
-        builder.sql("delete from ");
+        builder.sql("delete");
+        if (getSqlClient().getDialect().needDeletedAlias()) {
+            builder.sql(" ");
+            builder.sql(table.getAlias());
+        }
+        builder.sql(" from ");
         builder.sql(table.getImmutableType().getTableName());
         builder.sql(" as ");
         builder.sql(table.getAlias());

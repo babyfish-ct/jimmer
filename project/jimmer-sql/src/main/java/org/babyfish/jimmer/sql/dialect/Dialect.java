@@ -17,4 +17,6 @@ public interface Dialect {
     default String getOverrideIdentityIdSql() {
         return null;
     }
+
+    default boolean needDeletedAlias() { return false; }
 }
