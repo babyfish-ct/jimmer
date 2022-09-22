@@ -16,4 +16,9 @@ public class MySqlDialect implements Dialect {
     public UpdateJoin getUpdateJoin() {
         return new UpdateJoin(true, UpdateJoin.From.UNNECESSARY);
     }
+
+    @Override
+    public boolean needDeletedAlias() {
+        return true;
+    }
 }

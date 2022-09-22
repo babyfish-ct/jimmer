@@ -188,4 +188,26 @@ public class DMLTest extends AbstractMutationTest {
                 }
         );
     }
+
+    @Test
+    public void deleteMySql() {
+
+        NativeDatabases.assumeNativeDatabase();
+
+        executeAndExpectRowCount(
+                NativeDatabases.MYSQL_DATA_SOURCE,
+                getSqlClient(
+                        it -> it.setDialect(new MySqlDialect())
+                ).createDelete(BookTable.class, (d, book) -> {
+                    d.where(book.name().eq("Learning GraphQL"));
+                }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("delete tb_1_ from BOOK as tb_1_ where tb_1_.NAME = ?");
+                        it.variables("Learning GraphQL");
+                    });
+                    ctx.rowCount(3);
+                }
+        );
+    }
 }

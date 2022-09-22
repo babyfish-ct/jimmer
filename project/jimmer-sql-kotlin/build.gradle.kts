@@ -53,6 +53,10 @@ tasks {
     }
 }
 
+tasks.withType<Javadoc>{
+    options.encoding = "UTF-8"
+}
+
 // Publish to maven-----------------------------------------------------
 val NEXUS_USERNAME: String by project
 val NEXUS_PASSWORD: String by project

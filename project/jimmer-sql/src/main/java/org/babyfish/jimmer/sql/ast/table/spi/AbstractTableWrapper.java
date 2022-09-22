@@ -5,7 +5,6 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
@@ -23,6 +22,7 @@ public abstract class AbstractTableWrapper<E> implements Table<E>, FluentTable<E
     }
 
     // For fluent-API
+    @SuppressWarnings("unchecked")
     @Override
     public void bind(Table<E> raw) {
         if (_raw != null) {
