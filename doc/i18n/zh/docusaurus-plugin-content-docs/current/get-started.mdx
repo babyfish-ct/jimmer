@@ -18,13 +18,17 @@ import TabItem from '@theme/TabItem';
 
 ## 快速体验
 
-用Intellij打开[&lt;jimmer-home&gt;/example/java/java-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql/)或[&lt;jimmer-home&gt;/example/kotlin/java-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt/)，启动。
+用Intellij打开[&lt;jimmer-home&gt;/example/java/java-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql/)或[&lt;jimmer-home&gt;/example/kotlin/java-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt/)，
 
-访问http://localhost:8080/ui。
+首次打开后，IDE会出现编译报错，请参考[用IDE打开Demo](#用IDE打开Demo)
+
+启动，访问http://localhost:8080/ui。
 
 更多信息，请参考[附带demo](./demo)
 
 ## 注意事项
+
+### Jimmer对象的序列化
 
 如果你使用Spring REST而非Spring GraphQL，需要让Jackson支持Jimmer对象的序列化与反序列化，如下。
 
@@ -50,3 +54,23 @@ fun immutableModule() = ImmutableModule()
 </Tabs>
 
 详情请参考[Jimmer和Jackson](./jimmer-core/dynamic#jimmer和jackson)
+
+### 用IDE打开Demo
+
+本框架使用了代码生成器，对Java而言，是AnnotationProcessor；对Kotlin而言，是KSP。
+
+所以，首次用IDE打开框架附带demo中任何项目，都会因为本该被自动生成的代码暂时不存在而报编译错。
+
+别怕，放心大胆地点击运行按钮，所有问题将会立即自动消失。
+
+### Java Fluent API
+
+对于SQL DSL相关功能，Jimmer为Java语言提供了两种风格的API
+
+- Lambda API: 和kotlin API同质的API风格。
+- Fluent API: 对Java语言而言更常见的API风格。
+
+对于Fluent API而言，需要注意两件事。
+
+- JSqlClient.createFluent()返回的对象是短生命周期对象，每次要用需临时创建，请勿记下来反复使用。
+- 在某个DAO/Repository函数内部，如果只需一个SQL DSL statemement，Fluent API是一个不错的选择；否则，Lambda API更适合。

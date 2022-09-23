@@ -21,7 +21,6 @@ jimmer-sql对分页查询进行了特别设计，开发者只需要编写data-qu
 Fluent fluent = sqlClient.createFluent();
 BookTable book = new BookTable();
 
-// α
 ConfigurableRootQuery<Book> query = fluent
     .query(book)
     ... 省略其它逻辑: ...
@@ -30,18 +29,11 @@ ConfigurableRootQuery<Book> query = fluent
     ... 3. 任意复杂的子查询 ...
     .select(book);
 
-// β
-TypedRootQuery<Long> countQuery = query
-    // highlight-next-line
-    .reselect((q, t) ->
-        q.select(t.count())
-    )
-    // highlight-next-line
-    .withoutSortingAndPaging();
+// highlight-next-line
+int rowCount = query.count();
 
-// γ
-int rowCount = countQuery.execute().get(0).intValue();
 List<Book> books = query
+    // highlight-next-line
     .limit(rowCount / 3, rowCount / 3)
     .execute();
 ```
@@ -50,7 +42,6 @@ List<Book> books = query
 <TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
-// α
 ConfigurableTypedRootQuery<BookTable, Book> query = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
         ... 省略其它逻辑: ...
@@ -60,18 +51,11 @@ ConfigurableTypedRootQuery<BookTable, Book> query = sqlClient
         return q.select(book);
     });
 
-// β
-TypedRootQuery<Long> countQuery = query
-    // highlight-next-line
-    .reselect((q, t) ->
-        q.select(t.count())
-    )
-    // highlight-next-line
-    .withoutSortingAndPaging();
+// highlight-next-line
+int rowCount = query.count();
 
-// γ
-int rowCount = countQuery.execute().get(0).intValue();
 List<Book> books = query
+    // highlight-next-line
     .limit(rowCount / 3, rowCount / 3)
     .execute();
 ```
@@ -80,7 +64,6 @@ List<Book> books = query
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-// α
 val query = sqlClient.createQuery(Book::class) {
     ... 省略其它逻辑: ...
     ... 1. 任意复杂的动态条件 ...
@@ -89,37 +72,79 @@ val query = sqlClient.createQuery(Book::class) {
     select(table)
 }
 
-// β
-val countQuery = query
-    // highlight-next-line
-    .reselect {
-        select(count(table))
-    }
-    // highlight-next-line
-    .withoutSortingAndPaging()
+// highlight-next-line
+val rowCount = query.count()
 
-// γ
-val rowCount = countQuery.execute()[0].toInt()
 val books = query
-    .limit(rowCount / 3, rowCount / 3)
+    // highlight-next-line
+    .limit(limmit = rowCount / 3, offset = rowCount / 3)
     .execute()
 ```
 
 </TabItem>
 </Tabs>
 
-1. 注释`α`处：
-    开发人员创建data-query。
+其中，`query.count()`是一种便捷写法，其实际操作如下
 
-2. 注释`β`处：
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
-    在data-query的基础上，快速创建新的count-query。
-    - `reselect`: 替换原查询的`select`字句，改为查询记录条数。
-    - `withoutSortingAndPaging`: 忽略原来查询的`order by`子句和分页（如果有的话）。
+```java title="ConfigurableRootQuery.java"
+public interface ConfigurableRootQuery<T extends Table<?>, R> 
+    extends TypedRootQuery<R> {
 
-3. 注释`γ`处：
+    default int count() {
+        return count(null);
+    }
 
-使用count-query查询记录总条数，使用data-query查询页内数据，两个查询各司其职。
+    default int count(Connection con) {
+        // highlight-next-line
+        return reselect(
+                (q, t) -> q.select(t.count())
+            )
+            .withoutSortingAndPaging()
+            .execute(con)
+            .get(0)
+            .intValue();
+    }
+
+    @NewChain
+    <X> ConfigurableRootQuery<T, X> reselect(
+        BiFunction<
+            MutableRootQuery<T>, 
+            T, 
+            ConfigurableRootQuery<T, X>
+        > block
+    );
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kt title="KConfigurableRootQuery.kt"
+interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R>
+    
+    fun count(con: Connection? = null): Int =
+        // highlight-next-line
+        reselect { 
+            select(org.babyfish.jimmer.sql.kt.ast.expression.count(table)) 
+        }
+        .withoutSortingAndPaging()
+        .execute(con)[0]
+        .toInt()
+
+    @NewChain
+    fun <X> reselect(
+        block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, X>
+    ): KConfigurableRootQuery<E, X>
+}
+```
+
+</TabItem>
+</Tabs>
+
+关键在于这个`reselect`方法，在不影响当前查询的前提下，创建一个新查询，新查询返回记录条数。
 
 :::caution
 
@@ -208,13 +233,7 @@ ConfigurableRootQuery<BookTable, Book> query = fluent
     .orderBy(book.name())
     .select(book);
 
-TypedRootQuery<Long> countQuery = query
-    .reselect((q, t) ->
-        q.select(t.count())
-    )
-    .withoutSortingAndPaging();
-
-int rowCount = countQuery.execute().get(0).intValue();
+int rowCount = query.count();
 ```
 
 </TabItem>
@@ -236,13 +255,7 @@ ConfigurableTypedRootQuery<BookTable, Book> query =
         return q.select(book);
     });
 
-TypedRootQuery<Long> countQuery = query
-    .reselect((q, t) ->
-        q.select(t.count())
-    )
-    .withoutSortingAndPaging();
-
-int rowCount = countQuery.execute().get(0).intValue();
+int rowCount = query.count();
 ```
 
 </TabItem>
@@ -262,13 +275,7 @@ val query = sqlClient.createQuery(Book::class) {
     select(table)
 }
 
-val countQuery = query
-    .reselect { 
-        select(count(table))
-    }
-    .withoutSortingAndPaging()
-
-val rowCount = countQuery.execute()[0].toInt()
+val rowCount = query.count()
 ```
 
 </TabItem>
@@ -323,13 +330,7 @@ ConfigurableRootQuery<BookTable, Book> query = fluent
     .orderBy(book.name())
     .select(book);
 
-TypedRootQuery<Long> countQuery = query
-    .reselect((q, t) ->
-        q.select(t.count())
-    )
-    .withoutSortingAndPaging();
-
-int rowCount = countQuery.execute().get(0).intValue();
+int rowCount = query.count();
 ```
 
 </TabItem>
@@ -351,13 +352,7 @@ ConfigurableTypedRootQuery<BookTable, Book> query =
         return q.select(book);
     });
 
-TypedRootQuery<Long> countQuery = query
-    .reselect((q, t) ->
-        q.t(book.count())
-    )
-    .withoutSortingAndPaging();
-
-int rowCount = countQuery.execute().get(0).intValue();
+int rowCount = query.count();
 ```
 
 </TabItem>
@@ -377,13 +372,7 @@ val query = sqlClient.createQuery(Book::class) {
     select(table)
 }
 
-val countQuery = query
-    .reselect { 
-        select(count(table))
-    }
-    .withoutSortingAndPaging()
-
-val rowCount = countQuery.execute()[0].toInt()
+val rowCount = query.count()
 ```
 
 </TabItem>

@@ -21,7 +21,6 @@ jimmer-sql is specially designed for paging queries. Developers only need to wri
 Fluent fluent = sqlClient.createFluent();
 BookTable book = new BookTable();
 
-// α
 ConfigurableRootQuery<Book> query = fluent
     .query(book)
     ... Omit some code logic, including: ...
@@ -30,17 +29,7 @@ ConfigurableRootQuery<Book> query = fluent
     ... 3. Arbitrarily complex subqueries ...
     .select(book);
 
-// β
-TypedRootQuery<Long> countQuery = query
-    // highlight-next-line
-    .reselect((q, t) ->
-        q.select(t.count())
-    )
-    // highlight-next-line
-    .withoutSortingAndPaging();
-
-// γ
-int rowCount = countQuery.execute().get(0).intValue();
+int rowCount = query.count();
 List<Book> books = query
     .limit(rowCount / 3, rowCount / 3)
     .execute();
@@ -50,7 +39,6 @@ List<Book> books = query
 <TabItem value="java-lambda" label="Java(Lambda)">
 
 ```java
-// α
 ConfigurableTypedRootQuery<BookTable, Book> query = sqlClient
     .createQuery(BookTable.class, (q, book) -> {
         ... Omit some code logic, including: ...
@@ -60,17 +48,7 @@ ConfigurableTypedRootQuery<BookTable, Book> query = sqlClient
         return q.select(book);
     });
 
-// β
-TypedRootQuery<Long> countQuery = query
-    // highlight-next-line
-    .reselect((q, t) ->
-        q.select(t.count())
-    )
-    // highlight-next-line
-    .withoutSortingAndPaging();
-
-// γ
-int rowCount = countQuery.execute().get(0).intValue();
+int rowCount = query.count();
 List<Book> books = query
     .limit(rowCount / 3, rowCount / 3)
     .execute();
@@ -80,7 +58,6 @@ List<Book> books = query
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-// α
 val query = sqlClient.createQuery(Book::class) {
     ... Omit some code logic, including: ...
     ... 1. Arbitrarily complex dynamic conditions ...
@@ -89,17 +66,7 @@ val query = sqlClient.createQuery(Book::class) {
     select(table)
 }
 
-// β
-val countQuery = query
-    // highlight-next-line
-    .reselect {
-        select(count(table))
-    }
-    // highlight-next-line
-    .withoutSortingAndPaging()
-
-// γ
-val rowCount = countQuery.execute()[0].toInt()
+val rowCount = query.count()
 val books = query
     .limit(rowCount / 3, rowCount / 3)
     .execute()
@@ -108,18 +75,67 @@ val books = query
 </TabItem>
 </Tabs>
 
-1. Code at `α`:
-    data-query is created by developer.
+Among them, `query.count()` is a convenient way of writing, and its actual operation is as follows
 
-2. Code at `β`:
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
-    On the basis of data-query, quickly create a the count-query.
-    - `reselect`: Replace the `select` clause of the original query with the total row count selection.
-    - `withoutSortingAndPaging`: Ignore the `order by` clause and paging (if any) of the original query.
+```java title="ConfigurableRootQuery.java"
+public interface ConfigurableRootQuery<T extends Table<?>, R> 
+    extends TypedRootQuery<R> {
 
-3. Code at `γ`:
+    default int count() {
+        return count(null);
+    }
 
-Use count-query to query the total row count, and use data-query to query the data in one page. These two queries each perform their own duties.
+    default int count(Connection con) {
+        // highlight-next-line
+        return reselect(
+                (q, t) -> q.select(t.count())
+            )
+            .withoutSortingAndPaging()
+            .execute(con)
+            .get(0)
+            .intValue();
+    }
+
+    @NewChain
+    <X> ConfigurableRootQuery<T, X> reselect(
+        BiFunction<
+            MutableRootQuery<T>, 
+            T, 
+            ConfigurableRootQuery<T, X>
+        > block
+    );
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kt title="KConfigurableRootQuery.kt"
+interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R>
+    
+    fun count(con: Connection? = null): Int =
+        // highlight-next-line
+        reselect { 
+            select(org.babyfish.jimmer.sql.kt.ast.expression.count(table)) 
+        }
+        .withoutSortingAndPaging()
+        .execute(con)[0]
+        .toInt()
+
+    @NewChain
+    fun <X> reselect(
+        block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, X>
+    ): KConfigurableRootQuery<E, X>
+}
+```
+
+</TabItem>
+</Tabs>
+
+The key lies in the `reselect` method, which creates a new query without affecting the current query, and the new query returns the number of records.
 
 :::caution
 
@@ -208,13 +224,7 @@ ConfigurableRootQuery<BookTable, Book> query = fluent
     .orderBy(book.name())
     .select(book);
 
-TypedRootQuery<Long> countQuery = query
-    .reselect((q, t) ->
-        q.select(t.count())
-    )
-    .withoutSortingAndPaging();
-
-int rowCount = countQuery.execute().get(0).intValue();
+int rowCount = query.count();
 ```
 
 </TabItem>
@@ -236,13 +246,7 @@ ConfigurableTypedRootQuery<BookTable, Book> query =
         return q.select(book);
     });
 
-TypedRootQuery<Long> countQuery = query
-    .reselect((q, t) ->
-        q.select(t.count())
-    )
-    .withoutSortingAndPaging();
-
-int rowCount = countQuery.execute().get(0).intValue();
+int rowCount = query.count();
 ```
 
 </TabItem>
@@ -262,13 +266,7 @@ val query = sqlClient.createQuery(Book::class) {
     select(table)
 }
 
-val countQuery = query
-    .reselect { 
-        select(count(table))
-    }
-    .withoutSortingAndPaging()
-
-val rowCount = countQuery.execute()[0].toInt()
+val rowCount = query.count()
 ```
 
 </TabItem>
@@ -323,13 +321,7 @@ ConfigurableRootQuery<BookTable, Book> query = fluent
     .orderBy(book.name())
     .select(book);
 
-TypedRootQuery<Long> countQuery = query
-    .reselect((q, t) ->
-        q.select(t.count())
-    )
-    .withoutSortingAndPaging();
-
-int rowCount = countQuery.execute().get(0).intValue();
+int rowCount = query.count();
 ```
 
 </TabItem>
@@ -351,13 +343,7 @@ ConfigurableTypedRootQuery<BookTable, Book> query =
         return q.select(book);
     });
 
-TypedRootQuery<Long> countQuery = query
-    .reselect((q, t) ->
-        q.select(t.count())
-    )
-    .withoutSortingAndPaging();
-
-int rowCount = countQuery.execute().get(0).intValue();
+int rowCount = query.count();
 ```
 
 </TabItem>
@@ -377,13 +363,7 @@ val query = sqlClient.createQuery(Book::class) {
     select(table)
 }
 
-val countQuery = query
-    .reselect { 
-        select(count(table))
-    }
-    .withoutSortingAndPaging()
-
-val rowCount = countQuery.execute()[0].toInt()
+val rowCount = query.count()
 ```
 
 </TabItem>

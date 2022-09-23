@@ -960,13 +960,7 @@ ConfigurableRootQuery<Book> query = fluent
     .select(book);
 
 // count-query can be generated and optimized.
-TypedRootQuery<Long> countQuery = query
-    .reselect((q, t) -> 
-        q.select(t.count())
-    )
-    .withoutSortingAndPaging();
-
-int rowCount = countQuery.execute().get(0).intValue();
+int rowCount = query.count();
 
 // Query data from 1/3 to 2/3
 List<Book> books = query
@@ -989,13 +983,7 @@ ConfigurableRootQuery<Book> query = sqlClient
     });
 
 // count-query can be generated and optimized.
-TypedRootQuery<Long> countQuery = query
-    .reselect((q, t) -> 
-        q.select(t.count())
-    )
-    .withoutSortingAndPaging();
-
-int rowCount = countQuery.execute().get(0).intValue();
+int rowCount = query.count();
 
 // Query data from 1/3 to 2/3
 List<Book> books = query
@@ -1018,13 +1006,7 @@ val query = sqlClient
     }
 
 // count-query can be generated and optimized.
-val countQuery = query
-    .reselect {
-        select(count(table))
-    }
-    .withoutSortingAndPaging()
-
-val rowCount = countQuery.execute()[0]
+val rowCount = query.count()
 
 // Query data from 1/3 to 2/3
 val books = query
