@@ -958,13 +958,7 @@ ConfigurableRootQuery<Book> query = fluent
     .select(book);
 
 // 对行数的查询由框架自动生成和优化
-TypedRootQuery<Long> countQuery = query
-    .reselect((q, t) -> 
-        q.select(t.count())
-    )
-    .withoutSortingAndPaging();
-
-int rowCount = countQuery.execute().get(0).intValue();
+int rowCount = query.count();
 
 // 查询从1/3处到2/3的部分数据
 List<Book> books = query
@@ -987,13 +981,7 @@ ConfigurableRootQuery<Book> query = sqlClient
     });
 
 // 对行数的查询由框架自动生成和优化
-TypedRootQuery<Long> countQuery = query
-    .reselect((q, t) -> 
-        q.select(t.count())
-    )
-    .withoutSortingAndPaging();
-
-int rowCount = countQuery.execute().get(0).intValue();
+int rowCount = query.count();
 
 // 查询从1/3处到2/3的部分数据
 List<Book> books = query
@@ -1016,13 +1004,7 @@ val query = sqlClient
     }
 
 // 对行数的查询由框架自动生成和优化。
-val countQuery = query
-    .reselect {
-        select(count(table))
-    }
-    .withoutSortingAndPaging()
-
-val rowCount = countQuery.execute()[0]
+val rowCount = query.count()
 
 // 查询从1/3处到2/3的部分数据
 val books = query
