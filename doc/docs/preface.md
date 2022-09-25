@@ -9,10 +9,6 @@ A large part of the operations of OLTP type projects are aimed at the original d
 
 The data types related to the calculation indicators introduced by business computing are not the same as the original structure of the database, and are not the scope of this article.
 
-All cases in this documentation are based on the following UML
-
-TODO: Add UML
-
 ## 2. Disadvantages of the current factions
 
 Now, there are many frameworks for users to access RDBMS, which are generally divided into two factions
