@@ -3,7 +3,7 @@ sidebar_position: 1
 title: 前言
 ---
 
-## 1. 本文讨论前提
+## 1. 本文的讨论前提
 
 OLTP类型项目很大一部分操作是都针对数据库原始数据，这时软件系统中的对象结构和数据库的中数据结构大体一致，是本文讨论的场景。
 
@@ -28,7 +28,7 @@ TODO: 加图
 ```java
 List<Book> books = entityManager
     .createQuery(
-        "select book from Book " +
+        "select book from Book book " +
         "left join fetch book.store " +
         "left join fetch book.authors"
     ).getResultList();
@@ -50,7 +50,8 @@ List<Book> books = entityManager
 ```java
 List<BookDTO> bookDTOs = entityManager
     .createQuery(
-	    "select new BookDTO(book.id, book.name) from Book"
+	    "select new BookDTO(book.id, book.name) " +
+        "from Book book"
     ).getResultList();
 ```
 
@@ -107,7 +108,7 @@ List<BookDTO> bookDTOs = entityManager
 
 通过上面的论述，我们知道
 
-- 传统ORM派：优点是直接和数据存储结构对应，提供统一视角；但缺点是对返回数据格式进行对象级和普通属性级别的裁剪，而且返回的数据结构难以直接利用。
+- 传统ORM派：优点是直接和数据存储结构对应，提供统一视角；但缺点是只对返回数据格式进行对象级裁剪，没有普通属性级的裁剪，而且返回的数据结构难以直接利用。
 - DTO Mapper派：优点是查询的到的DTO对象简单，返回的聚合根所代表的数据结构只包含单向关联；但缺点是DTO类型数量膨胀严重，虽不同但相似，开发成本和测试成本都很高。
 
 Jimmer完美融合两派之长，走出了既然不同的第三条路。因此并不能比把Jimmer上述两个派中的任何方案做简单对比。
@@ -153,11 +154,11 @@ Jimmer比GraphQL做得更好，它甚至支持自关联属性的递归查询。
 
 - 对用户的缓存技术选型不做任何限制，用户可以选用任何缓存技术。
 - 内部支持对象缓存和关联缓存，在复杂数据结构查询中，二者在幕后按需有机结合。最终给用户呈现出的效果，就是任意复杂数据结构的缓存，而非简单对象的缓存。
-- 自动保存缓存一致性，只要在接受到数据库binlog推送后简单调用Jimmer的API即可。
+- 自动保证缓存的数据一致性，只要在接受到数据库binlog推送后简单调用Jimmer的API即可。
 - 缓存机制对开发人员100%透明，是否采用缓存，对业务代码没有任何影响。
 
 :::tip
-虽然RDBMS具备无以伦比的表达能力，但它有一个明显的缺点：按数据之间的关系导航追踪其它数据，性能不理想。
+虽然RDBMS具备无以伦比的表达能力，但它有一个明显的缺点：按关系导航追踪其它数据，性能不理想。
 
 关联缓存可以在很大程度上缓解这个问题，让RDBMS如虎添翼。
 :::
