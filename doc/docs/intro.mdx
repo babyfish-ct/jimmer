@@ -1096,20 +1096,3 @@ fun authors(
 :::tip
 This feature can work with external cache
 :::
-
-## Other highlights
-
-### DTO is optional
-
-The dynamic capabilities of immutable objects introduce beneficial side effects and a new design philosophy.
-
-In the process of information management software development, HTTP APIs often interact with object trees that only contain one-way associations, people will not use two-way associations even though the JSON serialization technology used has some corresponding ability.
-
-Therefore, DTOs are important when designing module API, because the DTOs required by each business clearly define the aggregate root. DTO design becomes a prerequisite for business design and development.
-
-Immutable objects in Jimmer are dynamic. Although two-way associations can be defined in the design of ORM entity types, Jimmer ensures that there are only one-way associations between object instances when creating objects for specific business scenarios, and any attempt to establish a two-way association will result in exceptions.
-
-That is, the design of the aggregate root is deferred from the design of the system API until the object is created in a specific business scenario. It is no longer necessary to design and develop based on DTO, and it is possible to completely use entity objects as the basis for development, which makes the development process natural.
-
-Of course, such a design concept does not deny the value of DTO. If you think it is safer and clearer to design external APIs with static DTOs than with dynamic entities, you can still use DTOs to encapsulate a layer. This is a useful but not required option.
-
