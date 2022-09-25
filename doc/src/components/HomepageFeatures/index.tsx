@@ -23,11 +23,13 @@ const FeatureList: FeatureItem[] = [
     title: 'ORM for immutable data model',
     Svg: require('@site/static/img/orm.svg').default,
     description: (
-      <ul>
-        <li>Include cache, no DTO required</li>
-        <li>More powerful than other popular ORM frameworks</li>
-        <li>Faster than other popular ORM frameworks</li>
-      </ul>
+      <div style={{textAlign: 'left'}}>
+        <ul>
+          <li>Include cache, no DTO required</li>
+          <li>More powerful than other popular ORM frameworks</li>
+          <li>Faster than other popular ORM frameworks</li>
+        </ul>
+      </div>
     ),
   },
   {
