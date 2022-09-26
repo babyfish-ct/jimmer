@@ -11,6 +11,8 @@ import org.babyfish.jimmer.sql.runtime.DbNull;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 public class CascadeSaveTest extends AbstractMutationTest {
@@ -816,6 +818,94 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "--->--->}" +
                                         "--->]" +
                                         "}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testBatchSave() {
+        UUID storeId = UUID.fromString("6057bec2-df8d-48f1-b31e-fdd36861cccb");
+        UUID bookId1 = UUID.fromString("e1d34561-17df-4c08-9959-1c6cb33cdafb");
+        UUID bookId2 = UUID.fromString("3d1d7676-5258-41c0-8e21-02110af07e90");
+        setAutoIds(Book.class, bookId1, bookId2);
+
+        BookStore store = BookStoreDraft.$.produce(draft -> {
+            draft.setId(storeId);
+            draft.setName("TURING");
+            draft.setVersion(0);
+        });
+        List<Book> books = Arrays.asList(
+                BookDraft.$.produce(book -> {
+                    book.setName("A")
+                            .setEdition(1)
+                            .setPrice(new BigDecimal(48))
+                            .setStore(store);
+                }),
+                BookDraft.$.produce(book -> {
+                    book.setName("B")
+                            .setEdition(1)
+                            .setPrice(new BigDecimal(49))
+                            .setStore(store);
+                })
+        );
+        executeAndExpectResult(
+                getSqlClient().getEntities().batchSaveCommand(books).configure(
+                        it -> it.setAutoAttachingAll()
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from BOOK_STORE as tb_1_ where tb_1_.ID = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK_STORE(ID, NAME, VERSION) values(?, ?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) " +
+                                        "values(?, ?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID) " +
+                                        "values(?, ?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{\"name\":\"A\",\"edition\":1,\"price\":48,\"store\":{\"id\":\"6057bec2-df8d-48f1-b31e-fdd36861cccb\",\"name\":\"TURING\",\"version\":0}}"
+                        );
+                        it.modified(
+                                "{\"name\":\"A\",\"edition\":1,\"price\":48,\"store\":{\"id\":\"6057bec2-df8d-48f1-b31e-fdd36861cccb\",\"name\":\"TURING\",\"version\":0}}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{\"name\":\"B\",\"edition\":1,\"price\":49,\"store\":{\"id\":\"6057bec2-df8d-48f1-b31e-fdd36861cccb\",\"name\":\"TURING\",\"version\":0}}"
+                        );
+                        it.modified(
+                                "{\"name\":\"B\",\"edition\":1,\"price\":49,\"store\":{\"id\":\"6057bec2-df8d-48f1-b31e-fdd36861cccb\",\"name\":\"TURING\",\"version\":0}}"
                         );
                     });
                 }

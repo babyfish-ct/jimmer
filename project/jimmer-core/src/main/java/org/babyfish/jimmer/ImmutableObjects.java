@@ -10,11 +10,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.Table;
 import org.babyfish.jimmer.sql.meta.Column;
-
-import java.text.SimpleDateFormat;
-import java.util.function.Function;
 
 public class ImmutableObjects {
 
@@ -142,6 +138,25 @@ public class ImmutableObjects {
      */
     public static Object get(Object immutable, ImmutableProp prop) {
         return get(immutable, prop.getId());
+    }
+
+    /**
+     * Get the property value of immutable object,
+     * if the property is not loaded, exception will be thrown.
+     *
+     * @param immutable Object instance
+     * @param prop Property
+     * @return Whether the property of the object is specified.
+     * @exception IllegalArgumentException There are two possibilities
+     *      <ul>
+     *          <li>The first argument is immutable object created by jimmer</li>
+     *          <li>The second argument is not a valid property name of immutable object</li>
+     *      </ul>
+     * @exception UnloadedException The property is not loaded
+     */
+    @SuppressWarnings("unchecked")
+    public static <T, X> X get(T obj, TypedProp<T, X> prop) {
+        return (X)get(obj, prop.unwrap().getId());
     }
 
     public static boolean isIdOnly(Object immutable) {

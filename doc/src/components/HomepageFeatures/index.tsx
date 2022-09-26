@@ -24,8 +24,8 @@ const FeatureList: FeatureItem[] = [
     Svg: require('@site/static/img/orm.svg').default,
     description: (
       <div style={{textAlign: 'left'}}>
-        Powerful ORM for immutable data model
         <ul>
+          <li>Include cache, no DTO required</li>
           <li>More powerful than other popular ORM frameworks</li>
           <li>Faster than other popular ORM frameworks</li>
         </ul>
