@@ -144,6 +144,9 @@ public class ImmutableObjects {
      * Get the property value of immutable object,
      * if the property is not loaded, exception will be thrown.
      *
+     * @param <T> The entity type
+     * @param <X> The property type
+     *
      * @param immutable Object instance
      * @param prop Property
      * @return Whether the property of the object is specified.
@@ -155,8 +158,8 @@ public class ImmutableObjects {
      * @exception UnloadedException The property is not loaded
      */
     @SuppressWarnings("unchecked")
-    public static <T, X> X get(T obj, TypedProp<T, X> prop) {
-        return (X)get(obj, prop.unwrap().getId());
+    public static <T, X> X get(T immutable, TypedProp<T, X> prop) {
+        return (X)get(immutable, prop.unwrap().getId());
     }
 
     public static boolean isIdOnly(Object immutable) {
