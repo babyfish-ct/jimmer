@@ -224,6 +224,10 @@ class Saver {
 
     private ObjectType saveSelf(DraftSpi draftSpi) {
 
+        if (cache.isSaved(draftSpi)) {
+            return ObjectType.EXISTING;
+        }
+
         if (data.getMode() == SaveMode.INSERT_ONLY) {
             insert(draftSpi);
             return ObjectType.NEW;
@@ -393,7 +397,7 @@ class Saver {
             setDraftId(draftSpi, id);
         }
 
-        cache.save(draftSpi);
+        cache.save(draftSpi, true);
     }
 
     private void update(DraftSpi draftSpi, boolean excludeKeyProps) {
@@ -497,7 +501,7 @@ class Saver {
             if (version != null) {
                 increaseDraftVersion(draftSpi);
             }
-            cache.save(draftSpi);
+            cache.save(draftSpi, true);
         } else if (version != null) {
             throw new OptimisticLockException(
                     type,
@@ -562,7 +566,7 @@ class Saver {
 
         ImmutableSpi spi = rows.isEmpty() ? null : rows.get(0);
         if (spi != null) {
-            cache.save(spi);
+            cache.save(spi, false);
         }
         return spi;
     }

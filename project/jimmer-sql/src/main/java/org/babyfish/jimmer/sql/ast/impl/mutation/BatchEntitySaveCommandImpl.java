@@ -1,14 +1,15 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.lang.Ref;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 
+import java.lang.reflect.ReflectPermission;
 import java.sql.Connection;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -64,14 +65,38 @@ public class BatchEntitySaveCommandImpl<E>
                 .execute(this::executeImpl);
     }
 
+    @SuppressWarnings("unchecked")
     private BatchSaveResult<E> executeImpl(Connection con) {
+        if (entities.isEmpty()) {
+            return new BatchSaveResult<>(Collections.emptyList());
+        }
         SaverCache cache = new SaverCache(data);
         Map<AffectedTable, Integer> affectedRowCountMap = new LinkedHashMap<>();
-        List<SimpleSaveResult<E>> simpleSaveResults = entities
-                .stream()
-                .map(it -> new Saver(data, con, cache, affectedRowCountMap).save(it))
-                .collect(Collectors.toList());
-        return new BatchSaveResult<>(affectedRowCountMap, simpleSaveResults);
+        List<SimpleSaveResult<E>>[] oldResultListRef = new List[1];
+        List<Object> modifiedEntities = Internal.produceList(
+                ((ImmutableSpi) entities.iterator().next()).__type(),
+                entities,
+                list -> {
+                    oldResultListRef[0] =
+                            entities
+                                    .stream()
+                                    .map(
+                                            it -> new Saver(data, con, cache, affectedRowCountMap)
+                                                    .save(it)
+                                    )
+                                    .collect(Collectors.toList());
+                }
+        );
+        int size = oldResultListRef[0].size();
+        List<SimpleSaveResult<E>> results = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            SimpleSaveResult<E> result = oldResultListRef[0].get(i);
+            results.add(result.copy((E)modifiedEntities.get(i)));
+        }
+        return new BatchSaveResult<>(
+                affectedRowCountMap,
+                results
+        );
     }
 
     @Override
