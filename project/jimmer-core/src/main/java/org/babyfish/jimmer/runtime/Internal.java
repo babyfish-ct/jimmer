@@ -7,6 +7,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class Internal {
@@ -30,7 +31,7 @@ public class Internal {
 
     public static List<Object> produceList(
             ImmutableType type,
-            Collection<Object> bases,
+            Collection<?> bases,
             DraftConsumer<List<? extends Draft>> block
     ) {
         if (bases.isEmpty()) {
