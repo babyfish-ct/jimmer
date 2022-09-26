@@ -19,6 +19,8 @@ class MutationCache {
 
     private final Map<TypedKey, ImmutableSpi> keyObjMap = new HashMap<>();
 
+    private final IdentityHashMap<Object, Object> savedMap = new IdentityHashMap<>();
+
     public MutationCache(JSqlClient sqlClient) {
         this.sqlClientWithoutCache = sqlClient.caches(CacheDisableConfig::disableAll);
     }
@@ -88,41 +90,34 @@ class MutationCache {
         return resultMap;
     }
 
-    public ImmutableSpi save(ImmutableSpi spi) {
-        return save(spi, true);
-    }
-
-    public ImmutableSpi save(ImmutableSpi spi, boolean merge) {
+    public ImmutableSpi save(ImmutableSpi spi, boolean saved) {
 
         ImmutableType type = spi.__type();
         ImmutableProp idProp = type.getIdProp();
         Set<ImmutableProp> keyProps = keyProps(type);
 
-        if (merge) {
+        ImmutableSpi oldSpi = find(spi);
+        if (oldSpi != null) {
 
-            ImmutableSpi oldSpi = find(spi);
-            if (oldSpi != null) {
+            TypedId oldTypedId = new TypedId(type, oldSpi.__get(idProp.getId()));
+            idObjMap.remove(oldTypedId);
 
-                TypedId oldTypedId = new TypedId(type, oldSpi.__get(idProp.getId()));
-                idObjMap.remove(oldTypedId);
+            if (keyProps != null && !keyProps.isEmpty()) {
+                TypedKey oldKey = TypedKey.of(oldSpi, keyProps, false);
+                if (oldKey != null) {
+                    keyObjMap.remove(oldKey);
+                }
+            }
 
-                if (keyProps != null && !keyProps.isEmpty()) {
-                    TypedKey oldKey = TypedKey.of(oldSpi, keyProps, false);
-                    if (oldKey != null) {
-                        keyObjMap.remove(oldKey);
+            ImmutableSpi newSpi = spi;
+            spi = (ImmutableSpi) Internal.produce(spi.__type(), oldSpi, draft -> {
+                for (ImmutableProp prop : type.getProps().values()) {
+                    int propId = prop.getId();
+                    if (newSpi.__isLoaded(propId)) {
+                        ((DraftSpi) draft).__set(propId, newSpi.__get(prop.getId()));
                     }
                 }
-
-                ImmutableSpi newSpi = spi;
-                spi = (ImmutableSpi) Internal.produce(spi.__type(), oldSpi, draft -> {
-                    for (ImmutableProp prop : type.getProps().values()) {
-                        int propId = prop.getId();
-                        if (newSpi.__isLoaded(propId)) {
-                            ((DraftSpi) draft).__set(propId, newSpi.__get(prop.getId()));
-                        }
-                    }
-                });
-            }
+            });
         }
 
         TypedId typedId = new TypedId(type, spi.__get(idProp.getId()));
@@ -135,7 +130,15 @@ class MutationCache {
             }
         }
 
+        if (saved) {
+            savedMap.put(spi, null);
+        }
+
         return spi;
+    }
+
+    public boolean isSaved(ImmutableSpi spi) {
+        return savedMap.containsKey(spi);
     }
 
     protected Set<ImmutableProp> keyProps(ImmutableType type) {

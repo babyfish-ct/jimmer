@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 title: 教程介绍 
 ---
 
@@ -958,13 +958,7 @@ ConfigurableRootQuery<Book> query = fluent
     .select(book);
 
 // 对行数的查询由框架自动生成和优化
-TypedRootQuery<Long> countQuery = query
-    .reselect((q, t) -> 
-        q.select(t.count())
-    )
-    .withoutSortingAndPaging();
-
-int rowCount = countQuery.execute().get(0).intValue();
+int rowCount = query.count();
 
 // 查询从1/3处到2/3的部分数据
 List<Book> books = query
@@ -987,13 +981,7 @@ ConfigurableRootQuery<Book> query = sqlClient
     });
 
 // 对行数的查询由框架自动生成和优化
-TypedRootQuery<Long> countQuery = query
-    .reselect((q, t) -> 
-        q.select(t.count())
-    )
-    .withoutSortingAndPaging();
-
-int rowCount = countQuery.execute().get(0).intValue();
+int rowCount = query.count();
 
 // 查询从1/3处到2/3的部分数据
 List<Book> books = query
@@ -1016,13 +1004,7 @@ val query = sqlClient
     }
 
 // 对行数的查询由框架自动生成和优化。
-val countQuery = query
-    .reselect {
-        select(count(table))
-    }
-    .withoutSortingAndPaging()
-
-val rowCount = countQuery.execute()[0]
+val rowCount = query.count()
 
 // 查询从1/3处到2/3的部分数据
 val books = query
@@ -1112,19 +1094,3 @@ fun authors(
 :::tip
 该功能可以和外部缓存一起工作
 :::
-
-## 其他亮点
-
-### DTO是可选的
-
-不可变对象的动态功能引入了有益的副作用和新的设计理念。
-
-在信息管理软件开发过程中，HTTP API交互只有单向关联的对象树，即使JSON序列化技术具有一定的双向关联处理能力，人们也不会使用。
-
-因此，在设计模块API时，DTO很重要，因为每个业务所需的DTO都明确定义了聚合根。 DTO设计成为业务设计和开发的先决条件。
-
-Jimmer中的不可变对象是动态的。虽然在ORM实体类型的设计中可以定义双向关联，但在针对特定业务场景创建对象时，Jimmer确保对象实例之间只有单向关联，任何企图建立双向关联的尝试都会导致异常。
-
-也就是说，聚合根的抉择，被延迟到了特定的业务场景需要创建对象时，系统API的设计不再受其影响。不必以DTO为中心进行设计和开发，完全可以使用实体对象作为开发的基础，让开发过程自然而然。
-
-当然，这样的设计理念并不否定DTO的价值。如果您认为使用静态DTO比使用动态实体更安全、更清晰，您仍然可以使用DTO封装你的最终API。这是一个有用但不是必需的选项。
