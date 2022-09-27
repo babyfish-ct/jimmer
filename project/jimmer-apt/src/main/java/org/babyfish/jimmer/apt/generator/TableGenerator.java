@@ -174,7 +174,7 @@ public class TableGenerator {
                 );
             } else {
                 returnType = ParameterizedTypeName.get(
-                        Constants.EXPRESSION_CLASS_NAME,
+                        PROP_EXPRESSION_CLASS_NAME,
                         prop.getTypeName()
                 );
             }
