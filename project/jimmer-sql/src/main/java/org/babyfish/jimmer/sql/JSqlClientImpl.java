@@ -125,9 +125,9 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
-    public ConnectionManager getSlaveConnectionManager() {
+    public ConnectionManager getSlaveConnectionManager(boolean forUpdate) {
         ConnectionManager slave = slaveConnectionManager;
-        if (slave != null) {
+        if (slave != null && !forUpdate) {
             return slave;
         }
         return connectionManager;

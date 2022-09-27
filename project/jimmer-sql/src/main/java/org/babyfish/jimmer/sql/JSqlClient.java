@@ -38,7 +38,7 @@ public interface JSqlClient {
 
     ConnectionManager getConnectionManager();
 
-    ConnectionManager getSlaveConnectionManager();
+    ConnectionManager getSlaveConnectionManager(boolean forUpdate);
 
     Dialect getDialect();
 

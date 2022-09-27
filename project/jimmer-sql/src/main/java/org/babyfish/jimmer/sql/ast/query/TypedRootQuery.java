@@ -8,6 +8,7 @@ import javax.validation.constraints.NotNull;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public interface TypedRootQuery<R> extends Executable<List<R>> {
 
@@ -62,4 +63,18 @@ public interface TypedRootQuery<R> extends Executable<List<R>> {
     default Optional<R> fetchOptional(Connection con) {
         return Optional.ofNullable(fetchOneOrNull(con));
     }
+
+    default void forEach(Consumer<R> consumer) {
+        forEach(null, -1, consumer);
+    }
+
+    default void forEach(Connection con, Consumer<R> consumer) {
+        forEach(con, -1, consumer);
+    }
+
+    default void forEach(int batchSize, Consumer<R> consumer) {
+        forEach(null, batchSize, consumer);
+    }
+
+    void forEach(Connection con, int batchSize, Consumer<R> consumer);
 }

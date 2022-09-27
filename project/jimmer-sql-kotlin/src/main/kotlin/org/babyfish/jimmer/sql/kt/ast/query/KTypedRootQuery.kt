@@ -31,4 +31,10 @@ interface KTypedRootQuery<R> : KExecutable<List<R>> {
                 else -> throw ExecutionException("Too much data is returned")
             }
         }
+
+    fun forEach(
+        con: Connection? = null,
+        batchSize: Int = 0,
+        block: (R) -> Unit
+    )
 }
