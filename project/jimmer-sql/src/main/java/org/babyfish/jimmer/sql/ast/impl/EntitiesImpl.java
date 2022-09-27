@@ -334,7 +334,7 @@ public class EntitiesImpl implements Entities {
         if (example != null && example.type() != type) {
             throw new IllegalArgumentException(
                     "The type of example is \"" +
-                            fetcher.getImmutableType() +
+                            example.type() +
                             "\", it does not match the query root type \"" +
                             type +
                             "\""

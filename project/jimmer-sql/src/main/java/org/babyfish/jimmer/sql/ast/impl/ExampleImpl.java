@@ -41,7 +41,8 @@ public class ExampleImpl<E> implements Example<E> {
                     throw new IllegalArgumentException(
                             "The prop \"" +
                                     prop +
-                                    "\" of example cannot be loaded because it is not based on simple column"
+                                    "\" of example object cannot be loaded, " +
+                                    "example object does not accept properties not based on simple column"
                     );
                 }
             }

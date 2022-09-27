@@ -15,8 +15,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.util.List;
+import java.util.function.Consumer;
 
-class MergedTypedRootQueryImpl<R> implements TypedRootQuery<R>, TypedQueryImplementor {
+class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, TypedQueryImplementor {
 
     private JSqlClient sqlClient;
 
@@ -27,6 +28,8 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQuery<R>, TypedQueryImplem
     private TypedQueryImplementor right;
 
     private List<Selection<?>> selections;
+
+    private boolean isForUpdate;
 
     public MergedTypedRootQueryImpl(
             JSqlClient sqlClient,
@@ -41,12 +44,14 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQuery<R>, TypedQueryImplem
                 this.left.getSelections(),
                 this.right.getSelections()
         );
+        isForUpdate = ((TypedRootQueryImplementor<?>)left).isForUpdate() ||
+                ((TypedRootQueryImplementor<?>)right).isForUpdate();
     }
 
     @Override
     public List<R> execute() {
         return sqlClient
-                .getSlaveConnectionManager()
+                .getSlaveConnectionManager(isForUpdate)
                 .execute(this::executeImpl);
     }
 
@@ -56,13 +61,31 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQuery<R>, TypedQueryImplem
             return executeImpl(con);
         }
         return sqlClient
-                .getSlaveConnectionManager()
+                .getSlaveConnectionManager(isForUpdate)
                 .execute(this::executeImpl);
     }
 
     private List<R> executeImpl(Connection con) {
         Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(sqlClient));
         return Selectors.select(sqlClient, con, sqlResult.get_1(), sqlResult.get_2(), selections);
+    }
+
+    @Override
+    public void forEach(Connection con, int batchSize, Consumer<R> consumer) {
+        int finalBatchSize = batchSize > 0 ? batchSize : sqlClient.getDefaultBatchSize();
+        if (con != null) {
+            forEachImpl(con, finalBatchSize, consumer);
+        } else {
+            sqlClient.getSlaveConnectionManager(isForUpdate).execute(newConn -> {
+                forEachImpl(newConn, finalBatchSize, consumer);
+                return (Void) null;
+            });
+        }
+    }
+
+    private void forEachImpl(Connection con, int batchSize, Consumer<R> consumer) {
+        Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(sqlClient));
+        Selectors.forEach(sqlClient, con, sqlResult.get_1(), sqlResult.get_2(), selections, batchSize, consumer);
     }
 
     private Tuple2<String, List<Object>> preExecute(SqlBuilder builder) {
@@ -141,6 +164,11 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQuery<R>, TypedQueryImplem
             return ((ExpressionImplementor<?>) a).getType() ==
                     ((ExpressionImplementor<?>) b).getType();
         }
+        return false;
+    }
+
+    @Override
+    public boolean isForUpdate() {
         return false;
     }
 }
