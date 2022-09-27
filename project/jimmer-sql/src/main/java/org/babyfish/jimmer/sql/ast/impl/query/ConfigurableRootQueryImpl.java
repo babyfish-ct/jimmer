@@ -19,10 +19,11 @@ import java.sql.Connection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         extends AbstractConfigurableTypedQueryImpl<R>
-        implements ConfigurableRootQuery<T, R> {
+        implements ConfigurableRootQuery<T, R>, TypedRootQueryImplementor<R> {
 
     public ConfigurableRootQueryImpl(
             TypedQueryData data,
@@ -128,7 +129,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     public List<R> execute() {
         return getBaseQuery()
                 .getSqlClient()
-                .getSlaveConnectionManager()
+                .getSlaveConnectionManager(getData().isForUpdate())
                 .execute(this::executeImpl);
     }
 
@@ -139,13 +140,13 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         }
         return getBaseQuery()
                 .getSqlClient()
-                .getSlaveConnectionManager()
+                .getSlaveConnectionManager(getData().isForUpdate())
                 .execute(this::executeImpl);
     }
 
     private List<R> executeImpl(Connection con) {
         TypedQueryData data = getData();
-        if (getData().getLimit() == 0) {
+        if (data.getLimit() == 0) {
             return Collections.emptyList();
         }
         JSqlClient sqlClient = getBaseQuery().getSqlClient();
@@ -156,6 +157,38 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
                 sqlResult.get_1(),
                 sqlResult.get_2(),
                 data.getSelections()
+        );
+    }
+
+    @Override
+    public void forEach(Connection con, int batchSize, Consumer<R> consumer) {
+        TypedQueryData data = getData();
+        if (data.getLimit() == 0) {
+            return;
+        }
+        JSqlClient sqlClient = getBaseQuery().getSqlClient();
+        int finalBatchSize = batchSize > 0 ? batchSize : sqlClient.getDefaultBatchSize();
+        if (con != null) {
+            forEachImpl(con, finalBatchSize, consumer);
+        } else {
+            sqlClient.getSlaveConnectionManager(getData().isForUpdate()).execute(newConn -> {
+                forEachImpl(newConn, finalBatchSize, consumer);
+                return (Void) null;
+            });
+        }
+    }
+
+    private void forEachImpl(Connection con, int batchSize, Consumer<R> consumer) {
+        JSqlClient sqlClient = getBaseQuery().getSqlClient();
+        Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(sqlClient));
+        Selectors.forEach(
+                sqlClient,
+                con,
+                sqlResult.get_1(),
+                sqlResult.get_2(),
+                getData().getSelections(),
+                batchSize,
+                consumer
         );
     }
 
@@ -184,6 +217,11 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     @Override
     public TypedRootQuery<R> intersect(TypedRootQuery<R> other) {
         return new MergedTypedRootQueryImpl<>(getBaseQuery().getSqlClient(), "intersect", this, other);
+    }
+
+    @Override
+    public boolean isForUpdate() {
+        return getData().isForUpdate();
     }
 
     private static class ReselectValidator extends AstVisitor {
