@@ -101,7 +101,7 @@ internal class KSqlClientImpl(
         if (master) {
             javaClient.connectionManager
         } else {
-            javaClient.slaveConnectionManager
+            javaClient.getSlaveConnectionManager(false)
         }.execute(block)
 
     override fun caches(block: KCacheDisableDsl.() -> Unit): KSqlClient =
