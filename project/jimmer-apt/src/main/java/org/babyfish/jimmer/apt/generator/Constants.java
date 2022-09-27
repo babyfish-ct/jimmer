@@ -109,10 +109,10 @@ class Constants {
     public static final ClassName CONSUMER_CLASS_NAME =
             ClassName.get(Consumer.class);
 
-    public static final ClassName EXPRESSION_CLASS_NAME =
+    public static final ClassName PROP_EXPRESSION_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast",
-                    "Expression"
+                    "PropExpression"
             );
 
     public static final ClassName PROP_STRING_EXPRESSION_CLASS_NAME =

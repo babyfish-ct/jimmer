@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'org.babyfish.jimmer.sql.example'
-version = '0.2.12'
+version = '0.2.13'
 
 java {
 	sourceCompatibility = JavaVersion.VERSION_1_8
@@ -18,16 +18,14 @@ repositories {
 
 dependencies {
 
-	implementation 'org.babyfish.jimmer:jimmer-sql:0.2.12'
-	annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.2.12'
-	annotationProcessor 'org.projectlombok:lombok:1.18.24'
+	implementation 'org.babyfish.jimmer:jimmer-sql:0.2.13'
+	annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.2.13'
 
 	implementation 'org.springframework.boot:spring-boot-starter-graphql'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
 	implementation 'org.springframework.data:spring-data-redis'
 	implementation 'org.springframework.kafka:spring-kafka:2.9.0'
-	implementation 'org.projectlombok:lombok:1.18.24'
 
 	implementation 'com.graphql-java:graphql-java-extended-scalars:18.1'
 
