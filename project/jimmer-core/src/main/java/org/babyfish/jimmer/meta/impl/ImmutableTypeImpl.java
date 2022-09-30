@@ -3,10 +3,7 @@ package org.babyfish.jimmer.meta.impl;
 import kotlin.jvm.internal.ClassBasedDeclarationContainer;
 import kotlin.reflect.KClass;
 import org.babyfish.jimmer.Draft;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutablePropCategory;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.ModelException;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.*;
@@ -16,6 +13,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 class ImmutableTypeImpl implements ImmutableType {
 
@@ -473,7 +471,7 @@ class ImmutableTypeImpl implements ImmutableType {
                                 "\" is already exists"
                 );
             }
-            if (type.superType != null && type.getProps().containsKey(name)) {
+            if (type.superType != null && type.superType.getProps().containsKey(name)) {
                 throw new IllegalArgumentException(
                         "The property \"" +
                                 type.javaClass.getName() +
@@ -508,6 +506,21 @@ class ImmutableTypeImpl implements ImmutableType {
                 type.setIdProp(type.declaredProps.get(idPropName));
             } else if (type.superType != null) {
                 type.setIdProp(type.superType.getIdProp());
+            }
+            if (type.getIdProp() == null) {
+                List<ImmutableProp> entityAssociations = type
+                        .declaredProps
+                        .values()
+                        .stream()
+                        .filter(it -> it.isAssociation(TargetLevel.ENTITY))
+                        .collect(Collectors.toList());
+                if (!entityAssociations.isEmpty()) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    entityAssociations.get(0) +
+                                    "\", it is ORM association property but there no id in declaring type or super type"
+                    );
+                }
             }
             if (versionPropName != null) {
                 type.setVersionProp(type.declaredProps.get(versionPropName));
