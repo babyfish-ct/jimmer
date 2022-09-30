@@ -507,21 +507,6 @@ class ImmutableTypeImpl implements ImmutableType {
             } else if (type.superType != null) {
                 type.setIdProp(type.superType.getIdProp());
             }
-            if (type.getIdProp() == null) {
-                List<ImmutableProp> entityAssociations = type
-                        .declaredProps
-                        .values()
-                        .stream()
-                        .filter(it -> it.isAssociation(TargetLevel.ENTITY))
-                        .collect(Collectors.toList());
-                if (!entityAssociations.isEmpty()) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    entityAssociations.get(0) +
-                                    "\", it is ORM association property but there no id in declaring type or super type"
-                    );
-                }
-            }
             if (versionPropName != null) {
                 type.setVersionProp(type.declaredProps.get(versionPropName));
             } else if (type.superType != null) {
