@@ -9,9 +9,6 @@ import java.util.List;
 @MappedSuperclass
 public interface RoleBase {
 
-    @Id
-    long getId();
-
     @OneToMany(mappedBy = "role")
     List<Permission> getPermissions();
 }
