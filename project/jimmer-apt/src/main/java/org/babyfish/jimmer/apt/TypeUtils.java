@@ -65,6 +65,11 @@ public class TypeUtils {
         );
     }
 
+    public boolean isMappedSuperclass(TypeMirror type) {
+        Element element = types.asElement(type);
+        return element != null && element.getAnnotation(MappedSuperclass.class) != null;
+    }
+
     public boolean isEntity(TypeMirror type) {
         Element element = types.asElement(type);
         return element != null && element.getAnnotation(Entity.class) != null;
