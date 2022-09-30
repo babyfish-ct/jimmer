@@ -1,3 +1,5 @@
+drop table permission if exists;
+drop table role if exists;
 drop table book_author_mapping if exists;
 drop table author_country_mapping if exists;
 drop table book if exists;
@@ -219,3 +221,32 @@ insert into tree_node(node_id, name, parent_id) values
                     (23, 'Suit', 22),
                     (24, 'Shirt', 22)
 ;
+
+create table role(
+    id bigint not null,
+    name varchar(50) not null
+);
+alter table role
+    add constraint pk_role
+        primary key(id);
+
+create table permission(
+    id bigint not null,
+    name varchar(50) not null,
+    role_id bigint not null
+);
+alter table permission
+    add constraint pk_permission
+        primary key(id);
+alter table permission
+    add constraint fk_permission
+        foreign key(role_id)
+            references role(id);
+
+insert into role(id, name) values(1, 'r_1');
+insert into role(id, name) values(2, 'r_2');
+
+insert into permission(id, name, role_id) values(1, 'p_1', 1);
+insert into permission(id, name, role_id) values(2, 'p_2', 1);
+insert into permission(id, name, role_id) values(3, 'p_3', 2);
+insert into permission(id, name, role_id) values(4, 'p_4', 2);

@@ -230,7 +230,7 @@ public class ImplGenerator {
                     builder
                             .beginControlFlow("if (__$LLoaded)", prop.getName())
                             .addComment("If entity-id is loaded, return directly")
-                            .addStatement("return $L == other.$L()", prop.getName(), prop.getName())
+                            .addStatement("return $L == other.$L()", prop.getName(), prop.getGetterName())
                             .endControlFlow();
                 } else {
                     builder

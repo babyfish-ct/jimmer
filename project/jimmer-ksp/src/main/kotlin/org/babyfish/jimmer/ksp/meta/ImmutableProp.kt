@@ -9,6 +9,7 @@ import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.ID_FULL_NAME
 import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
 import org.babyfish.jimmer.ksp.generator.VERSION_FULL_NAME
+import org.babyfish.jimmer.meta.ModelException
 import org.babyfish.jimmer.sql.*
 import kotlin.reflect.KClass
 
@@ -65,7 +66,13 @@ class ImmutableProp(
             resolvedType.arguments[0].type!!.resolve()
         } else {
             resolvedType
-        }.declaration as KSClassDeclaration
+        }.declaration.also {
+            if (it.annotation(MappedSuperclass::class) !== null) {
+                throw ModelException(
+                    "Illegal property \"$this\", its target type \"$it\" is illegal, it cannot be type decorated by @MappedSuperclass"
+                )
+            }
+        } as KSClassDeclaration
 
     val isAssociation: Boolean =
         (targetDeclaration.classKind === ClassKind.INTERFACE)

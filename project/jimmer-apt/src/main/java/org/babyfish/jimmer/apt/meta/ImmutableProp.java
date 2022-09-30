@@ -142,6 +142,16 @@ public class ImmutableProp {
             elementType = returnType;
         }
 
+        if (typeUtils.isMappedSuperclass(elementType)) {
+            throw new MetaException(
+                    "Illegal property \"" +
+                            this +
+                            "\", the target type \"" +
+                            TypeName.get(elementType) +
+                            "\" is illegal, it cannot be type decorated by @MappedSuperclass"
+            );
+        }
+
         isTransient = executableElement.getAnnotation(Transient.class) != null;
 
         isAssociation = typeUtils.isImmutable(elementType);
