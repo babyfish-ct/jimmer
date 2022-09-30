@@ -97,11 +97,15 @@ public abstract class AbstractDataLoader {
                 );
             }
         }
+        ImmutableProp thisIdProp = prop.getDeclaringType().getIdProp();
+        if (thisIdProp == null) {
+            thisIdProp = fetcher.getImmutableType().getIdProp();
+        }
         this.sqlClient = sqlClient;
         this.con = con;
         this.prop = prop;
         this.filter = (Filter<Table<ImmutableSpi>>) filter;
-        this.thisIdProp = prop.getDeclaringType().getIdProp();
+        this.thisIdProp = thisIdProp;
         this.limit = limit;
         this.offset = offset;
         if (prop.isAssociation(TargetLevel.ENTITY)) {
