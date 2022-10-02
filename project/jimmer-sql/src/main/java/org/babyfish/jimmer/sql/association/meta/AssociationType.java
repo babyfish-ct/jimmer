@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.util.StaticCache;
 
+import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.function.BiFunction;
 
@@ -96,6 +97,9 @@ public class AssociationType implements ImmutableType {
     public Class<?> getJavaClass() {
         return Association.class;
     }
+
+    @Override
+    public Annotation getImmutableAnnotation() { return null; }
 
     @Override
     public String getTableName() {
