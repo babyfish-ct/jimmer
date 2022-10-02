@@ -118,6 +118,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
                 Field field = fetcher.negative ?
                         null :
                         new FieldImpl(
+                                immutableType,
                                 fetcher.prop,
                                 fetcher.filter,
                                 fetcher.batchSize,

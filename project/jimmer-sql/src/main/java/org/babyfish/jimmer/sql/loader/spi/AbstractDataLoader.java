@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.loader.spi;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -56,6 +57,7 @@ public abstract class AbstractDataLoader {
     protected AbstractDataLoader(
             JSqlClient sqlClient,
             Connection con,
+            ImmutableType entityType,
             ImmutableProp prop,
             Fetcher<?> fetcher,
             Filter<?> filter,
@@ -97,15 +99,40 @@ public abstract class AbstractDataLoader {
                 );
             }
         }
-        ImmutableProp thisIdProp = prop.getDeclaringType().getIdProp();
-        if (thisIdProp == null) {
-            thisIdProp = fetcher.getImmutableType().getIdProp();
-        }
         this.sqlClient = sqlClient;
         this.con = con;
         this.prop = prop;
         this.filter = (Filter<Table<ImmutableSpi>>) filter;
-        this.thisIdProp = thisIdProp;
+        if (entityType != null) {
+            if (!prop.getDeclaringType().getJavaClass().isAssignableFrom(entityType.getJavaClass())) {
+                throw new IllegalArgumentException(
+                        "The entity type \"" +
+                                entityType +
+                                "\" is does not extend declaring type of \"" +
+                                prop +
+                                "\""
+                );
+            }
+            this.thisIdProp = entityType.getIdProp();
+            if (thisIdProp == null) {
+                throw new IllegalArgumentException(
+                        "Cannot create data loader based entity type \"" +
+                                entityType +
+                                "\", it does not contain id property"
+                );
+            }
+        } else {
+            this.thisIdProp = prop.getDeclaringType().getIdProp();
+            if (thisIdProp == null) {
+                throw new IllegalArgumentException(
+                        "Cannot create data loader based property \"" +
+                                prop +
+                                "\", there is no id prop in the declaring type \"" +
+                                prop.getDeclaringType() +
+                                "\""
+                );
+            }
+        }
         this.limit = limit;
         this.offset = offset;
         if (prop.isAssociation(TargetLevel.ENTITY)) {
