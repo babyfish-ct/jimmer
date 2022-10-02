@@ -3,6 +3,7 @@ package org.babyfish.jimmer.meta.impl;
 import kotlin.jvm.internal.ClassBasedDeclarationContainer;
 import kotlin.reflect.KClass;
 import org.babyfish.jimmer.Draft;
+import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
@@ -18,6 +19,8 @@ import java.util.stream.Collectors;
 class ImmutableTypeImpl implements ImmutableType {
 
     private final Class<?> javaClass;
+
+    private final Annotation immutableAnnotation;
 
     private KClass<?> kotlinClass;
 
@@ -54,6 +57,23 @@ class ImmutableTypeImpl implements ImmutableType {
         this.superType = superType;
         this.draftFactory = draftFactory;
 
+        Entity entity = javaClass.getAnnotation(Entity.class);
+        MappedSuperclass mappedSuperclass = javaClass.getAnnotation(MappedSuperclass.class);
+        if (entity != null && mappedSuperclass != null) {
+            throw new ModelException(
+                    "Illegal type \"" +
+                            javaClass.getName() +
+                            "\", it cannot be decorated by both @Entity and @MappedSuperclass"
+            );
+        }
+        if (entity != null) {
+            immutableAnnotation = entity;
+        } else if (mappedSuperclass != null) {
+            immutableAnnotation = mappedSuperclass;
+        } else {
+            immutableAnnotation = javaClass.getAnnotation(Immutable.class);
+        }
+
         Table table = javaClass.getAnnotation(Table.class);
         tableName = table != null ? table.name() : "";
         if (tableName.isEmpty()) {
@@ -70,40 +90,54 @@ class ImmutableTypeImpl implements ImmutableType {
         this.kotlinClass = kotlinClass;
     }
 
+    @Override
     public Class<?> getJavaClass() {
         return javaClass;
     }
 
+    @Override
+    public Annotation getImmutableAnnotation() {
+        return immutableAnnotation;
+    }
+
     KClass<?> getKotlinClass() { return kotlinClass; }
 
+    @Override
     public ImmutableType getSuperType() {
         return superType;
     }
 
+    @Override
     public BiFunction<DraftContext, Object, Draft> getDraftFactory() {
         return draftFactory;
     }
 
+    @Override
     public Map<String, ImmutableProp> getDeclaredProps() {
         return declaredProps;
     }
 
+    @Override
     public ImmutableProp getIdProp() {
         return idProp;
     }
 
+    @Override
     public ImmutableProp getVersionProp() {
         return versionProp;
     }
 
+    @Override
     public Set<ImmutableProp> getKeyProps() {
         return keyProps;
     }
 
+    @Override
     public String getTableName() {
         return tableName;
     }
 
+    @Override
     public Map<String, ImmutableProp> getProps() {
         Map<String, ImmutableProp> props = this.props;
         if (props == null) {
@@ -126,6 +160,7 @@ class ImmutableTypeImpl implements ImmutableType {
         return props;
     }
 
+    @Override
     public ImmutableProp getProp(String name) {
         ImmutableProp prop = getProps().get(name);
         if (prop == null) {
@@ -136,6 +171,7 @@ class ImmutableTypeImpl implements ImmutableType {
         return prop;
     }
 
+    @Override
     public ImmutableProp getProp(int id) {
         ImmutableProp[] arr = this.getPropArr();
         if (id < 1 || id >= arr.length) {
@@ -158,6 +194,7 @@ class ImmutableTypeImpl implements ImmutableType {
         return arr;
     }
 
+    @Override
     public ImmutableProp getPropByColumnName(String columnName) {
         String scName = DatabaseIdentifiers.standardIdentifier(columnName);
         ImmutableProp prop = getColumnProps().get(scName);
@@ -199,6 +236,7 @@ class ImmutableTypeImpl implements ImmutableType {
         return cps;
     }
 
+    @Override
     public Map<String, ImmutableProp> getSelectableProps() {
         Map<String, ImmutableProp> selectableProps = this.selectableProps;
         if (selectableProps == null) {
@@ -331,6 +369,7 @@ class ImmutableTypeImpl implements ImmutableType {
         this.keyProps = Collections.unmodifiableSet(keyProps);
     }
 
+    @Override
     public IdGenerator getIdGenerator() {
         return idGenerator;
     }

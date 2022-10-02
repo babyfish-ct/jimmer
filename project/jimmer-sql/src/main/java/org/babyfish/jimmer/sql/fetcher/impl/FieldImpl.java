@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.Filter;
@@ -10,6 +11,8 @@ import org.babyfish.jimmer.sql.meta.Column;
 import java.util.StringJoiner;
 
 class FieldImpl implements Field {
+
+    private final ImmutableType entityType;
 
     private final ImmutableProp prop;
 
@@ -28,6 +31,7 @@ class FieldImpl implements Field {
     private final boolean isSimpleField;
 
     FieldImpl(
+            ImmutableType entityType,
             ImmutableProp prop,
             Filter<?> filter,
             int batchSize,
@@ -36,6 +40,7 @@ class FieldImpl implements Field {
             RecursionStrategy<?> recursionStrategy,
             FetcherImpl<?> childFetcher
     ) {
+        this.entityType = entityType;
         this.prop = prop;
         this.filter = filter;
         this.batchSize = batchSize;
@@ -44,6 +49,11 @@ class FieldImpl implements Field {
         this.recursionStrategy = recursionStrategy;
         this.childFetcher = childFetcher;
         this.isSimpleField = determineIsSimpleField();
+    }
+
+    @Override
+    public ImmutableType getEntityType() {
+        return entityType;
     }
 
     @Override

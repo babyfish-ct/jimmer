@@ -2,6 +2,8 @@ package org.babyfish.jimmer.sql.ast.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.Entity;
+import org.babyfish.jimmer.sql.MappedSuperclass;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -17,6 +19,13 @@ public interface AffectedTable {
     }
 
     static Entity of(ImmutableType type) {
+        if (!(type.getImmutableAnnotation() instanceof org.babyfish.jimmer.sql.Entity)) {
+            throw new IllegalArgumentException(
+                    "\"" +
+                            type +
+                            "\" is not entity"
+            );
+        }
         return new Entity(type);
     }
 

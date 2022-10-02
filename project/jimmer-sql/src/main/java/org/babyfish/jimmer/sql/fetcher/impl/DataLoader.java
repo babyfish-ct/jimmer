@@ -12,6 +12,7 @@ public class DataLoader extends AbstractDataLoader {
         super(
                 sqlClient,
                 con,
+                field.getEntityType(),
                 field.getProp(),
                 field.getChildFetcher(),
                 field.getFilter(),
