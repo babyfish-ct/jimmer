@@ -40,6 +40,8 @@ public interface ImmutableType {
     
     Class<?> getJavaClass();
 
+    Annotation getImmutableAnnotation();
+
     ImmutableType getSuperType();
 
     BiFunction<DraftContext, Object, Draft> getDraftFactory();
