@@ -1,9 +1,9 @@
 package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
-import org.babyfish.jimmer.sql.model.permission.PermissionFetcher;
-import org.babyfish.jimmer.sql.model.permission.RoleFetcher;
-import org.babyfish.jimmer.sql.model.permission.RoleTable;
+import org.babyfish.jimmer.sql.model.inheritance.PermissionFetcher;
+import org.babyfish.jimmer.sql.model.inheritance.RoleFetcher;
+import org.babyfish.jimmer.sql.model.inheritance.RoleTable;
 import org.junit.jupiter.api.Test;
 
 public class InheritanceQueryTest extends AbstractQueryTest {
@@ -25,8 +25,8 @@ public class InheritanceQueryTest extends AbstractQueryTest {
                     );
                     ctx.rows(
                             "[" +
-                                    "--->{\"id\":1,\"name\":\"r_1\"}," +
-                                    "--->{\"id\":2,\"name\":\"r_2\"}" +
+                                    "--->{\"name\":\"r_1\",\"id\":1}," +
+                                    "--->{\"name\":\"r_2\",\"id\":2}" +
                                     "]"
                     );
                 }
@@ -57,19 +57,19 @@ public class InheritanceQueryTest extends AbstractQueryTest {
                     ctx.rows(
                             "[" +
                                     "--->{" +
+                                    "--->--->\"name\":\"r_1\"," +
                                     "--->--->\"permissions\":[" +
                                     "--->--->--->{\"id\":1},{" +
                                     "--->--->--->\"id\":2}" +
                                     "--->--->]," +
-                                    "--->--->\"id\":1," +
-                                    "--->--->\"name\":\"r_1\"" +
+                                    "--->--->\"id\":1" +
                                     "--->},{" +
+                                    "--->--->\"name\":\"r_2\"," +
                                     "--->--->\"permissions\":[" +
                                     "--->--->--->{\"id\":3}," +
                                     "--->--->--->{\"id\":4}" +
                                     "--->--->]," +
-                                    "--->--->\"id\":2," +
-                                    "--->--->\"name\":\"r_2\"" +
+                                    "--->--->\"id\":2" +
                                     "--->}" +
                                     "]"
                     );
@@ -101,18 +101,19 @@ public class InheritanceQueryTest extends AbstractQueryTest {
                     ctx.rows(
                             "[" +
                                     "--->{" +
+                                    "--->--->\"name\":\"r_1\"," +
                                     "--->--->\"permissions\":[" +
-                                    "--->--->--->{\"id\":1,\"name\":\"p_1\"}," +
-                                    "--->--->--->{\"id\":2,\"name\":\"p_2\"}" +
+                                    "--->--->--->{\"name\":\"p_1\",\"id\":1}," +
+                                    "--->--->--->{\"name\":\"p_2\",\"id\":2}" +
                                     "--->--->]," +
-                                    "--->--->\"id\":1," +
-                                    "--->--->\"name\":\"r_1\"" +
+                                    "--->--->\"id\":1" +
                                     "--->},{" +
+                                    "--->--->\"name\":\"r_2\"," +
                                     "--->--->\"permissions\":[" +
-                                    "--->--->--->{\"id\":3,\"name\":\"p_3\"}," +
-                                    "--->--->--->{\"id\":4,\"name\":\"p_4\"}]," +
-                                    "--->--->\"id\":2," +
-                                    "--->--->\"name\":\"r_2\"" +
+                                    "--->--->--->{\"name\":\"p_3\",\"id\":3}," +
+                                    "--->--->--->{\"name\":\"p_4\",\"id\":4}" +
+                                    "--->--->]," +
+                                    "--->--->\"id\":2" +
                                     "--->}" +
                                     "]"
                     );

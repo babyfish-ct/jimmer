@@ -1,4 +1,11 @@
 package org.babyfish.jimmer.sql.kt.model.inheritance
 
-class MappedEntity {
+import org.babyfish.jimmer.sql.Key
+import org.babyfish.jimmer.sql.MappedSuperclass
+
+@MappedSuperclass
+interface NamedEntity {
+
+    @Key
+    val name: String
 }

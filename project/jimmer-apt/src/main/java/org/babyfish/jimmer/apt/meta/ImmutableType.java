@@ -139,7 +139,7 @@ public class ImmutableType {
             }
         }
 
-        int propIdSequence = superType != null ? superType.getDeclaredProps().size() : 0;
+        int propIdSequence = superType != null ? superType.getProps().size() : 0;
         Map<String, ImmutableProp> map = new LinkedHashMap<>();
         for (ExecutableElement executableElement : ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
             if (executableElement.getAnnotation(Id.class) != null) {

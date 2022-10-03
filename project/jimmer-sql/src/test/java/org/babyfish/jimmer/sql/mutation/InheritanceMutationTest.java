@@ -2,10 +2,10 @@ package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
-import org.babyfish.jimmer.sql.model.permission.Permission;
-import org.babyfish.jimmer.sql.model.permission.PermissionDraft;
-import org.babyfish.jimmer.sql.model.permission.Role;
-import org.babyfish.jimmer.sql.model.permission.RoleDraft;
+import org.babyfish.jimmer.sql.model.inheritance.Permission;
+import org.babyfish.jimmer.sql.model.inheritance.PermissionDraft;
+import org.babyfish.jimmer.sql.model.inheritance.Role;
+import org.babyfish.jimmer.sql.model.inheritance.RoleDraft;
 import org.junit.jupiter.api.Test;
 
 public class InheritanceMutationTest extends AbstractMutationTest {
@@ -36,7 +36,7 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into ROLE(ID, NAME) values(?, ?)"
+                                "insert into ROLE(NAME, ID) values(?, ?)"
                         );
                     });
                     ctx.statement(it -> {
@@ -48,7 +48,7 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into PERMISSION(ROLE_ID, ID, NAME) values(?, ?, ?)"
+                                "insert into PERMISSION(NAME, ROLE_ID, ID) values(?, ?, ?)"
                         );
                     });
                     ctx.statement(it -> {
@@ -60,37 +60,37 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into PERMISSION(ROLE_ID, ID, NAME) values(?, ?, ?)"
+                                "insert into PERMISSION(NAME, ROLE_ID, ID) values(?, ?, ?)"
                         );
                     });
                     ctx.entity(it -> {
                         it.original(
                                 "{" +
+                                        "--->\"name\":\"role\"," +
                                         "--->\"permissions\":[" +
                                         "--->--->{" +
                                         "--->--->--->\"name\":\"permission_1\"" +
                                         "--->--->},{" +
                                         "--->--->--->\"name\":\"permission_2\"" +
                                         "--->}--->" +
-                                        "--->]," +
-                                        "--->\"name\":\"role\"" +
+                                        "--->]" +
                                         "}"
                         );
                         it.modified(
                                 "{" +
+                                        "--->\"name\":\"role\"," +
                                         "--->\"permissions\":[" +
                                         "--->--->{" +
+                                        "--->--->--->\"name\":\"permission_1\"," +
                                         "--->--->--->\"role\":{\"id\":101}," +
-                                        "--->--->--->\"id\":101," +
-                                        "--->--->--->\"name\":\"permission_1\"" +
+                                        "--->--->--->\"id\":101" +
                                         "--->--->},{" +
+                                        "--->--->--->\"name\":\"permission_2\"," +
                                         "--->--->--->\"role\":{\"id\":101}," +
-                                        "--->--->--->\"id\":102," +
-                                        "--->--->--->\"name\":\"permission_2\"" +
+                                        "--->--->--->\"id\":102" +
                                         "--->--->}" +
                                         "--->]," +
-                                        "--->\"id\":101," +
-                                        "--->\"name\":\"role\"" +
+                                        "--->\"id\":101" +
                                         "}"
                         );
                     });
@@ -120,7 +120,7 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into ROLE(ID, NAME) values(?, ?)"
+                                "insert into ROLE(NAME, ID) values(?, ?)"
                         );
                     });
                     ctx.statement(it -> {
@@ -132,15 +132,15 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into PERMISSION(ROLE_ID, ID, NAME) values(?, ?, ?)"
+                                "insert into PERMISSION(NAME, ROLE_ID, ID) values(?, ?, ?)"
                         );
                     });
                     ctx.entity(it -> {
                         it.original(
-                                "{\"role\":{\"name\":\"role\"},\"name\":\"Permission\"}"
+                                "{\"name\":\"Permission\",\"role\":{\"name\":\"role\"}}"
                         );
                         it.modified(
-                                "{\"role\":{\"id\":101,\"name\":\"role\"},\"id\":101,\"name\":\"Permission\"}"
+                                "{\"name\":\"Permission\",\"role\":{\"name\":\"role\",\"id\":101},\"id\":101}"
                         );
                     });
                     ctx.rowCount(AffectedTable.of(Role.class), 1);

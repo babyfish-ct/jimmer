@@ -1,4 +1,14 @@
 package org.babyfish.jimmer.sql.kt.model.inheritance
 
-class Permission {
+import org.babyfish.jimmer.sql.Entity
+import org.babyfish.jimmer.sql.GeneratedValue
+import org.babyfish.jimmer.sql.GenerationType
+import org.babyfish.jimmer.sql.Id
+
+@Entity
+interface Permission : PermissionBase {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long
 }
