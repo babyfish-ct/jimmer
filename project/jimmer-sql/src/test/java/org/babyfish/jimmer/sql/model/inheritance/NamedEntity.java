@@ -1,9 +1,11 @@
 package org.babyfish.jimmer.sql.model.inheritance;
 
+import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.MappedSuperclass;
 
 @MappedSuperclass
-public interface Named {
+public interface NamedEntity {
 
-    String name();
+    @Key
+    String getName();
 }

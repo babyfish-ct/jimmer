@@ -544,7 +544,10 @@ class ImmutableTypeImpl implements ImmutableType {
             if (idPropName != null) {
                 type.setIdProp(type.declaredProps.get(idPropName));
             } else if (type.superType != null) {
-                type.setIdProp(type.superType.getIdProp());
+                ImmutableProp superIdProp = type.superType.getIdProp();
+                if (superIdProp != null) {
+                    type.setIdProp(superIdProp);
+                }
             }
             if (versionPropName != null) {
                 type.setVersionProp(type.declaredProps.get(versionPropName));

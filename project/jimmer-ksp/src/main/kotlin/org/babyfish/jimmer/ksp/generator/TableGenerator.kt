@@ -50,10 +50,10 @@ class TableGenerator(
                     )
                     val type = ctx.typeOf(modelClassDeclaration)
                     for (prop in type.properties.values) {
-                        addProp(prop, nonNullTable = false, outerJoin = false)
-                        addProp(prop, nonNullTable = true, outerJoin = false)
-                        addProp(prop, nonNullTable = false, outerJoin = true)
-                        addProp(prop, nonNullTable = true, outerJoin = true)
+                        addProp(type, prop, nonNullTable = false, outerJoin = false)
+                        addProp(type, prop, nonNullTable = true, outerJoin = false)
+                        addProp(type, prop, nonNullTable = false, outerJoin = true)
+                        addProp(type, prop, nonNullTable = true, outerJoin = true)
                     }
                     addFetchByFun(type, false)
                     addFetchByFun(type, true)
@@ -65,6 +65,7 @@ class TableGenerator(
     }
 
     private fun FileSpec.Builder.addProp(
+        type: ImmutableType,
         prop: ImmutableProp,
         nonNullTable: Boolean,
         outerJoin: Boolean
@@ -99,7 +100,7 @@ class TableGenerator(
                 else -> K_TABLE_CLASS_NAME
             }
         }.parameterizedBy(
-            prop.declaringType.className
+            type.className
         )
 
         val propName = if (outerJoin) "${prop.name}?" else prop.name
