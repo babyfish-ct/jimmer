@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.event.binlog;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -35,7 +36,9 @@ public class BinLogParser {
         ObjectMapper clonedMapper = mapper != null ?
                 new ObjectMapper(mapper) {} :
                 new ObjectMapper();
-        clonedMapper.registerModule(new BinLogModule(scalarProviderMap));
+        clonedMapper
+                .registerModule(new BinLogModule(scalarProviderMap))
+                .registerModule(new JavaTimeModule());
         this.mapper = clonedMapper;
     }
 
