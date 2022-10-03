@@ -150,7 +150,7 @@ public class AbstractTest {
         autoIdMap.put(entityType, new AutoIds(Arrays.asList(args.clone())));
     }
 
-    private Object autoId(Class<?> entityType) {
+    protected Object autoId(Class<?> entityType) {
         AutoIds autoIds = autoIdMap.get(entityType);
         if (autoIds == null) {
             throw new IllegalStateException("No prepared auto ids for \"" + entityType.getName() + "\"");

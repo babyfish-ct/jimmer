@@ -15,7 +15,7 @@ public class InheritanceQueryTest extends AbstractQueryTest {
                     return q.select(
                             role.fetch(
                                     RoleFetcher.$
-                                            .allScalarFields()
+                                            .name()
                             )
                     );
                 }),
@@ -40,7 +40,7 @@ public class InheritanceQueryTest extends AbstractQueryTest {
                     return q.select(
                             role.fetch(
                                     RoleFetcher.$
-                                            .allScalarFields()
+                                            .name()
                                             .permissions()
                             )
                     );
@@ -84,9 +84,9 @@ public class InheritanceQueryTest extends AbstractQueryTest {
                     return q.select(
                             role.fetch(
                                     RoleFetcher.$
-                                            .allScalarFields()
+                                            .name()
                                             .permissions(
-                                                    PermissionFetcher.$.allScalarFields()
+                                                    PermissionFetcher.$.name()
                                             )
                             )
                     );

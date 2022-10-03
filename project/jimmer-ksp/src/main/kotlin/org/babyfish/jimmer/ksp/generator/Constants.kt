@@ -2,10 +2,7 @@ package org.babyfish.jimmer.ksp.generator
 
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.asClassName
-import org.babyfish.jimmer.CircularReferenceException
-import org.babyfish.jimmer.DraftConsumer
-import org.babyfish.jimmer.ImmutableObjects
-import org.babyfish.jimmer.UnloadedException
+import org.babyfish.jimmer.*
 import org.babyfish.jimmer.meta.ImmutablePropCategory
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.*
@@ -33,6 +30,7 @@ internal val IMMUTABLE_SPI_CLASS_NAME = ImmutableSpi::class.asClassName()
 internal val IMMUTABLE_OBJECTS_CLASS_NAME = ImmutableObjects::class.asClassName()
 internal val UNLOADED_EXCEPTION_CLASS_NAME = UnloadedException::class.asClassName()
 internal val SYSTEM_CLASS_NAME = System::class.asClassName()
+internal val DRAFT_CLASS_NAME = Draft::class.asClassName()
 internal val DRAFT_SPI_CLASS_NAME = DraftSpi::class.asClassName()
 internal val DRAFT_CONTEXT_CLASS_NAME = DraftContext::class.asClassName()
 internal val NON_SHARED_LIST_CLASS_NAME = NonSharedList::class.asClassName()

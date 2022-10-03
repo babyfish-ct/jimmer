@@ -68,7 +68,7 @@ class DraftGenerator(
                 .apply {
                     type.superType?.let {
                         addSuperinterface(it.draftClassName)
-                    }
+                    } ?: addSuperinterface(DRAFT_CLASS_NAME)
                 }
                 .addSuperinterface(type.className)
                 .apply {
