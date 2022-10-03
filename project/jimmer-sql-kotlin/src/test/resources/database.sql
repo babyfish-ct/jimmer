@@ -1,3 +1,5 @@
+drop table permission if exists;
+drop table role if exists;
 drop table book_author_mapping if exists;
 drop table author_country_mapping if exists;
 drop table book if exists;
@@ -255,3 +257,32 @@ insert into primitive(
     (1, true, true, 'X', 'X', 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8),
     (2, true, null, 'X', null, 3, null, 4, null, 5, null, 6, null, 7, null, 8, null)
 ;
+
+create table role(
+    id bigint not null,
+    name varchar(50) not null
+);
+alter table role
+    add constraint pk_role
+        primary key(id);
+
+create table permission(
+    id bigint not null,
+    name varchar(50) not null,
+    role_id bigint not null
+);
+alter table permission
+    add constraint pk_permission
+        primary key(id);
+alter table permission
+    add constraint fk_permission
+        foreign key(role_id)
+            references role(id);
+
+insert into role(id, name) values(1, 'r_1');
+insert into role(id, name) values(2, 'r_2');
+
+insert into permission(id, name, role_id) values(1, 'p_1', 1);
+insert into permission(id, name, role_id) values(2, 'p_2', 1);
+insert into permission(id, name, role_id) values(3, 'p_3', 2);
+insert into permission(id, name, role_id) values(4, 'p_4', 2);
