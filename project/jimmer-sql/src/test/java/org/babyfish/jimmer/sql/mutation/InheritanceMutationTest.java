@@ -1,21 +1,60 @@
 package org.babyfish.jimmer.sql.mutation;
 
+import org.babyfish.jimmer.ImmutableObjects;
+import org.babyfish.jimmer.sql.DraftInterceptor;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
-import org.babyfish.jimmer.sql.model.inheritance.Permission;
-import org.babyfish.jimmer.sql.model.inheritance.PermissionDraft;
-import org.babyfish.jimmer.sql.model.inheritance.Role;
-import org.babyfish.jimmer.sql.model.inheritance.RoleDraft;
+import org.babyfish.jimmer.sql.meta.UserIdGenerator;
+import org.babyfish.jimmer.sql.model.inheritance.*;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 public class InheritanceMutationTest extends AbstractMutationTest {
+
+    private static final DateTimeFormatter FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    private static final LocalDateTime CREATED_TIME =
+            LocalDateTime.parse("2022-10-03 00:00:00", FORMATTER);
+
+    private static final LocalDateTime MODIFIED_TIME =
+            LocalDateTime.parse("2022-10-03 00:10:00", FORMATTER);
+
+    private final static DraftInterceptor<NamedEntityDraft> INTERCEPTOR =
+            new DraftInterceptor<NamedEntityDraft>() {
+                @Override
+                public void beforeSave(@NotNull NamedEntityDraft draft, boolean isNew) {
+                    if (!ImmutableObjects.isLoaded(draft, NamedEntityProps.MODIFIED_TIME)) {
+                        draft.setModifiedTime(MODIFIED_TIME);
+                    }
+                    if (isNew && !ImmutableObjects.isLoaded(draft, NamedEntityProps.CREATED_TIME)) {
+                        draft.setCreatedTime(CREATED_TIME);
+                    }
+                }
+            };
+
+    private JSqlClient sqlClient;
+
+    @BeforeEach
+    public void initialize() {
+        sqlClient = getSqlClient(it -> {
+            UserIdGenerator idGenerator = this::autoId;
+            it.setIdGenerator(idGenerator);
+            it.addDraftInterceptor(INTERCEPTOR);
+        });
+    }
 
     @Test
     public void testSaveRole() {
         setAutoIds(Role.class, 101L);
         setAutoIds(Permission.class, 101L, 102L);
         executeAndExpectResult(
-                getSqlClient().getEntities().saveCommand(
+                sqlClient.getEntities().saveCommand(
                         RoleDraft.$.produce(role -> {
                             role.setName("role");
                             role.addIntoPermissions(permission -> {
@@ -36,7 +75,7 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into ROLE(NAME, ID) values(?, ?)"
+                                "insert into ROLE(NAME, CREATED_TIME, MODIFIED_TIME, ID) values(?, ?, ?, ?)"
                         );
                     });
                     ctx.statement(it -> {
@@ -48,7 +87,8 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into PERMISSION(NAME, ROLE_ID, ID) values(?, ?, ?)"
+                                "insert into PERMISSION(NAME, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) " +
+                                        "values(?, ?, ?, ?, ?)"
                         );
                     });
                     ctx.statement(it -> {
@@ -60,7 +100,8 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into PERMISSION(NAME, ROLE_ID, ID) values(?, ?, ?)"
+                                "insert into PERMISSION(NAME, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) " +
+                                        "values(?, ?, ?, ?, ?)"
                         );
                     });
                     ctx.entity(it -> {
@@ -79,13 +120,19 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                         it.modified(
                                 "{" +
                                         "--->\"name\":\"role\"," +
+                                        "--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                         "--->\"permissions\":[" +
                                         "--->--->{" +
                                         "--->--->--->\"name\":\"permission_1\"," +
+                                        "--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                         "--->--->--->\"role\":{\"id\":101}," +
                                         "--->--->--->\"id\":101" +
                                         "--->--->},{" +
                                         "--->--->--->\"name\":\"permission_2\"," +
+                                        "--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                         "--->--->--->\"role\":{\"id\":101}," +
                                         "--->--->--->\"id\":102" +
                                         "--->--->}" +
@@ -105,7 +152,7 @@ public class InheritanceMutationTest extends AbstractMutationTest {
         setAutoIds(Role.class, 101L);
         setAutoIds(Permission.class, 101L);
         executeAndExpectResult(
-                getSqlClient().getEntities().saveCommand(
+                sqlClient.getEntities().saveCommand(
                         PermissionDraft.$.produce(permission -> {
                             permission.setName("Permission")
                                     .setRole(role -> role.setName("role"));
@@ -120,7 +167,8 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into ROLE(NAME, ID) values(?, ?)"
+                                "insert into ROLE(NAME, CREATED_TIME, MODIFIED_TIME, ID) " +
+                                        "values(?, ?, ?, ?)"
                         );
                     });
                     ctx.statement(it -> {
@@ -132,7 +180,8 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into PERMISSION(NAME, ROLE_ID, ID) values(?, ?, ?)"
+                                "insert into PERMISSION(NAME, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) " +
+                                        "values(?, ?, ?, ?, ?)"
                         );
                     });
                     ctx.entity(it -> {
@@ -140,7 +189,18 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                                 "{\"name\":\"Permission\",\"role\":{\"name\":\"role\"}}"
                         );
                         it.modified(
-                                "{\"name\":\"Permission\",\"role\":{\"name\":\"role\",\"id\":101},\"id\":101}"
+                                "{" +
+                                        "--->\"name\":\"Permission\"," +
+                                        "--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->\"role\":{" +
+                                        "--->--->\"name\":\"role\"," +
+                                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->\"id\":101" +
+                                        "}," +
+                                        "--->\"id\":101" +
+                                        "}"
                         );
                     });
                     ctx.rowCount(AffectedTable.of(Role.class), 1);

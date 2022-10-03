@@ -37,8 +37,12 @@ public class DraftGenerator {
     public void generate() {
         typeBuilder = TypeSpec
                 .interfaceBuilder(type.getName() + "Draft")
-                .addSuperinterface(type.getClassName())
-                .addSuperinterface(Draft.class);
+                .addSuperinterface(type.getClassName());
+        if (type.getSuperType() != null) {
+            typeBuilder.addSuperinterface(type.getSuperType().getDraftClassName());
+        } else {
+            typeBuilder.addSuperinterface(Draft.class);
+        }
         addMembers(type);
         try {
             JavaFile
