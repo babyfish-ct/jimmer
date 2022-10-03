@@ -141,7 +141,7 @@ alter table tree_node
             references tree_node(node_id);
 
 insert into tree_node(
-    node_id, name, parent_id, , created_time, modified_time
+    node_id, name, parent_id, created_time, modified_time
 ) values
     (1, 'Home', null, current_timestamp(), current_timestamp()),
         (2, 'Food', 1, current_timestamp(), current_timestamp()),

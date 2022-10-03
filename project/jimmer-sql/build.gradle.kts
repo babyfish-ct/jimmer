@@ -21,6 +21,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.7.10")
     implementation("org.jetbrains:annotations:23.0.0")
     implementation("org.apache.commons:commons-lang3:3.12.0")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3")
 
     testAnnotationProcessor(project(":jimmer-apt"))
     
