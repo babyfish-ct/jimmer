@@ -483,35 +483,28 @@ class JSqlClientImpl implements JSqlClient {
         public Builder addDraftInterceptors(Collection<DraftInterceptor<?>> interceptors) {
             for (DraftInterceptor<?> interceptor : interceptors) {
                 if (interceptor != null) {
-                    Type draftType = TypeUtils
+                    Collection<Type> types = TypeUtils
                             .getTypeArguments(
                                     interceptor.getClass(),
                                     DraftInterceptor.class
                             )
-                            .values()
-                            .iterator()
-                            .next();
+                            .values();
+                    if (types.isEmpty()) {
+                        throw new IllegalArgumentException(
+                                "Illegal draft interceptor type \"" +
+                                        interceptor.getClass().getName() +
+                                        "\", it extends \"DraftInterceptor\" but the generic type is not specified"
+                        );
+                    }
+                    Type draftType = types.iterator().next();
                     if (!(draftType instanceof Class<?>) || !((Class<?>) draftType).isInterface()) {
                         throw new IllegalArgumentException(
                                 "Illegal draft interceptor type \"" +
                                         interceptor.getClass().getName() +
-                                        "\", its generic type is not an interface type"
+                                        "\", it extends \"DraftInterceptor\" but the generic type is not draft interface type"
                         );
                     }
                     ImmutableType immutableType = ImmutableType.get((Class<?>) draftType);
-                    draftInterceptorMap
-                            .computeIfAbsent(immutableType, it -> new ArrayList<>())
-                            .add(interceptor);
-                }
-            }
-            return this;
-        }
-
-        @Override
-        public Builder addDraftInterceptors(Class<? extends Draft> draftType, Collection<DraftInterceptor<?>> interceptors) {
-            for (DraftInterceptor<?> interceptor : interceptors) {
-                if (interceptor != null) {
-                    ImmutableType immutableType = ImmutableType.get(draftType);
                     draftInterceptorMap
                             .computeIfAbsent(immutableType, it -> new ArrayList<>())
                             .add(interceptor);

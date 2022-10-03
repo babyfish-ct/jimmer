@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.kt
 
-import org.babyfish.jimmer.Draft
 import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.sql.DraftInterceptor
@@ -59,35 +58,16 @@ class KSqlClientDsl internal constructor(
         }
     }
 
-    inline fun <reified D: Draft> addDraftInterceptor(noinline block: (D, Boolean) -> Unit) {
-        addDraftInterceptors(D::class, listOf(block))
+    fun addDraftInterceptor(interceptor: DraftInterceptor<*>) {
+        javaBuilder.addDraftInterceptor(interceptor)
     }
 
-    inline fun <reified D: Draft> addDraftInterceptors(vararg blocks: (D, Boolean) -> Unit) {
-        addDraftInterceptors(D::class, blocks.toList())
+    fun addDraftInterceptors(vararg interceptors: DraftInterceptor<*>) {
+        javaBuilder.addDraftInterceptors(*interceptors)
     }
 
-    inline fun <reified D: Draft> addDraftInterceptors(blocks: Collection<(D, Boolean) -> Unit>) {
-        addDraftInterceptors(D::class, blocks)
-    }
-
-    fun <D: Draft> addDraftInterceptor(draftType: KClass<D>, block: (D, Boolean) -> Unit) {
-        addDraftInterceptors(draftType, listOf(block))
-    }
-
-    fun <D: Draft> addDraftInterceptors(draftType: KClass<D>, vararg blocks: (D, Boolean) -> Unit) {
-        addDraftInterceptors(draftType, blocks.toList())
-    }
-
-    fun <D: Draft> addDraftInterceptors(draftType: KClass<D>, blocks: Collection<(D, Boolean) -> Unit>) {
-        javaBuilder.addDraftInterceptors(
-            draftType.java,
-            blocks.map {
-                DraftInterceptor<D> { draft, isNew ->
-                    it(draft, isNew)
-                }
-            }
-        )
+    fun addDraftInterceptors(interceptor: List<DraftInterceptor<*>>) {
+        javaBuilder.addDraftInterceptors(interceptor)
     }
 
     @DslScope

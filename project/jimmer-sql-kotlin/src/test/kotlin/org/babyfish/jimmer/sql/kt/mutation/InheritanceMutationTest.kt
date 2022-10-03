@@ -18,14 +18,7 @@ class InheritanceMutationTest : AbstractMutationTest() {
         sqlClient {
             setIdGenerator(Role::class, PreparedIdGenerator(101L))
             setIdGenerator(Permission::class, PreparedIdGenerator(101L, 102L))
-            addDraftInterceptor<NamedEntityDraft> { draft, isNew ->
-                if (!isLoaded(draft, NamedEntity::modifiedTime)) {
-                    draft.modifiedTime = MODIFIED_TIME
-                }
-                if (isNew && !isLoaded(draft, NamedEntity::createdTime)) {
-                    draft.createdTime = CREATED_TIME
-                }
-            }
+            addDraftInterceptor(NamedEntityDraftInterceptor)
         }
 
     @Test
@@ -178,8 +171,10 @@ class InheritanceMutationTest : AbstractMutationTest() {
         private val CREATED_TIME = LocalDateTime.parse("2022-10-03 00:00:00", FORMATTER)
 
         private val MODIFIED_TIME = LocalDateTime.parse("2022-10-03 00:10:00", FORMATTER)
+    }
 
-        private val INTERCEPTOR: DraftInterceptor<NamedEntityDraft> = DraftInterceptor { draft, isNew ->
+    private object NamedEntityDraftInterceptor : DraftInterceptor<NamedEntityDraft> {
+        override fun beforeSave(draft: NamedEntityDraft, isNew: Boolean) {
             if (!isLoaded(draft, NamedEntity::modifiedTime)) {
                 draft.modifiedTime = MODIFIED_TIME
             }
