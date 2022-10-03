@@ -8,7 +8,7 @@ import javax.validation.constraints.Null;
 import java.util.List;
 
 @Entity
-public interface TreeNode {
+public interface TreeNode extends CommonEntity {
 
     @Id
     @Column(name = "NODE_ID")

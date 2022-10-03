@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql;
 
-import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
@@ -164,9 +163,6 @@ public interface JSqlClient {
 
         @OldChain
         Builder addDraftInterceptors(Collection<DraftInterceptor<?>> interceptors);
-
-        @OldChain
-        Builder addDraftInterceptors(Class<? extends Draft> draftType, Collection<DraftInterceptor<?>> interceptors);
 
         JSqlClient build();
     }
