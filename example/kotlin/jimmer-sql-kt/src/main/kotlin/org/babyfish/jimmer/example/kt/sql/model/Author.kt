@@ -3,7 +3,7 @@ package org.babyfish.jimmer.example.kt.sql.model
 import org.babyfish.jimmer.sql.*
 
 @Entity
-interface Author {
+interface Author : CommonEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -5,7 +5,7 @@ import java.math.BigDecimal
 import javax.validation.constraints.NotBlank
 
 @Entity
-interface BookStore {
+interface BookStore : CommonEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

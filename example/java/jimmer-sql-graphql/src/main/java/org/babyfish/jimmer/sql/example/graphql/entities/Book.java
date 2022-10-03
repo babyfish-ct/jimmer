@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
-public interface Book {
+public interface Book extends CommonEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
