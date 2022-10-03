@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.ManyToOne;
 import org.babyfish.jimmer.sql.MappedSuperclass;
 
 @MappedSuperclass
-public interface PermissionBase {
+public interface PermissionBase extends NamedEntity {
 
     @ManyToOne
     Role getRole();
