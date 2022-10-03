@@ -47,6 +47,7 @@ class ImmutableType(
     val superType: ImmutableType ?=
         classDeclaration
             .superTypes
+            .map { it.resolve().declaration }
             .filterIsInstance<KSClassDeclaration>()
             .filter {
                 it.classKind == ClassKind.INTERFACE &&
@@ -62,7 +63,7 @@ class ImmutableType(
                 }
             }
             .firstOrNull()
-            ?.let { 
+            ?.let {
                 ctx.typeOf(it)
             }
 
@@ -124,7 +125,7 @@ class ImmutableType(
         .values
         .filter { it.isId }
         .let {
-            if (it.isEmpty() && isSqlType) {
+            if (it.isEmpty() && isEntity) {
                 throw MetaException("No id property is declared in '$classDeclaration'")
             }
             if (it.size > 1) {

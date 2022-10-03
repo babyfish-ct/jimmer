@@ -1,13 +1,12 @@
-package org.babyfish.jimmer.sql.model.permission;
+package org.babyfish.jimmer.sql.model.inheritance;
 
-import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.MappedSuperclass;
 import org.babyfish.jimmer.sql.OneToMany;
 
 import java.util.List;
 
 @MappedSuperclass
-public interface RoleBase {
+public interface RoleBase extends NamedEntity {
 
     @OneToMany(mappedBy = "role")
     List<Permission> getPermissions();

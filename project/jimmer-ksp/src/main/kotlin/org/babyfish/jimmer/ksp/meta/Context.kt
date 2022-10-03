@@ -33,9 +33,10 @@ class Context(
     private val typeMap = mutableMapOf<KSClassDeclaration, ImmutableType>()
 
     fun typeOf(classDeclaration: KSClassDeclaration): ImmutableType =
-        typeMap.computeIfAbsent(classDeclaration) {
-            ImmutableType(this, it)
-        }
+        typeMap[classDeclaration] ?:
+            ImmutableType(this, classDeclaration).also {
+                typeMap[classDeclaration] = it
+            }
 
     fun typeAnnotationOf(classDeclaration: KSClassDeclaration): KSAnnotation? {
         val entity = classDeclaration.annotation(Entity::class)

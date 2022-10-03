@@ -65,7 +65,7 @@ class ProducerGenerator(
     private fun CodeBlock.Builder.refSuperType() {
         val superType = type.superType
         if (superType !== null) {
-            add("%T.type", superType.draftClassName("Producer"))
+            add("%T.type", superType.draftClassName("$"))
         } else {
             add("null")
         }
