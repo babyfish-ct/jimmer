@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.example.cache;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.ValueSerializer;
@@ -86,10 +88,11 @@ public class RedisBinder<K, V> implements SimpleBinder<K, V> {
         }
         this.duration = duration;
         this.randomPercent = randomPercent;
+        ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
         if (type != null) {
-            valueSerializer = new ValueSerializer<>(type);
+            valueSerializer = new ValueSerializer<>(type, mapper);
         } else {
-            valueSerializer = new ValueSerializer<>(prop);
+            valueSerializer = new ValueSerializer<>(prop, mapper);
         }
     }
 

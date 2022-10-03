@@ -6,7 +6,7 @@ import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Positive
 
 @Entity
-interface Book {
+interface Book : CommonEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

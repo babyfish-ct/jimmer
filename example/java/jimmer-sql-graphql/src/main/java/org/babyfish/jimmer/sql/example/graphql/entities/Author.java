@@ -6,7 +6,7 @@ import javax.validation.constraints.NotBlank;
 import java.util.List;
 
 @Entity
-public interface Author {
+public interface Author extends CommonEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
