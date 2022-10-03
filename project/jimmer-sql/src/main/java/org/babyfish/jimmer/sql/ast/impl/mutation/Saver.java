@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -7,6 +8,7 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.OptimisticLockException;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
@@ -264,6 +266,8 @@ class Saver {
     @SuppressWarnings("unchecked")
     private void insert(DraftSpi draftSpi) {
 
+        callInterceptor(draftSpi, true);
+
         ImmutableType type = draftSpi.__type();
         IdGenerator idGenerator = data.getSqlClient().getIdGenerator(type.getJavaClass());
         Object id = draftSpi.__isLoaded(type.getIdProp().getId()) ?
@@ -402,6 +406,8 @@ class Saver {
 
     private void update(DraftSpi draftSpi, boolean excludeKeyProps) {
 
+        callInterceptor(draftSpi, false);
+
         ImmutableType type = draftSpi.__type();
 
         Set<ImmutableProp> excludeProps = null;
@@ -509,6 +515,27 @@ class Saver {
                     version,
                     path
             );
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void callInterceptor(DraftSpi draftSpi, boolean insert) {
+        ImmutableType type = draftSpi.__type();
+        DraftInterceptor<?> interceptor = data.getSqlClient().getDraftInterceptor(type);
+        if (interceptor != null) {
+            int idPropId = type.getIdProp().getId();
+            Object id = draftSpi.__isLoaded(idPropId) ?
+                    draftSpi.__get(type.getIdProp().getId()) :
+                    null;
+            ((DraftInterceptor<Draft>) interceptor).beforeSave(draftSpi, insert);
+            if (id != null) {
+                if (!draftSpi.__isLoaded(idPropId)) {
+                    throw new IllegalStateException("Draft interceptor cannot be used to unload id");
+                }
+                if (!id.equals(draftSpi.__get(idPropId))) {
+                    throw new IllegalStateException("Draft interceptor cannot be used to change id");
+                }
+            }
         }
     }
 

@@ -1,8 +1,10 @@
 package org.babyfish.jimmer.sql;
 
+import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
@@ -25,6 +27,7 @@ import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
+import java.util.Collection;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -119,6 +122,8 @@ public interface JSqlClient {
 
     TransientResolver<?, ?> getResolver(ImmutableProp prop);
 
+    DraftInterceptor<?> getDraftInterceptor(ImmutableType type);
+
     interface Builder {
 
         @OldChain
@@ -150,6 +155,18 @@ public interface JSqlClient {
 
         @OldChain
         Builder setCaches(Consumer<CacheConfig> block);
+
+        @OldChain
+        Builder addDraftInterceptor(DraftInterceptor<?> interceptor);
+
+        @OldChain
+        Builder addDraftInterceptors(DraftInterceptor<?>... interceptors);
+
+        @OldChain
+        Builder addDraftInterceptors(Collection<DraftInterceptor<?>> interceptors);
+
+        @OldChain
+        Builder addDraftInterceptors(Class<? extends Draft> draftType, Collection<DraftInterceptor<?>> interceptors);
 
         JSqlClient build();
     }
