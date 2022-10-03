@@ -13,7 +13,7 @@ class InheritanceQueryTest : AbstractQueryTest() {
             sqlClient.createQuery(Role::class) {
                 select(
                     table.fetchBy {
-                        allScalarFields()
+                        name()
                     }
                 )
             }
@@ -33,7 +33,7 @@ class InheritanceQueryTest : AbstractQueryTest() {
             sqlClient.createQuery(Role::class) {
                 select(
                     table.fetchBy {
-                        allScalarFields()
+                        name()
                         permissions()
                     }
                 )
@@ -62,9 +62,9 @@ class InheritanceQueryTest : AbstractQueryTest() {
             sqlClient.createQuery(Role::class) {
                 select(
                     table.fetchBy {
-                        allScalarFields()
+                        name()
                         permissions {
-                            allScalarFields()
+                            name()
                         }
                     }
                 )

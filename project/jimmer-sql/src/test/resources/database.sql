@@ -224,7 +224,9 @@ insert into tree_node(node_id, name, parent_id) values
 
 create table role(
     id bigint not null,
-    name varchar(50) not null
+    name varchar(50) not null,
+    created_time timestamp not null,
+    modified_time timestamp not null
 );
 alter table role
     add constraint pk_role
@@ -233,7 +235,9 @@ alter table role
 create table permission(
     id bigint not null,
     name varchar(50) not null,
-    role_id bigint not null
+    role_id bigint not null,
+    created_time timestamp not null,
+    modified_time timestamp not null
 );
 alter table permission
     add constraint pk_permission
@@ -243,10 +247,16 @@ alter table permission
         foreign key(role_id)
             references role(id);
 
-insert into role(id, name) values(1, 'r_1');
-insert into role(id, name) values(2, 'r_2');
+insert into role(id, name, created_time, modified_time)
+    values(1, 'r_1', '2022-10-03 00:00:00', '2022-10-03 00:10:00');
+insert into role(id, name, created_time, modified_time)
+    values(2, 'r_2', '2022-10-03 00:00:00', '2022-10-03 00:10:00');
 
-insert into permission(id, name, role_id) values(1, 'p_1', 1);
-insert into permission(id, name, role_id) values(2, 'p_2', 1);
-insert into permission(id, name, role_id) values(3, 'p_3', 2);
-insert into permission(id, name, role_id) values(4, 'p_4', 2);
+insert into permission(id, name, role_id, created_time, modified_time)
+    values(1, 'p_1', 1, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
+insert into permission(id, name, role_id, created_time, modified_time)
+    values(2, 'p_2', 1, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
+insert into permission(id, name, role_id, created_time, modified_time)
+    values(3, 'p_3', 2, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
+insert into permission(id, name, role_id, created_time, modified_time)
+    values(4, 'p_4', 2, '2022-10-03 00:00:00', '2022-10-03 00:10:00');

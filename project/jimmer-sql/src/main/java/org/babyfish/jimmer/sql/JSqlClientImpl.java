@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql;
 
+import org.apache.commons.lang3.reflect.TypeUtils;
+import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -31,14 +33,16 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggersImpl;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.jetbrains.annotations.NotNull;
 
+import java.lang.reflect.Type;
 import java.sql.Connection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 class JSqlClientImpl implements JSqlClient {
 
@@ -73,6 +77,8 @@ class JSqlClientImpl implements JSqlClient {
 
     private final TransientResolverManager transientResolverManager;
 
+    private final DraftInterceptorManager draftInterceptorManager;
+
     private JSqlClientImpl(
             ConnectionManager connectionManager,
             ConnectionManager slaveConnectionManager,
@@ -85,8 +91,8 @@ class JSqlClientImpl implements JSqlClient {
             Entities entities,
             Caches caches,
             Triggers triggers,
-            TransientResolverManager transientResolverManager
-    ) {
+            TransientResolverManager transientResolverManager,
+            DraftInterceptorManager draftInterceptorManager) {
         this.connectionManager =
                 connectionManager != null ?
                         connectionManager :
@@ -117,6 +123,7 @@ class JSqlClientImpl implements JSqlClient {
                 transientResolverManager != null ?
                         transientResolverManager :
                         createTransientResolverManager();
+        this.draftInterceptorManager = draftInterceptorManager;
     }
 
     @Override
@@ -297,7 +304,8 @@ class JSqlClientImpl implements JSqlClient {
                 entities,
                 new CachesImpl((CachesImpl) caches, cfg),
                 triggers,
-                transientResolverManager
+                transientResolverManager,
+                draftInterceptorManager
         );
     }
 
@@ -318,13 +326,19 @@ class JSqlClientImpl implements JSqlClient {
                 entities,
                 caches,
                 triggers,
-                transientResolverManager
+                transientResolverManager,
+                draftInterceptorManager
         );
     }
 
     @Override
     public TransientResolver<?, ?> getResolver(ImmutableProp prop) {
         return transientResolverManager.get(prop);
+    }
+
+    @Override
+    public DraftInterceptor<?> getDraftInterceptor(ImmutableType type) {
+        return draftInterceptorManager.get(type);
     }
 
     private TransientResolverManager createTransientResolverManager() {
@@ -367,6 +381,9 @@ class JSqlClientImpl implements JSqlClient {
         private Caches caches;
 
         private final Triggers triggers = new TriggersImpl();
+
+        private final Map<ImmutableType, List<DraftInterceptor<?>>> draftInterceptorMap =
+                new HashMap<>();
 
         public BuilderImpl() {}
 
@@ -453,6 +470,57 @@ class JSqlClientImpl implements JSqlClient {
         }
 
         @Override
+        public Builder addDraftInterceptor(DraftInterceptor<?> interceptor) {
+            return addDraftInterceptors(Collections.singletonList(interceptor));
+        }
+
+        @Override
+        public Builder addDraftInterceptors(DraftInterceptor<?>... interceptors) {
+            return addDraftInterceptors(Arrays.asList(interceptors));
+        }
+
+        @Override
+        public Builder addDraftInterceptors(Collection<DraftInterceptor<?>> interceptors) {
+            for (DraftInterceptor<?> interceptor : interceptors) {
+                if (interceptor != null) {
+                    Type draftType = TypeUtils
+                            .getTypeArguments(
+                                    interceptor.getClass(),
+                                    DraftInterceptor.class
+                            )
+                            .values()
+                            .iterator()
+                            .next();
+                    if (!(draftType instanceof Class<?>) || !((Class<?>) draftType).isInterface()) {
+                        throw new IllegalArgumentException(
+                                "Illegal draft interceptor type \"" +
+                                        interceptor.getClass().getName() +
+                                        "\", its generic type is not an interface type"
+                        );
+                    }
+                    ImmutableType immutableType = ImmutableType.get((Class<?>) draftType);
+                    draftInterceptorMap
+                            .computeIfAbsent(immutableType, it -> new ArrayList<>())
+                            .add(interceptor);
+                }
+            }
+            return this;
+        }
+
+        @Override
+        public Builder addDraftInterceptors(Class<? extends Draft> draftType, Collection<DraftInterceptor<?>> interceptors) {
+            for (DraftInterceptor<?> interceptor : interceptors) {
+                if (interceptor != null) {
+                    ImmutableType immutableType = ImmutableType.get(draftType);
+                    draftInterceptorMap
+                            .computeIfAbsent(immutableType, it -> new ArrayList<>())
+                            .add(interceptor);
+                }
+            }
+            return this;
+        }
+
+        @Override
         public JSqlClient build() {
             return new JSqlClientImpl(
                     connectionManager,
@@ -466,8 +534,8 @@ class JSqlClientImpl implements JSqlClient {
                     null,
                     caches,
                     triggers,
-                    null
-            );
+                    null,
+                    new DraftInterceptorManager(draftInterceptorMap));
         }
     }
 }
