@@ -17,7 +17,7 @@ class Literals {
         return new Num<>(value);
     }
 
-    public static <T extends Comparable<T>> ComparableExpression<T> comparable(T value) {
+    public static <T extends Comparable<?>> ComparableExpression<T> comparable(T value) {
         return new Cmp<>(value);
     }
 
@@ -79,7 +79,7 @@ class Literals {
         }
     }
 
-    private static class Cmp<T extends Comparable<T>> extends Any<T> implements ComparableExpressionImplementor<T> {
+    private static class Cmp<T extends Comparable<?>> extends Any<T> implements ComparableExpressionImplementor<T> {
         public Cmp(T value) {
             super(value);
         }

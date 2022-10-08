@@ -45,9 +45,12 @@ public class TypeUtils {
         numberType = elements
                 .getTypeElement(Number.class.getName())
                 .asType();
-        comparableType = elements
-                .getTypeElement(Comparable.class.getName())
-                .asType();
+        comparableType = types
+                .getDeclaredType(
+                        elements
+                        .getTypeElement(Comparable.class.getName()),
+                        types.getWildcardType(null, null)
+                );
     }
 
     public boolean isImmutable(TypeElement typeElement) {

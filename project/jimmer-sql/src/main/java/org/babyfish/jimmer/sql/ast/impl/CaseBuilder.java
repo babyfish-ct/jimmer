@@ -111,7 +111,7 @@ public class CaseBuilder<T> {
         }
     }
     
-    public static class Cmp<T extends Comparable<T>> extends CaseBuilder<T> {
+    public static class Cmp<T extends Comparable<?>> extends CaseBuilder<T> {
 
         Cmp(Class<T> type) {
             super(type);
@@ -214,7 +214,7 @@ public class CaseBuilder<T> {
         }
     }
     
-    private static class CmpExpr<T extends Comparable<T>> extends AnyExpr<T> implements ComparableExpressionImplementor<T> {
+    private static class CmpExpr<T extends Comparable<?>> extends AnyExpr<T> implements ComparableExpressionImplementor<T> {
         
         CmpExpr(
                 Class<T> type, 

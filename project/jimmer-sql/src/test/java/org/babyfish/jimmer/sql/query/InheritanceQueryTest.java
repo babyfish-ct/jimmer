@@ -6,6 +6,8 @@ import org.babyfish.jimmer.sql.model.inheritance.RoleFetcher;
 import org.babyfish.jimmer.sql.model.inheritance.RoleTable;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+
 public class InheritanceQueryTest extends AbstractQueryTest {
 
     @Test
@@ -113,6 +115,44 @@ public class InheritanceQueryTest extends AbstractQueryTest {
                                     "--->--->--->{\"name\":\"p_3\",\"id\":3}," +
                                     "--->--->--->{\"name\":\"p_4\",\"id\":4}" +
                                     "--->--->]," +
+                                    "--->--->\"id\":2" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testQueryByTime() {
+        executeAndExpect(
+                getSqlClient().createQuery(RoleTable.class, (q, role) -> {
+                    q.where(
+                            role.createdTime().between(
+                                    LocalDateTime.of(2022, 10, 3, 0, 0, 0),
+                                    LocalDateTime.of(2022, 10, 4, 0, 0, 0)
+                            )
+                    );
+                    return q.select(role);
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
+                                    "from ROLE as tb_1_ " +
+                                    "where tb_1_.CREATED_TIME " +
+                                    "between ? and ?"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"name\":\"r_1\"," +
+                                    "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                    "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                    "--->--->\"id\":1" +
+                                    "--->},{" +
+                                    "--->--->\"name\":\"r_2\"," +
+                                    "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                    "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                     "--->--->\"id\":2" +
                                     "--->}" +
                                     "]"

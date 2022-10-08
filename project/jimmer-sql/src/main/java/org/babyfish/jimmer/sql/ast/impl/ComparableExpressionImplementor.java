@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.ast.ComparableExpression;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 
-interface ComparableExpressionImplementor<T extends Comparable<T>> extends ComparableExpression<T>, ExpressionImplementor<T> {
+interface ComparableExpressionImplementor<T extends Comparable<?>> extends ComparableExpression<T>, ExpressionImplementor<T> {
 
     @Override
     default Predicate lt(Expression<T> other) {

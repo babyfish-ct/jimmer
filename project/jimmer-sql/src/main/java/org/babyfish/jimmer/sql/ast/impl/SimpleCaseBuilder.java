@@ -148,7 +148,7 @@ public class SimpleCaseBuilder<C, T> {
         }
     }
     
-    public static class Cmp<C, T extends Comparable<T>> extends SimpleCaseBuilder<C, T> {
+    public static class Cmp<C, T extends Comparable<?>> extends SimpleCaseBuilder<C, T> {
 
         Cmp(Class<T> type, Expression<?> expression) {
             super(type, expression);
@@ -187,13 +187,13 @@ public class SimpleCaseBuilder<C, T> {
 
     private static class AnyExpr<T> extends AbstractExpression<T> {
 
-        private Class<T> type;
+        private final Class<T> type;
 
-        private Expression<?> expression;
+        private final Expression<?> expression;
 
-        private List<Tuple2<Expression<?>, Expression<T>>> whens;
+        private final List<Tuple2<Expression<?>, Expression<T>>> whens;
 
-        private Expression<T> otherwise;
+        private final Expression<T> otherwise;
 
         AnyExpr(
                 Class<T> type,
@@ -269,7 +269,7 @@ public class SimpleCaseBuilder<C, T> {
         }
     }
     
-    private static class CmpExpr<T extends Comparable<T>> extends AnyExpr<T> implements ComparableExpressionImplementor<T> {
+    private static class CmpExpr<T extends Comparable<?>> extends AnyExpr<T> implements ComparableExpressionImplementor<T> {
         
         CmpExpr(
                 Class<T> type, 

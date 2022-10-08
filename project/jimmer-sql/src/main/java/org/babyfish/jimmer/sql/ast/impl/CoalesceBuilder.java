@@ -97,7 +97,7 @@ public class CoalesceBuilder<T> {
         }
     }
 
-    public static class Cmp<T extends Comparable<T>> extends CoalesceBuilder<T> {
+    public static class Cmp<T extends Comparable<?>> extends CoalesceBuilder<T> {
 
         Cmp(Expression<T> expression) {
             super(expression);
@@ -175,7 +175,7 @@ public class CoalesceBuilder<T> {
         }
     }
 
-    private static class CmpExpr<T extends Comparable<T>> extends Expr<T> implements ComparableExpressionImplementor<T> {
+    private static class CmpExpr<T extends Comparable<?>> extends Expr<T> implements ComparableExpressionImplementor<T> {
 
         public CmpExpr(List<Expression<?>> expressions) {
             super(expressions);

@@ -19,6 +19,7 @@ dependencies {
 
     testImplementation("com.h2database:h2:2.1.212")
     dokkaHtmlPlugin("org.jetbrains.dokka:dokka-base:1.6.0")
+    testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3")
 }
 
 kotlin {

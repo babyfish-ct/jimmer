@@ -1,8 +1,11 @@
 package org.babyfish.jimmer.sql.kt.query
 
+import org.babyfish.jimmer.sql.kt.ast.expression.between
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.inheritance.Role
+import org.babyfish.jimmer.sql.kt.model.inheritance.createdTime
 import org.babyfish.jimmer.sql.kt.model.inheritance.fetchBy
+import java.time.LocalDateTime
 import kotlin.test.Test
 
 class InheritanceQueryTest : AbstractQueryTest() {
@@ -93,6 +96,42 @@ class InheritanceQueryTest : AbstractQueryTest() {
                     |--->--->--->{"name":"p_3","id":3},
                     |--->--->--->{"name":"p_4","id":4}
                     |--->--->],
+                    |--->--->"id":2
+                    |--->}
+                    |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testQueryByTime() {
+        executeAndExpect(
+            sqlClient.createQuery(Role::class) {
+                where(
+                    table.createdTime.between(
+                        LocalDateTime.of(2022, 10, 3, 0, 0, 0),
+                        LocalDateTime.of(2022, 10, 4, 0, 0, 0)
+                    )
+                )
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME 
+                    |from ROLE as tb_1_ 
+                    |where tb_1_.CREATED_TIME between ? and ?""".trimMargin()
+            )
+            rows(
+                """[
+                    |--->{
+                    |--->--->"name":"r_1",
+                    |--->--->"createdTime":"2022-10-03 00:00:00",
+                    |--->--->"modifiedTime":"2022-10-03 00:10:00",
+                    |--->--->"id":1
+                    |--->},{
+                    |--->--->"name":"r_2",
+                    |--->--->"createdTime":"2022-10-03 00:00:00",
+                    |--->--->"modifiedTime":"2022-10-03 00:10:00",
                     |--->--->"id":2
                     |--->}
                     |]""".trimMargin()

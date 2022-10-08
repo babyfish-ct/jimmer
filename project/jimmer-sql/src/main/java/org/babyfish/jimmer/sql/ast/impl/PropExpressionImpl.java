@@ -123,7 +123,7 @@ public class PropExpressionImpl<T>
         }
     }
 
-    private static class CmpImpl<T extends Comparable<T>>
+    private static class CmpImpl<T extends Comparable<?>>
             extends PropExpressionImpl<T>
             implements PropExpression.Cmp<T>, ComparableExpressionImplementor<T> {
 

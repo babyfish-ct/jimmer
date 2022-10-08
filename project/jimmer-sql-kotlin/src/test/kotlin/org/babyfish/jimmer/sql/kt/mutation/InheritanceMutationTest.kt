@@ -84,18 +84,18 @@ class InheritanceMutationTest : AbstractMutationTest() {
                 modified(
                     """{
                         |--->"name":"role",
-                        |--->"createdTime":"2022-10-03T00:00:00",
-                        |--->"modifiedTime":"2022-10-03T00:10:00",
+                        |--->"createdTime":"2022-10-03 00:00:00",
+                        |--->"modifiedTime":"2022-10-03 00:10:00",
                         |--->"permissions":[
                         |--->--->{
                         |--->--->--->"name":"permission-1",
-                        |--->--->--->"createdTime":"2022-10-03T00:00:00",
-                        |--->--->--->"modifiedTime":"2022-10-03T00:10:00",
+                        |--->--->--->"createdTime":"2022-10-03 00:00:00",
+                        |--->--->--->"modifiedTime":"2022-10-03 00:10:00",
                         |--->--->--->"role":{"id":101},"id":101
                         |--->--->},{
                         |--->--->--->"name":"permission-2",
-                        |--->--->--->"createdTime":"2022-10-03T00:00:00",
-                        |--->--->--->"modifiedTime":"2022-10-03T00:10:00",
+                        |--->--->--->"createdTime":"2022-10-03 00:00:00",
+                        |--->--->--->"modifiedTime":"2022-10-03 00:10:00",
                         |--->--->--->"role":{"id":101},"id":102
                         |--->--->}
                         |--->
@@ -149,12 +149,12 @@ class InheritanceMutationTest : AbstractMutationTest() {
                 modified(
                     """{
                         |--->"name":"permission",
-                        |--->"createdTime":"2022-10-03T00:00:00",
-                        |--->"modifiedTime":"2022-10-03T00:10:00",
+                        |--->"createdTime":"2022-10-03 00:00:00",
+                        |--->"modifiedTime":"2022-10-03 00:10:00",
                         |--->"role":{
                         |--->--->"name":"role",
-                        |--->--->"createdTime":"2022-10-03T00:00:00",
-                        |--->--->"modifiedTime":"2022-10-03T00:10:00",
+                        |--->--->"createdTime":"2022-10-03 00:00:00",
+                        |--->--->"modifiedTime":"2022-10-03 00:10:00",
                         |--->--->"id":101
                         |--->},
                         |--->"id":101
