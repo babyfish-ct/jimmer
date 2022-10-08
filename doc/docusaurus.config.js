@@ -65,9 +65,9 @@ const config = {
         items: [
           {
             type: 'doc',
-            docId: 'intro',
+            docId: 'preface',
             position: 'left',
-            label: 'Tutorial',
+            label: 'View more',
           },
           {
             type: 'localeDropdown',
