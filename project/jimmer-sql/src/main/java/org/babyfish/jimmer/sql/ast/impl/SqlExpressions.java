@@ -154,7 +154,7 @@ public class SqlExpressions {
         }
     }
 
-    private static class Cmp<T extends Comparable<T>> extends Any<T> implements ComparableExpressionImplementor<T> {
+    private static class Cmp<T extends Comparable<?>> extends Any<T> implements ComparableExpressionImplementor<T> {
 
         Cmp(Class<T> type, String sql, List<Expression<?>> expressions, List<Object> values) {
             super(type, sql, expressions, values);

@@ -227,23 +227,28 @@ public interface Expression<T> extends Selection<T> {
         <N extends Number> CaseBuilder.Num<N> caseBuilder(Class<N> type);
     }
 
+    /*
+     * This class uses `T extends Comparable<?>`, not `T extends Comparable<T>`,
+     * because not all types strictly implement the interface `Comparable<T>`,
+     * such as `java.time.LocalDateTime`
+     */
     interface ComparableFactory {
 
-        <T extends Comparable<T>> ComparableExpression<T> value(T value);
+        <T extends Comparable<?>> ComparableExpression<T> value(T value);
 
-        <T extends Comparable<T>> ComparableExpression<T> sql(Class<T> type, String sql);
+        <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql);
 
-        <T extends Comparable<T>> ComparableExpression<T> sql(
+        <T extends Comparable<?>> ComparableExpression<T> sql(
                 Class<T> type,
                 String sql,
                 Consumer<SqlExpressionContext> block
         );
 
-        <C, T extends Comparable<T>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, C value);
+        <C, T extends Comparable<?>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, C value);
 
-        <C, T extends Comparable<T>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, Expression<C> expression);
+        <C, T extends Comparable<?>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, Expression<C> expression);
 
-        <T extends Comparable<T>> CaseBuilder.Cmp<T> caseBuilder(Class<T> type);
+        <T extends Comparable<?>> CaseBuilder.Cmp<T> caseBuilder(Class<T> type);
     }
 
     interface AnyFactory {

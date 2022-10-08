@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
-internal class BetweenPredicate<T: Comparable<T>>(
+internal class BetweenPredicate<T: Comparable<*>>(
     private val negative: Boolean,
     private val expression: KExpression<T>,
     private val min: KNonNullExpression<T>,

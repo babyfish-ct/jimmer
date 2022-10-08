@@ -28,7 +28,7 @@ public interface PropExpression<T> extends Expression<T> {
         CoalesceBuilder.Num<N> coalesceBuilder();
     }
 
-    interface Cmp<T extends Comparable<T>> extends PropExpression<T>, ComparableExpression<T> {
+    interface Cmp<T extends Comparable<?>> extends PropExpression<T>, ComparableExpression<T> {
 
         @Override
         ComparableExpression<T> coalesce(T defaultValue);

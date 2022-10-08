@@ -107,32 +107,32 @@ public class ExpressionFactories {
         static final Cmp INSTANCE = new Cmp();
 
         @Override
-        public <T extends Comparable<T>> ComparableExpression<T> value(T value) {
+        public <T extends Comparable<?>> ComparableExpression<T> value(T value) {
             return Literals.comparable(value);
         }
 
         @Override
-        public <T extends Comparable<T>> ComparableExpression<T> sql(Class<T> type, String sql) {
+        public <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql) {
             return sql(type, sql, null);
         }
 
         @Override
-        public <T extends Comparable<T>> ComparableExpression<T> sql(Class<T> type, String sql, Consumer<SqlExpressionContext> block) {
+        public <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql, Consumer<SqlExpressionContext> block) {
             return SqlExpressions.of(type, sql, block);
         }
 
         @Override
-        public <C, T extends Comparable<T>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, C value) {
+        public <C, T extends Comparable<?>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, C value) {
             return caseBuilder(type, Literals.any(value));
         }
 
         @Override
-        public <C, T extends Comparable<T>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, Expression<C> expression) {
+        public <C, T extends Comparable<?>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, Expression<C> expression) {
             return new SimpleCaseBuilder.Cmp<>(type, expression);
         }
 
         @Override
-        public <T extends Comparable<T>> CaseBuilder.Cmp<T> caseBuilder(Class<T> type) {
+        public <T extends Comparable<?>> CaseBuilder.Cmp<T> caseBuilder(Class<T> type) {
             return new CaseBuilder.Cmp<>(type);
         }
     }

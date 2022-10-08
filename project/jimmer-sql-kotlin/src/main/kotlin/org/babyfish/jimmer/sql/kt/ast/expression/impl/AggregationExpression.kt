@@ -52,7 +52,7 @@ internal abstract class AggregationExpression<T: Any>(
         override fun prefix(): String? = "distinct"
     }
 
-    class Max<T: Comparable<T>>(
+    class Max<T: Comparable<*>>(
         expression: KExpression<T>
     ): AggregationExpression<T>(expression), KNullableExpression<T> {
 
@@ -63,7 +63,7 @@ internal abstract class AggregationExpression<T: Any>(
             (expression as ExpressionImplementor<T>).type
     }
 
-    class Min<T: Comparable<T>>(
+    class Min<T: Comparable<*>>(
         expression: KExpression<T>
     ): AggregationExpression<T>(expression), KNullableExpression<T> {
 

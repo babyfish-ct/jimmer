@@ -114,49 +114,49 @@ infix fun <T: Any> KExpression<T>.ne(right: KExpression<T>): KNonNullExpression<
 infix fun <T: Any> KExpression<T>.ne(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Ne(this, value(right))
 
-infix fun <T: Comparable<T>> KExpression<T>.lt(right: KExpression<T>): KNonNullExpression<Boolean> =
+infix fun <T: Comparable<*>> KExpression<T>.lt(right: KExpression<T>): KNonNullExpression<Boolean> =
     ComparisonPredicate.Lt(this, right)
 
-infix fun <T: Comparable<T>> KExpression<T>.lt(right: T): KNonNullExpression<Boolean> =
+infix fun <T: Comparable<*>> KExpression<T>.lt(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Lt(this, value(right))
 
-infix fun <T: Comparable<T>> KExpression<T>.le(right: KExpression<T>): KNonNullExpression<Boolean> =
+infix fun <T: Comparable<*>> KExpression<T>.le(right: KExpression<T>): KNonNullExpression<Boolean> =
     ComparisonPredicate.Le(this, right)
 
-infix fun <T: Comparable<T>> KExpression<T>.le(right: T): KNonNullExpression<Boolean> =
+infix fun <T: Comparable<*>> KExpression<T>.le(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Le(this, value(right))
 
-infix fun <T: Comparable<T>> KExpression<T>.gt(right: KExpression<T>): KNonNullExpression<Boolean> =
+infix fun <T: Comparable<*>> KExpression<T>.gt(right: KExpression<T>): KNonNullExpression<Boolean> =
     ComparisonPredicate.Gt(this, right)
 
-infix fun <T: Comparable<T>> KExpression<T>.gt(right: T): KNonNullExpression<Boolean> =
+infix fun <T: Comparable<*>> KExpression<T>.gt(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Gt(this, value(right))
 
-infix fun <T: Comparable<T>> KExpression<T>.ge(right: KExpression<T>): KNonNullExpression<Boolean> =
+infix fun <T: Comparable<*>> KExpression<T>.ge(right: KExpression<T>): KNonNullExpression<Boolean> =
     ComparisonPredicate.Ge(this, right)
 
-infix fun <T: Comparable<T>> KExpression<T>.ge(right: T): KNonNullExpression<Boolean> =
+infix fun <T: Comparable<*>> KExpression<T>.ge(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Ge(this, value(right))
 
-fun <T: Comparable<T>> KExpression<T>.between(
+fun <T: Comparable<*>> KExpression<T>.between(
     min: KNonNullExpression<T>,
     max: KNonNullExpression<T>
 ): KNonNullExpression<Boolean> =
     BetweenPredicate(false, this, min, max)
 
-fun <T: Comparable<T>> KExpression<T>.between(
+fun <T: Comparable<*>> KExpression<T>.between(
     min: T,
     max: T
 ): KNonNullExpression<Boolean> =
     BetweenPredicate(false, this, value(min), value(max))
 
-fun <T: Comparable<T>> KExpression<T>.notBetween(
+fun <T: Comparable<*>> KExpression<T>.notBetween(
     min: KNonNullExpression<T>,
     max: KNonNullExpression<T>
 ): KNonNullExpression<Boolean> =
     BetweenPredicate(true, this, min, max)
 
-fun <T: Comparable<T>> KExpression<T>.notBetween(
+fun <T: Comparable<*>> KExpression<T>.notBetween(
     min: T,
     max: T
 ): KNonNullExpression<Boolean> =
@@ -239,10 +239,10 @@ fun count(table: KTable<*>, distinct: Boolean = false): KNonNullExpression<Long>
     return count(idExpr, distinct)
 }
 
-fun <T: Comparable<T>> max(expression: KExpression<T>): KNullableExpression<T> =
+fun <T: Comparable<*>> max(expression: KExpression<T>): KNullableExpression<T> =
     AggregationExpression.Max(expression)
 
-fun <T: Comparable<T>> min(expression: KExpression<T>): KNullableExpression<T> =
+fun <T: Comparable<*>> min(expression: KExpression<T>): KNullableExpression<T> =
     AggregationExpression.Min(expression)
 
 fun <T: Number> sum(expression: KExpression<T>): KNullableExpression<T> =
