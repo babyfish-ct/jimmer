@@ -26,7 +26,8 @@ List<Book> books = entityManager
     .createQuery(
         "select book from Book book " +
         "left join fetch book.store " +
-        "left join fetch book.authors"
+        "left join fetch book.authors",
+        Book.class
     ).getResultList();
 ```
 这个例子中的`join fetch`是JPA的一个特色功能，可以利用`SQL JOIN`使返回的`Book`对象不再是孤单对象，而是附带了关联属性`store`和`authors`。
@@ -47,7 +48,8 @@ List<Book> books = entityManager
 List<BookDTO> bookDTOs = entityManager
     .createQuery(
 	    "select new BookDTO(book.id, book.name) " +
-        "from Book book"
+        "from Book book",
+        BookDTO.class
     ).getResultList();
 ```
 
