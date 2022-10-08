@@ -26,7 +26,8 @@ List<Book> books = entityManager
     .createQuery(
         "select book from Book book " +
         "left join fetch book.store " +
-        "left join fetch book.authors"
+        "left join fetch book.authors",
+        Book.class
     ).getResultList();
 ```
 The `join fetch` in this example is a feature of JPA, which can use `SQL JOIN` to make the returned `Book` object no longer a single object, but with associated properties `store` and `authors`.
@@ -47,7 +48,8 @@ If you want the traditional ORM to accurately implement property-level clipping,
 List<BookDTO> bookDTOs = entityManager
     .createQuery(
 	    "select new BookDTO(book.id, book.name) " +
-        "from Book book"
+        "from Book book",
+        BookDTO.class
     ).getResultList();
 ```
 
