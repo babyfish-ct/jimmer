@@ -26,7 +26,7 @@ internal class BetweenPredicate<T: Comparable<T>>(
 
     override fun renderTo(builder: SqlBuilder) {
         renderChild(expression as Ast, builder)
-        builder.sql(if (negative) " not between " else "between")
+        builder.sql(if (negative) " not between " else " between ")
         renderChild(min as Ast, builder)
         builder.sql(" and ")
         renderChild(max as Ast, builder)
