@@ -63,6 +63,12 @@ public class Converters {
         if (value instanceof Instant) {
             return tryConvertInstant((Instant) value, expectedType);
         }
+        if (value instanceof java.sql.Date) {
+            return tryConvertInstant(Instant.from(((java.sql.Date) value).toLocalDate()), expectedType);
+        }
+        if (value instanceof java.sql.Time) {
+            return tryConvertInstant(Instant.from(((java.sql.Time) value).toLocalTime()), expectedType);
+        }
         if (value instanceof Date) {
             return tryConvertInstant(((Date) value).toInstant(), expectedType);
         }
