@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
+import org.babyfish.jimmer.sql.filter.StatefulFilter;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,7 +22,7 @@ public class MutableRootQueryImpl<T extends Table<?>>
             JSqlClient sqlClient,
             ImmutableType immutableType
     ) {
-        super(new TableAliasAllocator(), sqlClient, immutableType);
+        this(null, sqlClient, immutableType);
     }
 
     public MutableRootQueryImpl(
@@ -29,7 +30,17 @@ public class MutableRootQueryImpl<T extends Table<?>>
             JSqlClient sqlClient,
             ImmutableType immutableType
     ) {
-        super(aliasAllocator, sqlClient, immutableType);
+        super(
+                aliasAllocator != null ? aliasAllocator : new TableAliasAllocator(),
+                sqlClient,
+                immutableType
+        );
+        if (aliasAllocator == null) {
+            StatefulFilter<Table<?>> filter = sqlClient.getStatefulFilter(immutableType);
+            if (filter != null) {
+                filter.filter(this.getTable());
+            }
+        }
     }
 
     @Override

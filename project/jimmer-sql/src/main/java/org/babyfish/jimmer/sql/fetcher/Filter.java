@@ -34,7 +34,7 @@ public interface Filter<T extends Table<?>> extends CacheFilter {
                 block.accept(args);
             }
             @Override
-            public NavigableMap<String, Object> toCacheArgs() {
+            public NavigableMap<String, Object> getArgs() {
                 return sortedArgs;
             }
         };

@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.apt;
 
-import org.babyfish.jimmer.apt.generator.DraftGenerator;
-import org.babyfish.jimmer.apt.generator.FetcherGenerator;
-import org.babyfish.jimmer.apt.generator.PropsGenerator;
-import org.babyfish.jimmer.apt.generator.TableGenerator;
+import org.babyfish.jimmer.apt.generator.*;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.apt.meta.MetaException;
 
@@ -12,9 +9,6 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.util.Types;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 
 @SupportedAnnotationTypes({
@@ -103,6 +97,20 @@ public class ImmutableProcessor extends AbstractProcessor {
                             immutableType,
                             filer
                     ).generate();
+                    if (immutableType.isEntity() || immutableType.isMappedSuperClass()) {
+                        new ColumnsGenerator(
+                                typeUtils,
+                                immutableType,
+                                false,
+                                filer
+                        ).generate();
+                        new ColumnsGenerator(
+                                typeUtils,
+                                immutableType,
+                                true,
+                                filer
+                        ).generate();
+                    }
                     if (immutableType.isEntity()) {
                         new TableGenerator(
                                 typeUtils,

@@ -180,6 +180,11 @@ public class AssociationType implements ImmutableType {
     }
 
     @Override
+    public boolean isAssignableFrom(ImmutableType type) {
+        return false;
+    }
+
+    @Override
     public ImmutableType getSuperType() {
         return null;
     }

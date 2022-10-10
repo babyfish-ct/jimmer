@@ -42,6 +42,8 @@ public interface ImmutableType {
 
     Annotation getImmutableAnnotation();
 
+    boolean isAssignableFrom(ImmutableType type);
+
     ImmutableType getSuperType();
 
     BiFunction<DraftContext, Object, Draft> getDraftFactory();

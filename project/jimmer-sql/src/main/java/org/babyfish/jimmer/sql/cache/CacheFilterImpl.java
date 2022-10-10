@@ -25,7 +25,7 @@ class CacheFilterImpl implements CacheFilter {
     }
 
     @Override
-    public NavigableMap<String, Object> toCacheArgs() {
+    public NavigableMap<String, Object> getArgs() {
         return args;
     }
 
