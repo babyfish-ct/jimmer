@@ -103,6 +103,11 @@ class ImmutableTypeImpl implements ImmutableType {
     KClass<?> getKotlinClass() { return kotlinClass; }
 
     @Override
+    public boolean isAssignableFrom(ImmutableType type) {
+        return javaClass.isAssignableFrom(type.getJavaClass());
+    }
+
+    @Override
     public ImmutableType getSuperType() {
         return superType;
     }

@@ -18,9 +18,9 @@ import java.util.function.Function;
 
 public abstract class AbstractMutableStatementImpl implements Filterable {
 
-    private TableAliasAllocator tableAliasAllocator;
+    private final TableAliasAllocator tableAliasAllocator;
 
-    private JSqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
     private boolean frozen;
 
@@ -34,6 +34,8 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
         if (!(this instanceof Fake)) {
             Objects.requireNonNull(sqlClient, "sqlClient cannot be null");
             this.sqlClient = sqlClient;
+        } else {
+            this.sqlClient = null;
         }
     }
 

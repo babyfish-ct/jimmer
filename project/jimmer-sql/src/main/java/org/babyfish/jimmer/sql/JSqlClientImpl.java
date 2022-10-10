@@ -1,11 +1,11 @@
 package org.babyfish.jimmer.sql;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
-import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.sql.filter.StatefulFilter;
+import org.babyfish.jimmer.sql.filter.StatefulFilterManager;
 import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.babyfish.jimmer.sql.fluent.impl.FluentImpl;
 import org.babyfish.jimmer.sql.loader.ListLoader;
@@ -33,16 +33,13 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggersImpl;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
-import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 class JSqlClientImpl implements JSqlClient {
 
@@ -77,6 +74,8 @@ class JSqlClientImpl implements JSqlClient {
 
     private final TransientResolverManager transientResolverManager;
 
+    private final StatefulFilterManager statefulFilterManager;
+
     private final DraftInterceptorManager draftInterceptorManager;
 
     private JSqlClientImpl(
@@ -92,6 +91,7 @@ class JSqlClientImpl implements JSqlClient {
             Caches caches,
             Triggers triggers,
             TransientResolverManager transientResolverManager,
+            StatefulFilterManager statefulFilterManager,
             DraftInterceptorManager draftInterceptorManager) {
         this.connectionManager =
                 connectionManager != null ?
@@ -123,6 +123,7 @@ class JSqlClientImpl implements JSqlClient {
                 transientResolverManager != null ?
                         transientResolverManager :
                         createTransientResolverManager();
+        this.statefulFilterManager = statefulFilterManager;
         this.draftInterceptorManager = draftInterceptorManager;
     }
 
@@ -305,6 +306,7 @@ class JSqlClientImpl implements JSqlClient {
                 new CachesImpl((CachesImpl) caches, cfg),
                 triggers,
                 transientResolverManager,
+                statefulFilterManager,
                 draftInterceptorManager
         );
     }
@@ -327,6 +329,7 @@ class JSqlClientImpl implements JSqlClient {
                 caches,
                 triggers,
                 transientResolverManager,
+                statefulFilterManager,
                 draftInterceptorManager
         );
     }
@@ -334,6 +337,11 @@ class JSqlClientImpl implements JSqlClient {
     @Override
     public TransientResolver<?, ?> getResolver(ImmutableProp prop) {
         return transientResolverManager.get(prop);
+    }
+
+    @Override
+    public StatefulFilter<Table<?>> getStatefulFilter(ImmutableType type) {
+        return statefulFilterManager.get(type);
     }
 
     @Override
@@ -382,8 +390,9 @@ class JSqlClientImpl implements JSqlClient {
 
         private final Triggers triggers = new TriggersImpl();
 
-        private final Map<ImmutableType, List<DraftInterceptor<?>>> draftInterceptorMap =
-                new HashMap<>();
+        private final List<StatefulFilter<?>> filters = new ArrayList<>();
+
+        private final List<DraftInterceptor<?>> interceptors = new ArrayList<>();
 
         public BuilderImpl() {}
 
@@ -470,6 +479,22 @@ class JSqlClientImpl implements JSqlClient {
         }
 
         @Override
+        public Builder addStatefulFilter(StatefulFilter<?> filter) {
+            return addStatefulFilters(Collections.singletonList(filter));
+        }
+
+        @Override
+        public Builder addStatefulFilters(StatefulFilter<?>... filters) {
+            return addStatefulFilters(Arrays.asList(filters));
+        }
+
+        @Override
+        public Builder addStatefulFilters(Collection<StatefulFilter<?>> filters) {
+            this.filters.addAll(filters);
+            return this;
+        }
+
+        @Override
         public Builder addDraftInterceptor(DraftInterceptor<?> interceptor) {
             return addDraftInterceptors(Collections.singletonList(interceptor));
         }
@@ -481,35 +506,7 @@ class JSqlClientImpl implements JSqlClient {
 
         @Override
         public Builder addDraftInterceptors(Collection<DraftInterceptor<?>> interceptors) {
-            for (DraftInterceptor<?> interceptor : interceptors) {
-                if (interceptor != null) {
-                    Collection<Type> types = TypeUtils
-                            .getTypeArguments(
-                                    interceptor.getClass(),
-                                    DraftInterceptor.class
-                            )
-                            .values();
-                    if (types.isEmpty()) {
-                        throw new IllegalArgumentException(
-                                "Illegal draft interceptor type \"" +
-                                        interceptor.getClass().getName() +
-                                        "\", it extends \"DraftInterceptor\" but the generic type is not specified"
-                        );
-                    }
-                    Type draftType = types.iterator().next();
-                    if (!(draftType instanceof Class<?>) || !((Class<?>) draftType).isInterface()) {
-                        throw new IllegalArgumentException(
-                                "Illegal draft interceptor type \"" +
-                                        interceptor.getClass().getName() +
-                                        "\", it extends \"DraftInterceptor\" but the generic type is not draft interface type"
-                        );
-                    }
-                    ImmutableType immutableType = ImmutableType.get((Class<?>) draftType);
-                    draftInterceptorMap
-                            .computeIfAbsent(immutableType, it -> new ArrayList<>())
-                            .add(interceptor);
-                }
-            }
+            this.interceptors.addAll(interceptors);
             return this;
         }
 
@@ -528,7 +525,8 @@ class JSqlClientImpl implements JSqlClient {
                     caches,
                     triggers,
                     null,
-                    new DraftInterceptorManager(draftInterceptorMap));
+                    new StatefulFilterManager(filters),
+                    new DraftInterceptorManager(interceptors));
         }
     }
 }

@@ -200,7 +200,7 @@ public abstract class AbstractDataLoader {
 
     private Map<ImmutableSpi, ImmutableSpi> loadParents(Collection<ImmutableSpi> sources) {
         Cache<Object, Object> fkCache = sqlClient.getCaches().getPropertyCache(prop);
-        if (fkCache == null || (filter != null && !filter.toCacheArgs().isEmpty())) {
+        if (fkCache == null || (filter != null && !filter.getArgs().isEmpty())) {
             return loadParentsDirectly(sources);
         }
         Map<Object, Object> fkMap = new LinkedHashMap<>(
@@ -314,7 +314,7 @@ public abstract class AbstractDataLoader {
 
     private Map<ImmutableSpi, ImmutableSpi> loadTargetMap(Collection<ImmutableSpi> sources) {
         Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
-        if (cache == null|| (filter != null && !filter.toCacheArgs().isEmpty())) {
+        if (cache == null|| (filter != null && !filter.getArgs().isEmpty())) {
             return loadTargetMapDirectly(sources);
         }
         List<Object> sourceIds = toSourceIds(sources);
@@ -363,7 +363,7 @@ public abstract class AbstractDataLoader {
 
     private Map<ImmutableSpi, List<ImmutableSpi>> loadTargetMultiMap(Collection<ImmutableSpi> sources) {
         Cache<Object, List<Object>> cache = sqlClient.getCaches().getPropertyCache(prop);
-        if (cache == null || (filter != null && !filter.toCacheArgs().isEmpty())) {
+        if (cache == null || (filter != null && !filter.getArgs().isEmpty())) {
             return loadTargetMultiMapDirectly(sources);
         }
         List<Object> sourceIds = toSourceIds(sources);

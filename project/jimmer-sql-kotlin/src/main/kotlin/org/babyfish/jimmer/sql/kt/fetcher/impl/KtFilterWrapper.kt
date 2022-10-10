@@ -18,8 +18,8 @@ class KtFilterWrapper<E: Any>(
         }
     }
 
-    override fun toCacheArgs(): NavigableMap<String, Any> =
-        ktFilter.toCacheArgs()
+    override fun getArgs(): NavigableMap<String, Any> =
+        ktFilter.getArgs()
 
     override fun hashCode(): Int =
         ktFilter.hashCode()

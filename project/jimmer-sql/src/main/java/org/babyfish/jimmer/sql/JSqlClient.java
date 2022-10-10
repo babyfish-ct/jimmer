@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.cache.CacheConfig;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.cache.Caches;
+import org.babyfish.jimmer.sql.filter.StatefulFilter;
 import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.babyfish.jimmer.sql.loader.ListLoader;
 import org.babyfish.jimmer.sql.loader.ReferenceLoader;
@@ -121,6 +122,8 @@ public interface JSqlClient {
 
     TransientResolver<?, ?> getResolver(ImmutableProp prop);
 
+    StatefulFilter<Table<?>> getStatefulFilter(ImmutableType type);
+
     DraftInterceptor<?> getDraftInterceptor(ImmutableType type);
 
     interface Builder {
@@ -154,6 +157,15 @@ public interface JSqlClient {
 
         @OldChain
         Builder setCaches(Consumer<CacheConfig> block);
+
+        @OldChain
+        Builder addStatefulFilter(StatefulFilter<?> filter);
+
+        @OldChain
+        Builder addStatefulFilters(StatefulFilter<?>... filters);
+
+        @OldChain
+        Builder addStatefulFilters(Collection<StatefulFilter<?>> filters);
 
         @OldChain
         Builder addDraftInterceptor(DraftInterceptor<?> interceptor);

@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.event.AssociationEvent;
+import org.babyfish.jimmer.sql.event.EntityEvent;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -10,8 +13,17 @@ public interface CacheFilter {
      * Get arguments of this filter
      * @return A map, never null.
      */
-    default NavigableMap<String, Object> toCacheArgs() {
+    @NotNull
+    default NavigableMap<String, Object> getArgs() {
         return Collections.emptyNavigableMap();
+    }
+
+    default boolean isAffectedBy(EntityEvent<?> e) {
+        return false;
+    }
+
+    default boolean isAffectedBy(AssociationEvent e) {
+        return false;
     }
 
     static CacheFilter of(Map<String, Object> args) {
@@ -28,6 +40,6 @@ public interface CacheFilter {
     }
 
     static boolean isEmpty(CacheFilter cacheFilter) {
-        return cacheFilter == null || cacheFilter.toCacheArgs().isEmpty();
+        return cacheFilter == null || cacheFilter.getArgs().isEmpty();
     }
 }
