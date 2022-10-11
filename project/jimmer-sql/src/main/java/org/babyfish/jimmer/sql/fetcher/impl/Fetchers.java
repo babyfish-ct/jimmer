@@ -117,7 +117,7 @@ public class Fetchers {
 
     private static boolean hasReferenceFilter(ImmutableType type, JSqlClient sqlClient) {
         for (ImmutableProp prop : type.getSelectableReferenceProps().values()) {
-            if (sqlClient.getFilter(prop.getTargetType()) != null) {
+            if (sqlClient.getFilter(prop) != null) {
                 return true;
             }
         }

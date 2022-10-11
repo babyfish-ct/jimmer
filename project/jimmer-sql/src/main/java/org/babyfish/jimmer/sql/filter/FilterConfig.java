@@ -1,8 +1,13 @@
 package org.babyfish.jimmer.sql.filter;
 
+import org.babyfish.jimmer.lang.OldChain;
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.TypedProp;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.stream.Collectors;
 
 public class FilterConfig {
 
@@ -12,63 +17,91 @@ public class FilterConfig {
         this.filterManager = filterManager;
     }
 
-    public FilterConfig enable(Filter<?> filter) {
-        this.filterManager = filterManager.enable(Collections.singletonList(filter));
-        return this;
-    }
-
+    @OldChain
     public FilterConfig enable(Filter<?>... filters) {
         this.filterManager = filterManager.enable(Arrays.asList(filters));
         return this;
     }
 
+    @OldChain
     public FilterConfig enable(Collection<Filter<?>> filters) {
         this.filterManager = filterManager.enable(filters);
         return this;
     }
 
-    public FilterConfig disabled(Filter<?> filter) {
-        this.filterManager = filterManager.disable(Collections.singletonList(filter));
-        return this;
-    }
-
+    @OldChain
     public FilterConfig disable(Filter<?>... filters) {
         this.filterManager = filterManager.disable(Arrays.asList(filters));
         return this;
     }
 
+    @OldChain
     public FilterConfig disable(Collection<Filter<?>> filters) {
         this.filterManager = filterManager.disable(filters);
         return this;
     }
 
-    public FilterConfig enableByType(Class<?> filterType) {
-        this.filterManager = filterManager.enableByTypes(Collections.singletonList(filterType));
-        return this;
-    }
-
-    public FilterConfig enableByType(Class<?>... filterTypes) {
+    @OldChain
+    public FilterConfig enableByTypes(Class<?>... filterTypes) {
         this.filterManager = filterManager.enableByTypes(Arrays.asList(filterTypes));
         return this;
     }
 
-    public FilterConfig enableByType(Collection<Class<?>> filterTypes) {
+    @OldChain
+    public FilterConfig enableByTypes(Collection<Class<?>> filterTypes) {
         this.filterManager = filterManager.enableByTypes(filterTypes);
         return this;
     }
 
-    public FilterConfig disableByType(Class<?> filterType) {
-        this.filterManager = filterManager.disableByTypes(Collections.singletonList(filterType));
-        return this;
-    }
-
-    public FilterConfig disableByType(Class<?>... filterTypes) {
+    @OldChain
+    public FilterConfig disableByTypes(Class<?>... filterTypes) {
         this.filterManager = filterManager.disableByTypes(Arrays.asList(filterTypes));
         return this;
     }
 
-    public FilterConfig disableByType(Collection<Class<?>> filterTypes) {
+    @OldChain
+    public FilterConfig disableByTypes(Collection<Class<?>> filterTypes) {
         this.filterManager = filterManager.disableByTypes(filterTypes);
+        return this;
+    }
+
+    @OldChain
+    public FilterConfig addFilterableReferenceProps(ImmutableProp ... props) {
+        this.filterManager = filterManager.addFilterableReferenceProps(Arrays.asList(props));
+        return this;
+    }
+
+    @OldChain
+    public FilterConfig addFilterableReferenceProps(TypedProp.Reference<?, ?> ... props) {
+        this.filterManager = filterManager.addFilterableReferenceProps(
+                Arrays.stream(props).map(TypedProp::unwrap).collect(Collectors.toList())
+        );
+        return this;
+    }
+
+    @OldChain
+    public FilterConfig addFilterableReferenceProps(Collection<ImmutableProp> props) {
+        this.filterManager = filterManager.addFilterableReferenceProps(props);
+        return this;
+    }
+
+    @OldChain
+    public FilterConfig removeFilterableReferenceProps(ImmutableProp ... props) {
+        this.filterManager = filterManager.removeFilterableReferenceProps(Arrays.asList(props));
+        return this;
+    }
+
+    @OldChain
+    public FilterConfig removeFilterableReferenceProps(TypedProp.Reference<?, ?> ... props) {
+        this.filterManager = filterManager.removeFilterableReferenceProps(
+                Arrays.stream(props).map(TypedProp::unwrap).collect(Collectors.toList())
+        );
+        return this;
+    }
+
+    @OldChain
+    public FilterConfig removeFilterableReferenceProps(Collection<ImmutableProp> props) {
+        this.filterManager = filterManager.removeFilterableReferenceProps(props);
         return this;
     }
 
