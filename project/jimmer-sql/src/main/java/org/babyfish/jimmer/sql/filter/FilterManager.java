@@ -21,7 +21,7 @@ public class FilterManager {
 
     private final Map<ImmutableType, List<Filter<Columns>>> filterMap;
 
-    private final Set<Filter<?>> filters;
+    private final Set<Filter<?>> allFilters;
 
     private final Set<Filter<?>> disabledFilters;
 
@@ -42,31 +42,14 @@ public class FilterManager {
             Collection<Filter<?>> disabledFilters,
             Collection<ImmutableProp> filterableReferenceProps
     ) {
-        Map<ImmutableType, List<Filter<Columns>>> filterMap = new LinkedHashMap<>();
-        Set<Filter<?>> set = new HashSet<>();
-        Set<Class<?>> typeSet = new HashSet<>();
-        Set<Filter<?>> disabledSet = new HashSet<>(disabledFilters);
-        for (Filter<?> filter : new LinkedHashSet<>(filters)) {
-            if (filter != null) {
-                set.add(filter);
-                collectFilterTypes(filter.getClass(), typeSet);
-                for (ImmutableType immutableType = getImmutableType((Filter<Columns>) filter);
-                     immutableType != null;
-                     immutableType = immutableType.getSuperType()) {
-                    filterMap
-                            .computeIfAbsent(immutableType, it -> new ArrayList<>())
-                            .add((Filter<Columns>) filter);
-                }
-            }
-        }
-        disabledSet.retainAll(set);
-        this.filterMap = filterMap;
-        this.filters = set;
-        this.disabledFilters = disabledSet;
-        this.filterTypes = typeSet;
+        validateFilterableReferenceProps(filterableReferenceProps);
+        this.allFilters = filters(filters);
+        this.disabledFilters = disable(null, disabledFilters, this.allFilters);
+        this.filterTypes = filterTypes(this.allFilters);
         this.disabledFilterTypes = new HashSet<>();
-        this.disabledFilterDirectTypes = this.disabledFilterTypes;
+        this.disabledFilterDirectTypes = filterTypesByTypes(this.disabledFilterTypes);
         this.filterableReferenceProps = new HashSet<>(filterableReferenceProps);
+        this.filterMap = filterMap(this.allFilters, this.disabledFilters, this.disabledFilterDirectTypes);
     }
 
     private FilterManager(
@@ -75,18 +58,36 @@ public class FilterManager {
             Set<Filter<?>> disabledFilters,
             Set<Class<?>> filterTypes,
             Set<Class<?>> disabledFilterTypes,
+            Set<Class<?>> disabledFilterDirectTypes,
             Set<ImmutableProp> filterableReferenceProps) {
         this.filterMap = filterMap;
-        this.filters = filters;
+        this.allFilters = filters;
         this.disabledFilters = disabledFilters;
         this.filterTypes = filterTypes;
         this.disabledFilterTypes = disabledFilterTypes;
-        this.disabledFilterDirectTypes = disabledFilterDirectTypes();
+        this.disabledFilterDirectTypes = disabledFilterDirectTypes;
         this.filterableReferenceProps = filterableReferenceProps;
     }
 
     public Filter<Columns> get(ImmutableType type) {
         return cache.get(type);
+    }
+
+    public Filter<Columns> get(ImmutableProp prop) {
+        ImmutableType targetType = prop.getTargetType();
+        if (targetType == null) {
+            throw new IllegalArgumentException(
+                    "`" +
+                            prop +
+                            "` is not association property"
+            );
+        }
+        if (prop.isReference(TargetLevel.ENTITY) && prop.getStorage() instanceof Column) {
+            if (!filterableReferenceProps.contains(prop)) {
+                return null;
+            }
+        }
+        return get(targetType);
     }
 
     public FilterManager enable(Collection<Filter<?>> filters) {
@@ -99,30 +100,31 @@ public class FilterManager {
             return this;
         }
         return new FilterManager(
-                filterMap,
-                this.filters,
+                filterMap(allFilters, disabledSet, disabledFilterDirectTypes),
+                allFilters,
                 disabledSet,
                 filterTypes,
                 disabledFilterTypes,
-                filterableReferenceProps);
+                disabledFilterDirectTypes,
+                filterableReferenceProps
+        );
     }
 
     public FilterManager disable(Collection<Filter<?>> filters) {
         if (filters.isEmpty()) {
             return this;
         }
-        Set<Filter<?>> disabledSet = new HashSet<>(disabledFilters);
-        disabledSet.addAll(filters);
-        disabledSet.retainAll(this.filters);
+        Set<Filter<?>> disabledSet = disable(disabledFilters, filters, this.allFilters);
         if (disabledSet.size() == disabledFilters.size()) {
             return this;
         }
         return new FilterManager(
-                filterMap,
-                this.filters,
+                this.filterMap(allFilters, disabledSet, disabledFilterDirectTypes),
+                allFilters,
                 disabledSet,
                 filterTypes,
                 disabledFilterTypes,
+                disabledFilterDirectTypes,
                 filterableReferenceProps
         );
     }
@@ -136,12 +138,14 @@ public class FilterManager {
         if (disabledTypeSet.size() == disabledFilterTypes.size()) {
             return this;
         }
+        Set<Class<?>> disabledDirectTypeSet = filterTypesByTypes(disabledTypeSet);
         return new FilterManager(
-                filterMap,
-                filters,
+                filterMap(allFilters, disabledFilters, disabledDirectTypeSet),
+                allFilters,
                 disabledFilters,
                 this.filterTypes,
                 disabledTypeSet,
+                disabledDirectTypeSet,
                 filterableReferenceProps
         );
     }
@@ -150,18 +154,18 @@ public class FilterManager {
         if (filterTypes.isEmpty()) {
             return this;
         }
-        Set<Class<?>> disabledTypeSet = new HashSet<>(disabledFilterTypes);
-        disabledTypeSet.addAll(filterTypes);
-        disabledTypeSet.retainAll(this.filterTypes);
+        Set<Class<?>> disabledTypeSet = disable(disabledFilterTypes, filterTypes, this.filterTypes);
         if (disabledTypeSet.size() == disabledFilterTypes.size()) {
             return this;
         }
+        Set<Class<?>> disabledDirectTypeSet = filterTypesByTypes(disabledTypeSet);
         return new FilterManager(
-                filterMap,
-                filters,
+                filterMap(allFilters, disabledFilters, disabledDirectTypeSet),
+                allFilters,
                 disabledFilters,
                 this.filterTypes,
                 disabledTypeSet,
+                disabledDirectTypeSet,
                 filterableReferenceProps
         );
     }
@@ -170,28 +174,19 @@ public class FilterManager {
         if (props.isEmpty()) {
             return this;
         }
+        validateFilterableReferenceProps(props);
         Set<ImmutableProp> filterableSet = new HashSet<>(filterableReferenceProps);
-        for (ImmutableProp prop : props) {
-            if (prop.isReference(TargetLevel.ENTITY) && prop.getStorage() instanceof Column) {
-                filterableSet.add(prop);
-            } else {
-                throw new IllegalArgumentException(
-                        "Cannot configure `" +
-                                prop +
-                                "` as filterable reference property, it is not " +
-                                "many-to-one property based on foreign key"
-                );
-            }
-        }
+        filterableSet.addAll(props);
         if (filterableSet.size() == filterableReferenceProps.size()) {
             return this;
         }
         return new FilterManager(
                 filterMap,
-                filters,
+                allFilters,
                 disabledFilters,
                 filterTypes,
                 disabledFilterTypes,
+                disabledFilterDirectTypes,
                 filterableSet
         );
     }
@@ -207,10 +202,11 @@ public class FilterManager {
         }
         return new FilterManager(
                 filterMap,
-                filters,
+                allFilters,
                 disabledFilters,
                 filterTypes,
                 disabledFilterTypes,
+                disabledFilterDirectTypes,
                 filterableSet
         );
     }
@@ -239,14 +235,6 @@ public class FilterManager {
             }
         }
         return new CompositeCacheableFilter((List<CacheableFilter<Columns>>)(List<?>)filters);
-    }
-    
-    private Set<Class<?>> disabledFilterDirectTypes() {
-        Set<Class<?>> set = new HashSet<>();
-        for (Class<?> disabledFilterType : disabledFilterTypes) {
-            collectFilterTypes(disabledFilterType, set);
-        }
-        return set;
     }
 
     private static ImmutableType getImmutableType(Filter<Columns> filter) {
@@ -347,6 +335,66 @@ public class FilterManager {
         }
     }
 
+    private static Set<Filter<?>> filters(Collection<Filter<?>> filters) {
+        Set<Filter<?>> set = new LinkedHashSet<>();
+        for (Filter<?> filter : filters) {
+            if (filter != null) {
+                set.add(filter);
+            }
+        }
+        return set;
+    }
+
+    private static Set<Class<?>> filterTypes(Collection<Filter<?>> filters) {
+        Set<Class<?>> set = new LinkedHashSet<>();
+        for (Filter<?> filter : filters) {
+            if (filter != null) {
+                collectFilterTypes(filter.getClass(), set);
+            }
+        }
+        return set;
+    }
+
+    private static Set<Class<?>> filterTypesByTypes(Collection<Class<?>> filterTypes) {
+        Set<Class<?>> set = new LinkedHashSet<>();
+        for (Class<?> filterType : filterTypes) {
+            if (filterType != null && Filter.class.isAssignableFrom(filterType)) {
+                collectFilterTypes(filterType, set);
+            }
+        }
+        return set;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<ImmutableType, List<Filter<Columns>>> filterMap(
+            Collection<Filter<?>> filters,
+            Collection<Filter<?>> disabledFilters,
+            Collection<Class<?>> disabledFilterDirectTypes
+    ) {
+        Map<ImmutableType, List<Filter<Columns>>> map = new HashMap<>();
+        for (Filter<?> filter : filters) {
+            if (filter != null &&
+                    !disabledFilters.contains(filter) &&
+                    !disabledFilterDirectTypes.contains(filter.getClass())) {
+                for (ImmutableType immutableType = getImmutableType((Filter<Columns>) filter);
+                     immutableType != null;
+                     immutableType = immutableType.getSuperType()) {
+                    map
+                            .computeIfAbsent(immutableType, it -> new ArrayList<>())
+                            .add((Filter<Columns>) filter);
+                }
+            }
+        }
+        return map;
+    }
+
+    private static <E> Set<E> disable(Collection<E> base, Collection<E> more, Collection<E> enabled) {
+        Set<E> set = base != null ? new HashSet<>(base) : new HashSet<>();
+        set.addAll(more);
+        set.retainAll(enabled);
+        return set;
+    }
+
     private static void collectFilterTypes(Class<?> filterType, Set<Class<?>> filterTypes) {
         if (filterType != null && Filter.class.isAssignableFrom(filterType)) {
             filterTypes.add(filterType);
@@ -355,7 +403,26 @@ public class FilterManager {
     }
 
     private void validateFilterableReferenceProps(Collection<ImmutableProp> props) {
-
+        for (ImmutableProp prop : props) {
+            if (prop == null) {
+                throw new IllegalArgumentException("Filterable reference property cannot be null");
+            }
+            if (!prop.isReference(TargetLevel.ENTITY) || !(prop.getStorage() instanceof Column)) {
+                throw new IllegalArgumentException(
+                        "Cannot configure `" +
+                                prop +
+                                "` as filterable reference property, it must be not " +
+                                "many-to-one property based on foreign key"
+                );
+            }
+            if (!prop.isNullable()) {
+                throw new IllegalArgumentException(
+                        "Cannot configure `" +
+                                prop +
+                                "` as filterable reference property, it must be nullable"
+                );
+            }
+        }
     }
 
     private static class CompositeFilter implements Filter<Columns> {

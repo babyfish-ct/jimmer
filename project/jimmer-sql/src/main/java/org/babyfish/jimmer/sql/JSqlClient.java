@@ -130,6 +130,10 @@ public interface JSqlClient {
 
     Filter<Columns> getFilter(ImmutableType type);
 
+    Filter<Columns> getFilter(ImmutableProp prop);
+
+    Filter<Columns> getFilter(TypedProp.Association<?, ?> prop);
+
     DraftInterceptor<?> getDraftInterceptor(ImmutableType type);
 
     interface Builder {
@@ -181,6 +185,12 @@ public interface JSqlClient {
 
         @OldChain
         Builder addDisabledFilters(Collection<Filter<?>> filters);
+
+        @OldChain
+        Builder addFilterableReferenceProps(ImmutableProp... props);
+
+        @OldChain
+        Builder addFilterableReferenceProps(TypedProp.Reference<?, ?>... props);
 
         @OldChain
         Builder addDraftInterceptor(DraftInterceptor<?> interceptor);

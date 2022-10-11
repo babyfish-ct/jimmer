@@ -57,6 +57,13 @@ public class EntitiesImpl implements Entities {
         return con;
     }
 
+    public EntitiesImpl forSqlClient(JSqlClient sqlClient) {
+        if (this.sqlClient == sqlClient) {
+            return this;
+        }
+        return new EntitiesImpl(sqlClient, forUpdate, con);
+    }
+
     @Override
     public Entities forUpdate() {
         if (forUpdate) {

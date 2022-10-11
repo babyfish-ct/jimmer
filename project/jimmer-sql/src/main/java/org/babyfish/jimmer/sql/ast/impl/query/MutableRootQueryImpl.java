@@ -9,7 +9,6 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
-import org.babyfish.jimmer.sql.filter.Filter;
 
 import java.util.Arrays;
 import java.util.Collections;

@@ -36,13 +36,13 @@ public class GlobalFilterTest extends AbstractQueryTest {
         this.sqlClient = getSqlClient(it -> {
            it.addFilter(UNDELETED_FILTER);
            it.addDisabledFilter(DELETED_FILTER);
+           it.addFilterableReferenceProps(PermissionProps.ROLE);
         });
         this.sqlClientForDeletedData = sqlClient
-                .filters(it ->
-                        it
-                                .enable(DELETED_FILTER)
-                                .disable(UNDELETED_FILTER)
-                );
+                .filters(it -> {
+                    it.enable(DELETED_FILTER);
+                    it.disable(UNDELETED_FILTER);
+                });
     }
 
     @Test
@@ -62,12 +62,12 @@ public class GlobalFilterTest extends AbstractQueryTest {
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                     "from ROLE as tb_1_ " +
                                     "where tb_1_.DELETED = ?"
-                    );
+                    ).variables(false);
                     ctx.statement(1).sql(
                             "select tb_1_.ID " +
                                     "from PERMISSION as tb_1_ " +
                                     "where tb_1_.DELETED = ? and tb_1_.ROLE_ID = ?"
-                    );
+                    ).variables(false, 1L);
                     ctx.rows(
                             "[" +
                                     "--->{" +
@@ -106,12 +106,12 @@ public class GlobalFilterTest extends AbstractQueryTest {
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                     "from ROLE as tb_1_ " +
                                     "where tb_1_.DELETED = ?"
-                    );
+                    ).variables(false);
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                     "from PERMISSION as tb_1_ " +
                                     "where tb_1_.DELETED = ? and tb_1_.ROLE_ID = ?"
-                    );
+                    ).variables(false, 1L);
                     ctx.rows(
                             "[" +
                                     "--->{" +
@@ -137,7 +137,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testUndeletedPermissionAndIdOnlyRole() {
+    public void testQueryUndeletedPermissionAndIdOnlyRole() {
         executeAndExpect(
                 sqlClient.createQuery(PermissionTable.class, RootSelectable::select),
                 ctx -> {
@@ -145,18 +145,37 @@ public class GlobalFilterTest extends AbstractQueryTest {
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
                                     "from PERMISSION as tb_1_ " +
                                     "where tb_1_.DELETED = ?"
-                    );
+                    ).variables(false);
                     ctx.statement(1).sql(
                             "select tb_1_.ID from ROLE as tb_1_ " +
                                     "where tb_1_.DELETED = ? and " +
                                     "tb_1_.ID in (?, ?)"
+                    ).variables(false, 1L, 2L);
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"name\":\"p_1\"," +
+                                    "--->--->\"deleted\":false," +
+                                    "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                    "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                    "--->--->\"role\":{\"id\":1},\"" +
+                                    "--->--->id\":1" +
+                                    "--->},{" +
+                                    "--->--->\"name\":\"p_3\"," +
+                                    "--->--->\"deleted\":false," +
+                                    "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                    "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                    "--->--->\"role\":null," +
+                                    "--->--->\"id\":3" +
+                                    "--->}" +
+                                    "]"
                     );
                 }
         );
     }
 
     @Test
-    public void testUndeletedPermissionAndRole() {
+    public void testQueryUndeletedPermissionAndRole() {
         executeAndExpect(
                 sqlClient.createQuery(PermissionTable.class, (q, permission) -> {
                     return q.select(
@@ -175,11 +194,218 @@ public class GlobalFilterTest extends AbstractQueryTest {
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
                                     "from PERMISSION as tb_1_ " +
                                     "where tb_1_.DELETED = ?"
-                    );
+                    ).variables(false);
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                     "from ROLE as tb_1_ " +
                                     "where tb_1_.DELETED = ? and tb_1_.ID in (?, ?)"
+                    ).variables(false, 1L, 2L);
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"name\":\"p_1\"," +
+                                    "--->--->\"deleted\":false," +
+                                    "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                    "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                    "--->--->\"role\":{" +
+                                    "--->--->--->\"name\":\"r_1\"," +
+                                    "--->--->--->\"deleted\":false," +
+                                    "--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                    "--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                    "--->--->--->\"id\":1" +
+                                    "--->--->}," +
+                                    "--->--->\"id\":1" +
+                                    "--->},{" +
+                                    "--->--->\"name\":\"p_3\"," +
+                                    "--->--->\"deleted\":false," +
+                                    "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                    "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                    "--->--->\"role\":null," +
+                                    "--->--->\"id\":3" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testQueryDeletedRoleWithIdOnlyPermissions() {
+        executeAndExpect(
+                sqlClientForDeletedData.createQuery(RoleTable.class, (q, role) -> {
+                    return q.select(
+                            role.fetch(
+                                    RoleFetcher.$
+                                            .allScalarFields()
+                                            .permissions()
+                            )
+                    );
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
+                                    "from ROLE as tb_1_ " +
+                                    "where tb_1_.DELETED = ?"
+                    ).variables(true);
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID " +
+                                    "from PERMISSION as tb_1_ " +
+                                    "where tb_1_.DELETED = ? and tb_1_.ROLE_ID = ?"
+                    ).variables(true, 2L);
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"name\":\"r_2\"," +
+                                    "--->--->\"deleted\":true," +
+                                    "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                    "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                    "--->--->\"permissions\":[" +
+                                    "--->--->--->{\"id\":4}" +
+                                    "--->--->]," +
+                                    "--->--->\"id\":2" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testQueryDeletedRoleWithPermissions() {
+        executeAndExpect(
+                sqlClientForDeletedData.createQuery(RoleTable.class, (q, role) -> {
+                    return q.select(
+                            role.fetch(
+                                    RoleFetcher.$
+                                            .allScalarFields()
+                                            .permissions(
+                                                    PermissionFetcher.$
+                                                            .allScalarFields()
+                                            )
+                            )
+                    );
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
+                                    "from ROLE as tb_1_ " +
+                                    "where tb_1_.DELETED = ?"
+                    ).variables(true);
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
+                                    "from PERMISSION as tb_1_ " +
+                                    "where tb_1_.DELETED = ? and tb_1_.ROLE_ID = ?"
+                    ).variables(true, 2L);
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"name\":\"r_2\"," +
+                                    "--->--->\"deleted\":true," +
+                                    "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                    "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                    "--->--->\"permissions\":[" +
+                                    "--->--->--->{" +
+                                    "--->--->--->--->\"name\":\"p_4\"," +
+                                    "--->--->--->--->\"deleted\":true," +
+                                    "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                    "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                    "--->--->--->--->\"id\":4" +
+                                    "--->--->--->}" +
+                                    "--->--->]," +
+                                    "--->--->\"id\":2" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testQueryDeletedPermissionAndIdOnlyRole() {
+        executeAndExpect(
+                sqlClientForDeletedData.createQuery(PermissionTable.class, RootSelectable::select),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
+                                    "from PERMISSION as tb_1_ " +
+                                    "where tb_1_.DELETED = ?"
+                    ).variables(true);
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID from ROLE as tb_1_ " +
+                                    "where tb_1_.DELETED = ? and " +
+                                    "tb_1_.ID in (?, ?)"
+                    ).variables(true, 1L, 2L);
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"name\":\"p_2\"," +
+                                    "--->--->\"deleted\":true," +
+                                    "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                    "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                    "--->--->\"role\":null," +
+                                    "--->--->\"id\":2" +
+                                    "--->},{" +
+                                    "--->--->\"name\":\"p_4\"," +
+                                    "--->--->\"deleted\":true," +
+                                    "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                    "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                    "--->--->\"role\":{\"id\":2}," +
+                                    "--->--->\"id\":4" +
+                                    "--->}]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testQueryDeletedPermissionAndRole() {
+        executeAndExpect(
+                sqlClientForDeletedData.createQuery(PermissionTable.class, (q, permission) -> {
+                    return q.select(
+                            permission.fetch(
+                                    PermissionFetcher.$
+                                            .allScalarFields()
+                                            .role(
+                                                    RoleFetcher.$
+                                                            .allScalarFields()
+                                            )
+                            )
+                    );
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
+                                    "from PERMISSION as tb_1_ " +
+                                    "where tb_1_.DELETED = ?"
+                    ).variables(true);
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
+                                    "from ROLE as tb_1_ " +
+                                    "where tb_1_.DELETED = ? and tb_1_.ID in (?, ?)"
+                    ).variables(true, 1L, 2L);
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"name\":\"p_2\"," +
+                                    "--->--->\"deleted\":true," +
+                                    "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                    "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                    "--->--->\"role\":null,\"id\":2" +
+                                    "--->},{" +
+                                    "--->--->\"name\":\"p_4\"," +
+                                    "--->--->\"deleted\":true," +
+                                    "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                    "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                    "--->--->\"role\":{" +
+                                    "--->--->--->\"name\":\"r_2\"," +
+                                    "--->--->--->\"deleted\":true," +
+                                    "--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                    "--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                    "--->--->--->\"id\":2" +
+                                    "--->--->}," +
+                                    "--->--->\"id\":4" +
+                                    "--->}" +
+                                    "]"
                     );
                 }
         );

@@ -5,7 +5,6 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.table.Columns;
-import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.FilterManager;
@@ -43,6 +42,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 class JSqlClientImpl implements JSqlClient {
 
@@ -69,7 +69,7 @@ class JSqlClientImpl implements JSqlClient {
 
     private final int defaultListBatchSize;
 
-    private final Entities entities;
+    private final EntitiesImpl entities;
 
     private final Caches caches;
 
@@ -90,7 +90,7 @@ class JSqlClientImpl implements JSqlClient {
             Map<Class<?>, IdGenerator> idGeneratorMap,
             int defaultBatchSize,
             int defaultListBatchSize,
-            Entities entities,
+            EntitiesImpl entities,
             Caches caches,
             Triggers triggers,
             TransientResolverManager transientResolverManager,
@@ -115,7 +115,7 @@ class JSqlClientImpl implements JSqlClient {
         this.defaultListBatchSize = defaultListBatchSize;
         this.entities =
                 entities != null ?
-                        entities :
+                        entities.forSqlClient(this) :
                         new EntitiesImpl(this);
         this.caches =
                 caches != null ?
@@ -376,6 +376,16 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
+    public Filter<Columns> getFilter(ImmutableProp prop) {
+        return filterManager.get(prop);
+    }
+
+    @Override
+    public Filter<Columns> getFilter(TypedProp.Association<?, ?> prop) {
+        return getFilter(prop.unwrap());
+    }
+
+    @Override
     public DraftInterceptor<?> getDraftInterceptor(ImmutableType type) {
         return draftInterceptorManager.get(type);
     }
@@ -544,6 +554,20 @@ class JSqlClientImpl implements JSqlClient {
         public Builder addDisabledFilters(Collection<Filter<?>> filters) {
             this.filters.addAll(filters);
             this.disabledFilters.addAll(filters);
+            return this;
+        }
+
+        @Override
+        public Builder addFilterableReferenceProps(ImmutableProp... props) {
+            this.filterableReferenceProps.addAll(Arrays.asList(props));
+            return this;
+        }
+
+        @Override
+        public Builder addFilterableReferenceProps(TypedProp.Reference<?, ?>... props) {
+            this.filterableReferenceProps.addAll(
+                    Arrays.stream(props).map(TypedProp::unwrap).collect(Collectors.toList())
+            );
             return this;
         }
 
