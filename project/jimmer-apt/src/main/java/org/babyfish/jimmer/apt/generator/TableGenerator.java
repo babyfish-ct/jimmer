@@ -67,12 +67,10 @@ public class TableGenerator {
                                 type.getTableExClassName().simpleName() :
                                 type.getTableClassName().simpleName()
                 )
-                .addModifiers(Modifier.PUBLIC)
-                .addSuperinterface(
-                        isTableEx ?
-                                type.getColumnsExClassName(type.getClassName()) :
-                                type.getColumnsClassName(type.getClassName())
-                );
+                .addModifiers(Modifier.PUBLIC);
+        if (!isTableEx) {
+            typeBuilder.addSuperinterface(type.getColumnsClassName());
+        }
         if (isTableEx) {
             typeBuilder.superclass(type.getTableClassName());
             typeBuilder.addSuperinterface(

@@ -38,6 +38,8 @@ class ImmutableTypeImpl implements ImmutableType {
 
     private Map<String, ImmutableProp> selectableProps;
 
+    private Map<String, ImmutableProp> selectableReferenceProps;
+
     private ImmutableProp idProp;
 
     private ImmutableProp versionProp;
@@ -255,6 +257,22 @@ class ImmutableTypeImpl implements ImmutableType {
             this.selectableProps = Collections.unmodifiableMap(selectableProps);
         }
         return selectableProps;
+    }
+
+    @Override
+    public Map<String, ImmutableProp> getSelectableReferenceProps() {
+        Map<String, ImmutableProp> selectableReferenceProps = this.selectableReferenceProps;
+        if (selectableReferenceProps == null) {
+            selectableReferenceProps = new LinkedHashMap<>();
+            selectableReferenceProps.put(getIdProp().getName(), getIdProp());
+            for (ImmutableProp prop : getProps().values()) {
+                if (prop.isReference(TargetLevel.ENTITY) && prop.getStorage() instanceof Column) {
+                    selectableReferenceProps.put(prop.getName(), prop);
+                }
+            }
+            this.selectableReferenceProps = Collections.unmodifiableMap(selectableReferenceProps);
+        }
+        return selectableReferenceProps;
     }
 
     void setIdProp(ImmutableProp idProp) {

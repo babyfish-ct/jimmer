@@ -1,9 +1,15 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
+import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
 import java.sql.Connection;
@@ -26,16 +32,31 @@ public class Fetchers {
         }
 
         Map<Integer, List<Object>> columnMap = new LinkedHashMap<>();
+        List<Selection<?>> newSelections = null;
         for (int i = 0; i < selections.size(); i++) {
             Selection<?> selection = selections.get(i);
             if (selection instanceof FetcherSelection<?>) {
-                if (!((FetcherSelection<?>)selection).getFetcher().isSimpleFetcher()) {
+                Fetcher<?> fetcher = ((FetcherSelection<?>)selection).getFetcher();
+                if (!fetcher.isSimpleFetcher() ||
+                    hasReferenceFilter(fetcher.getImmutableType(), sqlClient)) {
                     columnMap.put(i, new ArrayList<>());
+                }
+            } else if (selection instanceof Table<?>) {
+                TableImplementor<?> tableImplementor = TableWrappers.unwrap((Table<?>) selection);
+                if (hasReferenceFilter(tableImplementor.getImmutableType(), sqlClient)) {
+                    columnMap.put(i, new ArrayList<>());
+                    if (newSelections == null) {
+                        newSelections = new ArrayList<>(selections);
+                    }
+                    newSelections.set(i, tableImplementor.toFetcherSelection());
                 }
             }
         }
         if (columnMap.isEmpty()) {
             return;
+        }
+        if (newSelections != null) {
+            selections = newSelections;
         }
 
         for (Object row : rows) {
@@ -92,5 +113,14 @@ public class Fetchers {
                 ctx.execute();
             }
         });
+    }
+
+    private static boolean hasReferenceFilter(ImmutableType type, JSqlClient sqlClient) {
+        for (ImmutableProp prop : type.getSelectableReferenceProps().values()) {
+            if (sqlClient.getFilter(prop.getTargetType()) != null) {
+                return true;
+            }
+        }
+        return false;
     }
 }

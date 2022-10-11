@@ -6,5 +6,5 @@ package org.babyfish.jimmer.sql.ast.table;
  * 1. It is super class of {@link Table}
  * 2. It must be decorated by {@link ColumnsFor}
  */
-public interface ColumnsEx<E> extends Columns<E> {
+public interface ColumnsEx extends Columns {
 }

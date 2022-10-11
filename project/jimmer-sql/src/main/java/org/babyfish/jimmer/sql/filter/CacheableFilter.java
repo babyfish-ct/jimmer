@@ -1,12 +1,13 @@
 package org.babyfish.jimmer.sql.filter;
 
+import org.babyfish.jimmer.sql.ast.table.Columns;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.event.EntityEvent;
 
 import java.util.NavigableMap;
 
-public interface StatefulFilter<T extends Table<?>> extends Filter<T> {
+public interface CacheableFilter<C extends Columns> extends Filter<C> {
 
     default NavigableMap<String, Object> getParameters() {
         throw new UnsupportedOperationException(

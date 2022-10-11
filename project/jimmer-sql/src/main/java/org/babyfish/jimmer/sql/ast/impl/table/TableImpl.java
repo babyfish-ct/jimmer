@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -29,24 +30,26 @@ import java.util.function.Function;
 
 class TableImpl<E> implements TableImplementor<E> {
 
-    private AbstractMutableStatementImpl statement;
+    private final AbstractMutableStatementImpl statement;
 
-    private ImmutableType immutableType;
+    private final ImmutableType immutableType;
 
-    private TableImpl<?> parent;
+    private final TableImpl<?> parent;
 
-    private boolean isInverse;
+    private final boolean isInverse;
 
-    private ImmutableProp joinProp;
+    private final ImmutableProp joinProp;
 
     private JoinType joinType;
 
-    private String alias;
+    private final String alias;
 
     private String middleTableAlias;
 
-    private Map<String, TableImpl<?>> childTableMap =
+    private final Map<String, TableImpl<?>> childTableMap =
             new LinkedHashMap<>();
+
+    private Selection<E> fetcherSelection;
 
     public TableImpl(
             AbstractMutableStatementImpl statement,
@@ -200,7 +203,7 @@ class TableImpl<E> implements TableImplementor<E> {
     @Override
     public <XT extends Table<?>> XT inverseJoin(
             Class<XT> targetTableType,
-            Function<XT, ? extends Table<E>> backPropBlock
+            Function<XT, ? extends Table<?>> backPropBlock
     ) {
         return inverseJoin(targetTableType, backPropBlock, JoinType.INNER);
     }
@@ -208,7 +211,7 @@ class TableImpl<E> implements TableImplementor<E> {
     @Override
     public <XT extends Table<?>> XT inverseJoin(
             Class<XT> targetTableType,
-            Function<XT, ? extends Table<E>> backPropBlock,
+            Function<XT, ? extends Table<?>> backPropBlock,
             JoinType joinType
     ) {
         return inverseJoin(ImmutableProps.join(targetTableType, backPropBlock), joinType);
@@ -287,13 +290,6 @@ class TableImpl<E> implements TableImplementor<E> {
         if (fetcher == null) {
             return this;
         }
-        if (fetcher.isSimpleFetcher() &&
-                fetcher.getFieldMap().keySet().equals(
-                        immutableType.getSelectableProps().keySet()
-                )
-        ) {
-            return this;
-        }
         if (immutableType != fetcher.getImmutableType()) {
             throw new IllegalArgumentException(
                     "Illegal fetcher type, current table is \"" +
@@ -304,6 +300,20 @@ class TableImpl<E> implements TableImplementor<E> {
             );
         }
         return new FetcherSelectionImpl<>(this, fetcher);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Selection<E> toFetcherSelection() {
+        Selection<E> fetcherSelection = this.fetcherSelection;
+        if (fetcherSelection == null) {
+            Fetcher<E> fetcher =
+                    new FetcherImpl<>(
+                            (Class<E>) immutableType.getJavaClass()
+                    ).allTableFields();
+            this.fetcherSelection = fetcherSelection = fetch(fetcher);
+        }
+        return fetcherSelection;
     }
 
     @Override

@@ -119,6 +119,9 @@ class FetcherTask {
         if (!isLoaded(draft, field)) {
             return false;
         }
+        if (sqlClient.getFilter(field.getProp().getTargetType()) != null) {
+            return false;
+        }
         Fetcher<?> childFetcher = field.getChildFetcher();
         Object childValue = draft.__get(field.getProp().getId());
         if (childFetcher != null && childValue != null) {
