@@ -233,7 +233,6 @@ public class EntitiesImpl implements Entities {
                             new CacheEnvironment<>(
                                     sqlClient,
                                     con,
-                                    null,
                                     CacheLoader.objectLoader(
                                             sqlClient,
                                             con,

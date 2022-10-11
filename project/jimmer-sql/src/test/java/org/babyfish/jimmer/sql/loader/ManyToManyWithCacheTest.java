@@ -57,20 +57,17 @@ public class ManyToManyWithCacheTest extends AbstractCachedLoaderTest {
                 )
         );
         for (int i = 0; i < 2; i++) {
-            boolean useSql = i == 0;
             connectAndExpect(
                     con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("authors"))
                             .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                     ctx -> {
-                        if (useSql) {
-                            ctx.sql(
-                                    "select tb_2_.BOOK_ID, tb_1_.ID " +
-                                            "from AUTHOR as tb_1_ " +
-                                            "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
-                                            "where tb_2_.BOOK_ID in (?, ?) " +
-                                            "and tb_1_.FIRST_NAME like ?"
-                            ).variables(learningGraphQLId3, graphQLInActionId3, "A%");
-                        }
+                        ctx.sql(
+                                "select tb_2_.BOOK_ID, tb_1_.ID " +
+                                        "from AUTHOR as tb_1_ " +
+                                        "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                        "where tb_2_.BOOK_ID in (?, ?) " +
+                                        "and tb_1_.FIRST_NAME like ?"
+                        ).variables(learningGraphQLId3, graphQLInActionId3, "A%");
                         ctx.rows(1);
                         ctx.row(0, map -> {
                             expect(
@@ -150,17 +147,12 @@ public class ManyToManyWithCacheTest extends AbstractCachedLoaderTest {
                         .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(
-                            "select tb_2_.BOOK_ID, tb_1_.ID " +
+                            "select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
                                     "from AUTHOR as tb_1_ " +
                                     "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "where tb_2_.BOOK_ID in (?, ?) " +
                                     "and tb_1_.FIRST_NAME like ?"
                     ).variables(learningGraphQLId3, graphQLInActionId3, "A%");
-                    ctx.statement(1).sql(
-                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "where tb_1_.ID = ?"
-                    ).variables(alexId);
                     ctx.rows(1);
                     ctx.row(0, map -> {
                         expect(

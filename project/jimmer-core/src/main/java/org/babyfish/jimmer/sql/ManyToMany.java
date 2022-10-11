@@ -10,4 +10,5 @@ import java.lang.annotation.*;
 @Target(ElementType.METHOD)
 public @interface ManyToMany {
     String mappedBy() default "";
+    OrderedProp[] orderedProps() default {};
 }

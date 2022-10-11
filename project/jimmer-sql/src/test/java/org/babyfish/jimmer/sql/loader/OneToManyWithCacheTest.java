@@ -69,19 +69,16 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
                 )
         );
         for (int i = 0; i < 2; i++) {
-            boolean useSql = i == 0;
             connectAndExpect(
                     con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
                             .load(Entities.BOOK_STORES),
                     ctx -> {
-                        if (useSql) {
-                            ctx.sql(
-                                    "select tb_1_.STORE_ID, tb_1_.ID " +
-                                            "from BOOK as tb_1_ " +
-                                            "where tb_1_.STORE_ID in (?, ?) " +
-                                            "and tb_1_.EDITION = ?"
-                            ).variables(oreillyId, manningId, 3);
-                        }
+                        ctx.sql(
+                                "select tb_1_.STORE_ID, tb_1_.ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.STORE_ID in (?, ?) " +
+                                        "and tb_1_.EDITION = ?"
+                        ).variables(oreillyId, manningId, 3);
                         ctx.rows(1);
                         ctx.row(
                                 0,
@@ -215,29 +212,16 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
                 )
         );
         for (int i = 0; i < 2; i++) {
-            boolean useSql = i == 0;
             connectAndExpect(
                     con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
                             .load(Entities.BOOK_STORES),
                     ctx -> {
-                        if (useSql) {
-                            ctx.sql(
-                                    "select tb_1_.STORE_ID, tb_1_.ID " +
-                                            "from BOOK as tb_1_ " +
-                                            "where tb_1_.STORE_ID in (?, ?) " +
-                                            "and tb_1_.EDITION = ?"
-                            ).variables(oreillyId, manningId, 3);
-                            ctx.statement(1).sql(
-                                    "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                            "from BOOK as tb_1_ " +
-                                            "where tb_1_.ID in (?, ?, ?, ?)"
-                            ).variables(
-                                    learningGraphQLId3,
-                                    effectiveTypeScriptId3,
-                                    programmingTypeScriptId3,
-                                    graphQLInActionId3
-                            );
-                        }
+                        ctx.sql(
+                                "select tb_1_.STORE_ID, tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.STORE_ID in (?, ?) " +
+                                        "and tb_1_.EDITION = ?"
+                        ).variables(oreillyId, manningId, 3);
                         ctx.rows(1);
                         ctx.row(
                                 0,

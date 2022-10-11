@@ -4,7 +4,6 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
-import org.babyfish.jimmer.sql.cache.CacheFilter;
 import org.babyfish.jimmer.sql.cache.ValueSerializer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,9 +27,6 @@ public class CacheImpl<T> implements Cache<Object, T> {
     @NotNull
     @Override
     public Map<Object, T> getAll(@NotNull Collection<Object> keys, @NotNull CacheEnvironment<Object, T> env) {
-        if (!CacheFilter.isEmpty(env.getFilter())) {
-            throw new IllegalArgumentException("Object cache does not support filter");
-        }
         Map<Object, T> resultMap = new LinkedHashMap<>();
         Set<Object> missedKeys = new LinkedHashSet<>();
         for (Object key : keys) {

@@ -10,4 +10,5 @@ import java.lang.annotation.*;
 @Target(ElementType.METHOD)
 public @interface OneToMany {
     String mappedBy();
+    OrderedProp[] orderedProps() default {};
 }

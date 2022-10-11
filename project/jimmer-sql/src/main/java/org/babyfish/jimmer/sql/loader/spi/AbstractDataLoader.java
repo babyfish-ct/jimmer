@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.loader.spi;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.OrderedItem;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -186,7 +187,6 @@ public abstract class AbstractDataLoader {
                 new CacheEnvironment<>(
                         sqlClient,
                         con,
-                        filter,
                         (ids) -> typedResolver.resolve(ids, con),
                         false
                 )
@@ -200,26 +200,22 @@ public abstract class AbstractDataLoader {
 
     private Map<ImmutableSpi, ImmutableSpi> loadParents(Collection<ImmutableSpi> sources) {
         Cache<Object, Object> fkCache = sqlClient.getCaches().getPropertyCache(prop);
-        if (fkCache == null || (filter != null && !filter.getArgs().isEmpty())) {
+        if (fkCache == null || filter != null) {
             return loadParentsDirectly(sources);
         }
         Map<Object, Object> fkMap = new LinkedHashMap<>(
                 (sources.size() * 4 + 2) / 3
         );
         Collection<Object> missedFkSourceIds;
-        if (filter != null) {
-            missedFkSourceIds = toSourceIds(sources);
-        } else {
-            missedFkSourceIds = new ArrayList<>();
-            for (ImmutableSpi source : sources) {
-                if (source.__isLoaded(prop.getId())) {
-                    ImmutableSpi target = (ImmutableSpi) source.__get(prop.getId());
-                    if (target != null) {
-                        fkMap.put(toSourceId(source), toTargetId(target));
-                    }
-                } else {
-                    missedFkSourceIds.add(toSourceId(source));
+        missedFkSourceIds = new ArrayList<>();
+        for (ImmutableSpi source : sources) {
+            if (source.__isLoaded(prop.getId())) {
+                ImmutableSpi target = (ImmutableSpi) source.__get(prop.getId());
+                if (target != null) {
+                    fkMap.put(toSourceId(source), toTargetId(target));
                 }
+            } else {
+                missedFkSourceIds.add(toSourceId(source));
             }
         }
         if (!missedFkSourceIds.isEmpty()) {
@@ -228,7 +224,6 @@ public abstract class AbstractDataLoader {
                     new CacheEnvironment<>(
                             sqlClient,
                             con,
-                            filter,
                             this::queryForeignKeyMap,
                             false
                     )
@@ -314,7 +309,7 @@ public abstract class AbstractDataLoader {
 
     private Map<ImmutableSpi, ImmutableSpi> loadTargetMap(Collection<ImmutableSpi> sources) {
         Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
-        if (cache == null|| (filter != null && !filter.getArgs().isEmpty())) {
+        if (cache == null|| filter != null) {
             return loadTargetMapDirectly(sources);
         }
         List<Object> sourceIds = toSourceIds(sources);
@@ -323,7 +318,6 @@ public abstract class AbstractDataLoader {
                 new CacheEnvironment<>(
                         sqlClient,
                         con,
-                        filter,
                         it -> Tuple2.toMap(
                                 querySourceTargetIdPairs(it)
                         ),
@@ -363,7 +357,7 @@ public abstract class AbstractDataLoader {
 
     private Map<ImmutableSpi, List<ImmutableSpi>> loadTargetMultiMap(Collection<ImmutableSpi> sources) {
         Cache<Object, List<Object>> cache = sqlClient.getCaches().getPropertyCache(prop);
-        if (cache == null || (filter != null && !filter.getArgs().isEmpty())) {
+        if (cache == null || filter != null) {
             return loadTargetMultiMapDirectly(sources);
         }
         List<Object> sourceIds = toSourceIds(sources);
@@ -372,7 +366,6 @@ public abstract class AbstractDataLoader {
                 new CacheEnvironment<>(
                         sqlClient,
                         con,
-                        filter,
                         it -> Tuple2.toMultiMap(
                                 querySourceTargetIdPairs(it)
                         ),
@@ -428,6 +421,7 @@ public abstract class AbstractDataLoader {
                 q.where(pkExpr.eq(sourceId));
                 q.where(fkExpr.isNotNull());
                 applyFilter(q, targetTable, sourceIds);
+                applySoring(q, targetTable);
                 return q.select(fkExpr);
             }).limit(limit, offset).execute(con);
             return Utils.toMap(sourceId, targetIds);
@@ -440,6 +434,7 @@ public abstract class AbstractDataLoader {
                     q.where(pkExpr.in(sourceIds));
                     q.where(fkExpr.isNotNull());
                     applyFilter(q, targetTable, sourceIds);
+                    applySoring(q, targetTable);
                     return q.select(pkExpr, fkExpr);
                 }).execute(con);
         return Tuple2.toMap(tuples);
@@ -492,6 +487,7 @@ public abstract class AbstractDataLoader {
             Expression<Object> idExpr = target.get(targetIdProp.getName());
             q.where(idExpr.in(targetIds));
             applyFilter(q, target, targetIds);
+            applySoring(q, target);
             return q.select(
                     ((Table<ImmutableSpi>)target).fetch(fetcher)
             );
@@ -501,7 +497,8 @@ public abstract class AbstractDataLoader {
     @SuppressWarnings("unchecked")
     private <R> List<Tuple2<Object, R>> executeTupleQuery(
             Collection<Object> sourceIds,
-            Function<Table<ImmutableSpi>, Selection<?>> valueExpressionGetter) {
+            Function<Table<ImmutableSpi>, Selection<?>> valueExpressionGetter
+    ) {
         if (sourceIds.size() == 1) {
             Object sourceId = sourceIds.iterator().next();
             List<R> results = Queries.createQuery(sqlClient, prop.getTargetType(), (q, target) -> {
@@ -510,6 +507,7 @@ public abstract class AbstractDataLoader {
                         .get(thisIdProp.getName());
                 q.where(sourceIdExpr.eq(sourceId));
                 applyFilter(q, target, sourceIds);
+                applySoring(q, target);
                 return q.select((Selection<R>) valueExpressionGetter.apply((Table<ImmutableSpi>) target));
             }).limit(limit, offset).execute(con);
             return Utils.toTuples(sourceId, results);
@@ -520,6 +518,7 @@ public abstract class AbstractDataLoader {
                     .get(thisIdProp.getName());
             q.where(sourceIdExpr.in(sourceIds));
             applyFilter(q, target, sourceIds);
+            applySoring(q, target);
             return q.select(sourceIdExpr, (Selection<R>) valueExpressionGetter.apply((Table<ImmutableSpi>) target));
         }).execute(con);
     }
@@ -538,6 +537,23 @@ public abstract class AbstractDataLoader {
                             keys
                     )
             );
+        }
+    }
+
+    private void applySoring(
+            MutableQuery query,
+            Table<?> table
+    ) {
+        List<OrderedItem> orderedItems = prop.getOrderedItems();
+        if (filter == null && !orderedItems.isEmpty()) {
+            for (OrderedItem orderedItem : orderedItems) {
+                Expression<?> expr = table.get(orderedItem.getProp().getName());
+                if (orderedItem.isDesc()) {
+                    query.orderBy(expr.desc());
+                } else {
+                    query.orderBy(expr);
+                }
+            }
         }
     }
 

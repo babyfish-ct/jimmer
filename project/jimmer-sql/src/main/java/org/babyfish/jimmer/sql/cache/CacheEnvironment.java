@@ -13,19 +13,15 @@ public class CacheEnvironment<K, V> {
 
     private final Connection connection;
 
-    private final CacheFilter filter;
-
     private final CacheLoader<K, V> loader;
 
     public CacheEnvironment(
             JSqlClient sqlClient,
             Connection connection,
-            CacheFilter filter,
             CacheLoader<K, V> loader,
             boolean requiresNewDraftContext) {
         this.sqlClient = Objects.requireNonNull(sqlClient, "sqlClient cannot be null");
         this.connection = Objects.requireNonNull(connection, "connection cannot be null");
-        this.filter = filter;
         this.loader = CacheLoaderWrapper.wrap(
                 Objects.requireNonNull(loader, "loader cannot be null"),
                 requiresNewDraftContext
@@ -42,11 +38,6 @@ public class CacheEnvironment<K, V> {
         return connection;
     }
 
-    @Nullable
-    public CacheFilter getFilter() {
-        return filter;
-    }
-
     @NotNull
     public CacheLoader<K, V> getLoader() {
         return loader;
@@ -54,7 +45,7 @@ public class CacheEnvironment<K, V> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(sqlClient, connection, filter, loader);
+        return Objects.hash(sqlClient, connection, loader);
     }
 
     @Override
@@ -64,7 +55,6 @@ public class CacheEnvironment<K, V> {
         CacheEnvironment<?, ?> that = (CacheEnvironment<?, ?>) o;
         return sqlClient.equals(that.sqlClient) &&
                 connection.equals(that.connection) &&
-                Objects.equals(filter, that.filter) &&
                 Objects.equals(loader, that.loader);
     }
 
@@ -73,7 +63,6 @@ public class CacheEnvironment<K, V> {
         return "CacheEnvironment{" +
                 "sqlClient=" + sqlClient +
                 ", connection=" + connection +
-                ", filter=" + filter +
                 ", loader=" + loader +
                 '}';
     }

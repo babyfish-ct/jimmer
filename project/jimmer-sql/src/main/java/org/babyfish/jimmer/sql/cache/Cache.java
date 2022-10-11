@@ -1,12 +1,12 @@
 package org.babyfish.jimmer.sql.cache;
 
-import org.babyfish.jimmer.lang.Ref;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.NavigableMap;
 
 public interface Cache<K, V> {
 
@@ -29,4 +29,23 @@ public interface Cache<K, V> {
     }
 
     void deleteAll(@NotNull Collection<K> keys, @Nullable Object reason);
+
+    interface Parameterized<K, V> extends Cache<K, V> {
+
+        @Nullable
+        default V get(
+                @NotNull K key,
+                @NotNull NavigableMap<String, Object> parameterMap,
+                @NotNull CacheEnvironment<K, V> env
+        ) {
+            return getAll(Collections.singleton(key), parameterMap, env).get(key);
+        }
+
+        @NotNull
+        Map<K, V> getAll(
+                @NotNull Collection<K> keys,
+                @NotNull NavigableMap<String, Object> parameterMap,
+                @NotNull CacheEnvironment<K, V> env
+        );
+    }
 }

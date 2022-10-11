@@ -62,20 +62,17 @@ public class InverseManyToManyTestWithCacheTest extends AbstractCachedLoaderTest
                         )
                 );
         for (int i = 0; i < 2; i++) {
-            boolean useSql = i == 0;
             connectAndExpect(
                     con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
                             .load(Entities.AUTHORS_FOR_MANY_TO_MANY),
                     ctx -> {
-                        if (useSql) {
-                            ctx.sql(
-                                    "select tb_2_.AUTHOR_ID, tb_1_.ID " +
-                                            "from BOOK as tb_1_ " +
-                                            "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
-                                            "where tb_2_.AUTHOR_ID in (?, ?) " +
-                                            "and tb_1_.EDITION = ?"
-                            ).variables(alexId, danId, 3);
-                        }
+                        ctx.sql(
+                                "select tb_2_.AUTHOR_ID, tb_1_.ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                        "where tb_2_.AUTHOR_ID in (?, ?) " +
+                                        "and tb_1_.EDITION = ?"
+                        ).variables(alexId, danId, 3);
                         ctx.rows(1);
                         ctx.row(0, map -> {
                             expect(
@@ -181,17 +178,12 @@ public class InverseManyToManyTestWithCacheTest extends AbstractCachedLoaderTest
                         .load(Entities.AUTHORS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(
-                            "select tb_2_.AUTHOR_ID, tb_1_.ID " +
+                            "select tb_2_.AUTHOR_ID, tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                     "from BOOK as tb_1_ " +
                                     "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
                                     "where tb_2_.AUTHOR_ID in (?, ?) " +
                                     "and tb_1_.EDITION = ?"
                     ).variables(alexId, danId, 3);
-                    ctx.statement(1).sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
-                                    "where tb_1_.ID in (?, ?)"
-                    ).variables(learningGraphQLId3, effectiveTypeScriptId3);
                     ctx.rows(1);
                     ctx.row(0, map -> {
                         expect(

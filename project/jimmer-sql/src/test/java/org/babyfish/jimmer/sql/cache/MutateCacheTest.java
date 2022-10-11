@@ -455,7 +455,8 @@ public class MutateCacheTest extends AbstractQueryTest {
                     it.statement(1).sql(
                             "select tb_1_.NODE_ID " +
                                     "from TREE_NODE as tb_1_ " +
-                                    "where tb_1_.PARENT_ID = ?"
+                                    "where tb_1_.PARENT_ID = ? " +
+                                    "order by tb_1_.NODE_ID asc"
                     );
                     it.statement(2).sql(
                             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
@@ -513,7 +514,8 @@ public class MutateCacheTest extends AbstractQueryTest {
                     it.statement(1).sql(
                             "select tb_1_.NODE_ID " +
                                     "from TREE_NODE as tb_1_ " +
-                                    "where tb_1_.PARENT_ID = ?"
+                                    "where tb_1_.PARENT_ID = ? " +
+                                    "order by tb_1_.NODE_ID asc"
                     );
                     it.statement(2).sql(
                             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
