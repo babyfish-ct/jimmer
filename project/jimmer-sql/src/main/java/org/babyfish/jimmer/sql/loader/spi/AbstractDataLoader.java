@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
+import org.babyfish.jimmer.sql.ast.table.Columns;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.cache.Cache;
@@ -40,7 +41,9 @@ public abstract class AbstractDataLoader {
 
     private final ImmutableProp prop;
 
-    private final Filter<Table<ImmutableSpi>> filter;
+    private final org.babyfish.jimmer.sql.filter.Filter<Columns> globalFiler;
+
+    private final Filter<Table<ImmutableSpi>> propFilter;
 
     private final ImmutableProp thisIdProp;
 
@@ -61,7 +64,7 @@ public abstract class AbstractDataLoader {
             ImmutableType entityType,
             ImmutableProp prop,
             Fetcher<?> fetcher,
-            Filter<?> filter,
+            Filter<?> propFilter,
             int limit,
             int offset
     ) {
@@ -78,7 +81,7 @@ public abstract class AbstractDataLoader {
                                 "\""
                 );
             }
-            if (filter != null) {
+            if (propFilter != null) {
                 throw new IllegalArgumentException(
                         "Cannot specify filter for scalar prop \"" +
                                 prop +
@@ -103,7 +106,12 @@ public abstract class AbstractDataLoader {
         this.sqlClient = sqlClient;
         this.con = con;
         this.prop = prop;
-        this.filter = (Filter<Table<ImmutableSpi>>) filter;
+        if (prop.isAssociation(TargetLevel.ENTITY)) {
+            globalFiler = sqlClient.getFilter(prop);
+        } else {
+            globalFiler = null;
+        }
+        this.propFilter = (Filter<Table<ImmutableSpi>>) propFilter;
         if (entityType != null) {
             if (!prop.getDeclaringType().getJavaClass().isAssignableFrom(entityType.getJavaClass())) {
                 throw new IllegalArgumentException(
@@ -200,7 +208,7 @@ public abstract class AbstractDataLoader {
 
     private Map<ImmutableSpi, ImmutableSpi> loadParents(Collection<ImmutableSpi> sources) {
         Cache<Object, Object> fkCache = sqlClient.getCaches().getPropertyCache(prop);
-        if (fkCache == null || filter != null) {
+        if (fkCache == null || propFilter != null) {
             return loadParentsDirectly(sources);
         }
         Map<Object, Object> fkMap = new LinkedHashMap<>(
@@ -266,7 +274,7 @@ public abstract class AbstractDataLoader {
         }
         Map<Object, ImmutableSpi> map1 = null;
         if (!fkMap.isEmpty()) {
-            if (filter != null) {
+            if (propFilter != null) {
                 map1 = Utils.joinMaps(
                         fkMap,
                         Utils.toMap(
@@ -286,7 +294,7 @@ public abstract class AbstractDataLoader {
         }
         Map<Object, ImmutableSpi> map2 = null;
         if (!missedFkSourceIds.isEmpty()) {
-            if (filter != null || fetcher.getFieldMap().size() > 1 || sqlClient.getFilter(prop) != null) {
+            if (globalFiler != null || propFilter != null || fetcher.getFieldMap().size() > 1) {
                 map2 = Tuple2.toMap(
                         querySourceTargetPairs(missedFkSourceIds)
                 );
@@ -309,7 +317,7 @@ public abstract class AbstractDataLoader {
 
     private Map<ImmutableSpi, ImmutableSpi> loadTargetMap(Collection<ImmutableSpi> sources) {
         Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
-        if (cache == null|| filter != null) {
+        if (cache == null|| propFilter != null) {
             return loadTargetMapDirectly(sources);
         }
         List<Object> sourceIds = toSourceIds(sources);
@@ -338,7 +346,7 @@ public abstract class AbstractDataLoader {
     private Map<ImmutableSpi, ImmutableSpi> loadTargetMapDirectly(Collection<ImmutableSpi> sources) {
         List<Object> sourceIds = toSourceIds(sources);
         Map<Object, ImmutableSpi> targetMap;
-        if (fetcher.getFieldMap().size() > 1 || sqlClient.getFilter(prop) != null) {
+        if (globalFiler != null || propFilter != null || fetcher.getFieldMap().size() > 1) {
             targetMap = Tuple2.toMap(
                     querySourceTargetPairs(sourceIds)
             );
@@ -357,7 +365,7 @@ public abstract class AbstractDataLoader {
 
     private Map<ImmutableSpi, List<ImmutableSpi>> loadTargetMultiMap(Collection<ImmutableSpi> sources) {
         Cache<Object, List<Object>> cache = sqlClient.getCaches().getPropertyCache(prop);
-        if (cache == null || filter != null) {
+        if (cache == null || propFilter != null) {
             return loadTargetMultiMapDirectly(sources);
         }
         List<Object> sourceIds = toSourceIds(sources);
@@ -394,7 +402,7 @@ public abstract class AbstractDataLoader {
     private Map<ImmutableSpi, List<ImmutableSpi>> loadTargetMultiMapDirectly(Collection<ImmutableSpi> sources) {
         List<Object> sourceIds = toSourceIds(sources);
         Map<Object, List<ImmutableSpi>> targetMap;
-        if (fetcher.getFieldMap().size() > 1 || sqlClient.getFilter(prop) != null) {
+        if (globalFiler != null || propFilter != null || fetcher.getFieldMap().size() > 1) {
             targetMap = Tuple2.toMultiMap(
                     querySourceTargetPairs(sourceIds)
             );
@@ -420,8 +428,8 @@ public abstract class AbstractDataLoader {
                 Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
                 q.where(pkExpr.eq(sourceId));
                 q.where(fkExpr.isNotNull());
-                applyFilter(q, targetTable, sourceIds);
-                applySoring(q, targetTable);
+                applyPropFilter(q, targetTable, sourceIds);
+                applyDefaultOrder(q, targetTable);
                 return q.select(fkExpr);
             }).limit(limit, offset).execute(con);
             return Utils.toMap(sourceId, targetIds);
@@ -433,15 +441,15 @@ public abstract class AbstractDataLoader {
                     Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
                     q.where(pkExpr.in(sourceIds));
                     q.where(fkExpr.isNotNull());
-                    applyFilter(q, targetTable, sourceIds);
-                    applySoring(q, targetTable);
+                    applyPropFilter(q, targetTable, sourceIds);
+                    applyDefaultOrder(q, targetTable);
                     return q.select(pkExpr, fkExpr);
                 }).execute(con);
         return Tuple2.toMap(tuples);
     }
 
     private List<Tuple2<Object, Object>> querySourceTargetIdPairs(Collection<Object> sourceIds) {
-        if (filter == null) {
+        if (propFilter == null) {
             boolean useMiddleTable = false;
             Storage storage = prop.getStorage();
             if (storage != null) {
@@ -486,8 +494,8 @@ public abstract class AbstractDataLoader {
         return Queries.createQuery(sqlClient, prop.getTargetType(), (q, target) -> {
             Expression<Object> idExpr = target.get(targetIdProp.getName());
             q.where(idExpr.in(targetIds));
-            applyFilter(q, target, targetIds);
-            applySoring(q, target);
+            applyPropFilter(q, target, targetIds);
+            applyDefaultOrder(q, target);
             return q.select(
                     ((Table<ImmutableSpi>)target).fetch(fetcher)
             );
@@ -506,8 +514,8 @@ public abstract class AbstractDataLoader {
                         .inverseJoin(prop.getDeclaringType().getJavaClass(), prop.getName())
                         .get(thisIdProp.getName());
                 q.where(sourceIdExpr.eq(sourceId));
-                applyFilter(q, target, sourceIds);
-                applySoring(q, target);
+                applyPropFilter(q, target, sourceIds);
+                applyDefaultOrder(q, target);
                 return q.select((Selection<R>) valueExpressionGetter.apply((Table<ImmutableSpi>) target));
             }).limit(limit, offset).execute(con);
             return Utils.toTuples(sourceId, results);
@@ -517,20 +525,20 @@ public abstract class AbstractDataLoader {
                     .inverseJoin(prop.getDeclaringType().getJavaClass(), prop.getName())
                     .get(thisIdProp.getName());
             q.where(sourceIdExpr.in(sourceIds));
-            applyFilter(q, target, sourceIds);
-            applySoring(q, target);
+            applyPropFilter(q, target, sourceIds);
+            applyDefaultOrder(q, target);
             return q.select(sourceIdExpr, (Selection<R>) valueExpressionGetter.apply((Table<ImmutableSpi>) target));
         }).execute(con);
     }
 
     @SuppressWarnings("unchecked")
-    private void applyFilter(
+    private void applyPropFilter(
             MutableQuery query,
             Table<?> table,
             Collection<Object> keys
     ) {
-        if (filter != null) {
-            filter.apply(
+        if (propFilter != null) {
+            propFilter.apply(
                     FilterArgsImpl.of(
                             (AbstractMutableQueryImpl) query,
                             (Table<ImmutableSpi>) table,
@@ -540,12 +548,12 @@ public abstract class AbstractDataLoader {
         }
     }
 
-    private void applySoring(
+    private void applyDefaultOrder(
             MutableQuery query,
             Table<?> table
     ) {
         List<OrderedItem> orderedItems = prop.getOrderedItems();
-        if (filter == null && !orderedItems.isEmpty()) {
+        if (globalFiler == null && propFilter == null && !orderedItems.isEmpty()) {
             for (OrderedItem orderedItem : orderedItems) {
                 Expression<?> expr = table.get(orderedItem.getProp().getName());
                 if (orderedItem.isDesc()) {
@@ -577,7 +585,7 @@ public abstract class AbstractDataLoader {
 
     @SuppressWarnings("unchecked")
     private List<ImmutableSpi> findTargets(Collection<Object> targetIds) {
-        if (fetcher.getFieldMap().size() > 1 || sqlClient.getFilter(prop) != null) {
+        if (globalFiler != null || propFilter != null || fetcher.getFieldMap().size() > 1) {
             return sqlClient.getEntities().forConnection(con).findByIds(
                     fetcher,
                     targetIds
