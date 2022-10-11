@@ -38,11 +38,10 @@ public class GlobalFilterTest extends AbstractQueryTest {
            it.addDisabledFilter(DELETED_FILTER);
            it.addFilterableReferenceProps(PermissionProps.ROLE);
         });
-        this.sqlClientForDeletedData = sqlClient
-                .filters(it -> {
-                    it.enable(DELETED_FILTER);
-                    it.disable(UNDELETED_FILTER);
-                });
+        this.sqlClientForDeletedData = sqlClient.filters(it -> {
+            it.enable(DELETED_FILTER);
+            it.disable(UNDELETED_FILTER);
+        });
     }
 
     @Test

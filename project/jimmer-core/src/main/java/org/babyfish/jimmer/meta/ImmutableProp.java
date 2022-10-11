@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
+import java.util.List;
 
 public interface ImmutableProp {
 
@@ -55,6 +56,8 @@ public interface ImmutableProp {
     boolean isVersion();
 
     ImmutableType getTargetType();
+
+    List<OrderedItem> getOrderedItems();
 
     ImmutableProp getMappedBy();
 

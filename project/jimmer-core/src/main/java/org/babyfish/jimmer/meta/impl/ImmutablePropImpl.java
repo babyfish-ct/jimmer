@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.*;
 
 class ImmutablePropImpl implements ImmutableProp {
 
@@ -44,6 +45,8 @@ class ImmutablePropImpl implements ImmutableProp {
     private ImmutableTypeImpl targetType;
 
     private boolean targetTypeResolved;
+
+    private List<OrderedItem> orderedItems;
 
     private ImmutableProp mappedBy;
 
@@ -274,6 +277,67 @@ class ImmutablePropImpl implements ImmutableProp {
         }
         targetTypeResolved = true;
         return targetType;
+    }
+
+    @Override
+    public List<OrderedItem> getOrderedItems() {
+        List<OrderedItem> orderedItems = this.orderedItems;
+        if (orderedItems == null) {
+            OrderedProp[] orderedProps = null;
+            if (isReferenceList(TargetLevel.ENTITY)) {
+                OneToMany oneToMany = getAnnotation(OneToMany.class);
+                if (oneToMany != null) {
+                    orderedProps = oneToMany.orderedProps();
+                } else {
+                    ManyToMany manyToMany = getAnnotation(ManyToMany.class);
+                    if (manyToMany != null) {
+                        orderedProps = manyToMany.orderedProps();
+                    }
+                }
+            }
+            if (orderedProps == null || orderedProps.length == 0) {
+                orderedItems = Collections.emptyList();
+            } else {
+                ImmutableType targetType = getTargetType();
+                Map<String, OrderedItem> map = new LinkedHashMap<>((orderedProps.length * 4 + 2) / 3);
+                for (OrderedProp orderedProp : orderedProps) {
+                    if (map.containsKey(orderedProp.value())) {
+                        throw new ModelException(
+                                "Illegal property \"" +
+                                        this +
+                                        "\", duplicated ordered property \"" +
+                                        orderedProp.value() +
+                                        "\""
+                        );
+                    }
+                    ImmutableProp prop = targetType.getProp(orderedProp.value());
+                    if (prop == null) {
+                        throw new ModelException(
+                                "Illegal property \"" +
+                                        this +
+                                        "\", the ordered property \"" +
+                                        orderedProp.value() +
+                                        "\" is not declared in target type \"" +
+                                        targetType +
+                                        "\""
+                        );
+                    }
+                    if (!prop.isScalar()) {
+                        throw new ModelException(
+                                "Illegal property \"" +
+                                        this +
+                                        "\", the ordered property \"" +
+                                        prop +
+                                        "\" is not scalar field"
+                        );
+                    }
+                    map.put(orderedProp.value(), new OrderedItem(prop, orderedProp.desc()));
+                }
+                orderedItems = Collections.unmodifiableList(new ArrayList<>(map.values()));
+            }
+            this.orderedItems = orderedItems;
+        }
+        return orderedItems;
     }
 
     @Override
