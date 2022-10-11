@@ -9,6 +9,8 @@ import java.util.Date;
 
 public class Converters {
 
+    private static final ZoneOffset OFFSET = OffsetDateTime.now().getOffset();
+
     private Converters() {}
 
     public static Object tryConvert(Object value, Class<?> expectedType) {
@@ -64,10 +66,10 @@ public class Converters {
             return tryConvertInstant((Instant) value, expectedType);
         }
         if (value instanceof java.sql.Date) {
-            return tryConvertInstant(Instant.ofEpochSecond(((java.sql.Date) value).getTime() / 1000), expectedType);
+            return tryConvertInstant(Instant.ofEpochMilli(((java.sql.Date) value).getTime()), expectedType);
         }
         if (value instanceof java.sql.Time) {
-            return tryConvertInstant(Instant.ofEpochSecond(((java.sql.Time) value).getTime() / 1000), expectedType);
+            return tryConvertInstant(Instant.ofEpochMilli(((java.sql.Time) value).getTime()), expectedType);
         }
         if (value instanceof Timestamp) {
             return tryConvertInstant(((Timestamp) value).toInstant(), expectedType);
@@ -76,19 +78,19 @@ public class Converters {
             return tryConvertInstant(((Date) value).toInstant(), expectedType);
         }
         if (value instanceof LocalDate) {
-            return tryConvertInstant(Instant.from((LocalDate) value), expectedType);
+            return tryConvertInstant(((LocalDate) value).atTime(LocalTime.MIN).toInstant(OFFSET), expectedType);
         }
         if (value instanceof LocalTime) {
-            return tryConvertInstant(Instant.from((LocalTime) value), expectedType);
+            return tryConvertInstant(((LocalTime) value).atDate(LocalDate.EPOCH).toInstant(OFFSET), expectedType);
         }
         if (value instanceof LocalDateTime) {
-            return tryConvertInstant(Instant.from((LocalDateTime) value), expectedType);
+            return tryConvertInstant(((LocalDateTime) value).toInstant(OFFSET), expectedType);
         }
         if (value instanceof OffsetDateTime) {
-            return tryConvertInstant(Instant.from((OffsetDateTime) value), expectedType);
+            return tryConvertInstant(((OffsetDateTime) value).toInstant(), expectedType);
         }
         if (value instanceof ZonedDateTime) {
-            return tryConvertInstant(Instant.from((ZonedDateTime) value), expectedType);
+            return tryConvertInstant(((ZonedDateTime) value).toInstant(), expectedType);
         }
         return null;
     }
