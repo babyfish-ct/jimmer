@@ -57,17 +57,20 @@ public class Converters {
         if (value instanceof Boolean && expectedType == boolean.class) {
             return value;
         }
-        if (value instanceof String && expectedType == char.class || expectedType == Character.class) {
+        if (value instanceof String && (expectedType == char.class || expectedType == Character.class)) {
             return ((String)value).charAt(0);
         }
         if (value instanceof Instant) {
             return tryConvertInstant((Instant) value, expectedType);
         }
         if (value instanceof java.sql.Date) {
-            return tryConvertInstant(Instant.from(((java.sql.Date) value).toLocalDate()), expectedType);
+            return tryConvertInstant(Instant.ofEpochSecond(((java.sql.Date) value).getTime() / 1000), expectedType);
         }
         if (value instanceof java.sql.Time) {
-            return tryConvertInstant(Instant.from(((java.sql.Time) value).toLocalTime()), expectedType);
+            return tryConvertInstant(Instant.ofEpochSecond(((java.sql.Time) value).getTime() / 1000), expectedType);
+        }
+        if (value instanceof Timestamp) {
+            return tryConvertInstant(((Timestamp) value).toInstant(), expectedType);
         }
         if (value instanceof Date) {
             return tryConvertInstant(((Date) value).toInstant(), expectedType);
