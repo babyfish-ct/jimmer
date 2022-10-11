@@ -425,6 +425,8 @@ class JSqlClientImpl implements JSqlClient {
 
         private final Set<Filter<?>> disabledFilters = new HashSet<>();
 
+        private final List<ImmutableProp> filterableReferenceProps = new ArrayList<>();
+
         private final List<DraftInterceptor<?>> interceptors = new ArrayList<>();
 
         public BuilderImpl() {}
@@ -576,7 +578,7 @@ class JSqlClientImpl implements JSqlClient {
                     caches,
                     triggers,
                     null,
-                    new FilterManager(filters, disabledFilters),
+                    new FilterManager(filters, disabledFilters, filterableReferenceProps),
                     new DraftInterceptorManager(interceptors));
         }
     }

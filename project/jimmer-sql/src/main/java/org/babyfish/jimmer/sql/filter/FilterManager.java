@@ -1,13 +1,16 @@
 package org.babyfish.jimmer.sql.filter;
 
 import org.apache.commons.lang3.reflect.TypeUtils;
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.table.Columns;
 import org.babyfish.jimmer.sql.ast.table.ColumnsFor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.event.EntityEvent;
+import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.util.StaticCache;
 
 import java.lang.reflect.ParameterizedType;
@@ -28,13 +31,16 @@ public class FilterManager {
 
     private final Set<Class<?>> disabledFilterDirectTypes;
 
+    private final Set<ImmutableProp> filterableReferenceProps;
+
     private final StaticCache<ImmutableType, Filter<Columns>> cache =
             new StaticCache<>(this::create, true);
 
     @SuppressWarnings("unchecked")
     public FilterManager(
             List<Filter<?>> filters,
-            Collection<Filter<?>> disabledFilters
+            Collection<Filter<?>> disabledFilters,
+            Collection<ImmutableProp> filterableReferenceProps
     ) {
         Map<ImmutableType, List<Filter<Columns>>> filterMap = new LinkedHashMap<>();
         Set<Filter<?>> set = new HashSet<>();
@@ -60,21 +66,23 @@ public class FilterManager {
         this.filterTypes = typeSet;
         this.disabledFilterTypes = new HashSet<>();
         this.disabledFilterDirectTypes = this.disabledFilterTypes;
+        this.filterableReferenceProps = new HashSet<>(filterableReferenceProps);
     }
 
     private FilterManager(
             Map<ImmutableType, List<Filter<Columns>>> filterMap,
             Set<Filter<?>> filters,
             Set<Filter<?>> disabledFilters,
-            Set<Class<?>> filterTypes, 
-            Set<Class<?>> disabledFilterTypes
-    ) {
+            Set<Class<?>> filterTypes,
+            Set<Class<?>> disabledFilterTypes,
+            Set<ImmutableProp> filterableReferenceProps) {
         this.filterMap = filterMap;
         this.filters = filters;
         this.disabledFilters = disabledFilters;
         this.filterTypes = filterTypes;
         this.disabledFilterTypes = disabledFilterTypes;
         this.disabledFilterDirectTypes = disabledFilterDirectTypes();
+        this.filterableReferenceProps = filterableReferenceProps;
     }
 
     public Filter<Columns> get(ImmutableType type) {
@@ -95,8 +103,8 @@ public class FilterManager {
                 this.filters,
                 disabledSet,
                 filterTypes,
-                disabledFilterTypes
-        );
+                disabledFilterTypes,
+                filterableReferenceProps);
     }
 
     public FilterManager disable(Collection<Filter<?>> filters) {
@@ -114,11 +122,15 @@ public class FilterManager {
                 this.filters,
                 disabledSet,
                 filterTypes,
-                disabledFilterTypes
+                disabledFilterTypes,
+                filterableReferenceProps
         );
     }
 
     public FilterManager enableByTypes(Collection<Class<?>> filterTypes) {
+        if (filterTypes.isEmpty()) {
+            return this;
+        }
         Set<Class<?>> disabledTypeSet = new HashSet<>(disabledFilterTypes);
         disabledTypeSet.removeAll(filterTypes);
         if (disabledTypeSet.size() == disabledFilterTypes.size()) {
@@ -129,11 +141,15 @@ public class FilterManager {
                 filters,
                 disabledFilters,
                 this.filterTypes,
-                disabledTypeSet
+                disabledTypeSet,
+                filterableReferenceProps
         );
     }
 
     public FilterManager disableByTypes(Collection<Class<?>> filterTypes) {
+        if (filterTypes.isEmpty()) {
+            return this;
+        }
         Set<Class<?>> disabledTypeSet = new HashSet<>(disabledFilterTypes);
         disabledTypeSet.addAll(filterTypes);
         disabledTypeSet.retainAll(this.filterTypes);
@@ -145,7 +161,57 @@ public class FilterManager {
                 filters,
                 disabledFilters,
                 this.filterTypes,
-                disabledTypeSet
+                disabledTypeSet,
+                filterableReferenceProps
+        );
+    }
+
+    public FilterManager addFilterableReferenceProps(Collection<ImmutableProp> props) {
+        if (props.isEmpty()) {
+            return this;
+        }
+        Set<ImmutableProp> filterableSet = new HashSet<>(filterableReferenceProps);
+        for (ImmutableProp prop : props) {
+            if (prop.isReference(TargetLevel.ENTITY) && prop.getStorage() instanceof Column) {
+                filterableSet.add(prop);
+            } else {
+                throw new IllegalArgumentException(
+                        "Cannot configure `" +
+                                prop +
+                                "` as filterable reference property, it is not " +
+                                "many-to-one property based on foreign key"
+                );
+            }
+        }
+        if (filterableSet.size() == filterableReferenceProps.size()) {
+            return this;
+        }
+        return new FilterManager(
+                filterMap,
+                filters,
+                disabledFilters,
+                filterTypes,
+                disabledFilterTypes,
+                filterableSet
+        );
+    }
+
+    public FilterManager removeFilterableReferenceProps(Collection<ImmutableProp> props) {
+        if (props.isEmpty()) {
+            return this;
+        }
+        Set<ImmutableProp> filterableSet = new HashSet<>(filterableReferenceProps);
+        filterableSet.removeAll(props);
+        if (filterableSet.size() == filterableReferenceProps.size()) {
+            return this;
+        }
+        return new FilterManager(
+                filterMap,
+                filters,
+                disabledFilters,
+                filterTypes,
+                disabledFilterTypes,
+                filterableSet
         );
     }
 
@@ -286,6 +352,10 @@ public class FilterManager {
             filterTypes.add(filterType);
             collectFilterTypes(filterType.getSuperclass(), filterTypes);
         }
+    }
+
+    private void validateFilterableReferenceProps(Collection<ImmutableProp> props) {
+
     }
 
     private static class CompositeFilter implements Filter<Columns> {
