@@ -11,7 +11,7 @@ import java.util.function.Function;
  * 1. It is super class of {@link Table}
  * 2. It must be decorated by {@link ColumnsFor}
  */
-public interface Columns<E> {
+public interface Columns {
 
     <XE extends Expression<?>> XE get(String prop);
 
@@ -32,12 +32,12 @@ public interface Columns<E> {
 
     <XT extends Table<?>> XT inverseJoin(
             Class<XT> targetTableType,
-            Function<XT, ? extends Table<E>> backPropBlock
+            Function<XT, ? extends Table<?>> backPropBlock
     );
 
     <XT extends Table<?>> XT inverseJoin(
             Class<XT> targetTableType,
-            Function<XT, ? extends Table<E>> backPropBlock,
+            Function<XT, ? extends Table<?>> backPropBlock,
             JoinType joinType
     );
 }

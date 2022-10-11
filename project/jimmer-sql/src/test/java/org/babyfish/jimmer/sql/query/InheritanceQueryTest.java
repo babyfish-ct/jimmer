@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.inheritance.PermissionFetcher;
+import org.babyfish.jimmer.sql.model.inheritance.Role;
 import org.babyfish.jimmer.sql.model.inheritance.RoleFetcher;
 import org.babyfish.jimmer.sql.model.inheritance.RoleTable;
 import org.junit.jupiter.api.Test;
@@ -133,7 +134,7 @@ public class InheritanceQueryTest extends AbstractQueryTest {
                                     LocalDateTime.of(2022, 10, 4, 0, 0, 0)
                             )
                     );
-                    return q.select(role);
+                    return q.select(role.fetch(RoleFetcher.$.allScalarFields().deleted(false)));
                 }),
                 ctx -> {
                     ctx.sql(

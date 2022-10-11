@@ -175,6 +175,11 @@ public class AssociationType implements ImmutableType {
     }
 
     @Override
+    public Map<String, ImmutableProp> getSelectableReferenceProps() {
+        return props;
+    }
+
+    @Override
     public BiFunction<DraftContext, Object, Draft> getDraftFactory() {
         throw new UnsupportedOperationException("draftFactory is not supported by AssociationType");
     }

@@ -68,6 +68,8 @@ public interface ImmutableType {
 
     Map<String, ImmutableProp> getSelectableProps();
 
+    Map<String, ImmutableProp> getSelectableReferenceProps();
+
     IdGenerator getIdGenerator();
 
     interface Builder {

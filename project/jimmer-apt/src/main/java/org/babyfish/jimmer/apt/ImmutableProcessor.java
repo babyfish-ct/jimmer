@@ -101,13 +101,6 @@ public class ImmutableProcessor extends AbstractProcessor {
                         new ColumnsGenerator(
                                 typeUtils,
                                 immutableType,
-                                false,
-                                filer
-                        ).generate();
-                        new ColumnsGenerator(
-                                typeUtils,
-                                immutableType,
-                                true,
                                 filer
                         ).generate();
                     }

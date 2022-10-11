@@ -87,7 +87,7 @@ public abstract class AbstractTableWrapper<E> implements Table<E>, FluentTable<E
     @Override
     public <XT extends Table<?>> XT inverseJoin(
             Class<XT> targetTableType,
-            Function<XT, ? extends Table<E>> backPropBlock
+            Function<XT, ? extends Table<?>> backPropBlock
     ) {
         return raw().inverseJoin(targetTableType, backPropBlock);
     }
@@ -95,7 +95,7 @@ public abstract class AbstractTableWrapper<E> implements Table<E>, FluentTable<E
     @Override
     public <XT extends Table<?>> XT inverseJoin(
             Class<XT> targetTableType,
-            Function<XT, ? extends Table<E>> backPropBlock,
+            Function<XT, ? extends Table<?>> backPropBlock,
             JoinType joinType
     ) {
         return raw().inverseJoin(targetTableType, backPropBlock, joinType);

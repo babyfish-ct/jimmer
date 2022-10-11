@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.impl.ExistsPredicate;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
+import org.babyfish.jimmer.sql.filter.Filter;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,6 +30,7 @@ public class MutableSubQueryImpl
                 immutableType
         );
         this.parent = parent;
+        this.applyFilter();
     }
 
     public AbstractMutableStatementImpl getParent() {

@@ -4,8 +4,11 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.sql.filter.StatefulFilter;
-import org.babyfish.jimmer.sql.filter.StatefulFilterManager;
+import org.babyfish.jimmer.sql.ast.table.Columns;
+import org.babyfish.jimmer.sql.filter.CacheableFilter;
+import org.babyfish.jimmer.sql.filter.Filter;
+import org.babyfish.jimmer.sql.filter.FilterConfig;
+import org.babyfish.jimmer.sql.filter.FilterManager;
 import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.babyfish.jimmer.sql.fluent.impl.FluentImpl;
 import org.babyfish.jimmer.sql.loader.ListLoader;
@@ -74,7 +77,7 @@ class JSqlClientImpl implements JSqlClient {
 
     private final TransientResolverManager transientResolverManager;
 
-    private final StatefulFilterManager statefulFilterManager;
+    private final FilterManager filterManager;
 
     private final DraftInterceptorManager draftInterceptorManager;
 
@@ -91,7 +94,7 @@ class JSqlClientImpl implements JSqlClient {
             Caches caches,
             Triggers triggers,
             TransientResolverManager transientResolverManager,
-            StatefulFilterManager statefulFilterManager,
+            FilterManager filterManager,
             DraftInterceptorManager draftInterceptorManager) {
         this.connectionManager =
                 connectionManager != null ?
@@ -123,7 +126,7 @@ class JSqlClientImpl implements JSqlClient {
                 transientResolverManager != null ?
                         transientResolverManager :
                         createTransientResolverManager();
-        this.statefulFilterManager = statefulFilterManager;
+        this.filterManager = filterManager;
         this.draftInterceptorManager = draftInterceptorManager;
     }
 
@@ -306,7 +309,35 @@ class JSqlClientImpl implements JSqlClient {
                 new CachesImpl((CachesImpl) caches, cfg),
                 triggers,
                 transientResolverManager,
-                statefulFilterManager,
+                filterManager,
+                draftInterceptorManager
+        );
+    }
+
+    @Override
+    public JSqlClient filters(Consumer<FilterConfig> block) {
+        if (block == null) {
+            throw new IllegalArgumentException("block cannot be null");
+        }
+        FilterConfig cfg = new FilterConfig(filterManager);
+        block.accept(cfg);
+        if (cfg.getFilterManager() == filterManager) {
+            return this;
+        }
+        return new JSqlClientImpl(
+                connectionManager,
+                slaveConnectionManager,
+                dialect,
+                executor,
+                scalarProviderMap,
+                idGeneratorMap,
+                defaultBatchSize,
+                defaultListBatchSize,
+                entities,
+                caches,
+                triggers,
+                transientResolverManager,
+                cfg.getFilterManager(),
                 draftInterceptorManager
         );
     }
@@ -329,7 +360,7 @@ class JSqlClientImpl implements JSqlClient {
                 caches,
                 triggers,
                 transientResolverManager,
-                statefulFilterManager,
+                filterManager,
                 draftInterceptorManager
         );
     }
@@ -340,8 +371,8 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
-    public StatefulFilter<Table<?>> getStatefulFilter(ImmutableType type) {
-        return statefulFilterManager.get(type);
+    public Filter<Columns> getFilter(ImmutableType type) {
+        return filterManager.get(type);
     }
 
     @Override
@@ -390,7 +421,9 @@ class JSqlClientImpl implements JSqlClient {
 
         private final Triggers triggers = new TriggersImpl();
 
-        private final List<StatefulFilter<?>> filters = new ArrayList<>();
+        private final List<Filter<?>> filters = new ArrayList<>();
+
+        private final Set<Filter<?>> disabledFilters = new HashSet<>();
 
         private final List<DraftInterceptor<?>> interceptors = new ArrayList<>();
 
@@ -479,18 +512,36 @@ class JSqlClientImpl implements JSqlClient {
         }
 
         @Override
-        public Builder addStatefulFilter(StatefulFilter<?> filter) {
-            return addStatefulFilters(Collections.singletonList(filter));
+        public Builder addFilter(Filter<?> filter) {
+            return addFilters(Collections.singletonList(filter));
         }
 
         @Override
-        public Builder addStatefulFilters(StatefulFilter<?>... filters) {
-            return addStatefulFilters(Arrays.asList(filters));
+        public Builder addFilters(Filter<?>... filters) {
+            return addFilters(Arrays.asList(filters));
         }
 
         @Override
-        public Builder addStatefulFilters(Collection<StatefulFilter<?>> filters) {
+        public Builder addFilters(Collection<Filter<?>> filters) {
             this.filters.addAll(filters);
+            this.disabledFilters.removeAll(filters);
+            return this;
+        }
+
+        @Override
+        public Builder addDisabledFilter(Filter<?> filter) {
+            return addDisabledFilters(Collections.singletonList(filter));
+        }
+
+        @Override
+        public Builder addDisabledFilters(Filter<?>... filters) {
+            return addDisabledFilters(Arrays.asList(filters));
+        }
+
+        @Override
+        public Builder addDisabledFilters(Collection<Filter<?>> filters) {
+            this.filters.addAll(filters);
+            this.disabledFilters.addAll(filters);
             return this;
         }
 
@@ -525,7 +576,7 @@ class JSqlClientImpl implements JSqlClient {
                     caches,
                     triggers,
                     null,
-                    new StatefulFilterManager(filters),
+                    new FilterManager(filters, disabledFilters),
                     new DraftInterceptorManager(interceptors));
         }
     }

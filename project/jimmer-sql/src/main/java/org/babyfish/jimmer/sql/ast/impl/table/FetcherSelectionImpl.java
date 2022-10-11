@@ -13,9 +13,9 @@ import org.jetbrains.annotations.NotNull;
 
 class FetcherSelectionImpl<E> implements FetcherSelection<E>, Ast {
 
-    private TableImpl<E> table;
+    private final TableImpl<E> table;
 
-    private Fetcher<E> fetcher;
+    private final Fetcher<E> fetcher;
 
     FetcherSelectionImpl(TableImpl<E> table, Fetcher<E> fetcher) {
         this.table = table;

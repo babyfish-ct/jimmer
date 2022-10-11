@@ -291,7 +291,7 @@ public abstract class AbstractDataLoader {
         }
         Map<Object, ImmutableSpi> map2 = null;
         if (!missedFkSourceIds.isEmpty()) {
-            if (filter != null || fetcher.getFieldMap().size() > 1) {
+            if (filter != null || fetcher.getFieldMap().size() > 1 || sqlClient.getFilter(prop.getTargetType()) != null) {
                 map2 = Tuple2.toMap(
                         querySourceTargetPairs(missedFkSourceIds)
                 );
@@ -344,7 +344,7 @@ public abstract class AbstractDataLoader {
     private Map<ImmutableSpi, ImmutableSpi> loadTargetMapDirectly(Collection<ImmutableSpi> sources) {
         List<Object> sourceIds = toSourceIds(sources);
         Map<Object, ImmutableSpi> targetMap;
-        if (fetcher.getFieldMap().size() > 1) {
+        if (fetcher.getFieldMap().size() > 1 || sqlClient.getFilter(prop.getTargetType()) != null) {
             targetMap = Tuple2.toMap(
                     querySourceTargetPairs(sourceIds)
             );
@@ -401,7 +401,7 @@ public abstract class AbstractDataLoader {
     private Map<ImmutableSpi, List<ImmutableSpi>> loadTargetMultiMapDirectly(Collection<ImmutableSpi> sources) {
         List<Object> sourceIds = toSourceIds(sources);
         Map<Object, List<ImmutableSpi>> targetMap;
-        if (fetcher.getFieldMap().size() > 1) {
+        if (fetcher.getFieldMap().size() > 1 || sqlClient.getFilter(prop.getTargetType()) != null) {
             targetMap = Tuple2.toMultiMap(
                     querySourceTargetPairs(sourceIds)
             );
@@ -561,7 +561,7 @@ public abstract class AbstractDataLoader {
 
     @SuppressWarnings("unchecked")
     private List<ImmutableSpi> findTargets(Collection<Object> targetIds) {
-        if (fetcher.getFieldMap().size() > 1) {
+        if (fetcher.getFieldMap().size() > 1 || sqlClient.getFilter(prop.getTargetType()) != null) {
             return sqlClient.getEntities().forConnection(con).findByIds(
                     fetcher,
                     targetIds

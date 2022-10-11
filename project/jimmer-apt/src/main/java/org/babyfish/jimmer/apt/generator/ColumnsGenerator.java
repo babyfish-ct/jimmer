@@ -21,8 +21,6 @@ public class ColumnsGenerator {
 
     private final ImmutableType type;
 
-    private final boolean isColumnsEx;
-
     private final Filer filer;
 
     private TypeSpec.Builder typeBuilder;
@@ -30,12 +28,10 @@ public class ColumnsGenerator {
     public ColumnsGenerator(
             TypeUtils typeUtils,
             ImmutableType type,
-            boolean isColumnsEx,
             Filer filer
     ) {
         this.typeUtils = typeUtils;
         this.type = type;
-        this.isColumnsEx = isColumnsEx;
         this.filer = filer;
     }
 
@@ -61,49 +57,25 @@ public class ColumnsGenerator {
     }
 
     private TypeSpec generateImpl() {
-        String suffix = isColumnsEx ? "ColumnsEx" : "Columns";
-        TypeVariableName typeVariable = TypeVariableName.get("E", type.getClassName());
-        typeBuilder = TypeSpec.interfaceBuilder(type.getName() + suffix);
-        typeBuilder.addTypeVariable(typeVariable);
+        typeBuilder = TypeSpec
+                .interfaceBuilder(type.getName() + "Columns")
+                .addModifiers(Modifier.PUBLIC);
         typeBuilder.addAnnotation(
                 AnnotationSpec
                         .builder(COLUMNS_FOR_CLASS_NAME)
                         .addMember("value", "$T.class", type.getClassName())
                         .build()
         );
-        if (isColumnsEx) {
+        if (type.getSuperType() != null) {
             typeBuilder.addSuperinterface(
-                    type.getColumnsClassName(typeVariable)
+                    type.getSuperType().getColumnsClassName()
             );
-            if (type.getSuperType() != null) {
-                typeBuilder.addSuperinterface(
-                        type.getSuperType().getColumnsExClassName(typeVariable)
-                );
-            } else {
-                typeBuilder.addSuperinterface(
-                        ParameterizedTypeName.get(
-                                Constants.COLUMNS_EX_CLASS_NAME,
-                                typeVariable
-                        )
-                );
-            }
         } else {
-            if (type.getSuperType() != null) {
-                typeBuilder.addSuperinterface(
-                        type.getSuperType().getColumnsClassName(typeVariable)
-                );
-            } else {
-                typeBuilder.addSuperinterface(
-                        ParameterizedTypeName.get(
-                                Constants.COLUMNS_CLASS_NAME,
-                                typeVariable
-                        )
-                );
-            }
+            typeBuilder.addSuperinterface(Constants.COLUMNS_CLASS_NAME);
         }
         try {
             for (ImmutableProp prop : type.getDeclaredProps().values()) {
-                if (prop.isList() == isColumnsEx) {
+                if (!prop.isList()) {
                     addProperty(prop, false);
                     addProperty(prop, true);
                 }
@@ -120,7 +92,7 @@ public class ColumnsGenerator {
     ) {
         MethodSpec method = ColumnsGenerator.property(
                 typeUtils,
-                isColumnsEx,
+                false,
                 prop,
                 withJoinType,
                 false
@@ -132,7 +104,7 @@ public class ColumnsGenerator {
 
     static MethodSpec property(
             TypeUtils typeUtils,
-            boolean isColumnsEx,
+            boolean isTableEx,
             ImmutableProp prop,
             boolean withJoinType,
             boolean withImplementation
@@ -146,7 +118,7 @@ public class ColumnsGenerator {
 
         TypeName returnType;
         if (prop.isAssociation()) {
-            if (isColumnsEx) {
+            if (isTableEx) {
                 returnType = typeUtils
                         .getImmutableType(prop.getElementType())
                         .getTableExClassName();
@@ -156,7 +128,7 @@ public class ColumnsGenerator {
                         .getTableClassName();
             }
         } else {
-            if (prop.getTypeName().isPrimitive()) {
+            if (prop.getTypeName().isPrimitive() && !prop.getTypeName().equals(TypeName.BOOLEAN)) {
                 returnType = ParameterizedTypeName.get(
                         Constants.PROP_NUMERIC_EXPRESSION_CLASS_NAME,
                         prop.getTypeName().box()
@@ -166,17 +138,17 @@ public class ColumnsGenerator {
             } else if (typeUtils.isNumber(prop.getReturnType())) {
                 returnType = ParameterizedTypeName.get(
                         Constants.PROP_NUMERIC_EXPRESSION_CLASS_NAME,
-                        prop.getTypeName()
+                        prop.getTypeName().box()
                 );
             } else if (typeUtils.isComparable(prop.getReturnType())) {
                 returnType = ParameterizedTypeName.get(
                         Constants.PROP_COMPARABLE_EXPRESSION_CLASS_NAME,
-                        prop.getTypeName()
+                        prop.getTypeName().box()
                 );
             } else {
                 returnType = ParameterizedTypeName.get(
                         PROP_EXPRESSION_CLASS_NAME,
-                        prop.getTypeName()
+                        prop.getTypeName().box()
                 );
             }
         }
@@ -186,7 +158,9 @@ public class ColumnsGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .returns(returnType);
         if (withImplementation) {
-            builder.addAnnotation(Override.class);
+            if (!isTableEx) {
+                builder.addAnnotation(Override.class);
+            }
         } else {
             builder.addModifiers(Modifier.ABSTRACT);
         }

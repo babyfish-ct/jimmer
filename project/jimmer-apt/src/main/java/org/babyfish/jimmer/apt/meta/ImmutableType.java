@@ -1,8 +1,6 @@
 package org.babyfish.jimmer.apt.meta;
 
 import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.ParameterizedTypeName;
-import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.Entity;
@@ -58,9 +56,7 @@ public class ImmutableType {
 
     private final ClassName draftImplClassName;
 
-    private final ClassName genericColumnsClassName;
-
-    private final ClassName genericColumnsExClassName;
+    private final ClassName columnsClassName;
 
     private final ClassName tableClassName;
 
@@ -284,8 +280,7 @@ public class ImmutableType {
         implementorClassName = toClassName(name -> name + "Draft", "Producer", "Implementor");
         implClassName = toClassName(name -> name + "Draft", "Producer", "Impl");
         draftImplClassName = toClassName(name -> name + "Draft", "Producer", "DraftImpl");
-        genericColumnsClassName = toClassName(name -> name + "Columns");
-        genericColumnsExClassName = toClassName(name -> name + "ColumnsEx");
+        columnsClassName = toClassName(name -> name + "Columns");
         tableClassName = toClassName(name -> name + "Table");
         tableExClassName = toClassName(name -> name + "TableEx");
         fetcherClassName = toClassName(name -> name + "Fetcher");
@@ -395,12 +390,8 @@ public class ImmutableType {
         return draftImplClassName;
     }
 
-    public ParameterizedTypeName getColumnsClassName(TypeName genericTypeArgument) {
-        return ParameterizedTypeName.get(genericColumnsClassName, genericTypeArgument);
-    }
-
-    public ParameterizedTypeName getColumnsExClassName(TypeName genericTypeArgument) {
-        return ParameterizedTypeName.get(genericColumnsExClassName, genericTypeArgument);
+    public ClassName getColumnsClassName() {
+        return columnsClassName;
     }
 
     public ClassName getTableClassName() {

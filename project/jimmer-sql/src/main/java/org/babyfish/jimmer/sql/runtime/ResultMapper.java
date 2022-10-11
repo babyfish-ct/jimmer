@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.meta.Column;
 
@@ -177,7 +178,7 @@ class ResultMapper {
                     .getFieldMap()
                     .values()
                     .stream()
-                    .map(it -> it.getProp())
+                    .map(Field::getProp)
                     .filter(it -> it.getStorage() instanceof Column)
                     .collect(Collectors.toList());
         } else {

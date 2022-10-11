@@ -7,10 +7,13 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
+import org.babyfish.jimmer.sql.ast.table.Columns;
 import org.babyfish.jimmer.sql.cache.CacheConfig;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.cache.Caches;
-import org.babyfish.jimmer.sql.filter.StatefulFilter;
+import org.babyfish.jimmer.sql.filter.CacheableFilter;
+import org.babyfish.jimmer.sql.filter.Filter;
+import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.babyfish.jimmer.sql.loader.ListLoader;
 import org.babyfish.jimmer.sql.loader.ReferenceLoader;
@@ -118,11 +121,14 @@ public interface JSqlClient {
     JSqlClient caches(Consumer<CacheDisableConfig> block);
 
     @NewChain
+    JSqlClient filters(Consumer<FilterConfig> block);
+
+    @NewChain
     JSqlClient disableSlaveConnectionManager();
 
     TransientResolver<?, ?> getResolver(ImmutableProp prop);
 
-    StatefulFilter<Table<?>> getStatefulFilter(ImmutableType type);
+    Filter<Columns> getFilter(ImmutableType type);
 
     DraftInterceptor<?> getDraftInterceptor(ImmutableType type);
 
@@ -159,13 +165,22 @@ public interface JSqlClient {
         Builder setCaches(Consumer<CacheConfig> block);
 
         @OldChain
-        Builder addStatefulFilter(StatefulFilter<?> filter);
+        Builder addFilter(Filter<?> filter);
 
         @OldChain
-        Builder addStatefulFilters(StatefulFilter<?>... filters);
+        Builder addFilters(Filter<?>... filters);
 
         @OldChain
-        Builder addStatefulFilters(Collection<StatefulFilter<?>> filters);
+        Builder addFilters(Collection<Filter<?>> filters);
+
+        @OldChain
+        Builder addDisabledFilter(Filter<?> filter);
+
+        @OldChain
+        Builder addDisabledFilters(Filter<?>... filters);
+
+        @OldChain
+        Builder addDisabledFilters(Collection<Filter<?>> filters);
 
         @OldChain
         Builder addDraftInterceptor(DraftInterceptor<?> interceptor);
