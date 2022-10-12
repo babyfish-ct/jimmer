@@ -20,6 +20,10 @@ class ImmutableTypeImpl implements ImmutableType {
 
     private final Class<?> javaClass;
 
+    private final boolean isEntity;
+
+    private final boolean isMappedSupperClass;
+
     private final Annotation immutableAnnotation;
 
     private KClass<?> kotlinClass;
@@ -59,6 +63,9 @@ class ImmutableTypeImpl implements ImmutableType {
         this.superType = superType;
         this.draftFactory = draftFactory;
 
+        this.isEntity = javaClass.isAnnotationPresent(Entity.class);
+        this.isMappedSupperClass = javaClass.isAnnotationPresent(MappedSuperclass.class);
+
         Entity entity = javaClass.getAnnotation(Entity.class);
         MappedSuperclass mappedSuperclass = javaClass.getAnnotation(MappedSuperclass.class);
         if (entity != null && mappedSuperclass != null) {
@@ -95,6 +102,16 @@ class ImmutableTypeImpl implements ImmutableType {
     @Override
     public Class<?> getJavaClass() {
         return javaClass;
+    }
+
+    @Override
+    public boolean isEntity() {
+        return isEntity;
+    }
+
+    @Override
+    public boolean isMappedSuperclass() {
+        return isMappedSupperClass;
     }
 
     @Override

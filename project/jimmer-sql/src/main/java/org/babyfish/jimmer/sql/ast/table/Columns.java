@@ -1,5 +1,8 @@
 package org.babyfish.jimmer.sql.ast.table;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 
@@ -19,16 +22,15 @@ public interface Columns {
 
     <XT extends Table<?>> XT join(String prop, JoinType joinType);
 
-    <XE, XT extends Table<XE>> XT inverseJoin(
-            Class<XE> targetType,
-            String backProp
-    );
+    <XT extends Table<?>> XT join(String prop, JoinType joinType, ImmutableType treatedAs);
 
-    <XE, XT extends Table<XE>> XT inverseJoin(
-            Class<XE> targetType,
-            String backProp,
-            JoinType joinType
-    );
+    <XT extends Table<?>> XT inverseJoin(ImmutableProp prop);
+
+    <XT extends Table<?>> XT inverseJoin(ImmutableProp prop, JoinType joinType);
+
+    <XT extends Table<?>> XT inverseJoin(TypedProp.Association<?, ?> prop);
+
+    <XT extends Table<?>> XT inverseJoin(TypedProp.Association<?, ?> prop, JoinType joinType);
 
     <XT extends Table<?>> XT inverseJoin(
             Class<XT> targetTableType,

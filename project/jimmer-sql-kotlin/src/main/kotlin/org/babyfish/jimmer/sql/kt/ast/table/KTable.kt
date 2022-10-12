@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.table
 
+import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
@@ -20,11 +21,11 @@ interface KTable<E: Any> {
     fun <X: Any> outerJoinReference(prop: KProperty1<E, X?>): KNullableTable<X>
     fun <X: Any> outerJoinList(prop: KProperty1<E, List<X>>): KNullableTable<X>
 
-    fun <X: Any> inverseJoin(targetType: KClass<X>, backProp: String): KTable<X>
+    fun <X: Any> inverseJoin(backProp: ImmutableProp): KTable<X>
     fun <X: Any> inverseJoinReference(backProp: KProperty1<X, E?>): KTable<X>
     fun <X: Any> inverseJoinList(backProp: KProperty1<X, List<E>>): KTable<X>
 
-    fun <X: Any> inverseOuterJoin(targetType: KClass<X>, backProp: String): KNullableTable<X>
+    fun <X: Any> inverseOuterJoin(backProp: ImmutableProp): KNullableTable<X>
     fun <X: Any> inverseOuterJoinReference(backProp: KProperty1<X, E?>): KNullableTable<X>
     fun <X: Any> inverseOuterJoinList(backProp: KProperty1<X, List<E>>): KNullableTable<X>
 

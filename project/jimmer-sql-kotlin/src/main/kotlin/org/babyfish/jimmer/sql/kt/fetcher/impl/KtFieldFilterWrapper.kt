@@ -1,18 +1,17 @@
 package org.babyfish.jimmer.sql.kt.fetcher.impl
 
 import org.babyfish.jimmer.sql.ast.table.Table
-import org.babyfish.jimmer.sql.fetcher.Filter
-import org.babyfish.jimmer.sql.fetcher.FilterArgs
-import org.babyfish.jimmer.sql.fetcher.impl.FilterArgsImpl
+import org.babyfish.jimmer.sql.fetcher.FieldFilter
+import org.babyfish.jimmer.sql.fetcher.FieldFilterArgs
+import org.babyfish.jimmer.sql.fetcher.impl.FieldFilterArgsImpl
 import org.babyfish.jimmer.sql.kt.fetcher.KFilter
-import java.util.*
 
-class KtFilterWrapper<E: Any>(
+class KtFieldFilterWrapper<E: Any>(
     private val ktFilter: KFilter<E>
-): Filter<Table<E>> {
+): FieldFilter<Table<E>> {
 
-    override fun apply(args: FilterArgs<Table<E>>) {
-        val javaQuery = (args as FilterArgsImpl<*>).unwrap()
+    override fun apply(args: FieldFilterArgs<Table<E>>) {
+        val javaQuery = (args as FieldFilterArgsImpl<*>).unwrap()
         ktFilter.apply {
             KFilterDslImpl<E>(javaQuery, args.getKeys()).apply()
         }
@@ -25,7 +24,7 @@ class KtFilterWrapper<E: Any>(
         if (this === other) {
             return true
         }
-        if (other !is KtFilterWrapper<*>) {
+        if (other !is KtFieldFilterWrapper<*>) {
             return false
         }
         return ktFilter == other.ktFilter

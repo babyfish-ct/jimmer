@@ -16,11 +16,11 @@ internal class FieldDslImpl<E: Any>(
     }
 
     override fun filter(filter: KFilterDsl<E>.() -> Unit) {
-        fieldConfig.filter(LambdaFilterWrapper(filter))
+        fieldConfig.filter(LambdaFieldFilterWrapper(filter))
     }
 
     override fun filter(filter: KFilter<E>) {
-        fieldConfig.filter(KtFilterWrapper(filter))
+        fieldConfig.filter(KtFieldFilterWrapper(filter))
     }
 
     override fun limit(limit: Int, offset: Int) {

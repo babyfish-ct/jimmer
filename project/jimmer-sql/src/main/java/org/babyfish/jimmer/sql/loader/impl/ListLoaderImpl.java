@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.loader.ListLoader;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.fetcher.Filter;
+import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -22,7 +22,7 @@ class ListLoaderImpl<SE, TE, TT extends Table<TE>> implements ListLoader<SE, TE,
 
     private final ImmutableProp prop;
 
-    private final Filter<?> filter;
+    private final FieldFilter<?> filter;
 
     public ListLoaderImpl(JSqlClient sqlClient, ImmutableProp prop) {
         this(sqlClient, null, prop, null);
@@ -32,7 +32,7 @@ class ListLoaderImpl<SE, TE, TT extends Table<TE>> implements ListLoader<SE, TE,
             JSqlClient sqlClient,
             Connection con,
             ImmutableProp prop,
-            Filter<?> filter
+            FieldFilter<?> filter
     ) {
         this.sqlClient = sqlClient;
         this.con = con;
@@ -49,7 +49,7 @@ class ListLoaderImpl<SE, TE, TT extends Table<TE>> implements ListLoader<SE, TE,
     }
 
     @Override
-    public ListLoader<SE, TE, TT> forFilter(Filter<TT> filter) {
+    public ListLoader<SE, TE, TT> forFilter(FieldFilter<TT> filter) {
         if (this.filter == filter) {
             return this;
         }
@@ -69,7 +69,7 @@ class ListLoaderImpl<SE, TE, TT extends Table<TE>> implements ListLoader<SE, TE,
                 sqlClient,
                 con,
                 prop,
-                (Filter<Table<ImmutableSpi>>) filter,
+                (FieldFilter<Table<ImmutableSpi>>) filter,
                 limit,
                 offset,
                 (ImmutableSpi) source
@@ -84,7 +84,7 @@ class ListLoaderImpl<SE, TE, TT extends Table<TE>> implements ListLoader<SE, TE,
                 sqlClient,
                 con,
                 prop,
-                (Filter<Table<ImmutableSpi>>) filter,
+                (FieldFilter<Table<ImmutableSpi>>) filter,
                 (Collection<ImmutableSpi>) sources
         );
     }

@@ -5,7 +5,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.fetcher.Filter;
+import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 
 import java.sql.Connection;
 import java.util.Collection;
@@ -19,7 +19,7 @@ class BatchCommand<S, T> implements Executable<Map<S, T>> {
 
     private final ImmutableProp prop;
 
-    private final Filter<Table<ImmutableSpi>> filter;
+    private final FieldFilter<Table<ImmutableSpi>> filter;
 
     private final Collection<ImmutableSpi> sources;
 
@@ -27,7 +27,7 @@ class BatchCommand<S, T> implements Executable<Map<S, T>> {
             JSqlClient sqlClient,
             Connection con,
             ImmutableProp prop,
-            Filter<Table<ImmutableSpi>> filter,
+            FieldFilter<Table<ImmutableSpi>> filter,
             Collection<ImmutableSpi> sources
     ) {
         this.sqlClient = sqlClient;

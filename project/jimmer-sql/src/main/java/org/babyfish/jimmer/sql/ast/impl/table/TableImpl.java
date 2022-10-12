@@ -3,6 +3,8 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
@@ -169,10 +171,18 @@ class TableImpl<E> implements TableImplementor<E> {
         return join(prop, JoinType.INNER);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <XT extends Table<?>> XT join(String prop, JoinType joinType) {
+        return join(prop, joinType, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <XT extends Table<?>> XT join(String prop, JoinType joinType, ImmutableType treatedAs) {
         ImmutableProp immutableProp = immutableType.getProps().get(prop);
+        if (treatedAs != null) {
+            immutableProp = RedirectedProp.target(immutableProp, treatedAs);
+        }
         if (immutableProp == null || !immutableProp.isAssociation(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException(
                     "\"" +
@@ -186,18 +196,30 @@ class TableImpl<E> implements TableImplementor<E> {
     }
 
     @Override
-    public <XE, XT extends Table<XE>> XT inverseJoin(Class<XE> targetType, String backProp) {
-        return inverseJoin(targetType, backProp, JoinType.INNER);
+    public <XT extends Table<?>> XT inverseJoin(ImmutableProp prop) {
+        return inverseJoin(prop, JoinType.INNER);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <XT extends Table<?>> XT inverseJoin(ImmutableProp backProp, JoinType joinType) {
+        if (backProp.getTargetType() != immutableType) {
+            throw new IllegalArgumentException("'" + backProp + "' is not back association property");
+        }
+        if (!backProp.getDeclaringType().isEntity()) {
+            throw new IllegalArgumentException("'" + backProp + "' is not declared in entity");
+        }
+        return (XT)join0(true, backProp, joinType);
     }
 
     @Override
-    public <XE, XT extends Table<XE>> XT inverseJoin(Class<XE> targetType, String backProp, JoinType joinType) {
-        ImmutableType immutableTargetType = ImmutableType.tryGet(targetType);
-        if (immutableTargetType == null) {
-            throw new IllegalArgumentException("'" + targetType.getName() + "' is not entity type");
-        }
-        ImmutableProp immutableBackProp = immutableTargetType.getProps().get(backProp);
-        return inverseJoin(immutableBackProp, joinType);
+    public <XT extends Table<?>> XT inverseJoin(TypedProp.Association<?, ?> prop) {
+        return inverseJoin(prop.unwrap(), JoinType.INNER);
+    }
+
+    @Override
+    public <XT extends Table<?>> XT inverseJoin(TypedProp.Association<?, ?> prop, JoinType joinType) {
+        return inverseJoin(prop.unwrap(), joinType);
     }
 
     @Override
@@ -205,7 +227,7 @@ class TableImpl<E> implements TableImplementor<E> {
             Class<XT> targetTableType,
             Function<XT, ? extends Table<?>> backPropBlock
     ) {
-        return inverseJoin(targetTableType, backPropBlock, JoinType.INNER);
+        return inverseJoin(ImmutableProps.join(targetTableType, backPropBlock));
     }
 
     @Override
@@ -215,14 +237,6 @@ class TableImpl<E> implements TableImplementor<E> {
             JoinType joinType
     ) {
         return inverseJoin(ImmutableProps.join(targetTableType, backPropBlock), joinType);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <XT extends Table<?>> XT inverseJoin(ImmutableProp backProp, JoinType joinType) {
-        if (backProp.getTargetType() != immutableType) {
-            throw new IllegalArgumentException("'" + backProp + "' is not back association property");
-        }
-        return (XT)join0(true, backProp, joinType);
     }
 
     private Table<?> join0(

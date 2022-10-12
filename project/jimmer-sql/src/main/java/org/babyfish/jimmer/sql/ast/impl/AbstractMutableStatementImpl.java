@@ -45,15 +45,19 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
         return predicates.isEmpty() ? null : predicates.get(0);
     }
 
-    public boolean freeze() {
+    public final boolean freeze() {
         if (frozen) {
             return false;
         }
+        onFrozen();
+        frozen = true;
+        return true;
+    }
+
+    protected void onFrozen() {
         if (predicates.size() > 1) {
             predicates = mergePredicates(predicates);
         }
-        frozen = true;
-        return true;
     }
 
     public void validateMutable() {
