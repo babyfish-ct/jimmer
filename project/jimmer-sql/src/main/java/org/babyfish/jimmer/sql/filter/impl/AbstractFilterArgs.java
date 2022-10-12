@@ -8,7 +8,7 @@ import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.AssociationTableEx;
-import org.babyfish.jimmer.sql.ast.table.Columns;
+import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
@@ -17,7 +17,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public abstract class AbstractFilterArgs<C extends Columns> implements FilterArgs<C> {
+public abstract class AbstractFilterArgs<P extends Props> implements FilterArgs<P> {
 
     protected final Sortable sortable;
 

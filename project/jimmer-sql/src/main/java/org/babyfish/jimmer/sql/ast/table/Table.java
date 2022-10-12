@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
-public interface Table<E> extends Selection<E>, Columns {
+public interface Table<E> extends Selection<E>, Props {
 
     Predicate eq(Table<E> other);
 

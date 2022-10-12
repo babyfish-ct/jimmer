@@ -40,22 +40,16 @@ class Constants {
     public static final ClassName TYPED_PROP_CLASS_NAME =
             ClassName.get(TypedProp.class);
 
-    public static final ClassName COLUMNS_CLASS_NAME =
+    public static final ClassName PROPS_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.table",
-                    "Columns"
+                    "Props"
             );
 
-    public static final ClassName COLUMNS_EX_CLASS_NAME =
+    public static final ClassName PROPS_FOR_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.table",
-                    "ColumnsEx"
-            );
-
-    public static final ClassName COLUMNS_FOR_CLASS_NAME =
-            ClassName.get(
-                    "org.babyfish.jimmer.sql.ast.table",
-                    "ColumnsFor"
+                    "PropsFor"
             );
 
     public static final ClassName TABLE_CLASS_NAME =

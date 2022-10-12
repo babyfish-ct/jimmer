@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.filter;
 
-import org.babyfish.jimmer.sql.ast.table.Columns;
+import org.babyfish.jimmer.sql.ast.table.Props;
 
-public interface Filter<C extends Columns> {
+public interface Filter<P extends Props> {
 
-    void filter(FilterArgs<C> args);
+    void filter(FilterArgs<P> args);
 }

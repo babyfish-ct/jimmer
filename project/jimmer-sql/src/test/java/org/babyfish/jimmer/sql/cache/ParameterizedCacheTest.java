@@ -34,7 +34,6 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
         sqlClient = getSqlClient(it -> {
             it.addFilter(UNDELETED_FILTER);
             it.addDisabledFilter(DELETED_FILTER);
-            it.addFilterableReferenceProps(PermissionProps.ROLE);
             it.setCaches(cfg -> {
                 cfg.setCacheFactory(
                         new Class[] {
@@ -584,10 +583,10 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
         }
     }
 
-    private static class UndeletedFilter implements CacheableFilter<NamedEntityColumns> {
+    private static class UndeletedFilter implements CacheableFilter<NamedEntityProps> {
 
         @Override
-        public void filter(FilterArgs<NamedEntityColumns> args) {
+        public void filter(FilterArgs<NamedEntityProps> args) {
             args.where(args.getTable().deleted().eq(false));
         }
 
@@ -605,10 +604,10 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
         }
     }
 
-    private static class DeletedFilter implements CacheableFilter<NamedEntityColumns> {
+    private static class DeletedFilter implements CacheableFilter<NamedEntityProps> {
 
         @Override
-        public void filter(FilterArgs<NamedEntityColumns> args) {
+        public void filter(FilterArgs<NamedEntityProps> args) {
             args.where(args.getTable().deleted().eq(true));
         }
 

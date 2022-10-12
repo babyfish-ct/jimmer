@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
-import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JSqlClient;
@@ -13,21 +12,15 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableRowCountDestructive;
 import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.query.*;
-import org.babyfish.jimmer.sql.ast.table.AssociationTableEx;
-import org.babyfish.jimmer.sql.ast.table.Columns;
+import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.filter.Filter;
-import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.babyfish.jimmer.sql.filter.impl.AbstractFilterArgs;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 public abstract class AbstractMutableQueryImpl
         extends AbstractMutableStatementImpl
@@ -41,7 +34,7 @@ public abstract class AbstractMutableQueryImpl
 
     private final List<Order> orders = new ArrayList<>();
 
-    private final Filter<Columns> filter;
+    private final Filter<Props> filter;
 
     @SuppressWarnings("unchecked")
     protected AbstractMutableQueryImpl(
@@ -248,14 +241,14 @@ public abstract class AbstractMutableQueryImpl
         }
     }
 
-    private static class FilterArgsImpl extends AbstractFilterArgs<Columns> {
+    private static class FilterArgsImpl extends AbstractFilterArgs<Props> {
 
         public FilterArgsImpl(AbstractMutableQueryImpl query) {
             super(query);
         }
 
         @Override
-        public @NotNull Columns getTable() {
+        public @NotNull Props getTable() {
             return ((AbstractMutableQueryImpl) sortable).getTable();
         }
 

@@ -4,7 +4,7 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.sql.ast.table.Columns;
+import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.FilterManager;
@@ -42,7 +42,6 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 class JSqlClientImpl implements JSqlClient {
 
@@ -371,17 +370,17 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
-    public Filter<Columns> getFilter(ImmutableType type) {
+    public Filter<Props> getFilter(ImmutableType type) {
         return filterManager.get(type);
     }
 
     @Override
-    public Filter<Columns> getFilter(ImmutableProp prop) {
+    public Filter<Props> getFilter(ImmutableProp prop) {
         return filterManager.get(prop);
     }
 
     @Override
-    public Filter<Columns> getFilter(TypedProp.Association<?, ?> prop) {
+    public Filter<Props> getFilter(TypedProp.Association<?, ?> prop) {
         return getFilter(prop.unwrap());
     }
 
@@ -434,8 +433,6 @@ class JSqlClientImpl implements JSqlClient {
         private final List<Filter<?>> filters = new ArrayList<>();
 
         private final Set<Filter<?>> disabledFilters = new HashSet<>();
-
-        private final List<ImmutableProp> filterableReferenceProps = new ArrayList<>();
 
         private final List<DraftInterceptor<?>> interceptors = new ArrayList<>();
 
@@ -558,20 +555,6 @@ class JSqlClientImpl implements JSqlClient {
         }
 
         @Override
-        public Builder addFilterableReferenceProps(ImmutableProp... props) {
-            this.filterableReferenceProps.addAll(Arrays.asList(props));
-            return this;
-        }
-
-        @Override
-        public Builder addFilterableReferenceProps(TypedProp.Reference<?, ?>... props) {
-            this.filterableReferenceProps.addAll(
-                    Arrays.stream(props).map(TypedProp::unwrap).collect(Collectors.toList())
-            );
-            return this;
-        }
-
-        @Override
         public Builder addDraftInterceptor(DraftInterceptor<?> interceptor) {
             return addDraftInterceptors(Collections.singletonList(interceptor));
         }
@@ -602,7 +585,7 @@ class JSqlClientImpl implements JSqlClient {
                     caches,
                     triggers,
                     null,
-                    new FilterManager(filters, disabledFilters, filterableReferenceProps),
+                    new FilterManager(filters, disabledFilters),
                     new DraftInterceptorManager(interceptors));
         }
     }

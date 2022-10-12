@@ -17,7 +17,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
-import org.babyfish.jimmer.sql.ast.table.Columns;
+import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.cache.Cache;
@@ -31,6 +31,7 @@ import org.babyfish.jimmer.sql.filter.impl.AbstractFilterArgs;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.meta.Storage;
+import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -46,7 +47,7 @@ public abstract class AbstractDataLoader {
 
     private final ImmutableProp prop;
 
-    private final org.babyfish.jimmer.sql.filter.Filter<Columns> globalFiler;
+    private final org.babyfish.jimmer.sql.filter.Filter<Props> globalFiler;
 
     private final FieldFilter<Table<ImmutableSpi>> propFilter;
 
@@ -117,6 +118,24 @@ public abstract class AbstractDataLoader {
             globalFiler = null;
         }
         this.propFilter = (FieldFilter<Table<ImmutableSpi>>) propFilter;
+        if (prop.isReference(TargetLevel.ENTITY) && !prop.isNullable()) {
+            if (globalFiler != null) {
+                throw new ExecutionException(
+                        "Cannot apply filter \"" +
+                                globalFiler +
+                                "\" for \"" +
+                                prop +
+                                "\" because that property is not nullable"
+                );
+            }
+            if (propFilter != null) {
+                throw new ExecutionException(
+                        "Cannot apply field filter of object fetcher for \"" +
+                                prop +
+                                "\" because that property is not nullable"
+                );
+            }
+        }
         if (entityType != null) {
             if (!entityType.getJavaClass().isAssignableFrom(entityType.getJavaClass())) {
                 throw new IllegalArgumentException(
@@ -214,8 +233,8 @@ public abstract class AbstractDataLoader {
     private Map<ImmutableSpi, ImmutableSpi> loadParents(Collection<ImmutableSpi> sources) {
 
         Cache<Object, Object> fkCache = sqlClient.getCaches().getPropertyCache(prop);
-        CacheableFilter<Columns> cacheableGlobalFilter = globalFiler instanceof CacheableFilter<?> ?
-                (CacheableFilter<Columns>) globalFiler :
+        CacheableFilter<Props> cacheableGlobalFilter = globalFiler instanceof CacheableFilter<?> ?
+                (CacheableFilter<Props>) globalFiler :
                 null;
         Cache.Parameterized<Object, Object> parameterizedFkCache = fkCache instanceof Cache.Parameterized<?, ?> ?
                 (Cache.Parameterized<Object, Object>) fkCache :
@@ -341,8 +360,8 @@ public abstract class AbstractDataLoader {
     private Map<ImmutableSpi, ImmutableSpi> loadTargetMap(Collection<ImmutableSpi> sources) {
 
         Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
-        CacheableFilter<Columns> cacheableGlobalFilter = globalFiler instanceof CacheableFilter<?> ?
-                (CacheableFilter<Columns>) globalFiler :
+        CacheableFilter<Props> cacheableGlobalFilter = globalFiler instanceof CacheableFilter<?> ?
+                (CacheableFilter<Props>) globalFiler :
                 null;
         Cache.Parameterized<Object, Object> parameterizedCache = cache instanceof Cache.Parameterized<?, ?> ?
                 (Cache.Parameterized<Object, Object>) cache :
@@ -403,8 +422,8 @@ public abstract class AbstractDataLoader {
 
     private Map<ImmutableSpi, List<ImmutableSpi>> loadTargetMultiMap(Collection<ImmutableSpi> sources) {
         Cache<Object, List<Object>> cache = sqlClient.getCaches().getPropertyCache(prop);
-        CacheableFilter<Columns> cacheableGlobalFilter = globalFiler instanceof CacheableFilter<?> ?
-                (CacheableFilter<Columns>) globalFiler :
+        CacheableFilter<Props> cacheableGlobalFilter = globalFiler instanceof CacheableFilter<?> ?
+                (CacheableFilter<Props>) globalFiler :
                 null;
         Cache.Parameterized<Object, List<Object>> parameterizedCache = cache instanceof Cache.Parameterized<?, ?> ?
                 (Cache.Parameterized<Object, List<Object>>) cache :
@@ -681,7 +700,7 @@ public abstract class AbstractDataLoader {
         });
     }
 
-    private static class FilterArgsImpl extends AbstractFilterArgs<Columns> {
+    private static class FilterArgsImpl extends AbstractFilterArgs<Props> {
 
         private final Table<?> table;
 
@@ -692,7 +711,7 @@ public abstract class AbstractDataLoader {
 
         @Override
         @NotNull
-        public Columns getTable() {
+        public Props getTable() {
             return table;
         }
     }

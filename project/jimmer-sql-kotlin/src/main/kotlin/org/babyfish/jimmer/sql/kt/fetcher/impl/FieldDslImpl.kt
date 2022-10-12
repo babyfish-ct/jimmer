@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.kt.fetcher.impl
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy
 import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig
-import org.babyfish.jimmer.sql.kt.fetcher.KFilter
 import org.babyfish.jimmer.sql.kt.fetcher.KFilterDsl
 import org.babyfish.jimmer.sql.kt.fetcher.KRecursiveListFieldDsl
 
@@ -17,10 +16,6 @@ internal class FieldDslImpl<E: Any>(
 
     override fun filter(filter: KFilterDsl<E>.() -> Unit) {
         fieldConfig.filter(LambdaFieldFilterWrapper(filter))
-    }
-
-    override fun filter(filter: KFilter<E>) {
-        fieldConfig.filter(KtFieldFilterWrapper(filter))
     }
 
     override fun limit(limit: Int, offset: Int) {
