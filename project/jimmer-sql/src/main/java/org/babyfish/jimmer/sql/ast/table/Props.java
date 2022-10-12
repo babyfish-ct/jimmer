@@ -12,9 +12,9 @@ import java.util.function.Function;
  * Used by mapped super class
  *
  * 1. It is super class of {@link Table}
- * 2. It must be decorated by {@link ColumnsFor}
+ * 2. It must be decorated by {@link PropsFor}
  */
-public interface Columns {
+public interface Props {
 
     <XE extends Expression<?>> XE get(String prop);
 

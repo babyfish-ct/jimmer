@@ -97,13 +97,6 @@ public class ImmutableProcessor extends AbstractProcessor {
                             immutableType,
                             filer
                     ).generate();
-                    if (immutableType.isEntity() || immutableType.isMappedSuperClass()) {
-                        new ColumnsGenerator(
-                                typeUtils,
-                                immutableType,
-                                filer
-                        ).generate();
-                    }
                     if (immutableType.isEntity()) {
                         new TableGenerator(
                                 typeUtils,

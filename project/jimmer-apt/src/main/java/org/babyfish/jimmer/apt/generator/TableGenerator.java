@@ -69,7 +69,7 @@ public class TableGenerator {
                 )
                 .addModifiers(Modifier.PUBLIC);
         if (!isTableEx) {
-            typeBuilder.addSuperinterface(type.getColumnsClassName());
+            typeBuilder.addSuperinterface(type.getPropsClassName());
         }
         if (isTableEx) {
             typeBuilder.superclass(type.getTableClassName());
@@ -138,7 +138,7 @@ public class TableGenerator {
             ImmutableProp prop,
             boolean withJoinType
     ) {
-        MethodSpec method = ColumnsGenerator.property(
+        MethodSpec method = PropsGenerator.property(
                 typeUtils,
                 isTableEx,
                 prop,

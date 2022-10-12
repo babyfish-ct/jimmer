@@ -7,11 +7,10 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
-import org.babyfish.jimmer.sql.ast.table.Columns;
+import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.cache.CacheConfig;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.cache.Caches;
-import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.fluent.Fluent;
@@ -128,11 +127,11 @@ public interface JSqlClient {
 
     TransientResolver<?, ?> getResolver(ImmutableProp prop);
 
-    Filter<Columns> getFilter(ImmutableType type);
+    Filter<Props> getFilter(ImmutableType type);
 
-    Filter<Columns> getFilter(ImmutableProp prop);
+    Filter<Props> getFilter(ImmutableProp prop);
 
-    Filter<Columns> getFilter(TypedProp.Association<?, ?> prop);
+    Filter<Props> getFilter(TypedProp.Association<?, ?> prop);
 
     DraftInterceptor<?> getDraftInterceptor(ImmutableType type);
 
@@ -185,12 +184,6 @@ public interface JSqlClient {
 
         @OldChain
         Builder addDisabledFilters(Collection<Filter<?>> filters);
-
-        @OldChain
-        Builder addFilterableReferenceProps(ImmutableProp... props);
-
-        @OldChain
-        Builder addFilterableReferenceProps(TypedProp.Reference<?, ?>... props);
 
         @OldChain
         Builder addDraftInterceptor(DraftInterceptor<?> interceptor);

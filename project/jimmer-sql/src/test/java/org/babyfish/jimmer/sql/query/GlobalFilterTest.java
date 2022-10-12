@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.query.selectable.RootSelectable;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
@@ -11,18 +10,18 @@ import org.junit.jupiter.api.Test;
 
 public class GlobalFilterTest extends AbstractQueryTest {
 
-    private static final Filter<NamedEntityColumns> UNDELETED_FILTER =
-            new Filter<NamedEntityColumns>() {
+    private static final Filter<NamedEntityProps> UNDELETED_FILTER =
+            new Filter<NamedEntityProps>() {
                 @Override
-                public void filter(FilterArgs<NamedEntityColumns> args) {
+                public void filter(FilterArgs<NamedEntityProps> args) {
                     args.where(args.getTable().deleted().eq(false));
                 }
             };
 
-    private static final Filter<NamedEntityColumns> DELETED_FILTER =
-            new Filter<NamedEntityColumns>() {
+    private static final Filter<NamedEntityProps> DELETED_FILTER =
+            new Filter<NamedEntityProps>() {
                 @Override
-                public void filter(FilterArgs<NamedEntityColumns> args) {
+                public void filter(FilterArgs<NamedEntityProps> args) {
                     args.where(args.getTable().deleted().eq(true));
                 }
             };
@@ -36,7 +35,6 @@ public class GlobalFilterTest extends AbstractQueryTest {
         this.sqlClient = getSqlClient(it -> {
            it.addFilter(UNDELETED_FILTER);
            it.addDisabledFilter(DELETED_FILTER);
-           it.addFilterableReferenceProps(PermissionProps.ROLE);
         });
         this.sqlClientForDeletedData = sqlClient.filters(it -> {
             it.enable(DELETED_FILTER);

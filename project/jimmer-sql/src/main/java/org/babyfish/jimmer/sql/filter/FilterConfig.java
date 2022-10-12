@@ -1,13 +1,9 @@
 package org.babyfish.jimmer.sql.filter;
 
 import org.babyfish.jimmer.lang.OldChain;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.TypedProp;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.stream.Collectors;
 
 public class FilterConfig {
 
@@ -50,46 +46,6 @@ public class FilterConfig {
     @OldChain
     public FilterConfig disableByTypes(Collection<Class<?>> filterTypes) {
         this.filterManager = filterManager.disableByTypes(filterTypes);
-        return this;
-    }
-
-    @OldChain
-    public FilterConfig addFilterableReferenceProps(ImmutableProp ... props) {
-        this.filterManager = filterManager.addFilterableReferenceProps(Arrays.asList(props));
-        return this;
-    }
-
-    @OldChain
-    public FilterConfig addFilterableReferenceProps(TypedProp.Reference<?, ?> ... props) {
-        this.filterManager = filterManager.addFilterableReferenceProps(
-                Arrays.stream(props).map(TypedProp::unwrap).collect(Collectors.toList())
-        );
-        return this;
-    }
-
-    @OldChain
-    public FilterConfig addFilterableReferenceProps(Collection<ImmutableProp> props) {
-        this.filterManager = filterManager.addFilterableReferenceProps(props);
-        return this;
-    }
-
-    @OldChain
-    public FilterConfig removeFilterableReferenceProps(ImmutableProp ... props) {
-        this.filterManager = filterManager.removeFilterableReferenceProps(Arrays.asList(props));
-        return this;
-    }
-
-    @OldChain
-    public FilterConfig removeFilterableReferenceProps(TypedProp.Reference<?, ?> ... props) {
-        this.filterManager = filterManager.removeFilterableReferenceProps(
-                Arrays.stream(props).map(TypedProp::unwrap).collect(Collectors.toList())
-        );
-        return this;
-    }
-
-    @OldChain
-    public FilterConfig removeFilterableReferenceProps(Collection<ImmutableProp> props) {
-        this.filterManager = filterManager.removeFilterableReferenceProps(props);
         return this;
     }
 
