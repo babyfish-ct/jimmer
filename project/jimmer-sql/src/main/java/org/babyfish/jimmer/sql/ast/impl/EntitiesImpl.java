@@ -284,7 +284,7 @@ public class EntitiesImpl implements Entities {
             return entities;
         }
         ConfigurableRootQuery<?, E> query = Queries.createQuery(
-                sqlClient, immutableType, (q, table) -> {
+                sqlClient, immutableType, true, (q, table) -> {
                     Expression<Object> idProp = table.get(immutableType.getIdProp().getName());
                     if (distinctIds.size() == 1) {
                         q.where(idProp.eq(distinctIds.iterator().next()));
@@ -346,7 +346,7 @@ public class EntitiesImpl implements Entities {
                             "\""
             );
         }
-        MutableRootQueryImpl<Table<E>> query = new MutableRootQueryImpl<Table<E>>(sqlClient, type);
+        MutableRootQueryImpl<Table<E>> query = new MutableRootQueryImpl<>(sqlClient, type, false);
         Table<E> table = query.getTable();
         if (example != null) {
             example.applyTo(query);

@@ -464,15 +464,20 @@ public class FilterManager {
             NavigableMap<String, Object> map = new TreeMap<>();
             for (CacheableFilter<Columns> filter : filters) {
                 for (Map.Entry<String, Object> e : filter.getParameters().entrySet()) {
-                    if (map.containsKey(e.getKey())) {
-                        throw new IllegalStateException(
-                                "Duplicated parameter key `" +
-                                        e.getKey() +
-                                        "` in filters: " + 
-                                        filters
-                        );
+                    String key = e.getKey();
+                    Object value = e.getValue();
+                    if (value != null) {
+                        Object conflictValue = map.get(key);
+                        if (conflictValue != null && !conflictValue.equals(value)) {
+                            throw new IllegalStateException(
+                                    "Duplicated parameter key `" +
+                                            key +
+                                            "` in filters: " +
+                                            filters
+                            );
+                        }
+                        map.put(key, value);
                     }
-                    map.put(e.getKey(), e.getValue());
                 }
             }
             return map;

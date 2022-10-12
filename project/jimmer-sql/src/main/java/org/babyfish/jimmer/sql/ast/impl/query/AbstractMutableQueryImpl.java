@@ -34,8 +34,6 @@ public abstract class AbstractMutableQueryImpl
 
     private final Table<?> table;
 
-    private final Filter<Columns> filter;
-
     private final List<Expression<?>> groupByExpressions = new ArrayList<>();
 
     private List<Predicate> havingPredicates = new ArrayList<>();
@@ -46,13 +44,19 @@ public abstract class AbstractMutableQueryImpl
     protected AbstractMutableQueryImpl(
             TableAliasAllocator tableAliasAllocator,
             JSqlClient sqlClient,
-            ImmutableType immutableType
+            ImmutableType immutableType,
+            boolean ignoreFilter
     ) {
         super(tableAliasAllocator, sqlClient);
         this.table = TableWrappers.wrap(
                 TableImplementor.create(this, immutableType)
         );
-        this.filter = sqlClient.getFilter(immutableType);
+        if (!ignoreFilter) {
+            Filter<Columns> filter = sqlClient.getFilter(immutableType);
+            if (filter != null) {
+                filter.filter(new FilterArgsImpl());
+            }
+        }
     }
 
     @Override
@@ -232,12 +236,6 @@ public abstract class AbstractMutableQueryImpl
                 getSqlBuilder().useTable(table);
                 use(table.getParent());
             }
-        }
-    }
-
-    protected void applyFilter() {
-        if (filter != null) {
-            filter.filter(new FilterArgsImpl());
         }
     }
 

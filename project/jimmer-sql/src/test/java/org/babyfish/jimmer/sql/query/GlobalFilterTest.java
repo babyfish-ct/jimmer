@@ -65,7 +65,8 @@ public class GlobalFilterTest extends AbstractQueryTest {
                     ctx.statement(1).sql(
                             "select tb_1_.ID " +
                                     "from PERMISSION as tb_1_ " +
-                                    "where tb_1_.DELETED = ? and tb_1_.ROLE_ID = ?"
+                                    "where tb_1_.DELETED = ? " +
+                                    "and tb_1_.ROLE_ID = ?"
                     ).variables(false, 1L);
                     ctx.rows(
                             "[" +
@@ -109,7 +110,8 @@ public class GlobalFilterTest extends AbstractQueryTest {
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                     "from PERMISSION as tb_1_ " +
-                                    "where tb_1_.DELETED = ? and tb_1_.ROLE_ID = ?"
+                                    "where tb_1_.DELETED = ? " +
+                                    "and tb_1_.ROLE_ID = ?"
                     ).variables(false, 1L);
                     ctx.rows(
                             "[" +

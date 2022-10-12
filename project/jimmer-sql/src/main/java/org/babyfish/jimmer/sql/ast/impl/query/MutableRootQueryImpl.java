@@ -19,9 +19,10 @@ public class MutableRootQueryImpl<T extends Table<?>>
 
     public MutableRootQueryImpl(
             JSqlClient sqlClient,
-            ImmutableType immutableType
+            ImmutableType immutableType,
+            boolean ignoreFilter
     ) {
-        this(null, sqlClient, immutableType);
+        super(new TableAliasAllocator(), sqlClient, immutableType, ignoreFilter);
     }
 
     @SuppressWarnings("unchecked")
@@ -31,13 +32,11 @@ public class MutableRootQueryImpl<T extends Table<?>>
             ImmutableType immutableType
     ) {
         super(
-                aliasAllocator != null ? aliasAllocator : new TableAliasAllocator(),
+                aliasAllocator,
                 sqlClient,
-                immutableType
+                immutableType,
+                true
         );
-        if (aliasAllocator == null) {
-            applyFilter();
-        }
     }
 
     @Override
