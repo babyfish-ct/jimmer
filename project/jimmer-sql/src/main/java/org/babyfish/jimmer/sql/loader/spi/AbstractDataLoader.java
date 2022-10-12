@@ -24,6 +24,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Filter;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FilterArgsImpl;
+import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.meta.Storage;
@@ -207,10 +208,25 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<ImmutableSpi, ImmutableSpi> loadParents(Collection<ImmutableSpi> sources) {
+
         Cache<Object, Object> fkCache = sqlClient.getCaches().getPropertyCache(prop);
-        if (fkCache == null || propFilter != null) {
+        CacheableFilter<Columns> cacheableGlobalFilter = globalFiler instanceof CacheableFilter<?> ?
+                (CacheableFilter<Columns>) globalFiler :
+                null;
+        Cache.Parameterized<Object, Object> parameterizedFkCache = fkCache instanceof Cache.Parameterized<?, ?> ?
+                (Cache.Parameterized<Object, Object>) fkCache :
+                null;
+        if (fkCache == null ||
+                propFilter != null ||
+                (globalFiler != null && cacheableGlobalFilter == null) ||
+                (cacheableGlobalFilter != null && parameterizedFkCache == null)
+        ) {
             return loadParentsDirectly(sources);
         }
+
+        NavigableMap<String, Object> parameterMap = cacheableGlobalFilter != null ?
+                cacheableGlobalFilter.getParameters() :
+                Collections.emptyNavigableMap();
         Map<Object, Object> fkMap = new LinkedHashMap<>(
                 (sources.size() * 4 + 2) / 3
         );
@@ -227,15 +243,15 @@ public abstract class AbstractDataLoader {
             }
         }
         if (!missedFkSourceIds.isEmpty()) {
-            Map<Object, Object> cachedFkMap = fkCache.getAll(
-                    missedFkSourceIds,
-                    new CacheEnvironment<>(
-                            sqlClient,
-                            con,
-                            this::queryForeignKeyMap,
-                            false
-                    )
+            CacheEnvironment<Object, Object> env = new CacheEnvironment<>(
+                    sqlClient,
+                    con,
+                    this::queryForeignKeyMap,
+                    false
             );
+            Map<Object, Object> cachedFkMap = parameterizedFkCache != null ?
+                    parameterizedFkCache.getAll(missedFkSourceIds, parameterMap, env) :
+                    fkCache.getAll(missedFkSourceIds, env);
             for (Object sourceId : missedFkSourceIds) {
                 Object fk = cachedFkMap.get(sourceId);
                 if (fk != null) {
@@ -254,7 +270,6 @@ public abstract class AbstractDataLoader {
         return Utils.joinCollectionAndMap(sources, this::toSourceId, targetMap);
     }
 
-    @SuppressWarnings("unchecked")
     private Map<ImmutableSpi, ImmutableSpi> loadParentsDirectly(
             Collection<ImmutableSpi> sources
     ) {
@@ -274,7 +289,7 @@ public abstract class AbstractDataLoader {
         }
         Map<Object, ImmutableSpi> map1 = null;
         if (!fkMap.isEmpty()) {
-            if (propFilter != null) {
+            if (globalFiler != null || propFilter != null) {
                 map1 = Utils.joinMaps(
                         fkMap,
                         Utils.toMap(
@@ -316,22 +331,37 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<ImmutableSpi, ImmutableSpi> loadTargetMap(Collection<ImmutableSpi> sources) {
+
         Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
-        if (cache == null|| propFilter != null) {
+        CacheableFilter<Columns> cacheableGlobalFilter = globalFiler instanceof CacheableFilter<?> ?
+                (CacheableFilter<Columns>) globalFiler :
+                null;
+        Cache.Parameterized<Object, Object> parameterizedCache = cache instanceof Cache.Parameterized<?, ?> ?
+                (Cache.Parameterized<Object, Object>) cache :
+                null;
+        if (cache == null ||
+                propFilter != null ||
+                (globalFiler != null && cacheableGlobalFilter == null) ||
+                (cacheableGlobalFilter != null && parameterizedCache == null)
+        ) {
             return loadTargetMapDirectly(sources);
         }
+
+        NavigableMap<String, Object> parameterMap = cacheableGlobalFilter != null ?
+                cacheableGlobalFilter.getParameters() :
+                Collections.emptyNavigableMap();
         List<Object> sourceIds = toSourceIds(sources);
-        Map<Object, Object> idMap = cache.getAll(
-                sourceIds,
-                new CacheEnvironment<>(
-                        sqlClient,
-                        con,
-                        it -> Tuple2.toMap(
-                                querySourceTargetIdPairs(it)
-                        ),
-                        false
-                )
+        CacheEnvironment<Object, Object> env = new CacheEnvironment<>(
+                sqlClient,
+                con,
+                it -> Tuple2.toMap(
+                        querySourceTargetIdPairs(it)
+                ),
+                false
         );
+        Map<Object, Object> idMap = parameterizedCache != null ?
+                parameterizedCache.getAll(sourceIds, parameterMap, env) :
+                cache.getAll(sourceIds, env);
         Map<Object, ImmutableSpi> targetMap = Utils.toMap(
                 this::toTargetId,
                 findTargets(new LinkedHashSet<>(idMap.values()))
@@ -365,21 +395,35 @@ public abstract class AbstractDataLoader {
 
     private Map<ImmutableSpi, List<ImmutableSpi>> loadTargetMultiMap(Collection<ImmutableSpi> sources) {
         Cache<Object, List<Object>> cache = sqlClient.getCaches().getPropertyCache(prop);
-        if (cache == null || propFilter != null) {
+        CacheableFilter<Columns> cacheableGlobalFilter = globalFiler instanceof CacheableFilter<?> ?
+                (CacheableFilter<Columns>) globalFiler :
+                null;
+        Cache.Parameterized<Object, List<Object>> parameterizedCache = cache instanceof Cache.Parameterized<?, ?> ?
+                (Cache.Parameterized<Object, List<Object>>) cache :
+                null;
+        if (cache == null ||
+                propFilter != null ||
+                (globalFiler != null && cacheableGlobalFilter == null) ||
+                (cacheableGlobalFilter != null && parameterizedCache == null)
+        ) {
             return loadTargetMultiMapDirectly(sources);
         }
+
+        NavigableMap<String, Object> parameterMap = cacheableGlobalFilter != null ?
+                cacheableGlobalFilter.getParameters() :
+                Collections.emptyNavigableMap();
         List<Object> sourceIds = toSourceIds(sources);
-        Map<Object, List<Object>> idMultiMap = cache.getAll(
-                sourceIds,
-                new CacheEnvironment<>(
-                        sqlClient,
-                        con,
-                        it -> Tuple2.toMultiMap(
-                                querySourceTargetIdPairs(it)
-                        ),
-                        false
-                )
+        CacheEnvironment<Object, List<Object>> env = new CacheEnvironment<>(
+                sqlClient,
+                con,
+                it -> Tuple2.toMultiMap(
+                        querySourceTargetIdPairs(it)
+                ),
+                false
         );
+        Map<Object, List<Object>> idMultiMap = parameterizedCache != null ?
+                parameterizedCache.getAll(sourceIds, parameterMap, env) :
+                cache.getAll(sourceIds, env);
         Map<Object, ImmutableSpi> targetMap = Utils.toMap(
                 this::toTargetId,
                 findTargets(
@@ -422,7 +466,7 @@ public abstract class AbstractDataLoader {
     private Map<Object, Object> queryForeignKeyMap(Collection<Object> sourceIds) {
         if (sourceIds.size() == 1) {
             Object sourceId = sourceIds.iterator().next();
-            List<Object> targetIds = Queries.createQuery(sqlClient, prop.getDeclaringType(), (q, source) -> {
+            List<Object> targetIds = Queries.createQuery(sqlClient, prop.getDeclaringType(), globalFiler == null, (q, source) -> {
                 Expression<Object> pkExpr = source.get(thisIdProp.getName());
                 Table<?> targetTable = source.join(prop.getName());
                 Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
@@ -435,7 +479,7 @@ public abstract class AbstractDataLoader {
             return Utils.toMap(sourceId, targetIds);
         }
         List<Tuple2<Object, Object>> tuples = Queries
-                .createQuery(sqlClient, prop.getDeclaringType(), (q, source) -> {
+                .createQuery(sqlClient, prop.getDeclaringType(), globalFiler == null, (q, source) -> {
                     Expression<Object> pkExpr = source.get(thisIdProp.getName());
                     Table<?> targetTable = source.join(prop.getName());
                     Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
@@ -491,7 +535,7 @@ public abstract class AbstractDataLoader {
 
     @SuppressWarnings("unchecked")
     private List<ImmutableSpi> queryTargets(Collection<Object> targetIds) {
-        return Queries.createQuery(sqlClient, prop.getTargetType(), (q, target) -> {
+        return Queries.createQuery(sqlClient, prop.getTargetType(), globalFiler == null, (q, target) -> {
             Expression<Object> idExpr = target.get(targetIdProp.getName());
             q.where(idExpr.in(targetIds));
             applyPropFilter(q, target, targetIds);
@@ -509,7 +553,7 @@ public abstract class AbstractDataLoader {
     ) {
         if (sourceIds.size() == 1) {
             Object sourceId = sourceIds.iterator().next();
-            List<R> results = Queries.createQuery(sqlClient, prop.getTargetType(), (q, target) -> {
+            List<R> results = Queries.createQuery(sqlClient, prop.getTargetType(), globalFiler == null, (q, target) -> {
                 Expression<Object> sourceIdExpr = target
                         .inverseJoin(prop.getDeclaringType().getJavaClass(), prop.getName())
                         .get(thisIdProp.getName());
@@ -520,7 +564,7 @@ public abstract class AbstractDataLoader {
             }).limit(limit, offset).execute(con);
             return Utils.toTuples(sourceId, results);
         }
-        return Queries.createQuery(sqlClient, prop.getTargetType(), (q, target) -> {
+        return Queries.createQuery(sqlClient, prop.getTargetType(), globalFiler == null, (q, target) -> {
             Expression<Object> sourceIdExpr = target
                     .inverseJoin(prop.getDeclaringType().getJavaClass(), prop.getName())
                     .get(thisIdProp.getName());

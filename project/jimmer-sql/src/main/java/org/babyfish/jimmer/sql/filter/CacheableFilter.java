@@ -9,27 +9,11 @@ import java.util.NavigableMap;
 
 public interface CacheableFilter<C extends Columns> extends Filter<C> {
 
-    default NavigableMap<String, Object> getParameters() {
-        throw new UnsupportedOperationException(
-                "`" +
-                        this.getClass().getName() +
-                        "getParameters()` has not been implemented"
-        );
-    }
+    NavigableMap<String, Object> getParameters();
 
-    default boolean isAffectedBy(EntityEvent<?> e) {
-        throw new UnsupportedOperationException(
-                "`" +
-                        this.getClass().getName() +
-                        "isAffectedBy(EntityEvent)` has not been implemented"
-        );
-    }
+    boolean isAffectedBy(EntityEvent<?> e);
 
     default boolean isAffectedBy(AssociationEvent e) {
-        throw new UnsupportedOperationException(
-                "`" +
-                        this.getClass().getName() +
-                        "isAffectedBy(AssociationEvent)` has not been implemented"
-        );
+        return false;
     }
 }

@@ -31,7 +31,8 @@ public class Queries {
         ImmutableType immutableType = ImmutableType.get(tableType);
         MutableRootQueryImpl<T> query = new MutableRootQueryImpl<>(
                 sqlClient,
-                immutableType
+                immutableType,
+                false
         );
         ConfigurableRootQuery<T, R> typedQuery = block.apply(query, (T)query.getTable());
         query.freeze();
@@ -78,7 +79,24 @@ public class Queries {
     ) {
         MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(
                 sqlClient,
-                immutableType
+                immutableType,
+                false
+        );
+        ConfigurableRootQuery<Table<?>, R> typedQuery = block.apply(query, query.getTable());
+        query.freeze();
+        return typedQuery;
+    }
+
+    public static <R> ConfigurableRootQuery<Table<?>, R> createQuery(
+            JSqlClient sqlClient,
+            ImmutableType immutableType,
+            boolean ignoreFilter,
+            BiFunction<MutableRootQuery<Table<?>>, Table<?>, ConfigurableRootQuery<Table<?>, R>> block
+    ) {
+        MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(
+                sqlClient,
+                immutableType,
+                ignoreFilter
         );
         ConfigurableRootQuery<Table<?>, R> typedQuery = block.apply(query, query.getTable());
         query.freeze();
@@ -102,7 +120,8 @@ public class Queries {
         );
         MutableRootQueryImpl<AssociationTable<SE, ST, TE, TT>> query = new MutableRootQueryImpl<>(
                 sqlClient,
-                associationType
+                associationType,
+                false
         );
         ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R> typedQuery =
                 block.apply(query, (AssociationTable<SE, ST, TE, TT>)query.getTable());
@@ -170,7 +189,8 @@ public class Queries {
     ) {
         MutableRootQueryImpl<AssociationTable<?, ?, ?, ?>> query = new MutableRootQueryImpl<>(
                 sqlClient,
-                associationType
+                associationType,
+                false
         );
         ConfigurableRootQuery<AssociationTable<?, ?, ?, ?>, R> typedQuery =
                 block.apply(query, (AssociationTable<?, ?, ?, ?>)query.getTable());

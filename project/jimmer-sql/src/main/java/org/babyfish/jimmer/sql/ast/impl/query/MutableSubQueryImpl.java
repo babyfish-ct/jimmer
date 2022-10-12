@@ -18,7 +18,7 @@ public class MutableSubQueryImpl
         extends AbstractMutableQueryImpl
         implements MutableSubQuery {
 
-    private AbstractMutableStatementImpl parent;
+    private final AbstractMutableStatementImpl parent;
 
     public MutableSubQueryImpl(
             AbstractMutableStatementImpl parent,
@@ -27,10 +27,10 @@ public class MutableSubQueryImpl
         super(
                 parent.getTableAliasAllocator(),
                 parent.getSqlClient(),
-                immutableType
+                immutableType,
+                false
         );
         this.parent = parent;
-        this.applyFilter();
     }
 
     public AbstractMutableStatementImpl getParent() {

@@ -35,7 +35,7 @@ public class FluentImpl implements Fluent {
             throw new IllegalArgumentException("Top-level query cannot be created inside another statement");
         }
         ImmutableType immutableType = ImmutableType.get(table.getClass());
-        MutableRootQueryImpl<T> query = new MutableRootQueryImpl<>(sqlClient, immutableType);
+        MutableRootQueryImpl<T> query = new MutableRootQueryImpl<>(sqlClient, immutableType, false);
         table.bind(query.getTable());
         stack.add(query);
         return new FluentRootQueryImpl<>(query, () -> pop(query));

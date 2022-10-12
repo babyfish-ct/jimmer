@@ -100,7 +100,7 @@ internal class KEntitiesImpl(
             )
         }
         val entities = javaEntities as EntitiesImpl
-        val query = MutableRootQueryImpl<Table<E>>(entities.sqlClient, type)
+        val query = MutableRootQueryImpl<Table<E>>(entities.sqlClient, type, true)
         val table = query.getTable<Table<E>>()
         example?.applyTo(query)
         if (block !== null) {
