@@ -4,7 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
-import org.babyfish.jimmer.sql.fetcher.Filter;
+import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
 import org.babyfish.jimmer.sql.meta.Column;
 
@@ -16,7 +16,7 @@ class FieldImpl implements Field {
 
     private final ImmutableProp prop;
 
-    private final Filter<?> filter;
+    private final FieldFilter<?> filter;
 
     private final int batchSize;
 
@@ -33,7 +33,7 @@ class FieldImpl implements Field {
     FieldImpl(
             ImmutableType entityType,
             ImmutableProp prop,
-            Filter<?> filter,
+            FieldFilter<?> filter,
             int batchSize,
             int limit,
             int offset,
@@ -62,7 +62,7 @@ class FieldImpl implements Field {
     }
 
     @Override
-    public Filter<?> getFilter() {
+    public FieldFilter<?> getFilter() {
         return filter;
     }
 

@@ -20,7 +20,7 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         if (binders.isEmpty()) {
             throw new IllegalArgumentException("binders cannot be empty");
         }
-        Node<K, V> node = new TailNode<>();
+        Node<K, V> node = this.createTailNode();
         ListIterator<Object> itr = binders.listIterator(binders.size());
         while (itr.hasPrevious()) {
             Object binder = itr.previous();
@@ -46,6 +46,10 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
             return new LoadingNode<>((LoadingBinder<K, V>) binder, next);
         }
         return new SimpleNode<>((SimpleBinder<K, V>) binder, next);
+    }
+
+    protected TailNode<K, V> createTailNode() {
+        return new TailNode<>();
     }
 
     protected interface Node<K, V> extends CacheChain<K, V> {
@@ -155,7 +159,7 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> CacheLoader<K, V> currentCacheLoader() {
+    protected static <K, V> CacheLoader<K, V> currentCacheLoader() {
         CacheLoader<?, ?> loader = LOADER_LOCAL.get();
         if (loader == null) {
             throw new IllegalStateException(

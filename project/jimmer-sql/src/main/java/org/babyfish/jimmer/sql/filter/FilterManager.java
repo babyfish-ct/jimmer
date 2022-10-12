@@ -129,27 +129,6 @@ public class FilterManager {
         );
     }
 
-    public FilterManager enableByTypes(Collection<Class<?>> filterTypes) {
-        if (filterTypes.isEmpty()) {
-            return this;
-        }
-        Set<Class<?>> disabledTypeSet = new HashSet<>(disabledFilterTypes);
-        disabledTypeSet.removeAll(filterTypes);
-        if (disabledTypeSet.size() == disabledFilterTypes.size()) {
-            return this;
-        }
-        Set<Class<?>> disabledDirectTypeSet = filterTypesByTypes(disabledTypeSet);
-        return new FilterManager(
-                filterMap(allFilters, disabledFilters, disabledDirectTypeSet),
-                allFilters,
-                disabledFilters,
-                this.filterTypes,
-                disabledTypeSet,
-                disabledDirectTypeSet,
-                filterableReferenceProps
-        );
-    }
-
     public FilterManager disableByTypes(Collection<Class<?>> filterTypes) {
         if (filterTypes.isEmpty()) {
             return this;

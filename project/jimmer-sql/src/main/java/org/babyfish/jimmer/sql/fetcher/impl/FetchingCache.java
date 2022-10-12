@@ -5,7 +5,7 @@ import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.fetcher.Field;
-import org.babyfish.jimmer.sql.fetcher.Filter;
+import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.meta.Column;
 
 import java.util.HashMap;
@@ -54,7 +54,7 @@ public class FetchingCache {
 
         private final ImmutableProp prop;
 
-        private final Filter<?> filter;
+        private final FieldFilter<?> filter;
 
         private final int limit;
 
@@ -64,7 +64,7 @@ public class FetchingCache {
             this(field.getProp(), field.getFilter(), field.getLimit(), field.getOffset());
         }
 
-        FieldKey(ImmutableProp prop, Filter<?> filter, int limit, int offset) {
+        FieldKey(ImmutableProp prop, FieldFilter<?> filter, int limit, int offset) {
             this.prop = prop;
             this.filter = filter;
             this.limit = limit;

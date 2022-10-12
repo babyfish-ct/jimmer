@@ -41,6 +41,13 @@ public class CacheConfig {
             if (!objectCacheMap.containsKey(type)) {
                 Cache<?, ?> objectCache = cacheFactory.createObjectCache(type);
                 if (objectCache != null) {
+                    if (objectCache instanceof Cache.Parameterized<?, ?>) {
+                        throw new IllegalStateException(
+                                "CacheFactory returns illegal cache for \"" +
+                                        type +
+                                        "\", object cache cannot be parameterized"
+                        );
+                    }
                     objectCacheMap.put(type, objectCache);
                 }
             }
@@ -67,6 +74,11 @@ public class CacheConfig {
             Class<T> type,
             Cache<?, T> cache
     ) {
+        if (cache instanceof Cache.Parameterized<?, ?>) {
+            throw new IllegalArgumentException(
+                    "Object cache cannot be parameterized cache"
+            );
+        }
         ImmutableType immutableType = ImmutableType.get(type);
         objectCacheMap.put(immutableType, LocatedCacheImpl.unwrap(cache));
         return this;

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.SimpleType;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -50,7 +51,7 @@ public class ValueSerializer<T> {
         }
         ObjectMapper clonedMapper = mapper != null?
             new ObjectMapper(mapper) {} :
-            new ObjectMapper();
+            new ObjectMapper().registerModule(new JavaTimeModule());
         clonedMapper.registerModule(new ImmutableModule());
         this.mapper = clonedMapper;
         if (prop == null) {

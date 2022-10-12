@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Test;
 
-public class FilterTest extends AbstractQueryTest {
+public class FieldFilterTest extends AbstractQueryTest {
 
     @Test
     public void testByOneToMany() {

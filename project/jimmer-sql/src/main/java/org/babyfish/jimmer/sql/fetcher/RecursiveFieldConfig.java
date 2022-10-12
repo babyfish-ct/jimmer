@@ -7,7 +7,7 @@ public interface RecursiveFieldConfig<E, T extends Table<E>> extends FieldConfig
 
     @OldChain
     @Override
-    RecursiveFieldConfig<E, T> filter(Filter<T> filter);
+    RecursiveFieldConfig<E, T> filter(FieldFilter<T> filter);
 
     @OldChain
     @Override

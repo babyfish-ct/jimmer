@@ -99,6 +99,16 @@ public class AssociationType implements ImmutableType {
     }
 
     @Override
+    public boolean isEntity() {
+        return true;
+    }
+
+    @Override
+    public boolean isMappedSuperclass() {
+        return false;
+    }
+
+    @Override
     public Annotation getImmutableAnnotation() { return null; }
 
     @Override

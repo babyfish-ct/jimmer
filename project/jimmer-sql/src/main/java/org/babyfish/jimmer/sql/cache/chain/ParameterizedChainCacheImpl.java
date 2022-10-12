@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.cache.chain;
 
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
+import org.babyfish.jimmer.sql.cache.CacheLoader;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -47,7 +48,7 @@ class ParameterizedChainCacheImpl<K, V> extends ChainCacheImpl<K, V> implements 
         if (binder instanceof LoadingBinder.Parameterized<?, ?>) {
             return parameterizedNode = new ParameterizedLoadingNode<K, V>(
                     (LoadingBinder.Parameterized<K, V>) binder,
-                    next
+                    (ParameterizedNode<K, V>) next
             );
         }
         if (binder instanceof SimpleBinder.Parameterized<?, ?>) {
@@ -59,17 +60,32 @@ class ParameterizedChainCacheImpl<K, V> extends ChainCacheImpl<K, V> implements 
         return super.createNode(binder, next);
     }
 
+    @Override
+    protected TailNode<K, V> createTailNode() {
+        return new TailNode<>();
+    }
+
     protected interface ParameterizedNode<K, V> extends Node<K, V>, CacheChain.Parameterized<K, V> {}
+
+    private static class TailNode<K, V> extends ChainCacheImpl.TailNode<K, V> implements ParameterizedNode<K, V> {
+
+        @Override
+        public @NotNull Map<K, V> loadAll(@NotNull Collection<K> keys, @NotNull NavigableMap<String, Object> parameterMap) {
+            CacheLoader<K, V> loader = currentCacheLoader();
+            return loader.loadAll(keys);
+        }
+    }
 
     private static class ParameterizedLoadingNode<K, V> implements ParameterizedNode<K, V> {
 
         private final LoadingBinder.Parameterized<K, V> binder;
 
-        private final Node<K, V> next;
+        private final ParameterizedNode<K, V> next;
 
-        ParameterizedLoadingNode(LoadingBinder.Parameterized<K, V> binder, Node<K, V> next) {
+        ParameterizedLoadingNode(LoadingBinder.Parameterized<K, V> binder, ParameterizedNode<K, V> next) {
             this.binder = binder;
             this.next = next;
+            binder.initialize(next);
         }
 
         @NotNull

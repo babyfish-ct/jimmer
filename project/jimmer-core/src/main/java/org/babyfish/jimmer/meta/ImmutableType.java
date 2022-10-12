@@ -40,6 +40,10 @@ public interface ImmutableType {
     
     Class<?> getJavaClass();
 
+    boolean isEntity();
+
+    boolean isMappedSuperclass();
+
     Annotation getImmutableAnnotation();
 
     boolean isAssignableFrom(ImmutableType type);

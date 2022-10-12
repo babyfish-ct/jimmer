@@ -1,5 +1,7 @@
 drop table permission if exists;
+drop table administrator_role_mapping if exists;
 drop table role if exists;
+drop table administrator if exists;
 drop table book_author_mapping if exists;
 drop table author_country_mapping if exists;
 drop table book if exists;
@@ -222,6 +224,17 @@ insert into tree_node(node_id, name, parent_id) values
                     (24, 'Shirt', 22)
 ;
 
+create table administrator(
+    id bigint not null,
+    name varchar(50) not null,
+    deleted boolean not null,
+    created_time timestamp not null,
+    modified_time timestamp not null
+);
+alter table administrator
+    add constraint pk_administrator
+        primary key(id);
+
 create table role(
     id bigint not null,
     name varchar(50) not null,
@@ -232,6 +245,22 @@ create table role(
 alter table role
     add constraint pk_role
         primary key(id);
+
+create table administrator_role_mapping(
+    administrator_id bigint not null,
+    role_id bigint not null
+);
+alter table administrator_role_mapping
+    add constraint pk_administrator_role_mapping
+        primary key(administrator_id, role_id);
+alter table administrator_role_mapping
+    add constraint fk_administrator_role_mapping_administrator
+        foreign key(administrator_id)
+            references administrator(id);
+alter table administrator_role_mapping
+    add constraint fk_administrator_role_mapping_role
+        foreign key(role_id)
+            references role(id);
 
 create table permission(
     id bigint not null,
@@ -249,10 +278,26 @@ alter table permission
         foreign key(role_id)
             references role(id);
 
+insert into administrator(id, name, deleted, created_time, modified_time)
+    values
+    (1, 'a_1', false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
+    (2, 'a_2', true, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
+    (3, 'a_3', false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
+    (4, 'a_4', true, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
+
 insert into role(id, name, deleted, created_time, modified_time)
     values
     (1, 'r_1', false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
     (2, 'r_2', true, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
+
+insert into administrator_role_mapping(administrator_id, role_id)
+    values
+    (1, 1),
+    (2, 1),
+    (3, 1),
+    (2, 2),
+    (3, 2),
+    (4, 2);
 
 insert into permission(id, name, role_id, deleted, created_time, modified_time)
     values

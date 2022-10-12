@@ -19,6 +19,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
+import org.babyfish.jimmer.sql.filter.impl.AbstractFilterArgs;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,6 +41,8 @@ public abstract class AbstractMutableQueryImpl
 
     private final List<Order> orders = new ArrayList<>();
 
+    private final Filter<Columns> filter;
+
     @SuppressWarnings("unchecked")
     protected AbstractMutableQueryImpl(
             TableAliasAllocator tableAliasAllocator,
@@ -48,14 +51,20 @@ public abstract class AbstractMutableQueryImpl
             boolean ignoreFilter
     ) {
         super(tableAliasAllocator, sqlClient);
+        if (!immutableType.isEntity()) {
+            throw new IllegalArgumentException(
+                    "`" +
+                            immutableType +
+                            "` is not entity"
+            );
+        }
         this.table = TableWrappers.wrap(
                 TableImplementor.create(this, immutableType)
         );
-        if (!ignoreFilter) {
-            Filter<Columns> filter = sqlClient.getFilter(immutableType);
-            if (filter != null) {
-                filter.filter(new FilterArgsImpl());
-            }
+        if (ignoreFilter) {
+            this.filter = null;
+        } else {
+            this.filter = sqlClient.getFilter(immutableType);
         }
     }
 
@@ -109,12 +118,12 @@ public abstract class AbstractMutableQueryImpl
     }
 
     @Override
-    public boolean freeze() {
-        if (!super.freeze()) {
-            return false;
+    protected void onFrozen() {
+        if (filter != null) {
+            filter.filter(new FilterArgsImpl(this));
         }
+        super.onFrozen();
         havingPredicates = mergePredicates(havingPredicates);
-        return true;
     }
 
     void accept(
@@ -239,63 +248,16 @@ public abstract class AbstractMutableQueryImpl
         }
     }
 
-    private class FilterArgsImpl implements FilterArgs<Columns> {
+    private static class FilterArgsImpl extends AbstractFilterArgs<Columns> {
+
+        public FilterArgsImpl(AbstractMutableQueryImpl query) {
+            super(query);
+        }
 
         @Override
         public @NotNull Columns getTable() {
-            return AbstractMutableQueryImpl.this.getTable();
+            return ((AbstractMutableQueryImpl) sortable).getTable();
         }
 
-        @Override
-        public <T extends Table<?>, R> ConfigurableSubQuery<R> createSubQuery(
-                Class<T> tableType,
-                BiFunction<MutableSubQuery, T, ConfigurableSubQuery<R>> block
-        ) {
-            return AbstractMutableQueryImpl.this.createSubQuery(tableType, block);
-        }
-
-        @Override
-        public <T extends Table<?>> MutableSubQuery createWildSubQuery(
-                Class<T> tableType,
-                BiConsumer<MutableSubQuery, T> block
-        ) {
-            return AbstractMutableQueryImpl.this.createWildSubQuery(tableType, block);
-        }
-
-        @Override
-        public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R> ConfigurableSubQuery<R> createAssociationSubQuery(
-                Class<ST> sourceTableType,
-                Function<ST, TT> targetTableGetter,
-                BiFunction<MutableSubQuery, AssociationTableEx<SE, ST, TE, TT>, ConfigurableSubQuery<R>> block
-        ) {
-            return AbstractMutableQueryImpl.this.createAssociationSubQuery(sourceTableType, targetTableGetter, block);
-        }
-
-        @Override
-        public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R> MutableSubQuery createAssociationWildSubQuery(
-                Class<ST> sourceTableType,
-                Function<ST, TT> targetTableGetter,
-                BiConsumer<MutableSubQuery, AssociationTableEx<SE, ST, TE, TT>> block
-        ) {
-            return AbstractMutableQueryImpl.this.createAssociationWildSubQuery(sourceTableType, targetTableGetter, block);
-        }
-
-        @Override
-        @OldChain
-        public Sortable where(Predicate... predicates) {
-            return AbstractMutableQueryImpl.this.where(predicates);
-        }
-
-        @Override
-        @OldChain
-        public Sortable orderBy(Expression<?>... expressions) {
-            return AbstractMutableQueryImpl.this.orderBy(expressions);
-        }
-
-        @Override
-        @OldChain
-        public Sortable orderBy(Order... orders) {
-            return AbstractMutableQueryImpl.this.orderBy(orders);
-        }
     }
 }

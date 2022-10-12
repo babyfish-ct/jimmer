@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.loader.ReferenceLoader
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.loader.KReferenceLoader
 import org.babyfish.jimmer.sql.kt.fetcher.KFilterDsl
-import org.babyfish.jimmer.sql.kt.fetcher.impl.LambdaFilterWrapper
+import org.babyfish.jimmer.sql.kt.fetcher.impl.LambdaFieldFilterWrapper
 import java.sql.Connection
 
 internal class KReferenceLoaderImpl<S: Any, T: Any>(
@@ -21,7 +21,7 @@ internal class KReferenceLoaderImpl<S: Any, T: Any>(
         }
 
     override fun forFilter(filter: KFilterDsl<T>.() -> Unit): KReferenceLoader<S, T> =
-        javaLoader.forFilter(LambdaFilterWrapper(filter)).let {
+        javaLoader.forFilter(LambdaFieldFilterWrapper(filter)).let {
             if (javaLoader === it) {
                 this
             } else {

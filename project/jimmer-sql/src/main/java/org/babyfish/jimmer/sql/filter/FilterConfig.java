@@ -42,18 +42,6 @@ public class FilterConfig {
     }
 
     @OldChain
-    public FilterConfig enableByTypes(Class<?>... filterTypes) {
-        this.filterManager = filterManager.enableByTypes(Arrays.asList(filterTypes));
-        return this;
-    }
-
-    @OldChain
-    public FilterConfig enableByTypes(Collection<Class<?>> filterTypes) {
-        this.filterManager = filterManager.enableByTypes(filterTypes);
-        return this;
-    }
-
-    @OldChain
     public FilterConfig disableByTypes(Class<?>... filterTypes) {
         this.filterManager = filterManager.disableByTypes(Arrays.asList(filterTypes));
         return this;

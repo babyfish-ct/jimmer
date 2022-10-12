@@ -8,7 +8,7 @@ import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.AssociationTableEx;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
-import org.babyfish.jimmer.sql.fetcher.FilterArgs;
+import org.babyfish.jimmer.sql.fetcher.FieldFilterArgs;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -17,7 +17,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class FilterArgsImpl<T extends Table<?>> implements FilterArgs<T> {
+public class FieldFilterArgsImpl<T extends Table<?>> implements FieldFilterArgs<T> {
 
     private AbstractMutableQueryImpl query;
 
@@ -25,19 +25,19 @@ public class FilterArgsImpl<T extends Table<?>> implements FilterArgs<T> {
 
     private Collection<Object> keys;
 
-    public static <T extends Table<?>> FilterArgs<T> of(
+    public static <T extends Table<?>> FieldFilterArgs<T> of(
             AbstractMutableQueryImpl query,
             T table,
             Collection<Object> keys
     ) {
-        return new FilterArgsImpl<>(
+        return new FieldFilterArgsImpl<>(
                 query,
                 table,
                 Objects.requireNonNull(keys, "keys cannot be null")
         );
     }
 
-    private FilterArgsImpl(
+    private FieldFilterArgsImpl(
             AbstractMutableQueryImpl query,
             T table,
             Collection<Object> keys

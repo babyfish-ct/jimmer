@@ -32,7 +32,6 @@ public class Fetchers {
         }
 
         Map<Integer, List<Object>> columnMap = new LinkedHashMap<>();
-        List<Selection<?>> newSelections = null;
         for (int i = 0; i < selections.size(); i++) {
             Selection<?> selection = selections.get(i);
             if (selection instanceof FetcherSelection<?>) {
@@ -41,22 +40,10 @@ public class Fetchers {
                     hasReferenceFilter(fetcher.getImmutableType(), sqlClient)) {
                     columnMap.put(i, new ArrayList<>());
                 }
-            } else if (selection instanceof Table<?>) {
-                TableImplementor<?> tableImplementor = TableWrappers.unwrap((Table<?>) selection);
-                if (hasReferenceFilter(tableImplementor.getImmutableType(), sqlClient)) {
-                    columnMap.put(i, new ArrayList<>());
-                    if (newSelections == null) {
-                        newSelections = new ArrayList<>(selections);
-                    }
-                    newSelections.set(i, tableImplementor.toFetcherSelection());
-                }
             }
         }
         if (columnMap.isEmpty()) {
             return;
-        }
-        if (newSelections != null) {
-            selections = newSelections;
         }
 
         for (Object row : rows) {
