@@ -63,6 +63,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
             });
             it.setConnectionManager(
                     new ConnectionManager() {
+                        @SuppressWarnings("unchecked")
                         @Override
                         public <R> R execute(Function<Connection, R> block) {
                             R[] resultBox = (R[])new Object[1];
@@ -613,8 +614,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
 
         @Override
         public boolean isAffectedBy(EntityEvent<?> e) {
-            return NamedEntity.class.isAssignableFrom(e.getImmutableType().getJavaClass()) &&
-                    e.getUnchangedFieldRef(NamedEntityProps.DELETED) == null;
+            return e.getUnchangedFieldRef(NamedEntityProps.DELETED) == null;
         }
     }
 
@@ -634,8 +634,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
 
         @Override
         public boolean isAffectedBy(EntityEvent<?> e) {
-            return NamedEntity.class.isAssignableFrom(e.getImmutableType().getJavaClass()) &&
-                    e.getUnchangedFieldRef(NamedEntityProps.DELETED) == null;
+            return e.getUnchangedFieldRef(NamedEntityProps.DELETED) == null;
         }
     }
 }
