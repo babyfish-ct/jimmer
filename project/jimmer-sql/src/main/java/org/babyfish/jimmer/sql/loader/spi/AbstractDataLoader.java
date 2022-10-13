@@ -51,6 +51,8 @@ public abstract class AbstractDataLoader {
 
     private final FieldFilter<Table<ImmutableSpi>> propFilter;
 
+    private final ImmutableType thisEntityType;
+
     private final ImmutableProp thisIdProp;
 
     private final int limit;
@@ -137,7 +139,14 @@ public abstract class AbstractDataLoader {
             }
         }
         if (entityType != null) {
-            if (!entityType.getJavaClass().isAssignableFrom(entityType.getJavaClass())) {
+            if (!entityType.isEntity()) {
+                throw new IllegalArgumentException(
+                        "\"" +
+                                entityType +
+                                "\" is not entity type"
+                );
+            }
+            if (!prop.getDeclaringType().getJavaClass().isAssignableFrom(entityType.getJavaClass())) {
                 throw new IllegalArgumentException(
                         "The entity type \"" +
                                 entityType +
@@ -146,6 +155,7 @@ public abstract class AbstractDataLoader {
                                 "\""
                 );
             }
+            this.thisEntityType = entityType;
             this.thisIdProp = entityType.getIdProp();
             if (thisIdProp == null) {
                 throw new IllegalArgumentException(
@@ -155,6 +165,7 @@ public abstract class AbstractDataLoader {
                 );
             }
         } else {
+            this.thisEntityType = prop.getDeclaringType();
             this.thisIdProp = prop.getDeclaringType().getIdProp();
             if (thisIdProp == null) {
                 throw new IllegalArgumentException(
@@ -493,7 +504,7 @@ public abstract class AbstractDataLoader {
     private Map<Object, Object> queryForeignKeyMap(Collection<Object> sourceIds) {
         if (sourceIds.size() == 1) {
             Object sourceId = sourceIds.iterator().next();
-            List<Object> targetIds = Queries.createQuery(sqlClient, thisIdProp.getDeclaringType(), true, (q, source) -> {
+            List<Object> targetIds = Queries.createQuery(sqlClient, thisEntityType, true, (q, source) -> {
                 Expression<Object> pkExpr = source.get(thisIdProp.getName());
                 Table<?> targetTable = source.join(prop.getName());
                 Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
@@ -507,7 +518,7 @@ public abstract class AbstractDataLoader {
             return Utils.toMap(sourceId, targetIds);
         }
         List<Tuple2<Object, Object>> tuples = Queries
-                .createQuery(sqlClient, thisIdProp.getDeclaringType(), true, (q, source) -> {
+                .createQuery(sqlClient, thisEntityType, true, (q, source) -> {
                     Expression<Object> pkExpr = source.get(thisIdProp.getName());
                     Table<?> targetTable = source.join(prop.getName());
                     Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
@@ -537,7 +548,7 @@ public abstract class AbstractDataLoader {
                 if (sourceIds.size() == 1) {
                     Object sourceId = sourceIds.iterator().next();
                     List<Object> targetIds = Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), (q, association) -> {
-                        Expression<Object> sourceIdExpr = association.source(thisIdProp.getDeclaringType()).get(thisIdProp.getName());
+                        Expression<Object> sourceIdExpr = association.source(thisEntityType).get(thisIdProp.getName());
                         Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
                         q.where(sourceIdExpr.eq(sourceId));
                         applyGlobalFilter(q, association.target());
@@ -546,7 +557,7 @@ public abstract class AbstractDataLoader {
                     return Utils.toTuples(sourceId, targetIds);
                 }
                 return Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), (q, association) -> {
-                    Expression<Object> sourceIdExpr = association.source(thisIdProp.getDeclaringType()).get(thisIdProp.getName());
+                    Expression<Object> sourceIdExpr = association.source(thisEntityType).get(thisIdProp.getName());
                     Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
                     q.where(sourceIdExpr.in(sourceIds));
                     applyGlobalFilter(q, association.target());
@@ -587,7 +598,7 @@ public abstract class AbstractDataLoader {
             List<R> results = Queries.createQuery(sqlClient, prop.getTargetType(), globalFiler == null, (q, target) -> {
                 Expression<Object> sourceIdExpr = target
                         .inverseJoin(
-                                RedirectedProp.source(prop, thisIdProp.getDeclaringType())
+                                RedirectedProp.source(prop, thisEntityType)
                         )
                         .get(thisIdProp.getName());
                 q.where(sourceIdExpr.eq(sourceId));
@@ -600,7 +611,7 @@ public abstract class AbstractDataLoader {
         return Queries.createQuery(sqlClient, prop.getTargetType(), globalFiler == null, (q, target) -> {
             Expression<Object> sourceIdExpr = target
                     .inverseJoin(
-                            RedirectedProp.source(prop, thisIdProp.getDeclaringType())
+                            RedirectedProp.source(prop, thisEntityType)
                     )
                     .get(thisIdProp.getName());
             q.where(sourceIdExpr.in(sourceIds));
