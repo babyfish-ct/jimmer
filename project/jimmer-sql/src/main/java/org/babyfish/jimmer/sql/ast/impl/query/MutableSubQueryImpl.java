@@ -28,7 +28,9 @@ public class MutableSubQueryImpl
                 parent.getTableAliasAllocator(),
                 parent.getSqlClient(),
                 immutableType,
-                false
+                parent.getPurpose(),
+                parent instanceof AbstractMutableQueryImpl &&
+                        ((AbstractMutableQueryImpl) parent).isFilterIgnored()
         );
         this.parent = parent;
     }

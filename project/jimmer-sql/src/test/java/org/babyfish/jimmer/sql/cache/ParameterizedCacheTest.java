@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
@@ -10,20 +11,19 @@ import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.babyfish.jimmer.sql.model.inheritance.*;
+import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Connection;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 public class ParameterizedCacheTest extends AbstractQueryTest {
-
-    private static final UndeletedFilter UNDELETED_FILTER = new UndeletedFilter();
-
-    private static final DeletedFilter DELETED_FILTER = new DeletedFilter();
 
     private JSqlClient sqlClient;
 
@@ -32,15 +32,17 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
     @BeforeEach
     public void initialize() {
         sqlClient = getSqlClient(it -> {
-            it.addFilter(UNDELETED_FILTER);
-            it.addDisabledFilter(DELETED_FILTER);
+            it.addFilter(new UndeletedFilter());
+            it.addDisabledFilter(new DeletedFilter());
+            it.setEntityManager(
+                    new EntityManager(
+                            Administrator.class,
+                            Role.class,
+                            Permission.class
+                    )
+            );
             it.setCaches(cfg -> {
                 cfg.setCacheFactory(
-                        new Class[] {
-                                Administrator.class,
-                                Role.class,
-                                Permission.class
-                        },
                         new CacheFactory() {
                             @Override
                             public @Nullable Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
@@ -59,11 +61,23 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                         }
                 );
             });
+            it.setConnectionManager(
+                    new ConnectionManager() {
+                        @Override
+                        public <R> R execute(Function<Connection, R> block) {
+                            R[] resultBox = (R[])new Object[1];
+                            jdbc(con -> {
+                                resultBox[0] = block.apply(con);
+                            });
+                            return resultBox[0];
+                        }
+                    }
+            );
         });
         sqlClientForDeletedData = sqlClient
                 .filters(it -> {
                     it.disableByTypes(UndeletedFilter.class);
-                    it.enable(DELETED_FILTER);
+                    it.enableByTypes(DeletedFilter.class);
                 });
     }
 

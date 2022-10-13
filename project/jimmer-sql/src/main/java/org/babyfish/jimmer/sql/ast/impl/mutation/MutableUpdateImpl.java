@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.dialect.UpdateJoin;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +38,7 @@ public class MutableUpdateImpl
     private Table<?> table;
 
     public MutableUpdateImpl(JSqlClient sqlClient, ImmutableType immutableType) {
-        super(new TableAliasAllocator(), sqlClient);
+        super(new TableAliasAllocator(), sqlClient, ExecutionPurpose.UPDATE);
         this.table = TableWrappers.wrap(
                 TableImplementor.create(this, immutableType)
         );

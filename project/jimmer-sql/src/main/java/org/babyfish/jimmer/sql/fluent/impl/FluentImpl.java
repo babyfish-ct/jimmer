@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.Filterable;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fluent.*;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -35,7 +36,7 @@ public class FluentImpl implements Fluent {
             throw new IllegalArgumentException("Top-level query cannot be created inside another statement");
         }
         ImmutableType immutableType = ImmutableType.get(table.getClass());
-        MutableRootQueryImpl<T> query = new MutableRootQueryImpl<>(sqlClient, immutableType, false);
+        MutableRootQueryImpl<T> query = new MutableRootQueryImpl<>(sqlClient, immutableType, ExecutionPurpose.QUERY, false);
         table.bind(query.getTable());
         stack.add(query);
         return new FluentRootQueryImpl<>(query, () -> pop(query));

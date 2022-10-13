@@ -52,6 +52,10 @@ class KSqlClientDsl internal constructor(
         javaBuilder.addScalarProvider(scalarProvider)
     }
 
+    fun setEntityManager(entityManager: EntityManager) {
+        javaBuilder.setEntityManager(entityManager)
+    }
+
     fun setCaches(block: CacheDsl.() -> Unit) {
         javaBuilder.setCaches {
             CacheDsl(it).block()
@@ -161,8 +165,8 @@ class KSqlClientDsl internal constructor(
     class CacheDsl internal constructor(
         private val javaCfg: CacheConfig
     ) {
-        fun setCacheFactory(entityTypes: Array<KClass<*>>, cacheFactory: CacheFactory) {
-            javaCfg.setCacheFactory(entityTypes.map { it.java }.toTypedArray(), cacheFactory)
+        fun setCacheFactory(cacheFactory: CacheFactory) {
+            javaCfg.setCacheFactory(cacheFactory)
         }
 
         fun <T: Any> setObjectCache(entityType: KClass<T>, cache: Cache<*, T>?) {

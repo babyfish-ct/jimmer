@@ -26,6 +26,7 @@ import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
+import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
@@ -114,6 +115,8 @@ public interface JSqlClient {
             Function<ST, TT> block
     );
 
+    EntityManager getEntityManager();
+
     Caches getCaches();
 
     @NewChain
@@ -163,6 +166,9 @@ public interface JSqlClient {
 
         @OldChain
         Builder setDefaultListBatchSize(int size);
+
+        @OldChain
+        Builder setEntityManager(EntityManager scanner);
 
         @OldChain
         Builder setCaches(Consumer<CacheConfig> block);

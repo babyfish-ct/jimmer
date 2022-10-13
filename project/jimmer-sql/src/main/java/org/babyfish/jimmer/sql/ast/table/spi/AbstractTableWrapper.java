@@ -38,6 +38,11 @@ public abstract class AbstractTableWrapper<E> implements Table<E>, FluentTable<E
     }
 
     @Override
+    public ImmutableType getImmutableType() {
+        return raw().getImmutableType();
+    }
+
+    @Override
     public Predicate eq(Table<E> other) {
         return raw().eq(other);
     }

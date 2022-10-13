@@ -13,7 +13,7 @@ import java.util.Map;
 
 /**
  * To be absolutely cache friendly,
- * all query methods in this class that start with "find" ignore the global filters.
+ * all query methods like "find...ById(s)" of this class ignore the global filters.
  *
  * The mentions here ignore global filters, only for aggregate root objects,
  * excluding deeper objects fetched by object fetcher.
