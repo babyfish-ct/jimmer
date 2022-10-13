@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.impl.AbstractFilterArgs;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,16 +35,17 @@ public abstract class AbstractMutableQueryImpl
 
     private final List<Order> orders = new ArrayList<>();
 
-    private final Filter<Props> filter;
+    private final boolean ignoreFilter;
 
     @SuppressWarnings("unchecked")
     protected AbstractMutableQueryImpl(
             TableAliasAllocator tableAliasAllocator,
             JSqlClient sqlClient,
             ImmutableType immutableType,
+            ExecutionPurpose purpose,
             boolean ignoreFilter
     ) {
-        super(tableAliasAllocator, sqlClient);
+        super(tableAliasAllocator, sqlClient, purpose);
         if (!immutableType.isEntity()) {
             throw new IllegalArgumentException(
                     "`" +
@@ -54,11 +56,7 @@ public abstract class AbstractMutableQueryImpl
         this.table = TableWrappers.wrap(
                 TableImplementor.create(this, immutableType)
         );
-        if (ignoreFilter) {
-            this.filter = null;
-        } else {
-            this.filter = sqlClient.getFilter(immutableType);
-        }
+        this.ignoreFilter = ignoreFilter;
     }
 
     @Override
@@ -112,11 +110,18 @@ public abstract class AbstractMutableQueryImpl
 
     @Override
     protected void onFrozen() {
-        if (filter != null) {
-            filter.filter(new FilterArgsImpl(this));
+        if (!ignoreFilter) {
+            Filter<Props> filter = getSqlClient().getFilter(getTable().getImmutableType());
+            if (filter != null) {
+                filter.filter(new FilterArgsImpl(this));
+            }
         }
         super.onFrozen();
         havingPredicates = mergePredicates(havingPredicates);
+    }
+
+    boolean isFilterIgnored() {
+        return ignoreFilter;
     }
 
     void accept(

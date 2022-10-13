@@ -11,8 +11,4 @@ public interface CacheableFilter<P extends Props> extends Filter<P> {
     NavigableMap<String, Object> getParameters();
 
     boolean isAffectedBy(EntityEvent<?> e);
-
-    default boolean isAffectedBy(AssociationEvent e) {
-        return false;
-    }
 }

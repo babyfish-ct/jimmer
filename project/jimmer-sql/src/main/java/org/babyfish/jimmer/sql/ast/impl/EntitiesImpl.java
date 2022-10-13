@@ -25,6 +25,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.fetcher.impl.Fetchers;
 import org.babyfish.jimmer.sql.runtime.Converters;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 
 import java.sql.Connection;
 import java.util.*;
@@ -284,7 +285,7 @@ public class EntitiesImpl implements Entities {
             return entities;
         }
         ConfigurableRootQuery<?, E> query = Queries.createQuery(
-                sqlClient, immutableType, true, (q, table) -> {
+                sqlClient, immutableType, ExecutionPurpose.QUERY, true, (q, table) -> {
                     Expression<Object> idProp = table.get(immutableType.getIdProp().getName());
                     if (distinctIds.size() == 1) {
                         q.where(idProp.eq(distinctIds.iterator().next()));
@@ -346,7 +347,8 @@ public class EntitiesImpl implements Entities {
                             "\""
             );
         }
-        MutableRootQueryImpl<Table<E>> query = new MutableRootQueryImpl<>(sqlClient, type, false);
+        MutableRootQueryImpl<Table<E>> query =
+                new MutableRootQueryImpl<>(sqlClient, type, ExecutionPurpose.QUERY, false);
         Table<E> table = query.getTable();
         if (example != null) {
             example.applyTo(query);

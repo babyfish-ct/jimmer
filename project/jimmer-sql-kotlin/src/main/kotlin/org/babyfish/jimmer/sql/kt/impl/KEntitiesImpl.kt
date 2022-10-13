@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KSaveCommandDslImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KSimpleSaveResultImpl
 import org.babyfish.jimmer.sql.kt.ast.query.FindDsl
 import org.babyfish.jimmer.sql.kt.ast.query.KExample
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose
 import java.sql.Connection
 import kotlin.reflect.KClass
 
@@ -100,7 +101,7 @@ internal class KEntitiesImpl(
             )
         }
         val entities = javaEntities as EntitiesImpl
-        val query = MutableRootQueryImpl<Table<E>>(entities.sqlClient, type, true)
+        val query = MutableRootQueryImpl<Table<E>>(entities.sqlClient, type, ExecutionPurpose.QUERY, true)
         val table = query.getTable<Table<E>>()
         example?.applyTo(query)
         if (block !== null) {

@@ -5,6 +5,7 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.Triggers;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -18,6 +19,8 @@ import java.util.function.Function;
 
 public class CacheConfig {
 
+    private final EntityManager entityManager;
+
     private final Map<ImmutableType, Cache<?, ?>> objectCacheMap =
             new LinkedHashMap<>();
 
@@ -28,16 +31,22 @@ public class CacheConfig {
 
     private ObjectMapper binLogObjectMapper;
 
+    public CacheConfig(EntityManager entityManager) {
+        this.entityManager = entityManager;
+    }
+
     @OldChain
-    public CacheConfig setCacheFactory(Class<?>[] entityTypes, CacheFactory cacheFactory) {
-        if (entityTypes.length == 0) {
-            throw new IllegalArgumentException("vararg \"entityTypes\" cannot be empty");
+    public CacheConfig setCacheFactory(CacheFactory cacheFactory) {
+        if (entityManager == null) {
+            throw new IllegalStateException("EntityManager must be set before set cache factory");
+        }
+        if (entityManager.getAllTypes().isEmpty()) {
+            throw new IllegalStateException("vararg \"entityTypes\" cannot be empty");
         }
         if (cacheFactory == null) {
             throw new IllegalArgumentException("cacheFactory cannot bee null");
         }
-        for (Class<?> entityType : entityTypes) {
-            ImmutableType type = ImmutableType.get(entityType);
+        for (ImmutableType type : entityManager.getAllTypes()) {
             if (!objectCacheMap.containsKey(type)) {
                 Cache<?, ?> objectCache = cacheFactory.createObjectCache(type);
                 if (objectCache != null) {

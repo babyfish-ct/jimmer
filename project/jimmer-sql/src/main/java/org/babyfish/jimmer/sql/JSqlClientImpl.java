@@ -36,7 +36,6 @@ import org.babyfish.jimmer.sql.event.TriggersImpl;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 
-import java.sql.Connection;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -44,13 +43,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 class JSqlClientImpl implements JSqlClient {
-
-    private static final ConnectionManager ILLEGAL_CONNECTION_MANAGER = new ConnectionManager() {
-        @Override
-        public <R> R execute(Function<Connection, R> block) {
-            throw new ExecutionException("ConnectionManager of SqlClient is not configured");
-        }
-    };
 
     private final ConnectionManager connectionManager;
 
@@ -69,6 +61,8 @@ class JSqlClientImpl implements JSqlClient {
     private final int defaultListBatchSize;
 
     private final EntitiesImpl entities;
+
+    private final EntityManager entityManager;
 
     private final Caches caches;
 
@@ -90,6 +84,7 @@ class JSqlClientImpl implements JSqlClient {
             int defaultBatchSize,
             int defaultListBatchSize,
             EntitiesImpl entities,
+            EntityManager entityManager,
             Caches caches,
             Triggers triggers,
             TransientResolverManager transientResolverManager,
@@ -98,7 +93,7 @@ class JSqlClientImpl implements JSqlClient {
         this.connectionManager =
                 connectionManager != null ?
                         connectionManager :
-                        ILLEGAL_CONNECTION_MANAGER;
+                        ConnectionManager.ILLEGAL;
         this.slaveConnectionManager = slaveConnectionManager;
         this.dialect =
                 dialect != null ?
@@ -116,10 +111,11 @@ class JSqlClientImpl implements JSqlClient {
                 entities != null ?
                         entities.forSqlClient(this) :
                         new EntitiesImpl(this);
+        this.entityManager = entityManager;
         this.caches =
                 caches != null ?
                         caches :
-                        CachesImpl.of(triggers, scalarProviderMap, null);
+                        CachesImpl.of(triggers, scalarProviderMap, entityManager, null);
         this.triggers = triggers;
         this.transientResolverManager =
                 transientResolverManager != null ?
@@ -284,6 +280,11 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
+    public EntityManager getEntityManager() {
+        return entityManager;
+    }
+
+    @Override
     public Caches getCaches() {
         return caches;
     }
@@ -305,6 +306,7 @@ class JSqlClientImpl implements JSqlClient {
                 defaultBatchSize,
                 defaultListBatchSize,
                 entities,
+                entityManager,
                 new CachesImpl((CachesImpl) caches, cfg),
                 triggers,
                 transientResolverManager,
@@ -333,6 +335,7 @@ class JSqlClientImpl implements JSqlClient {
                 defaultBatchSize,
                 defaultListBatchSize,
                 entities,
+                entityManager,
                 caches,
                 triggers,
                 transientResolverManager,
@@ -356,6 +359,7 @@ class JSqlClientImpl implements JSqlClient {
                 defaultBatchSize,
                 defaultListBatchSize,
                 entities,
+                entityManager,
                 caches,
                 triggers,
                 transientResolverManager,
@@ -425,6 +429,8 @@ class JSqlClientImpl implements JSqlClient {
         private int defaultBatchSize = 128;
 
         private int defaultListBatchSize = 16;
+
+        private EntityManager entityManager;
 
         private Caches caches;
 
@@ -515,8 +521,20 @@ class JSqlClientImpl implements JSqlClient {
 
         @Override
         @OldChain
+        public Builder setEntityManager(EntityManager scanner) {
+            if (entityManager != null) {
+                throw new IllegalStateException(
+                        "The EntityManager of SqlBuilder.Builder can only be set once"
+                );
+            }
+            entityManager = scanner;
+            return this;
+        }
+
+        @Override
+        @OldChain
         public JSqlClient.Builder setCaches(Consumer<CacheConfig> block) {
-            caches = CachesImpl.of(triggers, scalarProviderMap, block);
+            caches = CachesImpl.of(triggers, scalarProviderMap, entityManager, block);
             return this;
         }
 
@@ -572,7 +590,8 @@ class JSqlClientImpl implements JSqlClient {
 
         @Override
         public JSqlClient build() {
-            return new JSqlClientImpl(
+            FilterManager filterManager = new FilterManager(filters, disabledFilters);
+            JSqlClient sqlClient = new JSqlClientImpl(
                     connectionManager,
                     slaveConnectionManager,
                     dialect,
@@ -582,11 +601,15 @@ class JSqlClientImpl implements JSqlClient {
                     defaultBatchSize,
                     defaultListBatchSize,
                     null,
+                    entityManager,
                     caches,
                     triggers,
                     null,
-                    new FilterManager(filters, disabledFilters),
-                    new DraftInterceptorManager(interceptors));
+                    filterManager,
+                    new DraftInterceptorManager(interceptors)
+            );
+            filterManager.initialize(sqlClient);
+            return sqlClient;
         }
     }
 }

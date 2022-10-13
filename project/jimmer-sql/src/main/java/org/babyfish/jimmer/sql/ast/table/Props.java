@@ -16,6 +16,8 @@ import java.util.function.Function;
  */
 public interface Props {
 
+    ImmutableType getImmutableType();
+
     <XE extends Expression<?>> XE get(String prop);
 
     <XT extends Table<?>> XT join(String prop);
