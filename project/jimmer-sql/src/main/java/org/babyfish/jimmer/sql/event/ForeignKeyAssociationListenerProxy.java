@@ -43,7 +43,7 @@ class ForeignKeyAssociationListenerProxy implements EntityListener<ImmutableSpi>
                 attachedTargetId = attachedTarget.__get(parentIdPropId);
             }
         }
-        if (detachedTargetId == attachedTargetId) {
+        if (Objects.equals(detachedTargetId, attachedTargetId)) {
             return;
         }
         if (fkProp == prop) {

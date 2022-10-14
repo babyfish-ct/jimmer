@@ -42,6 +42,9 @@ public class TriggersImpl implements Triggers {
 
     @Override
     public void addAssociationListener(ImmutableProp prop, AssociationListener listener) {
+        if (!prop.getDeclaringType().isEntity()) {
+            throw new IllegalArgumentException("\"" + prop + "\" is not declared in entity");
+        }
         ImmutableProp primaryAssociationProp = Utils.primaryAssociationProp(prop);
         if (primaryAssociationProp.getStorage() instanceof MiddleTable) {
             addMiddleTableListener(primaryAssociationProp, new MiddleTableAssociationListenerProxy(prop, listener));
@@ -52,6 +55,9 @@ public class TriggersImpl implements Triggers {
 
     @Override
     public void removeAssociationListener(ImmutableProp prop, AssociationListener listener) {
+        if (!prop.getDeclaringType().isEntity()) {
+            throw new IllegalArgumentException("\"" + prop + "\" is not declared in entity");
+        }
         ImmutableProp primaryAssociationProp = Utils.primaryAssociationProp(prop);
         if (primaryAssociationProp.getStorage() instanceof MiddleTable) {
             removeMiddleTableListener(primaryAssociationProp, new MiddleTableAssociationListenerProxy(prop, listener));

@@ -269,7 +269,12 @@ class TableImpl<E> implements TableImplementor<E> {
         }
 
         if (prop.getMappedBy() != null) {
-            return join1(joinName, !isInverse, prop.getMappedBy(), joinType);
+            return join1(
+                    joinName,
+                    !isInverse,
+                    RedirectedProp.source(prop.getMappedBy(), prop.getTargetType()),
+                    joinType
+            );
         }
         return join1(joinName, isInverse, prop, joinType);
     }
