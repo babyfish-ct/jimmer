@@ -7,12 +7,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
 import java.util.List;
+import java.util.Objects;
 
 public abstract class RedirectedProp implements ImmutableProp {
 
-    private final ImmutableProp raw;
+    protected final ImmutableProp raw;
 
-    private RedirectedProp(ImmutableProp raw) {
+    RedirectedProp(ImmutableProp raw) {
         this.raw = raw;
     }
 
@@ -20,47 +21,14 @@ public abstract class RedirectedProp implements ImmutableProp {
         if (prop.getDeclaringType() == sourceType) {
             return prop;
         }
-        if (!prop.getDeclaringType().isAssignableFrom(sourceType)) {
-            throw new IllegalArgumentException(
-                    "Cannot redirect source type of \"" +
-                            prop +
-                            "\" to \"" +
-                            sourceType +
-                            "\" because that class not derived type of \"" +
-                            prop.getDeclaringType() +
-                            "\""
-            );
-        }
-        return new RedirectedProp(prop) {
-            @NotNull
-            @Override
-            public ImmutableType getDeclaringType() {
-                return sourceType;
-            }
-        };
+        return new SourceRedirectedProp(prop, sourceType);
     }
 
     public static ImmutableProp target(ImmutableProp prop, ImmutableType targetType) {
         if (prop.getTargetType() == targetType) {
             return prop;
         }
-        if (!prop.getTargetType().isAssignableFrom(targetType)) {
-            throw new IllegalArgumentException(
-                    "Cannot redirect target type of \"" +
-                            prop +
-                            "\" to \"" +
-                            targetType +
-                            "\" because that class not derived type of \"" +
-                            prop.getTargetType() +
-                            "\""
-            );
-        }
-        return new RedirectedProp(prop) {
-            @Override
-            public ImmutableType getTargetType() {
-                return targetType;
-            }
-        };
+        return new TargetRedirectedProp(prop, targetType);
     }
 
     @Override
@@ -186,5 +154,102 @@ public abstract class RedirectedProp implements ImmutableProp {
     @Override
     public ImmutableProp getOpposite() {
         return raw.getOpposite();
+    }
+
+    private static class SourceRedirectedProp extends RedirectedProp {
+
+        private final ImmutableType sourceType;
+
+        private SourceRedirectedProp(ImmutableProp raw, ImmutableType sourceType) {
+            super(raw);
+            if (!raw.getDeclaringType().isAssignableFrom(sourceType)) {
+                throw new IllegalArgumentException(
+                        "Cannot redirect source type of \"" +
+                                raw +
+                                "\" to \"" +
+                                sourceType +
+                                "\" because that class not derived type of \"" +
+                                raw.getDeclaringType() +
+                                "\""
+                );
+            }
+            this.sourceType = sourceType;
+        }
+
+        @NotNull
+        @Override
+        public ImmutableType getDeclaringType() {
+            return sourceType;
+        }
+
+        @Override
+        public int hashCode() {
+            return raw.hashCode() ^ sourceType.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof SourceRedirectedProp)) {
+                return false;
+            }
+            SourceRedirectedProp other = (SourceRedirectedProp) obj;
+            return raw.equals(other.raw) && sourceType.equals(other.sourceType);
+        }
+
+        @Override
+        public String toString() {
+            return sourceType + "." + raw.getName();
+        }
+    }
+
+    private static class TargetRedirectedProp extends RedirectedProp {
+
+        private final ImmutableType targetType;
+
+        private TargetRedirectedProp(ImmutableProp raw, ImmutableType targetType) {
+            super(raw);
+            if (!raw.getTargetType().isAssignableFrom(targetType)) {
+                throw new IllegalArgumentException(
+                        "Cannot redirect target type of \"" +
+                                raw +
+                                "\" to \"" +
+                                targetType +
+                                "\" because that class not derived type of \"" +
+                                raw.getTargetType() +
+                                "\""
+                );
+            }
+            this.targetType = targetType;
+        }
+
+        @Override
+        public ImmutableType getTargetType() {
+            return targetType;
+        }
+
+        @Override
+        public int hashCode() {
+            return raw.hashCode() ^ targetType.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof TargetRedirectedProp)) {
+                return false;
+            }
+            TargetRedirectedProp other = (TargetRedirectedProp) obj;
+            return raw.equals(other.raw) && targetType.equals(other.targetType);
+        }
+
+        @Override
+        public String toString() {
+            return raw.toString();
+        }
     }
 }

@@ -25,17 +25,23 @@ import org.babyfish.jimmer.util.StaticCache;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class FilterManager {
-
-    private final Map<ImmutableType, List<Filter<Props>>> filterMap;
 
     private final Set<Filter<?>> allFilters;
 
     private final Set<Filter<?>> disabledFilters;
 
+    private final Map<ImmutableType, List<Filter<Props>>> filterMap;
+
+    private final Map<ImmutableType, List<Filter<Props>>> allCacheableFilterMap;
+
     private final StaticCache<ImmutableType, Filter<Props>> cache =
             new StaticCache<>(this::create, true);
+
+    private final StaticCache<ImmutableType, List<Filter<Props>>> allCacheableCache =
+            new StaticCache<>(this::createAllCacheable, false);
 
     private JSqlClient sqlClient;
 
@@ -47,16 +53,22 @@ public class FilterManager {
         this.allFilters = filters(filters);
         this.disabledFilters = disable(null, disabledFilters, this.allFilters);
         this.filterMap = filterMap(this.allFilters, this.disabledFilters);
+        this.allCacheableFilterMap = filterMap(
+                this.allFilters.stream().filter(it -> it instanceof CacheableFilter<?>).collect(Collectors.toList()),
+                Collections.emptyList()
+        );
     }
 
     private FilterManager(
-            Map<ImmutableType, List<Filter<Props>>> filterMap,
             Set<Filter<?>> filters,
-            Set<Filter<?>> disabledFilters
+            Set<Filter<?>> disabledFilters,
+            Map<ImmutableType, List<Filter<Props>>> filterMap,
+            Map<ImmutableType, List<Filter<Props>>> allCacheableFilterMap
     ) {
-        this.filterMap = filterMap;
         this.allFilters = filters;
         this.disabledFilters = disabledFilters;
+        this.filterMap = filterMap;
+        this.allCacheableFilterMap = allCacheableFilterMap;
     }
 
     public Filter<Props> get(ImmutableType type) {
@@ -85,9 +97,10 @@ public class FilterManager {
             return this;
         }
         return new FilterManager(
-                filterMap(allFilters, disabledSet),
                 allFilters,
-                disabledSet
+                disabledSet,
+                filterMap(allFilters, disabledSet),
+                allCacheableFilterMap
         );
     }
 
@@ -100,9 +113,10 @@ public class FilterManager {
             return this;
         }
         return new FilterManager(
-                filterMap(allFilters, disabledSet),
                 allFilters,
-                disabledSet
+                disabledSet,
+                filterMap(allFilters, disabledSet),
+                allCacheableFilterMap
         );
     }
 
@@ -205,6 +219,23 @@ public class FilterManager {
             }
         }
         return new CompositeCacheableFilter((List<CacheableFilter<Props>>)(List<?>)filters);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Filter<Props>> createAllCacheable(ImmutableType type) {
+        List<Filter<Props>> filters = new ArrayList<>();
+        while (type != null) {
+            List<Filter<Props>> list = allCacheableFilterMap.get(type);
+            if (list != null) {
+                for (Filter<Props> filter : list) {
+                    if (!disabledFilters.contains(filter)) {
+                        filters.add(filter);
+                    }
+                }
+            }
+            type = type.getSuperType();
+        }
+        return filters;
     }
 
     private static ImmutableType getImmutableType(Filter<Props> filter) {
@@ -416,12 +447,7 @@ public class FilterManager {
 
         @Override
         public boolean isAffectedBy(EntityEvent<?> e) {
-            for (CacheableFilter<Props> filter : filters) {
-                if (filter.isAffectedBy(e)) {
-                    return true;
-                }
-            }
-            return false;
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -438,8 +464,8 @@ public class FilterManager {
             ImmutableProp prop = entry.getKey();
             Cache<?, ?> cache = entry.getValue();
             if (prop.isAssociation(TargetLevel.ENTITY)) {
-                List<Filter<Props>> filters = filterMap.get(prop.getTargetType());
-                if (filters != null && !filters.isEmpty()) {
+                List<Filter<Props>> filters = allCacheableCache.get(prop.getTargetType());
+                if (!filters.isEmpty()) {
                     sqlClient.getTriggers().addEntityListener(prop.getTargetType(), e -> {
                         onEntityEvent(prop, cache, filters, e);
                     });
@@ -501,11 +527,9 @@ public class FilterManager {
                             q.where(targetIdExpr.eq(e.getId()));
                             return q.select(sourceIdExpr);
                         })
+                        .distinct()
                         .execute();
-                if (sourceIds.size() > 1) {
-                    sourceIds = new HashSet<>(sourceIds);
-                }
-                if (sourceIds.isEmpty()) {
+                if (!sourceIds.isEmpty()) {
                     sqlClient.getCaches().getPropertyCache(prop).deleteAll(sourceIds);
                 }
             }

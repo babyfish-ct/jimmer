@@ -47,14 +47,14 @@ public abstract class AbstractDataLoader {
     private final Connection con;
 
     private final ImmutableProp prop;
+    
+    private final ImmutableProp sourceIdProp;
+    
+    private final ImmutableProp targetIdProp;
 
     private final org.babyfish.jimmer.sql.filter.Filter<Props> globalFiler;
 
     private final FieldFilter<Table<ImmutableSpi>> propFilter;
-
-    private final ImmutableType thisEntityType;
-
-    private final ImmutableProp thisIdProp;
 
     private final int limit;
 
@@ -63,8 +63,6 @@ public abstract class AbstractDataLoader {
     private final TransientResolver<?, ?> resolver;
 
     private final Fetcher<ImmutableSpi> fetcher;
-
-    private final ImmutableProp targetIdProp;
 
     @SuppressWarnings("unchecked")
     protected AbstractDataLoader(
@@ -112,9 +110,23 @@ public abstract class AbstractDataLoader {
                 );
             }
         }
+        if (entityType != null) {
+            if (!entityType.isEntity()) {
+                throw new IllegalArgumentException(
+                        "\"" + entityType + "\" is not entity"
+                );
+            }
+            prop = RedirectedProp.source(prop, entityType);
+        } else if (!prop.getDeclaringType().isEntity()) {
+            throw new IllegalArgumentException(
+                    "\"" + prop + "\" is not declared in entity"
+            );
+        }
         this.sqlClient = sqlClient;
         this.con = con;
         this.prop = prop;
+        this.sourceIdProp = prop.getDeclaringType().getIdProp();
+        this.targetIdProp = prop.getTargetType() != null ? prop.getTargetType().getIdProp() : null;
         if (prop.isAssociation(TargetLevel.ENTITY)) {
             globalFiler = sqlClient.getFilter(prop);
         } else {
@@ -139,45 +151,6 @@ public abstract class AbstractDataLoader {
                 );
             }
         }
-        if (entityType != null) {
-            if (!entityType.isEntity()) {
-                throw new IllegalArgumentException(
-                        "\"" +
-                                entityType +
-                                "\" is not entity type"
-                );
-            }
-            if (!prop.getDeclaringType().getJavaClass().isAssignableFrom(entityType.getJavaClass())) {
-                throw new IllegalArgumentException(
-                        "The entity type \"" +
-                                entityType +
-                                "\" is does not extend declaring type of \"" +
-                                prop +
-                                "\""
-                );
-            }
-            this.thisEntityType = entityType;
-            this.thisIdProp = entityType.getIdProp();
-            if (thisIdProp == null) {
-                throw new IllegalArgumentException(
-                        "Cannot create data loader based entity type \"" +
-                                entityType +
-                                "\", it does not contain id property"
-                );
-            }
-        } else {
-            this.thisEntityType = prop.getDeclaringType();
-            this.thisIdProp = prop.getDeclaringType().getIdProp();
-            if (thisIdProp == null) {
-                throw new IllegalArgumentException(
-                        "Cannot create data loader based property \"" +
-                                prop +
-                                "\", there is no id prop in the declaring type \"" +
-                                prop.getDeclaringType() +
-                                "\""
-                );
-            }
-        }
         this.limit = limit;
         this.offset = offset;
         if (prop.isAssociation(TargetLevel.ENTITY)) {
@@ -185,11 +158,9 @@ public abstract class AbstractDataLoader {
             this.fetcher = fetcher != null ?
                     (Fetcher<ImmutableSpi>) fetcher :
                     new FetcherImpl<>((Class<ImmutableSpi>) prop.getTargetType().getJavaClass());
-            this.targetIdProp = prop.getTargetType().getIdProp();
         } else {
             this.resolver = sqlClient.getResolver(prop);
             this.fetcher = null;
-            this.targetIdProp = null;
         }
     }
 
@@ -503,10 +474,11 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<Object, Object> queryForeignKeyMap(Collection<Object> sourceIds) {
+        
         if (sourceIds.size() == 1) {
             Object sourceId = sourceIds.iterator().next();
-            List<Object> targetIds = Queries.createQuery(sqlClient, thisEntityType, ExecutionPurpose.DATA_LOADER, true, (q, source) -> {
-                Expression<Object> pkExpr = source.get(thisIdProp.getName());
+            List<Object> targetIds = Queries.createQuery(sqlClient, prop.getDeclaringType(), ExecutionPurpose.DATA_LOADER, true, (q, source) -> {
+                Expression<Object> pkExpr = source.get(sourceIdProp.getName());
                 Table<?> targetTable = source.join(prop.getName());
                 Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
                 q.where(pkExpr.eq(sourceId));
@@ -519,8 +491,8 @@ public abstract class AbstractDataLoader {
             return Utils.toMap(sourceId, targetIds);
         }
         List<Tuple2<Object, Object>> tuples = Queries
-                .createQuery(sqlClient, thisEntityType, ExecutionPurpose.DATA_LOADER, true, (q, source) -> {
-                    Expression<Object> pkExpr = source.get(thisIdProp.getName());
+                .createQuery(sqlClient, prop.getDeclaringType(), ExecutionPurpose.DATA_LOADER, true, (q, source) -> {
+                    Expression<Object> pkExpr = source.get(sourceIdProp.getName());
                     Table<?> targetTable = source.join(prop.getName());
                     Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
                     q.where(pkExpr.in(sourceIds));
@@ -534,6 +506,7 @@ public abstract class AbstractDataLoader {
     }
 
     private List<Tuple2<Object, Object>> querySourceTargetIdPairs(Collection<Object> sourceIds) {
+
         if (propFilter == null) {
             boolean useMiddleTable = false;
             Storage storage = prop.getStorage();
@@ -549,7 +522,7 @@ public abstract class AbstractDataLoader {
                 if (sourceIds.size() == 1) {
                     Object sourceId = sourceIds.iterator().next();
                     List<Object> targetIds = Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.DATA_LOADER, (q, association) -> {
-                        Expression<Object> sourceIdExpr = association.source(thisEntityType).get(thisIdProp.getName());
+                        Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
                         Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
                         q.where(sourceIdExpr.eq(sourceId));
                         applyGlobalFilter(q, association.target());
@@ -558,7 +531,7 @@ public abstract class AbstractDataLoader {
                     return Utils.toTuples(sourceId, targetIds);
                 }
                 return Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.DATA_LOADER, (q, association) -> {
-                    Expression<Object> sourceIdExpr = association.source(thisEntityType).get(thisIdProp.getName());
+                    Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
                     Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
                     q.where(sourceIdExpr.in(sourceIds));
                     applyGlobalFilter(q, association.target());
@@ -578,6 +551,7 @@ public abstract class AbstractDataLoader {
 
     @SuppressWarnings("unchecked")
     private List<ImmutableSpi> queryTargets(Collection<Object> targetIds) {
+
         return Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.DATA_LOADER, globalFiler == null, (q, target) -> {
             Expression<Object> idExpr = target.get(targetIdProp.getName());
             q.where(idExpr.in(targetIds));
@@ -594,14 +568,15 @@ public abstract class AbstractDataLoader {
             Collection<Object> sourceIds,
             Function<Table<ImmutableSpi>, Selection<?>> valueExpressionGetter
     ) {
+
         if (sourceIds.size() == 1) {
             Object sourceId = sourceIds.iterator().next();
             List<R> results = Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.DATA_LOADER, globalFiler == null, (q, target) -> {
                 Expression<Object> sourceIdExpr = target
                         .inverseJoin(
-                                RedirectedProp.source(prop, thisEntityType)
+                                RedirectedProp.source(prop, prop.getDeclaringType())
                         )
-                        .get(thisIdProp.getName());
+                        .get(sourceIdProp.getName());
                 q.where(sourceIdExpr.eq(sourceId));
                 applyPropFilter(q, target, sourceIds);
                 applyDefaultOrder(q, target);
@@ -612,9 +587,9 @@ public abstract class AbstractDataLoader {
         return Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.DATA_LOADER, globalFiler == null, (q, target) -> {
             Expression<Object> sourceIdExpr = target
                     .inverseJoin(
-                            RedirectedProp.source(prop, thisEntityType)
+                            RedirectedProp.source(prop, prop.getDeclaringType())
                     )
-                    .get(thisIdProp.getName());
+                    .get(sourceIdProp.getName());
             q.where(sourceIdExpr.in(sourceIds));
             applyPropFilter(q, target, sourceIds);
             applyDefaultOrder(q, target);
@@ -663,7 +638,7 @@ public abstract class AbstractDataLoader {
     }
 
     private Object toSourceId(ImmutableSpi source) {
-        return source.__get(thisIdProp.getId());
+        return source.__get(sourceIdProp.getId());
     }
 
     private List<Object> toSourceIds(Collection<ImmutableSpi> sources) {

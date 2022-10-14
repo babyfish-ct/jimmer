@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
+import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.Triggers;
@@ -62,7 +63,7 @@ public class CachesImpl implements Caches {
         }
         for (ImmutableProp prop : propCacheMap.keySet()) {
             if (prop.getMappedBy() != null) {
-                prop = prop.getMappedBy();
+                prop = RedirectedProp.source(prop.getMappedBy(), prop.getTargetType());
             }
             if (prop.getStorage() instanceof MiddleTable) {
                 AssociationType type = AssociationType.of(prop);
@@ -137,6 +138,9 @@ public class CachesImpl implements Caches {
     @SuppressWarnings("unchecked")
     @Override
     public <K, V> LocatedCache<K, V> getPropertyCache(ImmutableProp prop) {
+        if (!prop.getDeclaringType().isEntity()) {
+            throw new IllegalArgumentException("\"" + prop + "\" is not declared in entity");
+        }
         if (disableAll ||
                 disabledProps.contains(prop) ||
                 disabledTypes.contains(prop.getTargetType())
@@ -232,6 +236,9 @@ public class CachesImpl implements Caches {
             Cache<?, ?> cache,
             ImmutableProp prop
     ) {
+        if (!prop.getDeclaringType().isEntity()) {
+            throw new IllegalArgumentException("\"" + prop + "\" is not declared in ");
+        }
         if (cache == null) {
             return null;
         }

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.common;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.chain.CacheChain;
 import org.babyfish.jimmer.sql.cache.chain.ChainCacheBuilder;
@@ -9,14 +10,20 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class ParameterizedCaches {
 
     private ParameterizedCaches() {}
 
     public static <K, V> Cache<K, V> create() {
+        return create(null, null);
+    }
+    
+    public static <K, V> Cache<K, V> create(ImmutableProp prop, BiConsumer<ImmutableProp, Collection<K>> onDelete) {
         return new ChainCacheBuilder<K, V>()
-                .add(new LevelOneBinder<>())
+                .add(new LevelOneBinder<>(prop, onDelete))
                 .add(new LevelTwoBinder<>())
                 .build();
     }
@@ -53,9 +60,18 @@ public class ParameterizedCaches {
 
     private static class LevelOneBinder<K, V> implements LoadingBinder.Parameterized<K, V> {
 
+        private final ImmutableProp prop;
+
+        private final BiConsumer<ImmutableProp, Collection<K>> onDelete;
+        
         private final Map<K, Map<Map<String, Object>, V>> valueMap = new HashMap<>();
 
         private CacheChain.Parameterized<K, V> chain;
+
+        LevelOneBinder(ImmutableProp prop, BiConsumer<ImmutableProp, Collection<K>> onDelete) {
+            this.prop = prop;
+            this.onDelete = onDelete;
+        }
 
         @Override
         public void initialize(@NotNull CacheChain.Parameterized<K, V> chain) {
@@ -92,13 +108,16 @@ public class ParameterizedCaches {
         @Override
         public void deleteAll(@NotNull Collection<K> keys, @Nullable Object reason) {
             valueMap.keySet().removeAll(keys);
+            if (onDelete != null) {
+                onDelete.accept(prop, keys);
+            }
         }
     }
 
     private static class LevelTwoBinder<K, V> implements SimpleBinder.Parameterized<K, V> {
-
+        
         private final Map<K, Map<Map<String, Object>, V>> valueMap = new HashMap<>();
-
+        
         @Override
         public @NotNull Map<K, V> getAll(@NotNull Collection<K> keys, @NotNull NavigableMap<String, Object> parameterMap) {
             return read(valueMap, keys, parameterMap);

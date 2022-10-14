@@ -17,11 +17,11 @@ public class EntityManager {
         for (Class<?> clazz : classes) {
             if (clazz != null) {
                 ImmutableType immutableType = ImmutableType.get(clazz);
-                if (!immutableType.isEntity() && !immutableType.isMappedSuperclass()) {
+                if (!immutableType.isEntity()) {
                     throw new IllegalArgumentException(
                             "\"" +
                                     immutableType +
-                                    "\" is neither entity nor mapped super class"
+                                    "\" is not entity"
                     );
                 }
                 map.put(immutableType, new ImmutableTypeInfo());
