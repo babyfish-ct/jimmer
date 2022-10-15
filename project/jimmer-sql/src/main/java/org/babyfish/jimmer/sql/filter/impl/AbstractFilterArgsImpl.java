@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.filter.impl;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
@@ -17,11 +18,11 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public abstract class AbstractFilterArgs<P extends Props> implements FilterArgs<P> {
+public abstract class AbstractFilterArgsImpl<P extends Props> implements FilterArgs<P> {
 
     protected final Sortable sortable;
 
-    public AbstractFilterArgs(Sortable sortable) {
+    public AbstractFilterArgsImpl(Sortable sortable) {
         this.sortable = sortable;
     }
 
@@ -75,5 +76,9 @@ public abstract class AbstractFilterArgs<P extends Props> implements FilterArgs<
     @OldChain
     public Sortable orderBy(Order... orders) {
         return sortable.orderBy(orders);
+    }
+
+    public AbstractMutableQueryImpl unwrap() {
+        return (AbstractMutableQueryImpl) sortable;
     }
 }

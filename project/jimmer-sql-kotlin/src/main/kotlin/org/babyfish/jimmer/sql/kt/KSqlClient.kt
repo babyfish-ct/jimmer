@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
+import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.loader.KListLoader
 import org.babyfish.jimmer.sql.kt.loader.KReferenceLoader
 import org.babyfish.jimmer.sql.kt.loader.KValueLoader
@@ -52,6 +53,9 @@ interface KSqlClient {
 
     @NewChain
     fun caches(block: KCacheDisableDsl.() -> Unit): KSqlClient
+
+    @NewChain
+    fun filters(block: KFilterDsl.() -> Unit): KSqlClient
 
     @NewChain
     fun disableSlaveConnectionManager(): KSqlClient

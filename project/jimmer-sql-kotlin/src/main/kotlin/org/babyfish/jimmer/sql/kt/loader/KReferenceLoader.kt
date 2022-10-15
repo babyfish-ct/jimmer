@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.loader
 
 import org.babyfish.jimmer.lang.NewChain
-import org.babyfish.jimmer.sql.kt.fetcher.KFilterDsl
+import org.babyfish.jimmer.sql.kt.fetcher.KFieldFilterDsl
 import java.sql.Connection
 
 interface KReferenceLoader<S: Any, T: Any> {
@@ -10,7 +10,7 @@ interface KReferenceLoader<S: Any, T: Any> {
     fun forConnection(con: Connection): KReferenceLoader<S, T>
 
     @NewChain
-    fun forFilter(filter: KFilterDsl<T>.() -> Unit): KReferenceLoader<S, T>
+    fun forFilter(filter: KFieldFilterDsl<T>.() -> Unit): KReferenceLoader<S, T>
 
     fun load(source: S, con: Connection? = null): T?
 

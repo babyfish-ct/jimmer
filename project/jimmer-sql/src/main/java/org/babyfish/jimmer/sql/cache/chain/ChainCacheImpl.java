@@ -13,7 +13,7 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
     private static final ThreadLocal<CacheLoader<?, ?>> LOADER_LOCAL =
         new ThreadLocal<>();
 
-    private final Node<K, V> node;
+    protected final Node<K, V> node;
 
     @SuppressWarnings("unchecked")
     public ChainCacheImpl(List<Object> binders) {

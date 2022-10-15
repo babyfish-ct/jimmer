@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.cache.chain;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.babyfish.jimmer.sql.cache.Cache;
 
 import java.util.ArrayList;
@@ -9,16 +10,16 @@ public class ChainCacheBuilder<K, V> {
 
     private final List<Object> binders = new ArrayList<>();
 
-    private boolean hasParameterizedBinder = false;
+    private Boolean hasParameterizedBinder = null;
 
     public ChainCacheBuilder<K, V> add(LoadingBinder<K, V> binder) {
         if (binder != null) {
-            if (hasParameterizedBinder) {
+            if (Boolean.TRUE.equals(hasParameterizedBinder)) {
                 throw new IllegalArgumentException(
-                        "The parameterized binders have been added to the builder, " +
-                                "so the next binder must also be parameterized binder"
+                        "Parameterized binder and normal binder cannot be mixed"
                 );
             }
+            hasParameterizedBinder = false;
             binders.add(binder);
         }
         return this;
@@ -26,6 +27,11 @@ public class ChainCacheBuilder<K, V> {
 
     public ChainCacheBuilder<K, V> add(LoadingBinder.Parameterized<K, V> binder) {
         if (binder != null) {
+            if (Boolean.FALSE.equals(hasParameterizedBinder)) {
+                throw new IllegalArgumentException(
+                        "Parameterized binder and normal binder cannot be mixed"
+                );
+            }
             hasParameterizedBinder = true;
             binders.add(binder);
         }
@@ -35,13 +41,12 @@ public class ChainCacheBuilder<K, V> {
     public ChainCacheBuilder<K, V> add(SimpleBinder<K, V> binder) {
         if (binder != null) {
             boolean isParameterized = binder instanceof SimpleBinder.Parameterized<?, ?>;
-            if (hasParameterizedBinder && !isParameterized) {
+            if (hasParameterizedBinder != null && !hasParameterizedBinder.equals(isParameterized)) {
                 throw new IllegalArgumentException(
-                        "The parameterized binders have been added to the builder, " +
-                                "so the next binder must also be parameterized binder"
+                        "Parameterized binder and normal binder cannot be mixed"
                 );
             }
-            hasParameterizedBinder |= isParameterized;
+            hasParameterizedBinder = isParameterized;
             binders.add(binder);
         }
         return this;

@@ -13,6 +13,7 @@ dependencies {
     implementation(kotlin("reflect"))
     api(project(":jimmer-core-kotlin"))
     api(project(":jimmer-sql"))
+    implementation("org.apache.commons:commons-lang3:3.12.0")
 
     testImplementation(kotlin("test"))
     kspTest(project(":jimmer-ksp"))
