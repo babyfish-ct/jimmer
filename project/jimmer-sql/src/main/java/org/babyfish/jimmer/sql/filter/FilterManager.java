@@ -218,7 +218,7 @@ public class FilterManager {
                 return new CompositeFilter(filters);        
             }
         }
-        return new CompositeCacheableFilter((List<CacheableFilter<Props>>)(List<?>)filters);
+        return new CompositeCacheableFilter(type, (List<CacheableFilter<Props>>)(List<?>)filters);
     }
 
     @SuppressWarnings("unchecked")
@@ -405,9 +405,12 @@ public class FilterManager {
 
     private static class CompositeCacheableFilter implements CacheableFilter<Props> {
 
+        private final ImmutableType type;
+
         private final List<CacheableFilter<Props>> filters;
 
-        private CompositeCacheableFilter(List<CacheableFilter<Props>> filters) {
+        private CompositeCacheableFilter(ImmutableType type, List<CacheableFilter<Props>> filters) {
+            this.type = type;
             this.filters = filters;
         }
 
@@ -447,7 +450,14 @@ public class FilterManager {
 
         @Override
         public boolean isAffectedBy(EntityEvent<?> e) {
-            throw new UnsupportedOperationException();
+            if (type.isAssignableFrom(e.getImmutableType())) {
+                for (CacheableFilter<Props> filter : filters) {
+                    if (filter.isAffectedBy(e)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         @Override

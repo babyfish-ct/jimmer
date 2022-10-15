@@ -40,6 +40,12 @@ class Constants {
     public static final ClassName TYPED_PROP_CLASS_NAME =
             ClassName.get(TypedProp.class);
 
+    public static final ClassName REDIRECTED_PROP_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta.impl",
+                    "RedirectedProp"
+            );
+
     public static final ClassName PROPS_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.table",

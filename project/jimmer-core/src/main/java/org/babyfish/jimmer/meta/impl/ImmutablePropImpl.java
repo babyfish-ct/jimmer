@@ -116,7 +116,18 @@ class ImmutablePropImpl implements ImmutableProp {
         }
 
         OnDissociate onDissociate = getAnnotation(OnDissociate.class);
-        dissociateAction = onDissociate != null ? onDissociate.value() : DissociateAction.NONE;
+        if (onDissociate != null) {
+            if (category != ImmutablePropCategory.REFERENCE) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                this +
+                                "\", only reference property can be decorated by @OnDissociate"
+                );
+            }
+            dissociateAction = onDissociate.value();
+        } else {
+            dissociateAction = DissociateAction.NONE;
+        }
     }
 
     @NotNull

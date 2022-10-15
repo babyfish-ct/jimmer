@@ -5,6 +5,7 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.JoinType;
 
 import javax.annotation.processing.Filer;
@@ -77,7 +78,15 @@ public class PropsGenerator {
         }
         try {
             for (ImmutableProp prop : type.getDeclaredProps().values()) {
-                addStaticProp(prop);
+                addStaticProp(prop, false);
+            }
+            ImmutableType superType = type.getSuperType();
+            if (type.isEntity() && superType != null && superType.isMappedSuperClass()) {
+                for (ImmutableProp prop : superType.getProps().values()) {
+                    if (prop.isAssociation()) {
+                        addStaticProp(prop, true);
+                    }
+                }
             }
             if (type.isEntity() || type.isMappedSuperClass()) {
                 for (ImmutableProp prop : type.getDeclaredProps().values()) {
@@ -93,7 +102,7 @@ public class PropsGenerator {
         }
     }
 
-    private void addStaticProp(ImmutableProp prop) {
+    private void addStaticProp(ImmutableProp prop, boolean override) {
         ClassName rawClassName;
         String action;
         if (prop.isList()) {
@@ -111,6 +120,7 @@ public class PropsGenerator {
                     "reference" :
                     "scalar";
         }
+        String fieldName = Strings.upper(prop.getName());
         FieldSpec.Builder builder = FieldSpec
                 .builder(
                         ParameterizedTypeName.get(
@@ -118,19 +128,31 @@ public class PropsGenerator {
                                 type.getClassName(),
                                 prop.getElementTypeName().box()
                         ),
-                        Strings.upper(prop.getName()),
+                        fieldName,
                         Modifier.PUBLIC,
                         Modifier.STATIC,
                         Modifier.FINAL
-                )
-                .initializer(
-                        "\n    $T.$L($T.get($T.class).getProp($L))",
-                        Constants.TYPED_PROP_CLASS_NAME,
-                        action,
-                        Constants.RUNTIME_TYPE_CLASS_NAME,
-                        type.getClassName(),
-                        Integer.toString(prop.getId())
                 );
+        if (override) {
+            builder.initializer(
+                    "\n    $T.$L($T.source($T.$L.unwrap(), $T.class))",
+                    Constants.TYPED_PROP_CLASS_NAME,
+                    action,
+                    Constants.REDIRECTED_PROP_CLASS_NAME,
+                    type.getSuperType().getPropsClassName(),
+                    fieldName,
+                    type.getClassName()
+            );
+        } else {
+            builder.initializer(
+                    "\n    $T.$L($T.get($T.class).getProp($L))",
+                    Constants.TYPED_PROP_CLASS_NAME,
+                    action,
+                    Constants.RUNTIME_TYPE_CLASS_NAME,
+                    type.getClassName(),
+                    Integer.toString(prop.getId())
+            );
+        }
         typeBuilder.addField(builder.build());
     }
 
