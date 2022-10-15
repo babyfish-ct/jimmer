@@ -65,7 +65,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "from PERMISSION as tb_1_ " +
                                     "where tb_1_.ROLE_ID = ? " +
                                     "and tb_1_.DELETED = ?"
-                    ).variables(1L, false);
+                    ).variables(100L, false);
                     ctx.rows(
                             "[" +
                                     "--->{" +
@@ -74,9 +74,9 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                     "--->--->\"permissions\":[" +
-                                    "--->--->--->{\"id\":1}" +
+                                    "--->--->--->{\"id\":1000}" +
                                     "--->--->]," +
-                                    "--->--->\"id\":1" +
+                                    "--->--->\"id\":100" +
                                     "--->}" +
                                     "]"
                     );
@@ -110,7 +110,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "from PERMISSION as tb_1_ " +
                                     "where tb_1_.ROLE_ID = ? " +
                                     "and tb_1_.DELETED = ?"
-                    ).variables(1L, false);
+                    ).variables(100L, false);
                     ctx.rows(
                             "[" +
                                     "--->{" +
@@ -124,10 +124,10 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->--->--->\"deleted\":false," +
                                     "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                    "--->--->--->--->\"id\":1" +
+                                    "--->--->--->--->\"id\":1000" +
                                     "--->--->--->}" +
                                     "--->--->]," +
-                                    "--->--->\"id\":1" +
+                                    "--->--->\"id\":100" +
                                     "--->}" +
                                     "]"
                     );
@@ -157,7 +157,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                             "select tb_1_.ID from ROLE as tb_1_ " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "and tb_1_.DELETED = ?"
-                    ).variables(1L, 2L, false);
+                    ).variables(100L, 200L, false);
                     ctx.rows(
                             "[" +
                                     "--->{" +
@@ -165,15 +165,15 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->\"deleted\":false," +
                                     "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                    "--->--->\"role\":{\"id\":1},\"" +
-                                    "--->--->id\":1" +
+                                    "--->--->\"role\":{\"id\":100},\"" +
+                                    "--->--->id\":1000" +
                                     "--->},{" +
                                     "--->--->\"name\":\"p_3\"," +
                                     "--->--->\"deleted\":false," +
                                     "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                     "--->--->\"role\":null," +
-                                    "--->--->\"id\":3" +
+                                    "--->--->\"id\":3000" +
                                     "--->}" +
                                     "]"
                     );
@@ -206,7 +206,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                     "from ROLE as tb_1_ " +
                                     "where tb_1_.ID in (?, ?) and tb_1_.DELETED = ?"
-                    ).variables(1L, 2L, false);
+                    ).variables(100L, 200L, false);
                     ctx.rows(
                             "[" +
                                     "--->{" +
@@ -219,16 +219,16 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->--->\"deleted\":false," +
                                     "--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                    "--->--->--->\"id\":1" +
+                                    "--->--->--->\"id\":100" +
                                     "--->--->}," +
-                                    "--->--->\"id\":1" +
+                                    "--->--->\"id\":1000" +
                                     "--->},{" +
                                     "--->--->\"name\":\"p_3\"," +
                                     "--->--->\"deleted\":false," +
                                     "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                     "--->--->\"role\":null," +
-                                    "--->--->\"id\":3" +
+                                    "--->--->\"id\":3000" +
                                     "--->}" +
                                     "]"
                     );
@@ -269,7 +269,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                     "--->--->\"roles\":[" +
-                                    "--->--->--->{\"id\":1}" +
+                                    "--->--->--->{\"id\":100}" +
                                     "--->--->]," +
                                     "--->--->\"id\":1" +
                                     "--->},{" +
@@ -278,7 +278,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                     "--->--->\"roles\":[" +
-                                    "--->--->--->{\"id\":1}" +
+                                    "--->--->--->{\"id\":100}" +
                                     "--->--->]," +
                                     "--->--->\"id\":3" +
                                     "--->}" +
@@ -329,7 +329,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->--->--->\"deleted\":false," +
                                     "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                    "--->--->--->--->\"id\":1" +
+                                    "--->--->--->--->\"id\":100" +
                                     "--->--->--->}" +
                                     "--->--->]," +
                                     "--->--->\"id\":1" +
@@ -344,7 +344,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->--->--->\"deleted\":false," +
                                     "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                    "--->--->--->--->\"id\":1" +
+                                    "--->--->--->--->\"id\":100" +
                                     "--->--->--->}" +
                                     "--->--->]," +
                                     "--->--->\"id\":3" +
@@ -378,7 +378,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "from ADMINISTRATOR as tb_1_ " +
                                     "inner join ADMINISTRATOR_ROLE_MAPPING as tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
                                     "where tb_2_.ROLE_ID = ? and tb_1_.DELETED = ?"
-                    ).variables(1L, false);
+                    ).variables(100L, false);
                     ctx.rows(
                             "[" +
                                     "--->{" +
@@ -390,7 +390,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->--->{\"id\":1}," +
                                     "--->--->--->{\"id\":3}" +
                                     "--->--->]," +
-                                    "--->--->\"id\":1" +
+                                    "--->--->\"id\":100" +
                                     "--->}" +
                                     "]"
                     );
@@ -424,7 +424,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "from ADMINISTRATOR as tb_1_ " +
                                     "inner join ADMINISTRATOR_ROLE_MAPPING as tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
                                     "where tb_2_.ROLE_ID = ? and tb_1_.DELETED = ?"
-                    ).variables(1L, false);
+                    ).variables(100L, false);
                     ctx.rows(
                             "[" +
                                     "--->{" +
@@ -447,7 +447,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->--->--->\"id\":3" +
                                     "--->--->--->}" +
                                     "--->--->]," +
-                                    "--->--->\"id\":1" +
+                                    "--->--->\"id\":100" +
                                     "--->}" +
                                     "]"
                     );
@@ -477,7 +477,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                             "select tb_1_.ID " +
                                     "from PERMISSION as tb_1_ " +
                                     "where tb_1_.ROLE_ID = ? and tb_1_.DELETED = ?"
-                    ).variables(2L, true);
+                    ).variables(200L, true);
                     ctx.rows(
                             "[" +
                                     "--->{" +
@@ -486,9 +486,9 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                     "--->--->\"permissions\":[" +
-                                    "--->--->--->{\"id\":4}" +
+                                    "--->--->--->{\"id\":4000}" +
                                     "--->--->]," +
-                                    "--->--->\"id\":2" +
+                                    "--->--->\"id\":200" +
                                     "--->}" +
                                     "]"
                     );
@@ -521,7 +521,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                     "from PERMISSION as tb_1_ " +
                                     "where tb_1_.ROLE_ID = ? and tb_1_.DELETED = ?"
-                    ).variables(2L, true);
+                    ).variables(200L, true);
                     ctx.rows(
                             "[" +
                                     "--->{" +
@@ -535,10 +535,10 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->--->--->\"deleted\":true," +
                                     "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                    "--->--->--->--->\"id\":4" +
+                                    "--->--->--->--->\"id\":4000" +
                                     "--->--->--->}" +
                                     "--->--->]," +
-                                    "--->--->\"id\":2" +
+                                    "--->--->\"id\":200" +
                                     "--->}" +
                                     "]"
                     );
@@ -568,7 +568,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                             "select tb_1_.ID from ROLE as tb_1_ " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "and tb_1_.DELETED = ?"
-                    ).variables(1L, 2L, true);
+                    ).variables(100L, 200L, true);
                     ctx.rows(
                             "[" +
                                     "--->{" +
@@ -577,14 +577,14 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                     "--->--->\"role\":null," +
-                                    "--->--->\"id\":2" +
+                                    "--->--->\"id\":2000" +
                                     "--->},{" +
                                     "--->--->\"name\":\"p_4\"," +
                                     "--->--->\"deleted\":true," +
                                     "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                    "--->--->\"role\":{\"id\":2}," +
-                                    "--->--->\"id\":4" +
+                                    "--->--->\"role\":{\"id\":200}," +
+                                    "--->--->\"id\":4000" +
                                     "--->}]"
                     );
                 }
@@ -616,7 +616,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                     "from ROLE as tb_1_ " +
                                     "where tb_1_.ID in (?, ?) and tb_1_.DELETED = ?"
-                    ).variables(1L, 2L, true);
+                    ).variables(100L, 200L, true);
                     ctx.rows(
                             "[" +
                                     "--->{" +
@@ -624,7 +624,8 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->\"deleted\":true," +
                                     "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                    "--->--->\"role\":null,\"id\":2" +
+                                    "--->--->\"role\":null," +
+                                    "--->--->\"id\":2000" +
                                     "--->},{" +
                                     "--->--->\"name\":\"p_4\"," +
                                     "--->--->\"deleted\":true," +
@@ -635,9 +636,9 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->--->\"deleted\":true," +
                                     "--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                    "--->--->--->\"id\":2" +
+                                    "--->--->--->\"id\":200" +
                                     "--->--->}," +
-                                    "--->--->\"id\":4" +
+                                    "--->--->\"id\":4000" +
                                     "--->}" +
                                     "]"
                     );
@@ -678,7 +679,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                     "--->--->\"roles\":[" +
-                                    "--->--->--->{\"id\":2}" +
+                                    "--->--->--->{\"id\":200}" +
                                     "--->--->]," +
                                     "--->--->\"id\":2" +
                                     "--->},{" +
@@ -687,7 +688,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                     "--->--->\"roles\":[" +
-                                    "--->--->--->{\"id\":2}" +
+                                    "--->--->--->{\"id\":200}" +
                                     "--->--->]," +
                                     "--->--->\"id\":4" +
                                     "--->}" +
@@ -738,7 +739,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->--->--->\"deleted\":true," +
                                     "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                    "--->--->--->--->\"id\":2" +
+                                    "--->--->--->--->\"id\":200" +
                                     "--->--->--->}" +
                                     "--->--->]," +
                                     "--->--->\"id\":2" +
@@ -753,7 +754,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->--->--->\"deleted\":true," +
                                     "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                     "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                    "--->--->--->--->\"id\":2" +
+                                    "--->--->--->--->\"id\":200" +
                                     "--->--->--->}" +
                                     "--->--->]," +
                                     "--->--->\"id\":4" +
@@ -787,7 +788,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "from ADMINISTRATOR as tb_1_ " +
                                     "inner join ADMINISTRATOR_ROLE_MAPPING as tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
                                     "where tb_2_.ROLE_ID = ? and tb_1_.DELETED = ?"
-                    ).variables(2L, true);
+                    ).variables(200L, true);
                     ctx.rows(
                             "[" +
                                     "--->{" +
@@ -799,7 +800,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->--->{\"id\":2}," +
                                     "--->--->--->{\"id\":4}" +
                                     "--->--->]," +
-                                    "--->--->\"id\":2" +
+                                    "--->--->\"id\":200" +
                                     "--->}" +
                                     "]"
                     );
@@ -833,7 +834,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "from ADMINISTRATOR as tb_1_ " +
                                     "inner join ADMINISTRATOR_ROLE_MAPPING as tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
                                     "where tb_2_.ROLE_ID = ? and tb_1_.DELETED = ?"
-                    ).variables(2L, true);
+                    ).variables(200L, true);
                     ctx.rows(
                             "[" +
                                     "--->{" +
@@ -856,7 +857,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
                                     "--->--->--->--->\"id\":4" +
                                     "--->--->--->}" +
                                     "--->--->]," +
-                                    "--->--->\"id\":2" +
+                                    "--->--->\"id\":200" +
                                     "--->}" +
                                     "]"
                     );

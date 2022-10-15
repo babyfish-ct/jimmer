@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.model.inheritance;
 import org.babyfish.jimmer.sql.JoinTable;
 import org.babyfish.jimmer.sql.ManyToMany;
 import org.babyfish.jimmer.sql.MappedSuperclass;
+import org.babyfish.jimmer.sql.OneToOne;
 
 import java.util.List;
 
@@ -16,4 +17,7 @@ public interface AdministratorBase extends NamedEntity {
             inverseJoinColumnName = "ROLE_ID"
     )
     List<Role> getRoles();
+
+    @OneToOne(mappedBy = "administrator")
+    AdministratorMetadata getMetadata();
 }
