@@ -187,25 +187,34 @@ public abstract class AbstractDataLoader {
     @SuppressWarnings("unchecked")
     private Map<ImmutableSpi, Object> loadTransients(Collection<ImmutableSpi> sources) {
         Collection<Object> sourceIds = toSourceIds(sources);
-        TransientResolver<Object, Object> typedResolver =
-                ((TransientResolver<Object, Object>)resolver);
+        TransientResolver<Object, Object> resolver =
+                ((TransientResolver<Object, Object>) this.resolver);
         Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
-        if (cache == null) {
+        TransientResolver.Parameterized<Object, Object> parameterizedResolver =
+                resolver instanceof TransientResolver.Parameterized<?, ?> ?
+                        (TransientResolver.Parameterized<Object, Object>) resolver :
+                        null;
+        Cache.Parameterized<Object, Object> parameterizedCache =
+                cache instanceof Cache.Parameterized<?, ?> ?
+                        (Cache.Parameterized<Object, Object>)cache :
+                        null;
+        if (cache == null || (parameterizedResolver != null && parameterizedCache == null)) {
             return Utils.joinCollectionAndMap(
                     sources,
                     this::toSourceId,
-                    typedResolver.resolve(sourceIds, con)
+                    resolver.resolve(sourceIds, con)
             );
         }
-        Map<Object, Object> valueMap = cache.getAll(
-                sourceIds,
-                new CacheEnvironment<>(
-                        sqlClient,
-                        con,
-                        (ids) -> typedResolver.resolve(ids, con),
-                        false
-                )
+        CacheEnvironment<Object, Object> env = new CacheEnvironment<>(
+                sqlClient,
+                con,
+                (ids) -> resolver.resolve(ids, con),
+                false
         );
+        Map<Object, Object> valueMap =
+                parameterizedResolver != null ?
+                        parameterizedCache.getAll(sourceIds, parameterizedResolver.getParameters(), env) :
+                        cache.getAll(sourceIds, env);
         return Utils.joinCollectionAndMap(
                 sources,
                 this::toSourceId,

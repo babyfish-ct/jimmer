@@ -7,6 +7,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Triggers;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -119,6 +120,22 @@ public class TriggersImpl implements Triggers {
         EntityEvent<ImmutableSpi> event = new EntityEvent<>((ImmutableSpi)oldRow, (ImmutableSpi) newRow, reason);
         List<EntityListener<ImmutableSpi>> listeners =
                 entityTableListenerMultiMap.get(event.getImmutableType());
+        ImmutableType superType = event.getImmutableType().getSuperType();
+        if (superType != null) {
+            if (listeners == null) {
+                listeners = new ArrayList<>();
+            } else {
+                listeners = new ArrayList<>(listeners);
+            }
+            while (superType != null) {
+                List<EntityListener<ImmutableSpi>> superListeners =
+                        entityTableListenerMultiMap.get(superType);
+                if (superListeners != null) {
+                    listeners.addAll(superListeners);
+                }
+                superType = superType.getSuperType();
+            }
+        }
         if (listeners != null && !listeners.isEmpty()) {
             Throwable throwable = null;
             for (EntityListener<ImmutableSpi> listener : listeners) {
