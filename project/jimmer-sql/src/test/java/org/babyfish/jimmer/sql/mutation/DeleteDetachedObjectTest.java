@@ -23,8 +23,7 @@ public class DeleteDetachedObjectTest extends AbstractMutationTest {
                         })
                 ).configure(cfg ->
                         cfg.setDissociateAction(
-                                BookTable.class,
-                                BookTable::store,
+                                BookProps.STORE,
                                 DissociateAction.DELETE
                         )
                 ),
@@ -87,7 +86,7 @@ public class DeleteDetachedObjectTest extends AbstractMutationTest {
                     ctx.totalRowCount(16);
                     ctx.rowCount(AffectedTable.of(BookStore.class), 1);
                     ctx.rowCount(AffectedTable.of(Book.class), 9);
-                    ctx.rowCount(AffectedTable.of(AuthorTableEx.class, AuthorTableEx::books), 6);
+                    ctx.rowCount(AffectedTable.of(AuthorProps.BOOKS), 6);
                 }
         );
     }

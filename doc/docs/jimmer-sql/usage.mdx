@@ -1377,9 +1377,7 @@ System.out.println(
     result.getAffectedRowCount(AffectedTable.of(Author.class)) +
 
     "\nAffected row count of middle table 'BOOK_AUTHOR_MAPPING': " +
-    result.getAffectedRowCount(
-        AffectedTable.of(BookTableEx.class, BookTableEx::authors)
-    )
+    result.getAffectedRowCount(AffectedTable.of(BookProps.AUTHORS))
 );
 ```
 
@@ -1514,7 +1512,7 @@ System.out.println(
     
     "\nAffected row count of middle table 'BOOK_AUTHOR_MAPPING': " +
     result.getAffectedRowCount(
-        AffectedTable.of(BookTableEx.class, BookTableEx::authors)
+        AffectedTable.of(BookProps.AUTHORS)
     )
 );
 ```

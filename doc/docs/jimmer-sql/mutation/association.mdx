@@ -21,10 +21,7 @@ jimmer-sql allows developers to directly insert and delete data for middle table
 
 ```java
 sqlClient
-    .getAssociations(
-        BookTableEx.class, 
-        BookTableEx::authors
-    )
+    .getAssociations(BookProps.AUTHORS)
     // highlight-next-line
     .save(12L, 3L);
 ```
@@ -62,10 +59,7 @@ In the same way, we can also achieve the same purpose through the association pr
 
 ```java
 sqlClient
-    .getAssociations(
-        AuthorTableEx.class,
-        AuthorTableEx::books
-    )
+    .getAssociations(AuthorProps.BOOKS)
     // highlight-next-line
     .save(3L, 12L);
 ```
@@ -105,15 +99,9 @@ For bidirectional associations, you can use `reverse` to switch between positive
 
 ```java
 Associations bookToAuthor = sqlClient
-    .getAssociations(
-        BookTableEx.class,
-        BookTableEx::authors
-    );
+    .getAssociations(BookProps.AUTHORS);
 Associations authorToBook = sqlClient
-    .getAssociations(
-        AuthorTableEx.class,
-        AuthorTableEx::books
-    );
+    .getAssociations(AuthorProps.BOOKS);
 Associations authorToBook2 = 
     // highlight-next-line
     bookToAuthor.reverse();
@@ -156,10 +144,7 @@ In this code:
 
 ```java
 sqlClient
-    .getAssociations(
-        BookTableEx.class,
-        BookTableEx::authors
-    )
+    .getAssociations(BookProps.AUTHORS)
     // highlight-next-line
     .batchSave(
         Arrays.asList(
@@ -223,10 +208,7 @@ jimmer-sql provides a shortcut
 
 ```java
 sqlClient
-    .getAssociations(
-        BookTableEx.class,
-        BookTableEx::authors
-    )
+    .getAssociations(BookProps.AUTHORS)
     // Batch save `Cartesian product` 
     // of two id collections
     // highlight-next-line
@@ -271,10 +253,7 @@ To solve this problem, an existence check can be performed.
 
 ```java
 sqlClient
-    .getAssociations(
-        BookTableEx.class,
-        BookTableEx::authors
-    )
+    .getAssociations(BookProps.AUTHORS)
     .batchSaveCommand(
         Arrays.asList(
             10L, 11L, 12L
@@ -345,10 +324,7 @@ The generated SQL statement is as follows
 
 ```java
 sqlClient
-    .getAssociations(
-            BookTableEx.class,
-            BookTableEx::authors
-    )
+    .getAssociations(BookProps.AUTHORS)
     // highlight-next-line
     .delete(12L, 3L);
 ```
@@ -387,10 +363,7 @@ Similar to batch insert, there are two ways to implement batch delete
 
 ```java
 sqlClient
-    .getAssociations(
-        BookTableEx.class,
-        BookTableEx::authors
-    )
+    .getAssociations(BookProps.AUTHORS)
     // highlight-next-line
     .batchDelete(
         Arrays.asList(
@@ -435,10 +408,7 @@ or
 
 ```java
 sqlClient
-    .getAssociations(
-        BookTableEx.class,
-        BookTableEx::authors
-    )
+    .getAssociations(BookProps.AUTHORS)
     // highlight-next-line
     .batchDelete(
         Arrays.asList(10L, 11L, 12L),

@@ -83,10 +83,7 @@ public class BookController {
     ) {
         return sqlClient
             // highlight-next-line
-            .getReferenceLoader(
-                    BookTable.class,
-                    BookTable::store
-            )
+            .getReferenceLoader(BookProps.STORE)
             .batchLoad(books);
     }
 }
@@ -149,10 +146,7 @@ public class BookStoreController {
     ) {
         return sqlClient
             // highlight-next-line
-            .getListLoader(
-                BookStoreTableEx.class,
-                BookStoreTableEx::books
-            )
+            .getListLoader(BookStoreProps.BOOKS)
             .batchLoad(bookStores);
     }
 }
@@ -203,10 +197,7 @@ public class BookController {
     public Map<Book, List<Author>> authors(List<Book> books) {
         return sqlClient
             // highlight-next-line
-            .getListLoader(
-                BookTableEx.class,
-                BookTableEx::authors
-            )
+            .getListLoader(BookProps.AUTHORS)
             .batchLoad(books);
     }
 }
@@ -259,10 +250,7 @@ public class AuthorController {
     ) {
         return sqlClient
                 // highlight-next-line
-                .getListLoader(
-                        AuthorTableEx.class,
-                        AuthorTableEx::books
-                )
+                .getListLoader(AuthorProps.BOOKS)
                 .batchLoad(authors);
     }
 }

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.ImmutableProps;
@@ -156,28 +157,6 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         }
 
         @Override
-        public Cfg setKeyProps(Class<?> entityType, String... props) {
-            ImmutableType type = ImmutableType.get(entityType);
-            return setKeyProps(
-                    Arrays.stream(props)
-                            .map(type::getProp)
-                            .toArray(ImmutableProp[]::new)
-            );
-        }
-
-        @Override
-        public <T extends Table<?>> Cfg setKeyProps(
-                Class<T> tableType,
-                Consumer<KeyPropCfg<T>> block
-        ) {
-            KeyPropCfgImpl<T> keyPropCfg = new KeyPropCfgImpl<T>(tableType);
-            block.accept(keyPropCfg);
-            return setKeyProps(
-                    keyPropCfg.getProps().toArray(new ImmutableProp[0])
-            );
-        }
-
-        @Override
         public Cfg setAutoAttachingAll() {
             autoAttachingAll = true;
             return this;
@@ -188,21 +167,6 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             validate();
             autoAttachingSet.add(prop);
             return this;
-        }
-
-        @Override
-        public Cfg setAutoAttaching(Class<?> entityType, String prop) {
-            ImmutableType immutableType = ImmutableType.get(entityType);
-            ImmutableProp immutableProp = immutableType.getProp(prop);
-            return setAutoAttaching(immutableProp);
-        }
-
-        @Override
-        public <T extends Table<?>> Cfg setAutoAttaching(
-                Class<T> tableType,
-                Function<T, Table<?>> block
-        ) {
-            return setAutoAttaching(ImmutableProps.join(tableType, block));
         }
 
         @Override
@@ -219,29 +183,6 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             }
             dissociateActionMap.put(prop, dissociateAction);
             return this;
-        }
-
-        @Override
-        public Cfg setDissociateAction(
-                Class<?> entityType,
-                String prop,
-                DissociateAction dissociateAction
-        ) {
-            ImmutableType immutableType = ImmutableType.get(entityType);
-            ImmutableProp immutableProp = immutableType.getProp(prop);
-            return setDissociateAction(immutableProp, dissociateAction);
-        }
-
-        @Override
-        public <T extends Table<?>> Cfg setDissociateAction(
-                Class<T> tableType,
-                Function<T, Table<?>> block,
-                DissociateAction dissociateAction
-        ) {
-            return setDissociateAction(
-                    ImmutableProps.join(tableType, block),
-                    dissociateAction
-            );
         }
 
         public Data freeze() {
@@ -277,10 +218,14 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         }
 
         @Override
-        public KeyPropCfg<T> add(Function<T, PropExpression<?>> block) {
-            ImmutableProp prop = ImmutableProps.get(tableType, block);
+        public KeyPropCfg<T> add(ImmutableProp prop) {
             props.add(prop);
             return this;
+        }
+
+        @Override
+        public KeyPropCfg<T> add(TypedProp<?, ?> prop) {
+            return add(prop.unwrap());
         }
     }
 }

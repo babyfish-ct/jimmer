@@ -108,8 +108,6 @@ For Java, middle table query only supports lambda style, not fluent style.
 
 Here, `createAssociationQuery` in java or `queries.forList` in kotlin means to create a query based on the middle table, not based on the entity table.
 
-The first two parameters, `BookTableEx.class` and `BookTableEx::authors`, represent the middle table `BOOK_AUTHOR_MAPPING` corresponding to the association `Book.authors`.
-
 The generated SQL is as follows
 ```sql
 select 
