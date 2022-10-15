@@ -11,10 +11,7 @@ import org.babyfish.jimmer.sql.common.ParameterizedCaches;
 import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
-import org.babyfish.jimmer.sql.model.inheritance.Administrator;
-import org.babyfish.jimmer.sql.model.inheritance.NamedEntityProps;
-import org.babyfish.jimmer.sql.model.inheritance.Permission;
-import org.babyfish.jimmer.sql.model.inheritance.Role;
+import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.jetbrains.annotations.NotNull;
@@ -44,6 +41,7 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
             it.setEntityManager(
                     new EntityManager(
                             Administrator.class,
+                            AdministratorMetadata.class,
                             Role.class,
                             Permission.class
                     )
@@ -113,6 +111,11 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select distinct tb_1_.ID " +
+                                    "from ADMINISTRATOR_METADATA as tb_1_ " +
+                                    "where tb_1_.ADMINISTRATOR_ID = ?"
+                    );
+                    ctx.statement(1).sql(
+                            "select distinct tb_1_.ID " +
                                     "from ROLE as tb_1_ " +
                                     "inner join ADMINISTRATOR_ROLE_MAPPING as tb_2_ on tb_1_.ID = tb_2_.ROLE_ID " +
                                     "where tb_2_.ADMINISTRATOR_ID = ?"
@@ -120,7 +123,10 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
                 }
         );
         Assertions.assertEquals(
-                "[delete Role.administrators-[1]]",
+                "[" +
+                        "delete AdministratorMetadata.administrator-[10], " +
+                        "delete Role.administrators-[100]" +
+                        "]",
                 messages.toString()
         );
     }
@@ -132,8 +138,8 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
                     try {
                         sqlClient.getCaches().invalidateByBinLog(
                                 "role",
-                                MAPPER.readTree("{\"id\":1, \"deleted\":false}"),
-                                MAPPER.readTree("{\"id\":1, \"deleted\":true}")
+                                MAPPER.readTree("{\"id\":100, \"deleted\":false}"),
+                                MAPPER.readTree("{\"id\":100, \"deleted\":true}")
                         );
                     } catch (JsonProcessingException ex) {
                         Assertions.fail(ex);
@@ -146,18 +152,18 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
                                     "from ADMINISTRATOR as tb_1_ " +
                                     "inner join ADMINISTRATOR_ROLE_MAPPING as tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
                                     "where tb_2_.ROLE_ID = ?"
-                    ).variables(1L);
+                    ).variables(100L);
                     ctx.statement(1).sql(
                             "select distinct tb_1_.ID " +
                                     "from PERMISSION as tb_1_ " +
                                     "where tb_1_.ROLE_ID = ?"
-                    ).variables(1L);
+                    ).variables(100L);
                 }
         );
         Assertions.assertEquals(
                 "[" +
                         "delete Administrator.roles-[1, 2, 3], " +
-                        "delete Permission.role-[1, 2]" +
+                        "delete Permission.role-[1000, 2000]" +
                         "]",
                 messages.toString()
         );
@@ -170,8 +176,8 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
                     try {
                         sqlClient.getCaches().invalidateByBinLog(
                                 "permission",
-                                MAPPER.readTree("{\"id\":1, \"deleted\":false, \"role_id\": 1}"),
-                                MAPPER.readTree("{\"id\":1, \"deleted\":true}")
+                                MAPPER.readTree("{\"id\":1000, \"deleted\":false, \"role_id\": 100}"),
+                                MAPPER.readTree("{\"id\":1000, \"deleted\":true}")
                         );
                     } catch (JsonProcessingException ex) {
                         Assertions.fail(ex);
@@ -182,7 +188,7 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 "[" +
-                        "delete Role.permissions-[1]" +
+                        "delete Role.permissions-[100]" +
                         "]",
                 messages.toString()
         );
@@ -199,8 +205,8 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
                     try {
                         sqlClient.getCaches().invalidateByBinLog(
                                 "permission",
-                                MAPPER.readTree("{\"id\":1, \"deleted\":false, \"role_id\": 1}"),
-                                MAPPER.readTree("{\"id\":1, \"deleted\":true, \"role_id\": 2}")
+                                MAPPER.readTree("{\"id\":1000, \"deleted\":false, \"role_id\": 100}"),
+                                MAPPER.readTree("{\"id\":1000, \"deleted\":true, \"role_id\": 200}")
                         );
                     } catch (JsonProcessingException ex) {
                         Assertions.fail(ex);
@@ -211,9 +217,9 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 "[" +
-                        "delete Role.permissions-[1], " +
-                        "delete Role.permissions-[2], " +
-                        "delete Permission.role-[1]" +
+                        "delete Role.permissions-[100], " +
+                        "delete Role.permissions-[200], " +
+                        "delete Permission.role-[1000]" +
                         "]",
                 messages.toString()
         );

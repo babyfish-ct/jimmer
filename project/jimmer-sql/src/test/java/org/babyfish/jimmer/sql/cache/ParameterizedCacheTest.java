@@ -37,6 +37,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
             it.setEntityManager(
                     new EntityManager(
                             Administrator.class,
+                            AdministratorMetadata.class,
                             Role.class,
                             Permission.class
                     )
@@ -111,12 +112,12 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                             "from PERMISSION as tb_1_ " +
                                             "where tb_1_.ROLE_ID = ? " +
                                             "and tb_1_.DELETED = ?"
-                            ).variables(1L, false);
+                            ).variables(100L, false);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
                                             "from PERMISSION as tb_1_ " +
                                             "where tb_1_.ID = ?"
-                            ).variables(1L);
+                            ).variables(1000L);
                         }
                         ctx.rows(
                                 "[" +
@@ -131,10 +132,10 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                         "--->--->--->--->\"deleted\":false," +
                                         "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                         "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                        "--->--->--->--->\"id\":1" +
+                                        "--->--->--->--->\"id\":1000" +
                                         "--->--->--->}" +
                                         "--->--->]," +
-                                        "--->--->\"id\":1" +
+                                        "--->--->\"id\":100" +
                                         "--->}" +
                                         "]"
                         );
@@ -165,12 +166,12 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                             "from PERMISSION as tb_1_ " +
                                             "where tb_1_.ROLE_ID = ? " +
                                             "and tb_1_.DELETED = ?"
-                            ).variables(2L, true);
+                            ).variables(200L, true);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
                                             "from PERMISSION as tb_1_ " +
                                             "where tb_1_.ID = ?"
-                            ).variables(4L);
+                            ).variables(4000L);
                         }
                         ctx.rows(
                                 "[" +
@@ -185,10 +186,10 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                         "--->--->--->--->\"deleted\":true," +
                                         "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                         "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                        "--->--->--->--->\"id\":4" +
+                                        "--->--->--->--->\"id\":4000" +
                                         "--->--->--->}" +
                                         "--->--->]," +
-                                        "--->--->\"id\":2" +
+                                        "--->--->\"id\":200" +
                                         "--->}" +
                                         "]"
                         );
@@ -228,12 +229,12 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                             "where tb_1_.ID in (?, ?) " +
                                             "and tb_1_.ROLE_ID is not null " +
                                             "and tb_2_.DELETED = ?"
-                            ).variables(1L, 3L, false);
+                            ).variables(1000L, 3000L, false);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                             "from ROLE as tb_1_ " +
                                             "where tb_1_.ID = ?"
-                            ).variables(1L);
+                            ).variables(100L);
                         }
                         ctx.rows(
                                 "[" +
@@ -247,16 +248,16 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                         "--->--->--->\"deleted\":false," +
                                         "--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                         "--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                        "--->--->--->\"id\":1" +
+                                        "--->--->--->\"id\":100" +
                                         "--->--->}," +
-                                        "--->--->\"id\":1" +
+                                        "--->--->\"id\":1000" +
                                         "--->},{" +
                                         "--->--->\"name\":\"p_3\"," +
                                         "--->--->\"deleted\":false," +
                                         "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                         "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                         "--->--->\"role\":null," +
-                                        "--->--->\"id\":3" +
+                                        "--->--->\"id\":3000" +
                                         "--->}" +
                                         "]"
                         );
@@ -289,12 +290,12 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                             "where tb_1_.ID in (?, ?) " +
                                             "and tb_1_.ROLE_ID is not null " +
                                             "and tb_2_.DELETED = ?"
-                            ).variables(2L, 4L, true);
+                            ).variables(2000L, 4000L, true);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                             "from ROLE as tb_1_ " +
                                             "where tb_1_.ID = ?"
-                            ).variables(2L);
+                            ).variables(200L);
                         }
                         ctx.rows(
                                 "[" +
@@ -304,7 +305,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                         "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                         "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                         "--->--->\"role\":null," +
-                                        "--->--->\"id\":2" +
+                                        "--->--->\"id\":2000" +
                                         "--->},{" +
                                         "--->--->\"name\":\"p_4\"," +
                                         "--->--->\"deleted\":true," +
@@ -315,9 +316,9 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                         "--->--->--->\"deleted\":true," +
                                         "--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                         "--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                        "--->--->--->\"id\":2" +
+                                        "--->--->--->\"id\":200" +
                                         "--->--->}," +
-                                        "--->--->\"id\":4" +
+                                        "--->--->\"id\":4000" +
                                         "--->}" +
                                         "]"
                         );
@@ -360,7 +361,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                             "from ROLE as tb_1_ " +
                                             "where tb_1_.ID = ?"
-                            ).variables(1L);
+                            ).variables(100L);
                         }
                         ctx.rows(
                                 "[" +
@@ -375,7 +376,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                         "--->--->--->--->\"deleted\":false," +
                                         "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                         "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                        "--->--->--->--->\"id\":1" +
+                                        "--->--->--->--->\"id\":100" +
                                         "--->--->--->}" +
                                         "--->--->]," +
                                         "--->--->\"id\":1" +
@@ -390,7 +391,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                         "--->--->--->--->\"deleted\":false," +
                                         "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                         "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                        "--->--->--->--->\"id\":1" +
+                                        "--->--->--->--->\"id\":100" +
                                         "--->--->--->}" +
                                         "--->--->]," +
                                         "--->--->\"id\":3" +
@@ -429,7 +430,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                             "from ROLE as tb_1_ " +
                                             "where tb_1_.ID = ?"
-                            ).variables(2L);
+                            ).variables(200L);
                         }
                         ctx.rows(
                                 "[" +
@@ -444,7 +445,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                         "--->--->--->--->\"deleted\":true," +
                                         "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                         "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                        "--->--->--->--->\"id\":2" +
+                                        "--->--->--->--->\"id\":200" +
                                         "--->--->--->}" +
                                         "--->--->]," +
                                         "--->--->\"id\":2" +
@@ -459,7 +460,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                         "--->--->--->--->\"deleted\":true," +
                                         "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                         "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                                        "--->--->--->--->\"id\":2" +
+                                        "--->--->--->--->\"id\":200" +
                                         "--->--->--->}" +
                                         "--->--->]," +
                                         "--->--->\"id\":4" +
@@ -500,7 +501,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                             "from ADMINISTRATOR_ROLE_MAPPING as tb_1_ " +
                                             "inner join ADMINISTRATOR as tb_3_ on tb_1_.ADMINISTRATOR_ID = tb_3_.ID " +
                                             "where tb_1_.ROLE_ID = ? and tb_3_.DELETED = ?"
-                            ).variables(1L, false);
+                            ).variables(100L, false);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                             "from ADMINISTRATOR as tb_1_ " +
@@ -529,7 +530,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                         "--->--->--->--->\"id\":3" +
                                         "--->--->--->}" +
                                         "--->--->]," +
-                                        "--->--->\"id\":1" +
+                                        "--->--->\"id\":100" +
                                         "--->}" +
                                         "]"
                         );
@@ -560,7 +561,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                             "from ADMINISTRATOR_ROLE_MAPPING as tb_1_ " +
                                             "inner join ADMINISTRATOR as tb_3_ on tb_1_.ADMINISTRATOR_ID = tb_3_.ID " +
                                             "where tb_1_.ROLE_ID = ? and tb_3_.DELETED = ?"
-                            ).variables(2L, true);
+                            ).variables(200L, true);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                             "from ADMINISTRATOR as tb_1_ " +
@@ -589,7 +590,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                         "--->--->--->--->\"id\":4" +
                                         "--->--->--->}" +
                                         "--->--->]," +
-                                        "--->--->\"id\":2" +
+                                        "--->--->\"id\":200" +
                                         "--->}" +
                                         "]"
                         );
