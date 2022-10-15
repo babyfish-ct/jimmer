@@ -436,8 +436,8 @@ SimpleSaveResult<Book> result = sqlClient
         // highlight-next-line
         it -> it.setKeyProps(BookTable.class, keyProps -> {
             keyProps
-                    .add(BookTable::name)
-                    .add(BookTable::edition);
+                    .add(BookProps.NAME)
+                    .add(BookProps.EDITION);
         })
     )
     .execute();
@@ -741,10 +741,7 @@ System.out.println(
 System.out.println(
     "\tBOOK_AUTHOR_MAPPING: " +
         result.getAffectedRowCount(
-            AffectedTable.of(
-                BookTableEx.class,
-                BookTableEx::authors
-            )
+            AffectedTable.of(BookProps.AUTHORS)
         )
 );
 ```
@@ -1002,8 +999,7 @@ sqlClient
     .configure(it -> 
         // highlight-next-line
         it.setDissociateAction(
-            BookTable.class, 
-            BookTable::store,
+            BookProps.STORE,
             DissociateAction.DELETE
         )
     )
@@ -1141,15 +1137,9 @@ sqlClient
     .configure(it -> 
         it
             // highlight-next-line
-            .setAutoAttaching(
-                    BookTable.class, 
-                    BookTable::store
-            )
+            .setAutoAttaching(BookProps.STORE)
             // highlight-next-line
-            .setAutoAttaching(
-                    BookTableEx.class, 
-                    BookTableEx::authors
-            )
+            .setAutoAttaching(BookProps.AUTHORS)
     )
     .execute();
 ```

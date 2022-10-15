@@ -38,7 +38,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                             book.store(true).setName("TURING").setWebsite("http://www.turing.com");
                         })
                 ).configure(cfg -> {
-                    cfg.setAutoAttaching(BookTable.class, BookTable::store);
+                    cfg.setAutoAttaching(BookProps.STORE);
                 }),
                 ctx -> {
                     ctx.statement(it -> {
@@ -171,7 +171,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                     });
                         })
                 ).configure(cfg -> {
-                    cfg.setAutoAttaching(BookStoreTableEx.class, BookStoreTableEx::books);
+                    cfg.setAutoAttaching(BookStoreProps.BOOKS);
                 }),
                 ctx -> {
                     ctx.statement(it -> {
@@ -267,8 +267,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         })
                 ).configure(it ->
                         it.setDissociateAction(
-                                BookTable.class,
-                                BookTable::store,
+                                BookProps.STORE,
                                 DissociateAction.SET_NULL
                         )
                 ),
@@ -373,7 +372,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                     });
                         })
                 ).configure(cfg -> {
-                    cfg.setAutoAttaching(BookTableEx.class, BookTableEx::authors);
+                    cfg.setAutoAttaching(BookProps.AUTHORS);
                 }),
                 ctx -> {
                     ctx.statement(it -> {
@@ -445,7 +444,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         ctx.totalRowCount(5);
                         ctx.rowCount(AffectedTable.of(Book.class), 1);
                         ctx.rowCount(AffectedTable.of(Author.class), 2);
-                        ctx.rowCount(AffectedTable.of(BookTableEx.class, BookTableEx::authors), 2);
+                        ctx.rowCount(AffectedTable.of(BookProps.AUTHORS), 2);
                     });
                 }
         );
@@ -540,7 +539,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.totalRowCount(7);
                     ctx.rowCount(AffectedTable.of(Book.class), 1);
                     ctx.rowCount(AffectedTable.of(Author.class), 2);
-                    ctx.rowCount(AffectedTable.of(BookTableEx.class, BookTableEx::authors), 4);
+                    ctx.rowCount(AffectedTable.of(BookProps.AUTHORS), 4);
                 }
         );
     }
@@ -566,7 +565,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                     });
                         })
                 ).configure(cfg -> {
-                    cfg.setAutoAttaching(AuthorTableEx.class, AuthorTableEx::books);
+                    cfg.setAutoAttaching(AuthorProps.BOOKS);
                 }),
                 ctx -> {
                     ctx.statement(it -> {
@@ -638,7 +637,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         ctx.totalRowCount(5);
                         ctx.rowCount(AffectedTable.of(Book.class), 2);
                         ctx.rowCount(AffectedTable.of(Author.class), 1);
-                        ctx.rowCount(AffectedTable.of(AuthorTableEx.class, AuthorTableEx::books), 2);
+                        ctx.rowCount(AffectedTable.of(AuthorProps.BOOKS), 2);
                     });
                 }
         );
@@ -737,7 +736,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.totalRowCount(6);
                     ctx.rowCount(AffectedTable.of(Book.class), 2);
                     ctx.rowCount(AffectedTable.of(Author.class), 1);
-                    ctx.rowCount(AffectedTable.of(AuthorTableEx.class, AuthorTableEx::books), 3);
+                    ctx.rowCount(AffectedTable.of(AuthorProps.BOOKS), 3);
                 }
         );
     }

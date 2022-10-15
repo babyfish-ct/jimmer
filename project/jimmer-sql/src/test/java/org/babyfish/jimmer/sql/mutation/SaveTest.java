@@ -367,8 +367,7 @@ public class SaveTest extends AbstractMutationTest {
                         })
                 ).configure(it ->
                         it.setDissociateAction(
-                                BookTable.class,
-                                BookTable::store,
+                                BookProps.STORE,
                                 DissociateAction.SET_NULL
                         )
                 ),
@@ -474,7 +473,7 @@ public class SaveTest extends AbstractMutationTest {
                     });
                     ctx.totalRowCount(3);
                     ctx.rowCount(AffectedTable.of(Book.class), 1);
-                    ctx.rowCount(AffectedTable.of(BookTableEx.class, BookTableEx::authors), 2);
+                    ctx.rowCount(AffectedTable.of(BookProps.AUTHORS), 2);
                 }
         );
     }
@@ -530,7 +529,7 @@ public class SaveTest extends AbstractMutationTest {
                                 "}");
                     });
                     ctx.totalRowCount(4);
-                    ctx.rowCount(AffectedTable.of(BookTableEx.class, BookTableEx::authors), 4);
+                    ctx.rowCount(AffectedTable.of(BookProps.AUTHORS), 4);
                 }
         );
     }
@@ -592,7 +591,7 @@ public class SaveTest extends AbstractMutationTest {
                     });
                     ctx.totalRowCount(3);
                     ctx.rowCount(AffectedTable.of(Author.class), 1);
-                    ctx.rowCount(AffectedTable.of(AuthorTableEx.class, AuthorTableEx::books), 2);
+                    ctx.rowCount(AffectedTable.of(AuthorProps.BOOKS), 2);
                 }
         );
     }
@@ -650,7 +649,7 @@ public class SaveTest extends AbstractMutationTest {
                                 "}");
                     });
                     ctx.totalRowCount(5);
-                    ctx.rowCount(AffectedTable.of(AuthorTableEx.class, AuthorTableEx::books), 5);
+                    ctx.rowCount(AffectedTable.of(AuthorProps.BOOKS), 5);
                 }
         );
     }

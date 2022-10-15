@@ -829,10 +829,7 @@ where(
         book
             // Author.books反过来就是Book.authors
             // highlight-next-line
-            .inverseJoin(
-                AuthorTableEx.class, 
-                AuthorTableEx::books
-            )
+            .inverseJoin(AuthorProps.BOOKS)
             .firstName()
             .eq("Alex")
     );

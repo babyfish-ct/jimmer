@@ -234,16 +234,8 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
-    public <ST extends Table<?>> Associations getAssociations(
-            Class<ST> sourceTableType,
-            Function<ST, ? extends Table<?>> block
-    ) {
-        return getAssociations(ImmutableProps.join(sourceTableType, block));
-    }
-
-    @Override
-    public Associations getAssociations(Class<?> entityType, String prop) {
-        return getAssociations(ImmutableType.get(entityType).getProp(prop));
+    public Associations getAssociations(TypedProp.Association<?, ?> prop) {
+        return getAssociations(prop.unwrap());
     }
 
     @Override

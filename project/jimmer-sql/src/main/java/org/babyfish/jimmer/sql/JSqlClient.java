@@ -90,12 +90,7 @@ public interface JSqlClient {
 
     Triggers getTriggers();
 
-    <ST extends Table<?>> Associations getAssociations(
-            Class<ST> sourceTableType,
-            Function<ST, ? extends Table<?>> block
-    );
-
-    Associations getAssociations(Class<?> entityType, String prop);
+    Associations getAssociations(TypedProp.Association<?, ?> prop);
 
     Associations getAssociations(ImmutableProp immutableProp);
 
