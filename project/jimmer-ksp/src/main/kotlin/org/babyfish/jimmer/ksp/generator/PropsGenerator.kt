@@ -6,13 +6,12 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import org.babyfish.jimmer.ksp.className
 import org.babyfish.jimmer.ksp.meta.Context
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
 import java.io.OutputStreamWriter
 
-class TableGenerator(
+class PropsGenerator(
     private val codeGenerator: CodeGenerator,
     private val ctx: Context,
     private val file: KSFile,
@@ -23,9 +22,9 @@ class TableGenerator(
             file.fileName.let {
                 var lastDotIndex = it.lastIndexOf('.')
                 if (lastDotIndex == -1) {
-                    "${it}$TABLE"
+                    "${it}$PROPS"
                 } else {
-                    "${it.substring(0, lastDotIndex)}$TABLE"
+                    "${it.substring(0, lastDotIndex)}$PROPS"
                 }
             }
         codeGenerator.createNewFile(
@@ -90,14 +89,14 @@ class TableGenerator(
                 outerJoin -> K_TABLE_EX_CLASS_NAME
                 nonNullTable -> K_NON_NULL_TABLE_EX_CLASS_NAME
                 prop.isAssociation -> K_NULLABLE_TABLE_EX_CLASS_NAME
-                else -> K_TABLE_CLASS_NAME
+                else -> K_PROPS_CLASS_NAME
             }
         } else {
             when {
-                outerJoin -> K_TABLE_CLASS_NAME
-                nonNullTable -> K_NON_NULL_TABLE_CLASS_NAME
-                prop.isAssociation -> K_NULLABLE_TABLE_CLASS_NAME
-                else -> K_TABLE_CLASS_NAME
+                outerJoin -> K_PROPS_CLASS_NAME
+                nonNullTable -> K_NON_NULL_PROPS_CLASS_NAME
+                prop.isAssociation -> K_NULLABLE_PROPS_CLASS_NAME
+                else -> K_PROPS_CLASS_NAME
             }
         }.parameterizedBy(
             type.className

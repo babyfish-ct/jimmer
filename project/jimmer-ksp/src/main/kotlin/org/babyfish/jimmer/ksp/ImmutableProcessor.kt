@@ -12,7 +12,7 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import org.babyfish.jimmer.ksp.generator.DraftGenerator
 import org.babyfish.jimmer.ksp.generator.FetcherGenerator
-import org.babyfish.jimmer.ksp.generator.TableGenerator
+import org.babyfish.jimmer.ksp.generator.PropsGenerator
 import org.babyfish.jimmer.ksp.meta.Context
 import org.babyfish.jimmer.sql.Entity
 import java.util.concurrent.atomic.AtomicBoolean
@@ -41,7 +41,7 @@ class ImmutableProcessor(
                 )
             }
             if (entityClassDeclarations.isNotEmpty()) {
-                TableGenerator(environment.codeGenerator, ctx, file, entityClassDeclarations[0])
+                PropsGenerator(environment.codeGenerator, ctx, file, entityClassDeclarations[0])
                     .generate(allFiles)
                 FetcherGenerator(environment.codeGenerator, ctx, file, entityClassDeclarations[0])
                     .generate(allFiles)

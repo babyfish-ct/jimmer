@@ -17,11 +17,19 @@ public abstract class RedirectedProp implements ImmutableProp {
         this.raw = raw;
     }
 
+    public static ImmutableProp source(ImmutableProp prop, Class<?> sourceType) {
+        return source(prop, ImmutableType.get(sourceType));
+    }
+
     public static ImmutableProp source(ImmutableProp prop, ImmutableType sourceType) {
         if (prop.getDeclaringType() == sourceType) {
             return prop;
         }
         return new SourceRedirectedProp(prop, sourceType);
+    }
+
+    public static ImmutableProp target(ImmutableProp prop, Class<?> targetType) {
+        return target(prop, ImmutableType.get(targetType));
     }
 
     public static ImmutableProp target(ImmutableProp prop, ImmutableType targetType) {
