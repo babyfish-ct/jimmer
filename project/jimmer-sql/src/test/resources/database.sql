@@ -238,6 +238,7 @@ alter table administrator
 
 create table administrator_metadata(
     id bigint not null,
+    name varchar(50) not null,
     email varchar(50) not null,
     website varchar(50) not null,
     administrator_id bigint not null,
@@ -303,12 +304,12 @@ insert into administrator(id, name, deleted, created_time, modified_time)
     (3, 'a_3', false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
     (4, 'a_4', true, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
 
-insert into administrator_metadata(id, email, website, administrator_id, deleted, created_time, modified_time)
+insert into administrator_metadata(id, name, email, website, administrator_id, deleted, created_time, modified_time)
     values
-    (10, 'email_1', 'website_1', 1, false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
-    (20, 'email_2', 'website_2', 2, true, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
-    (30, 'email_3', 'website_3', 3, false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
-    (40, 'email_4', 'website_4', 4, true, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
+    (10, 'am_1', 'email_1', 'website_1', 1, false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
+    (20, 'am_2', 'email_2', 'website_2', 2, true, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
+    (30, 'am_3', 'email_3', 'website_3', 3, false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
+    (40, 'am_4', 'email_4', 'website_4', 4, true, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
 
 insert into role(id, name, deleted, created_time, modified_time)
     values

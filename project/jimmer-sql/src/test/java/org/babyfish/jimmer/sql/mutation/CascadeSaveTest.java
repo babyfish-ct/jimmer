@@ -1,16 +1,24 @@
 package org.babyfish.jimmer.sql.mutation;
 
+import org.babyfish.jimmer.Immutable;
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
+import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.runtime.DbNull;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -735,6 +743,182 @@ public class CascadeSaveTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testCascadeInsertWithOneToOne() {
+        setAutoIds(Administrator.class, 5L);
+        setAutoIds(AdministratorMetadata.class, 50L);
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    UserIdGenerator idGenerator = this::autoId;
+                    it.setIdGenerator(idGenerator);
+                    it.addDraftInterceptor(new Interceptor());
+                }).getEntities().saveCommand(
+                        AdministratorDraft.$.produce(draft -> {
+                            draft.setName("a_5");
+                            draft.setMetadata(metadata -> {
+                                metadata.setName("am_5");
+                                metadata.setEmail("email_5");
+                                metadata.setWebsite("website_5");
+                            });
+                        })
+                ).configure(it -> it.setAutoAttachingAll()),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME from " +
+                                        "ADMINISTRATOR as tb_1_ " +
+                                        "where tb_1_.NAME = ?"
+                        );
+                        it.variables("a_5");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into ADMINISTRATOR(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ID) " +
+                                        "values(?, ?, ?, ?, ?)"
+                        );
+                        it.variables("a_5", false, Interceptor.TIME, Interceptor.TIME, 5L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from ADMINISTRATOR_METADATA as tb_1_ " +
+                                        "where tb_1_.NAME = ?"
+                        );
+                        it.variables("am_5");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into ADMINISTRATOR_METADATA(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID, ID) " +
+                                        "values(?, ?, ?, ?, ?, ?, ?, ?)"
+                        );
+                        it.variables("am_5", false, Interceptor.TIME, Interceptor.TIME, "email_5", "website_5", 5L, 50L);
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{" +
+                                        "--->\"name\":\"a_5\"," +
+                                        "--->\"metadata\":{" +
+                                        "--->--->\"name\":\"am_5\"," +
+                                        "--->--->\"email\":\"email_5\"," +
+                                        "--->--->\"website\":\"website_5\"" +
+                                        "--->}" +
+                                        "}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "--->\"name\":\"a_5\"," +
+                                        "--->\"deleted\":false," +
+                                        "--->\"createdTime\":\"2022-10-15 16:55:00\"," +
+                                        "--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
+                                        "--->\"metadata\":{" +
+                                        "--->--->\"name\":\"am_5\"," +
+                                        "--->--->\"deleted\":false," +
+                                        "--->--->\"createdTime\":\"2022-10-15 16:55:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
+                                        "--->--->\"email\":\"email_5\"," +
+                                        "--->--->\"website\":\"website_5\"," +
+                                        "--->--->\"administrator\":{\"id\":5}," +
+                                        "--->--->\"id\":50" +
+                                        "--->}," +
+                                        "--->\"id\":5" +
+                                        "}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testCascadeUpdateWithOneToOne() {
+        executeAndExpectResult(
+                getSqlClient(it -> {
+                    UserIdGenerator idGenerator = this::autoId;
+                    it.setIdGenerator(idGenerator);
+                    it.addDraftInterceptor(new Interceptor());
+                }).getEntities().saveCommand(
+                        AdministratorDraft.$.produce(draft -> {
+                            draft.setName("a_4");
+                            draft.setMetadata(metadata -> {
+                                metadata.setName("am_4");
+                                metadata.setEmail("email_4+");
+                                metadata.setWebsite("website_4+");
+                            });
+                        })
+                ).configure(it -> it.setAutoAttachingAll()),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from ADMINISTRATOR as tb_1_ " +
+                                        "where tb_1_.NAME = ?"
+                        );
+                        it.variables("a_4");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update ADMINISTRATOR " +
+                                        "set DELETED = ?, MODIFIED_TIME = ? " +
+                                        "where ID = ?"
+                        );
+                        it.variables(false, Interceptor.TIME, 4L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from ADMINISTRATOR_METADATA as tb_1_ " +
+                                        "where tb_1_.NAME = ?"
+                        );
+                        it.variables("am_4");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update ADMINISTRATOR_METADATA " +
+                                        "set DELETED = ?, MODIFIED_TIME = ?, EMAIL = ?, WEBSITE = ?, ADMINISTRATOR_ID = ? " +
+                                        "where ID = ?"
+                        );
+                        it.variables(false, Interceptor.TIME, "email_4+", "website_4+", 4L, 40L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID " +
+                                        "from ADMINISTRATOR_METADATA " +
+                                        "where ADMINISTRATOR_ID = ? and ID not in(?)"
+                        );
+                        it.variables(4L, 40L);
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{" +
+                                        "--->\"name\":\"a_4\"," +
+                                        "--->\"metadata\":{" +
+                                        "--->--->\"name\":\"am_4\"," +
+                                        "--->--->\"email\":\"email_4+\"," +
+                                        "--->--->\"website\":\"website_4+\"" +
+                                        "--->}" +
+                                        "}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "--->\"name\":\"a_4\"," +
+                                        "--->\"deleted\":false," +
+                                        "--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
+                                        "--->\"metadata\":{" +
+                                        "--->--->\"name\":\"am_4\"," +
+                                        "--->--->\"deleted\":false," +
+                                        "--->--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
+                                        "--->--->\"email\":\"email_4+\"," +
+                                        "--->--->\"website\":\"website_4+\"," +
+                                        "--->--->\"administrator\":{\"id\":4}," +
+                                        "--->--->\"id\":40" +
+                                        "--->}," +
+                                        "--->\"id\":4" +
+                                        "}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
     public void saveTree() {
         setAutoIds(TreeNode.class, 100L, 101L, 102L);
         executeAndExpectResult(
@@ -910,5 +1094,25 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     });
                 }
         );
+    }
+
+    private static class Interceptor implements DraftInterceptor<NamedEntityDraft> {
+
+        public static final LocalDateTime TIME = LocalDateTime.of(
+                2022, 10, 15, 16, 55
+        );
+
+        @Override
+        public void beforeSave(@NotNull NamedEntityDraft draft, boolean isNew) {
+            if (!ImmutableObjects.isLoaded(draft, NamedEntityProps.DELETED)) {
+                draft.setDeleted(false);
+            }
+            if (!ImmutableObjects.isLoaded(draft, NamedEntityProps.MODIFIED_TIME)) {
+                draft.setModifiedTime(TIME);
+            }
+            if (isNew && !ImmutableObjects.isLoaded(draft, NamedEntityProps.CREATED_TIME)) {
+                draft.setCreatedTime(TIME);
+            }
+        }
     }
 }
