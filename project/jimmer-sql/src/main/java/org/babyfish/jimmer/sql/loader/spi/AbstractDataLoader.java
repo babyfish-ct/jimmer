@@ -27,7 +27,7 @@ import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FieldFilterArgsImpl;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
-import org.babyfish.jimmer.sql.filter.impl.AbstractFilterArgs;
+import org.babyfish.jimmer.sql.filter.impl.AbstractFilterArgsImpl;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.meta.Storage;
@@ -686,19 +686,18 @@ public abstract class AbstractDataLoader {
             targetDraft.__set(targetIdProp.getId(), id);
         });
     }
+    
+    private static class FilterArgsImpl extends AbstractFilterArgsImpl<Props> {
 
-    private static class FilterArgsImpl extends AbstractFilterArgs<Props> {
-
-        private final Table<?> table;
-
-        public FilterArgsImpl(Sortable sortable, Table<?> table) {
+        private final Props table;
+        
+        public FilterArgsImpl(Sortable sortable, Props table) {
             super(sortable);
             this.table = table;
         }
 
         @Override
-        @NotNull
-        public Props getTable() {
+        public @NotNull Props getTable() {
             return table;
         }
     }

@@ -15,7 +15,7 @@ import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.filter.Filter;
-import org.babyfish.jimmer.sql.filter.impl.AbstractFilterArgs;
+import org.babyfish.jimmer.sql.filter.impl.AbstractFilterArgsImpl;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -246,16 +246,15 @@ public abstract class AbstractMutableQueryImpl
         }
     }
 
-    private static class FilterArgsImpl extends AbstractFilterArgs<Props> {
+    private static class FilterArgsImpl extends AbstractFilterArgsImpl<Props> {
 
-        public FilterArgsImpl(AbstractMutableQueryImpl query) {
-            super(query);
+        public FilterArgsImpl(AbstractMutableQueryImpl sortable) {
+            super(sortable);
         }
 
         @Override
-        public @NotNull Props getTable() {
-            return ((AbstractMutableQueryImpl) sortable).getTable();
+        public @NotNull Table<?> getTable() {
+            return ((AbstractMutableQueryImpl)sortable).getTable();
         }
-
     }
 }

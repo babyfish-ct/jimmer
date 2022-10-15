@@ -72,7 +72,6 @@ class PropsGenerator(
         if (prop.isTransient) {
             return
         }
-
         if (outerJoin && !prop.isAssociation) {
             return
         }

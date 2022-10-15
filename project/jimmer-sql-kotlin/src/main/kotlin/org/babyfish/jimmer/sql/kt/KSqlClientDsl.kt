@@ -6,6 +6,8 @@ import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.cache.*
 import org.babyfish.jimmer.sql.dialect.Dialect
+import org.babyfish.jimmer.sql.kt.filter.KFilter
+import org.babyfish.jimmer.sql.kt.filter.impl.toJavaFilter
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
 import org.babyfish.jimmer.sql.meta.IdGenerator
 import org.babyfish.jimmer.sql.runtime.*
@@ -60,6 +62,22 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setCaches {
             CacheDsl(it).block()
         }
+    }
+
+    fun addFilters(vararg filters: KFilter<*>) {
+        javaBuilder.addFilters(filters.map { it.toJavaFilter() })
+    }
+
+    fun addFilters(filters: Collection<KFilter<*>>) {
+        javaBuilder.addFilters(filters.map { it.toJavaFilter() })
+    }
+
+    fun addDisabledFilters(vararg filters: KFilter<*>) {
+        javaBuilder.addDisabledFilters(filters.map { it.toJavaFilter() })
+    }
+
+    fun addDisabledFilters(filters: Collection<KFilter<*>>) {
+        javaBuilder.addDisabledFilters(filters.map { it.toJavaFilter() })
     }
 
     fun addDraftInterceptor(interceptor: DraftInterceptor<*>) {

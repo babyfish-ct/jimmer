@@ -8,12 +8,14 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig
+import org.babyfish.jimmer.sql.filter.FilterConfig
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableDeleteImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableUpdateImpl
+import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.loader.KListLoader
 import org.babyfish.jimmer.sql.kt.loader.KReferenceLoader
 import org.babyfish.jimmer.sql.kt.loader.KValueLoader
@@ -105,9 +107,30 @@ internal class KSqlClientImpl(
         }.execute(block)
 
     override fun caches(block: KCacheDisableDsl.() -> Unit): KSqlClient =
-        KSqlClientImpl(
-            javaClient.caches { block(KCacheDisableDsl(CacheDisableConfig())) }
-        )
+        javaClient
+            .caches {
+                block(KCacheDisableDsl(it))
+            }
+            .let {
+                if (javaClient === it) {
+                    this
+                } else {
+                    KSqlClientImpl(it)
+                }
+            }
+
+    override fun filters(block: KFilterDsl.() -> Unit): KSqlClient =
+        javaClient
+            .filters {
+                block(KFilterDsl(it))
+            }
+            .let {
+                if (javaClient === it) {
+                    this
+                } else {
+                    KSqlClientImpl(it)
+                }
+            }
 
     override fun disableSlaveConnectionManager(): KSqlClient =
         javaClient.disableSlaveConnectionManager().let {

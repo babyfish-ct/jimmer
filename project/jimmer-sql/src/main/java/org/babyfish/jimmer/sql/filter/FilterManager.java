@@ -17,6 +17,7 @@ import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
 import org.babyfish.jimmer.sql.cache.LocatedCache;
 import org.babyfish.jimmer.sql.event.EntityEvent;
+import org.babyfish.jimmer.sql.filter.impl.TypeAwareFilter;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
@@ -239,6 +240,9 @@ public class FilterManager {
     }
 
     private static ImmutableType getImmutableType(Filter<Props> filter) {
+        if (filter instanceof TypeAwareFilter) {
+            return ((TypeAwareFilter)filter).getImmutableType();
+        }
         Class<?> filterClass = filter.getClass();
         Collection<Type> filterTypeArguments = TypeUtils
                 .getTypeArguments(filterClass, Filter.class)
@@ -252,12 +256,12 @@ public class FilterManager {
                             "`"
             );
         }
-        Type columnsType = filterTypeArguments.iterator().next();
-        Class<?> columnsClass;
-        if (columnsType instanceof Class<?>) {
-            columnsClass = (Class<?>) columnsType;
-        } else if (columnsType instanceof ParameterizedType){
-            columnsClass = (Class<?>)((ParameterizedType)columnsType).getRawType();
+        Type propsType = filterTypeArguments.iterator().next();
+        Class<?> propsClass;
+        if (propsType instanceof Class<?>) {
+            propsClass = (Class<?>) propsType;
+        } else if (propsType instanceof ParameterizedType){
+            propsClass = (Class<?>)((ParameterizedType)propsType).getRawType();
         } else {
             throw new IllegalStateException(
                     "`" +
@@ -267,7 +271,7 @@ public class FilterManager {
                             "` can only be class of parameterized type"
             );
         }
-        if (TableEx.class.isAssignableFrom(columnsClass)) {
+        if (TableEx.class.isAssignableFrom(propsClass)) {
             throw new IllegalStateException(
                     "`" +
                             filterClass.getName() +
@@ -276,11 +280,11 @@ public class FilterManager {
                             "` can not be `TableEx`"
             );
         }
-        if (Table.class.isAssignableFrom(columnsClass)) {
-            Collection<Type> columnsTypeArguments = TypeUtils
-                    .getTypeArguments(columnsType, Table.class)
+        if (Table.class.isAssignableFrom(propsClass)) {
+            Collection<Type> propsTypeArguments = TypeUtils
+                    .getTypeArguments(propsType, Table.class)
                     .values();
-            if (columnsTypeArguments.isEmpty()) {
+            if (propsTypeArguments.isEmpty()) {
                 throw new IllegalStateException(
                         "`" +
                                 filterClass.getName() +
@@ -289,7 +293,7 @@ public class FilterManager {
                                 "`"
                 );
             }
-            Type entityType = columnsTypeArguments.iterator().next();
+            Type entityType = propsTypeArguments.iterator().next();
             if (!(entityType instanceof Class<?>)) {
                 throw new IllegalStateException(
                         "`" +
@@ -300,14 +304,14 @@ public class FilterManager {
                 );
             }
             return ImmutableType.get((Class<?>) entityType);
-        } else if (Props.class.isAssignableFrom(columnsClass)) {
-            PropsFor propsFor = columnsClass.getAnnotation(PropsFor.class);
-            if (Props.class == columnsClass) {
+        } else if (Props.class.isAssignableFrom(propsClass)) {
+            PropsFor propsFor = propsClass.getAnnotation(PropsFor.class);
+            if (Props.class == propsClass) {
                 throw new IllegalStateException(
                         "`" +
                                 filterClass.getName() +
                                 "` is illegal, its type argument cannot be `" +
-                                columnsClass.getName() +
+                                propsClass.getName() +
                                 "`"
                 );
             }
@@ -318,7 +322,7 @@ public class FilterManager {
                                 "` is illegal, the type argument of `" +
                                 Props.class.getName() +
                                 "` is `" +
-                                columnsClass.getName() +
+                                propsClass.getName() +
                                 "` which is not decorated by `@" +
                                 PropsFor.class.getName() +
                                 "`"
@@ -510,6 +514,7 @@ public class FilterManager {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void removeCache(ImmutableProp prop, Cache<?, ?> cache, EntityEvent<?> e) {
         ImmutableProp mappedBy = prop.getMappedBy();
         if (mappedBy != null && mappedBy.getStorage() instanceof Column) {
@@ -519,7 +524,7 @@ public class FilterManager {
                 if (source != null) {
                     ImmutableType sourceType = source.__type();
                     Object sourceId = source.__get(sourceType.getIdProp().getId());
-                    sqlClient.getCaches().getPropertyCache(prop).delete(sourceId);
+                    ((Cache<Object, Object>)cache).delete(sourceId);
                 }
             }
         } else {
@@ -540,7 +545,7 @@ public class FilterManager {
                         .distinct()
                         .execute();
                 if (!sourceIds.isEmpty()) {
-                    sqlClient.getCaches().getPropertyCache(prop).deleteAll(sourceIds);
+                    ((Cache<Object, Object>)cache).deleteAll(sourceIds);
                 }
             }
         }

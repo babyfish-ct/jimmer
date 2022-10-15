@@ -9,8 +9,6 @@ import java.util.*;
 
 class ParameterizedChainCacheImpl<K, V> extends ChainCacheImpl<K, V> implements Cache.Parameterized<K, V> {
 
-    private ParameterizedNode<K, V> parameterizedNode;
-
     public ParameterizedChainCacheImpl(List<Object> binders) {
         super(binders);
         boolean hasParameterizedBinder = false;
@@ -38,7 +36,7 @@ class ParameterizedChainCacheImpl<K, V> extends ChainCacheImpl<K, V> implements 
             @NotNull CacheEnvironment<K, V> env
     ) {
         return usingCacheLoading(
-                env.getLoader(), () -> parameterizedNode.loadAll(keys, parameterMap)
+                env.getLoader(), () -> ((ParameterizedNode<K, V>)node).loadAll(keys, parameterMap)
         );
     }
 
@@ -46,13 +44,13 @@ class ParameterizedChainCacheImpl<K, V> extends ChainCacheImpl<K, V> implements 
     @Override
     protected Node<K, V> createNode(Object binder, Node<K, V> next) {
         if (binder instanceof LoadingBinder.Parameterized<?, ?>) {
-            return parameterizedNode = new ParameterizedLoadingNode<K, V>(
+            return new ParameterizedLoadingNode<K, V>(
                     (LoadingBinder.Parameterized<K, V>) binder,
                     (ParameterizedNode<K, V>) next
             );
         }
         if (binder instanceof SimpleBinder.Parameterized<?, ?>) {
-            return parameterizedNode = new ParameterizedSimpleNode<K, V>(
+            return new ParameterizedSimpleNode<K, V>(
                     (SimpleBinder.Parameterized<K, V>) binder,
                     next
             );

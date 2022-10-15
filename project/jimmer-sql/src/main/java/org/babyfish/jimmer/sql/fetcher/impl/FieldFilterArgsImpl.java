@@ -19,11 +19,11 @@ import java.util.function.Function;
 
 public class FieldFilterArgsImpl<T extends Table<?>> implements FieldFilterArgs<T> {
 
-    private AbstractMutableQueryImpl query;
+    private final AbstractMutableQueryImpl query;
 
-    private T table;
+    private final T table;
 
-    private Collection<Object> keys;
+    private final Collection<Object> keys;
 
     public static <T extends Table<?>> FieldFilterArgs<T> of(
             AbstractMutableQueryImpl query,
