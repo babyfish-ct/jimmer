@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.sql.model.inheritance;
 
+import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ManyToOne;
 import org.babyfish.jimmer.sql.MappedSuperclass;
+import org.babyfish.jimmer.sql.OnDissociate;
 
 @MappedSuperclass
 public interface AdministratorMetadataBase extends NamedEntity {
@@ -11,5 +13,6 @@ public interface AdministratorMetadataBase extends NamedEntity {
     String getWebsite();
 
     @ManyToOne
+    @OnDissociate(DissociateAction.DELETE)
     Administrator getAdministrator();
 }

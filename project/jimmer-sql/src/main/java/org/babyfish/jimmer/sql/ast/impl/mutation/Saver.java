@@ -4,6 +4,7 @@ import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -102,19 +103,20 @@ class Saver {
                     childTableOperator = new ChildTableOperator(
                             data.getSqlClient(),
                             con,
-                            mappedBy
+                            RedirectedProp.source(mappedBy, prop.getTargetType())
                     );
                 }
                 Object associatedValue = currentDraftSpi.__get(prop.getId());
                 Set<Object> associatedObjectIds = new LinkedHashSet<>();
-                if (associatedValue instanceof List<?>) {
-                    List<DraftSpi> associatedObjects = (List<DraftSpi>) associatedValue;
+                if (associatedValue != null) {
+                    List<DraftSpi> associatedObjects =
+                            associatedValue instanceof List<?> ?
+                                    (List<DraftSpi>) associatedValue :
+                                    Collections.singletonList((DraftSpi) associatedValue);
                     if (childTableOperator != null) {
                         int targetIdPropId = prop.getTargetType().getIdProp().getId();
-                        Iterator<DraftSpi> itr = new ArrayList<>(associatedObjects).iterator();
                         List<Object> updatingTargetIds = new ArrayList<>();
-                        while (itr.hasNext()) {
-                            DraftSpi associatedObject = itr.next();
+                        for (DraftSpi associatedObject : associatedObjects) {
                             if (isNonIdPropLoaded(associatedObject, false)) {
                                 associatedObject.__set(
                                         mappedBy.getId(),
@@ -124,7 +126,6 @@ class Saver {
                                 );
                             } else {
                                 updatingTargetIds.add(associatedObject.__get(targetIdPropId));
-                                itr.remove();
                             }
                         }
                         if (!updatingTargetIds.isEmpty()) {
@@ -135,9 +136,6 @@ class Saver {
                     for (DraftSpi associatedObject : associatedObjects) {
                         associatedObjectIds.add(saveAssociatedObjectAndGetId(prop, associatedObject));
                     }
-                } else if (associatedValue != null) {
-                    DraftSpi associatedObject = (DraftSpi) associatedValue;
-                    associatedObjectIds.add(saveAssociatedObjectAndGetId(prop, associatedObject));
                 }
                 ImmutableProp middleTableProp = null;
                 MiddleTable middleTable = null;

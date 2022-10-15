@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.model.inheritance;
 
-import org.babyfish.jimmer.sql.JoinTable;
-import org.babyfish.jimmer.sql.ManyToMany;
-import org.babyfish.jimmer.sql.MappedSuperclass;
-import org.babyfish.jimmer.sql.OneToOne;
+import org.babyfish.jimmer.sql.*;
 
 import java.util.List;
 
