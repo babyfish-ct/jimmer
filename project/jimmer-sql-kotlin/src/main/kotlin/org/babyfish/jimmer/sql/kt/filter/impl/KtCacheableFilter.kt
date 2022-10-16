@@ -10,7 +10,7 @@ internal class KtCacheableFilter<E: Any>(
     javaFilter: CacheableFilter<Props>
 ) : KtFilter<E>(javaFilter), KCacheableFilter<E> {
 
-    override fun getParameters(): NavigableMap<String, Any> =
+    override fun getParameters(): SortedMap<String, Any> =
         (javaFilter as CacheableFilter<*>).parameters
 
     override fun isAffectedBy(e: EntityEvent<*>): Boolean =

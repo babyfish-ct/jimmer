@@ -32,7 +32,7 @@ class ParameterizedChainCacheImpl<K, V> extends ChainCacheImpl<K, V> implements 
     @NotNull
     public Map<K, V> getAll(
             @NotNull Collection<K> keys,
-            @NotNull NavigableMap<String, Object> parameterMap,
+            @NotNull SortedMap<String, Object> parameterMap,
             @NotNull CacheEnvironment<K, V> env
     ) {
         return usingCacheLoading(
@@ -68,7 +68,7 @@ class ParameterizedChainCacheImpl<K, V> extends ChainCacheImpl<K, V> implements 
     private static class TailNode<K, V> extends ChainCacheImpl.TailNode<K, V> implements ParameterizedNode<K, V> {
 
         @Override
-        public @NotNull Map<K, V> loadAll(@NotNull Collection<K> keys, @NotNull NavigableMap<String, Object> parameterMap) {
+        public @NotNull Map<K, V> loadAll(@NotNull Collection<K> keys, @NotNull SortedMap<String, Object> parameterMap) {
             CacheLoader<K, V> loader = currentCacheLoader();
             return loader.loadAll(keys);
         }
@@ -96,7 +96,7 @@ class ParameterizedChainCacheImpl<K, V> extends ChainCacheImpl<K, V> implements 
         @NotNull
         public Map<K, V> loadAll(
                 @NotNull Collection<K> keys,
-                @NotNull NavigableMap<String, Object> parameterMap
+                @NotNull SortedMap<String, Object> parameterMap
         ) {
             return binder.getAll(keys, parameterMap);
         }
@@ -117,7 +117,7 @@ class ParameterizedChainCacheImpl<K, V> extends ChainCacheImpl<K, V> implements 
         @Override
         public @NotNull Map<K, V> loadAll(
                 @NotNull Collection<K> keys,
-                @NotNull NavigableMap<String, Object> parameterMap
+                @NotNull SortedMap<String, Object> parameterMap
         ) {
             SimpleBinder.Parameterized<K, V> parameterizedBinder =
                     (SimpleBinder.Parameterized<K, V>) binder;

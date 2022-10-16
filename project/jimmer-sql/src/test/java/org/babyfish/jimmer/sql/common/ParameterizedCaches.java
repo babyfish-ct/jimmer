@@ -11,7 +11,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 public class ParameterizedCaches {
 
@@ -81,7 +80,7 @@ public class ParameterizedCaches {
         @Override
         public @NotNull Map<K, V> getAll(
                 @NotNull Collection<K> keys,
-                @NotNull NavigableMap<String, Object> parameterMap
+                @NotNull SortedMap<String, Object> parameterMap
         ) {
             Map<K, V> map = read(valueMap, keys, parameterMap);
             if (map.size() < keys.size()) {
@@ -119,12 +118,12 @@ public class ParameterizedCaches {
         private final Map<K, Map<Map<String, Object>, V>> valueMap = new HashMap<>();
         
         @Override
-        public @NotNull Map<K, V> getAll(@NotNull Collection<K> keys, @NotNull NavigableMap<String, Object> parameterMap) {
+        public @NotNull Map<K, V> getAll(@NotNull Collection<K> keys, @NotNull SortedMap<String, Object> parameterMap) {
             return read(valueMap, keys, parameterMap);
         }
 
         @Override
-        public void setAll(@NotNull Map<K, V> map, @NotNull NavigableMap<String, Object> parameterMap) {
+        public void setAll(@NotNull Map<K, V> map, @NotNull SortedMap<String, Object> parameterMap) {
             write(valueMap, map, parameterMap);
         }
 

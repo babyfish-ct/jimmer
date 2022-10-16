@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.NavigableMap;
+import java.util.SortedMap;
 
 class ParameterizedLocatedCacheImpl<K, V> extends LocatedCacheImpl<K, V> implements Cache.Parameterized<K, V> {
 
@@ -17,7 +17,7 @@ class ParameterizedLocatedCacheImpl<K, V> extends LocatedCacheImpl<K, V> impleme
     @Override
     public @NotNull Map<K, V> getAll(
             @NotNull Collection<K> keys,
-            @NotNull NavigableMap<String, Object> parameterMap,
+            @NotNull SortedMap<String, Object> parameterMap,
             @NotNull CacheEnvironment<K, V> env
     ) {
         return loading(() -> {

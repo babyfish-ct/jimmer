@@ -241,8 +241,8 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
         }
 
         @Override
-        public NavigableMap<String, Object> getParameters() {
-            NavigableMap<String, Object> map = new TreeMap<>();
+        public SortedMap<String, Object> getParameters() {
+            SortedMap<String, Object> map = new TreeMap<>();
             map.put("deleted", false);
             return map;
         }

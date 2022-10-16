@@ -23,19 +23,19 @@ class KFilterDsl internal constructor(
         javaConfig.disable(filters.map { it.toJavaFilter() })
     }
 
-    fun enableByTypes(vararg filterTypes: KClass<KFilter<*>>) {
+    fun enableByTypes(vararg filterTypes: KClass<*>) {
         javaConfig.enableByTypes(filterTypes.map { it.java })
     }
 
-    fun enableByTypes(filterTypes: Collection<KClass<KFilter<*>>>) {
+    fun enableByTypes(filterTypes: Collection<KClass<*>>) {
         javaConfig.enableByTypes(filterTypes.map { it.java })
     }
 
-    fun disableByTypes(vararg filterTypes: KClass<KFilter<*>>) {
+    fun disableByTypes(vararg filterTypes: KClass<*>) {
         javaConfig.disableByTypes(filterTypes.map { it.java })
     }
 
-    fun disableByTypes(filterTypes: Collection<KClass<KFilter<*>>>) {
+    fun disableByTypes(filterTypes: Collection<KClass<*>>) {
         javaConfig.disableByTypes(filterTypes.map { it.java })
     }
 }

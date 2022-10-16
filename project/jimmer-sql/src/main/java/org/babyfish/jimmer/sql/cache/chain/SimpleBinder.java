@@ -1,44 +1,36 @@
 package org.babyfish.jimmer.sql.cache.chain;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.NavigableMap;
+import java.util.SortedMap;
 
 public interface SimpleBinder<K, V> {
 
-    @NotNull
-    Map<K, V> getAll(@NotNull Collection<K> keys);
+    Map<K, V> getAll(Collection<K> keys);
 
-    void setAll(@NotNull Map<K, V> map);
+    void setAll(Map<K, V> map);
 
-    void deleteAll(@NotNull Collection<K> keys, @Nullable Object reason);
+    void deleteAll(Collection<K> keys, Object reason);
 
     interface Parameterized<K, V> extends SimpleBinder<K, V> {
 
-        @Override
-        @NotNull
-        default Map<K, V> getAll(@NotNull Collection<K> keys) {
-            return getAll(keys, Collections.emptyNavigableMap());
+        default Map<K, V> getAll(Collection<K> keys) {
+            return getAll(keys, Collections.emptySortedMap());
         }
 
-        @Override
-        default void setAll(@NotNull Map<K, V> map) {
-            setAll(map, Collections.emptyNavigableMap());
+        default void setAll(Map<K, V> map) {
+            setAll(map, Collections.emptySortedMap());
         }
 
-        @NotNull
         Map<K, V> getAll(
-                @NotNull Collection<K> keys,
-                @NotNull NavigableMap<String, Object> parameterMap
+                Collection<K> keys,
+                SortedMap<String, Object> parameterMap
         );
 
         void setAll(
-                @NotNull Map<K, V> map,
-                @NotNull NavigableMap<String, Object> parameterMap
+                Map<K, V> map,
+                SortedMap<String, Object> parameterMap
         );
     }
 }

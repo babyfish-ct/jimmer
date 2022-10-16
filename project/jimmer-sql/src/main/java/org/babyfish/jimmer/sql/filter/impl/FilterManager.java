@@ -181,7 +181,10 @@ public class FilterManager implements Filters {
         for (Filter<?> filter : disabledFilters) {
             boolean matched = false;
             for (Class<?> expectedType : filterTypes) {
-                if (expectedType.isAssignableFrom(filter.getClass())) {
+                Class<?> actualType = filter instanceof TypeAwareFilter ?
+                        ((TypeAwareFilter) filter).getFilterType() :
+                        filter.getClass();
+                if (expectedType.isAssignableFrom(actualType)) {
                     matched = true;
                     break;
                 }
@@ -201,7 +204,10 @@ public class FilterManager implements Filters {
         for (Filter<?> filter : allFilters) {
             boolean matched = false;
             for (Class<?> expectedType : filterTypes) {
-                if (expectedType.isAssignableFrom(filter.getClass())) {
+                Class<?> actualType = filter instanceof TypeAwareFilter ?
+                        ((TypeAwareFilter) filter).getFilterType() :
+                        filter.getClass();
+                if (expectedType.isAssignableFrom(actualType)) {
                     matched = true;
                     break;
                 }
@@ -477,11 +483,11 @@ public class FilterManager implements Filters {
         }
 
         @Override
-        public NavigableMap<String, Object> getParameters() {
+        public SortedMap<String, Object> getParameters() {
             if (filters.size() == 1) {
                 return filters.get(0).getParameters();
             }
-            NavigableMap<String, Object> map = new TreeMap<>();
+            SortedMap<String, Object> map = new TreeMap<>();
             for (CacheableFilter<Props> filter : filters) {
                 for (Map.Entry<String, Object> e : filter.getParameters().entrySet()) {
                     String key = e.getKey();

@@ -49,10 +49,10 @@ class PropsGenerator(
                     )
                     val type = ctx.typeOf(modelClassDeclaration)
                     for (prop in type.properties.values) {
-                        addProp(type, prop, nonNullTable = false, outerJoin = false)
                         addProp(type, prop, nonNullTable = true, outerJoin = false)
-                        addProp(type, prop, nonNullTable = false, outerJoin = true)
+                        addProp(type, prop, nonNullTable = false, outerJoin = false)
                         addProp(type, prop, nonNullTable = true, outerJoin = true)
+                        addProp(type, prop, nonNullTable = false, outerJoin = true)
                     }
                     if (type.isEntity) {
                         addFetchByFun(type, false)
@@ -77,28 +77,14 @@ class PropsGenerator(
         if (outerJoin && !prop.isAssociation) {
             return
         }
-        if (nonNullTable && (
-                (prop.isAssociation && outerJoin) ||
-                    (!prop.isAssociation && prop.isNullable)
-            )
-        ) {
+        if (nonNullTable && (prop.isAssociation || prop.isNullable)) {
             return
         }
-
-        val receiverClassName = if (prop.isList) {
-            when {
-                outerJoin -> K_TABLE_EX_CLASS_NAME
-                nonNullTable -> K_NON_NULL_TABLE_EX_CLASS_NAME
-                prop.isAssociation -> K_NULLABLE_TABLE_EX_CLASS_NAME
-                else -> K_PROPS_CLASS_NAME
-            }
-        } else {
-            when {
-                outerJoin -> K_PROPS_CLASS_NAME
-                nonNullTable -> K_NON_NULL_PROPS_CLASS_NAME
-                prop.isAssociation -> K_NULLABLE_PROPS_CLASS_NAME
-                else -> K_PROPS_CLASS_NAME
-            }
+        val receiverClassName = when {
+            prop.isList -> K_TABLE_EX_CLASS_NAME
+            prop.isAssociation || prop.isNullable -> K_PROPS_CLASS_NAME
+            nonNullTable -> K_NON_NULL_PROPS_CLASS_NAME
+            else -> K_NULLABLE_PROPS_CLASS_NAME
         }.parameterizedBy(
             type.className
         )
@@ -111,17 +97,11 @@ class PropsGenerator(
         }
         val returnClassName =
             when {
-                prop.isList ->
-                    if (nonNullTable) {
-                        K_NON_NULL_TABLE_EX_CLASS_NAME
-                    } else {
-                        K_NULLABLE_TABLE_EX_CLASS_NAME
-                    }
                 prop.isAssociation ->
-                    if (nonNullTable) {
-                        K_NON_NULL_TABLE_CLASS_NAME
-                    } else {
+                    if (outerJoin) {
                         K_NULLABLE_TABLE_CLASS_NAME
+                    } else {
+                        K_NON_NULL_TABLE_CLASS_NAME
                     }
                 else ->
                     if (nonNullTable) {

@@ -53,9 +53,9 @@ public class RolePermissionCountResolver implements TransientResolver.Parameteri
     }
 
     @Override
-    public NavigableMap<String, Object> getParameters() {
-        return filter instanceof CacheableFilter<?> ?
-                ((CacheableFilter<?>)filter).getParameters() :
-                Collections.emptyNavigableMap();
+    public SortedMap<String, Object> getParameters() {
+        return filter != null ?
+                filter.getParameters() :
+                Collections.emptySortedMap();
     }
 }

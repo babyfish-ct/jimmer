@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.NavigableMap;
+import java.util.SortedMap;
 
 public interface CacheChain<K, V> {
 
@@ -16,7 +16,7 @@ public interface CacheChain<K, V> {
         @NotNull
         Map<K, V> loadAll(
                 @NotNull Collection<K> keys,
-                @NotNull NavigableMap<String, Object> parameterMap
+                @NotNull SortedMap<String, Object> parameterMap
         );
     }
 }
