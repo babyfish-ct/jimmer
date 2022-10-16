@@ -486,7 +486,7 @@ public abstract class AbstractDataLoader {
         
         if (sourceIds.size() == 1) {
             Object sourceId = sourceIds.iterator().next();
-            List<Object> targetIds = Queries.createQuery(sqlClient, prop.getDeclaringType(), ExecutionPurpose.DATA_LOADER, true, (q, source) -> {
+            List<Object> targetIds = Queries.createQuery(sqlClient, prop.getDeclaringType(), ExecutionPurpose.LOADER, true, (q, source) -> {
                 Expression<Object> pkExpr = source.get(sourceIdProp.getName());
                 Table<?> targetTable = source.join(prop.getName());
                 Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
@@ -500,7 +500,7 @@ public abstract class AbstractDataLoader {
             return Utils.toMap(sourceId, targetIds);
         }
         List<Tuple2<Object, Object>> tuples = Queries
-                .createQuery(sqlClient, prop.getDeclaringType(), ExecutionPurpose.DATA_LOADER, true, (q, source) -> {
+                .createQuery(sqlClient, prop.getDeclaringType(), ExecutionPurpose.LOADER, true, (q, source) -> {
                     Expression<Object> pkExpr = source.get(sourceIdProp.getName());
                     Table<?> targetTable = source.join(prop.getName());
                     Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
@@ -530,7 +530,7 @@ public abstract class AbstractDataLoader {
             if (useMiddleTable) {
                 if (sourceIds.size() == 1) {
                     Object sourceId = sourceIds.iterator().next();
-                    List<Object> targetIds = Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.DATA_LOADER, (q, association) -> {
+                    List<Object> targetIds = Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.LOADER, (q, association) -> {
                         Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
                         Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
                         q.where(sourceIdExpr.eq(sourceId));
@@ -539,7 +539,7 @@ public abstract class AbstractDataLoader {
                     }).limit(limit, offset).execute(con);
                     return Utils.toTuples(sourceId, targetIds);
                 }
-                return Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.DATA_LOADER, (q, association) -> {
+                return Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.LOADER, (q, association) -> {
                     Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
                     Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
                     q.where(sourceIdExpr.in(sourceIds));
@@ -561,7 +561,7 @@ public abstract class AbstractDataLoader {
     @SuppressWarnings("unchecked")
     private List<ImmutableSpi> queryTargets(Collection<Object> targetIds) {
 
-        return Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.DATA_LOADER, globalFiler == null, (q, target) -> {
+        return Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOADER, globalFiler == null, (q, target) -> {
             Expression<Object> idExpr = target.get(targetIdProp.getName());
             q.where(idExpr.in(targetIds));
             applyPropFilter(q, target, targetIds);
@@ -580,7 +580,7 @@ public abstract class AbstractDataLoader {
 
         if (sourceIds.size() == 1) {
             Object sourceId = sourceIds.iterator().next();
-            List<R> results = Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.DATA_LOADER, globalFiler == null, (q, target) -> {
+            List<R> results = Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOADER, globalFiler == null, (q, target) -> {
                 Expression<Object> sourceIdExpr = target
                         .inverseJoin(
                                 RedirectedProp.source(prop, prop.getDeclaringType())
@@ -593,7 +593,7 @@ public abstract class AbstractDataLoader {
             }).limit(limit, offset).execute(con);
             return Utils.toTuples(sourceId, results);
         }
-        return Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.DATA_LOADER, globalFiler == null, (q, target) -> {
+        return Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOADER, globalFiler == null, (q, target) -> {
             Expression<Object> sourceIdExpr = target
                     .inverseJoin(
                             RedirectedProp.source(prop, prop.getDeclaringType())

@@ -83,6 +83,7 @@ public class MutableDeleteImpl
                     con,
                     sqlResult.get_1(),
                     sqlResult.get_2(),
+                    getPurpose(),
                     null,
                     PreparedStatement::executeUpdate
             );

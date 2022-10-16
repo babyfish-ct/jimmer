@@ -593,7 +593,7 @@ public class FilterManager implements Filters {
             String targetIdPropName = prop.getTargetType().getIdProp().getName();
             for (ImmutableType sourceType : sourceTypes) {
                 Collection<Object> sourceIds = Queries
-                        .createQuery(sqlClient, sourceType, ExecutionPurpose.EVICT_CACHE, true, (q, source) -> {
+                        .createQuery(sqlClient, sourceType, ExecutionPurpose.EVICT, true, (q, source) -> {
                             Expression<Object> sourceIdExpr = source.get(sourceType.getIdProp().getName());
                             Expression<Object> targetIdExpr = source.join(prop.getName()).get(targetIdPropName);
                             q.where(targetIdExpr.eq(e.getId()));

@@ -37,7 +37,7 @@ public class MutableRootQueryImpl<T extends Table<?>>
                 aliasAllocator,
                 sqlClient,
                 immutableType,
-                ExecutionPurpose.JOIN_FOR_DELETE,
+                ExecutionPurpose.DELETE, // Join for delete statement
                 true
         );
     }
