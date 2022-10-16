@@ -12,11 +12,14 @@ public class DefaultExecutor implements Executor {
 
     public static final DefaultExecutor INSTANCE = new DefaultExecutor();
 
+    DefaultExecutor() {}
+
     @Override
     public <R> R execute(
             Connection con,
             String sql,
             List<Object> variables,
+            ExecutionPurpose purpose,
             StatementFactory statementFactory,
             SqlFunction<PreparedStatement, R> block
     ) {

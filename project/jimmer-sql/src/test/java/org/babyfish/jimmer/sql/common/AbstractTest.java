@@ -49,11 +49,12 @@ public class AbstractTest {
                 Connection con,
                 String sql,
                 List<Object> variables,
+                ExecutionPurpose purpose,
                 StatementFactory statementFactory,
                 SqlFunction<PreparedStatement, R> block
         ) {
             executions.add(new Execution(sql, variables));
-            return DefaultExecutor.INSTANCE.execute(con, sql, variables, statementFactory, block);
+            return DefaultExecutor.INSTANCE.execute(con, sql, variables, purpose, statementFactory, block);
         }
     }
 

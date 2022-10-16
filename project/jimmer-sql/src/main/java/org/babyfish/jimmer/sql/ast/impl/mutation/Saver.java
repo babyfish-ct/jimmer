@@ -21,6 +21,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.Converters;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.sql.Connection;
@@ -284,7 +285,7 @@ class Saver {
                 String sql = data.getSqlClient().getDialect().getSelectIdFromSequenceSql(
                         ((SequenceIdGenerator)idGenerator).getSequenceName()
                 );
-                id = data.getSqlClient().getExecutor().execute(con, sql, Collections.emptyList(), null, stmt -> {
+                id = data.getSqlClient().getExecutor().execute(con, sql, Collections.emptyList(), ExecutionPurpose.MUTATE, null, stmt -> {
                     try (ResultSet rs = stmt.executeQuery()) {
                         rs.next();
                         return rs.getObject(1);
@@ -372,6 +373,7 @@ class Saver {
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                ExecutionPurpose.MUTATE,
                 generateKeys ?
                         (c, s) ->
                                 c.prepareStatement(s, Statement.RETURN_GENERATED_KEYS) :
@@ -497,6 +499,7 @@ class Saver {
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                ExecutionPurpose.MUTATE,
                 null,
                 PreparedStatement::executeUpdate
         );

@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -156,7 +157,8 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
-                data.getSelections()
+                data.getSelections(),
+                getBaseQuery().getPurpose()
         );
     }
 
@@ -187,6 +189,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
                 sqlResult.get_1(),
                 sqlResult.get_2(),
                 getData().getSelections(),
+                getBaseQuery().getPurpose(),
                 batchSize,
                 consumer
         );
