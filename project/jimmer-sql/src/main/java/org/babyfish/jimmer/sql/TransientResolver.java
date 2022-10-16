@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql;
 import java.sql.Connection;
 import java.util.Collection;
 import java.util.Map;
-import java.util.NavigableMap;
+import java.util.SortedMap;
 
 public interface TransientResolver<ID, V> {
 
@@ -11,6 +11,6 @@ public interface TransientResolver<ID, V> {
 
     interface Parameterized<ID, V> extends TransientResolver<ID, V> {
 
-        NavigableMap<String, Object> getParameters();
+        SortedMap<String, Object> getParameters();
     }
 }

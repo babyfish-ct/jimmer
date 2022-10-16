@@ -239,9 +239,9 @@ public abstract class AbstractDataLoader {
             return loadParentsDirectly(sources);
         }
 
-        NavigableMap<String, Object> parameterMap = cacheableGlobalFilter != null ?
+        SortedMap<String, Object> parameterMap = cacheableGlobalFilter != null ?
                 cacheableGlobalFilter.getParameters() :
-                Collections.emptyNavigableMap();
+                Collections.emptySortedMap();
         Map<Object, Object> fkMap = new LinkedHashMap<>(
                 (sources.size() * 4 + 2) / 3
         );
@@ -366,9 +366,9 @@ public abstract class AbstractDataLoader {
             return loadTargetMapDirectly(sources);
         }
 
-        NavigableMap<String, Object> parameterMap = cacheableGlobalFilter != null ?
+        SortedMap<String, Object> parameterMap = cacheableGlobalFilter != null ?
                 cacheableGlobalFilter.getParameters() :
-                Collections.emptyNavigableMap();
+                Collections.emptySortedMap();
         List<Object> sourceIds = toSourceIds(sources);
         CacheEnvironment<Object, Object> env = new CacheEnvironment<>(
                 sqlClient,
@@ -428,9 +428,9 @@ public abstract class AbstractDataLoader {
             return loadTargetMultiMapDirectly(sources);
         }
 
-        NavigableMap<String, Object> parameterMap = cacheableGlobalFilter != null ?
+        SortedMap<String, Object> parameterMap = cacheableGlobalFilter != null ?
                 cacheableGlobalFilter.getParameters() :
-                Collections.emptyNavigableMap();
+                Collections.emptySortedMap();
         List<Object> sourceIds = toSourceIds(sources);
         CacheEnvironment<Object, List<Object>> env = new CacheEnvironment<>(
                 sqlClient,

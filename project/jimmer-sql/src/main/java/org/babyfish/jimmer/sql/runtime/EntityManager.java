@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import kotlin.reflect.KClass;
 import org.babyfish.jimmer.meta.ImmutableType;
 
 import java.util.*;

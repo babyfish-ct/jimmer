@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.util.List;
-import java.util.NavigableMap;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
 
@@ -612,8 +612,8 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
         }
 
         @Override
-        public NavigableMap<String, Object> getParameters() {
-            NavigableMap<String, Object> map = new TreeMap<>();
+        public SortedMap<String, Object> getParameters() {
+            SortedMap<String, Object> map = new TreeMap<>();
             map.put("deleted", false);
             return map;
         }
@@ -632,8 +632,8 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
         }
 
         @Override
-        public NavigableMap<String, Object> getParameters() {
-            NavigableMap<String, Object> map = new TreeMap<>();
+        public SortedMap<String, Object> getParameters() {
+            SortedMap<String, Object> map = new TreeMap<>();
             map.put("deleted", true);
             return map;
         }

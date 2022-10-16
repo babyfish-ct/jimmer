@@ -10,4 +10,6 @@ import org.babyfish.jimmer.sql.filter.Filter;
 public interface TypeAwareFilter extends Filter<Props> {
 
     ImmutableType getImmutableType();
+
+    Class<?> getFilterType();
 }

@@ -14,5 +14,5 @@ interface AdministratorMetadataBase : NamedEntity {
 
     @ManyToOne
     @OnDissociate(DissociateAction.DELETE)
-    val administrator: Administrator
+    val administrator: Administrator?
 }
