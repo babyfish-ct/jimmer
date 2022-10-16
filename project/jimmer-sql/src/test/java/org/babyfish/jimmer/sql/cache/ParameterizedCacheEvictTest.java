@@ -63,6 +63,11 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
                             public @Nullable Cache<?, List<?>> createAssociatedIdListCache(@NotNull ImmutableProp prop) {
                                 return ParameterizedCaches.create(prop, that::onPropCacheDelete);
                             }
+
+                            @Override
+                            public @Nullable Cache<?, ?> createResolverCache(@NotNull ImmutableProp prop) {
+                                return ParameterizedCaches.create(prop, that::onPropCacheDelete);
+                            }
                         }
                 );
             });
@@ -188,6 +193,7 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 "[" +
+                        "delete Role.permissionCount-[100], " +
                         "delete Role.permissions-[100]" +
                         "]",
                 messages.toString()
@@ -219,7 +225,9 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
                 "[" +
                         "delete Role.permissions-[100], " +
                         "delete Role.permissions-[200], " +
-                        "delete Permission.role-[1000]" +
+                        "delete Permission.role-[1000], " +
+                        "delete Role.permissionCount-[100], " +
+                        "delete Role.permissionCount-[200]" +
                         "]",
                 messages.toString()
         );

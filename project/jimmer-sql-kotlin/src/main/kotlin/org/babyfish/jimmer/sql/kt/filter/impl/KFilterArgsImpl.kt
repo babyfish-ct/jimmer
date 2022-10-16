@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullProps
 import org.babyfish.jimmer.sql.kt.ast.table.KProps
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
 import org.babyfish.jimmer.sql.kt.filter.KFilterArgs
@@ -15,10 +16,10 @@ import org.babyfish.jimmer.sql.kt.impl.KSubQueriesImpl
 import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
 
 internal class KFilterArgsImpl<E: Any>(
-    private val javaQuery: AbstractMutableQueryImpl
+    val javaQuery: AbstractMutableQueryImpl
 ) : KFilterArgs<E> {
 
-    override val table: KProps<E>
+    override val table: KNonNullProps<E>
         get() = KNonNullTableExImpl(javaQuery.getTable());
 
     override fun where(vararg predicates: KNonNullExpression<Boolean>?) {

@@ -83,7 +83,7 @@ public class PropsGenerator {
             ImmutableType superType = type.getSuperType();
             if (type.isEntity() && superType != null && superType.isMappedSuperClass()) {
                 for (ImmutableProp prop : superType.getProps().values()) {
-                    if (prop.isAssociation()) {
+                    if (prop.isAssociation() || prop.isTransient()) {
                         addStaticProp(prop, true);
                     }
                 }

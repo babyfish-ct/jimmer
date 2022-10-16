@@ -8,9 +8,8 @@ import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
-import org.babyfish.jimmer.sql.kt.loader.KListLoader
-import org.babyfish.jimmer.sql.kt.loader.KReferenceLoader
-import org.babyfish.jimmer.sql.kt.loader.KValueLoader
+import org.babyfish.jimmer.sql.kt.filter.KFilters
+import org.babyfish.jimmer.sql.kt.loader.KLoaders
 import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -41,13 +40,11 @@ interface KSqlClient {
 
     val triggers: KTriggers
 
+    val filters: KFilters
+
+    val loaders: KLoaders
+
     fun getAssociations(prop: KProperty1<*, *>): KAssociations
-
-    fun <S: Any, V: Any> getValueLoader(prop: KProperty1<S, V>): KValueLoader<S, V>
-
-    fun <S: Any, T: Any> getReferenceLoader(prop: KProperty1<S, T?>): KReferenceLoader<S, T>
-
-    fun <S: Any, T: Any> getListLoader(prop: KProperty1<S, List<T>>): KListLoader<S, T>
 
     fun <R> executeNativeSql(master: Boolean = false, block: (Connection) -> R): R
 

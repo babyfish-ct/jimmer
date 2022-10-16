@@ -6,13 +6,13 @@ import org.babyfish.jimmer.sql.filter.CacheableFilter
 import org.babyfish.jimmer.sql.kt.filter.KCacheableFilter
 import java.util.*
 
-internal class JavaCacheableFilter(
-    ktFilter: KCacheableFilter<*>
-) : JavaFilter(ktFilter), CacheableFilter<Props> {
+internal class KtCacheableFilter<E: Any>(
+    javaFilter: CacheableFilter<Props>
+) : KtFilter<E>(javaFilter), KCacheableFilter<E> {
 
     override fun getParameters(): NavigableMap<String, Any> =
-        (ktFilter as KCacheableFilter<*>).getParameters()
+        (javaFilter as CacheableFilter<*>).parameters
 
     override fun isAffectedBy(e: EntityEvent<*>): Boolean =
-        (ktFilter as KCacheableFilter<*>).isAffectedBy(e)
+        (javaFilter as CacheableFilter<*>).isAffectedBy(e)
 }

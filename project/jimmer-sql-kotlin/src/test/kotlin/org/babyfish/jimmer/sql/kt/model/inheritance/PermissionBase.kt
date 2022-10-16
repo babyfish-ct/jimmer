@@ -7,5 +7,5 @@ import org.babyfish.jimmer.sql.MappedSuperclass
 interface PermissionBase : NamedEntity {
 
     @ManyToOne
-    val role: Role
+    val role: Role?
 }

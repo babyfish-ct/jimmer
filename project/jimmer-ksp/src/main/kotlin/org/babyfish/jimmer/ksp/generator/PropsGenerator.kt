@@ -54,8 +54,10 @@ class PropsGenerator(
                         addProp(type, prop, nonNullTable = false, outerJoin = true)
                         addProp(type, prop, nonNullTable = true, outerJoin = true)
                     }
-                    addFetchByFun(type, false)
-                    addFetchByFun(type, true)
+                    if (type.isEntity) {
+                        addFetchByFun(type, false)
+                        addFetchByFun(type, true)
+                    }
                 }.build()
             val writer = OutputStreamWriter(it, Charsets.UTF_8)
             fileSpec.writeTo(writer)

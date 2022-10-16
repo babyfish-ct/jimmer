@@ -1,5 +1,8 @@
 drop table permission if exists;
+drop table administrator_role_mapping if exists;
 drop table role if exists;
+drop table administrator_metadata if exists;
+drop table administrator if exists;
 drop table book_author_mapping if exists;
 drop table author_country_mapping if exists;
 drop table book if exists;
@@ -258,9 +261,39 @@ insert into primitive(
     (2, true, null, 'X', null, 3, null, 4, null, 5, null, 6, null, 7, null, 8, null)
 ;
 
+create table administrator(
+    id bigint not null,
+    name varchar(50) not null,
+    deleted boolean not null,
+    created_time timestamp not null,
+    modified_time timestamp not null
+);
+alter table administrator
+    add constraint pk_administrator
+        primary key(id);
+
+create table administrator_metadata(
+    id bigint not null,
+    name varchar(50) not null,
+    email varchar(50) not null,
+    website varchar(50) not null,
+    administrator_id bigint not null,
+    deleted boolean not null,
+    created_time timestamp not null,
+    modified_time timestamp not null
+);
+alter table administrator_metadata
+    add constraint pk_administrator_metadata
+        primary key(id);
+alter table administrator_metadata
+    add constraint fk_administrator_metadata_administrator
+        foreign key(administrator_id)
+            references administrator(id);
+
 create table role(
     id bigint not null,
     name varchar(50) not null,
+    deleted boolean not null,
     created_time timestamp not null,
     modified_time timestamp not null
 );
@@ -268,10 +301,27 @@ alter table role
     add constraint pk_role
         primary key(id);
 
+create table administrator_role_mapping(
+    administrator_id bigint not null,
+    role_id bigint not null
+);
+alter table administrator_role_mapping
+    add constraint pk_administrator_role_mapping
+        primary key(administrator_id, role_id);
+alter table administrator_role_mapping
+    add constraint fk_administrator_role_mapping_administrator
+        foreign key(administrator_id)
+            references administrator(id);
+alter table administrator_role_mapping
+    add constraint fk_administrator_role_mapping_role
+        foreign key(role_id)
+            references role(id);
+
 create table permission(
     id bigint not null,
     name varchar(50) not null,
     role_id bigint not null,
+    deleted boolean not null,
     created_time timestamp not null,
     modified_time timestamp not null
 );
@@ -283,16 +333,37 @@ alter table permission
         foreign key(role_id)
             references role(id);
 
-insert into role(id, name, created_time, modified_time)
-    values(1, 'r_1', '2022-10-03 00:00:00', '2022-10-03 00:10:00');
-insert into role(id, name, created_time, modified_time)
-    values(2, 'r_2', '2022-10-03 00:00:00', '2022-10-03 00:10:00');
+insert into administrator(id, name, deleted, created_time, modified_time)
+    values
+    (1, 'a_1', false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
+    (2, 'a_2', true, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
+    (3, 'a_3', false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
+    (4, 'a_4', true, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
 
-insert into permission(id, name, role_id, created_time, modified_time)
-    values(1, 'p_1', 1, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
-insert into permission(id, name, role_id, created_time, modified_time)
-    values(2, 'p_2', 1, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
-insert into permission(id, name, role_id, created_time, modified_time)
-    values(3, 'p_3', 2, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
-insert into permission(id, name, role_id, created_time, modified_time)
-    values(4, 'p_4', 2, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
+insert into administrator_metadata(id, name, email, website, administrator_id, deleted, created_time, modified_time)
+    values
+    (10, 'am_1', 'email_1', 'website_1', 1, false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
+    (20, 'am_2', 'email_2', 'website_2', 2, true, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
+    (30, 'am_3', 'email_3', 'website_3', 3, false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
+    (40, 'am_4', 'email_4', 'website_4', 4, true, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
+
+insert into role(id, name, deleted, created_time, modified_time)
+    values
+    (100, 'r_1', false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
+    (200, 'r_2', true, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
+
+insert into administrator_role_mapping(administrator_id, role_id)
+    values
+    (1, 100),
+    (2, 100),
+    (3, 100),
+    (2, 200),
+    (3, 200),
+    (4, 200);
+
+insert into permission(id, name, role_id, deleted, created_time, modified_time)
+    values
+    (1000, 'p_1', 100, false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
+    (2000, 'p_2', 100, true, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
+    (3000, 'p_3', 200, false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
+    (4000, 'p_4', 200, true, '2022-10-03 00:00:00', '2022-10-03 00:10:00');

@@ -14,7 +14,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 internal abstract class KTableExImpl<E: Any>(
-    protected val javaTable: TableImplementor<E>
+    val javaTable: TableImplementor<E>
 ): Ast, KTableEx<E>, TableSelection<E> by(javaTable) {
 
     override fun <X : Any> outerJoin(prop: String): KNullableTableEx<X> =
