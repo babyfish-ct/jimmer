@@ -29,6 +29,9 @@ class TransientResolverManager {
     }
 
     private TransientResolver<?, ?> createResolver(ImmutableProp prop) {
+        if (!prop.getDeclaringType().isEntity()) {
+            throw new IllegalArgumentException("\"" + prop + "\" is not declared in entity");
+        }
         Transient trans = prop.getAnnotation(Transient.class);
         if (trans == null) {
             return null;

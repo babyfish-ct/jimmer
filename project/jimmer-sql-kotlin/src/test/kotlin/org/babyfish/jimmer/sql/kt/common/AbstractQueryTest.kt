@@ -64,7 +64,7 @@ abstract class AbstractQueryTest : AbstractTest() {
             return QueryTestContext(index)
         }
 
-        fun sql(sql: String) {
+        fun sql(sql: String): QueryTestContext<R> {
             maxStatementIndex = Math.max(maxStatementIndex, index)
             assertFalse(
                 executions.isEmpty(),
@@ -75,6 +75,7 @@ abstract class AbstractQueryTest : AbstractTest() {
                 executions[index].sql,
                 "statements[$index].sql"
             )
+            return this
         }
 
         fun variables(vararg variables: Any?) {

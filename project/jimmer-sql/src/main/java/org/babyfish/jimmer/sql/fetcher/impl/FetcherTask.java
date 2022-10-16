@@ -119,7 +119,7 @@ class FetcherTask {
         if (!isLoaded(draft, field)) {
             return false;
         }
-        if (sqlClient.getFilter(field.getProp().getTargetType()) != null) {
+        if (sqlClient.getFilters().getFilter(field.getProp().getTargetType()) != null) {
             return false;
         }
         Fetcher<?> childFetcher = field.getChildFetcher();

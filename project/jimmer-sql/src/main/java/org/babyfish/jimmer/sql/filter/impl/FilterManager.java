@@ -1,10 +1,11 @@
-package org.babyfish.jimmer.sql.filter;
+package org.babyfish.jimmer.sql.filter.impl;
 
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -17,7 +18,10 @@ import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
 import org.babyfish.jimmer.sql.cache.LocatedCache;
 import org.babyfish.jimmer.sql.event.EntityEvent;
-import org.babyfish.jimmer.sql.filter.impl.TypeAwareFilter;
+import org.babyfish.jimmer.sql.filter.CacheableFilter;
+import org.babyfish.jimmer.sql.filter.Filter;
+import org.babyfish.jimmer.sql.filter.FilterArgs;
+import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
@@ -28,7 +32,7 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class FilterManager {
+public class FilterManager implements Filters {
 
     private final Set<Filter<?>> allFilters;
 
@@ -72,11 +76,23 @@ public class FilterManager {
         this.allCacheableFilterMap = allCacheableFilterMap;
     }
 
-    public Filter<Props> get(ImmutableType type) {
+    @Override
+    public Filter<Props> getFilter(Class<?> type) {
+        return getFilter(ImmutableType.get(type));
+    }
+
+    @Override
+    public Filter<Props> getFilter(ImmutableType type) {
         return cache.get(type);
     }
 
-    public Filter<Props> get(ImmutableProp prop) {
+    @Override
+    public Filter<Props> getTargetFilter(TypedProp.Association<?, ?> prop) {
+        return getTargetFilter(prop.unwrap());
+    }
+
+    @Override
+    public Filter<Props> getTargetFilter(ImmutableProp prop) {
         ImmutableType targetType = prop.getTargetType();
         if (targetType == null) {
             throw new IllegalArgumentException(
@@ -85,7 +101,43 @@ public class FilterManager {
                             "` is not association property"
             );
         }
-        return get(targetType);
+        return getFilter(targetType);
+    }
+
+    @Override
+    public CacheableFilter<Props> getCacheableFilter(Class<?> type) {
+        Filter<Props> filter = getFilter(type);
+        if (filter instanceof CacheableFilter<?>) {
+            return (CacheableFilter<Props>) filter;
+        }
+        return null;
+    }
+
+    @Override
+    public CacheableFilter<Props> getCacheableFilter(ImmutableType type) {
+        Filter<Props> filter = getFilter(type);
+        if (filter instanceof CacheableFilter<?>) {
+            return (CacheableFilter<Props>) filter;
+        }
+        return null;
+    }
+
+    @Override
+    public CacheableFilter<Props> getCacheableTargetFilter(ImmutableProp prop) {
+        Filter<Props> filter = getTargetFilter(prop);
+        if (filter instanceof CacheableFilter<?>) {
+            return (CacheableFilter<Props>) filter;
+        }
+        return null;
+    }
+
+    @Override
+    public CacheableFilter<Props> getCacheableTargetFilter(TypedProp.Association<?, ?> prop) {
+        Filter<Props> filter = getTargetFilter(prop);
+        if (filter instanceof CacheableFilter<?>) {
+            return (CacheableFilter<Props>) filter;
+        }
+        return null;
     }
 
     public FilterManager enable(Collection<Filter<?>> filters) {
@@ -200,8 +252,8 @@ public class FilterManager {
     @SuppressWarnings("unchecked")
     private Filter<Props> create(ImmutableType type) {
         List<Filter<Props>> filters = new ArrayList<>();
-        while (type != null) {
-            List<Filter<Props>> list = filterMap.get(type);
+        for (ImmutableType t = type; t != null; t = t.getSuperType()) {
+            List<Filter<Props>> list = filterMap.get(t);
             if (list != null) {
                 for (Filter<Props> filter : list) {
                     if (!disabledFilters.contains(filter)) {
@@ -209,7 +261,6 @@ public class FilterManager {
                     }
                 }
             }
-            type = type.getSuperType();
         }
         if (filters.isEmpty()) {
             return null;

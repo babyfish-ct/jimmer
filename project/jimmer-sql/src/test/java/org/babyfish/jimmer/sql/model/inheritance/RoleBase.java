@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.model.inheritance;
 import org.babyfish.jimmer.sql.ManyToMany;
 import org.babyfish.jimmer.sql.MappedSuperclass;
 import org.babyfish.jimmer.sql.OneToMany;
+import org.babyfish.jimmer.sql.Transient;
 
 import java.util.List;
 
@@ -14,4 +15,7 @@ public interface RoleBase extends NamedEntity {
 
     @ManyToMany(mappedBy = "roles")
     List<Administrator> administrators();
+
+    @Transient(RolePermissionCountResolver.class)
+    int getPermissionCount();
 }

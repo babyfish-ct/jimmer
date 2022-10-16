@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.filter;
 
 import org.babyfish.jimmer.lang.OldChain;
+import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 
 import java.util.Arrays;
 import java.util.Collection;

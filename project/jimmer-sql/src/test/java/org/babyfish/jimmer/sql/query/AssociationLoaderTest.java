@@ -23,7 +23,8 @@ public class AssociationLoaderTest extends AbstractQueryTest {
         });
         anyAndExpect(
                 getSqlClient()
-                        .getReferenceLoader(BookTable.class, BookTable::store)
+                        .getLoaders()
+                        .reference(BookTable.class, BookTable::store)
                         .loadCommand(book),
                 ctx -> {
                     ctx.sql(
@@ -65,7 +66,8 @@ public class AssociationLoaderTest extends AbstractQueryTest {
         );
         anyAndExpect(
                 getSqlClient()
-                        .getReferenceLoader(BookTable.class, BookTable::store)
+                        .getLoaders()
+                        .reference(BookTable.class, BookTable::store)
                         .batchLoadCommand(books),
                 ctx -> {
                     ctx.sql(
@@ -104,7 +106,8 @@ public class AssociationLoaderTest extends AbstractQueryTest {
     public void testLoadOneToMany() {
         anyAndExpect(
                 getSqlClient()
-                        .getListLoader(
+                        .getLoaders()
+                        .list(
                                 BookStoreTableEx.class,
                                 BookStoreTableEx::books
                         )
@@ -161,7 +164,8 @@ public class AssociationLoaderTest extends AbstractQueryTest {
         );
         anyAndExpect(
                 getSqlClient()
-                        .getListLoader(
+                        .getLoaders()
+                        .list(
                                 BookStoreTableEx.class,
                                 BookStoreTableEx::books
                         )
@@ -226,7 +230,8 @@ public class AssociationLoaderTest extends AbstractQueryTest {
     public void loadManyToMany() {
         anyAndExpect(
                 getSqlClient()
-                        .getListLoader(
+                        .getLoaders()
+                        .list(
                                 BookTableEx.class,
                                 BookTableEx::authors
                         )
@@ -275,7 +280,8 @@ public class AssociationLoaderTest extends AbstractQueryTest {
         );
         anyAndExpect(
                 getSqlClient()
-                        .getListLoader(
+                        .getLoaders()
+                        .list(
                                 BookTableEx.class,
                                 BookTableEx::authors
                         )

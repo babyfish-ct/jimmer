@@ -11,6 +11,8 @@ interface NamedEntity {
     @Key
     val name: String
 
+    val deleted: Boolean
+
     @get:JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     val createdTime: LocalDateTime
 

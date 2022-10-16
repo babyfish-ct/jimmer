@@ -4,16 +4,15 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.sql.ast.table.Props;
+import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
-import org.babyfish.jimmer.sql.filter.FilterManager;
+import org.babyfish.jimmer.sql.filter.Filters;
+import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.babyfish.jimmer.sql.fluent.impl.FluentImpl;
-import org.babyfish.jimmer.sql.loader.ListLoader;
-import org.babyfish.jimmer.sql.loader.ReferenceLoader;
-import org.babyfish.jimmer.sql.loader.ValueLoader;
-import org.babyfish.jimmer.sql.loader.impl.Loaders;
+import org.babyfish.jimmer.sql.loader.Loaders;
+import org.babyfish.jimmer.sql.loader.impl.LoadersImpl;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
@@ -74,6 +73,8 @@ class JSqlClientImpl implements JSqlClient {
 
     private final DraftInterceptorManager draftInterceptorManager;
 
+    private final Loaders loaders = new LoadersImpl(this);
+
     private JSqlClientImpl(
             ConnectionManager connectionManager,
             ConnectionManager slaveConnectionManager,
@@ -87,8 +88,8 @@ class JSqlClientImpl implements JSqlClient {
             EntityManager entityManager,
             Caches caches,
             Triggers triggers,
-            TransientResolverManager transientResolverManager,
             FilterManager filterManager,
+            TransientResolverManager transientResolverManager,
             DraftInterceptorManager draftInterceptorManager) {
         this.connectionManager =
                 connectionManager != null ?
@@ -117,11 +118,11 @@ class JSqlClientImpl implements JSqlClient {
                         caches :
                         CachesImpl.of(triggers, scalarProviderMap, entityManager, null);
         this.triggers = triggers;
+        this.filterManager = filterManager;
         this.transientResolverManager =
                 transientResolverManager != null ?
                         transientResolverManager :
                         createTransientResolverManager();
-        this.filterManager = filterManager;
         this.draftInterceptorManager = draftInterceptorManager;
     }
 
@@ -249,26 +250,8 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
-    public <S, V> ValueLoader<S, V> getValueLoader(TypedProp.Scalar<S, V> prop) {
-        return Loaders.createValueLoader(this, prop.unwrap());
-    }
-
-    @Override
-    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>> ReferenceLoader<SE, TE, TT>
-    getReferenceLoader(Class<ST> sourceTableType, Function<ST, TT> block) {
-        return Loaders.createReferenceLoader(
-                this,
-                ImmutableProps.join(sourceTableType, block)
-        );
-    }
-
-    @Override
-    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ListLoader<SE, TE, TT> getListLoader(Class<ST> sourceTableType, Function<ST, TT> block) {
-        return Loaders.createListLoader(
-                this,
-                ImmutableProps.join(sourceTableType, block)
-        );
+    public Loaders getLoaders() {
+        return loaders;
     }
 
     @Override
@@ -301,8 +284,8 @@ class JSqlClientImpl implements JSqlClient {
                 entityManager,
                 new CachesImpl((CachesImpl) caches, cfg),
                 triggers,
-                transientResolverManager,
                 filterManager,
+                transientResolverManager,
                 draftInterceptorManager
         );
     }
@@ -330,8 +313,8 @@ class JSqlClientImpl implements JSqlClient {
                 entityManager,
                 caches,
                 triggers,
-                transientResolverManager,
                 cfg.getFilterManager(),
+                transientResolverManager,
                 draftInterceptorManager
         );
     }
@@ -354,8 +337,8 @@ class JSqlClientImpl implements JSqlClient {
                 entityManager,
                 caches,
                 triggers,
-                transientResolverManager,
                 filterManager,
+                transientResolverManager,
                 draftInterceptorManager
         );
     }
@@ -366,18 +349,8 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
-    public Filter<Props> getFilter(ImmutableType type) {
-        return filterManager.get(type);
-    }
-
-    @Override
-    public Filter<Props> getFilter(ImmutableProp prop) {
-        return filterManager.get(prop);
-    }
-
-    @Override
-    public Filter<Props> getFilter(TypedProp.Association<?, ?> prop) {
-        return getFilter(prop.unwrap());
+    public Filters getFilters() {
+        return filterManager;
     }
 
     @Override
@@ -391,7 +364,7 @@ class JSqlClientImpl implements JSqlClient {
             for (ImmutableType type : ((CachesImpl)caches).getObjectCacheMap().keySet()) {
                 for (ImmutableProp prop : type.getProps().values()) {
                     if (prop.hasTransientResolver()) {
-                        manager.get(prop);
+                        manager.get(RedirectedProp.source(prop, type));
                     }
                 }
             }
@@ -596,8 +569,8 @@ class JSqlClientImpl implements JSqlClient {
                     entityManager,
                     caches,
                     triggers,
-                    null,
                     filterManager,
+                    null,
                     new DraftInterceptorManager(interceptors)
             );
             filterManager.initialize(sqlClient);

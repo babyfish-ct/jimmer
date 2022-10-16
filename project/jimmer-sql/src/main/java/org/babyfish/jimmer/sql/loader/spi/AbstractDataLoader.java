@@ -128,7 +128,7 @@ public abstract class AbstractDataLoader {
         this.sourceIdProp = prop.getDeclaringType().getIdProp();
         this.targetIdProp = prop.getTargetType() != null ? prop.getTargetType().getIdProp() : null;
         if (prop.isAssociation(TargetLevel.ENTITY)) {
-            globalFiler = sqlClient.getFilter(prop);
+            globalFiler = sqlClient.getFilters().getTargetFilter(prop);
         } else {
             globalFiler = null;
         }

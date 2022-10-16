@@ -5,7 +5,7 @@ import java.util.*
 
 interface KCacheableFilter<E: Any> : KFilter<E> {
 
-    val parameters: NavigableMap<String, Any>
+    fun getParameters(): NavigableMap<String, Any>
 
     fun isAffectedBy(e: EntityEvent<*>): Boolean
 }

@@ -6,10 +6,6 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Selection;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
-import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
 import java.sql.Connection;
@@ -104,7 +100,7 @@ public class Fetchers {
 
     private static boolean hasReferenceFilter(ImmutableType type, JSqlClient sqlClient) {
         for (ImmutableProp prop : type.getSelectableReferenceProps().values()) {
-            if (sqlClient.getFilter(prop) != null) {
+            if (sqlClient.getFilters().getTargetFilter(prop) != null) {
                 return true;
             }
         }

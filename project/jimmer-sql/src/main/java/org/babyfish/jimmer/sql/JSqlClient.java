@@ -7,16 +7,14 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
-import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.cache.CacheConfig;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
+import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.fluent.Fluent;
-import org.babyfish.jimmer.sql.loader.ListLoader;
-import org.babyfish.jimmer.sql.loader.ReferenceLoader;
-import org.babyfish.jimmer.sql.loader.ValueLoader;
+import org.babyfish.jimmer.sql.loader.Loaders;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
@@ -96,19 +94,7 @@ public interface JSqlClient {
 
     Associations getAssociations(AssociationType associationType);
 
-    <S, V> ValueLoader<S, V> getValueLoader(TypedProp.Scalar<S, V> prop);
-
-    <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ReferenceLoader<SE, TE, TT> getReferenceLoader(
-            Class<ST> sourceTableType,
-            Function<ST, TT> block
-    );
-
-    <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ListLoader<SE, TE, TT> getListLoader(
-            Class<ST> sourceTableType,
-            Function<ST, TT> block
-    );
+    Loaders getLoaders();
 
     EntityManager getEntityManager();
 
@@ -125,11 +111,7 @@ public interface JSqlClient {
 
     TransientResolver<?, ?> getResolver(ImmutableProp prop);
 
-    Filter<Props> getFilter(ImmutableType type);
-
-    Filter<Props> getFilter(ImmutableProp prop);
-
-    Filter<Props> getFilter(TypedProp.Association<?, ?> prop);
+    Filters getFilters();
 
     DraftInterceptor<?> getDraftInterceptor(ImmutableType type);
 

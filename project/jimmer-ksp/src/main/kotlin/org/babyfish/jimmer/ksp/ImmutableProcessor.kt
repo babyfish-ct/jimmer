@@ -15,6 +15,7 @@ import org.babyfish.jimmer.ksp.generator.FetcherGenerator
 import org.babyfish.jimmer.ksp.generator.PropsGenerator
 import org.babyfish.jimmer.ksp.meta.Context
 import org.babyfish.jimmer.sql.Entity
+import org.babyfish.jimmer.sql.MappedSuperclass
 import java.util.concurrent.atomic.AtomicBoolean
 
 class ImmutableProcessor(
@@ -33,18 +34,25 @@ class ImmutableProcessor(
             val allFiles = resolver.getAllFiles().toList()
             DraftGenerator(environment.codeGenerator, ctx, file, classDeclarations)
                 .generate(allFiles)
-            val entityClassDeclarations = classDeclarations.filter { it.annotation(Entity::class) !== null }
-            if (entityClassDeclarations.size > 1) {
+            val sqlClassDeclarations = classDeclarations.filter {
+                it.annotation(Entity::class) !== null ||
+                    it.annotation(MappedSuperclass::class) !== null
+            }
+            if (sqlClassDeclarations.size > 1) {
                 throw GeneratorException(
-                    "The $file declares several types decorated by @${Entity::class.qualifiedName}: " +
-                        entityClassDeclarations.joinToString { it.fullName }
+                    "The $file declares several types decorated by " +
+                        "@${Entity::class.qualifiedName} or @${MappedSuperclass::class.qualifiedName}: " +
+                        sqlClassDeclarations.joinToString { it.fullName }
                 )
             }
-            if (entityClassDeclarations.isNotEmpty()) {
-                PropsGenerator(environment.codeGenerator, ctx, file, entityClassDeclarations[0])
+            if (sqlClassDeclarations.isNotEmpty()) {
+                val sqlClassDeclaration = sqlClassDeclarations[0]
+                PropsGenerator(environment.codeGenerator, ctx, file, sqlClassDeclaration)
                     .generate(allFiles)
-                FetcherGenerator(environment.codeGenerator, ctx, file, entityClassDeclarations[0])
-                    .generate(allFiles)
+                if (sqlClassDeclaration.annotation(Entity::class) !== null) {
+                    FetcherGenerator(environment.codeGenerator, ctx, file, sqlClassDeclaration)
+                        .generate(allFiles)
+                }
             }
         }
         return classDeclarationMultiMap.values.flatten()
