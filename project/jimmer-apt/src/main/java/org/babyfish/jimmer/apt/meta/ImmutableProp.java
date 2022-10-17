@@ -339,6 +339,7 @@ public class ImmutableProp {
         OneToMany oneToMany = getAnnotation(OneToMany.class);
         ManyToOne manyToOne = getAnnotation(ManyToOne.class);
         ManyToMany manyToMany = getAnnotation(ManyToMany.class);
+        OnDissociate onDissociate = getAnnotation(OnDissociate.class);
         Annotation[] associationAnnotations = Arrays.stream(
                 new Annotation[] { oneToOne, oneToMany, manyToOne, manyToMany }
         ).filter(Objects::nonNull).toArray(Annotation[]::new);
@@ -543,12 +544,21 @@ public class ImmutableProp {
                         throw new MetaException(
                                 "Illegal property \"" +
                                         this +
-                                        "\", many-to-one property decorated by both \"@" +
+                                        "\", many-to-one property decorated by \"@" +
                                         Key.class.getName() +
                                         "\" must base on foreign key"
                         );
                     }
                 }
+            }
+            if (onDissociate != null && (associationAnnotations.length != 1 || associationAnnotations[0].annotationType() != ManyToOne.class)) {
+                throw new MetaException(
+                        "Illegal property \"" +
+                                this +
+                                "\", the property decorated by \"@" +
+                                OnDissociate.class.getName() +
+                                "\" must be many-to-one property"
+                );
             }
         }
     }

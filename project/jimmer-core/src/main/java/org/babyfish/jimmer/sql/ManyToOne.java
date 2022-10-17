@@ -8,4 +8,6 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
 @Target(ElementType.METHOD)
-public @interface ManyToOne {}
+public @interface ManyToOne {
+    boolean unique() default false;
+}

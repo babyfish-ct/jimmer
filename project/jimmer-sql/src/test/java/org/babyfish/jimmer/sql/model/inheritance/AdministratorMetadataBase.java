@@ -12,7 +12,7 @@ public interface AdministratorMetadataBase extends NamedEntity {
 
     String getWebsite();
 
-    @ManyToOne
+    @ManyToOne(unique = true)
     @OnDissociate(DissociateAction.DELETE)
     Administrator getAdministrator();
 }
