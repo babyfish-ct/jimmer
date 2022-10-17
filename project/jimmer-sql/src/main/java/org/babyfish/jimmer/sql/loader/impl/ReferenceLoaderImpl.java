@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.loader.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.loader.ReferenceLoader;
+import org.babyfish.jimmer.sql.loader.FilterableReferenceLoader;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -12,7 +12,7 @@ import java.sql.Connection;
 import java.util.Collection;
 import java.util.Map;
 
-class ReferenceLoaderImpl<SE, TE, TT extends Table<TE>> implements ReferenceLoader<SE, TE, TT> {
+class ReferenceLoaderImpl<SE, TE, TT extends Table<TE>> implements FilterableReferenceLoader<SE, TE, TT> {
 
     private final JSqlClient sqlClient;
 
@@ -42,7 +42,7 @@ class ReferenceLoaderImpl<SE, TE, TT extends Table<TE>> implements ReferenceLoad
     }
 
     @Override
-    public ReferenceLoader<SE, TE, TT> forConnection(Connection con) {
+    public FilterableReferenceLoader<SE, TE, TT> forConnection(Connection con) {
         if (this.con == con) {
             return this;
         }
@@ -50,7 +50,7 @@ class ReferenceLoaderImpl<SE, TE, TT extends Table<TE>> implements ReferenceLoad
     }
 
     @Override
-    public ReferenceLoader<SE, TE, TT> forFilter(FieldFilter<TT> filter) {
+    public FilterableReferenceLoader<SE, TE, TT> forFilter(FieldFilter<TT> filter) {
         if (this.filter == filter) {
             return this;
         }

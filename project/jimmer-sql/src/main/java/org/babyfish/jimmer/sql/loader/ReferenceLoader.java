@@ -2,30 +2,25 @@ package org.babyfish.jimmer.sql.loader;
 
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.ast.Executable;
-import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 
 import java.sql.Connection;
 import java.util.Collection;
 import java.util.Map;
 
-public interface ReferenceLoader<SE, TE, TT extends Table<TE>> {
+public interface ReferenceLoader<S, T> {
 
     @NewChain
-    ReferenceLoader<SE, TE, TT> forConnection(Connection con);
+    ReferenceLoader<S, T> forConnection(Connection con);
 
-    @NewChain
-    ReferenceLoader<SE, TE, TT> forFilter(FieldFilter<TT> filter);
-
-    default TE load(SE source) {
+    default T load(S source) {
         return loadCommand(source).execute();
     }
 
-    Executable<TE> loadCommand(SE source);
+    Executable<T> loadCommand(S source);
 
-    default Map<SE, TE> batchLoad(Collection<SE> sources) {
+    default Map<S, T> batchLoad(Collection<S> sources) {
         return batchLoadCommand(sources).execute();
     }
 
-    Executable<Map<SE, TE>> batchLoadCommand(Collection<SE> sources);
+    Executable<Map<S, T>> batchLoadCommand(Collection<S> sources);
 }

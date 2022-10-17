@@ -16,22 +16,20 @@ import java.util.function.Function;
  */
 public interface Loaders {
 
-    <S, T> Map<S, T> batchLoad(Collection<S> sources, TypedProp.Scalar<S, T> prop);
-
-    <S, T> Map<S, T> batchLoad(Collection<S> sources, TypedProp.Reference<S, T> prop);
-
-    <S, T> Map<S, List<T>> batchLoad(Collection<S> sources, TypedProp.ReferenceList<S, T> prop);
-
     <S, T> ValueLoader<S, T> value(TypedProp.Scalar<S, T> prop);
 
+    <S, T> ReferenceLoader<S, T> reference(TypedProp.Reference<S, T> prop);
+
+    <S, T> ListLoader<S, T> list(TypedProp.ReferenceList<S, T> prop);
+
     <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ReferenceLoader<SE, TE, TT> reference(
+    FilterableReferenceLoader<SE, TE, TT> reference(
             Class<ST> sourceTableType,
             Function<ST, TT> block
     );
 
     <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ListLoader<SE, TE, TT> list(
+    FilterableListLoader<SE, TE, TT> list(
             Class<ST> sourceTableType,
             Function<ST, TT> block
     );

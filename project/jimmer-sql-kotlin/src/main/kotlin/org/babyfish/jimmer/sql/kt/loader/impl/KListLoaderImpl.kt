@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.loader.impl
 
-import org.babyfish.jimmer.sql.loader.ListLoader
+import org.babyfish.jimmer.sql.loader.FilterableListLoader
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.loader.KListLoader
 import org.babyfish.jimmer.sql.kt.fetcher.KFieldFilterDsl
@@ -8,7 +8,7 @@ import org.babyfish.jimmer.sql.kt.fetcher.impl.JavaFieldFilter
 import java.sql.Connection
 
 internal class KListLoaderImpl<S: Any, T: Any>(
-    private val javaLoader: ListLoader<S, T, Table<T>>
+    private val javaLoader: FilterableListLoader<S, T, Table<T>>
 ): KListLoader<S, T> {
 
     override fun forConnection(con: Connection): KListLoader<S, T> =

@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.loader.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.loader.ListLoader;
+import org.babyfish.jimmer.sql.loader.FilterableListLoader;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -14,7 +14,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-class ListLoaderImpl<SE, TE, TT extends Table<TE>> implements ListLoader<SE, TE, TT> {
+class ListLoaderImpl<SE, TE, TT extends Table<TE>> implements FilterableListLoader<SE, TE, TT> {
 
     private final JSqlClient sqlClient;
 
@@ -41,7 +41,7 @@ class ListLoaderImpl<SE, TE, TT extends Table<TE>> implements ListLoader<SE, TE,
     }
 
     @Override
-    public ListLoader<SE, TE, TT> forConnection(Connection con) {
+    public FilterableListLoader<SE, TE, TT> forConnection(Connection con) {
         if (this.con == con) {
             return this;
         }
@@ -49,7 +49,7 @@ class ListLoaderImpl<SE, TE, TT extends Table<TE>> implements ListLoader<SE, TE,
     }
 
     @Override
-    public ListLoader<SE, TE, TT> forFilter(FieldFilter<TT> filter) {
+    public FilterableListLoader<SE, TE, TT> forFilter(FieldFilter<TT> filter) {
         if (this.filter == filter) {
             return this;
         }
