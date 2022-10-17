@@ -4,16 +4,10 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ImmutableProps;
-import org.babyfish.jimmer.sql.loader.ListLoader;
-import org.babyfish.jimmer.sql.loader.Loaders;
-import org.babyfish.jimmer.sql.loader.ReferenceLoader;
+import org.babyfish.jimmer.sql.loader.*;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.loader.ValueLoader;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 
 public class LoadersImpl implements Loaders {
@@ -25,27 +19,22 @@ public class LoadersImpl implements Loaders {
     }
 
     @Override
-    public <S, T> Map<S, T> batchLoad(Collection<S> sources, TypedProp.Scalar<S, T> prop) {
-        return value(prop).batchLoad(sources);
-    }
-
-    @Override
-    public <S, T> Map<S, T> batchLoad(Collection<S> sources, TypedProp.Reference<S, T> prop) {
-        return this.<S, T, Table<T>>reference(prop.unwrap()).batchLoad(sources);
-    }
-
-    @Override
-    public <S, T> Map<S, List<T>> batchLoad(Collection<S> sources, TypedProp.ReferenceList<S, T> prop) {
-        return this.<S, T, Table<T>>list(prop.unwrap()).batchLoad(sources);
-    }
-
-    @Override
     public <S, T> ValueLoader<S, T> value(TypedProp.Scalar<S, T> prop) {
         return value(prop.unwrap());
     }
 
     @Override
-    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>> ReferenceLoader<SE, TE, TT> reference(
+    public <S, T> ReferenceLoader<S, T> reference(TypedProp.Reference<S, T> prop) {
+        return reference(prop.unwrap());
+    }
+
+    @Override
+    public <S, T> ListLoader<S, T> list(TypedProp.ReferenceList<S, T> prop) {
+        return list(prop.unwrap());
+    }
+
+    @Override
+    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>> FilterableReferenceLoader<SE, TE, TT> reference(
             Class<ST> sourceTableType,
             Function<ST, TT> block
     ) {
@@ -53,7 +42,7 @@ public class LoadersImpl implements Loaders {
     }
 
     @Override
-    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>> ListLoader<SE, TE, TT> list(
+    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>> FilterableListLoader<SE, TE, TT> list(
             Class<ST> sourceTableType,
             Function<ST, TT> block
     ) {
@@ -69,7 +58,7 @@ public class LoadersImpl implements Loaders {
         return new ValueLoaderImpl<>(sqlClient, prop);
     }
 
-    public <SE, TE, TT extends Table<TE>> ReferenceLoader<SE, TE, TT> reference(ImmutableProp prop) {
+    public <SE, TE, TT extends Table<TE>> FilterableReferenceLoader<SE, TE, TT> reference(ImmutableProp prop) {
         if (!prop.isReference(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException(
                     "Cannot create reference loader for \"" + prop + "\", it is not entity reference association"
@@ -78,7 +67,7 @@ public class LoadersImpl implements Loaders {
         return new ReferenceLoaderImpl<>(sqlClient, prop);
     }
 
-    public <SE, TE, TT extends Table<TE>> ListLoader<SE, TE, TT> list(ImmutableProp prop) {
+    public <SE, TE, TT extends Table<TE>> FilterableListLoader<SE, TE, TT> list(ImmutableProp prop) {
         if (!prop.isReferenceList(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException(
                     "Cannot create list loader for \"" + prop + "\", it is not entity list association"

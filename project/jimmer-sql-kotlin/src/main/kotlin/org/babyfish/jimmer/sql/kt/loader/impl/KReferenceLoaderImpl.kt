@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.loader.impl
 
-import org.babyfish.jimmer.sql.loader.ReferenceLoader
+import org.babyfish.jimmer.sql.loader.FilterableReferenceLoader
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.loader.KReferenceLoader
 import org.babyfish.jimmer.sql.kt.fetcher.KFieldFilterDsl
@@ -8,7 +8,7 @@ import org.babyfish.jimmer.sql.kt.fetcher.impl.JavaFieldFilter
 import java.sql.Connection
 
 internal class KReferenceLoaderImpl<S: Any, T: Any>(
-    private val javaLoader: ReferenceLoader<S, T, Table<T>>
+    private val javaLoader: FilterableReferenceLoader<S, T, Table<T>>
 ): KReferenceLoader<S, T> {
 
     override fun forConnection(con: Connection): KReferenceLoader<S, T> =
