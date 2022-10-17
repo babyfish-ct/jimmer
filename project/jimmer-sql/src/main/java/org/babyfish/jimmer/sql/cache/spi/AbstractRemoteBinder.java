@@ -12,7 +12,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
-public abstract class AbstractRemoteBinder<K, V> {
+abstract class AbstractRemoteBinder<K, V> {
 
     final ObjectMapper objectMapper;
 
