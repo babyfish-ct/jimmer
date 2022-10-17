@@ -387,27 +387,38 @@ class ImmutablePropImpl implements ImmutableProp {
                                     "\""
                     );
                 }
-                if (resolved.isReference(TargetLevel.ENTITY) &&
-                        associationAnnotation.annotationType() != OneToOne.class &&
+                if (resolved.getStorage() == null) {
+                    throw new ModelException(
+                            "The property \"" +
+                                    resolved +
+                                    "\" is illegal, it's not persistence property so that " +
+                                    "\"" +
+                                    "this" +
+                                    "\" cannot reference it by \"mappedBy\""
+                    );
+                }
+                if (resolved.getAssociationAnnotation().annotationType() == OneToOne.class &&
+                        associationAnnotation.annotationType() != OneToOne.class
+                ) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it must be one-to-one property " +
+                                    "because its \"mappedBy\" property \"" +
+                                    resolved +
+                                    "\" is one-to-one property"
+                    );
+                }
+                if (resolved.getAssociationAnnotation().annotationType() == ManyToOne.class &&
                         associationAnnotation.annotationType() != OneToMany.class
                 ) {
                     throw new ModelException(
                             "Illegal property \"" +
                                     this +
-                                    "\", it must be one-to-one of one-to-many property " +
-                                    "because its mappedBy property \"" +
+                                    "\", it must be one-to-one property " +
+                                    "because its \"mappedBy\" property \"" +
                                     resolved +
-                                    "\" is reference"
-                    );
-                }
-                if (oneToOne != null && !resolved.getAnnotation(ManyToOne.class).unique()) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    resolved +
-                                    "\", the `unique` of annotation `@ManyToOne` must be `true` because" +
-                                    "it is mapped by the one-to-one property \"" +
-                                    this +
-                                    "\""
+                                    "\" is one-to-one property"
                     );
                 }
                 if (resolved.isReferenceList(TargetLevel.ENTITY) &&
@@ -417,7 +428,7 @@ class ImmutablePropImpl implements ImmutableProp {
                             "Illegal property \"" +
                                     this +
                                     "\", it must be many-to-many property " +
-                                    "because its mappedBy property \"" +
+                                    "because its \"mappedBy\" property \"" +
                                     resolved +
                                     "\" is list"
                     );
