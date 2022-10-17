@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.cache.chain;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.babyfish.jimmer.sql.cache.Cache;
 
 import java.util.ArrayList;
