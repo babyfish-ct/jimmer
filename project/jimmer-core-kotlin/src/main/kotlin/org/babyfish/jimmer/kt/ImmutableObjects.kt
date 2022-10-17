@@ -16,9 +16,10 @@ fun <T, X> get(obj: T, prop: KProperty1<T, X>): X =
     ImmutableObjects.get(obj, prop.toImmutableProp()) as X
 
 fun KProperty1<*, *>.toImmutableProp(): ImmutableProp {
-    val javaMethod = getter.javaMethod ?: error("$this does not has java getter")
-    val immutableType = ImmutableType.get(javaMethod.declaringClass)
-    return immutableType.getProp(name)!!.let {
+    val immutableType = ImmutableType.get(
+        (parameters[0].type.classifier as KClass<*>).java
+    )
+    return immutableType.getProp(name).let {
         RedirectedProp.source(it, immutableType)
     }
 }
