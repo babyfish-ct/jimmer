@@ -489,21 +489,41 @@ public class FilterManager implements Filters {
             }
             SortedMap<String, Object> map = new TreeMap<>();
             for (CacheableFilter<Props> filter : filters) {
-                for (Map.Entry<String, Object> e : filter.getParameters().entrySet()) {
+                SortedMap<String, Object> subMap = filter.getParameters();
+                if (subMap == null || subMap.isEmpty()) {
+                    throw new IllegalStateException(
+                            "The method `getParameters` of \"" +
+                                    filter.getClass().getName() +
+                                    "\" cannot return null or empty map"
+                    );
+                }
+                for (Map.Entry<String, Object> e : subMap.entrySet()) {
                     String key = e.getKey();
                     Object value = e.getValue();
-                    if (value != null) {
-                        Object conflictValue = map.get(key);
-                        if (conflictValue != null && !conflictValue.equals(value)) {
-                            throw new IllegalStateException(
-                                    "Duplicated parameter key `" +
-                                            key +
-                                            "` in filters: " +
-                                            filters
-                            );
-                        }
-                        map.put(key, value);
+                    if (key == null || key.isEmpty()) {
+                        throw new IllegalStateException(
+                                "The method `getParameters` of \"" +
+                                        filter.getClass().getName() +
+                                        "\" cannot map with null or empty key"
+                        );
                     }
+                    if (value == null) {
+                        throw new IllegalStateException(
+                                "The method `getParameters` of \"" +
+                                        filter.getClass().getName() +
+                                        "\" cannot map with null value"
+                        );
+                    }
+                    Object conflictValue = map.get(key);
+                    if (conflictValue != null && !conflictValue.equals(value)) {
+                        throw new IllegalStateException(
+                                "Duplicated parameter key `" +
+                                        key +
+                                        "` in filters: " +
+                                        filters
+                        );
+                    }
+                    map.put(key, value);
                 }
             }
             return map;

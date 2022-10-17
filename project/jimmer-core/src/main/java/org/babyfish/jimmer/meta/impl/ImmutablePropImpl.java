@@ -50,6 +50,8 @@ class ImmutablePropImpl implements ImmutableProp {
 
     private ImmutableProp mappedBy;
 
+    private ImmutableProp acceptedMappedBy;
+
     private boolean mappedByResolved;
 
     private ImmutableProp opposite;
@@ -398,6 +400,16 @@ class ImmutablePropImpl implements ImmutableProp {
                                     "\" is reference"
                     );
                 }
+                if (oneToOne != null && !resolved.getAnnotation(ManyToOne.class).unique()) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    resolved +
+                                    "\", the `unique` of annotation `@ManyToOne` must be `true` because" +
+                                    "it is mapped by the one-to-one property \"" +
+                                    this +
+                                    "\""
+                    );
+                }
                 if (resolved.isReferenceList(TargetLevel.ENTITY) &&
                         associationAnnotation.annotationType() != ManyToMany.class
                 ) {
@@ -410,11 +422,27 @@ class ImmutablePropImpl implements ImmutableProp {
                                     "\" is list"
                     );
                 }
+                ((ImmutablePropImpl)resolved).acceptMappedBy(this);
                 this.mappedBy = resolved;
             }
         }
         mappedByResolved = true;
         return mappedBy;
+    }
+
+    private void acceptMappedBy(ImmutableProp prop) {
+        if (acceptedMappedBy != null) {
+            throw new ModelException(
+                    "Both `" +
+                            acceptedMappedBy +
+                            "` and `" +
+                            prop +
+                            "` use `mappedBy` to reference `" +
+                            this +
+                            "`"
+            );
+        }
+        acceptedMappedBy = prop;
     }
 
     @Override

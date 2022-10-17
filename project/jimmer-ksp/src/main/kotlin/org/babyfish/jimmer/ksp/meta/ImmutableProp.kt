@@ -266,6 +266,12 @@ class ImmutableProp(
                         "so it must be nullable"
                 )
             }
+            if (it.annotation(OnDissociate::class) != null && it.annotation(ManyToOne::class) == null) {
+                throw MetaException(
+                    "The property '${this}' is illegal, " +
+                        "only many-to-one property can be decorated by @OnDissociate"
+                )
+            }
             annotations.firstOrNull()
         }
 

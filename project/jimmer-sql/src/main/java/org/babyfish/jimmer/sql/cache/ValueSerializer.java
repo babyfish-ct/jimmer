@@ -89,7 +89,7 @@ public class ValueSerializer<T> {
         try {
             return mapper.writeValueAsBytes(value);
         } catch (JsonProcessingException ex) {
-            throw new ValueSerializationException(ex);
+            throw new SerializationException(ex);
         }
     }
 
@@ -192,7 +192,7 @@ public class ValueSerializer<T> {
         try {
             deserializedValue = mapper.readValue(value, valueType);
         } catch (IOException ex) {
-            throw new ValueSerializationException(ex);
+            throw new SerializationException(ex);
         }
         return ctx != null ? ctx.resolveObject(deserializedValue) : deserializedValue;
     }

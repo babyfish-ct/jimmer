@@ -12,7 +12,7 @@ interface AdministratorMetadataBase : NamedEntity {
 
     val website: String
 
-    @ManyToOne
+    @ManyToOne(unique = true)
     @OnDissociate(DissociateAction.DELETE)
     val administrator: Administrator?
 }
