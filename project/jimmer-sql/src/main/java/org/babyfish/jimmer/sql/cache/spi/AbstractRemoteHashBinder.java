@@ -9,7 +9,6 @@ import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
 
 import java.time.Duration;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public abstract class AbstractRemoteHashBinder<K, V>
         extends AbstractRemoteBinder<K, V>
