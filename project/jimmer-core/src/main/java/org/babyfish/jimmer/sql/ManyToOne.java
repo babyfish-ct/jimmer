@@ -9,5 +9,4 @@ import java.lang.annotation.*;
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
 @Target(ElementType.METHOD)
 public @interface ManyToOne {
-    boolean unique() default false;
 }

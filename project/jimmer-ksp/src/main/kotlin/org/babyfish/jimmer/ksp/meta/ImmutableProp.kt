@@ -217,12 +217,17 @@ class ImmutableProp(
                 }
             }
 
+            val isMappedBy = annotations.isNotEmpty() &&
+                annotations[0].arguments.any { arg ->
+                    arg.name?.asString() == "mappedBy" &&
+                        arg.value.let { v -> v is String && v.isNotEmpty() }
+                }
             if (storageAnnotations.isNotEmpty()) {
-                if (oneToOne !== null || oneToMany !== null) {
+                if (isMappedBy) {
                     throw MetaException(
-                        "The property '${this}' cannot be declared by " +
+                        "The property '${this}' cannot be decorated by " +
                             "'@${storageAnnotations[0].fullName}' " +
-                            "because it is marked by '${annotations[0].fullName}'"
+                            "because it is association property with 'mappedBy'"
                     )
                 }
                 if (column !== null && isAssociation) {
@@ -231,10 +236,10 @@ class ImmutableProp(
                             "'@${storageAnnotations[0].fullName}' because it is not association association"
                     )
                 }
-                if (joinColumn !== null && manyToOne === null) {
+                if (joinColumn !== null && manyToOne === null && oneToOne === null) {
                     throw MetaException(
                         "The property '${this}' cannot be declared by " +
-                            "'@${storageAnnotations[0].fullName}' because it is not many-to-one association"
+                            "'@${storageAnnotations[0].fullName}' because it is not many-to-one or one-to-one association"
                     )
                 }
                 if (joinTable !== null && manyToOne === null && manyToMany == null) {
@@ -266,11 +271,19 @@ class ImmutableProp(
                         "so it must be nullable"
                 )
             }
-            if (it.annotation(OnDissociate::class) != null && it.annotation(ManyToOne::class) == null) {
-                throw MetaException(
-                    "The property '${this}' is illegal, " +
-                        "only many-to-one property can be decorated by @OnDissociate"
-                )
+            if (it.annotation(OnDissociate::class) != null) {
+                if (isMappedBy) {
+                    throw MetaException(
+                        "The property '${this}' is illegal, " +
+                            "The property with \"mappedBy\" can be decorated by @OnDissociate"
+                    )
+                }
+                if (manyToOne == null && oneToOne == null) {
+                    throw MetaException(
+                        "The property '${this}' is illegal, " +
+                            "only many-to-one or one-to-one property can be decorated by @OnDissociate"
+                    )
+                }
             }
             annotations.firstOrNull()
         }
