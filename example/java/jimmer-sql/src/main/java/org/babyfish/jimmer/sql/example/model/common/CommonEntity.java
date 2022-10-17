@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.model;
+package org.babyfish.jimmer.sql.example.model.common;
 
 import org.babyfish.jimmer.sql.MappedSuperclass;
 

@@ -504,11 +504,6 @@ class JSqlClientImpl implements JSqlClient {
         }
 
         @Override
-        public Builder addFilter(Filter<?> filter) {
-            return addFilters(Collections.singletonList(filter));
-        }
-
-        @Override
         public Builder addFilters(Filter<?>... filters) {
             return addFilters(Arrays.asList(filters));
         }
@@ -518,11 +513,6 @@ class JSqlClientImpl implements JSqlClient {
             this.filters.addAll(filters);
             this.disabledFilters.removeAll(filters);
             return this;
-        }
-
-        @Override
-        public Builder addDisabledFilter(Filter<?> filter) {
-            return addDisabledFilters(Collections.singletonList(filter));
         }
 
         @Override

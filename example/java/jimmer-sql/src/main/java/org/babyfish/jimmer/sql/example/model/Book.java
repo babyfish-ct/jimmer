@@ -1,15 +1,14 @@
 package org.babyfish.jimmer.sql.example.model;
 
 import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
+import org.babyfish.jimmer.sql.example.model.common.TenantAware;
 
 import javax.validation.constraints.Null;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.UUID;
 
 @Entity
-public interface Book extends CommonEntity {
+public interface Book extends TenantAware {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -32,7 +32,7 @@ public abstract class AbstractRemoteBinder<K, V> {
             int randomPercent
     ) {
         if (objectMapper != null) {
-            if (!objectMapper.getRegisteredModuleIds().contains(ImmutableModule.class)) {
+            if (!objectMapper.getRegisteredModuleIds().contains(ImmutableModule.class.getName())) {
                 throw new IllegalArgumentException("There is no ImmutableModule in object mapper");
             }
         } else {
@@ -65,6 +65,14 @@ public abstract class AbstractRemoteBinder<K, V> {
     protected long randomMillis() {
         return ThreadLocalRandom.current().nextLong(minMills, maxMillis);
     }
+
+    public final void deleteAll(Collection<K> keys, Object reason) {
+        if (reason == null || reason.equals(this.reason())) {
+            Collection<String> redisKeys = redisKeys(keys);
+            delete(redisKeys);
+        }
+    }
+    protected abstract void delete(Collection<String> keys);
 
     protected abstract String reason();
 

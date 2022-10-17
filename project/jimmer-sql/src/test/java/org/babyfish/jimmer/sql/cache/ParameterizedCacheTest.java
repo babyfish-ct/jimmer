@@ -32,8 +32,8 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
     @BeforeEach
     public void initialize() {
         sqlClient = getSqlClient(it -> {
-            it.addFilter(new UndeletedFilter());
-            it.addDisabledFilter(new DeletedFilter());
+            it.addFilters(new UndeletedFilter());
+            it.addDisabledFilters(new DeletedFilter());
             it.setEntityManager(
                     new EntityManager(
                             Administrator.class,

@@ -5,6 +5,7 @@ create table book_store(
     id bigint unsigned not null auto_increment primary key,
     name varchar(50) not null,
     website varchar(100),
+    tenant varchar(20),
     created_time datetime not null,
     modified_time datetime not null
 ) engine=innodb;
@@ -20,6 +21,7 @@ create table book(
     edition integer not null,
     price numeric(10, 2) not null,
     store_id bigint unsigned,
+    tenant varchar(20),
     created_time datetime not null,
     modified_time datetime not null 
 ) engine=innodb;
@@ -88,27 +90,27 @@ alter table tree_node
         foreign key(parent_id)
             references tree_node(node_id);
 
-insert into book_store(id, name, created_time, modified_time) values
-    (1, 'O''REILLY', now(), now()),
-    (2, 'MANNING', now(), now())
+insert into book_store(id, name, tenant, created_time, modified_time) values
+    (1, 'O''REILLY', 'a', now(), now()),
+    (2, 'MANNING', 'a', now(), now())
 ;
 
-insert into book(id, name, edition, price, store_id, created_time, modified_time) values
-    (1, 'Learning GraphQL', 1, 50, 1, now(), now()),
-    (2, 'Learning GraphQL', 2, 55, 1, now(), now()),
-    (3, 'Learning GraphQL', 3, 51, 1, now(), now()),
+insert into book(id, name, edition, price, store_id, tenant, created_time, modified_time) values
+    (1, 'Learning GraphQL', 1, 50, 1, 'a', now(), now()),
+    (2, 'Learning GraphQL', 2, 55, 1, 'b', now(), now()),
+    (3, 'Learning GraphQL', 3, 51, 1, 'a', now(), now()),
 
-    (4, 'Effective TypeScript', 1, 73, 1, now(), now()),
-    (5, 'Effective TypeScript', 2, 69, 1, now(), now()),
-    (6, 'Effective TypeScript', 3, 88, 1, now(), now()),
+    (4, 'Effective TypeScript', 1, 73, 1, 'b', now(), now()),
+    (5, 'Effective TypeScript', 2, 69, 1, 'a', now(), now()),
+    (6, 'Effective TypeScript', 3, 88, 1, 'b', now(), now()),
 
-    (7, 'Programming TypeScript', 1, 47.5, 1, now(), now()),
-    (8, 'Programming TypeScript', 2, 45, 1, now(), now()),
-    (9, 'Programming TypeScript', 3, 48, 1, now(), now()),
+    (7, 'Programming TypeScript', 1, 47.5, 1, 'a', now(), now()),
+    (8, 'Programming TypeScript', 2, 45, 1, 'b', now(), now()),
+    (9, 'Programming TypeScript', 3, 48, 1, 'a', now(), now()),
 
-    (10, 'GraphQL in Action', 1, 80, 2, now(), now()),
-    (11, 'GraphQL in Action', 2, 81, 2, now(), now()),
-    (12, 'GraphQL in Action', 3, 80, 2, now(), now())
+    (10, 'GraphQL in Action', 1, 80, 2, 'b', now(), now()),
+    (11, 'GraphQL in Action', 2, 81, 2, 'a', now(), now()),
+    (12, 'GraphQL in Action', 3, 80, 2, 'b', now(), now())
 ;
 
 insert into author(id, first_name, last_name, gender, created_time, modified_time) values

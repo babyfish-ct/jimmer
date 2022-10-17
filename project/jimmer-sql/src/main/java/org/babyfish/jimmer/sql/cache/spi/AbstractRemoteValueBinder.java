@@ -10,9 +10,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public abstract class AbstractRemoteValueBinder<K, V> extends AbstractRemoteBinder<K, V> implements SimpleBinder<K, V> {
+public abstract class AbstractRemoteValueBinder<K, V>
+        extends AbstractRemoteBinder<K, V>
+        implements SimpleBinder<K, V> {
 
-    AbstractRemoteValueBinder(
+    protected AbstractRemoteValueBinder(
             ObjectMapper objectMapper,
             ImmutableType type,
             ImmutableProp prop,
@@ -35,16 +37,7 @@ public abstract class AbstractRemoteValueBinder<K, V> extends AbstractRemoteBind
         write(convertedMap);
     }
 
-    public void deleteAll(Collection<K> keys, Object reason) {
-        if (reason == null || reason.equals(this.reason())) {
-            Collection<String> redisKeys = redisKeys(keys);
-            delete(redisKeys);
-        }
-    }
-
     protected abstract List<byte[]> read(Collection<String> keys);
 
     protected abstract void write(Map<String, byte[]> map);
-
-    protected abstract void delete(Collection<String> keys);
 }

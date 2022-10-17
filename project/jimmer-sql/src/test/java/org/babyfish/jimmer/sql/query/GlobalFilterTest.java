@@ -33,8 +33,8 @@ public class GlobalFilterTest extends AbstractQueryTest {
     @BeforeEach
     public void initialize() {
         this.sqlClient = getSqlClient(it -> {
-           it.addFilter(UNDELETED_FILTER);
-           it.addDisabledFilter(DELETED_FILTER);
+           it.addFilters(UNDELETED_FILTER);
+           it.addDisabledFilters(DELETED_FILTER);
         });
         this.sqlClientForDeletedData = sqlClient.filters(it -> {
             it.enable(DELETED_FILTER);

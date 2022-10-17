@@ -1,10 +1,9 @@
 package org.babyfish.jimmer.sql.example.model;
 
 import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
+import org.babyfish.jimmer.sql.example.model.common.CommonEntity;
 
 import java.util.List;
-import java.util.UUID;
 
 @Entity
 public interface Author extends CommonEntity {
