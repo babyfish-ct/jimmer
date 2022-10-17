@@ -17,7 +17,7 @@ internal class KFiltersImpl(
             it.toKtFilter()
         }
 
-    override fun <T : Any> getTargetFilter(prop: KProperty1<Any, T?>): KFilter<T>? =
+    override fun <T : Any> getTargetFilter(prop: KProperty1<*, T?>): KFilter<T>? =
         javaFilters.getTargetFilter(prop.toImmutableProp())?.let {
             it.toKtFilter()
         }
@@ -25,6 +25,6 @@ internal class KFiltersImpl(
     override fun <T : Any> getCacheableFilter(type: KClass<T>): KCacheableFilter<T>? =
         getFilter(type) as? KCacheableFilter<T>
 
-    override fun <T : Any> getCacheableTargetFilter(prop: KProperty1<Any, T?>): KCacheableFilter<T>? =
+    override fun <T : Any> getCacheableTargetFilter(prop: KProperty1<*, T?>): KCacheableFilter<T>? =
         getTargetFilter(prop) as? KCacheableFilter<T>
 }
