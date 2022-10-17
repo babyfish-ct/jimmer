@@ -1,10 +1,9 @@
-package org.babyfish.jimmer.sql.example.cfg;
+package org.babyfish.jimmer.sql.example.interceptor.input;
 
-import org.babyfish.jimmer.DraftConsumer;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DraftInterceptor;
-import org.babyfish.jimmer.sql.example.model.CommonEntityDraft;
-import org.babyfish.jimmer.sql.example.model.CommonEntityProps;
+import org.babyfish.jimmer.sql.example.model.common.CommonEntityDraft;
+import org.babyfish.jimmer.sql.example.model.common.CommonEntityProps;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;

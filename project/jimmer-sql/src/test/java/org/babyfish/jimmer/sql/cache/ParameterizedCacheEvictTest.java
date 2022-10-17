@@ -37,7 +37,7 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
         messages = new ArrayList<>();
         ParameterizedCacheEvictTest that = this;
         sqlClient = getSqlClient(it -> {
-            it.addFilter(new UndeletedFilter());
+            it.addFilters(new UndeletedFilter());
             it.setEntityManager(
                     new EntityManager(
                             Administrator.class,

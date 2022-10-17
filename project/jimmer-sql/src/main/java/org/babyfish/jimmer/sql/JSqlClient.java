@@ -151,16 +151,10 @@ public interface JSqlClient {
         Builder setCaches(Consumer<CacheConfig> block);
 
         @OldChain
-        Builder addFilter(Filter<?> filter);
-
-        @OldChain
         Builder addFilters(Filter<?>... filters);
 
         @OldChain
         Builder addFilters(Collection<Filter<?>> filters);
-
-        @OldChain
-        Builder addDisabledFilter(Filter<?> filter);
 
         @OldChain
         Builder addDisabledFilters(Filter<?>... filters);

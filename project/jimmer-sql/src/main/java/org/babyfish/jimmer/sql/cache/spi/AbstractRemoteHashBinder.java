@@ -50,19 +50,9 @@ public abstract class AbstractRemoteHashBinder<K, V>
         write(convertedMap, hashKey);
     }
 
-    public void deleteAll(Collection<K> keys, Object reason) {
-        if (reason == null || reason.equals(this.reason())) {
-            Collection<String> redisKeys = keys.stream().map(this::redisKey).collect(Collectors.toList());
-            delete(redisKeys);
-        }
-    }
-
-
     protected abstract List<byte[]> read(Collection<String> keys, String hashKey);
 
     protected abstract void write(Map<String, byte[]> map, String hashKey);
-
-    protected abstract void delete(Collection<String> keys);
 
     private String hashKey(SortedMap<String, Object> parameterMap) {
         try {
