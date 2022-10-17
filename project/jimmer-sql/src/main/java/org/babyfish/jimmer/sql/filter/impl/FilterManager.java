@@ -273,7 +273,7 @@ public class FilterManager implements Filters {
         }
         for (Filter<?> filter : filters) {
             if (!(filter instanceof CacheableFilter<?>)) {
-                return new CompositeFilter(filters);        
+                return new CompositeFilter(filters);
             }
         }
         return new CompositeCacheableFilter(type, (List<CacheableFilter<Props>>)(List<?>)filters);
@@ -485,17 +485,14 @@ public class FilterManager implements Filters {
         @Override
         public SortedMap<String, Object> getParameters() {
             if (filters.size() == 1) {
-                return filters.get(0).getParameters();
+                SortedMap<String, Object> map = filters.get(0).getParameters();
+                return map != null ? map : Collections.emptySortedMap();
             }
             SortedMap<String, Object> map = new TreeMap<>();
             for (CacheableFilter<Props> filter : filters) {
                 SortedMap<String, Object> subMap = filter.getParameters();
                 if (subMap == null || subMap.isEmpty()) {
-                    throw new IllegalStateException(
-                            "The method `getParameters` of \"" +
-                                    filter.getClass().getName() +
-                                    "\" cannot return null or empty map"
-                    );
+                    continue;
                 }
                 for (Map.Entry<String, Object> e : subMap.entrySet()) {
                     String key = e.getKey();
