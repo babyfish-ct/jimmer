@@ -1042,7 +1042,7 @@ public Map<Book, BookStore> store(Collection<Book> books) {
 @org.springframework.graphql.data.method.annotation.BatchMapping
 public Map<Book, List<Author>> authors(List<Book> books) {
     return sqlClient
-        .getListLoader(BookProps.AUTHORS)
+        .getListLoader(BookTableEx.class, BookTableEx::authors)
         .forFilter(
             args -> args
                 .orderBy(args.getTable().firstName())
