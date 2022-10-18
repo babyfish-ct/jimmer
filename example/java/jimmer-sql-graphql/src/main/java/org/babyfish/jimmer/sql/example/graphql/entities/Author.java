@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.example.graphql.entities;
 
 import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.example.graphql.entities.common.CommonEntity;
 
 import javax.validation.constraints.NotBlank;
 import java.util.List;
@@ -22,6 +23,6 @@ public interface Author extends CommonEntity {
 
     Gender gender();
 
-    @ManyToMany(mappedBy = "authors")
+    @ManyToMany(mappedBy = "authors", orderedProps = @OrderedProp("name"))
     List<Book> books();
 }

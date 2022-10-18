@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.example.kt.graphql.cache
+package org.babyfish.jimmer.example.kt.graphql.cache.binder
 
 import com.github.benmanes.caffeine.cache.CacheLoader
 import com.github.benmanes.caffeine.cache.Caffeine

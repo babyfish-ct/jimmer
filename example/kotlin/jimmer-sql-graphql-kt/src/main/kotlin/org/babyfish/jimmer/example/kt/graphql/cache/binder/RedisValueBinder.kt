@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.example.kt.sql.cache.binder
+package org.babyfish.jimmer.example.kt.graphql.cache.binder
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.babyfish.jimmer.meta.ImmutableType
@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 
 class RedisValueBinder<K, V>(
     private val operations: RedisOperations<String, ByteArray>,
-    objectMapper: ObjectMapper,
+    objectMapper: ObjectMapper?,
     type: ImmutableType,
     duration: Duration
 ) : AbstractKRemoteValueBinder<K, V>(

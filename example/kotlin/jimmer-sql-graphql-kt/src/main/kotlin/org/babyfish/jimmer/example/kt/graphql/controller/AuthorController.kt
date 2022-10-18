@@ -3,12 +3,8 @@ package org.babyfish.jimmer.example.kt.graphql.controller
 import org.babyfish.jimmer.example.kt.graphql.dal.AuthorRepository
 import org.babyfish.jimmer.example.kt.graphql.entities.Author
 import org.babyfish.jimmer.example.kt.graphql.entities.Book
-import org.babyfish.jimmer.example.kt.graphql.entities.edition
-import org.babyfish.jimmer.example.kt.graphql.entities.name
 import org.babyfish.jimmer.example.kt.graphql.input.AuthorInput
-import org.babyfish.jimmer.sql.ast.query.OrderMode
 import org.babyfish.jimmer.sql.kt.KSqlClient
-import org.babyfish.jimmer.sql.kt.ast.expression.desc
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.BatchMapping
 import org.springframework.graphql.data.method.annotation.MutationMapping
@@ -37,11 +33,8 @@ class AuthorController(
         authors: java.util.List<Author>
     ): Map<Author, List<Book>> =
         sqlClient
-            .getListLoader(Author::books)
-            .forFilter {
-                orderBy(table.name)
-                orderBy(table.edition.desc())
-            }
+            .loaders
+            .list(Author::books)
             .batchLoad(authors)
 
     // --- Mutation ---

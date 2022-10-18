@@ -1,10 +1,10 @@
-package org.babyfish.jimmer.sql.example.interceptor.input;
+package org.babyfish.jimmer.sql.example.graphql.interceptor.input;
 
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DraftInterceptor;
-import org.babyfish.jimmer.sql.example.interceptor.TenantProvider;
-import org.babyfish.jimmer.sql.example.model.common.TenantAwareDraft;
-import org.babyfish.jimmer.sql.example.model.common.TenantAwareProps;
+import org.babyfish.jimmer.sql.example.graphql.entities.common.TenantAwareDraft;
+import org.babyfish.jimmer.sql.example.graphql.entities.common.TenantAwareProps;
+import org.babyfish.jimmer.sql.example.graphql.interceptor.TenantProvider;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -33,3 +33,5 @@ public class TenantAwareDraftInterceptor implements DraftInterceptor<TenantAware
         }
     }
 }
+
+

@@ -48,25 +48,16 @@ public class BookController {
     @BatchMapping
     public Map<Book, BookStore> store(Collection<Book> books) {
         return sqlClient
-                .getReferenceLoader(
-                        BookTable.class,
-                        BookTable::store
-                )
+                .getLoaders()
+                .reference(BookProps.STORE)
                 .batchLoad(books);
     }
 
     @BatchMapping
     public Map<Book, List<Author>> authors(List<Book> books) {
         return sqlClient
-                .getListLoader(
-                        BookTableEx.class,
-                        BookTableEx::authors
-                )
-                .forFilter(
-                        args -> args
-                                .orderBy(args.getTable().firstName())
-                                .orderBy(args.getTable().lastName())
-                )
+                .getLoaders()
+                .list(BookProps.AUTHORS)
                 .batchLoad(books);
     }
 

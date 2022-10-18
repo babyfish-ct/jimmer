@@ -18,8 +18,8 @@ repositories {
 
 dependencies {
 
-	implementation 'org.babyfish.jimmer:jimmer-sql:0.2.23'
-	annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.2.23'
+	implementation 'org.babyfish.jimmer:jimmer-sql:0.3.0-early-access-9'
+	annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.3.0-early-access-9'
 
 	implementation 'org.springframework.boot:spring-boot-starter-graphql'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
