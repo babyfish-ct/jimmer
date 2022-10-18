@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
+import org.babyfish.jimmer.sql.example.App;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.runtime.*;
@@ -65,10 +66,8 @@ public class SqlClientConfig {
                 .addFilters(filters)
                 .setEntityManager(
                         new EntityManager(
-                                BookStore.class,
-                                Book.class,
-                                Author.class,
-                                TreeNode.class
+                                App.class.getClassLoader(),
+                                Book.class.getPackage().getName()
                         )
                 )
                 .setCaches(it -> {

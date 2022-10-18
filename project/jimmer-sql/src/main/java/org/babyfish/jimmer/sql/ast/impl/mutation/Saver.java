@@ -324,7 +324,7 @@ class Saver {
                         value = ((ImmutableSpi) value).__get(prop.getTargetType().getIdProp().getId());
                     }
                     values.add(value);
-                } else if (!prop.isNullable()) {
+                } else if (!prop.isNullable() && !prop.isId()) {
                     throw new IllegalArgumentException(
                             "Cannot insert the object at \"" +
                                     path +
