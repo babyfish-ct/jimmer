@@ -92,7 +92,7 @@ alter table tree_node
 
 insert into book_store(id, name, tenant, created_time, modified_time) values
     (1, 'O''REILLY', 'a', now(), now()),
-    (2, 'MANNING', 'a', now(), now())
+    (2, 'MANNING', 'b', now(), now())
 ;
 
 insert into book(id, name, edition, price, store_id, tenant, created_time, modified_time) values

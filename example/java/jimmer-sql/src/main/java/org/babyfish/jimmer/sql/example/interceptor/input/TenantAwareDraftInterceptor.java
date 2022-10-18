@@ -21,7 +21,7 @@ public class TenantAwareDraftInterceptor implements DraftInterceptor<TenantAware
     public void beforeSave(@NotNull TenantAwareDraft draft, boolean isNew) {
         if (!ImmutableObjects.isLoaded(draft, TenantAwareProps.TENANT)) {
             String tenant = tenantProvider.get();
-            if (tenant.isEmpty()) {
+            if (tenant == null) {
                 throw new IllegalStateException(
                         "Global tenant must be specified when the tenant of saved object is not specified"
                 );

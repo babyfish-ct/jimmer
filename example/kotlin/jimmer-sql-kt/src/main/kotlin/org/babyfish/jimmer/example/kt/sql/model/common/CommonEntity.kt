@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.example.kt.sql.model
+package org.babyfish.jimmer.example.kt.sql.model.common
 
 import org.babyfish.jimmer.sql.MappedSuperclass
 import java.time.LocalDateTime
