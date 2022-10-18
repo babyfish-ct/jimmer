@@ -6,24 +6,28 @@ import org.babyfish.jimmer.sql.cache.chain.CacheChain;
 import org.babyfish.jimmer.sql.cache.chain.ChainCacheBuilder;
 import org.babyfish.jimmer.sql.cache.chain.LoadingBinder;
 import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
+import org.babyfish.jimmer.sql.cache.spi.AbstractRemoteHashBinder;
+import org.babyfish.jimmer.sql.model.BookStoreProps;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class ParameterizedCaches {
 
     private ParameterizedCaches() {}
 
-    public static <K, V> Cache<K, V> create() {
-        return create(null, null);
+    public static <K, V> Cache<K, V> create(ImmutableProp prop) {
+        return create(prop, null);
     }
     
-    public static <K, V> Cache<K, V> create(ImmutableProp prop, BiConsumer<ImmutableProp, Collection<K>> onDelete) {
+    public static <K, V> Cache<K, V> create(ImmutableProp prop, Consumer<Collection<String>> onDelete) {
         return new ChainCacheBuilder<K, V>()
-                .add(new LevelOneBinder<>(prop, onDelete))
-                .add(new LevelTwoBinder<>())
+                .add(new LevelOneBinder<>())
+                .add(new LevelTwoBinder<>(prop, onDelete))
                 .build();
     }
 
@@ -58,19 +62,10 @@ public class ParameterizedCaches {
     }
 
     private static class LevelOneBinder<K, V> implements LoadingBinder.Parameterized<K, V> {
-
-        private final ImmutableProp prop;
-
-        private final BiConsumer<ImmutableProp, Collection<K>> onDelete;
         
         private final Map<K, Map<Map<String, Object>, V>> valueMap = new HashMap<>();
 
         private CacheChain.Parameterized<K, V> chain;
-
-        LevelOneBinder(ImmutableProp prop, BiConsumer<ImmutableProp, Collection<K>> onDelete) {
-            this.prop = prop;
-            this.onDelete = onDelete;
-        }
 
         @Override
         public void initialize(@NotNull CacheChain.Parameterized<K, V> chain) {
@@ -107,29 +102,55 @@ public class ParameterizedCaches {
         @Override
         public void deleteAll(@NotNull Collection<K> keys, @Nullable Object reason) {
             valueMap.keySet().removeAll(keys);
-            if (onDelete != null) {
-                onDelete.accept(prop, keys);
-            }
         }
     }
 
-    private static class LevelTwoBinder<K, V> implements SimpleBinder.Parameterized<K, V> {
-        
-        private final Map<K, Map<Map<String, Object>, V>> valueMap = new HashMap<>();
-        
-        @Override
-        public @NotNull Map<K, V> getAll(@NotNull Collection<K> keys, @NotNull SortedMap<String, Object> parameterMap) {
-            return read(valueMap, keys, parameterMap);
+    private static class LevelTwoBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
+
+        private final Map<String, Map<String, byte[]>> valueMap = new HashMap<>();
+
+
+        private final Consumer<Collection<String>> onDelete;
+
+        protected LevelTwoBinder(ImmutableProp prop, Consumer<Collection<String>> onDelete) {
+            super(null, null, prop, Duration.ofSeconds(10), 0);
+            this.onDelete = onDelete;
         }
 
         @Override
-        public void setAll(@NotNull Map<K, V> map, @NotNull SortedMap<String, Object> parameterMap) {
-            write(valueMap, map, parameterMap);
-        }
-
-        @Override
-        public void deleteAll(@NotNull Collection<K> keys, @Nullable Object reason) {
+        protected void delete(Collection<String> keys) {
             valueMap.keySet().removeAll(keys);
+            if (onDelete != null) {
+                onDelete.accept(keys);
+            }
+            valueMap.keySet().removeAll(keys);
+        }
+
+        @Override
+        protected List<byte[]> read(Collection<String> keys, String hashKey) {
+            List<byte[]> arr = new ArrayList<>();
+            for (String key : keys) {
+                Map<String, byte[]> subMap = valueMap.get(key);
+                if (subMap != null) {
+                    arr.add(subMap.get(hashKey));
+                } else {
+                    arr.add(null);
+                }
+            }
+            return arr;
+        }
+
+        @Override
+        protected void write(Map<String, byte[]> map, String hashKey) {
+            for (Map.Entry<String, byte[]> e : map.entrySet()) {
+                Map<String, byte[]> subMap = valueMap.computeIfAbsent(e.getKey(), it -> new HashMap<>());
+                subMap.put(hashKey, e.getValue());
+            }
+        }
+
+        @Override
+        protected String reason() {
+            return null;
         }
     }
 }

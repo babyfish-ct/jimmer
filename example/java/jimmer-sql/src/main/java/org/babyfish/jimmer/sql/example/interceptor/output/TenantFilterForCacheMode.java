@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.example.model.common.TenantAwareProps;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.SortedMap;
@@ -14,6 +15,7 @@ import java.util.TreeMap;
 /*
  * This bean is only be used when cache is used.
  */
+@Component
 @ConditionalOnProperty("spring.redis.host")
 public class TenantFilterForCacheMode implements CacheableFilter<TenantAwareProps> {
 
