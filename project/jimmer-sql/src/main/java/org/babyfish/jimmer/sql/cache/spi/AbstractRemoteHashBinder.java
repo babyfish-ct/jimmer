@@ -69,7 +69,7 @@ public abstract class AbstractRemoteHashBinder<K, V>
                     writer.write("\"");
                     writer.write(e.getKey());
                     writer.write("\":");
-                    objectMapper.writeValue(writer, e.getValue());
+                    writer.write(objectMapper.writeValueAsString(e.getValue()));
                 }
                 writer.write("}");
                 writer.flush();

@@ -1,14 +1,14 @@
-package org.babyfish.jimmer.example.kt.sql.cfg
+package org.babyfish.jimmer.example.kt.sql.interceptor.input
 
-import org.babyfish.jimmer.example.kt.sql.model.CommonEntity
-import org.babyfish.jimmer.example.kt.sql.model.CommonEntityDraft
+import org.babyfish.jimmer.example.kt.sql.model.common.CommonEntity
+import org.babyfish.jimmer.example.kt.sql.model.common.CommonEntityDraft
 import org.babyfish.jimmer.kt.isLoaded
 import org.babyfish.jimmer.sql.DraftInterceptor
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
 /*
- * see JSqlClient.Builder.addDraftInterceptors
+ * see KSqlClientDsl.addDraftInterceptors
  */
 @Component
 class CommonEntityDraftInterceptor : DraftInterceptor<CommonEntityDraft> {

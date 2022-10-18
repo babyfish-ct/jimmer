@@ -5,8 +5,11 @@ import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.cache.CacheFactory
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.dialect.MySqlDialect
+import org.babyfish.jimmer.sql.filter.Filter
 import org.babyfish.jimmer.sql.kt.KSqlClient
+import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.newKSqlClient
+import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.babyfish.jimmer.sql.runtime.ScalarProvider
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -27,6 +30,7 @@ class SqlClientConfig {
         dataSource: DataSource,
         @Value("\${spring.datasource.url}") jdbcUrl: String,
         interceptors: List<DraftInterceptor<*>>,
+        filters: List<KFilter<*>>,
         cacheFactory: CacheFactory? // Optional dependency
     ): KSqlClient {
         val isH2 = jdbcUrl.startsWith("jdbc:h2:")
@@ -58,17 +62,19 @@ class SqlClientConfig {
 
             addDraftInterceptors(interceptors)
 
+            addFilters(filters)
+
+            setEntityManager(
+                EntityManager(
+                    BookStore::class.java,
+                    Book::class.java,
+                    Author::class.java,
+                    TreeNode::class.java
+                )
+            )
             setCaches {
                 if (cacheFactory != null) {
-                    setCacheFactory(
-                        arrayOf(
-                            BookStore::class,
-                            Book::class,
-                            Author::class,
-                            TreeNode::class
-                        ),
-                        cacheFactory
-                    )
+                    setCacheFactory(cacheFactory)
                 }
             }
         }.also {

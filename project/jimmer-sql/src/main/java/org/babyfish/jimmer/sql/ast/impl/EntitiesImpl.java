@@ -368,6 +368,7 @@ public class EntitiesImpl implements Entities {
                 query.orderBy(table.get(sortedProp.unwrap().getName()).asc());
             }
         }
+        query.freeze();
         return query.select(
                 fetcher != null ? table.fetch(fetcher) : table
         ).execute(con);
