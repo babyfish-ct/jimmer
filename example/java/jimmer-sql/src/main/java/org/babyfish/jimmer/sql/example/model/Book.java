@@ -26,7 +26,10 @@ public interface Book extends TenantAware {
     @ManyToOne
     BookStore store();
 
-    @ManyToMany
+    @ManyToMany(orderedProps = {
+            @OrderedProp("firstName"),
+            @OrderedProp("lastName")
+    })
     @JoinTable(
             name = "BOOK_AUTHOR_MAPPING",
             joinColumnName = "BOOK_ID",
