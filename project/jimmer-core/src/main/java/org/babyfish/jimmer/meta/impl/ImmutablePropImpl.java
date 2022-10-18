@@ -477,6 +477,11 @@ class ImmutablePropImpl implements ImmutableProp {
     }
 
     @Override
+    public boolean equals(Object o) {
+        return o instanceof ImmutableProp && this == RedirectedProp.unwrap((ImmutableProp) o);
+    }
+
+    @Override
     public String toString() {
         return declaringType.toString() + '.' + name;
     }

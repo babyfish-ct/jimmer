@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.example.controller;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -11,7 +10,6 @@ import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.example.model.common.CommonEntityProps;
-import org.babyfish.jimmer.sql.example.model.common.TenantAware;
 import org.babyfish.jimmer.sql.example.model.common.TenantAwareProps;
 import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.babyfish.jimmer.sql.meta.Column;
@@ -209,12 +207,5 @@ public class BookController {
                 }
             }
         }
-    }
-}
-
-interface ImmutableVisitor {
-
-    class Builder {
-            
     }
 }
