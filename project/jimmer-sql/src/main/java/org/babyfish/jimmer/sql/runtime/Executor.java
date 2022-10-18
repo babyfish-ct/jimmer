@@ -10,7 +10,16 @@ public interface Executor {
             Connection con,
             String sql,
             List<Object> variables,
+            ExecutionPurpose purpose,
             StatementFactory statementFactory,
             SqlFunction<PreparedStatement, R> block
     );
+
+    static Executor log() {
+        return ExecutorForLog.wrap(DefaultExecutor.INSTANCE);
+    }
+
+    static Executor log(Executor executor) {
+        return ExecutorForLog.wrap(executor);
+    }
 }

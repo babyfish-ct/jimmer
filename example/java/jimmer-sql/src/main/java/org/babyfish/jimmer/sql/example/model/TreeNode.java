@@ -3,12 +3,13 @@ package org.babyfish.jimmer.sql.example.model;
 import org.babyfish.jimmer.sql.Key;
 
 import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.example.model.common.CommonEntity;
 
 import javax.validation.constraints.Null;
 import java.util.List;
 
 @Entity
-public interface TreeNode {
+public interface TreeNode extends CommonEntity {
 
     @Id
     @Column(name = "NODE_ID")

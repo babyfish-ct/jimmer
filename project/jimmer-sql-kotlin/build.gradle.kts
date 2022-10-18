@@ -15,12 +15,14 @@ dependencies {
     implementation(kotlin("reflect"))
     api(project(":jimmer-core-kotlin"))
     api(project(":jimmer-sql"))
+    implementation("org.apache.commons:commons-lang3:3.12.0")
 
     testImplementation(kotlin("test"))
     kspTest(project(":jimmer-ksp"))
 
     testImplementation("com.h2database:h2:2.1.212")
     dokkaHtmlPlugin("org.jetbrains.dokka:dokka-base:1.6.0")
+    testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3")
 }
 
 kotlin {

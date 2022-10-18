@@ -1,17 +1,28 @@
 package org.babyfish.jimmer.sql.cache.chain;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 
 public interface LoadingBinder<K, V> {
 
-    void initialize(@NotNull CacheChain<K, V> chain);
+    void initialize(CacheChain<K, V> chain);
 
-    @NotNull
-    Map<K, V> getAll(@NotNull Collection<K> keys);
+    Map<K, V> getAll(Collection<K> keys);
 
-    void deleteAll(@NotNull Collection<K> keys, @Nullable Object reason);
+    void deleteAll(Collection<K> keys, Object reason);
+
+    interface Parameterized<K, V> {
+
+        void initialize(CacheChain.Parameterized<K, V> chain);
+
+        default Map<K, V> getAll(Collection<K> keys) {
+            return getAll(keys, Collections.emptySortedMap());
+        }
+
+        Map<K, V> getAll(
+                Collection<K> keys,
+                SortedMap<String, Object> parameterMap
+        );
+
+        void deleteAll(Collection<K> keys, Object reason);
+    }
 }

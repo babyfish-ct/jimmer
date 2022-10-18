@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
@@ -29,7 +31,9 @@ public class Fetchers {
         for (int i = 0; i < selections.size(); i++) {
             Selection<?> selection = selections.get(i);
             if (selection instanceof FetcherSelection<?>) {
-                if (!((FetcherSelection<?>)selection).getFetcher().isSimpleFetcher()) {
+                Fetcher<?> fetcher = ((FetcherSelection<?>)selection).getFetcher();
+                if (!fetcher.isSimpleFetcher() ||
+                    hasReferenceFilter(fetcher.getImmutableType(), sqlClient)) {
                     columnMap.put(i, new ArrayList<>());
                 }
             }
@@ -92,5 +96,14 @@ public class Fetchers {
                 ctx.execute();
             }
         });
+    }
+
+    private static boolean hasReferenceFilter(ImmutableType type, JSqlClient sqlClient) {
+        for (ImmutableProp prop : type.getSelectableReferenceProps().values()) {
+            if (sqlClient.getFilters().getTargetFilter(prop) != null) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -5,7 +5,6 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
-import org.babyfish.jimmer.sql.JoinType;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
@@ -69,11 +68,14 @@ public class TableGenerator {
                                 type.getTableClassName().simpleName()
                 )
                 .addModifiers(Modifier.PUBLIC);
+        if (!isTableEx) {
+            typeBuilder.addSuperinterface(type.getPropsClassName());
+        }
         if (isTableEx) {
             typeBuilder.superclass(type.getTableClassName());
             typeBuilder.addSuperinterface(
                     ParameterizedTypeName.get(
-                            Constants.QUERY_TABLE_EX_CLASS_NAME,
+                            Constants.TABLE_EX_CLASS_NAME,
                             type.getClassName()
                     )
             );
@@ -117,7 +119,7 @@ public class TableGenerator {
         TypeName tableTypeName;
         if (isTableEx) {
             tableTypeName = ParameterizedTypeName.get(
-                    QUERY_TABLE_EX_CLASS_NAME,
+                    TABLE_EX_CLASS_NAME,
                     type.getClassName()
             );
         } else {
@@ -136,70 +138,16 @@ public class TableGenerator {
             ImmutableProp prop,
             boolean withJoinType
     ) {
-        if (prop.isTransient()) {
-            return;
+        MethodSpec method = PropsGenerator.property(
+                typeUtils,
+                isTableEx,
+                prop,
+                withJoinType,
+                true
+        );
+        if (method != null) {
+            typeBuilder.addMethod(method);
         }
-        if (withJoinType && !prop.isAssociation()) {
-            return;
-        }
-
-        TypeName returnType;
-        if (prop.isAssociation()) {
-            if (isTableEx) {
-                returnType = typeUtils
-                        .getImmutableType(prop.getElementType())
-                        .getTableExClassName();
-            } else {
-                returnType = typeUtils
-                        .getImmutableType(prop.getElementType())
-                        .getTableClassName();
-            }
-        } else {
-            if (prop.getTypeName().isPrimitive()) {
-                returnType = ParameterizedTypeName.get(
-                        Constants.PROP_NUMERIC_EXPRESSION_CLASS_NAME,
-                        prop.getTypeName().box()
-                );
-            } else if (typeUtils.isString(prop.getReturnType())) {
-                returnType = Constants.PROP_STRING_EXPRESSION_CLASS_NAME;
-            } else if (typeUtils.isNumber(prop.getReturnType())) {
-                returnType = ParameterizedTypeName.get(
-                        Constants.PROP_NUMERIC_EXPRESSION_CLASS_NAME,
-                        prop.getTypeName()
-                );
-            } else if (typeUtils.isComparable(prop.getReturnType())) {
-                returnType = ParameterizedTypeName.get(
-                        Constants.PROP_COMPARABLE_EXPRESSION_CLASS_NAME,
-                        prop.getTypeName()
-                );
-            } else {
-                returnType = ParameterizedTypeName.get(
-                        PROP_EXPRESSION_CLASS_NAME,
-                        prop.getTypeName()
-                );
-            }
-        }
-
-        MethodSpec.Builder builder = MethodSpec
-                .methodBuilder(prop.getName())
-                .addModifiers(Modifier.PUBLIC)
-                .returns(returnType);
-        if (isTableEx && !prop.isList()) {
-            builder.addAnnotation(Override.class);
-        }
-        if (withJoinType) {
-            builder.addParameter(JoinType.class, "joinType");
-        }
-        if (prop.isAssociation()) {
-            if (withJoinType) {
-                builder.addStatement("return join($S, joinType)", prop.getName());
-            } else {
-                builder.addStatement("return join($S)", prop.getName());
-            }
-        } else {
-            builder.addStatement("return get($S)", prop.getName());
-        }
-        typeBuilder.addMethod(builder.build());
     }
 
     private void addAsTableEx() {

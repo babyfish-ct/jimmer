@@ -12,6 +12,8 @@ public interface NamedEntity {
     @Key
     String getName();
 
+    boolean deleted();
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime getCreatedTime();
 

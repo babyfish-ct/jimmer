@@ -5,6 +5,9 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.meta.impl.RedirectedProp;
+import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.Triggers;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -18,6 +21,8 @@ import java.util.function.Function;
 
 public class CacheConfig {
 
+    private final EntityManager entityManager;
+
     private final Map<ImmutableType, Cache<?, ?>> objectCacheMap =
             new LinkedHashMap<>();
 
@@ -28,33 +33,51 @@ public class CacheConfig {
 
     private ObjectMapper binLogObjectMapper;
 
+    public CacheConfig(EntityManager entityManager) {
+        this.entityManager = entityManager;
+    }
+
     @OldChain
-    public CacheConfig setCacheFactory(Class<?>[] entityTypes, CacheFactory cacheFactory) {
-        if (entityTypes.length == 0) {
-            throw new IllegalArgumentException("vararg \"entityTypes\" cannot be empty");
+    public CacheConfig setCacheFactory(CacheFactory cacheFactory) {
+        if (entityManager == null) {
+            throw new IllegalStateException("EntityManager must be set before set cache factory");
+        }
+        if (entityManager.getAllTypes().isEmpty()) {
+            throw new IllegalStateException("vararg \"entityTypes\" cannot be empty");
         }
         if (cacheFactory == null) {
             throw new IllegalArgumentException("cacheFactory cannot bee null");
         }
-        for (Class<?> entityType : entityTypes) {
-            ImmutableType type = ImmutableType.get(entityType);
-            if (!objectCacheMap.containsKey(type)) {
-                Cache<?, ?> objectCache = cacheFactory.createObjectCache(type);
-                if (objectCache != null) {
-                    objectCacheMap.put(type, objectCache);
+        for (ImmutableType type : entityManager.getAllTypes()) {
+            if (type.isEntity()) {
+                if (!objectCacheMap.containsKey(type)) {
+                    Cache<?, ?> objectCache = cacheFactory.createObjectCache(type);
+                    if (objectCache != null) {
+                        if (objectCache instanceof Cache.Parameterized<?, ?>) {
+                            throw new IllegalStateException(
+                                    "CacheFactory returns illegal cache for \"" +
+                                            type +
+                                            "\", object cache cannot be parameterized"
+                            );
+                        }
+                        objectCacheMap.put(type, objectCache);
+                    }
                 }
-            }
-            for (ImmutableProp prop : type.getProps().values()) {
-                if ((prop.isAssociation(TargetLevel.ENTITY) || prop.hasTransientResolver()) && !propCacheMap.containsKey(prop)) {
-                    Cache<?, ?> propCache =
-                            prop.hasTransientResolver() ?
-                                    cacheFactory.createResolverCache(prop) : (
-                                            prop.isReferenceList(TargetLevel.ENTITY) ?
-                                                    cacheFactory.createAssociatedIdListCache(prop) :
-                                                    cacheFactory.createAssociatedIdCache(prop)
+                for (ImmutableProp prop : type.getProps().values()) {
+                    if (prop.isAssociation(TargetLevel.ENTITY) || prop.hasTransientResolver()) {
+                        ImmutableProp cacheableProp = RedirectedProp.source(prop, type);
+                        if (!propCacheMap.containsKey(cacheableProp)) {
+                            Cache<?, ?> propCache =
+                                    cacheableProp.hasTransientResolver() ?
+                                            cacheFactory.createResolverCache(cacheableProp) : (
+                                            cacheableProp.isReferenceList(TargetLevel.ENTITY) ?
+                                                    cacheFactory.createAssociatedIdListCache(cacheableProp) :
+                                                    cacheFactory.createAssociatedIdCache(cacheableProp)
                                     );
-                    if (propCache != null) {
-                        propCacheMap.put(prop, propCache);
+                            if (propCache != null) {
+                                propCacheMap.put(cacheableProp, propCache);
+                            }
+                        }
                     }
                 }
             }
@@ -67,6 +90,11 @@ public class CacheConfig {
             Class<T> type,
             Cache<?, T> cache
     ) {
+        if (cache instanceof Cache.Parameterized<?, ?>) {
+            throw new IllegalArgumentException(
+                    "Object cache cannot be parameterized cache"
+            );
+        }
         ImmutableType immutableType = ImmutableType.get(type);
         objectCacheMap.put(immutableType, LocatedCacheImpl.unwrap(cache));
         return this;
@@ -74,12 +102,10 @@ public class CacheConfig {
 
     @OldChain
     public <ST extends Table<?>> CacheConfig setAssociatedIdCache(
-            Class<ST> sourceTableType,
-            Function<ST, Table<?>> targetTableGetter,
+            TypedProp.Reference<?, ?> prop,
             Cache<?, ?> cache
     ) {
-        ImmutableProp prop = ImmutableProps.join(sourceTableType, targetTableGetter);
-        return setAssociatedIdCache(prop, cache);
+        return setAssociatedIdCache(prop.unwrap(), cache);
     }
 
     @OldChain
@@ -90,18 +116,19 @@ public class CacheConfig {
         if (!prop.isReference(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException("The prop \"" + prop + "\" is not entity reference");
         }
+        if (!prop.getDeclaringType().isEntity()) {
+            throw new IllegalArgumentException("The prop \"" + prop + "\" is not declared in entity");
+        }
         propCacheMap.put(prop, LocatedCacheImpl.unwrap(cache));
         return this;
     }
 
     @OldChain
     public <T, ST extends Table<?>, TT extends Table<T>> CacheConfig setAssociatedIdListCache(
-            Class<ST> sourceTableType,
-            Function<ST, Table<?>> targetTableGetter,
+            TypedProp.ReferenceList<?, ?> prop,
             Cache<?, List<?>> cache
     ) {
-        ImmutableProp prop = ImmutableProps.join(sourceTableType, targetTableGetter);
-        return setAssociatedIdListCache(prop, cache);
+        return setAssociatedIdListCache(prop.unwrap(), cache);
     }
 
     @OldChain
@@ -112,8 +139,19 @@ public class CacheConfig {
         if (!prop.isReferenceList(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException("The prop \"" + prop + "\" is not entity list");
         }
+        if (!prop.getDeclaringType().isEntity()) {
+            throw new IllegalArgumentException("The prop \"" + prop + "\" is not declared in entity");
+        }
         propCacheMap.put(prop, LocatedCacheImpl.unwrap(cache));
         return this;
+    }
+
+    @OldChain
+    public CacheConfig setResolverCache(
+            TypedProp<?, ?> prop,
+            Cache<?, ?> cache
+    ) {
+        return setResolverCache(prop.unwrap(), cache);
     }
 
     @OldChain
@@ -123,6 +161,9 @@ public class CacheConfig {
     ) {
         if (!prop.hasTransientResolver()) {
             throw new IllegalArgumentException("The prop \"" + prop + "\" is transient property with resolver");
+        }
+        if (!prop.getDeclaringType().isEntity()) {
+            throw new IllegalArgumentException("The prop \"" + prop + "\" is not declared in entity");
         }
         propCacheMap.put(prop, LocatedCacheImpl.unwrap(cache));
         return this;

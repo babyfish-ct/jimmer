@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
@@ -29,11 +30,8 @@ public interface AffectedTable {
         return new Entity(type);
     }
 
-    static <T extends Table<?>> Middle of(
-            Class<T> tableType,
-            Function<T, Table<?>> block
-    ) {
-        return new Middle(ImmutableProps.join(tableType, block));
+    static <T extends Table<?>> Middle of(TypedProp.Association<?, ?> prop) {
+        return new Middle(prop.unwrap());
     }
 
     static Middle of(ImmutableProp prop) {

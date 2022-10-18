@@ -2,7 +2,9 @@ package org.babyfish.jimmer.sql.loader.spi;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.OrderedItem;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -14,17 +16,24 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
+import org.babyfish.jimmer.sql.ast.query.Sortable;
+import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.Filter;
+import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
-import org.babyfish.jimmer.sql.fetcher.impl.FilterArgsImpl;
+import org.babyfish.jimmer.sql.fetcher.impl.FieldFilterArgsImpl;
+import org.babyfish.jimmer.sql.filter.CacheableFilter;
+import org.babyfish.jimmer.sql.filter.impl.AbstractFilterArgsImpl;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.meta.Storage;
+import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.util.*;
@@ -38,10 +47,14 @@ public abstract class AbstractDataLoader {
     private final Connection con;
 
     private final ImmutableProp prop;
+    
+    private final ImmutableProp sourceIdProp;
+    
+    private final ImmutableProp targetIdProp;
 
-    private final Filter<Table<ImmutableSpi>> filter;
+    private final org.babyfish.jimmer.sql.filter.Filter<Props> globalFiler;
 
-    private final ImmutableProp thisIdProp;
+    private final FieldFilter<Table<ImmutableSpi>> propFilter;
 
     private final int limit;
 
@@ -51,8 +64,6 @@ public abstract class AbstractDataLoader {
 
     private final Fetcher<ImmutableSpi> fetcher;
 
-    private final ImmutableProp targetIdProp;
-
     @SuppressWarnings("unchecked")
     protected AbstractDataLoader(
             JSqlClient sqlClient,
@@ -60,7 +71,7 @@ public abstract class AbstractDataLoader {
             ImmutableType entityType,
             ImmutableProp prop,
             Fetcher<?> fetcher,
-            Filter<?> filter,
+            FieldFilter<?> propFilter,
             int limit,
             int offset
     ) {
@@ -77,7 +88,7 @@ public abstract class AbstractDataLoader {
                                 "\""
                 );
             }
-            if (filter != null) {
+            if (propFilter != null) {
                 throw new IllegalArgumentException(
                         "Cannot specify filter for scalar prop \"" +
                                 prop +
@@ -99,37 +110,44 @@ public abstract class AbstractDataLoader {
                 );
             }
         }
+        if (entityType != null) {
+            if (!entityType.isEntity()) {
+                throw new IllegalArgumentException(
+                        "\"" + entityType + "\" is not entity"
+                );
+            }
+            prop = RedirectedProp.source(prop, entityType);
+        } else if (!prop.getDeclaringType().isEntity()) {
+            throw new IllegalArgumentException(
+                    "\"" + prop + "\" is not declared in entity"
+            );
+        }
         this.sqlClient = sqlClient;
         this.con = con;
         this.prop = prop;
-        this.filter = (Filter<Table<ImmutableSpi>>) filter;
-        if (entityType != null) {
-            if (!prop.getDeclaringType().getJavaClass().isAssignableFrom(entityType.getJavaClass())) {
-                throw new IllegalArgumentException(
-                        "The entity type \"" +
-                                entityType +
-                                "\" is does not extend declaring type of \"" +
-                                prop +
-                                "\""
-                );
-            }
-            this.thisIdProp = entityType.getIdProp();
-            if (thisIdProp == null) {
-                throw new IllegalArgumentException(
-                        "Cannot create data loader based entity type \"" +
-                                entityType +
-                                "\", it does not contain id property"
-                );
-            }
+        this.sourceIdProp = prop.getDeclaringType().getIdProp();
+        this.targetIdProp = prop.getTargetType() != null ? prop.getTargetType().getIdProp() : null;
+        if (prop.isAssociation(TargetLevel.ENTITY)) {
+            globalFiler = sqlClient.getFilters().getTargetFilter(prop);
         } else {
-            this.thisIdProp = prop.getDeclaringType().getIdProp();
-            if (thisIdProp == null) {
-                throw new IllegalArgumentException(
-                        "Cannot create data loader based property \"" +
+            globalFiler = null;
+        }
+        this.propFilter = (FieldFilter<Table<ImmutableSpi>>) propFilter;
+        if (prop.isReference(TargetLevel.ENTITY) && !prop.isNullable()) {
+            if (globalFiler != null) {
+                throw new ExecutionException(
+                        "Cannot apply filter \"" +
+                                globalFiler +
+                                "\" for \"" +
                                 prop +
-                                "\", there is no id prop in the declaring type \"" +
-                                prop.getDeclaringType() +
-                                "\""
+                                "\" because that property is not nullable"
+                );
+            }
+            if (propFilter != null) {
+                throw new ExecutionException(
+                        "Cannot apply field filter of object fetcher for \"" +
+                                prop +
+                                "\" because that property is not nullable"
                 );
             }
         }
@@ -140,11 +158,9 @@ public abstract class AbstractDataLoader {
             this.fetcher = fetcher != null ?
                     (Fetcher<ImmutableSpi>) fetcher :
                     new FetcherImpl<>((Class<ImmutableSpi>) prop.getTargetType().getJavaClass());
-            this.targetIdProp = prop.getTargetType().getIdProp();
         } else {
             this.resolver = sqlClient.getResolver(prop);
             this.fetcher = null;
-            this.targetIdProp = null;
         }
     }
 
@@ -171,26 +187,34 @@ public abstract class AbstractDataLoader {
     @SuppressWarnings("unchecked")
     private Map<ImmutableSpi, Object> loadTransients(Collection<ImmutableSpi> sources) {
         Collection<Object> sourceIds = toSourceIds(sources);
-        TransientResolver<Object, Object> typedResolver =
-                ((TransientResolver<Object, Object>)resolver);
+        TransientResolver<Object, Object> resolver =
+                ((TransientResolver<Object, Object>) this.resolver);
         Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
-        if (cache == null) {
+        TransientResolver.Parameterized<Object, Object> parameterizedResolver =
+                resolver instanceof TransientResolver.Parameterized<?, ?> ?
+                        (TransientResolver.Parameterized<Object, Object>) resolver :
+                        null;
+        Cache.Parameterized<Object, Object> parameterizedCache =
+                cache instanceof Cache.Parameterized<?, ?> ?
+                        (Cache.Parameterized<Object, Object>)cache :
+                        null;
+        if (cache == null || (parameterizedResolver != null && parameterizedCache == null)) {
             return Utils.joinCollectionAndMap(
                     sources,
                     this::toSourceId,
-                    typedResolver.resolve(sourceIds, con)
+                    resolver.resolve(sourceIds, con)
             );
         }
-        Map<Object, Object> valueMap = cache.getAll(
-                sourceIds,
-                new CacheEnvironment<>(
-                        sqlClient,
-                        con,
-                        filter,
-                        (ids) -> typedResolver.resolve(ids, con),
-                        false
-                )
+        CacheEnvironment<Object, Object> env = new CacheEnvironment<>(
+                sqlClient,
+                con,
+                (ids) -> resolver.resolve(ids, con),
+                false
         );
+        Map<Object, Object> valueMap =
+                parameterizedResolver != null ?
+                        parameterizedCache.getAll(sourceIds, parameterizedResolver.getParameters(), env) :
+                        cache.getAll(sourceIds, env);
         return Utils.joinCollectionAndMap(
                 sources,
                 this::toSourceId,
@@ -199,18 +223,33 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<ImmutableSpi, ImmutableSpi> loadParents(Collection<ImmutableSpi> sources) {
+
         Cache<Object, Object> fkCache = sqlClient.getCaches().getPropertyCache(prop);
-        if (fkCache == null || (filter != null && !filter.toCacheArgs().isEmpty())) {
+        CacheableFilter<Props> cacheableGlobalFilter = globalFiler instanceof CacheableFilter<?> ?
+                (CacheableFilter<Props>) globalFiler :
+                null;
+        Cache.Parameterized<Object, Object> parameterizedFkCache = fkCache instanceof Cache.Parameterized<?, ?> ?
+                (Cache.Parameterized<Object, Object>) fkCache :
+                null;
+        if (fkCache == null ||
+                propFilter != null ||
+                (globalFiler != null && cacheableGlobalFilter == null) ||
+                (cacheableGlobalFilter != null && parameterizedFkCache == null)
+        ) {
             return loadParentsDirectly(sources);
         }
+
+        SortedMap<String, Object> parameterMap = cacheableGlobalFilter != null ?
+                cacheableGlobalFilter.getParameters() :
+                Collections.emptySortedMap();
         Map<Object, Object> fkMap = new LinkedHashMap<>(
                 (sources.size() * 4 + 2) / 3
         );
         Collection<Object> missedFkSourceIds;
-        if (filter != null) {
+        missedFkSourceIds = new ArrayList<>();
+        if (globalFiler != null) {
             missedFkSourceIds = toSourceIds(sources);
         } else {
-            missedFkSourceIds = new ArrayList<>();
             for (ImmutableSpi source : sources) {
                 if (source.__isLoaded(prop.getId())) {
                     ImmutableSpi target = (ImmutableSpi) source.__get(prop.getId());
@@ -223,16 +262,15 @@ public abstract class AbstractDataLoader {
             }
         }
         if (!missedFkSourceIds.isEmpty()) {
-            Map<Object, Object> cachedFkMap = fkCache.getAll(
-                    missedFkSourceIds,
-                    new CacheEnvironment<>(
-                            sqlClient,
-                            con,
-                            filter,
-                            this::queryForeignKeyMap,
-                            false
-                    )
+            CacheEnvironment<Object, Object> env = new CacheEnvironment<>(
+                    sqlClient,
+                    con,
+                    this::queryForeignKeyMap,
+                    false
             );
+            Map<Object, Object> cachedFkMap = parameterizedFkCache != null ?
+                    parameterizedFkCache.getAll(missedFkSourceIds, parameterMap, env) :
+                    fkCache.getAll(missedFkSourceIds, env);
             for (Object sourceId : missedFkSourceIds) {
                 Object fk = cachedFkMap.get(sourceId);
                 if (fk != null) {
@@ -251,7 +289,6 @@ public abstract class AbstractDataLoader {
         return Utils.joinCollectionAndMap(sources, this::toSourceId, targetMap);
     }
 
-    @SuppressWarnings("unchecked")
     private Map<ImmutableSpi, ImmutableSpi> loadParentsDirectly(
             Collection<ImmutableSpi> sources
     ) {
@@ -271,7 +308,7 @@ public abstract class AbstractDataLoader {
         }
         Map<Object, ImmutableSpi> map1 = null;
         if (!fkMap.isEmpty()) {
-            if (filter != null) {
+            if (globalFiler != null || propFilter != null) {
                 map1 = Utils.joinMaps(
                         fkMap,
                         Utils.toMap(
@@ -291,7 +328,7 @@ public abstract class AbstractDataLoader {
         }
         Map<Object, ImmutableSpi> map2 = null;
         if (!missedFkSourceIds.isEmpty()) {
-            if (filter != null || fetcher.getFieldMap().size() > 1) {
+            if (globalFiler != null || propFilter != null || fetcher.getFieldMap().size() > 1) {
                 map2 = Tuple2.toMap(
                         querySourceTargetPairs(missedFkSourceIds)
                 );
@@ -307,29 +344,43 @@ public abstract class AbstractDataLoader {
         }
         return Utils.joinCollectionAndMap(
                 sources,
-                this::toTargetId,
+                this::toSourceId,
                 Utils.mergeMap(map1, map2)
         );
     }
 
     private Map<ImmutableSpi, ImmutableSpi> loadTargetMap(Collection<ImmutableSpi> sources) {
+
         Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
-        if (cache == null|| (filter != null && !filter.toCacheArgs().isEmpty())) {
+        CacheableFilter<Props> cacheableGlobalFilter = globalFiler instanceof CacheableFilter<?> ?
+                (CacheableFilter<Props>) globalFiler :
+                null;
+        Cache.Parameterized<Object, Object> parameterizedCache = cache instanceof Cache.Parameterized<?, ?> ?
+                (Cache.Parameterized<Object, Object>) cache :
+                null;
+        if (cache == null ||
+                propFilter != null ||
+                (globalFiler != null && cacheableGlobalFilter == null) ||
+                (cacheableGlobalFilter != null && parameterizedCache == null)
+        ) {
             return loadTargetMapDirectly(sources);
         }
+
+        SortedMap<String, Object> parameterMap = cacheableGlobalFilter != null ?
+                cacheableGlobalFilter.getParameters() :
+                Collections.emptySortedMap();
         List<Object> sourceIds = toSourceIds(sources);
-        Map<Object, Object> idMap = cache.getAll(
-                sourceIds,
-                new CacheEnvironment<>(
-                        sqlClient,
-                        con,
-                        filter,
-                        it -> Tuple2.toMap(
-                                querySourceTargetIdPairs(it)
-                        ),
-                        false
-                )
+        CacheEnvironment<Object, Object> env = new CacheEnvironment<>(
+                sqlClient,
+                con,
+                it -> Tuple2.toMap(
+                        querySourceTargetIdPairs(it)
+                ),
+                false
         );
+        Map<Object, Object> idMap = parameterizedCache != null ?
+                parameterizedCache.getAll(sourceIds, parameterMap, env) :
+                cache.getAll(sourceIds, env);
         Map<Object, ImmutableSpi> targetMap = Utils.toMap(
                 this::toTargetId,
                 findTargets(new LinkedHashSet<>(idMap.values()))
@@ -344,7 +395,7 @@ public abstract class AbstractDataLoader {
     private Map<ImmutableSpi, ImmutableSpi> loadTargetMapDirectly(Collection<ImmutableSpi> sources) {
         List<Object> sourceIds = toSourceIds(sources);
         Map<Object, ImmutableSpi> targetMap;
-        if (fetcher.getFieldMap().size() > 1) {
+        if (globalFiler != null || propFilter != null || fetcher.getFieldMap().size() > 1) {
             targetMap = Tuple2.toMap(
                     querySourceTargetPairs(sourceIds)
             );
@@ -363,22 +414,35 @@ public abstract class AbstractDataLoader {
 
     private Map<ImmutableSpi, List<ImmutableSpi>> loadTargetMultiMap(Collection<ImmutableSpi> sources) {
         Cache<Object, List<Object>> cache = sqlClient.getCaches().getPropertyCache(prop);
-        if (cache == null || (filter != null && !filter.toCacheArgs().isEmpty())) {
+        CacheableFilter<Props> cacheableGlobalFilter = globalFiler instanceof CacheableFilter<?> ?
+                (CacheableFilter<Props>) globalFiler :
+                null;
+        Cache.Parameterized<Object, List<Object>> parameterizedCache = cache instanceof Cache.Parameterized<?, ?> ?
+                (Cache.Parameterized<Object, List<Object>>) cache :
+                null;
+        if (cache == null ||
+                propFilter != null ||
+                (globalFiler != null && cacheableGlobalFilter == null) ||
+                (cacheableGlobalFilter != null && parameterizedCache == null)
+        ) {
             return loadTargetMultiMapDirectly(sources);
         }
+
+        SortedMap<String, Object> parameterMap = cacheableGlobalFilter != null ?
+                cacheableGlobalFilter.getParameters() :
+                Collections.emptySortedMap();
         List<Object> sourceIds = toSourceIds(sources);
-        Map<Object, List<Object>> idMultiMap = cache.getAll(
-                sourceIds,
-                new CacheEnvironment<>(
-                        sqlClient,
-                        con,
-                        filter,
-                        it -> Tuple2.toMultiMap(
-                                querySourceTargetIdPairs(it)
-                        ),
-                        false
-                )
+        CacheEnvironment<Object, List<Object>> env = new CacheEnvironment<>(
+                sqlClient,
+                con,
+                it -> Tuple2.toMultiMap(
+                        querySourceTargetIdPairs(it)
+                ),
+                false
         );
+        Map<Object, List<Object>> idMultiMap = parameterizedCache != null ?
+                parameterizedCache.getAll(sourceIds, parameterMap, env) :
+                cache.getAll(sourceIds, env);
         Map<Object, ImmutableSpi> targetMap = Utils.toMap(
                 this::toTargetId,
                 findTargets(
@@ -401,7 +465,7 @@ public abstract class AbstractDataLoader {
     private Map<ImmutableSpi, List<ImmutableSpi>> loadTargetMultiMapDirectly(Collection<ImmutableSpi> sources) {
         List<Object> sourceIds = toSourceIds(sources);
         Map<Object, List<ImmutableSpi>> targetMap;
-        if (fetcher.getFieldMap().size() > 1) {
+        if (globalFiler != null || propFilter != null || fetcher.getFieldMap().size() > 1) {
             targetMap = Tuple2.toMultiMap(
                     querySourceTargetPairs(sourceIds)
             );
@@ -419,34 +483,40 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<Object, Object> queryForeignKeyMap(Collection<Object> sourceIds) {
+        
         if (sourceIds.size() == 1) {
             Object sourceId = sourceIds.iterator().next();
-            List<Object> targetIds = Queries.createQuery(sqlClient, prop.getDeclaringType(), (q, source) -> {
-                Expression<Object> pkExpr = source.get(thisIdProp.getName());
+            List<Object> targetIds = Queries.createQuery(sqlClient, prop.getDeclaringType(), ExecutionPurpose.LOADER, true, (q, source) -> {
+                Expression<Object> pkExpr = source.get(sourceIdProp.getName());
                 Table<?> targetTable = source.join(prop.getName());
                 Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
                 q.where(pkExpr.eq(sourceId));
                 q.where(fkExpr.isNotNull());
-                applyFilter(q, targetTable, sourceIds);
+                applyGlobalFilter(q, targetTable);
+                applyPropFilter(q, targetTable, sourceIds);
+                applyDefaultOrder(q, targetTable);
                 return q.select(fkExpr);
             }).limit(limit, offset).execute(con);
             return Utils.toMap(sourceId, targetIds);
         }
         List<Tuple2<Object, Object>> tuples = Queries
-                .createQuery(sqlClient, prop.getDeclaringType(), (q, source) -> {
-                    Expression<Object> pkExpr = source.get(thisIdProp.getName());
+                .createQuery(sqlClient, prop.getDeclaringType(), ExecutionPurpose.LOADER, true, (q, source) -> {
+                    Expression<Object> pkExpr = source.get(sourceIdProp.getName());
                     Table<?> targetTable = source.join(prop.getName());
                     Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
                     q.where(pkExpr.in(sourceIds));
                     q.where(fkExpr.isNotNull());
-                    applyFilter(q, targetTable, sourceIds);
+                    applyGlobalFilter(q, targetTable);
+                    applyPropFilter(q, targetTable, sourceIds);
+                    applyDefaultOrder(q, targetTable);
                     return q.select(pkExpr, fkExpr);
                 }).execute(con);
         return Tuple2.toMap(tuples);
     }
 
     private List<Tuple2<Object, Object>> querySourceTargetIdPairs(Collection<Object> sourceIds) {
-        if (filter == null) {
+
+        if (propFilter == null) {
             boolean useMiddleTable = false;
             Storage storage = prop.getStorage();
             if (storage != null) {
@@ -460,18 +530,20 @@ public abstract class AbstractDataLoader {
             if (useMiddleTable) {
                 if (sourceIds.size() == 1) {
                     Object sourceId = sourceIds.iterator().next();
-                    List<Object> targetIds = Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), (q, association) -> {
-                        Expression<Object> sourceIdExpr = association.source().get(thisIdProp.getName());
+                    List<Object> targetIds = Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.LOADER, (q, association) -> {
+                        Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
                         Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
                         q.where(sourceIdExpr.eq(sourceId));
+                        applyGlobalFilter(q, association.target());
                         return q.select(targetIdExpr);
                     }).limit(limit, offset).execute(con);
                     return Utils.toTuples(sourceId, targetIds);
                 }
-                return Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), (q, association) -> {
-                    Expression<Object> sourceIdExpr = association.source().get(thisIdProp.getName());
+                return Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.LOADER, (q, association) -> {
+                    Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
                     Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
                     q.where(sourceIdExpr.in(sourceIds));
+                    applyGlobalFilter(q, association.target());
                     return q.select(sourceIdExpr, targetIdExpr);
                 }).execute(con);
             }
@@ -488,10 +560,12 @@ public abstract class AbstractDataLoader {
 
     @SuppressWarnings("unchecked")
     private List<ImmutableSpi> queryTargets(Collection<Object> targetIds) {
-        return Queries.createQuery(sqlClient, prop.getTargetType(), (q, target) -> {
+
+        return Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOADER, globalFiler == null, (q, target) -> {
             Expression<Object> idExpr = target.get(targetIdProp.getName());
             q.where(idExpr.in(targetIds));
-            applyFilter(q, target, targetIds);
+            applyPropFilter(q, target, targetIds);
+            applyDefaultOrder(q, target);
             return q.select(
                     ((Table<ImmutableSpi>)target).fetch(fetcher)
             );
@@ -501,38 +575,52 @@ public abstract class AbstractDataLoader {
     @SuppressWarnings("unchecked")
     private <R> List<Tuple2<Object, R>> executeTupleQuery(
             Collection<Object> sourceIds,
-            Function<Table<ImmutableSpi>, Selection<?>> valueExpressionGetter) {
+            Function<Table<ImmutableSpi>, Selection<?>> valueExpressionGetter
+    ) {
+
         if (sourceIds.size() == 1) {
             Object sourceId = sourceIds.iterator().next();
-            List<R> results = Queries.createQuery(sqlClient, prop.getTargetType(), (q, target) -> {
+            List<R> results = Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOADER, globalFiler == null, (q, target) -> {
                 Expression<Object> sourceIdExpr = target
-                        .inverseJoin(prop.getDeclaringType().getJavaClass(), prop.getName())
-                        .get(thisIdProp.getName());
+                        .inverseJoin(
+                                RedirectedProp.source(prop, prop.getDeclaringType())
+                        )
+                        .get(sourceIdProp.getName());
                 q.where(sourceIdExpr.eq(sourceId));
-                applyFilter(q, target, sourceIds);
+                applyPropFilter(q, target, sourceIds);
+                applyDefaultOrder(q, target);
                 return q.select((Selection<R>) valueExpressionGetter.apply((Table<ImmutableSpi>) target));
             }).limit(limit, offset).execute(con);
             return Utils.toTuples(sourceId, results);
         }
-        return Queries.createQuery(sqlClient, prop.getTargetType(), (q, target) -> {
+        return Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOADER, globalFiler == null, (q, target) -> {
             Expression<Object> sourceIdExpr = target
-                    .inverseJoin(prop.getDeclaringType().getJavaClass(), prop.getName())
-                    .get(thisIdProp.getName());
+                    .inverseJoin(
+                            RedirectedProp.source(prop, prop.getDeclaringType())
+                    )
+                    .get(sourceIdProp.getName());
             q.where(sourceIdExpr.in(sourceIds));
-            applyFilter(q, target, sourceIds);
+            applyPropFilter(q, target, sourceIds);
+            applyDefaultOrder(q, target);
             return q.select(sourceIdExpr, (Selection<R>) valueExpressionGetter.apply((Table<ImmutableSpi>) target));
         }).execute(con);
     }
 
+    private void applyGlobalFilter(Sortable sortable, Table<?> table) {
+        if (globalFiler != null) {
+            globalFiler.filter(new FilterArgsImpl(sortable, table));
+        }
+    }
+
     @SuppressWarnings("unchecked")
-    private void applyFilter(
+    private void applyPropFilter(
             MutableQuery query,
             Table<?> table,
             Collection<Object> keys
     ) {
-        if (filter != null) {
-            filter.apply(
-                    FilterArgsImpl.of(
+        if (propFilter != null) {
+            propFilter.apply(
+                    FieldFilterArgsImpl.of(
                             (AbstractMutableQueryImpl) query,
                             (Table<ImmutableSpi>) table,
                             keys
@@ -541,8 +629,25 @@ public abstract class AbstractDataLoader {
         }
     }
 
+    private void applyDefaultOrder(
+            MutableQuery query,
+            Table<?> table
+    ) {
+        List<OrderedItem> orderedItems = prop.getOrderedItems();
+        if (globalFiler == null && propFilter == null && !orderedItems.isEmpty()) {
+            for (OrderedItem orderedItem : orderedItems) {
+                Expression<?> expr = table.get(orderedItem.getProp().getName());
+                if (orderedItem.isDesc()) {
+                    query.orderBy(expr.desc());
+                } else {
+                    query.orderBy(expr);
+                }
+            }
+        }
+    }
+
     private Object toSourceId(ImmutableSpi source) {
-        return source.__get(thisIdProp.getId());
+        return source.__get(sourceIdProp.getId());
     }
 
     private List<Object> toSourceIds(Collection<ImmutableSpi> sources) {
@@ -589,5 +694,20 @@ public abstract class AbstractDataLoader {
             DraftSpi targetDraft = (DraftSpi) draft;
             targetDraft.__set(targetIdProp.getId(), id);
         });
+    }
+    
+    private static class FilterArgsImpl extends AbstractFilterArgsImpl<Props> {
+
+        private final Props table;
+        
+        public FilterArgsImpl(Sortable sortable, Props table) {
+            super(sortable);
+            this.table = table;
+        }
+
+        @Override
+        public @NotNull Props getTable() {
+            return table;
+        }
     }
 }

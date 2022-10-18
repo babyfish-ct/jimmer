@@ -1,3 +1,3 @@
 package org.babyfish.jimmer.sql.kt.ast.query
 
-interface KMutableRootQuery<E: Any> : KSortable<E>, KRootSelectable<E>
+interface KMutableRootQuery<E: Any> : KMutableQuery<E>, KRootSelectable<E>

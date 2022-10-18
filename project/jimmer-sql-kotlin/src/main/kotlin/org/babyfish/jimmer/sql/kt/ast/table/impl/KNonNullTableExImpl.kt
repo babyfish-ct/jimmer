@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.kt.ast.table.impl
 
 import org.babyfish.jimmer.kt.toImmutableProp
+import org.babyfish.jimmer.meta.ImmutableProp
+import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
@@ -35,23 +37,17 @@ internal class KNonNullTableExImpl<E: Any>(
     override fun <X : Any> joinList(prop: KProperty1<E, List<X>>): KNonNullTableEx<X>  =
         KNonNullTableExImpl(javaTable.join(prop.name))
 
-    override fun <X: Any> inverseJoin(targetType: KClass<X>, backProp: String): KNonNullTableEx<X> =
-        KNonNullTableExImpl(javaTable.inverseJoin(targetType.java, backProp))
+    override fun <X: Any> inverseJoin(backProp: ImmutableProp): KNonNullTableEx<X> =
+        KNonNullTableExImpl(javaTable.inverseJoin(backProp, JoinType.INNER))
 
     override fun <X : Any> inverseJoinReference(backProp: KProperty1<X, E?>): KNonNullTableEx<X> =
         KNonNullTableExImpl(
-            javaTable.inverseJoin(
-                backProp.toImmutableProp().declaringType.javaClass,
-                backProp.name
-            )
+            javaTable.inverseJoin(backProp.toImmutableProp(), JoinType.INNER)
         )
 
     override fun <X : Any> inverseJoinList(backProp: KProperty1<X, List<E>>): KNonNullTableEx<X> =
         KNonNullTableExImpl(
-            javaTable.inverseJoin(
-                backProp.toImmutableProp().declaringType.javaClass,
-                backProp.name
-            )
+            javaTable.inverseJoin(backProp.toImmutableProp(), JoinType.INNER)
         )
 
     override fun fetch(fetcher: Fetcher<E>): Selection<E> =

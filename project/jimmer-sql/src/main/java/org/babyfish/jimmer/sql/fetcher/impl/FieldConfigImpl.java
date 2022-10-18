@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.fetcher.Filter;
+import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
 import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig;
 
@@ -13,7 +13,7 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
 
     private FetcherImpl<?> childFetcher;
 
-    private Filter<T> filter;
+    private FieldFilter<T> filter;
 
     private int batchSize;
 
@@ -32,7 +32,7 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
     }
 
     @Override
-    public RecursiveListFieldConfig<E, T> filter(Filter<T> filter) {
+    public RecursiveListFieldConfig<E, T> filter(FieldFilter<T> filter) {
         if (filter != null && prop.isReference(TargetLevel.ENTITY) && !prop.isNullable()) {
             throw new IllegalArgumentException(
                     "Cannot set filter for non-null one-to-one/many-to-one property \"" + prop + "\""
@@ -105,7 +105,7 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
         return childFetcher;
     }
 
-    Filter<T> getFilter() {
+    FieldFilter<T> getFilter() {
         return filter;
     }
 

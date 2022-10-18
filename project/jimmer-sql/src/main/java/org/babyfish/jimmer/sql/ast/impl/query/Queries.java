@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.AssociationTableEx;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -31,7 +32,9 @@ public class Queries {
         ImmutableType immutableType = ImmutableType.get(tableType);
         MutableRootQueryImpl<T> query = new MutableRootQueryImpl<>(
                 sqlClient,
-                immutableType
+                immutableType,
+                ExecutionPurpose.QUERY,
+                false
         );
         ConfigurableRootQuery<T, R> typedQuery = block.apply(query, (T)query.getTable());
         query.freeze();
@@ -76,9 +79,21 @@ public class Queries {
             ImmutableType immutableType,
             BiFunction<MutableRootQuery<Table<?>>, Table<?>, ConfigurableRootQuery<Table<?>, R>> block
     ) {
+        return createQuery(sqlClient, immutableType, ExecutionPurpose.QUERY, false, block);
+    }
+
+    public static <R> ConfigurableRootQuery<Table<?>, R> createQuery(
+            JSqlClient sqlClient,
+            ImmutableType immutableType,
+            ExecutionPurpose purpose,
+            boolean ignoreFilter,
+            BiFunction<MutableRootQuery<Table<?>>, Table<?>, ConfigurableRootQuery<Table<?>, R>> block
+    ) {
         MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(
                 sqlClient,
-                immutableType
+                immutableType,
+                purpose,
+                ignoreFilter
         );
         ConfigurableRootQuery<Table<?>, R> typedQuery = block.apply(query, query.getTable());
         query.freeze();
@@ -102,7 +117,9 @@ public class Queries {
         );
         MutableRootQueryImpl<AssociationTable<SE, ST, TE, TT>> query = new MutableRootQueryImpl<>(
                 sqlClient,
-                associationType
+                associationType,
+                ExecutionPurpose.QUERY,
+                false
         );
         ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R> typedQuery =
                 block.apply(query, (AssociationTable<SE, ST, TE, TT>)query.getTable());
@@ -166,11 +183,27 @@ public class Queries {
                     MutableRootQuery<AssociationTable<?, ?, ?, ?>>,
                     AssociationTable<?, ?, ?, ?>,
                     ConfigurableRootQuery<AssociationTable<?, ?, ?, ?>, R>
-                    > block
+            > block
+    ) {
+        return createAssociationQuery(sqlClient, associationType, ExecutionPurpose.QUERY, block);
+    }
+
+    public static <R>
+    ConfigurableRootQuery<AssociationTable<?, ?, ?, ?>, R> createAssociationQuery(
+            JSqlClient sqlClient,
+            AssociationType associationType,
+            ExecutionPurpose purpose,
+            BiFunction<
+                    MutableRootQuery<AssociationTable<?, ?, ?, ?>>,
+                    AssociationTable<?, ?, ?, ?>,
+                    ConfigurableRootQuery<AssociationTable<?, ?, ?, ?>, R>
+            > block
     ) {
         MutableRootQueryImpl<AssociationTable<?, ?, ?, ?>> query = new MutableRootQueryImpl<>(
                 sqlClient,
-                associationType
+                associationType,
+                purpose,
+                false
         );
         ConfigurableRootQuery<AssociationTable<?, ?, ?, ?>, R> typedQuery =
                 block.apply(query, (AssociationTable<?, ?, ?, ?>)query.getTable());

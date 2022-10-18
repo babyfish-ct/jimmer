@@ -21,10 +21,7 @@ jimmer-sql允许开发人员通过最简单也最高效的方式，直接对中�
 
 ```java
 sqlClient
-    .getAssociations(
-        BookTableEx.class, 
-        BookTableEx::authors
-    )
+    .getAssociations(BookProps.AUTHORS)
     // highlight-next-line
     .save(12L, 3L);
 ```
@@ -62,10 +59,7 @@ insert into
 
 ```java
 sqlClient
-    .getAssociations(
-        AuthorTableEx.class,
-        AuthorTableEx::books
-    )
+    .getAssociations(AuthorProps.BOOKS)
     // highlight-next-line
     .save(3L, 12L);
 ```
@@ -107,15 +101,9 @@ insert into
 
 ```java
 Associations bookToAuthor = sqlClient
-    .getAssociations(
-        BookTableEx.class,
-        BookTableEx::authors
-    );
+    .getAssociations(BookProps.AUTHORS);
 Associations authorToBook = sqlClient
-    .getAssociations(
-        AuthorTableEx.class,
-        AuthorTableEx::books
-    );
+    .getAssociations(AuthorProps.BOOKS);
 Associations authorToBook2 = 
     // highlight-next-line
     bookToAuthor.reverse();
@@ -158,10 +146,7 @@ val bookToAuthor2 =
 
 ```java
 sqlClient
-    .getAssociations(
-        BookTableEx.class,
-        BookTableEx::authors
-    )
+    .getAssociations(BookProps.AUTHORS)
     // highlight-next-line
     .batchSave(
         Arrays.asList(
@@ -224,10 +209,7 @@ jimmer-sql提供一种快捷写法
 
 ```java
 sqlClient
-    .getAssociations(
-        BookTableEx.class,
-        BookTableEx::authors
-    )
+    .getAssociations(BookProps.AUTHORS)
     // 保存两个id集合的笛卡尔乘积
     // highlight-next-line
     .batchSave(
@@ -270,10 +252,7 @@ sqlClient
 
 ```java
 sqlClient
-    .getAssociations(
-        BookTableEx.class,
-        BookTableEx::authors
-    )
+    .getAssociations(BookProps.AUTHORS)
     .batchSaveCommand(
         Arrays.asList(
             10L, 11L, 12L
@@ -341,10 +320,7 @@ sqlClient
 
 ```java
 sqlClient
-    .getAssociations(
-            BookTableEx.class,
-            BookTableEx::authors
-    )
+    .getAssociations(BookProps.AUTHORS)
     // highlight-next-line
     .delete(12L, 3L);
 ```
@@ -384,9 +360,7 @@ where
 ```java
 sqlClient
     .getAssociations(
-        BookTableEx.class,
-        BookTableEx::authors
-    )
+        BookTableEx.claBookProps.AUTHORS)
     // highlight-next-line
     .batchDelete(
         Arrays.asList(
@@ -431,10 +405,7 @@ sqlClient
 
 ```java
 sqlClient
-    .getAssociations(
-        BookTableEx.class,
-        BookTableEx::authors
-    )
+    .getAssociations(BookProps.AUTHORS)
     // highlight-next-line
     .batchDelete(
         Arrays.asList(10L, 11L, 12L),

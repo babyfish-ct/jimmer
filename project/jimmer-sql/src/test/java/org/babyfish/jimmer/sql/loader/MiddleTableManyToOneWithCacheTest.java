@@ -53,20 +53,17 @@ public class MiddleTableManyToOneWithCacheTest extends AbstractCachedLoaderTest 
                 )
         );
         for (int i = 0; i < 2; i++) {
-            boolean useSql = i == 0;
             connectAndExpect(
                     con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("country"))
                             .load(Entities.AUTHORS_FOR_MANY_TO_ONE),
                     ctx -> {
-                        if (useSql) {
-                            ctx.sql(
-                                    "select tb_2_.AUTHOR_ID, tb_1_.CODE " +
-                                            "from COUNTRY as tb_1_ " +
-                                            "inner join AUTHOR_COUNTRY_MAPPING as tb_2_ on tb_1_.CODE = tb_2_.COUNTRY_CODE " +
-                                            "where tb_2_.AUTHOR_ID in (?, ?) " +
-                                            "and tb_1_.CODE = ?"
-                            ).variables(alexId, danId, "UK");
-                        }
+                        ctx.sql(
+                                "select tb_2_.AUTHOR_ID, tb_1_.CODE " +
+                                        "from COUNTRY as tb_1_ " +
+                                        "inner join AUTHOR_COUNTRY_MAPPING as tb_2_ on tb_1_.CODE = tb_2_.COUNTRY_CODE " +
+                                        "where tb_2_.AUTHOR_ID in (?, ?) " +
+                                        "and tb_1_.CODE = ?"
+                        ).variables(alexId, danId, "UK");
                         ctx.rows(1);
                         ctx.row(0, map -> {
                             expect(

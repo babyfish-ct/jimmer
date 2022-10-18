@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.Converters;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.sql.Connection;
@@ -63,6 +64,7 @@ class ChildTableOperator {
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                ExecutionPurpose.MUTATE,
                 null,
                 PreparedStatement::executeUpdate
         );
@@ -83,6 +85,7 @@ class ChildTableOperator {
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                ExecutionPurpose.MUTATE,
                 null,
                 PreparedStatement::executeUpdate
         );
@@ -103,6 +106,7 @@ class ChildTableOperator {
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                ExecutionPurpose.MUTATE,
                 null,
                 stmt -> {
                     List<Object> list = new ArrayList<>();

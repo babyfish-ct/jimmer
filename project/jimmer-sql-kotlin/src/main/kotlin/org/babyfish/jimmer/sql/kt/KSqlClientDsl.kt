@@ -1,12 +1,13 @@
 package org.babyfish.jimmer.sql.kt
 
-import org.babyfish.jimmer.Draft
 import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.cache.*
 import org.babyfish.jimmer.sql.dialect.Dialect
+import org.babyfish.jimmer.sql.kt.filter.KFilter
+import org.babyfish.jimmer.sql.kt.filter.impl.toJavaFilter
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
 import org.babyfish.jimmer.sql.meta.IdGenerator
 import org.babyfish.jimmer.sql.runtime.*
@@ -37,6 +38,10 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setConnectionManager(ConnectionManagerImpl(block))
     }
 
+    fun setExecutor(executor: Executor?) {
+        javaBuilder.setExecutor(executor)
+    }
+
     fun setExecutor(block: ExecutorDsl.() -> Unit) {
         javaBuilder.setExecutor(ExecutorImpl(block))
     }
@@ -53,41 +58,42 @@ class KSqlClientDsl internal constructor(
         javaBuilder.addScalarProvider(scalarProvider)
     }
 
+    fun setEntityManager(entityManager: EntityManager) {
+        javaBuilder.setEntityManager(entityManager)
+    }
+
     fun setCaches(block: CacheDsl.() -> Unit) {
         javaBuilder.setCaches {
             CacheDsl(it).block()
         }
     }
 
-    inline fun <reified D: Draft> addDraftInterceptor(noinline block: (D, Boolean) -> Unit) {
-        addDraftInterceptors(D::class, listOf(block))
+    fun addFilters(vararg filters: KFilter<*>) {
+        javaBuilder.addFilters(filters.map { it.toJavaFilter() })
     }
 
-    inline fun <reified D: Draft> addDraftInterceptors(vararg blocks: (D, Boolean) -> Unit) {
-        addDraftInterceptors(D::class, blocks.toList())
+    fun addFilters(filters: Collection<KFilter<*>>) {
+        javaBuilder.addFilters(filters.map { it.toJavaFilter() })
     }
 
-    inline fun <reified D: Draft> addDraftInterceptors(blocks: Collection<(D, Boolean) -> Unit>) {
-        addDraftInterceptors(D::class, blocks)
+    fun addDisabledFilters(vararg filters: KFilter<*>) {
+        javaBuilder.addDisabledFilters(filters.map { it.toJavaFilter() })
     }
 
-    fun <D: Draft> addDraftInterceptor(draftType: KClass<D>, block: (D, Boolean) -> Unit) {
-        addDraftInterceptors(draftType, listOf(block))
+    fun addDisabledFilters(filters: Collection<KFilter<*>>) {
+        javaBuilder.addDisabledFilters(filters.map { it.toJavaFilter() })
     }
 
-    fun <D: Draft> addDraftInterceptors(draftType: KClass<D>, vararg blocks: (D, Boolean) -> Unit) {
-        addDraftInterceptors(draftType, blocks.toList())
+    fun addDraftInterceptor(interceptor: DraftInterceptor<*>) {
+        javaBuilder.addDraftInterceptor(interceptor)
     }
 
-    fun <D: Draft> addDraftInterceptors(draftType: KClass<D>, blocks: Collection<(D, Boolean) -> Unit>) {
-        javaBuilder.addDraftInterceptors(
-            draftType.java,
-            blocks.map {
-                DraftInterceptor<D> { draft, isNew ->
-                    it(draft, isNew)
-                }
-            }
-        )
+    fun addDraftInterceptors(vararg interceptors: DraftInterceptor<*>) {
+        javaBuilder.addDraftInterceptors(*interceptors)
+    }
+
+    fun addDraftInterceptors(interceptor: List<DraftInterceptor<*>>) {
+        javaBuilder.addDraftInterceptors(interceptor)
     }
 
     @DslScope
@@ -131,6 +137,7 @@ class KSqlClientDsl internal constructor(
         val con: Connection,
         val sql: String,
         val variables: List<Any>,
+        val purpose: ExecutionPurpose,
         private val statementFactory: StatementFactory?,
         private val javaBlock: SqlFunction<PreparedStatement, *>
     ) {
@@ -142,7 +149,7 @@ class KSqlClientDsl internal constructor(
             if (proceeded) {
                 throw IllegalStateException("ExecutorDsl cannot be proceeded twice")
             }
-            result = DefaultExecutor.INSTANCE.execute(con, sql, variables, statementFactory, javaBlock)
+            result = DefaultExecutor.INSTANCE.execute(con, sql, variables, purpose, statementFactory, javaBlock)
             proceeded = true
         }
 
@@ -162,6 +169,7 @@ class KSqlClientDsl internal constructor(
             con: Connection,
             sql: String,
             variables: List<Any>,
+            purpose: ExecutionPurpose,
             statementFactory: StatementFactory?,
             block: SqlFunction<PreparedStatement, R>
         ): R =
@@ -169,6 +177,7 @@ class KSqlClientDsl internal constructor(
                 con,
                 sql,
                 variables,
+                purpose,
                 statementFactory,
                 block
             ).let {
@@ -181,8 +190,8 @@ class KSqlClientDsl internal constructor(
     class CacheDsl internal constructor(
         private val javaCfg: CacheConfig
     ) {
-        fun setCacheFactory(entityTypes: Array<KClass<*>>, cacheFactory: CacheFactory) {
-            javaCfg.setCacheFactory(entityTypes.map { it.java }.toTypedArray(), cacheFactory)
+        fun setCacheFactory(cacheFactory: CacheFactory) {
+            javaCfg.setCacheFactory(cacheFactory)
         }
 
         fun <T: Any> setObjectCache(entityType: KClass<T>, cache: Cache<*, T>?) {

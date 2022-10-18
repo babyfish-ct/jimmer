@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.example.graphql.cfg;
 
+import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
@@ -36,6 +37,7 @@ public class SqlClientConfig {
     public JSqlClient sqlClient(
             DataSource dataSource,
             @Value("${spring.datasource.url}") String jdbcUrl,
+            List<DraftInterceptor<?>> interceptors,
             Optional<CacheFactory> cacheFactory
     ) {
         boolean isH2 = jdbcUrl.startsWith("jdbc:h2:");
@@ -85,6 +87,7 @@ public class SqlClientConfig {
                             }
                         }
                 )
+                .addDraftInterceptors(interceptors)
                 .setCaches(it -> {
                     if (cacheFactory.isPresent()) {
                         it.setCacheFactory(

@@ -20,9 +20,10 @@ public class Selectors {
             Connection con,
             String sql,
             List<Object> variables,
-            List<Selection<?>> selections
+            List<Selection<?>> selections,
+            ExecutionPurpose purpose
     ) {
-        return sqlClient.getExecutor().execute(con, sql, variables, null, stmt -> {
+        return sqlClient.getExecutor().execute(con, sql, variables, purpose, null, stmt -> {
             List<R> results = new ArrayList<>();
             try (ResultSet resultSet = stmt.executeQuery()) {
                 ResultMapper resultMapper = new ResultMapper(sqlClient, selections, resultSet);
@@ -42,10 +43,11 @@ public class Selectors {
             String sql,
             List<Object> variables,
             List<Selection<?>> selections,
+            ExecutionPurpose purpose,
             int batchSize,
             Consumer<R> consumer
     ) {
-        sqlClient.getExecutor().execute(con, sql, variables, null, stmt -> {
+        sqlClient.getExecutor().execute(con, sql, variables, purpose, null, stmt -> {
             List<R> results = new ArrayList<>();
             try (ResultSet resultSet = stmt.executeQuery()) {
                 ResultMapper resultMapper = new ResultMapper(sqlClient, selections, resultSet);

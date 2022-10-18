@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.example.kt.sql.cfg
 
 import org.babyfish.jimmer.example.kt.sql.model.*
+import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.cache.CacheFactory
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.dialect.MySqlDialect
@@ -25,6 +26,7 @@ class SqlClientConfig {
     fun sqlClient(
         dataSource: DataSource,
         @Value("\${spring.datasource.url}") jdbcUrl: String,
+        interceptors: List<DraftInterceptor<*>>,
         cacheFactory: CacheFactory? // Optional dependency
     ): KSqlClient {
         val isH2 = jdbcUrl.startsWith("jdbc:h2:")
@@ -53,6 +55,8 @@ class SqlClientConfig {
             }
 
             setDialect(if (isH2) H2Dialect() else MySqlDialect())
+
+            addDraftInterceptors(interceptors)
 
             setCaches {
                 if (cacheFactory != null) {

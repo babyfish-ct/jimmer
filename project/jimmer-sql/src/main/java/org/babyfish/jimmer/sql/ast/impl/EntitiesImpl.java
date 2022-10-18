@@ -25,6 +25,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.fetcher.impl.Fetchers;
 import org.babyfish.jimmer.sql.runtime.Converters;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 
 import java.sql.Connection;
 import java.util.*;
@@ -55,6 +56,13 @@ public class EntitiesImpl implements Entities {
 
     public Connection getCon() {
         return con;
+    }
+
+    public EntitiesImpl forSqlClient(JSqlClient sqlClient) {
+        if (this.sqlClient == sqlClient) {
+            return this;
+        }
+        return new EntitiesImpl(sqlClient, forUpdate, con);
     }
 
     @Override
@@ -226,7 +234,6 @@ public class EntitiesImpl implements Entities {
                             new CacheEnvironment<>(
                                     sqlClient,
                                     con,
-                                    null,
                                     CacheLoader.objectLoader(
                                             sqlClient,
                                             con,
@@ -278,7 +285,7 @@ public class EntitiesImpl implements Entities {
             return entities;
         }
         ConfigurableRootQuery<?, E> query = Queries.createQuery(
-                sqlClient, immutableType, (q, table) -> {
+                sqlClient, immutableType, ExecutionPurpose.QUERY, true, (q, table) -> {
                     Expression<Object> idProp = table.get(immutableType.getIdProp().getName());
                     if (distinctIds.size() == 1) {
                         q.where(idProp.eq(distinctIds.iterator().next()));
@@ -340,7 +347,8 @@ public class EntitiesImpl implements Entities {
                             "\""
             );
         }
-        MutableRootQueryImpl<Table<E>> query = new MutableRootQueryImpl<Table<E>>(sqlClient, type);
+        MutableRootQueryImpl<Table<E>> query =
+                new MutableRootQueryImpl<>(sqlClient, type, ExecutionPurpose.QUERY, false);
         Table<E> table = query.getTable();
         if (example != null) {
             example.applyTo(query);

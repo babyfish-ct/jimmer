@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.example.cache;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.Cache;
@@ -45,15 +46,18 @@ public class CacheConfig {
     }
 
     @Bean
-    public CacheFactory cacheFactory(RedisTemplate<String, byte[]> redisTemplate) {
+    public CacheFactory cacheFactory(
+            RedisTemplate<String, byte[]> redisTemplate,
+            ObjectMapper objectMapper
+    ) {
         return new CacheFactory() {
 
             // Id -> Object
             @Override
             public Cache<?, ?> createObjectCache(ImmutableType type) {
                 return new ChainCacheBuilder<>()
-                        .add(new CaffeineBinder<>(512, Duration.ofSeconds(1)))
-                        .add(new RedisBinder<>(redisTemplate, type, Duration.ofMinutes(10)))
+                        //.add(new CaffeineBinder<>(512, Duration.ofSeconds(1)))
+                        .add(new RedisHashBinder<>(redisTemplate, objectMapper, type, Duration.ofMinutes(10)))
                         .build();
             }
 
@@ -61,8 +65,7 @@ public class CacheConfig {
             @Override
             public Cache<?, ?> createAssociatedIdCache(ImmutableProp prop) {
                 return new ChainCacheBuilder<>()
-                        .add(new CaffeineBinder<>(512, Duration.ofSeconds(1)))
-                        .add(new RedisBinder<>(redisTemplate, prop, Duration.ofMinutes(5)))
+                        .add(new RedisHashBinder<>(redisTemplate, objectMapper, prop, Duration.ofMinutes(5)))
                         .build();
             }
 
@@ -70,8 +73,7 @@ public class CacheConfig {
             @Override
             public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
                 return new ChainCacheBuilder<Object, List<?>>()
-                        .add(new CaffeineBinder<>(64, Duration.ofSeconds(1)))
-                        .add(new RedisBinder<>(redisTemplate, prop, Duration.ofMinutes(5)))
+                        .add(new RedisHashBinder<>(redisTemplate, objectMapper, prop, Duration.ofMinutes(5)))
                         .build();
             }
 
@@ -79,8 +81,7 @@ public class CacheConfig {
             @Override
             public Cache<?, ?> createResolverCache(ImmutableProp prop) {
                 return new ChainCacheBuilder<Object, List<?>>()
-                        .add(new CaffeineBinder<>(1024, Duration.ofSeconds(1)))
-                        .add(new RedisBinder<>(redisTemplate, prop, Duration.ofHours(1)))
+                        .add(new RedisHashBinder<>(redisTemplate, objectMapper, prop, Duration.ofHours(1)))
                         .build();
             }
         };

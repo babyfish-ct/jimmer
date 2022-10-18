@@ -168,31 +168,5 @@ public class DeleteCommandImpl implements DeleteCommand {
             dissociateActionMap.put(prop, dissociateAction);
             return this;
         }
-
-        @Override
-        public Cfg setDissociateAction(
-                Class<?> entityType,
-                String prop,
-                DissociateAction dissociateAction
-        ) {
-            ImmutableType immutableType = ImmutableType.get(entityType);
-            ImmutableProp immutableProp = immutableType.getProps().get(prop);
-            if (immutableProp == null || !immutableProp.isReference(TargetLevel.ENTITY)) {
-                throw new IllegalArgumentException(
-                        "'" + prop + "' is not entity reference property of \"" + entityType.getName() + "\""
-                );
-            }
-            return setDissociateAction(immutableProp, dissociateAction);
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public <T extends Table<?>> Cfg setDissociateAction(
-                Class<T> tableType,
-                Function<T, Table<?>> block,
-                DissociateAction dissociateAction
-        ) {
-            return setDissociateAction(ImmutableProps.join(tableType, block), dissociateAction);
-        }
     }
 }

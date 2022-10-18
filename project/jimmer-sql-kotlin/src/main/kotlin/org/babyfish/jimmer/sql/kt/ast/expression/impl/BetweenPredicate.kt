@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
-internal class BetweenPredicate<T: Comparable<T>>(
+internal class BetweenPredicate<T: Comparable<*>>(
     private val negative: Boolean,
     private val expression: KExpression<T>,
     private val min: KNonNullExpression<T>,
@@ -26,7 +26,7 @@ internal class BetweenPredicate<T: Comparable<T>>(
 
     override fun renderTo(builder: SqlBuilder) {
         renderChild(expression as Ast, builder)
-        builder.sql(if (negative) " not between " else "between")
+        builder.sql(if (negative) " not between " else " between ")
         renderChild(min as Ast, builder)
         builder.sql(" and ")
         renderChild(max as Ast, builder)

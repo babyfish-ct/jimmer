@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -18,7 +19,9 @@ import java.util.function.Function;
 public class AbstractQueryTest extends AbstractTest {
 
     private static final ObjectMapper MAPPER =
-            new ObjectMapper().registerModule(new ImmutableModule());
+            new ObjectMapper()
+                    .registerModule(new ImmutableModule())
+                    .registerModule(new JavaTimeModule());
 
     private List<?> rows;
 

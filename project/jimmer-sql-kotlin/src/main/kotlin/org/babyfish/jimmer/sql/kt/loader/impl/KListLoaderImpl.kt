@@ -1,14 +1,14 @@
 package org.babyfish.jimmer.sql.kt.loader.impl
 
-import org.babyfish.jimmer.sql.loader.ListLoader
+import org.babyfish.jimmer.sql.loader.FilterableListLoader
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.loader.KListLoader
-import org.babyfish.jimmer.sql.kt.fetcher.KFilterDsl
-import org.babyfish.jimmer.sql.kt.fetcher.impl.LambdaFilterWrapper
+import org.babyfish.jimmer.sql.kt.fetcher.KFieldFilterDsl
+import org.babyfish.jimmer.sql.kt.fetcher.impl.JavaFieldFilter
 import java.sql.Connection
 
 internal class KListLoaderImpl<S: Any, T: Any>(
-    private val javaLoader: ListLoader<S, T, Table<T>>
+    private val javaLoader: FilterableListLoader<S, T, Table<T>>
 ): KListLoader<S, T> {
 
     override fun forConnection(con: Connection): KListLoader<S, T> =
@@ -20,8 +20,8 @@ internal class KListLoaderImpl<S: Any, T: Any>(
             }
         }
 
-    override fun forFilter(filter: KFilterDsl<T>.() -> Unit): KListLoader<S, T> =
-        javaLoader.forFilter(LambdaFilterWrapper(filter)).let {
+    override fun forFilter(filter: KFieldFilterDsl<T>.() -> Unit): KListLoader<S, T> =
+        javaLoader.forFilter(JavaFieldFilter(filter)).let {
             if (javaLoader === it) {
                 this
             } else {

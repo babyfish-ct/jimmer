@@ -52,7 +52,7 @@ class FetcherContext {
     @SuppressWarnings("unchecked")
     public void add(Fetcher<?> fetcher, DraftSpi draft) {
         for (Field field : fetcher.getFieldMap().values()) {
-            if (!field.isSimpleField()) {
+            if (!field.isSimpleField() || sqlClient.getFilters().getFilter(field.getProp().getTargetType()) != null) {
                 RecursionStrategy<?> recursionStrategy = field.getRecursionStrategy();
                 if (recursionStrategy != null &&
                         !((RecursionStrategy<Object>)recursionStrategy).isRecursive(

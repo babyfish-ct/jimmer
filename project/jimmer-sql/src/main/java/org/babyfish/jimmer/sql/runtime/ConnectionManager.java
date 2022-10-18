@@ -23,4 +23,11 @@ public interface ConnectionManager {
             }
         };
     }
+
+    ConnectionManager ILLEGAL = new ConnectionManager() {
+        @Override
+        public <R> R execute(Function<Connection, R> block) {
+            throw new ExecutionException("ConnectionManager of SqlClient is not configured");
+        }
+    };
 }

@@ -5,7 +5,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.fetcher.Filter;
+import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 
 import java.sql.Connection;
 import java.util.Collections;
@@ -18,7 +18,7 @@ class SingleCommand<T> implements Executable<T> {
 
     private final ImmutableProp prop;
 
-    private final Filter<Table<ImmutableSpi>> filter;
+    private final FieldFilter<Table<ImmutableSpi>> filter;
 
     private final int limit;
 
@@ -30,7 +30,7 @@ class SingleCommand<T> implements Executable<T> {
             JSqlClient sqlClient,
             Connection con,
             ImmutableProp prop,
-            Filter<Table<ImmutableSpi>> filter,
+            FieldFilter<Table<ImmutableSpi>> filter,
             int limit,
             int offset,
             ImmutableSpi source

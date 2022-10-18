@@ -27,9 +27,7 @@ System.out.println(
     result.getAffectedRowCount(AffectedTable.of(Book.class)) +
     
     "\nAffected row count of middle table 'BOOK_AUTHOR_MAPPING': " +
-    result.getAffectedRowCount(
-        AffectedTable.of(BookTableEx.class, BookTableEx::authors)
-    )
+    result.getAffectedRowCount(AffectedTable.of(BookProps.AUTHORS))
 );
 ```
 
@@ -94,9 +92,7 @@ System.out.println(
             result.getAffectedRowCount(AffectedTable.of(Book.class)) +
 
             "\nAffected row count of middle table 'BOOK_AUTHOR_MAPPING': " +
-            result.getAffectedRowCount(
-                    AffectedTable.of(BookTableEx.class, BookTableEx::authors)
-            )
+            result.getAffectedRowCount(AffectedTable.of(BookProps.AUTHORS))
 );
 ```
 
@@ -171,8 +167,7 @@ DeleteResult result = sqlClient
             it
                 // highlight-next-line
                 .setDissociateAction(
-                    BookTable.class,
-                    BookTable::store,
+                    BookProps.STORE,
                     DissociateAction.SET_NULL
                 )
     )

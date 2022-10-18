@@ -1,8 +1,10 @@
 package org.babyfish.jimmer.sql.binlog;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.inheritance.Role;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -45,6 +47,21 @@ public class BinLogTest {
                         alexId +
                         "\",\"firstName\":\"Alex\",\"lastName\":\"Banks\",\"gender\":\"MALE\"}",
                 author.toString()
+        );
+    }
+
+    @Test
+    public void testRole() {
+        String json = "{" +
+                "\"id\": 1, " +
+                "\"name\": \"Role\", " +
+                "\"created_time\": \"2022-10-03 00:00:00\"," +
+                "\"modified_time\": \"2022-10-03 00:10:00\"" +
+                "}";
+        Role role = new BinLogParser(scalarProviderMap).parseEntity(Role.class, json);
+        Assertions.assertEquals(
+                "{\"name\":\"Role\",\"id\":1}",
+                role.toString()
         );
     }
 

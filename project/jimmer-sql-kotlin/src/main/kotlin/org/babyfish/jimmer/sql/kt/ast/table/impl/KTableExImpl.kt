@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.table.impl
 
 import org.babyfish.jimmer.kt.toImmutableProp
+import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
@@ -13,7 +14,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 internal abstract class KTableExImpl<E: Any>(
-    protected val javaTable: TableImplementor<E>
+    val javaTable: TableImplementor<E>
 ): Ast, KTableEx<E>, TableSelection<E> by(javaTable) {
 
     override fun <X : Any> outerJoin(prop: String): KNullableTableEx<X> =
@@ -25,31 +26,19 @@ internal abstract class KTableExImpl<E: Any>(
     override fun <X : Any> outerJoinList(prop: KProperty1<E, List<X>>): KNullableTableEx<X> =
         KNullableTableExImpl(javaTable.join(prop.name, JoinType.LEFT))
 
-    override fun <X : Any> inverseOuterJoin(targetType: KClass<X>, backProp: String): KNullableTableEx<X> =
+    override fun <X : Any> inverseOuterJoin(backProp: ImmutableProp): KNullableTableEx<X> =
         KNullableTableExImpl(
-            javaTable.inverseJoin(
-                targetType.java,
-                backProp,
-                JoinType.LEFT
-            )
+            javaTable.inverseJoin(backProp, JoinType.LEFT)
         )
 
     override fun <X : Any> inverseOuterJoinReference(backProp: KProperty1<X, E?>): KNullableTableEx<X> =
         KNullableTableExImpl(
-            javaTable.inverseJoin(
-                backProp.toImmutableProp().declaringType.javaClass,
-                backProp.name,
-                JoinType.LEFT
-            )
+            javaTable.inverseJoin(backProp.toImmutableProp(), JoinType.LEFT)
         )
 
     override fun <X : Any> inverseOuterJoinList(backProp: KProperty1<X, List<E>>): KNullableTableEx<X> =
         KNullableTableExImpl(
-            javaTable.inverseJoin(
-                backProp.toImmutableProp().declaringType.javaClass,
-                backProp.name,
-                JoinType.LEFT
-            )
+            javaTable.inverseJoin(backProp.toImmutableProp(), JoinType.LEFT)
         )
 
     override fun accept(visitor: AstVisitor) {

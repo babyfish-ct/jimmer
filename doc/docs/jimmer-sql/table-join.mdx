@@ -841,10 +841,7 @@ There are two ways to write the inverse join that is completely equivalent to it
             // Reverse `Auhtor.books`,
             // it's actually `Book.authors`
             // highlight-next-line
-            .inverseJoin(
-                AuthorTableEx.class, 
-                AuthorTableEx::books
-            )
+            .inverseJoin(AuthorProps.BOOKS)
             .firstName()
             .eq("Alex")
     );

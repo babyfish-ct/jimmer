@@ -8,6 +8,13 @@ import org.babyfish.jimmer.sql.kt.ast.query.KExample
 import java.sql.Connection
 import kotlin.reflect.KClass
 
+/**
+ * To be absolutely cache friendly,
+ * all query methods in this class that start with "find" ignore the global filters.
+ *
+ * The mentions here ignore global filters, only for aggregate root objects,
+ * excluding deeper objects fetched by object fetcher.
+ */
 interface KEntities {
 
     @NewChain

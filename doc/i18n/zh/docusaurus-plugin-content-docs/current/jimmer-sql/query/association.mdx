@@ -108,8 +108,6 @@ associations.forEach(::println)
 
 这里，`createAssociation`表示基于中间表创建查询，而非基于实体表。
 
-前两个参数，`BookTableEx.class`和`BookTableEx::authors`表示，查询关联`Book.authors`所对应的中间表`BOOK_AUTHOR_MAPPING`。
-
 生成的SQL如下
 ```sql
 select 

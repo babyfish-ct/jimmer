@@ -18,7 +18,7 @@ internal const val IMPLEMENTOR = "Implementor"
 internal const val IMPL = "Impl"
 internal const val DRAFT_IMPL = "DraftImpl"
 internal const val DRAFT_FIELD_EMAIL_PATTERN = "__email_pattern"
-internal const val TABLE = "Table"
+internal const val PROPS = "Props"
 internal const val FETCHER = "Fetcher"
 internal const val FETCHER_DSL = "FetcherDsl"
 
@@ -53,6 +53,18 @@ internal val K_NULLABLE_TABLE_EX_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KNullableTableEx"
 )
+internal val K_PROPS_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table",
+    "KProps"
+)
+internal val K_NON_NULL_PROPS_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table",
+    "KNonNullProps"
+)
+internal val K_NULLABLE_PROPS_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table",
+    "KNullableProps"
+)
 internal val K_NON_NULL_TABLE_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KNonNullTable"
@@ -64,10 +76,6 @@ internal val K_NULLABLE_TABLE_CLASS_NAME = ClassName(
 internal val K_TABLE_EX_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KTableEx"
-)
-internal val K_TABLE_CLASS_NAME = ClassName(
-    "org.babyfish.jimmer.sql.kt.ast.table",
-    "KTable"
 )
 internal val K_NON_NULL_PROP_EXPRESSION = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.expression",

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
@@ -29,11 +30,8 @@ public class CacheDisableConfig {
         disabledTypes.add(type);
     }
 
-    public <ST extends Table<?>> void disable(
-            Class<ST> sourceTableType,
-            Function<ST, ? extends Table<?>> targetTableGetter
-    ) {
-        disabledProps.add(ImmutableProps.join(sourceTableType, targetTableGetter));
+    public <ST extends Table<?>> void disable(TypedProp<?, ?> prop) {
+        disabledProps.add(prop.unwrap());
     }
 
     public void disable(ImmutableProp prop) {

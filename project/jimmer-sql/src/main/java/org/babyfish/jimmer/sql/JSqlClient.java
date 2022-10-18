@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql;
 
-import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
@@ -11,10 +10,11 @@ import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.cache.CacheConfig;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.cache.Caches;
+import org.babyfish.jimmer.sql.filter.Filter;
+import org.babyfish.jimmer.sql.filter.FilterConfig;
+import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.fluent.Fluent;
-import org.babyfish.jimmer.sql.loader.ListLoader;
-import org.babyfish.jimmer.sql.loader.ReferenceLoader;
-import org.babyfish.jimmer.sql.loader.ValueLoader;
+import org.babyfish.jimmer.sql.loader.Loaders;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
@@ -24,6 +24,7 @@ import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
+import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
@@ -87,30 +88,15 @@ public interface JSqlClient {
 
     Triggers getTriggers();
 
-    <ST extends Table<?>> Associations getAssociations(
-            Class<ST> sourceTableType,
-            Function<ST, ? extends Table<?>> block
-    );
-
-    Associations getAssociations(Class<?> entityType, String prop);
+    Associations getAssociations(TypedProp.Association<?, ?> prop);
 
     Associations getAssociations(ImmutableProp immutableProp);
 
     Associations getAssociations(AssociationType associationType);
 
-    <S, V> ValueLoader<S, V> getValueLoader(TypedProp.Scalar<S, V> prop);
+    Loaders getLoaders();
 
-    <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ReferenceLoader<SE, TE, TT> getReferenceLoader(
-            Class<ST> sourceTableType,
-            Function<ST, TT> block
-    );
-
-    <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ListLoader<SE, TE, TT> getListLoader(
-            Class<ST> sourceTableType,
-            Function<ST, TT> block
-    );
+    EntityManager getEntityManager();
 
     Caches getCaches();
 
@@ -118,9 +104,14 @@ public interface JSqlClient {
     JSqlClient caches(Consumer<CacheDisableConfig> block);
 
     @NewChain
+    JSqlClient filters(Consumer<FilterConfig> block);
+
+    @NewChain
     JSqlClient disableSlaveConnectionManager();
 
     TransientResolver<?, ?> getResolver(ImmutableProp prop);
+
+    Filters getFilters();
 
     DraftInterceptor<?> getDraftInterceptor(ImmutableType type);
 
@@ -154,7 +145,22 @@ public interface JSqlClient {
         Builder setDefaultListBatchSize(int size);
 
         @OldChain
+        Builder setEntityManager(EntityManager scanner);
+
+        @OldChain
         Builder setCaches(Consumer<CacheConfig> block);
+
+        @OldChain
+        Builder addFilters(Filter<?>... filters);
+
+        @OldChain
+        Builder addFilters(Collection<Filter<?>> filters);
+
+        @OldChain
+        Builder addDisabledFilters(Filter<?>... filters);
+
+        @OldChain
+        Builder addDisabledFilters(Collection<Filter<?>> filters);
 
         @OldChain
         Builder addDraftInterceptor(DraftInterceptor<?> interceptor);
@@ -164,9 +170,6 @@ public interface JSqlClient {
 
         @OldChain
         Builder addDraftInterceptors(Collection<DraftInterceptor<?>> interceptors);
-
-        @OldChain
-        Builder addDraftInterceptors(Class<? extends Draft> draftType, Collection<DraftInterceptor<?>> interceptors);
 
         JSqlClient build();
     }

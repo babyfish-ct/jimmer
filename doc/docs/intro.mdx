@@ -1036,10 +1036,7 @@ Provide rapid development support for Spring GraphQL introduced in spring boot 2
 @org.springframework.graphql.data.method.annotation.BatchMapping
 public Map<Book, BookStore> store(Collection<Book> books) {
     return sqlClient
-            .getReferenceLoader(
-                BookTable.class,
-                BookTable::store
-            )
+            .getReferenceLoader(BookProps.STORE)
             .batchLoad(books);
 }
 
@@ -1047,10 +1044,7 @@ public Map<Book, BookStore> store(Collection<Book> books) {
 @org.springframework.graphql.data.method.annotation.BatchMapping
 public Map<Book, List<Author>> authors(List<Book> books) {
     return sqlClient
-            .getListLoader(
-                BookTableEx.class,
-                BookTableEx::authors
-            )
+            .getListLoader(BookTableEx.class, BookTableEx::authors)
             .forFilter(
                 args -> args
                     .orderBy(args.getTable().firstName())

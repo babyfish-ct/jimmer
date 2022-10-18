@@ -1,12 +1,13 @@
 package org.babyfish.jimmer.sql.cache;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
+import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.Triggers;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -62,7 +63,7 @@ public class CachesImpl implements Caches {
         }
         for (ImmutableProp prop : propCacheMap.keySet()) {
             if (prop.getMappedBy() != null) {
-                prop = prop.getMappedBy();
+                prop = RedirectedProp.source(prop.getMappedBy(), prop.getTargetType());
             }
             if (prop.getStorage() instanceof MiddleTable) {
                 AssociationType type = AssociationType.of(prop);
@@ -117,11 +118,11 @@ public class CachesImpl implements Caches {
         disabledProps = cfg.getDisabledProps();
     }
 
-    public Map<ImmutableType, LocatedCacheImpl<?, ?>> getObjectCacheMap() {
+    public Map<ImmutableType, LocatedCache<?, ?>> getObjectCacheMap() {
         return Collections.unmodifiableMap(objectCacheMap);
     }
 
-    public Map<ImmutableProp, LocatedCacheImpl<?, ?>> getPropCacheMap() {
+    public Map<ImmutableProp, LocatedCache<?, ?>> getPropCacheMap() {
         return Collections.unmodifiableMap(propCacheMap);
     }
 
@@ -137,6 +138,9 @@ public class CachesImpl implements Caches {
     @SuppressWarnings("unchecked")
     @Override
     public <K, V> LocatedCache<K, V> getPropertyCache(ImmutableProp prop) {
+        if (!prop.getDeclaringType().isEntity()) {
+            throw new IllegalArgumentException("\"" + prop + "\" is not declared in entity");
+        }
         if (disableAll ||
                 disabledProps.contains(prop) ||
                 disabledTypes.contains(prop.getTargetType())
@@ -232,6 +236,9 @@ public class CachesImpl implements Caches {
             Cache<?, ?> cache,
             ImmutableProp prop
     ) {
+        if (!prop.getDeclaringType().isEntity()) {
+            throw new IllegalArgumentException("\"" + prop + "\" is not declared in ");
+        }
         if (cache == null) {
             return null;
         }
@@ -255,9 +262,10 @@ public class CachesImpl implements Caches {
     public static Caches of(
             Triggers triggers,
             Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
+            EntityManager entityManager,
             Consumer<CacheConfig> block
     ) {
-        CacheConfig cfg = new CacheConfig();
+        CacheConfig cfg = new CacheConfig(entityManager);
         if (block != null) {
             block.accept(cfg);
         }

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.loader;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
@@ -19,14 +20,16 @@ public class AbstractCachedLoaderTest extends AbstractQueryTest {
     @BeforeEach
     public void initialize() {
         cachedSqlClient = getSqlClient(builder -> {
+            builder.setEntityManager(
+                    new EntityManager(
+                            BookStore.class,
+                            Book.class,
+                            Author.class,
+                            Country.class
+                    )
+            );
             builder.setCaches(cfg -> {
                 cfg.setCacheFactory(
-                        new Class[] {
-                                BookStore.class,
-                                Book.class,
-                                Author.class,
-                                Country.class
-                        },
                         new CacheFactory() {
                             @Override
                             public Cache<?, ?> createObjectCache(ImmutableType type) {

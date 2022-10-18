@@ -36,15 +36,6 @@ public interface AbstractEntitySaveCommand {
         }
 
         @OldChain
-        Cfg setKeyProps(Class<?> entityType, String ... props);
-
-        @OldChain
-        <T extends Table<?>> Cfg setKeyProps(
-                Class<T> tableType,
-                Consumer<KeyPropCfg<T>> block
-        );
-
-        @OldChain
         Cfg setAutoAttachingAll();
 
         @OldChain
@@ -54,15 +45,6 @@ public interface AbstractEntitySaveCommand {
 
         @OldChain
         Cfg setAutoAttaching(ImmutableProp prop);
-
-        @OldChain
-        Cfg setAutoAttaching(Class<?> entityType, String prop);
-
-        @OldChain
-        <T extends Table<?>> Cfg setAutoAttaching(
-                Class<T> tableType,
-                Function<T, Table<?>> block
-        );
 
         @OldChain
         default Cfg setDissociateAction(
@@ -77,25 +59,14 @@ public interface AbstractEntitySaveCommand {
                 ImmutableProp prop,
                 DissociateAction dissociateAction
         );
-
-        @OldChain
-        Cfg setDissociateAction(
-                Class<?> entityType,
-                String prop,
-                DissociateAction dissociateAction
-        );
-
-        @OldChain
-        <T extends Table<?>> Cfg setDissociateAction(
-                Class<T> tableType,
-                Function<T, Table<?>> block,
-                DissociateAction dissociateAction
-        );
     }
 
-    interface KeyPropCfg<T extends Table<?>> {
+    interface KeyPropCfg<T> {
 
         @OldChain
-        KeyPropCfg<T> add(Function<T, PropExpression<?>> block);
+        KeyPropCfg<T> add(ImmutableProp prop);
+
+        @OldChain
+        KeyPropCfg<T> add(TypedProp<?, ?> prop);
     }
 }

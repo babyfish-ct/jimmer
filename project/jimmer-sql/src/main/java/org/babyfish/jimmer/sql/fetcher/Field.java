@@ -16,7 +16,7 @@ public interface Field {
 
     ImmutableProp getProp();
 
-    Filter<?> getFilter();
+    FieldFilter<?> getFilter();
 
     int getBatchSize();
 
