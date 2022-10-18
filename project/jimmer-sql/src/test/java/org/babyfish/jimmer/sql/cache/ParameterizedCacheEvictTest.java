@@ -30,11 +30,11 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
 
     private JSqlClient sqlClient;
 
-    private List<String> messages;
+    private List<String> deleteMessages;
 
     @BeforeEach
     public void initialize() {
-        messages = new ArrayList<>();
+        deleteMessages = new ArrayList<>();
         ParameterizedCacheEvictTest that = this;
         sqlClient = getSqlClient(it -> {
             it.addFilters(new UndeletedFilter());
@@ -87,15 +87,8 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
         });
     }
 
-    private void onPropCacheDelete(ImmutableProp prop, Collection<?> keys) {
-        messages.add(
-                "delete " +
-                        prop.getDeclaringType().getJavaClass().getSimpleName() +
-                        "." +
-                        prop.getName() +
-                        "-" +
-                        keys
-        );
+    private void onPropCacheDelete(Collection<String> keys) {
+        deleteMessages.addAll(keys);
     }
 
     @Test
@@ -129,10 +122,10 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 "[" +
-                        "delete AdministratorMetadata.administrator-[10], " +
-                        "delete Role.administrators-[100]" +
+                        "AdministratorMetadata.administrator-10, " +
+                        "Role.administrators-100" +
                         "]",
-                messages.toString()
+                deleteMessages.toString()
         );
     }
 
@@ -167,10 +160,13 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 "[" +
-                        "delete Administrator.roles-[1, 2, 3], " +
-                        "delete Permission.role-[1000, 2000]" +
+                        "Administrator.roles-1, " +
+                        "Administrator.roles-2, " +
+                        "Administrator.roles-3, " +
+                        "Permission.role-1000, " +
+                        "Permission.role-2000" +
                         "]",
-                messages.toString()
+                deleteMessages.toString()
         );
     }
 
@@ -193,10 +189,10 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 "[" +
-                        "delete Role.permissionCount-[100], " +
-                        "delete Role.permissions-[100]" +
+                        "Role.permissionCount-100, " +
+                        "Role.permissions-100" +
                         "]",
-                messages.toString()
+                deleteMessages.toString()
         );
     }
 
@@ -223,13 +219,13 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 "[" +
-                        "delete Role.permissions-[100], " +
-                        "delete Role.permissions-[200], " +
-                        "delete Permission.role-[1000], " +
-                        "delete Role.permissionCount-[100], " +
-                        "delete Role.permissionCount-[200]" +
+                        "Role.permissions-100, " +
+                        "Role.permissions-200, " +
+                        "Permission.role-1000, " +
+                        "Role.permissionCount-100, " +
+                        "Role.permissionCount-200" +
                         "]",
-                messages.toString()
+                deleteMessages.toString()
         );
     }
 

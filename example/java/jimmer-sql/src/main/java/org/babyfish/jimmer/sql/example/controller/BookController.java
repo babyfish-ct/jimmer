@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.example.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
@@ -21,6 +20,31 @@ public class BookController {
         this.sqlClient = sqlClient;
     }
 
+    @GetMapping("/stores")
+    public List<BookStore> stores(
+            @RequestParam(defaultValue = "false") boolean fetch
+    ) {
+        if (fetch) {
+            return sqlClient.getEntities().findAll(
+                    BookStoreFetcher.$
+                            .allScalarFields()
+                            .avgPrice()
+                            .books(
+                                    BookFetcher.$
+                                            .allScalarFields()
+                                            .authors(
+                                                    AuthorFetcher.$.allScalarFields()
+                                            )
+                            ),
+                    BookStoreProps.NAME.asc()
+            );
+        }
+        return sqlClient.getEntities().findAll(
+                BookStore.class,
+                BookStoreProps.NAME.asc()
+        );
+    }
+
     @GetMapping("/books")
     public Page<Book> books(
             @RequestParam(defaultValue = "false") boolean fetch,
@@ -29,7 +53,7 @@ public class BookController {
             @RequestParam(defaultValue = "") String authorName,
             @RequestParam(defaultValue = "0") int pageIndex,
             @RequestParam(defaultValue = "5") int pageSize
-    ) throws JsonProcessingException {
+    ) {
 
         Fluent fluent = sqlClient.createFluent();
         BookTable book = new BookTable();

@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.cache;
+package org.babyfish.jimmer.sql.example.cache.binder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
@@ -10,7 +10,6 @@ import org.springframework.data.redis.core.SessionCallback;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -68,7 +67,7 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
                             pipelinedOps.opsForHash().put(e.getKey(), hashKey, e.getValue());
                             pipelinedOps.expire(
                                     e.getKey(),
-                                    randomMillis(),
+                                    nextExpireMillis(),
                                     TimeUnit.MILLISECONDS
                             );
                         }

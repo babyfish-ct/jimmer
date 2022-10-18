@@ -6,6 +6,9 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.cache.chain.*;
+import org.babyfish.jimmer.sql.example.cache.binder.CaffeineBinder;
+import org.babyfish.jimmer.sql.example.cache.binder.RedisHashBinder;
+import org.babyfish.jimmer.sql.example.cache.binder.RedisValueBinder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,8 +31,6 @@ public class CacheConfig {
         template.setConnectionFactory(connectionFactory);
         template.setKeySerializer(StringRedisSerializer.UTF_8);
 
-        // Specify a dummy serializer for spring redis because
-        // `org.babyfish.jimmer.sql.example.cache.ValueSerializer` took over the job.
         template.setValueSerializer(
                 new RedisSerializer<byte[]>() {
                     @Override
@@ -56,8 +57,8 @@ public class CacheConfig {
             @Override
             public Cache<?, ?> createObjectCache(ImmutableType type) {
                 return new ChainCacheBuilder<>()
-                        //.add(new CaffeineBinder<>(512, Duration.ofSeconds(1)))
-                        .add(new RedisHashBinder<>(redisTemplate, objectMapper, type, Duration.ofMinutes(10)))
+                        .add(new CaffeineBinder<>(512, Duration.ofSeconds(1)))
+                        .add(new RedisValueBinder<>(redisTemplate, objectMapper, type, Duration.ofMinutes(10)))
                         .build();
             }
 
