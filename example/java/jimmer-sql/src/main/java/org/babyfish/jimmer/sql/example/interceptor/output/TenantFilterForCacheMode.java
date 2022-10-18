@@ -1,19 +1,18 @@
 package org.babyfish.jimmer.sql.example.interceptor.output;
 
-import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.example.interceptor.TenantProvider;
 import org.babyfish.jimmer.sql.example.model.common.TenantAwareProps;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
-import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
 /*
+ * see JSqlClient.Builder.addFilters
+ *
  * This bean is only be used when cache is used.
  */
 @Component

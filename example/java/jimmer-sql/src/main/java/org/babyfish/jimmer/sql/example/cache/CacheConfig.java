@@ -27,11 +27,8 @@ public class CacheConfig {
 
     @Bean
     public RedisTemplate<String, byte[]> rawDataRedisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, byte[]> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        template.setKeySerializer(StringRedisSerializer.UTF_8);
 
-        template.setValueSerializer(
+        RedisSerializer<byte[]> nopSerializer =
                 new RedisSerializer<byte[]>() {
                     @Override
                     public byte[] serialize(byte[] bytes) throws SerializationException {
@@ -41,8 +38,14 @@ public class CacheConfig {
                     public byte[] deserialize(byte[] bytes) throws SerializationException {
                         return bytes;
                     }
-                }
-        );
+                };
+
+        RedisTemplate<String, byte[]> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+        template.setKeySerializer(StringRedisSerializer.UTF_8);
+        template.setValueSerializer(nopSerializer);
+        template.setHashKeySerializer(StringRedisSerializer.UTF_8);
+        template.setHashValueSerializer(nopSerializer);
         return template;
     }
 
