@@ -4,8 +4,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class JimmerSqlApplication
+class App
 
 fun main(args: Array<String>) {
-	runApplication<JimmerSqlApplication>(*args)
+	runApplication<App>(*args)
 }

@@ -131,6 +131,7 @@ class ParameterizedChainCacheImpl<K, V> extends ChainCacheImpl<K, V> implements 
                 }
                 Map<K, V> mapFromNext = next.loadAll(missedKeys);
                 if (mapFromNext.size() < missedKeys.size()) {
+                    mapFromNext = new HashMap<>(mapFromNext);
                     for (K missedKey : missedKeys) {
                         if (!mapFromNext.containsKey(missedKey)) {
                             mapFromNext.put(missedKey, null);
