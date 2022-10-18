@@ -6,9 +6,8 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.SerializationException;
 import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.time.Duration;
 import java.util.*;
 
@@ -57,7 +56,7 @@ public abstract class AbstractRemoteHashBinder<K, V>
 
     private String hashKey(SortedMap<String, Object> parameterMap) {
         try {
-            OutputStreamWriter writer = new OutputStreamWriter(new ByteArrayOutputStream());
+            StringWriter writer = new StringWriter();
             try {
                 writer.write("{");
                 boolean addComma = false;
