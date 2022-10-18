@@ -8,9 +8,8 @@ import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.ast.query.KExample
 import org.babyfish.jimmer.sql.kt.ast.query.example
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.bind.annotation.*
 
 @RestController
 class BookController(
@@ -137,4 +136,9 @@ class BookController(
                 asc(Author::lastName)
             }
         }
+
+    @Transactional
+    @PutMapping("/book")
+    fun saveBook(@RequestBody book: Book): Book =
+        sqlClient.entities.save(book).modifiedEntity
 }

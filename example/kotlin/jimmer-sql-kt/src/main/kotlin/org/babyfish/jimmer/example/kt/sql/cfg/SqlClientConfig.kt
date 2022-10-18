@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.example.kt.sql.cfg
 
+import org.babyfish.jimmer.example.kt.sql.App
 import org.babyfish.jimmer.example.kt.sql.model.*
 import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.cache.CacheFactory
@@ -10,6 +11,7 @@ import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.newKSqlClient
 import org.babyfish.jimmer.sql.runtime.EntityManager
+import org.babyfish.jimmer.sql.runtime.Executor
 import org.babyfish.jimmer.sql.runtime.ScalarProvider
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -50,13 +52,7 @@ class SqlClientConfig {
                 }
             }
 
-            setExecutor {
-                /*
-                 * Log SQL and variables
-                 */
-                LOGGER.info("Execute sql : \"{}\", with variables: {}", sql, variables)
-                proceed()
-            }
+            setExecutor(Executor.log())
 
             setDialect(if (isH2) H2Dialect() else MySqlDialect())
 
@@ -66,10 +62,8 @@ class SqlClientConfig {
 
             setEntityManager(
                 EntityManager(
-                    BookStore::class.java,
-                    Book::class.java,
-                    Author::class.java,
-                    TreeNode::class.java
+                    App::class.java.classLoader,
+                    Book::class.java.`package`.name
                 )
             )
             setCaches {
