@@ -32,15 +32,15 @@ import java.util.*;
 
 class Saver {
 
-    private AbstractEntitySaveCommandImpl.Data data;
+    private final AbstractEntitySaveCommandImpl.Data data;
 
-    private Connection con;
+    private final Connection con;
 
-    private SaverCache cache;
+    private final SaverCache cache;
 
-    private Map<AffectedTable, Integer> affectedRowCountMap;
+    private final Map<AffectedTable, Integer> affectedRowCountMap;
 
-    private String path;
+    private final String path;
 
     Saver(
             AbstractEntitySaveCommandImpl.Data data,
@@ -316,13 +316,23 @@ class Saver {
         List<ImmutableProp> props = new ArrayList<>();
         List<Object> values = new ArrayList<>();
         for (ImmutableProp prop : draftSpi.__type().getProps().values()) {
-            if (prop.getStorage() instanceof Column && draftSpi.__isLoaded(prop.getId())) {
-                props.add(prop);
-                Object value = draftSpi.__get(prop.getId());
-                if (value != null && prop.isReference(TargetLevel.ENTITY)) {
-                    value = ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getId());
+            if (prop.getStorage() instanceof Column) {
+                if (draftSpi.__isLoaded(prop.getId())) {
+                    props.add(prop);
+                    Object value = draftSpi.__get(prop.getId());
+                    if (value != null && prop.isReference(TargetLevel.ENTITY)) {
+                        value = ((ImmutableSpi) value).__get(prop.getTargetType().getIdProp().getId());
+                    }
+                    values.add(value);
+                } else if (!prop.isNullable()) {
+                    throw new IllegalArgumentException(
+                            "Cannot insert the object at \"" +
+                                    path +
+                                    "\" because the non-null property \"" +
+                                    prop +
+                                    "\" is not specified"
+                    );
                 }
-                values.add(value);
             }
         }
         if (props.isEmpty()) {

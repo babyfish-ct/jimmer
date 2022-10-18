@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilters
 import org.babyfish.jimmer.sql.kt.loader.KLoaders
+import org.babyfish.jimmer.sql.runtime.EntityManager
 import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -56,6 +57,8 @@ interface KSqlClient {
 
     @NewChain
     fun disableSlaveConnectionManager(): KSqlClient
+
+    val entityManager: EntityManager
 
     val javaClient: JSqlClient
 }
