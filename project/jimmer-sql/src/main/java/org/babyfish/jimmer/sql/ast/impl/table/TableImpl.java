@@ -448,7 +448,7 @@ class TableImpl<E> implements TableImplementor<E> {
                     ((Column)joinProp.getStorage()).getName(),
                     immutableType.getTableName(),
                     alias,
-                    ((Column)parent.immutableType.getIdProp().getStorage()).getName(),
+                    ((Column)immutableType.getIdProp().getStorage()).getName(),
                     mode
             );
         }
