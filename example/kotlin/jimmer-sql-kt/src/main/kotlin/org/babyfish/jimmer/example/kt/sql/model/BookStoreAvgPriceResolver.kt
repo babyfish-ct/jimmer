@@ -8,10 +8,13 @@ import org.babyfish.jimmer.sql.kt.ast.expression.valueIn
 import org.babyfish.jimmer.sql.kt.event.getUnchangedFieldRef
 import java.math.BigDecimal
 import java.sql.Connection
+import java.util.*
 
 class BookStoreAvgPriceResolver(
     private val sqlClient: KSqlClient
-) : KTransientResolver<Long, BigDecimal> {
+) : KTransientResolver.Parameterized<Long, BigDecimal> {
+
+    private val cacheableBooksFilter = sqlClient.filters.getCacheableTargetFilter(BookStore::books)
 
     init {
 
@@ -26,13 +29,23 @@ class BookStoreAvgPriceResolver(
         sqlClient.triggers.addEntityListener(Book::class) {
             val storeId = it.getUnchangedFieldRef(Book::store)?.value?.id
             if (storeId !== null) {
-                // 2. Otherwise, check whether `Book.price` is changed.
+                // 2. Otherwise, check whether `Book.price` is changed
+                // or `cacheableBooksFilter is affected`.
+                var evict = false
                 if (it.getUnchangedFieldRef(Book::price) === null) {
+                    evict = true
+                } else if (cacheableBooksFilter !== null && cacheableBooksFilter.isAffectedBy(it)) {
+                    evict = true
+                }
+                if (evict) {
                     sqlClient.caches.getPropertyCache<Any, Any>(BookStore::avgPrice)?.delete(storeId)
                 }
             }
         }
     }
+
+    override fun getParameters(): SortedMap<String, Any>? =
+        cacheableBooksFilter?.getParameters()
 
     override fun resolve(
         ids: Collection<Long>,

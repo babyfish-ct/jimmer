@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.example.kt.graphql.cfg
 
+import org.babyfish.jimmer.example.kt.graphql.App
 import org.babyfish.jimmer.example.kt.graphql.entities.Author
 import org.babyfish.jimmer.example.kt.graphql.entities.Book
 import org.babyfish.jimmer.example.kt.graphql.entities.BookStore
@@ -11,6 +12,7 @@ import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.newKSqlClient
 import org.babyfish.jimmer.sql.runtime.EntityManager
+import org.babyfish.jimmer.sql.runtime.Executor
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -50,21 +52,14 @@ class SqlClientConfig {
                 }
             }
 
-            setExecutor {
-                /*
-                 * Log SQL and variables
-                 */
-                LOGGER.info("Execute sql : \"{}\", with variables: {}", sql, variables)
-                proceed()
-            }
+            setExecutor(Executor.log())
 
             setDialect(if (isH2) H2Dialect() else MySqlDialect())
 
             setEntityManager(
                 EntityManager(
-                    BookStore::class.java,
-                    Book::class.java,
-                    Author::class.java
+                    App::class.java.classLoader,
+                    Book::class.java.`package`.name
                 )
             )
             addDraftInterceptors(interceptors)
