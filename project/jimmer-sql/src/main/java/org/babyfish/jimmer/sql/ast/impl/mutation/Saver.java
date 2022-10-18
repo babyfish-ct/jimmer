@@ -552,7 +552,7 @@ class Saver {
 
         Collection<ImmutableProp> actualKeyProps = actualKeyProps(example);
 
-        List<ImmutableSpi> rows = Queries.createQuery(data.getSqlClient(), type, (q, table) -> {
+        List<ImmutableSpi> rows = Queries.createQuery(data.getSqlClient(), type, ExecutionPurpose.MUTATE, true, (q, table) -> {
             for (ImmutableProp keyProp : actualKeyProps) {
                 if (keyProp.isReference(TargetLevel.ENTITY)) {
                     ImmutableProp targetIdProp = keyProp.getTargetType().getIdProp();
