@@ -51,16 +51,8 @@ public class BookStoreController {
             List<BookStore> stores
     ) {
         return sqlClient
-                .getListLoader(
-                        BookStoreTableEx.class,
-                        BookStoreTableEx::books
-                )
-                .forFilter(
-                        args -> args.orderBy(
-                                args.getTable().name().asc(),
-                                args.getTable().edition().desc()
-                        )
-                )
+                .getLoaders()
+                .list(BookStoreProps.BOOKS)
                 .batchLoad(stores);
     }
 
@@ -69,7 +61,8 @@ public class BookStoreController {
     @BatchMapping
     public Map<BookStore, BigDecimal> avgPrice(List<BookStore> stores) {
         return sqlClient
-                .getValueLoader(BookStoreProps.AVG_PRICE)
+                .getLoaders()
+                .value(BookStoreProps.AVG_PRICE)
                 .batchLoad(stores);
     }
 

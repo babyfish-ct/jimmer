@@ -3,14 +3,14 @@ package org.babyfish.jimmer.example.kt.graphql.cfg
 import org.babyfish.jimmer.example.kt.graphql.entities.Author
 import org.babyfish.jimmer.example.kt.graphql.entities.Book
 import org.babyfish.jimmer.example.kt.graphql.entities.BookStore
-import org.babyfish.jimmer.example.kt.graphql.entities.Gender
 import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.cache.CacheFactory
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.dialect.MySqlDialect
 import org.babyfish.jimmer.sql.kt.KSqlClient
+import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.newKSqlClient
-import org.babyfish.jimmer.sql.runtime.*
+import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -30,6 +30,7 @@ class SqlClientConfig {
         dataSource: DataSource,
         @Value("\${spring.datasource.url}") jdbcUrl: String,
         interceptors: List<DraftInterceptor<*>>,
+        filters: List<KFilter<*>>,
         cacheFactory: CacheFactory? // Optional dependency
     ): KSqlClient {
         val isH2 = jdbcUrl.startsWith("jdbc:h2:")
@@ -59,18 +60,20 @@ class SqlClientConfig {
 
             setDialect(if (isH2) H2Dialect() else MySqlDialect())
 
+            setEntityManager(
+                EntityManager(
+                    BookStore::class.java,
+                    Book::class.java,
+                    Author::class.java
+                )
+            )
             addDraftInterceptors(interceptors)
 
-            cacheFactory?.let {
-                setCaches {
-                    setCacheFactory(
-                        arrayOf(
-                            BookStore::class,
-                            Book::class,
-                            Author::class
-                        ),
-                        it
-                    )
+            addFilters(filters)
+
+            setCaches {
+                if (cacheFactory != null) {
+                    setCacheFactory(cacheFactory)
                 }
             }
         }.also {

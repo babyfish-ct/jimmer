@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.example.graphql.dal.AuthorRepository;
 import org.babyfish.jimmer.sql.example.graphql.entities.Author;
+import org.babyfish.jimmer.sql.example.graphql.entities.AuthorProps;
 import org.babyfish.jimmer.sql.example.graphql.entities.AuthorTableEx;
 import org.babyfish.jimmer.sql.example.graphql.entities.Book;
 import org.babyfish.jimmer.sql.example.graphql.input.AuthorInput;
@@ -46,11 +47,8 @@ public class AuthorController {
             List<Author> authors
     ) {
         return sqlClient
-                .getListLoader(
-                        AuthorTableEx.class,
-                        AuthorTableEx::books
-                )
-                .forFilter(args -> args.orderBy(args.getTable().name()))
+                .getLoaders()
+                .list(AuthorProps.BOOKS)
                 .batchLoad(authors);
     }
 

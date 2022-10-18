@@ -1,7 +1,7 @@
-package org.babyfish.jimmer.example.kt.sql.interceptor.output
+package org.babyfish.jimmer.example.kt.graphql.interceptor.output
 
-import org.babyfish.jimmer.example.kt.sql.interceptor.TenantProvider
-import org.babyfish.jimmer.example.kt.sql.model.common.TenantAware
+import org.babyfish.jimmer.example.kt.graphql.entities.common.TenantAware
+import org.babyfish.jimmer.example.kt.graphql.interceptor.TenantProvider
 import org.babyfish.jimmer.sql.event.EntityEvent
 import org.babyfish.jimmer.sql.kt.event.getUnchangedFieldRef
 import org.babyfish.jimmer.sql.kt.filter.KCacheableFilter

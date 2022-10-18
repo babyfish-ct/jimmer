@@ -1,11 +1,11 @@
 package org.babyfish.jimmer.example.kt.graphql.entities
 
+import org.babyfish.jimmer.example.kt.graphql.entities.common.TenantAware
 import org.babyfish.jimmer.sql.*
 import java.math.BigDecimal
-import javax.validation.constraints.NotBlank
 
 @Entity
-interface BookStore : CommonEntity {
+interface BookStore : TenantAware {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,6 +19,9 @@ interface BookStore : CommonEntity {
     @Transient(BookStoreAvgPriceResolver::class)
     val avgPrice: BigDecimal
 
-    @OneToMany(mappedBy = "store")
+    @OneToMany(mappedBy = "store", orderedProps = [
+        OrderedProp("name"),
+        OrderedProp("edition", desc = true)
+    ])
     val books: List<Book>
 }
