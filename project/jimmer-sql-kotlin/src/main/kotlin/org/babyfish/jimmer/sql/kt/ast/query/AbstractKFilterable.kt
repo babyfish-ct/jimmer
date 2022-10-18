@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.table.KProps
 import kotlin.reflect.KClass
 
-interface KAbstractFilterable<E: Any, P: KProps<E>> {
+interface AbstractKFilterable<E: Any, P: KProps<E>> {
 
     val table: P
 

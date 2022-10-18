@@ -48,9 +48,9 @@ abstract class AbstractRemoteBinder<K, V> {
             throw new IllegalArgumentException("randomPercent must between 0 and 99");
         }
         if (type != null) {
-            this.keyPrefix = type.getJavaClass().getSimpleName() + '-';
+            this.keyPrefix = getKeyPrefix(type);
         } else {
-            this.keyPrefix = prop.getDeclaringType().getJavaClass().getSimpleName() + '.' + prop.getName() + '-';
+            this.keyPrefix = getKeyPrefix(prop);
         }
         long millis = duration.toMillis();
         minMills = millis - randomPercent * millis / 100;
@@ -62,7 +62,15 @@ abstract class AbstractRemoteBinder<K, V> {
         }
     }
 
-    protected long randomMillis() {
+    protected String getKeyPrefix(ImmutableType type) {
+        return type.getJavaClass().getSimpleName() + '-';
+    }
+
+    protected String getKeyPrefix(ImmutableProp prop) {
+        return prop.getDeclaringType().getJavaClass().getSimpleName() + '.' + prop.getName() + '-';
+    }
+
+    protected long nextExpireMillis() {
         return ThreadLocalRandom.current().nextLong(minMills, maxMillis);
     }
 

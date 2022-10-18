@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.ast.query.Order
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.table.KProps
 
-interface KAbstractSortable<E: Any, P: KProps<E>> : KAbstractFilterable<E, P> {
+interface AbstractKSortable<E: Any, P: KProps<E>> : AbstractKFilterable<E, P> {
 
     fun orderBy(vararg expression: KExpression<*>?)
 
