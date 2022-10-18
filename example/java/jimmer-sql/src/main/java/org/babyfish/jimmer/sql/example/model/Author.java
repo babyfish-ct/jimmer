@@ -20,6 +20,9 @@ public interface Author extends CommonEntity {
 
     Gender gender();
 
-    @ManyToMany(mappedBy = "authors")
+    @ManyToMany(mappedBy = "authors", orderedProps = {
+            @OrderedProp("name"),
+            @OrderedProp(value = "edition", desc = true)
+    })
     List<Book> books();
 }
