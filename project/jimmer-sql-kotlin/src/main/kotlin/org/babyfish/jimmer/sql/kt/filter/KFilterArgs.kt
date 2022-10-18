@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.kt.filter
 
-import org.babyfish.jimmer.sql.kt.ast.query.KAbstractSortable
+import org.babyfish.jimmer.sql.kt.ast.query.AbstractKSortable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullProps
-import org.babyfish.jimmer.sql.kt.ast.table.KProps
 
-interface KFilterArgs<E: Any> : KAbstractSortable<E, KNonNullProps<E>>
+interface KFilterArgs<E: Any> : AbstractKSortable<E, KNonNullProps<E>>

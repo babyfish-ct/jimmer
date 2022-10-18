@@ -1,12 +1,14 @@
 package org.babyfish.jimmer.sql.cache.spi;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.SerializationException;
 import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.time.Duration;
 import java.util.*;
 
@@ -55,8 +57,28 @@ public abstract class AbstractRemoteHashBinder<K, V>
 
     private String hashKey(SortedMap<String, Object> parameterMap) {
         try {
-            return objectMapper.writeValueAsString(parameterMap);
-        } catch (JsonProcessingException ex) {
+            OutputStreamWriter writer = new OutputStreamWriter(new ByteArrayOutputStream());
+            try {
+                writer.write("{");
+                boolean addComma = false;
+                for (Map.Entry<String, Object> e : parameterMap.entrySet()) {
+                    if (addComma) {
+                        writer.write(",");
+                    } else {
+                        addComma = true;
+                    }
+                    writer.write("\"");
+                    writer.write(e.getKey());
+                    writer.write("\":");
+                    objectMapper.writeValue(writer, e.getValue());
+                }
+                writer.write("}");
+                writer.flush();
+                return writer.toString();
+            } finally {
+                writer.close();
+            }
+        } catch (IOException ex) {
             throw new SerializationException(ex);
         }
     }
