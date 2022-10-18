@@ -24,6 +24,7 @@ import org.babyfish.jimmer.sql.kt.loader.impl.KListLoaderImpl
 import org.babyfish.jimmer.sql.kt.loader.impl.KLoadersImpl
 import org.babyfish.jimmer.sql.kt.loader.impl.KReferenceLoaderImpl
 import org.babyfish.jimmer.sql.kt.loader.impl.KValueLoaderImpl
+import org.babyfish.jimmer.sql.runtime.EntityManager
 import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -120,6 +121,9 @@ internal class KSqlClientImpl(
                 KSqlClientImpl(it)
             }
         }
+
+    override val entityManager: EntityManager
+        get() = sqlClient.entityManager
 
     override val javaClient: JSqlClient
         get() = sqlClient
