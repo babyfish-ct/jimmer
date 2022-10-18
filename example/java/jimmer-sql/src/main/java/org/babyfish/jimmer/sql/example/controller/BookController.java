@@ -1,26 +1,15 @@
 package org.babyfish.jimmer.sql.example.controller;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.example.model.*;
-import org.babyfish.jimmer.sql.example.model.common.CommonEntityProps;
-import org.babyfish.jimmer.sql.example.model.common.TenantAwareProps;
 import org.babyfish.jimmer.sql.fluent.Fluent;
-import org.babyfish.jimmer.sql.meta.Column;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
 public class BookController {
@@ -161,51 +150,6 @@ public class BookController {
     @Transactional
     @PutMapping("book")
     public Book saveBook(@RequestBody Book book) {
-        validateRequiredFields(
-                book,
-                CommonEntityProps.CREATED_TIME,
-                CommonEntityProps.MODIFIED_TIME,
-                TenantAwareProps.TENANT
-        );
         return sqlClient.getEntities().save(book).getModifiedEntity();
-    }
-
-    private void validateRequiredFields(
-            Object immutable,
-            TypedProp<?, ?> ... exceptedProps
-    ) {
-        if (!(immutable instanceof ImmutableSpi)) {
-            throw new IllegalArgumentException("The argument is not immutable object");
-        }
-        validateRequiredFieldsImpl(
-                (ImmutableSpi) immutable,
-                Arrays.stream(exceptedProps).map(TypedProp::unwrap).collect(Collectors.toSet())
-        );
-    }
-
-    private void validateRequiredFieldsImpl(
-            ImmutableSpi spi,
-            Set<ImmutableProp> exceptedProps
-    ) {
-        for (ImmutableProp prop : spi.__type().getProps().values()) {
-            if (prop.isId() && !prop.isTransient() && !prop.isNullable() && prop.getStorage() instanceof Column && !exceptedProps.contains(prop)) {
-                if (!spi.__isLoaded(prop.getId())) {
-                    throw new IllegalArgumentException(
-                            "The required property \"" +
-                                    prop +
-                                    "\" of an object is not loaded"
-                    );
-                }
-            } else if (prop.isAssociation(TargetLevel.ENTITY) && spi.__isLoaded(prop.getId())) {
-                Object value = spi.__get(prop.getId());
-                if (value instanceof Collection<?>) {
-                    for (Object target : (Collection<?>)value) {
-                        validateRequiredFieldsImpl((ImmutableSpi)target, exceptedProps);
-                    }
-                } else if (value != null) {
-                    validateRequiredFieldsImpl((ImmutableSpi)value, exceptedProps);
-                }
-            }
-        }
     }
 }
