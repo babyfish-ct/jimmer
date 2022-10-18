@@ -8,6 +8,9 @@ import org.babyfish.jimmer.sql.example.model.common.TenantAwareProps;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
+/*
+ * See JSqlClient.Builder.addDraftInterceptors()
+ */
 @Component
 public class TenantAwareDraftInterceptor implements DraftInterceptor<TenantAwareDraft> {
 

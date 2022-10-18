@@ -9,6 +9,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.stereotype.Component;
 
 /*
+ * see JSqlClient.Builder.addFilters
+ * 
  * This bean is only be used when cache is NOT used.
  */
 @ConditionalOnMissingBean(TenantFilterForCacheMode.class)

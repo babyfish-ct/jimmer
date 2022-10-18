@@ -20,10 +20,10 @@ class TenantFilterForCacheMode(
     tenantProvider: TenantProvider
 ) : TenantFilterForNonCacheMode(tenantProvider), KCacheableFilter<TenantAware> {
 
-    override fun getParameters(): SortedMap<String, Any> =
+    override fun getParameters(): SortedMap<String, Any>? =
         tenantProvider.tenant?.let {
             sortedMapOf("tenant" to it)
-        } ?: sortedMapOf()
+        }
 
     override fun isAffectedBy(e: EntityEvent<*>): Boolean =
         e.getUnchangedFieldRef(TenantAware::tenant) === null
