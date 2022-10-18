@@ -1,5 +1,8 @@
-package org.babyfish.jimmer.example.kt.graphql.cache
+package org.babyfish.jimmer.example.kt.graphql.cfg
 
+import org.babyfish.jimmer.example.kt.graphql.cache.binder.CaffeineBinder
+import org.babyfish.jimmer.example.kt.graphql.cache.binder.RedisHashBinder
+import org.babyfish.jimmer.example.kt.graphql.cache.binder.RedisValueBinder
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.cache.Cache
@@ -23,16 +26,17 @@ class CacheConfig {
         connectionFactory: RedisConnectionFactory
     ): RedisTemplate<String, ByteArray> =
         RedisTemplate<String, ByteArray>().apply {
-            setConnectionFactory(connectionFactory)
-            keySerializer = StringRedisSerializer.UTF_8
 
-            // Specify a dummy serializer for spring redis because
-            // `org.babyfish.jimmer.sql.example.cache.ValueSerializer` took over the job.
-            valueSerializer =
-                object : RedisSerializer<ByteArray?> {
-                    override fun serialize(t: ByteArray?): ByteArray? = t
-                    override fun deserialize(bytes: ByteArray?): ByteArray? = bytes
-                }
+            setConnectionFactory(connectionFactory)
+
+            val nopSerializer = object : RedisSerializer<ByteArray?> {
+                override fun serialize(t: ByteArray?): ByteArray? = t
+                override fun deserialize(bytes: ByteArray?): ByteArray? = bytes
+            }
+            keySerializer = StringRedisSerializer.UTF_8
+            valueSerializer = nopSerializer
+            hashKeySerializer = StringRedisSerializer.UTF_8
+            hashValueSerializer = nopSerializer
         }
 
     @Bean
@@ -43,28 +47,25 @@ class CacheConfig {
             override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
                 ChainCacheBuilder<Any, Any>()
                     .add(CaffeineBinder(512, Duration.ofSeconds(1)))
-                    .add(RedisBinder(redisTemplate, type, Duration.ofMinutes(10)))
+                    .add(RedisValueBinder(redisTemplate, null, type, Duration.ofMinutes(10)))
                     .build()
 
             // Id -> TargetId, for one-to-one/many-to-one
             override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
                 ChainCacheBuilder<Any, Any>()
-                    .add(CaffeineBinder(512, Duration.ofSeconds(1)))
-                    .add(RedisBinder(redisTemplate, prop, Duration.ofMinutes(5)))
+                    .add(RedisHashBinder(redisTemplate, null, prop, Duration.ofMinutes(5)))
                     .build()
 
-            // Id -> TargetId List, for one-to-many/many-to-many
+            // Id -> TargetId list, for one-to-many/many-to-many
             override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
                 ChainCacheBuilder<Any, List<*>>()
-                    .add(CaffeineBinder(64, Duration.ofSeconds(1)))
-                    .add(RedisBinder(redisTemplate, prop, Duration.ofMinutes(5)))
+                    .add(RedisHashBinder(redisTemplate, null, prop, Duration.ofMinutes(5)))
                     .build()
 
             // Id -> computed value, for transient properties with resolver
             override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? =
                 ChainCacheBuilder<Any, List<*>>()
-                    .add(CaffeineBinder(1024, Duration.ofSeconds(1)))
-                    .add(RedisBinder(redisTemplate, prop, Duration.ofHours(1)))
+                    .add(RedisHashBinder(redisTemplate, null, prop, Duration.ofHours(1)))
                     .build()
         }
 }

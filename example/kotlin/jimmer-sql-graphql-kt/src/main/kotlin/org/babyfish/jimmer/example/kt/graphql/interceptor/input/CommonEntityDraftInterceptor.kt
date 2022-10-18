@@ -1,7 +1,7 @@
-package org.babyfish.jimmer.example.kt.graphql.cfg
+package org.babyfish.jimmer.example.kt.graphql.interceptor.input
 
-import org.babyfish.jimmer.example.kt.graphql.entities.CommonEntity
-import org.babyfish.jimmer.example.kt.graphql.entities.CommonEntityDraft
+import org.babyfish.jimmer.example.kt.graphql.entities.common.CommonEntity
+import org.babyfish.jimmer.example.kt.graphql.entities.common.CommonEntityDraft
 import org.babyfish.jimmer.kt.isLoaded
 import org.babyfish.jimmer.sql.DraftInterceptor
 import org.springframework.stereotype.Component

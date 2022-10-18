@@ -105,6 +105,7 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
                 }
                 Map<K, V> mapFromNext = next.loadAll(missedKeys);
                 if (mapFromNext.size() < missedKeys.size()) {
+                    mapFromNext = new HashMap<>(mapFromNext);
                     for (K missedKey : missedKeys) {
                         if (!mapFromNext.containsKey(missedKey)) {
                             mapFromNext.put(missedKey, null);

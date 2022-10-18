@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.spi.AbstractRemoteHashBinder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.SessionCallback;
@@ -15,6 +17,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RedisHashBinder.class);
 
     private final RedisOperations<String, byte[]> operations;
 
@@ -79,6 +83,7 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
 
     @Override
     protected void delete(Collection<String> keys) {
+        LOGGER.info("Delete property data form redis: " + keys);
         operations.delete(keys);
     }
 

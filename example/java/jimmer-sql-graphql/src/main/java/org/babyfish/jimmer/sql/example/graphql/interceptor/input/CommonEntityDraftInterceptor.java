@@ -1,9 +1,9 @@
-package org.babyfish.jimmer.sql.example.graphql.cfg;
+package org.babyfish.jimmer.sql.example.graphql.interceptor.input;
 
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DraftInterceptor;
-import org.babyfish.jimmer.sql.example.graphql.entities.CommonEntityDraft;
-import org.babyfish.jimmer.sql.example.graphql.entities.CommonEntityProps;
+import org.babyfish.jimmer.sql.example.graphql.entities.common.CommonEntityDraft;
+import org.babyfish.jimmer.sql.example.graphql.entities.common.CommonEntityProps;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;

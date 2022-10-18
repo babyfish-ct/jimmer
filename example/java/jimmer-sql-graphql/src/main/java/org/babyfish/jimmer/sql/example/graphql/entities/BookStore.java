@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.example.graphql.entities;
 
 import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.example.graphql.entities.common.TenantAware;
 import org.springframework.lang.Nullable;
 
 import javax.validation.constraints.NotBlank;
@@ -8,7 +9,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
-public interface BookStore extends CommonEntity {
+public interface BookStore extends TenantAware {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,6 +26,6 @@ public interface BookStore extends CommonEntity {
     @Transient(BookStoreAvgPriceResolver.class)
     BigDecimal avgPrice();
 
-    @OneToMany(mappedBy = "store")
+    @OneToMany(mappedBy = "store", orderedProps = @OrderedProp("name"))
     List<Book> books();
 }

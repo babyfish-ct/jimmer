@@ -1,12 +1,13 @@
 package org.babyfish.jimmer.example.kt.graphql.entities
 
+import org.babyfish.jimmer.example.kt.graphql.entities.common.TenantAware
 import org.babyfish.jimmer.sql.*
 import java.math.BigDecimal
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Positive
 
 @Entity
-interface Book : CommonEntity {
+interface Book : TenantAware {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,7 +24,10 @@ interface Book : CommonEntity {
     @ManyToOne
     val store: BookStore?
 
-    @ManyToMany
+    @ManyToMany(orderedProps = [
+        OrderedProp("firstName"),
+        OrderedProp("lastName")
+    ])
     @JoinTable(
         name = "BOOK_AUTHOR_MAPPING",
         joinColumnName = "BOOK_ID",

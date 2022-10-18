@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.example.kt.sql.cache
+package org.babyfish.jimmer.example.kt.sql.cfg
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.babyfish.jimmer.example.kt.sql.cache.binder.CaffeineBinder

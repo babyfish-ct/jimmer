@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.example.kt.graphql.entities
+package org.babyfish.jimmer.example.kt.graphql.entities.common
 
 import org.babyfish.jimmer.sql.MappedSuperclass
 import java.time.LocalDateTime
