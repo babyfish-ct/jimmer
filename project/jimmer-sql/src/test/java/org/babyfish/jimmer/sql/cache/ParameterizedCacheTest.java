@@ -52,17 +52,17 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
 
                             @Override
                             public @Nullable Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
-                                return ParameterizedCaches.create();
+                                return ParameterizedCaches.create(prop);
                             }
 
                             @Override
                             public @Nullable Cache<?, List<?>> createAssociatedIdListCache(@NotNull ImmutableProp prop) {
-                                return ParameterizedCaches.create();
+                                return ParameterizedCaches.create(prop);
                             }
 
                             @Override
                             public @Nullable Cache<?, ?> createResolverCache(@NotNull ImmutableProp prop) {
-                                return ParameterizedCaches.create();
+                                return ParameterizedCaches.create(prop);
                             }
                         }
                 );

@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.cache;
+package org.babyfish.jimmer.sql.example.cache.binder;
 
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;

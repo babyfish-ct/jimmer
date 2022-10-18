@@ -257,7 +257,7 @@ public class FilterManager implements Filters {
 
     @SuppressWarnings("unchecked")
     private Filter<Props> create(ImmutableType type) {
-        List<Filter<Props>> filters = new ArrayList<>();
+        Set<Filter<Props>> filters = new LinkedHashSet<>();
         for (ImmutableType t = type; t != null; t = t.getSuperType()) {
             List<Filter<Props>> list = filterMap.get(t);
             if (list != null) {
@@ -276,7 +276,7 @@ public class FilterManager implements Filters {
                 return new CompositeFilter(filters);
             }
         }
-        return new CompositeCacheableFilter(type, (List<CacheableFilter<Props>>)(List<?>)filters);
+        return new CompositeCacheableFilter(type, (Collection<CacheableFilter<Props>>)(Collection<?>)filters);
     }
 
     @SuppressWarnings("unchecked")
@@ -445,8 +445,8 @@ public class FilterManager implements Filters {
 
         private final List<Filter<Props>> filters;
 
-        private CompositeFilter(List<Filter<Props>> filters) {
-            this.filters = filters;
+        private CompositeFilter(Collection<Filter<Props>> filters) {
+            this.filters = new ArrayList<>(filters);
         }
 
         @Override
@@ -470,9 +470,9 @@ public class FilterManager implements Filters {
 
         private final List<CacheableFilter<Props>> filters;
 
-        private CompositeCacheableFilter(ImmutableType type, List<CacheableFilter<Props>> filters) {
+        private CompositeCacheableFilter(ImmutableType type, Collection<CacheableFilter<Props>> filters) {
             this.type = type;
-            this.filters = filters;
+            this.filters = new ArrayList<>(filters);
         }
 
         @Override

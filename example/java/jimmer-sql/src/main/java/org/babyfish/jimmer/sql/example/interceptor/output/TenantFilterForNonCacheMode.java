@@ -1,17 +1,16 @@
 package org.babyfish.jimmer.sql.example.interceptor.output;
 
 import org.babyfish.jimmer.sql.example.interceptor.TenantProvider;
-import org.babyfish.jimmer.sql.example.model.common.TenantAware;
 import org.babyfish.jimmer.sql.example.model.common.TenantAwareProps;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
 
 /*
  * This bean is only be used when cache is NOT used.
  */
-@ConditionalOnProperty(value = "spring.redis.host", matchIfMissing = true)
+@ConditionalOnMissingBean(TenantFilterForCacheMode.class)
 @Component
 public class TenantFilterForNonCacheMode implements Filter<TenantAwareProps> {
 
