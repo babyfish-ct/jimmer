@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.example.graphql.entities;
 
 import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.example.graphql.entities.common.TenantAware;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Null;
@@ -9,7 +10,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
-public interface Book extends CommonEntity {
+public interface Book extends TenantAware {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,7 +30,10 @@ public interface Book extends CommonEntity {
     @ManyToOne
     BookStore store();
 
-    @ManyToMany
+    @ManyToMany(orderedProps = {
+            @OrderedProp("firstName"),
+            @OrderedProp("lastName")
+    })
     @JoinTable(
             name = "BOOK_AUTHOR_MAPPING",
             joinColumnName = "BOOK_ID",

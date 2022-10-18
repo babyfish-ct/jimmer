@@ -4,7 +4,6 @@ import org.babyfish.jimmer.example.kt.graphql.dal.BookRepository
 import org.babyfish.jimmer.example.kt.graphql.entities.Author
 import org.babyfish.jimmer.example.kt.graphql.entities.Book
 import org.babyfish.jimmer.example.kt.graphql.entities.BookStore
-import org.babyfish.jimmer.example.kt.graphql.entities.firstName
 import org.babyfish.jimmer.example.kt.graphql.input.BookInput
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.springframework.graphql.data.method.annotation.Argument
@@ -13,7 +12,6 @@ import org.springframework.graphql.data.method.annotation.MutationMapping
 import org.springframework.graphql.data.method.annotation.QueryMapping
 import org.springframework.stereotype.Controller
 import org.springframework.transaction.annotation.Transactional
-
 
 @Controller
 class BookController(
@@ -39,7 +37,8 @@ class BookController(
         books: java.util.List<Book>
     ): Map<Book, BookStore> =
         sqlClient
-            .getReferenceLoader(Book::store)
+            .loaders
+            .reference(Book::store)
             .batchLoad(books)
 
     @BatchMapping
@@ -48,10 +47,8 @@ class BookController(
         books: java.util.List<Book>
     ): Map<Book, List<Author>> =
         sqlClient
-            .getListLoader(Book::authors)
-            .forFilter {
-                orderBy(table.firstName)
-            }
+            .loaders
+            .list(Book::authors)
             .batchLoad(books)
 
     // --- Mutation ---

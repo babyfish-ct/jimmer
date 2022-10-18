@@ -1,11 +1,14 @@
 package org.babyfish.jimmer.sql.example.graphql.cache;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.cache.chain.*;
-import org.jetbrains.annotations.Nullable;
+import org.babyfish.jimmer.sql.example.graphql.cache.binder.CaffeineBinder;
+import org.babyfish.jimmer.sql.example.graphql.cache.binder.RedisHashBinder;
+import org.babyfish.jimmer.sql.example.graphql.cache.binder.RedisValueBinder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,13 +27,8 @@ public class CacheConfig {
 
     @Bean
     public RedisTemplate<String, byte[]> rawDataRedisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, byte[]> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        template.setKeySerializer(StringRedisSerializer.UTF_8);
 
-        // Specify a dummy serializer for spring redis because
-        // `org.babyfish.jimmer.sql.example.cache.ValueSerializer` took over the job.
-        template.setValueSerializer(
+        RedisSerializer<byte[]> nopSerializer =
                 new RedisSerializer<byte[]>() {
                     @Override
                     public byte[] serialize(byte[] bytes) throws SerializationException {
@@ -40,13 +38,21 @@ public class CacheConfig {
                     public byte[] deserialize(byte[] bytes) throws SerializationException {
                         return bytes;
                     }
-                }
-        );
+                };
+
+        RedisTemplate<String, byte[]> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+        template.setKeySerializer(StringRedisSerializer.UTF_8);
+        template.setValueSerializer(nopSerializer);
+        template.setHashKeySerializer(StringRedisSerializer.UTF_8);
+        template.setHashValueSerializer(nopSerializer);
         return template;
     }
 
     @Bean
-    public CacheFactory cacheFactory(RedisTemplate<String, byte[]> redisTemplate) {
+    public CacheFactory cacheFactory(
+            RedisTemplate<String, byte[]> redisTemplate
+    ) {
         return new CacheFactory() {
 
             // Id -> Object
@@ -54,7 +60,7 @@ public class CacheConfig {
             public Cache<?, ?> createObjectCache(ImmutableType type) {
                 return new ChainCacheBuilder<>()
                         .add(new CaffeineBinder<>(512, Duration.ofSeconds(1)))
-                        .add(new RedisBinder<>(redisTemplate, type, Duration.ofMinutes(10)))
+                        .add(new RedisValueBinder<>(redisTemplate, null, type, Duration.ofMinutes(10)))
                         .build();
             }
 
@@ -62,8 +68,7 @@ public class CacheConfig {
             @Override
             public Cache<?, ?> createAssociatedIdCache(ImmutableProp prop) {
                 return new ChainCacheBuilder<>()
-                        .add(new CaffeineBinder<>(512, Duration.ofSeconds(1)))
-                        .add(new RedisBinder<>(redisTemplate, prop, Duration.ofMinutes(5)))
+                        .add(new RedisHashBinder<>(redisTemplate, null, prop, Duration.ofMinutes(5)))
                         .build();
             }
 
@@ -71,8 +76,7 @@ public class CacheConfig {
             @Override
             public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
                 return new ChainCacheBuilder<Object, List<?>>()
-                        .add(new CaffeineBinder<>(64, Duration.ofSeconds(1)))
-                        .add(new RedisBinder<>(redisTemplate, prop, Duration.ofMinutes(5)))
+                        .add(new RedisHashBinder<>(redisTemplate, null, prop, Duration.ofMinutes(5)))
                         .build();
             }
 
@@ -80,8 +84,7 @@ public class CacheConfig {
             @Override
             public Cache<?, ?> createResolverCache(ImmutableProp prop) {
                 return new ChainCacheBuilder<Object, List<?>>()
-                        .add(new CaffeineBinder<>(1024, Duration.ofSeconds(1)))
-                        .add(new RedisBinder<>(redisTemplate, prop, Duration.ofHours(1)))
+                        .add(new RedisHashBinder<>(redisTemplate, null, prop, Duration.ofHours(1)))
                         .build();
             }
         };

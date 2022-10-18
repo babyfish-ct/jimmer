@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.graphql.cache;
+package org.babyfish.jimmer.sql.example.graphql.cache.binder;
 
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;

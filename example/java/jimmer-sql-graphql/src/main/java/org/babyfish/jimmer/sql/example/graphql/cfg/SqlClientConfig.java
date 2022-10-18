@@ -8,9 +8,11 @@ import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.example.graphql.entities.Author;
 import org.babyfish.jimmer.sql.example.graphql.entities.Book;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStore;
+import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,7 +40,8 @@ public class SqlClientConfig {
             DataSource dataSource,
             @Value("${spring.datasource.url}") String jdbcUrl,
             List<DraftInterceptor<?>> interceptors,
-            Optional<CacheFactory> cacheFactory
+            List<Filter<?>> filters,
+            @Autowired(required = false) CacheFactory cacheFactory
     ) {
         boolean isH2 = jdbcUrl.startsWith("jdbc:h2:");
         JSqlClient sqlClient = JSqlClient.newBuilder()
@@ -63,41 +66,19 @@ public class SqlClientConfig {
                 .setDialect(
                         isH2 ? new H2Dialect() : new MySqlDialect() // Support sequence
                 )
-                .setExecutor(
-                        /*
-                         * Log SQL and variables
-                         */
-                        new Executor() {
-                            @Override
-                            public <R> R execute(
-                                    Connection con,
-                                    String sql,
-                                    List<Object> variables,
-                                    StatementFactory statementFactory,
-                                    SqlFunction<PreparedStatement, R> block
-                            ) {
-                                LOGGER.info("Execute sql : \"{}\", with variables: {}", sql, variables);
-                                return DefaultExecutor.INSTANCE.execute(
-                                        con,
-                                        sql,
-                                        variables,
-                                        statementFactory,
-                                        block
-                                );
-                            }
-                        }
-                )
+                .setExecutor(Executor.log())
                 .addDraftInterceptors(interceptors)
+                .addFilters(filters)
+                .setEntityManager(
+                        new EntityManager(
+                                BookStore.class,
+                                Book.class,
+                                Author.class
+                        )
+                )
                 .setCaches(it -> {
-                    if (cacheFactory.isPresent()) {
-                        it.setCacheFactory(
-                                new Class[] {
-                                        BookStore.class,
-                                        Book.class,
-                                        Author.class
-                                },
-                                cacheFactory.get()
-                        );
+                    if (cacheFactory != null) {
+                        it.setCacheFactory(cacheFactory);
                     }
                 })
                 .build();
