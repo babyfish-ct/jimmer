@@ -32,6 +32,9 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     if (!ImmutableObjects.isLoaded(draft, NamedEntityProps.MODIFIED_TIME)) {
                         draft.setModifiedTime(MODIFIED_TIME);
                     }
+                    if (!ImmutableObjects.isLoaded(draft, NamedEntityProps.DELETED)) {
+                        draft.setDeleted(false);
+                    }
                     if (isNew && !ImmutableObjects.isLoaded(draft, NamedEntityProps.CREATED_TIME)) {
                         draft.setCreatedTime(CREATED_TIME);
                     }
@@ -75,19 +78,7 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into ROLE(NAME, CREATED_TIME, MODIFIED_TIME, ID) values(?, ?, ?, ?)"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME " +
-                                        "from PERMISSION as tb_1_ " +
-                                        "where tb_1_.NAME = ?"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "insert into PERMISSION(NAME, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) " +
+                                "insert into ROLE(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ID) " +
                                         "values(?, ?, ?, ?, ?)"
                         );
                     });
@@ -100,8 +91,21 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into PERMISSION(NAME, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) " +
-                                        "values(?, ?, ?, ?, ?)"
+                                "insert into PERMISSION(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) " +
+                                        "values(?, ?, ?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from PERMISSION as tb_1_ " +
+                                        "where tb_1_.NAME = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into PERMISSION(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) " +
+                                        "values(?, ?, ?, ?, ?, ?)"
                         );
                     });
                     ctx.entity(it -> {
@@ -120,17 +124,20 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                         it.modified(
                                 "{" +
                                         "--->\"name\":\"role\"," +
+                                        "--->\"deleted\":false," +
                                         "--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                         "--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                         "--->\"permissions\":[" +
                                         "--->--->{" +
                                         "--->--->--->\"name\":\"permission_1\"," +
+                                        "--->--->--->\"deleted\":false," +
                                         "--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                         "--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                         "--->--->--->\"role\":{\"id\":101}," +
                                         "--->--->--->\"id\":101" +
                                         "--->--->},{" +
                                         "--->--->--->\"name\":\"permission_2\"," +
+                                        "--->--->--->\"deleted\":false," +
                                         "--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                         "--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                         "--->--->--->\"role\":{\"id\":101}," +
@@ -167,8 +174,8 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into ROLE(NAME, CREATED_TIME, MODIFIED_TIME, ID) " +
-                                        "values(?, ?, ?, ?)"
+                                "insert into ROLE(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ID) " +
+                                        "values(?, ?, ?, ?, ?)"
                         );
                     });
                     ctx.statement(it -> {
@@ -180,8 +187,8 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "insert into PERMISSION(NAME, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) " +
-                                        "values(?, ?, ?, ?, ?)"
+                                "insert into PERMISSION(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) " +
+                                        "values(?, ?, ?, ?, ?, ?)"
                         );
                     });
                     ctx.entity(it -> {
@@ -191,10 +198,12 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                         it.modified(
                                 "{" +
                                         "--->\"name\":\"Permission\"," +
+                                        "--->\"deleted\":false," +
                                         "--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                         "--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                         "--->\"role\":{" +
                                         "--->--->\"name\":\"role\"," +
+                                        "--->--->\"deleted\":false," +
                                         "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
                                         "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
                                         "--->--->\"id\":101" +

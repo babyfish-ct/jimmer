@@ -25,17 +25,11 @@ public class MixedTest extends AbstractQueryTest {
                                             TreeNodeFetcher.$.name().childNodes(
                                                     TreeNodeFetcher.$.name().childNodes(
                                                             TreeNodeFetcher.$.name(),
-                                                            it -> it.recursive().filter(
-                                                                    Filter.sortingFilter(TreeNodeTable.class, TreeNodeTable::id)
-                                                            )
+                                                            it -> it.recursive()
                                                     ),
-                                                    it -> it.recursive().filter(
-                                                            Filter.sortingFilter(TreeNodeTable.class, TreeNodeTable::id)
-                                                    )
+                                                    it -> it.recursive()
                                             ),
-                                            it -> it.recursive().filter(
-                                                    Filter.sortingFilter(TreeNodeTable.class, TreeNodeTable::id)
-                                            )
+                                            it -> it.recursive()
                                     )
                             )
                     );

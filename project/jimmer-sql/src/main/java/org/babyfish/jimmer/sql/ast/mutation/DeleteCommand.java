@@ -31,19 +31,5 @@ public interface DeleteCommand extends Executable<DeleteResult> {
                 ImmutableProp prop,
                 DissociateAction dissociateAction
         );
-
-        @OldChain
-        Cfg setDissociateAction(
-                Class<?> entityType,
-                String prop,
-                DissociateAction dissociateAction
-        );
-
-        @OldChain
-        <T extends Table<?>> Cfg setDissociateAction(
-                Class<T> tableType,
-                Function<T, Table<?>> block,
-                DissociateAction dissociateAction
-        );
     }
 }

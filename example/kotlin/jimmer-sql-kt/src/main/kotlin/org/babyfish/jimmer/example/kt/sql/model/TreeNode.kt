@@ -3,7 +3,7 @@ package org.babyfish.jimmer.example.kt.sql.model
 import org.babyfish.jimmer.sql.*
 
 @Entity
-interface TreeNode {
+interface TreeNode : CommonEntity {
 
     @Id
     @Column(name = "NODE_ID")

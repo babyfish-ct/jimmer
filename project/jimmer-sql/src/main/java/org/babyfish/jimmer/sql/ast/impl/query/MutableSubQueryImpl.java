@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.impl.ExistsPredicate;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
+import org.babyfish.jimmer.sql.filter.Filter;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,7 +18,7 @@ public class MutableSubQueryImpl
         extends AbstractMutableQueryImpl
         implements MutableSubQuery {
 
-    private AbstractMutableStatementImpl parent;
+    private final AbstractMutableStatementImpl parent;
 
     public MutableSubQueryImpl(
             AbstractMutableStatementImpl parent,
@@ -26,7 +27,10 @@ public class MutableSubQueryImpl
         super(
                 parent.getTableAliasAllocator(),
                 parent.getSqlClient(),
-                immutableType
+                immutableType,
+                parent.getPurpose(),
+                parent instanceof AbstractMutableQueryImpl &&
+                        ((AbstractMutableQueryImpl) parent).isFilterIgnored()
         );
         this.parent = parent;
     }

@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.event.binlog;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.BeanProperty;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
@@ -15,6 +14,13 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.Temporal;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -74,6 +80,10 @@ class BinLogDeserializer extends StdDeserializer<Object> {
                             (ScalarProvider<Object, Object>)
                                     scalarProviderMap.get(prop.getElementClass());
                     Class<?> jsonDataType = provider != null ? provider.getSqlType() : prop.getElementClass();
+                    if (Temporal.class.isAssignableFrom(jsonDataType) ||
+                            Date.class.isAssignableFrom(jsonDataType)) {
+                        continue;
+                    }
                     value = DeserializeUtils.readTreeAsValue(
                             ctx,
                             childNode,

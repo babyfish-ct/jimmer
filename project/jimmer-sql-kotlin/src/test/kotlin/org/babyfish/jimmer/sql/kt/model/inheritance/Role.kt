@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.GeneratedValue
 import org.babyfish.jimmer.sql.GenerationType
 import org.babyfish.jimmer.sql.Id
+import org.babyfish.jimmer.sql.Transient
 
 @Entity
 interface Role : RoleBase {
@@ -11,4 +12,7 @@ interface Role : RoleBase {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long
+
+    @Transient(RolePermissionCountResolver::class)
+    val permissionCount: Int
 }

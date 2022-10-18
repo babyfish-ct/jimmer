@@ -18,14 +18,7 @@ class InheritanceMutationTest : AbstractMutationTest() {
         sqlClient {
             setIdGenerator(Role::class, PreparedIdGenerator(101L))
             setIdGenerator(Permission::class, PreparedIdGenerator(101L, 102L))
-            addDraftInterceptor<NamedEntityDraft> { draft, isNew ->
-                if (!isLoaded(draft, NamedEntity::modifiedTime)) {
-                    draft.modifiedTime = MODIFIED_TIME
-                }
-                if (isNew && !isLoaded(draft, NamedEntity::createdTime)) {
-                    draft.createdTime = CREATED_TIME
-                }
-            }
+            addDraftInterceptor(NamedEntityDraftInterceptor)
         }
 
     @Test
@@ -55,19 +48,7 @@ class InheritanceMutationTest : AbstractMutationTest() {
             }
             statement {
                 sql(
-                    """insert into ROLE(NAME, CREATED_TIME, MODIFIED_TIME, ID) values(?, ?, ?, ?)"""
-                )
-            }
-            statement {
-                sql(
-                    """select tb_1_.ID, tb_1_.NAME 
-                        |from PERMISSION as tb_1_ 
-                        |where tb_1_.NAME = ?""".trimMargin()
-                )
-            }
-            statement {
-                sql(
-                    """insert into PERMISSION(NAME, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) 
+                    """insert into ROLE(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ID) 
                         |values(?, ?, ?, ?, ?)""".trimMargin()
                 )
             }
@@ -80,8 +61,21 @@ class InheritanceMutationTest : AbstractMutationTest() {
             }
             statement {
                 sql(
-                    """insert into PERMISSION(NAME, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) 
-                        |values(?, ?, ?, ?, ?)""".trimMargin()
+                    """insert into PERMISSION(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) 
+                        |values(?, ?, ?, ?, ?, ?)""".trimMargin()
+                )
+            }
+            statement {
+                sql(
+                    """select tb_1_.ID, tb_1_.NAME 
+                        |from PERMISSION as tb_1_ 
+                        |where tb_1_.NAME = ?""".trimMargin()
+                )
+            }
+            statement {
+                sql(
+                    """insert into PERMISSION(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) 
+                        |values(?, ?, ?, ?, ?, ?)""".trimMargin()
                 )
             }
             entity {
@@ -91,18 +85,21 @@ class InheritanceMutationTest : AbstractMutationTest() {
                 modified(
                     """{
                         |--->"name":"role",
-                        |--->"createdTime":"2022-10-03T00:00:00",
-                        |--->"modifiedTime":"2022-10-03T00:10:00",
+                        |--->"deleted":false,
+                        |--->"createdTime":"2022-10-03 00:00:00",
+                        |--->"modifiedTime":"2022-10-03 00:10:00",
                         |--->"permissions":[
                         |--->--->{
                         |--->--->--->"name":"permission-1",
-                        |--->--->--->"createdTime":"2022-10-03T00:00:00",
-                        |--->--->--->"modifiedTime":"2022-10-03T00:10:00",
+                        |--->--->--->"deleted":false,
+                        |--->--->--->"createdTime":"2022-10-03 00:00:00",
+                        |--->--->--->"modifiedTime":"2022-10-03 00:10:00",
                         |--->--->--->"role":{"id":101},"id":101
                         |--->--->},{
                         |--->--->--->"name":"permission-2",
-                        |--->--->--->"createdTime":"2022-10-03T00:00:00",
-                        |--->--->--->"modifiedTime":"2022-10-03T00:10:00",
+                        |--->--->--->"deleted":false,
+                        |--->--->--->"createdTime":"2022-10-03 00:00:00",
+                        |--->--->--->"modifiedTime":"2022-10-03 00:10:00",
                         |--->--->--->"role":{"id":101},"id":102
                         |--->--->}
                         |--->
@@ -134,8 +131,8 @@ class InheritanceMutationTest : AbstractMutationTest() {
             }
             statement {
                 sql(
-                    """insert into ROLE(NAME, CREATED_TIME, MODIFIED_TIME, ID) 
-                        |values(?, ?, ?, ?)""".trimMargin()
+                    """insert into ROLE(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ID) 
+                        |values(?, ?, ?, ?, ?)""".trimMargin()
                 )
             }
             statement {
@@ -145,8 +142,8 @@ class InheritanceMutationTest : AbstractMutationTest() {
             }
             statement {
                 sql(
-                    """insert into PERMISSION(NAME, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) 
-                        |values(?, ?, ?, ?, ?)""".trimMargin()
+                    """insert into PERMISSION(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ROLE_ID, ID) 
+                        |values(?, ?, ?, ?, ?, ?)""".trimMargin()
                 )
             }
             entity {
@@ -156,12 +153,14 @@ class InheritanceMutationTest : AbstractMutationTest() {
                 modified(
                     """{
                         |--->"name":"permission",
-                        |--->"createdTime":"2022-10-03T00:00:00",
-                        |--->"modifiedTime":"2022-10-03T00:10:00",
+                        |--->"deleted":false,
+                        |--->"createdTime":"2022-10-03 00:00:00",
+                        |--->"modifiedTime":"2022-10-03 00:10:00",
                         |--->"role":{
                         |--->--->"name":"role",
-                        |--->--->"createdTime":"2022-10-03T00:00:00",
-                        |--->--->"modifiedTime":"2022-10-03T00:10:00",
+                        |--->--->"deleted":false,
+                        |--->--->"createdTime":"2022-10-03 00:00:00",
+                        |--->--->"modifiedTime":"2022-10-03 00:10:00",
                         |--->--->"id":101
                         |--->},
                         |--->"id":101
@@ -178,8 +177,13 @@ class InheritanceMutationTest : AbstractMutationTest() {
         private val CREATED_TIME = LocalDateTime.parse("2022-10-03 00:00:00", FORMATTER)
 
         private val MODIFIED_TIME = LocalDateTime.parse("2022-10-03 00:10:00", FORMATTER)
+    }
 
-        private val INTERCEPTOR: DraftInterceptor<NamedEntityDraft> = DraftInterceptor { draft, isNew ->
+    private object NamedEntityDraftInterceptor : DraftInterceptor<NamedEntityDraft> {
+        override fun beforeSave(draft: NamedEntityDraft, isNew: Boolean) {
+            if (!isLoaded(draft, NamedEntity::deleted)) {
+                draft.deleted = false
+            }
             if (!isLoaded(draft, NamedEntity::modifiedTime)) {
                 draft.modifiedTime = MODIFIED_TIME
             }

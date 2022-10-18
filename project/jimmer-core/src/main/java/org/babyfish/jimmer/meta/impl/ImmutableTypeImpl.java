@@ -20,6 +20,10 @@ class ImmutableTypeImpl implements ImmutableType {
 
     private final Class<?> javaClass;
 
+    private final boolean isEntity;
+
+    private final boolean isMappedSupperClass;
+
     private final Annotation immutableAnnotation;
 
     private KClass<?> kotlinClass;
@@ -37,6 +41,8 @@ class ImmutableTypeImpl implements ImmutableType {
     private Map<String, ImmutableProp> columnProps;
 
     private Map<String, ImmutableProp> selectableProps;
+
+    private Map<String, ImmutableProp> selectableReferenceProps;
 
     private ImmutableProp idProp;
 
@@ -56,6 +62,9 @@ class ImmutableTypeImpl implements ImmutableType {
         this.javaClass = javaClass;
         this.superType = superType;
         this.draftFactory = draftFactory;
+
+        this.isEntity = javaClass.isAnnotationPresent(Entity.class);
+        this.isMappedSupperClass = javaClass.isAnnotationPresent(MappedSuperclass.class);
 
         Entity entity = javaClass.getAnnotation(Entity.class);
         MappedSuperclass mappedSuperclass = javaClass.getAnnotation(MappedSuperclass.class);
@@ -96,11 +105,26 @@ class ImmutableTypeImpl implements ImmutableType {
     }
 
     @Override
+    public boolean isEntity() {
+        return isEntity;
+    }
+
+    @Override
+    public boolean isMappedSuperclass() {
+        return isMappedSupperClass;
+    }
+
+    @Override
     public Annotation getImmutableAnnotation() {
         return immutableAnnotation;
     }
 
     KClass<?> getKotlinClass() { return kotlinClass; }
+
+    @Override
+    public boolean isAssignableFrom(ImmutableType type) {
+        return javaClass.isAssignableFrom(type.getJavaClass());
+    }
 
     @Override
     public ImmutableType getSuperType() {
@@ -250,6 +274,21 @@ class ImmutableTypeImpl implements ImmutableType {
             this.selectableProps = Collections.unmodifiableMap(selectableProps);
         }
         return selectableProps;
+    }
+
+    @Override
+    public Map<String, ImmutableProp> getSelectableReferenceProps() {
+        Map<String, ImmutableProp> selectableReferenceProps = this.selectableReferenceProps;
+        if (selectableReferenceProps == null) {
+            selectableReferenceProps = new LinkedHashMap<>();
+            for (ImmutableProp prop : getProps().values()) {
+                if (prop.isReference(TargetLevel.ENTITY) && prop.getStorage() instanceof Column) {
+                    selectableReferenceProps.put(prop.getName(), prop);
+                }
+            }
+            this.selectableReferenceProps = Collections.unmodifiableMap(selectableReferenceProps);
+        }
+        return selectableReferenceProps;
     }
 
     void setIdProp(ImmutableProp idProp) {

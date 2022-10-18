@@ -16,7 +16,7 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
     private static final ThreadLocal<Set<LocatedCacheImpl<?, ?>>> LOADING_CACHES_LOCAL =
         new ThreadLocal<>();
 
-    private final Cache<K, V> raw;
+    protected final Cache<K, V> raw;
 
     private final ImmutableType type;
 
@@ -64,6 +64,13 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
                 return wrapper;
             }
             cache = ((LocatedCacheImpl<K, V>) cache).raw;
+        }
+        if (cache instanceof Cache.Parameterized<?, ?>) {
+            return new ParameterizedLocatedCacheImpl<>(
+                    (Cache.Parameterized<K, V>)cache,
+                    type,
+                    prop
+            );
         }
         return new LocatedCacheImpl<>(cache, type, prop);
     }
@@ -113,7 +120,7 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
         raw.deleteAll(keys, reason);
     }
 
-    private <R> R loading(Supplier<R> block) {
+    protected <R> R loading(Supplier<R> block) {
         Set<LocatedCacheImpl<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
         if (disabledCaches == null) {
             disabledCaches = new HashSet<>();
@@ -132,7 +139,7 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
     }
 
     @SuppressWarnings("unchecked")
-    private void validateResult(Object result) {
+    protected void validateResult(Object result) {
         if (result == null) {
             if (prop != null && !prop.isReferenceList(TargetLevel.OBJECT) &&!prop.isNullable()) {
                 throw new IllegalArgumentException(

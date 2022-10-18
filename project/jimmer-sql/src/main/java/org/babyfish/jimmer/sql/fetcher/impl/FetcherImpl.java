@@ -4,7 +4,7 @@ import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.sql.fetcher.Filter;
+import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.*;
 import org.babyfish.jimmer.sql.meta.Column;
@@ -22,7 +22,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
 
     private final ImmutableProp prop;
 
-    private final Filter<?> filter;
+    private final FieldFilter<?> filter;
 
     private final int batchSize;
 

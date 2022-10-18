@@ -1,17 +1,18 @@
 package org.babyfish.jimmer.sql;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
-import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.meta.impl.RedirectedProp;
+import org.babyfish.jimmer.sql.filter.Filter;
+import org.babyfish.jimmer.sql.filter.FilterConfig;
+import org.babyfish.jimmer.sql.filter.Filters;
+import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.babyfish.jimmer.sql.fluent.impl.FluentImpl;
-import org.babyfish.jimmer.sql.loader.ListLoader;
-import org.babyfish.jimmer.sql.loader.ReferenceLoader;
-import org.babyfish.jimmer.sql.loader.ValueLoader;
-import org.babyfish.jimmer.sql.loader.impl.Loaders;
+import org.babyfish.jimmer.sql.loader.Loaders;
+import org.babyfish.jimmer.sql.loader.impl.LoadersImpl;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.impl.mutation.AssociationsImpl;
@@ -33,25 +34,14 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggersImpl;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
-import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Type;
-import java.sql.Connection;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 class JSqlClientImpl implements JSqlClient {
-
-    private static final ConnectionManager ILLEGAL_CONNECTION_MANAGER = new ConnectionManager() {
-        @Override
-        public <R> R execute(Function<Connection, R> block) {
-            throw new ExecutionException("ConnectionManager of SqlClient is not configured");
-        }
-    };
 
     private final ConnectionManager connectionManager;
 
@@ -69,7 +59,9 @@ class JSqlClientImpl implements JSqlClient {
 
     private final int defaultListBatchSize;
 
-    private final Entities entities;
+    private final EntitiesImpl entities;
+
+    private final EntityManager entityManager;
 
     private final Caches caches;
 
@@ -77,7 +69,11 @@ class JSqlClientImpl implements JSqlClient {
 
     private final TransientResolverManager transientResolverManager;
 
+    private final FilterManager filterManager;
+
     private final DraftInterceptorManager draftInterceptorManager;
+
+    private final Loaders loaders = new LoadersImpl(this);
 
     private JSqlClientImpl(
             ConnectionManager connectionManager,
@@ -88,15 +84,17 @@ class JSqlClientImpl implements JSqlClient {
             Map<Class<?>, IdGenerator> idGeneratorMap,
             int defaultBatchSize,
             int defaultListBatchSize,
-            Entities entities,
+            EntitiesImpl entities,
+            EntityManager entityManager,
             Caches caches,
             Triggers triggers,
+            FilterManager filterManager,
             TransientResolverManager transientResolverManager,
             DraftInterceptorManager draftInterceptorManager) {
         this.connectionManager =
                 connectionManager != null ?
                         connectionManager :
-                        ILLEGAL_CONNECTION_MANAGER;
+                        ConnectionManager.ILLEGAL;
         this.slaveConnectionManager = slaveConnectionManager;
         this.dialect =
                 dialect != null ?
@@ -112,13 +110,15 @@ class JSqlClientImpl implements JSqlClient {
         this.defaultListBatchSize = defaultListBatchSize;
         this.entities =
                 entities != null ?
-                        entities :
+                        entities.forSqlClient(this) :
                         new EntitiesImpl(this);
+        this.entityManager = entityManager;
         this.caches =
                 caches != null ?
                         caches :
-                        CachesImpl.of(triggers, scalarProviderMap, null);
+                        CachesImpl.of(triggers, scalarProviderMap, entityManager, null);
         this.triggers = triggers;
+        this.filterManager = filterManager;
         this.transientResolverManager =
                 transientResolverManager != null ?
                         transientResolverManager :
@@ -235,16 +235,8 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
-    public <ST extends Table<?>> Associations getAssociations(
-            Class<ST> sourceTableType,
-            Function<ST, ? extends Table<?>> block
-    ) {
-        return getAssociations(ImmutableProps.join(sourceTableType, block));
-    }
-
-    @Override
-    public Associations getAssociations(Class<?> entityType, String prop) {
-        return getAssociations(ImmutableType.get(entityType).getProp(prop));
+    public Associations getAssociations(TypedProp.Association<?, ?> prop) {
+        return getAssociations(prop.unwrap());
     }
 
     @Override
@@ -258,26 +250,13 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
-    public <S, V> ValueLoader<S, V> getValueLoader(TypedProp.Scalar<S, V> prop) {
-        return Loaders.createValueLoader(this, prop.unwrap());
+    public Loaders getLoaders() {
+        return loaders;
     }
 
     @Override
-    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>> ReferenceLoader<SE, TE, TT>
-    getReferenceLoader(Class<ST> sourceTableType, Function<ST, TT> block) {
-        return Loaders.createReferenceLoader(
-                this,
-                ImmutableProps.join(sourceTableType, block)
-        );
-    }
-
-    @Override
-    public <SE, ST extends Table<SE>, TE, TT extends Table<TE>>
-    ListLoader<SE, TE, TT> getListLoader(Class<ST> sourceTableType, Function<ST, TT> block) {
-        return Loaders.createListLoader(
-                this,
-                ImmutableProps.join(sourceTableType, block)
-        );
+    public EntityManager getEntityManager() {
+        return entityManager;
     }
 
     @Override
@@ -302,8 +281,39 @@ class JSqlClientImpl implements JSqlClient {
                 defaultBatchSize,
                 defaultListBatchSize,
                 entities,
+                entityManager,
                 new CachesImpl((CachesImpl) caches, cfg),
                 triggers,
+                filterManager,
+                transientResolverManager,
+                draftInterceptorManager
+        );
+    }
+
+    @Override
+    public JSqlClient filters(Consumer<FilterConfig> block) {
+        if (block == null) {
+            throw new IllegalArgumentException("block cannot be null");
+        }
+        FilterConfig cfg = new FilterConfig(filterManager);
+        block.accept(cfg);
+        if (cfg.getFilterManager() == filterManager) {
+            return this;
+        }
+        return new JSqlClientImpl(
+                connectionManager,
+                slaveConnectionManager,
+                dialect,
+                executor,
+                scalarProviderMap,
+                idGeneratorMap,
+                defaultBatchSize,
+                defaultListBatchSize,
+                entities,
+                entityManager,
+                caches,
+                triggers,
+                cfg.getFilterManager(),
                 transientResolverManager,
                 draftInterceptorManager
         );
@@ -324,8 +334,10 @@ class JSqlClientImpl implements JSqlClient {
                 defaultBatchSize,
                 defaultListBatchSize,
                 entities,
+                entityManager,
                 caches,
                 triggers,
+                filterManager,
                 transientResolverManager,
                 draftInterceptorManager
         );
@@ -334,6 +346,11 @@ class JSqlClientImpl implements JSqlClient {
     @Override
     public TransientResolver<?, ?> getResolver(ImmutableProp prop) {
         return transientResolverManager.get(prop);
+    }
+
+    @Override
+    public Filters getFilters() {
+        return filterManager;
     }
 
     @Override
@@ -347,7 +364,7 @@ class JSqlClientImpl implements JSqlClient {
             for (ImmutableType type : ((CachesImpl)caches).getObjectCacheMap().keySet()) {
                 for (ImmutableProp prop : type.getProps().values()) {
                     if (prop.hasTransientResolver()) {
-                        manager.get(prop);
+                        manager.get(RedirectedProp.source(prop, type));
                     }
                 }
             }
@@ -378,12 +395,17 @@ class JSqlClientImpl implements JSqlClient {
 
         private int defaultListBatchSize = 16;
 
+        private EntityManager entityManager;
+
         private Caches caches;
 
         private final Triggers triggers = new TriggersImpl();
 
-        private final Map<ImmutableType, List<DraftInterceptor<?>>> draftInterceptorMap =
-                new HashMap<>();
+        private final List<Filter<?>> filters = new ArrayList<>();
+
+        private final Set<Filter<?>> disabledFilters = new HashSet<>();
+
+        private final List<DraftInterceptor<?>> interceptors = new ArrayList<>();
 
         public BuilderImpl() {}
 
@@ -464,8 +486,44 @@ class JSqlClientImpl implements JSqlClient {
 
         @Override
         @OldChain
+        public Builder setEntityManager(EntityManager scanner) {
+            if (entityManager != null) {
+                throw new IllegalStateException(
+                        "The EntityManager of SqlBuilder.Builder can only be set once"
+                );
+            }
+            entityManager = scanner;
+            return this;
+        }
+
+        @Override
+        @OldChain
         public JSqlClient.Builder setCaches(Consumer<CacheConfig> block) {
-            caches = CachesImpl.of(triggers, scalarProviderMap, block);
+            caches = CachesImpl.of(triggers, scalarProviderMap, entityManager, block);
+            return this;
+        }
+
+        @Override
+        public Builder addFilters(Filter<?>... filters) {
+            return addFilters(Arrays.asList(filters));
+        }
+
+        @Override
+        public Builder addFilters(Collection<Filter<?>> filters) {
+            this.filters.addAll(filters);
+            this.disabledFilters.removeAll(filters);
+            return this;
+        }
+
+        @Override
+        public Builder addDisabledFilters(Filter<?>... filters) {
+            return addDisabledFilters(Arrays.asList(filters));
+        }
+
+        @Override
+        public Builder addDisabledFilters(Collection<Filter<?>> filters) {
+            this.filters.addAll(filters);
+            this.disabledFilters.addAll(filters);
             return this;
         }
 
@@ -481,48 +539,14 @@ class JSqlClientImpl implements JSqlClient {
 
         @Override
         public Builder addDraftInterceptors(Collection<DraftInterceptor<?>> interceptors) {
-            for (DraftInterceptor<?> interceptor : interceptors) {
-                if (interceptor != null) {
-                    Type draftType = TypeUtils
-                            .getTypeArguments(
-                                    interceptor.getClass(),
-                                    DraftInterceptor.class
-                            )
-                            .values()
-                            .iterator()
-                            .next();
-                    if (!(draftType instanceof Class<?>) || !((Class<?>) draftType).isInterface()) {
-                        throw new IllegalArgumentException(
-                                "Illegal draft interceptor type \"" +
-                                        interceptor.getClass().getName() +
-                                        "\", its generic type is not an interface type"
-                        );
-                    }
-                    ImmutableType immutableType = ImmutableType.get((Class<?>) draftType);
-                    draftInterceptorMap
-                            .computeIfAbsent(immutableType, it -> new ArrayList<>())
-                            .add(interceptor);
-                }
-            }
-            return this;
-        }
-
-        @Override
-        public Builder addDraftInterceptors(Class<? extends Draft> draftType, Collection<DraftInterceptor<?>> interceptors) {
-            for (DraftInterceptor<?> interceptor : interceptors) {
-                if (interceptor != null) {
-                    ImmutableType immutableType = ImmutableType.get(draftType);
-                    draftInterceptorMap
-                            .computeIfAbsent(immutableType, it -> new ArrayList<>())
-                            .add(interceptor);
-                }
-            }
+            this.interceptors.addAll(interceptors);
             return this;
         }
 
         @Override
         public JSqlClient build() {
-            return new JSqlClientImpl(
+            FilterManager filterManager = new FilterManager(filters, disabledFilters);
+            JSqlClient sqlClient = new JSqlClientImpl(
                     connectionManager,
                     slaveConnectionManager,
                     dialect,
@@ -532,10 +556,15 @@ class JSqlClientImpl implements JSqlClient {
                     defaultBatchSize,
                     defaultListBatchSize,
                     null,
+                    entityManager,
                     caches,
                     triggers,
+                    filterManager,
                     null,
-                    new DraftInterceptorManager(draftInterceptorMap));
+                    new DraftInterceptorManager(interceptors)
+            );
+            filterManager.initialize(sqlClient);
+            return sqlClient;
         }
     }
 }

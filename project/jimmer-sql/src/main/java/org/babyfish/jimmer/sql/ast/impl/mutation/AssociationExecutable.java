@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -150,7 +151,8 @@ class AssociationExecutable implements Executable<Integer> {
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
-                Arrays.asList(expressionPair.get_1(), expressionPair.get_2())
+                Arrays.asList(expressionPair.get_1(), expressionPair.get_2()),
+                ExecutionPurpose.QUERY
         );
     }
 

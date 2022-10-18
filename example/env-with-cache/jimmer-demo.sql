@@ -4,7 +4,10 @@ use jimmer_demo;
 create table book_store(
     id bigint unsigned not null auto_increment primary key,
     name varchar(50) not null,
-    website varchar(100)
+    website varchar(100),
+    tenant varchar(20),
+    created_time datetime not null,
+    modified_time datetime not null
 ) engine=innodb;
 alter table book_store auto_increment = 100;
 alter table book_store
@@ -17,7 +20,10 @@ create table book(
     name varchar(50) not null,
     edition integer not null,
     price numeric(10, 2) not null,
-    store_id bigint unsigned
+    store_id bigint unsigned,
+    tenant varchar(20),
+    created_time datetime not null,
+    modified_time datetime not null 
 ) engine=innodb;
 alter table book_store auto_increment = 100;
 alter table book
@@ -34,7 +40,9 @@ create table author(
     id bigint unsigned not null auto_increment primary key,
     first_name varchar(25) not null,
     last_name varchar(25) not null,
-    gender char(1) not null
+    gender char(1) not null,
+    created_time datetime not null,
+    modified_time datetime not null 
 ) engine=innodb;
 alter table author auto_increment = 100;
 alter table author
@@ -69,7 +77,9 @@ alter table book_author_mapping
 create table tree_node(
     node_id bigint unsigned not null auto_increment primary key,
     name varchar(20) not null,
-    parent_id bigint unsigned
+    parent_id bigint unsigned,
+    created_time datetime not null,
+    modified_time datetime not null 
 ) engine=innodb;
 alter table tree_node auto_increment = 100;
 alter table tree_node
@@ -80,35 +90,35 @@ alter table tree_node
         foreign key(parent_id)
             references tree_node(node_id);
 
-insert into book_store(id, name) values
-    (1, 'O''REILLY'),
-    (2, 'MANNING')
+insert into book_store(id, name, tenant, created_time, modified_time) values
+    (1, 'O''REILLY', 'a', now(), now()),
+    (2, 'MANNING', 'a', now(), now())
 ;
 
-insert into book(id, name, edition, price, store_id) values
-    (1, 'Learning GraphQL', 1, 50, 1),
-    (2, 'Learning GraphQL', 2, 55, 1),
-    (3, 'Learning GraphQL', 3, 51, 1),
+insert into book(id, name, edition, price, store_id, tenant, created_time, modified_time) values
+    (1, 'Learning GraphQL', 1, 50, 1, 'a', now(), now()),
+    (2, 'Learning GraphQL', 2, 55, 1, 'b', now(), now()),
+    (3, 'Learning GraphQL', 3, 51, 1, 'a', now(), now()),
 
-    (4, 'Effective TypeScript', 1, 73, 1),
-    (5, 'Effective TypeScript', 2, 69, 1),
-    (6, 'Effective TypeScript', 3, 88, 1),
+    (4, 'Effective TypeScript', 1, 73, 1, 'b', now(), now()),
+    (5, 'Effective TypeScript', 2, 69, 1, 'a', now(), now()),
+    (6, 'Effective TypeScript', 3, 88, 1, 'b', now(), now()),
 
-    (7, 'Programming TypeScript', 1, 47.5, 1),
-    (8, 'Programming TypeScript', 2, 45, 1),
-    (9, 'Programming TypeScript', 3, 48, 1),
+    (7, 'Programming TypeScript', 1, 47.5, 1, 'a', now(), now()),
+    (8, 'Programming TypeScript', 2, 45, 1, 'b', now(), now()),
+    (9, 'Programming TypeScript', 3, 48, 1, 'a', now(), now()),
 
-    (10, 'GraphQL in Action', 1, 80, 2),
-    (11, 'GraphQL in Action', 2, 81, 2),
-    (12, 'GraphQL in Action', 3, 80, 2)
+    (10, 'GraphQL in Action', 1, 80, 2, 'b', now(), now()),
+    (11, 'GraphQL in Action', 2, 81, 2, 'a', now(), now()),
+    (12, 'GraphQL in Action', 3, 80, 2, 'b', now(), now())
 ;
 
-insert into author(id, first_name, last_name, gender) values
-    (1, 'Eve', 'Procello', 'F'),
-    (2, 'Alex', 'Banks', 'M'),
-    (3, 'Dan', 'Vanderkam', 'M'),
-    (4, 'Boris', 'Cherny', 'M'),
-    (5, 'Samer', 'Buna', 'M')
+insert into author(id, first_name, last_name, gender, created_time, modified_time) values
+    (1, 'Eve', 'Procello', 'F', now(), now()),
+    (2, 'Alex', 'Banks', 'M', now(), now()),
+    (3, 'Dan', 'Vanderkam', 'M', now(), now()),
+    (4, 'Boris', 'Cherny', 'M', now(), now()),
+    (5, 'Samer', 'Buna', 'M', now(), now())
 ;
 
 insert into book_author_mapping(book_id, author_id) values
@@ -134,30 +144,30 @@ insert into book_author_mapping(book_id, author_id) values
 ;
 
 insert into tree_node(
-    node_id, name, parent_id
+    node_id, name, parent_id, created_time, modified_time
 ) values
-    (1, 'Home', null),
-        (2, 'Food', 1),
-            (3, 'Drinks', 2),
-                (4, 'Coca Cola', 3),
-                (5, 'Fanta', 3),
-            (6, 'Bread', 2),
-                (7, 'Baguette', 6),
-                (8, 'Ciabatta', 6),
-        (9, 'Clothing', 1),
-            (10, 'Woman', 9),
-                (11, 'Casual wear', 10),
-                    (12, 'Dress', 11),
-                    (13, 'Miniskirt', 11),
-                    (14, 'Jeans', 11),
-                (15, 'Formal wear', 10),
-                    (16, 'Suit', 15),
-                    (17, 'Shirt', 15),
-            (18, 'Man', 9),
-                (19, 'Casual wear', 18),
-                    (20, 'Jacket', 19),
-                    (21, 'Jeans', 19),
-                (22, 'Formal wear', 18),
-                    (23, 'Suit', 22),
-                    (24, 'Shirt', 22)
+    (1, 'Home', null, now(), now()),
+        (2, 'Food', 1, now(), now()),
+            (3, 'Drinks', 2, now(), now()),
+                (4, 'Coca Cola', 3, now(), now()),
+                (5, 'Fanta', 3, now(), now()),
+            (6, 'Bread', 2, now(), now()),
+                (7, 'Baguette', 6, now(), now()),
+                (8, 'Ciabatta', 6, now(), now()),
+        (9, 'Clothing', 1, now(), now()),
+            (10, 'Woman', 9, now(), now()),
+                (11, 'Casual wear', 10, now(), now()),
+                    (12, 'Dress', 11, now(), now()),
+                    (13, 'Miniskirt', 11, now(), now()),
+                    (14, 'Jeans', 11, now(), now()),
+                (15, 'Formal wear', 10, now(), now()),
+                    (16, 'Suit', 15, now(), now()),
+                    (17, 'Shirt', 15, now(), now()),
+            (18, 'Man', 9, now(), now()),
+                (19, 'Casual wear', 18, now(), now()),
+                    (20, 'Jacket', 19, now(), now()),
+                    (21, 'Jeans', 19, now(), now()),
+                (22, 'Formal wear', 18, now(), now()),
+                    (23, 'Suit', 22, now(), now()),
+                    (24, 'Shirt', 22, now(), now())
 ;

@@ -8,6 +8,8 @@ import org.babyfish.jimmer.meta.impl.TypedPropImpl;
  */
 public interface TypedProp<S, T> {
 
+    ImmutableProp unwrap();
+
     interface Single<S, T> extends TypedProp<S, T> {}
 
     interface Multiple<S, T> extends TypedProp<S, T> {}
@@ -41,6 +43,4 @@ public interface TypedProp<S, T> {
     static <S, T> ReferenceList<S, T> referenceList(ImmutableProp prop) {
         return new TypedPropImpl.ReferenceList<>(prop);
     }
-
-    ImmutableProp unwrap();
 }

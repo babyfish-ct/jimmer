@@ -12,8 +12,13 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableRowCountDestructive;
 import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.filter.Filter;
+import org.babyfish.jimmer.sql.filter.impl.AbstractFilterArgsImpl;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,24 +27,36 @@ public abstract class AbstractMutableQueryImpl
         extends AbstractMutableStatementImpl
         implements MutableQuery {
 
-    private Table<?> table;
+    private final Table<?> table;
 
-    private List<Expression<?>> groupByExpressions = new ArrayList<>();
+    private final List<Expression<?>> groupByExpressions = new ArrayList<>();
 
     private List<Predicate> havingPredicates = new ArrayList<>();
 
-    private List<Order> orders = new ArrayList<>();
+    private final List<Order> orders = new ArrayList<>();
+
+    private final boolean ignoreFilter;
 
     @SuppressWarnings("unchecked")
     protected AbstractMutableQueryImpl(
             TableAliasAllocator tableAliasAllocator,
             JSqlClient sqlClient,
-            ImmutableType immutableType
+            ImmutableType immutableType,
+            ExecutionPurpose purpose,
+            boolean ignoreFilter
     ) {
-        super(tableAliasAllocator, sqlClient);
+        super(tableAliasAllocator, sqlClient, purpose);
+        if (!immutableType.isEntity()) {
+            throw new IllegalArgumentException(
+                    "`" +
+                            immutableType +
+                            "` is not entity"
+            );
+        }
         this.table = TableWrappers.wrap(
                 TableImplementor.create(this, immutableType)
         );
+        this.ignoreFilter = ignoreFilter;
     }
 
     @Override
@@ -92,12 +109,19 @@ public abstract class AbstractMutableQueryImpl
     }
 
     @Override
-    public boolean freeze() {
-        if (!super.freeze()) {
-            return false;
+    protected void onFrozen() {
+        if (!ignoreFilter) {
+            Filter<Props> filter = getSqlClient().getFilters().getFilter(getTable().getImmutableType());
+            if (filter != null) {
+                filter.filter(new FilterArgsImpl(this));
+            }
         }
+        super.onFrozen();
         havingPredicates = mergePredicates(havingPredicates);
-        return true;
+    }
+
+    boolean isFilterIgnored() {
+        return ignoreFilter;
     }
 
     void accept(
@@ -219,6 +243,18 @@ public abstract class AbstractMutableQueryImpl
                 getSqlBuilder().useTable(table);
                 use(table.getParent());
             }
+        }
+    }
+
+    private static class FilterArgsImpl extends AbstractFilterArgsImpl<Props> {
+
+        public FilterArgsImpl(AbstractMutableQueryImpl sortable) {
+            super(sortable);
+        }
+
+        @Override
+        public @NotNull Table<?> getTable() {
+            return ((AbstractMutableQueryImpl)sortable).getTable();
         }
     }
 }

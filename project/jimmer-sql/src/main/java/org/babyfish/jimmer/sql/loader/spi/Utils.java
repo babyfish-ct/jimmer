@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 class Utils {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(Utils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Utils.class);
 
     @SafeVarargs
     static <K, V> Map<K, V> mergeMap(Map<K, V> ... maps) {

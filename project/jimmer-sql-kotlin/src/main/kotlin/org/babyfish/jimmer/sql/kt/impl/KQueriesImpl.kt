@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.kt.KQueries
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableRootQueryImpl
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -27,7 +28,9 @@ internal class KQueriesImpl(
     ): KConfigurableRootQuery<E, R> {
         val query = MutableRootQueryImpl<Table<*>>(
             sqlClient,
-            ImmutableType.get(entityType.java)
+            ImmutableType.get(entityType.java),
+            ExecutionPurpose.QUERY,
+            false
         )
         val typedQuery = KMutableRootQueryImpl(
             query as MutableRootQueryImpl<Table<E>>
@@ -59,7 +62,9 @@ internal class KQueriesImpl(
         val query: MutableRootQueryImpl<AssociationTable<S, Table<S>, T, Table<T>>> =
             MutableRootQueryImpl(
                 sqlClient,
-                associationType
+                associationType,
+                ExecutionPurpose.QUERY,
+                false
             )
         val typedQuery = KMutableRootQueryImpl(
             query as MutableRootQueryImpl<Table<Association<S, T>>>

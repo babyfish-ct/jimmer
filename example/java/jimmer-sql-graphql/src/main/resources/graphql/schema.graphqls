@@ -1,5 +1,6 @@
 scalar Long
 scalar BigDecimal
+scalar LocalDateTime
 
 type Query {
     bookStores(name: String): [BookStore!]!
@@ -16,29 +17,40 @@ type Mutation {
     deleteAuthor(id: Long): Int!
 }
 
-type BookStore {
+interface CommonEntity {
+    createdTime: LocalDateTime!
+    modifiedTime: LocalDateTime!
+}
+
+type BookStore implements CommonEntity {
     id: Long!
     name: String!
     website: String
     avgPrice: BigDecimal!
     books(name: String): [Book!]!
+    createdTime: LocalDateTime!
+    modifiedTime: LocalDateTime!
 }
 
-type Book {
+type Book implements CommonEntity {
     id: Long!
     name: String!
     edition: Int!
     price: BigDecimal!
     store: BookStore
     authors: [Author!]!
+    createdTime: LocalDateTime!
+    modifiedTime: LocalDateTime!
 }
 
-type Author {
+type Author implements CommonEntity {
     id: Long!
     firstName: String!
     lastName: String!
     gender: Gender!
     books(name: String): [Book!]!
+    createdTime: LocalDateTime!
+    modifiedTime: LocalDateTime!
 }
 
 input BookStoreInput {
@@ -64,4 +76,3 @@ input AuthorInput {
 }
 
 enum Gender { MALE, FEMALE }
-

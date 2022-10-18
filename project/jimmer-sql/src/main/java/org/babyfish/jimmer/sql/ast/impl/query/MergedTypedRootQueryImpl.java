@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -67,7 +68,7 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, Typed
 
     private List<R> executeImpl(Connection con) {
         Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(sqlClient));
-        return Selectors.select(sqlClient, con, sqlResult.get_1(), sqlResult.get_2(), selections);
+        return Selectors.select(sqlClient, con, sqlResult.get_1(), sqlResult.get_2(), selections, ExecutionPurpose.QUERY);
     }
 
     @Override
@@ -85,7 +86,7 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, Typed
 
     private void forEachImpl(Connection con, int batchSize, Consumer<R> consumer) {
         Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(sqlClient));
-        Selectors.forEach(sqlClient, con, sqlResult.get_1(), sqlResult.get_2(), selections, batchSize, consumer);
+        Selectors.forEach(sqlClient, con, sqlResult.get_1(), sqlResult.get_2(), selections, ExecutionPurpose.QUERY, batchSize, consumer);
     }
 
     private Tuple2<String, List<Object>> preExecute(SqlBuilder builder) {

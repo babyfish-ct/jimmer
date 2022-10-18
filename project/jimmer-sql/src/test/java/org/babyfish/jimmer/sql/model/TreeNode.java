@@ -17,7 +17,7 @@ public interface TreeNode {
     @OnDissociate(DissociateAction.DELETE)
     TreeNode parent();
 
-    @OneToMany(mappedBy = "parent")
+    @OneToMany(mappedBy = "parent", orderedProps = @OrderedProp("id"))
     List<TreeNode> childNodes();
 
     /*

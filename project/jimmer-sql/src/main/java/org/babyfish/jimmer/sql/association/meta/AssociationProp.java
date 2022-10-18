@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.association.meta;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutablePropCategory;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.meta.Column;
@@ -12,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.List;
 
 public abstract class AssociationProp implements ImmutableProp {
 
@@ -99,6 +98,11 @@ public abstract class AssociationProp implements ImmutableProp {
     @Override
     public ImmutableProp getOpposite() {
         return null;
+    }
+
+    @Override
+    public List<OrderedItem> getOrderedItems() {
+        return Collections.emptyList();
     }
 
     @Override

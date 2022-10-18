@@ -40,7 +40,13 @@ public interface ImmutableType {
     
     Class<?> getJavaClass();
 
+    boolean isEntity();
+
+    boolean isMappedSuperclass();
+
     Annotation getImmutableAnnotation();
+
+    boolean isAssignableFrom(ImmutableType type);
 
     ImmutableType getSuperType();
 
@@ -65,6 +71,8 @@ public interface ImmutableType {
     ImmutableProp getPropByColumnName(String columnName);
 
     Map<String, ImmutableProp> getSelectableProps();
+
+    Map<String, ImmutableProp> getSelectableReferenceProps();
 
     IdGenerator getIdGenerator();
 

@@ -4,6 +4,7 @@ import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -20,6 +21,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.Converters;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.sql.Connection;
@@ -102,19 +104,20 @@ class Saver {
                     childTableOperator = new ChildTableOperator(
                             data.getSqlClient(),
                             con,
-                            mappedBy
+                            RedirectedProp.source(mappedBy, prop.getTargetType())
                     );
                 }
                 Object associatedValue = currentDraftSpi.__get(prop.getId());
                 Set<Object> associatedObjectIds = new LinkedHashSet<>();
-                if (associatedValue instanceof List<?>) {
-                    List<DraftSpi> associatedObjects = (List<DraftSpi>) associatedValue;
+                if (associatedValue != null) {
+                    List<DraftSpi> associatedObjects =
+                            associatedValue instanceof List<?> ?
+                                    (List<DraftSpi>) associatedValue :
+                                    Collections.singletonList((DraftSpi) associatedValue);
                     if (childTableOperator != null) {
                         int targetIdPropId = prop.getTargetType().getIdProp().getId();
-                        Iterator<DraftSpi> itr = new ArrayList<>(associatedObjects).iterator();
                         List<Object> updatingTargetIds = new ArrayList<>();
-                        while (itr.hasNext()) {
-                            DraftSpi associatedObject = itr.next();
+                        for (DraftSpi associatedObject : associatedObjects) {
                             if (isNonIdPropLoaded(associatedObject, false)) {
                                 associatedObject.__set(
                                         mappedBy.getId(),
@@ -124,7 +127,6 @@ class Saver {
                                 );
                             } else {
                                 updatingTargetIds.add(associatedObject.__get(targetIdPropId));
-                                itr.remove();
                             }
                         }
                         if (!updatingTargetIds.isEmpty()) {
@@ -135,9 +137,6 @@ class Saver {
                     for (DraftSpi associatedObject : associatedObjects) {
                         associatedObjectIds.add(saveAssociatedObjectAndGetId(prop, associatedObject));
                     }
-                } else if (associatedValue != null) {
-                    DraftSpi associatedObject = (DraftSpi) associatedValue;
-                    associatedObjectIds.add(saveAssociatedObjectAndGetId(prop, associatedObject));
                 }
                 ImmutableProp middleTableProp = null;
                 MiddleTable middleTable = null;
@@ -286,7 +285,7 @@ class Saver {
                 String sql = data.getSqlClient().getDialect().getSelectIdFromSequenceSql(
                         ((SequenceIdGenerator)idGenerator).getSequenceName()
                 );
-                id = data.getSqlClient().getExecutor().execute(con, sql, Collections.emptyList(), null, stmt -> {
+                id = data.getSqlClient().getExecutor().execute(con, sql, Collections.emptyList(), ExecutionPurpose.MUTATE, null, stmt -> {
                     try (ResultSet rs = stmt.executeQuery()) {
                         rs.next();
                         return rs.getObject(1);
@@ -374,6 +373,7 @@ class Saver {
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                ExecutionPurpose.MUTATE,
                 generateKeys ?
                         (c, s) ->
                                 c.prepareStatement(s, Statement.RETURN_GENERATED_KEYS) :
@@ -499,6 +499,7 @@ class Saver {
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                ExecutionPurpose.MUTATE,
                 null,
                 PreparedStatement::executeUpdate
         );

@@ -1,24 +1,17 @@
 package org.babyfish.jimmer.sql.kt.common
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import org.babyfish.jimmer.jackson.ImmutableModule
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.KSqlClientDsl
-import org.babyfish.jimmer.sql.kt.model.Gender
 import org.babyfish.jimmer.sql.kt.newKSqlClient
-import org.babyfish.jimmer.sql.runtime.DefaultExecutor
-import org.babyfish.jimmer.sql.runtime.Executor
-import org.babyfish.jimmer.sql.runtime.ScalarProvider
-import org.babyfish.jimmer.sql.runtime.SqlFunction
 import org.junit.BeforeClass
 import java.io.IOException
 import java.io.InputStreamReader
 import java.sql.Connection
-import java.sql.PreparedStatement
 import java.sql.SQLException
-import java.util.*
 import javax.sql.DataSource
-import kotlin.reflect.KClass
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -115,7 +108,9 @@ abstract class AbstractTest {
         }
 
         @JvmStatic
-        protected val MAPPER = ObjectMapper().registerModule(ImmutableModule())
+        protected val MAPPER = ObjectMapper()
+            .registerModule(ImmutableModule())
+            .registerModule(JavaTimeModule())
 
         @JvmStatic
         protected fun contentEquals(

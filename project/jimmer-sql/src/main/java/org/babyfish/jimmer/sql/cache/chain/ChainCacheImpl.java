@@ -13,22 +13,18 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
     private static final ThreadLocal<CacheLoader<?, ?>> LOADER_LOCAL =
         new ThreadLocal<>();
 
-    private final Node<K, V> node;
+    protected final Node<K, V> node;
 
     @SuppressWarnings("unchecked")
     public ChainCacheImpl(List<Object> binders) {
         if (binders.isEmpty()) {
             throw new IllegalArgumentException("binders cannot be empty");
         }
-        Node<K, V> node = new TailNode<>();
+        Node<K, V> node = this.createTailNode();
         ListIterator<Object> itr = binders.listIterator(binders.size());
         while (itr.hasPrevious()) {
             Object binder = itr.previous();
-            if (binder instanceof LoadingBinder<?, ?>) {
-                node = new LoadingNode<>((LoadingBinder<K, V>) binder, node);
-            } else {
-                node = new SimpleNode<>((SimpleBinder<K, V>) binder, node);
-            }
+            node = createNode(binder, node);
         }
         this.node = node;
     }
@@ -44,7 +40,19 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         node.deleteAll(keys, reason);
     }
 
-    private interface Node<K, V> extends CacheChain<K, V> {
+    @SuppressWarnings("unchecked")
+    protected Node<K, V> createNode(Object binder, Node<K, V> next) {
+        if (binder instanceof LoadingBinder<?, ?>) {
+            return new LoadingNode<>((LoadingBinder<K, V>) binder, next);
+        }
+        return new SimpleNode<>((SimpleBinder<K, V>) binder, next);
+    }
+
+    protected TailNode<K, V> createTailNode() {
+        return new TailNode<>();
+    }
+
+    protected interface Node<K, V> extends CacheChain<K, V> {
         void deleteAll(@NotNull Collection<K> keys, Object reason);
     }
 
@@ -54,7 +62,7 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
 
         private final Node<K, V> next;
 
-        private LoadingNode(LoadingBinder<K, V> binder, Node<K, V> next) {
+        LoadingNode(LoadingBinder<K, V> binder, Node<K, V> next) {
             this.binder = binder;
             this.next = next;
             binder.initialize(next);
@@ -73,13 +81,13 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         }
     }
 
-    private static class SimpleNode<K, V> implements Node<K, V> {
+    protected static class SimpleNode<K, V> implements Node<K, V> {
 
-        private final SimpleBinder<K, V> binder;
+        protected final SimpleBinder<K, V> binder;
 
-        private final Node<K, V> next;
+        protected final Node<K, V> next;
 
-        private SimpleNode(SimpleBinder<K, V> binder, Node<K, V> next) {
+        protected SimpleNode(SimpleBinder<K, V> binder, Node<K, V> next) {
             this.binder = binder;
             this.next = next;
         }
@@ -116,7 +124,7 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         }
     }
 
-    private static class TailNode<K, V> implements Node<K, V> {
+    protected static class TailNode<K, V> implements Node<K, V> {
 
         @NotNull
         @Override
@@ -130,7 +138,7 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
         }
     }
 
-    private static <R> R usingCacheLoading(
+    protected static <R> R usingCacheLoading(
             CacheLoader<?, ?> loader,
             Supplier<R> block
     ) {
@@ -151,7 +159,7 @@ class ChainCacheImpl<K, V> implements Cache<K, V> {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> CacheLoader<K, V> currentCacheLoader() {
+    protected static <K, V> CacheLoader<K, V> currentCacheLoader() {
         CacheLoader<?, ?> loader = LOADER_LOCAL.get();
         if (loader == null) {
             throw new IllegalStateException(

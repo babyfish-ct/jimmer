@@ -17,7 +17,8 @@ class LoaderTest : AbstractQueryTest() {
     fun testWithoutFilter() {
         connectAndExpect({ con ->
             sqlClient
-                .getListLoader(BookStore::books)
+                .loaders
+                .list(BookStore::books)
                 .forConnection(con)
                 .load(new(BookStore::class).by {
                     id = 2L
@@ -59,7 +60,8 @@ class LoaderTest : AbstractQueryTest() {
     fun testWithFilter() {
         connectAndExpect({ con ->
             sqlClient
-                .getListLoader(BookStore::books)
+                .loaders
+                .list(BookStore::books)
                 .forConnection(con)
                 .forFilter {
                     orderBy(table.edition.desc())
@@ -100,7 +102,8 @@ class LoaderTest : AbstractQueryTest() {
     fun test() {
         connectAndExpect({ con ->
             sqlClient
-                .getValueLoader(BookStore::avgPrice)
+                .loaders
+                .value(BookStore::avgPrice)
                 .forConnection(con)
                 .batchLoad(
                     listOf(

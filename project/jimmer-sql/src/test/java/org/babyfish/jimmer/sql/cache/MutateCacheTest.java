@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
@@ -25,15 +26,17 @@ public class MutateCacheTest extends AbstractQueryTest {
     public void initialize() {
         cacheOpRecords.clear();
         sqlClient = getSqlClient(builder -> {
+            builder.setEntityManager(
+                    new EntityManager(
+                            BookStore.class,
+                            Book.class,
+                            Author.class,
+                            Country.class,
+                            TreeNode.class
+                    )
+            );
             builder.setCaches(cfg ->
                     cfg.setCacheFactory(
-                            new Class[] {
-                                    BookStore.class,
-                                    Book.class,
-                                    Author.class,
-                                    Country.class,
-                                    TreeNode.class
-                            },
                             new CacheFactory() {
                                 @Override
                                 public Cache<?, ?> createObjectCache(ImmutableType type) {
@@ -455,7 +458,8 @@ public class MutateCacheTest extends AbstractQueryTest {
                     it.statement(1).sql(
                             "select tb_1_.NODE_ID " +
                                     "from TREE_NODE as tb_1_ " +
-                                    "where tb_1_.PARENT_ID = ?"
+                                    "where tb_1_.PARENT_ID = ? " +
+                                    "order by tb_1_.NODE_ID asc"
                     );
                     it.statement(2).sql(
                             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
@@ -513,7 +517,8 @@ public class MutateCacheTest extends AbstractQueryTest {
                     it.statement(1).sql(
                             "select tb_1_.NODE_ID " +
                                     "from TREE_NODE as tb_1_ " +
-                                    "where tb_1_.PARENT_ID = ?"
+                                    "where tb_1_.PARENT_ID = ? " +
+                                    "order by tb_1_.NODE_ID asc"
                     );
                     it.statement(2).sql(
                             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +

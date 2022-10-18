@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.sql.Connection;
@@ -29,7 +30,7 @@ public class MutableDeleteImpl
     private MutableRootQueryImpl<TableEx<?>> deleteQuery;
 
     public MutableDeleteImpl(JSqlClient sqlClient, ImmutableType immutableType) {
-        super(new TableAliasAllocator(), sqlClient);
+        super(new TableAliasAllocator(), sqlClient, ExecutionPurpose.DELETE);
         deleteQuery = new MutableRootQueryImpl<>(
                 this.getTableAliasAllocator(),
                 sqlClient,
@@ -82,6 +83,7 @@ public class MutableDeleteImpl
                     con,
                     sqlResult.get_1(),
                     sqlResult.get_2(),
+                    getPurpose(),
                     null,
                     PreparedStatement::executeUpdate
             );

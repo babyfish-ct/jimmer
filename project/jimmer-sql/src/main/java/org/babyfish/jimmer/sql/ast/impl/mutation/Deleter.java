@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.sql.Connection;
@@ -178,6 +179,7 @@ public class Deleter {
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
+                        ExecutionPurpose.DELETE,
                         null,
                         PreparedStatement::executeUpdate
                 );
@@ -215,6 +217,7 @@ public class Deleter {
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
+                        ExecutionPurpose.DELETE,
                         null,
                         PreparedStatement::executeUpdate
                 );
@@ -249,6 +252,7 @@ public class Deleter {
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
+                        ExecutionPurpose.DELETE,
                         null,
                         stmt -> {
                             List<Object> values = new ArrayList<>();
@@ -313,6 +317,7 @@ public class Deleter {
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
+                        ExecutionPurpose.DELETE,
                         null,
                         PreparedStatement::executeUpdate
                 );

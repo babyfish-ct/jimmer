@@ -7,7 +7,7 @@ public interface ListFieldConfig<E, T extends Table<E>> extends FieldConfig<E, T
 
     @OldChain
     @Override
-    ListFieldConfig<E, T> filter(Filter<T> filter);
+    ListFieldConfig<E, T> filter(FieldFilter<T> filter);
 
     @OldChain
     @Override

@@ -99,6 +99,16 @@ public class AssociationType implements ImmutableType {
     }
 
     @Override
+    public boolean isEntity() {
+        return true;
+    }
+
+    @Override
+    public boolean isMappedSuperclass() {
+        return false;
+    }
+
+    @Override
     public Annotation getImmutableAnnotation() { return null; }
 
     @Override
@@ -175,8 +185,18 @@ public class AssociationType implements ImmutableType {
     }
 
     @Override
+    public Map<String, ImmutableProp> getSelectableReferenceProps() {
+        return props;
+    }
+
+    @Override
     public BiFunction<DraftContext, Object, Draft> getDraftFactory() {
         throw new UnsupportedOperationException("draftFactory is not supported by AssociationType");
+    }
+
+    @Override
+    public boolean isAssignableFrom(ImmutableType type) {
+        return false;
     }
 
     @Override

@@ -47,8 +47,7 @@ public class DeleteTest extends AbstractMutationTest {
                         manningId
                 ).configure(cfg -> {
                     cfg.setDissociateAction(
-                            BookTable.class,
-                            it -> it.store(),
+                            BookProps.STORE,
                             DissociateAction.SET_NULL
                     );
                 }),
@@ -77,8 +76,7 @@ public class DeleteTest extends AbstractMutationTest {
                         manningId
                 ).configure(cfg -> {
                     cfg.setDissociateAction(
-                            BookTable.class,
-                            it -> it.store(),
+                            BookProps.STORE,
                             DissociateAction.DELETE
                     );
                 }),
@@ -102,7 +100,7 @@ public class DeleteTest extends AbstractMutationTest {
                     ctx.totalRowCount(7);
                     ctx.rowCount(AffectedTable.of(BookStore.class), 1);
                     ctx.rowCount(AffectedTable.of(Book.class), 3);
-                    ctx.rowCount(AffectedTable.of(BookTableEx.class, BookTableEx::authors), 3);
+                    ctx.rowCount(AffectedTable.of(BookProps.AUTHORS), 3);
                 }
         );
     }
@@ -129,7 +127,7 @@ public class DeleteTest extends AbstractMutationTest {
                         it.variables(learningGraphQLId1, learningGraphQLId2, nonExistingId);
                     });
                     ctx.totalRowCount(6);
-                    ctx.rowCount(AffectedTable.of(BookTableEx.class, BookTableEx::authors), 4);
+                    ctx.rowCount(AffectedTable.of(BookProps.AUTHORS), 4);
                     ctx.rowCount(AffectedTable.of(Book.class), 2);
                 }
         );
@@ -157,8 +155,8 @@ public class DeleteTest extends AbstractMutationTest {
                     });
                     ctx.totalRowCount(5);
                     ctx.rowCount(AffectedTable.of(Author.class), 1);
-                    ctx.rowCount(AffectedTable.of(AuthorTable.class, AuthorTable::country), 1);
-                    ctx.rowCount(AffectedTable.of(AuthorTableEx.class, AuthorTableEx::books), 3);
+                    ctx.rowCount(AffectedTable.of(AuthorProps.COUNTRY), 1);
+                    ctx.rowCount(AffectedTable.of(AuthorProps.BOOKS), 3);
                 }
         );
     }

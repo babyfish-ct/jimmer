@@ -1,5 +1,8 @@
 package org.babyfish.jimmer.sql.ast.table.spi;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
@@ -32,6 +35,11 @@ public abstract class AbstractTableWrapper<E> implements Table<E>, FluentTable<E
             throw new IllegalArgumentException("raw cannot be null");
         }
         _raw = (Table<E>) TableWrappers.unwrap(raw);
+    }
+
+    @Override
+    public ImmutableType getImmutableType() {
+        return raw().getImmutableType();
     }
 
     @Override
@@ -75,19 +83,34 @@ public abstract class AbstractTableWrapper<E> implements Table<E>, FluentTable<E
     }
 
     @Override
-    public <XE, XT extends Table<XE>> XT inverseJoin(Class<XE> targetType, String backProp) {
-        return raw().inverseJoin(targetType, backProp);
+    public <XT extends Table<?>> XT join(String prop, JoinType joinType, ImmutableType treatedAs) {
+        return raw().join(prop, joinType, treatedAs);
     }
 
     @Override
-    public <XE, XT extends Table<XE>> XT inverseJoin(Class<XE> targetType, String backProp, JoinType joinType) {
-        return raw().inverseJoin(targetType, backProp, joinType);
+    public <XT extends Table<?>> XT inverseJoin(ImmutableProp prop) {
+        return raw().inverseJoin(prop);
+    }
+
+    @Override
+    public <XT extends Table<?>> XT inverseJoin(ImmutableProp prop, JoinType joinType) {
+        return raw().inverseJoin(prop, joinType);
+    }
+
+    @Override
+    public <XT extends Table<?>> XT inverseJoin(TypedProp.Association<?, ?> prop) {
+        return raw().inverseJoin(prop);
+    }
+
+    @Override
+    public <XT extends Table<?>> XT inverseJoin(TypedProp.Association<?, ?> prop, JoinType joinType) {
+        return raw().inverseJoin(prop, joinType);
     }
 
     @Override
     public <XT extends Table<?>> XT inverseJoin(
             Class<XT> targetTableType,
-            Function<XT, ? extends Table<E>> backPropBlock
+            Function<XT, ? extends Table<?>> backPropBlock
     ) {
         return raw().inverseJoin(targetTableType, backPropBlock);
     }
@@ -95,7 +118,7 @@ public abstract class AbstractTableWrapper<E> implements Table<E>, FluentTable<E
     @Override
     public <XT extends Table<?>> XT inverseJoin(
             Class<XT> targetTableType,
-            Function<XT, ? extends Table<E>> backPropBlock,
+            Function<XT, ? extends Table<?>> backPropBlock,
             JoinType joinType
     ) {
         return raw().inverseJoin(targetTableType, backPropBlock, joinType);

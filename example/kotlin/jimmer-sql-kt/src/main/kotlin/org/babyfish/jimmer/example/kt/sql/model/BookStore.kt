@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.*
 import java.math.BigDecimal
 
 @Entity
-interface BookStore {
+interface BookStore : CommonEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

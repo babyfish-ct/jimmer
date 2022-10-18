@@ -5,7 +5,7 @@ import javax.validation.constraints.NotBlank
 
 
 @Entity
-interface Author {
+interface Author : CommonEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

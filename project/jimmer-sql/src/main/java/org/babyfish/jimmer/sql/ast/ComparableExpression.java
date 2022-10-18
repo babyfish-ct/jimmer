@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.ast;
 
 import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
 
-public interface ComparableExpression<T extends Comparable<T>> extends Expression<T> {
+public interface ComparableExpression<T extends Comparable<?>> extends Expression<T> {
 
     Predicate lt(Expression<T> other);
 

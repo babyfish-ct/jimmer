@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.example.kt.sql.cache
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.cache.ValueSerializer
@@ -41,7 +43,10 @@ class RedisBinder<K, V> private constructor(
         }
         this.duration = duration
         this.randomPercent = randomPercent
-        valueSerializer = type?.let { ValueSerializer(it) } ?: ValueSerializer(prop!!)
+        val mapper = ObjectMapper().registerModule(JavaTimeModule())
+        valueSerializer = type
+            ?.let { ValueSerializer(it, mapper) }
+            ?: ValueSerializer(prop!!, mapper)
     }
 
     constructor(

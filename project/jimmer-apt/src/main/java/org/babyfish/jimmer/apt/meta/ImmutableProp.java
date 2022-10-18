@@ -339,6 +339,7 @@ public class ImmutableProp {
         OneToMany oneToMany = getAnnotation(OneToMany.class);
         ManyToOne manyToOne = getAnnotation(ManyToOne.class);
         ManyToMany manyToMany = getAnnotation(ManyToMany.class);
+        OnDissociate onDissociate = getAnnotation(OnDissociate.class);
         Annotation[] associationAnnotations = Arrays.stream(
                 new Annotation[] { oneToOne, oneToMany, manyToOne, manyToMany }
         ).filter(Objects::nonNull).toArray(Annotation[]::new);
@@ -415,13 +416,6 @@ public class ImmutableProp {
                                     associationAnnotation.annotationType().getName()
                     );
                 }
-                if (oneToOne != null && oneToOne.mappedBy().equals("")) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", The \"mappedBy\" of one-to-one property must be specified"
-                    );
-                }
                 if (oneToMany != null && oneToMany.mappedBy().equals("")) {
                     throw new MetaException(
                             "Illegal property \"" +
@@ -429,17 +423,17 @@ public class ImmutableProp {
                                     "\", The \"mappedBy\" of one-to-many property must be specified"
                     );
                 }
-                if (oneToOne != null || oneToMany != null || (
-                        manyToMany != null && !manyToMany.mappedBy().equals(""))
-                ) {
-                    if (joinColumn != null) {
-                        throw new MetaException(
-                                "Illegal property \"" +
-                                        this +
-                                        "\", it cannot be decorated by @" +
-                                        JoinColumn.class.getName()
-                        );
-                    }
+                boolean isMappedBy =
+                        oneToOne != null && !oneToOne.mappedBy().isEmpty() ||
+                                oneToMany != null ||
+                                manyToMany != null && !manyToMany.mappedBy().isEmpty();
+                if (isMappedBy && storageAnnotations.length != 0) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", the property with \"mappedBy\" cannot be decorated by @" +
+                                    storageAnnotations[0].annotationType().getName()
+                    );
                 }
                 if (column != null) {
                     throw new MetaException(
@@ -543,11 +537,30 @@ public class ImmutableProp {
                         throw new MetaException(
                                 "Illegal property \"" +
                                         this +
-                                        "\", many-to-one property decorated by both \"@" +
+                                        "\", many-to-one property decorated by \"@" +
                                         Key.class.getName() +
                                         "\" must base on foreign key"
                         );
                     }
+                }
+            }
+            if (onDissociate != null) {
+                if (oneToOne != null && !oneToOne.mappedBy().isEmpty()) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", the property with \"mappedBy\" cannot be decorated by \"@" +
+                                    OnDissociate.class.getName()
+                    );
+                }
+                if (oneToOne == null && manyToOne == null) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", the property decorated by \"@" +
+                                    OnDissociate.class.getName() +
+                                    "\" must be many-to-one or one-to-one property"
+                    );
                 }
             }
         }

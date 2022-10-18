@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -19,17 +20,26 @@ public class MutableRootQueryImpl<T extends Table<?>>
 
     public MutableRootQueryImpl(
             JSqlClient sqlClient,
-            ImmutableType immutableType
+            ImmutableType immutableType,
+            ExecutionPurpose purpose,
+            boolean ignoreFilter
     ) {
-        super(new TableAliasAllocator(), sqlClient, immutableType);
+        super(new TableAliasAllocator(), sqlClient, immutableType, purpose, ignoreFilter);
     }
 
+    @SuppressWarnings("unchecked")
     public MutableRootQueryImpl(
             TableAliasAllocator aliasAllocator,
             JSqlClient sqlClient,
             ImmutableType immutableType
     ) {
-        super(aliasAllocator, sqlClient, immutableType);
+        super(
+                aliasAllocator,
+                sqlClient,
+                immutableType,
+                ExecutionPurpose.DELETE, // Join for delete statement
+                true
+        );
     }
 
     @Override

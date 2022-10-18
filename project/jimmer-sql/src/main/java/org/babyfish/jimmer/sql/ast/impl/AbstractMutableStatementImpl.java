@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.AssociationTableEx;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -18,9 +19,11 @@ import java.util.function.Function;
 
 public abstract class AbstractMutableStatementImpl implements Filterable {
 
-    private TableAliasAllocator tableAliasAllocator;
+    private final TableAliasAllocator tableAliasAllocator;
 
-    private JSqlClient sqlClient;
+    private final JSqlClient sqlClient;
+
+    protected final ExecutionPurpose purpose;
 
     private boolean frozen;
 
@@ -28,13 +31,17 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
 
     public AbstractMutableStatementImpl(
             TableAliasAllocator tableAliasAllocator,
-            JSqlClient sqlClient
+            JSqlClient sqlClient,
+            ExecutionPurpose purpose
     ) {
         this.tableAliasAllocator = tableAliasAllocator;
-        if (!(this instanceof Fake)) {
+        if (this instanceof Fake) {
+            this.sqlClient = null;
+        } else {
             Objects.requireNonNull(sqlClient, "sqlClient cannot be null");
             this.sqlClient = sqlClient;
         }
+        this.purpose = purpose != null ? purpose : ExecutionPurpose.QUERY;
     }
 
     public abstract <T extends Table<?>> T getTable();
@@ -43,15 +50,19 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
         return predicates.isEmpty() ? null : predicates.get(0);
     }
 
-    public boolean freeze() {
+    public final boolean freeze() {
         if (frozen) {
             return false;
         }
+        onFrozen();
+        frozen = true;
+        return true;
+    }
+
+    protected void onFrozen() {
         if (predicates.size() > 1) {
             predicates = mergePredicates(predicates);
         }
-        frozen = true;
-        return true;
     }
 
     public void validateMutable() {
@@ -121,6 +132,10 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
         return Queries.createAssociationWildSubQuery(this, sourceTableType, targetTableGetter, block);
     }
 
+    public ExecutionPurpose getPurpose() {
+        return purpose;
+    }
+
     public static AbstractMutableStatementImpl fake() {
         return new Fake();
     }
@@ -141,7 +156,7 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
     private static class Fake extends AbstractMutableStatementImpl {
 
         private Fake() {
-            super(new TableAliasAllocator(), null);
+            super(new TableAliasAllocator(), null, ExecutionPurpose.QUERY);
         }
 
         @Override

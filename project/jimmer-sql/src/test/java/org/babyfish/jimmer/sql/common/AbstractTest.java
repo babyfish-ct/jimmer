@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.common;
 
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
-import org.babyfish.jimmer.sql.model.Gender;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.h2.Driver;
 import org.junit.jupiter.api.Assertions;
@@ -50,11 +49,12 @@ public class AbstractTest {
                 Connection con,
                 String sql,
                 List<Object> variables,
+                ExecutionPurpose purpose,
                 StatementFactory statementFactory,
                 SqlFunction<PreparedStatement, R> block
         ) {
             executions.add(new Execution(sql, variables));
-            return DefaultExecutor.INSTANCE.execute(con, sql, variables, statementFactory, block);
+            return DefaultExecutor.INSTANCE.execute(con, sql, variables, purpose, statementFactory, block);
         }
     }
 
