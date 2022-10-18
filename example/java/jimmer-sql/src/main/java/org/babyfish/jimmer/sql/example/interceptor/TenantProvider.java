@@ -15,6 +15,6 @@ public class TenantProvider {
 
     public String get() {
         String tenant = request.getHeader("tenant");
-        return tenant == null ? "" : tenant;
+        return "".equals(tenant) ? null : tenant;
     }
 }

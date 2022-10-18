@@ -5,7 +5,7 @@ import java.util.*
 
 interface KCacheableFilter<E: Any> : KFilter<E> {
 
-    fun getParameters(): SortedMap<String, Any>
+    fun getParameters(): SortedMap<String, Any>?
 
     fun isAffectedBy(e: EntityEvent<*>): Boolean
 }

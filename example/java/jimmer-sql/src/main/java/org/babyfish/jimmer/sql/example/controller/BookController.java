@@ -32,9 +32,6 @@ public class BookController {
                             .books(
                                     BookFetcher.$
                                             .allScalarFields()
-                                            .authors(
-                                                    AuthorFetcher.$.allScalarFields()
-                                            )
                             ),
                     BookStoreProps.NAME.asc()
             );

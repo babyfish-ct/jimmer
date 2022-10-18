@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.example.interceptor.output;
 
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.example.interceptor.TenantProvider;
 import org.babyfish.jimmer.sql.example.model.common.TenantAwareProps;
@@ -17,27 +18,19 @@ import java.util.TreeMap;
  */
 @Component
 @ConditionalOnProperty("spring.redis.host")
-public class TenantFilterForCacheMode implements CacheableFilter<TenantAwareProps> {
-
-    private final TenantProvider tenantProvider;
+public class TenantFilterForCacheMode
+        extends TenantFilterForNonCacheMode
+        implements CacheableFilter<TenantAwareProps> {
 
     public TenantFilterForCacheMode(TenantProvider tenantProvider) {
-        this.tenantProvider = tenantProvider;
-    }
-
-    @Override
-    public void filter(FilterArgs<TenantAwareProps> args) {
-        String tenant = tenantProvider.get();
-        if (!tenant.isEmpty()) {
-            args.where(args.getTable().tenant().eq(tenant));
-        }
+        super(tenantProvider);
     }
 
     @Override
     public SortedMap<String, Object> getParameters() {
         String tenant = tenantProvider.get();
-        if (tenant.isEmpty()) {
-            return Collections.emptySortedMap();
+        if (tenant == null) {
+            return null;
         }
         SortedMap<String, Object> map = new TreeMap<>();
         map.put("tenant", tenant);

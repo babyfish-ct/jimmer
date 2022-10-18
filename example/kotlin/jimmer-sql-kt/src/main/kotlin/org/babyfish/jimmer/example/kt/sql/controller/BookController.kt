@@ -1,8 +1,13 @@
 package org.babyfish.jimmer.example.kt.sql.controller
 
 import org.babyfish.jimmer.example.kt.sql.model.*
+import org.babyfish.jimmer.kt.new
+import org.babyfish.jimmer.sql.ast.query.Example
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.expression.*
+import org.babyfish.jimmer.sql.kt.ast.query.KExample
+import org.babyfish.jimmer.sql.kt.ast.query.example
+import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -11,6 +16,28 @@ import org.springframework.web.bind.annotation.RestController
 class BookController(
     private val sqlClient: KSqlClient
 ) {
+
+    @GetMapping("/stores")
+    fun stores(
+        @RequestParam(defaultValue = "false") fetch: Boolean,
+    ): List<BookStore> =
+        if (fetch) {
+            sqlClient.entities.findAll(
+                newFetcher(BookStore::class).by {
+                    allScalarFields()
+                    avgPrice()
+                    books {
+                        allScalarFields()
+                    }
+                }
+            ) {
+                asc(BookStore::name)
+            }
+        } else {
+            sqlClient.entities.findAll(BookStore::class) {
+                asc(BookStore::name)
+            }
+        }
 
     @GetMapping("/books")
     fun books(
@@ -73,4 +100,41 @@ class BookController(
             totalPageCount = pageCount
         )
     }
+
+    @GetMapping("/authors")
+    fun authors(
+        @RequestParam(defaultValue = "false") fetch: Boolean,
+        @RequestParam(defaultValue = "") firstName: String,
+        @RequestParam(defaultValue = "") lastName: String,
+        @RequestParam gender: Gender?,
+    ): List<Author> =
+        new(Author::class).by {
+            firstName.takeIf { it.isNotEmpty() }?.let { this.firstName = it }
+            lastName.takeIf { it.isNotEmpty() }?.let { this.lastName = it }
+            gender?.let { this.gender = it }
+        }.let {
+            sqlClient.entities.findByExample(
+                example(it) {
+                    ilike(Author::firstName)
+                    ilike(Author::lastName)
+                },
+                if (fetch) {
+                    newFetcher(Author::class).by {
+                        allScalarFields()
+                        books {
+                            allScalarFields()
+                            store {
+                                allScalarFields()
+                                avgPrice()
+                            }
+                        }
+                    }
+                } else {
+                    null
+                }
+            ) {
+                asc(Author::firstName)
+                asc(Author::lastName)
+            }
+        }
 }
