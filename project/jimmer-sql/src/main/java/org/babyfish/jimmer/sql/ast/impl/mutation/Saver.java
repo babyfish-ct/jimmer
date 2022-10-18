@@ -316,23 +316,13 @@ class Saver {
         List<ImmutableProp> props = new ArrayList<>();
         List<Object> values = new ArrayList<>();
         for (ImmutableProp prop : draftSpi.__type().getProps().values()) {
-            if (prop.getStorage() instanceof Column) {
-                if (draftSpi.__isLoaded(prop.getId())) {
-                    props.add(prop);
-                    Object value = draftSpi.__get(prop.getId());
-                    if (value != null && prop.isReference(TargetLevel.ENTITY)) {
-                        value = ((ImmutableSpi) value).__get(prop.getTargetType().getIdProp().getId());
-                    }
-                    values.add(value);
-                } else if (!prop.isNullable()) {
-                    throw new IllegalArgumentException(
-                            "Cannot insert the object at \"" +
-                                    path +
-                                    "\" because the non-null property \"" +
-                                    prop +
-                                    "\" is not specified"
-                    );
+            if (prop.getStorage() instanceof Column && draftSpi.__isLoaded(prop.getId())) {
+                props.add(prop);
+                Object value = draftSpi.__get(prop.getId());
+                if (value != null && prop.isReference(TargetLevel.ENTITY)) {
+                    value = ((ImmutableSpi) value).__get(prop.getTargetType().getIdProp().getId());
                 }
+                values.add(value);
             }
         }
         if (props.isEmpty()) {
