@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.example.interceptor.output;
 
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.example.interceptor.TenantProvider;
 import org.babyfish.jimmer.sql.example.model.common.TenantAwareProps;
 import org.babyfish.jimmer.sql.filter.Filter;
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class TenantFilterForNonCacheMode implements Filter<TenantAwareProps> {
 
-    private final TenantProvider tenantProvider;
+    protected final TenantProvider tenantProvider;
 
     public TenantFilterForNonCacheMode(TenantProvider tenantProvider) {
         this.tenantProvider = tenantProvider;
@@ -23,7 +24,7 @@ public class TenantFilterForNonCacheMode implements Filter<TenantAwareProps> {
     @Override
     public void filter(FilterArgs<TenantAwareProps> args) {
         String tenant = tenantProvider.get();
-        if (!tenant.isEmpty()) {
+        if (tenant != null) {
             args.where(args.getTable().tenant().eq(tenant));
         }
     }

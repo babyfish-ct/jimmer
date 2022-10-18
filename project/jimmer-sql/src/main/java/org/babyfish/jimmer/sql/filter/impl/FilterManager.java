@@ -415,13 +415,10 @@ public class FilterManager implements Filters {
         Map<ImmutableType, List<Filter<Props>>> map = new HashMap<>();
         for (Filter<?> filter : filters) {
             if (filter != null && !disabledFilters.contains(filter)) {
-                for (ImmutableType immutableType = getImmutableType((Filter<Props>) filter);
-                     immutableType != null;
-                     immutableType = immutableType.getSuperType()) {
-                    map
-                            .computeIfAbsent(immutableType, it -> new ArrayList<>())
-                            .add((Filter<Props>) filter);
-                }
+                ImmutableType immutableType = getImmutableType((Filter<Props>) filter);
+                map
+                    .computeIfAbsent(immutableType, it -> new ArrayList<>())
+                    .add((Filter<Props>) filter);
             }
         }
         return map;
