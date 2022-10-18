@@ -23,6 +23,9 @@ public interface BookStore extends TenantAware {
     @Transient(BookStoreAvgPriceResolver.class)
     BigDecimal avgPrice();
 
-    @OneToMany(mappedBy = "store")
+    @OneToMany(mappedBy = "store", orderedProps = {
+            @OrderedProp("name"),
+            @OrderedProp(value = "edition", desc = true)
+    })
     List<Book> books();
 }
