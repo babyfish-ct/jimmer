@@ -43,18 +43,18 @@ jimmer-sql对此提供了特别支持，提供专用的API，让开发人员可�
     <tbody>
         <tr>
             <td><b>Computed property</b></td>
-            <td>JSqlClient.getValueLoader</td>
-            <td>KSqlClient.getValueLoader</td>
+            <td>JSqlClient.getLoaders().value</td>
+            <td>KSqlClient.loaders.value</td>
         </tr>
         <tr>
             <td><b>Reference association</b></td>
-            <td>JSqlClient.getReferenceLoader</td>
-            <td>KSqlClient.getReferenceLoader</td>
+            <td>JSqlClient.getLoaders().reference</td>
+            <td>KSqlClient.loaders.reference</td>
         </tr>
         <tr>
             <td><b>List association</b></td>
-            <td>JSqlClient.getListLoader</td>
-            <td>KSqlClient.getListLoader</td>
+            <td>JSqlClient.getLoaders().list</td>
+            <td>KSqlClient.loaders.list</td>
         </tr>
     </tbody>
 </table>
@@ -83,8 +83,9 @@ public class BookController {
         Collection<Book> books
     ) {
         return sqlClient
+            .getLoaders()
             // highlight-next-line
-            .getReferenceLoader(BookProps.STORE)
+            .reference(BookProps.STORE)
             .batchLoad(books);
     }
 }
@@ -107,8 +108,9 @@ class BookController(
         books: java.util.List<Book>
     ): Map<Book, BookStore> =
         sqlClient
+            .loaders
             // highlight-next-line
-            .getReferenceLoader(Book::store)
+            .reference(Book::store)
             .batchLoad(books)
 }
 ```
@@ -146,8 +148,9 @@ public class BookStoreController {
             List<BookStore> bookStores
     ) {
         return sqlClient
+            .getLoaders()
             // highlight-next-line
-            .getListLoader(BookStoreProps.BOOKS)
+            .list(BookStoreProps.BOOKS)
             .batchLoad(bookStores);
     }
 }
@@ -170,8 +173,9 @@ class BookController(
         stores: java.util.List<BookStore>
     ): Map<BookStore, List<Book>> =
         sqlClient
+            .loaders
             // highlight-next-line
-            .getListLoader(BookStore::books)
+            .list(BookStore::books)
             .batchLoad(stores)
 }
 ```
@@ -197,8 +201,9 @@ public class BookController {
     @BatchMapping
     public Map<Book, List<Author>> authors(List<Book> books) {
         return sqlClient
+            .getLoaders()
             // highlight-next-line
-            .getListLoader(BookProps.AUTHORS)
+            .list(BookProps.AUTHORS)
             .batchLoad(books);
     }
 }
@@ -221,8 +226,9 @@ class BookController(
         books: java.util.List<Book>
     ): Map<Book, List<Author>> =
         sqlClient
+            .loaders
             // highlight-next-line
-            .getListLoader(Book::authors)
+            .list(Book::authors)
             .batchLoad(books)
 }
 ```
@@ -250,8 +256,9 @@ public class AuthorController {
             List<Author> authors
     ) {
         return sqlClient
+                .getLoaders()
                 // highlight-next-line
-                .getListLoader(AuthorProps.BOOKS)
+                .list(AuthorProps.BOOKS)
                 .batchLoad(authors);
     }
 }
@@ -274,8 +281,9 @@ class AuthorController(
         authors: java.util.List<Author>
     ): Map<Author, List<Book>> =
         sqlClient
+            .loaders
             // highlight-next-line
-            .getListLoader(Author::books)
+            .list(Author::books)
             .batchLoad(authors)
 }
 ```
@@ -355,8 +363,9 @@ public class BookStoreController {
         List<BookStore> stores
     ) {
         return sqlClient
+                .getLoaders()
                 // highlight-next-line
-                .<BookStore, BigDecimal>getValueLoader(
+                .<BookStore, BigDecimal>value(
                     BOOK_STORE_DOT_AVG_PRICE
                 )
                 .batchLoad(stores);
@@ -381,8 +390,9 @@ class BookStoreController(
         stores: java.util.List<BookStore>
     ): Map<BookStore, BigDecimal> =
         sqlClient
+            .loaders
             // hightlight-next-line
-            .getValueLoader(BookStore::avgPrice)
+            .value(BookStore::avgPrice)
             .batchLoad(stores)
 }
 
