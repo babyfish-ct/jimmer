@@ -39,5 +39,6 @@ public class TenantFilterForCacheMode
     @Override
     public boolean isAffectedBy(EntityEvent<?> e) {
         return e.getUnchangedFieldRef(TenantAwareProps.TENANT) == null;
+        // Can also return `e.getChangedFieldRef(TenantAwareProps.TENANT) != null`
     }
 }
