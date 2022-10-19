@@ -8,5 +8,8 @@ interface KTransientResolver<ID: Any, V> : TransientResolver<ID, V> {
 
     override fun resolve(ids: Collection<ID>, con: Connection): Map<ID, V>
 
-    interface Parameterized<ID: Any, V> : KTransientResolver<ID, V>, TransientResolver.Parameterized<ID, V>
+    interface Parameterized<ID: Any, V> : KTransientResolver<ID, V>, TransientResolver.Parameterized<ID, V> {
+
+        override fun getParameters(): SortedMap<String, Any>?
+    }
 }

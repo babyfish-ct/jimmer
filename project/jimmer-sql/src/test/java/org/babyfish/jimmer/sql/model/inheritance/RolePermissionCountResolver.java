@@ -17,23 +17,11 @@ public class RolePermissionCountResolver implements TransientResolver.Parameteri
 
     private final JSqlClient sqlClient;
 
-    private final CacheableFilter<Props> filter;
-
     public RolePermissionCountResolver(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
-        this.filter = sqlClient.getFilters().getCacheableFilter(Permission.class);
         sqlClient.getTriggers().addAssociationListener(RoleProps.PERMISSIONS, e -> {
             sqlClient.getCaches().getPropertyCache(RoleProps.PERMISSION_COUNT).delete(e.getSourceId());
         });
-        if (filter != null) {
-            sqlClient.getTriggers().addEntityListener(Permission.class, e -> {
-                Ref<Role> roleRef = e.getUnchangedFieldRef(PermissionProps.ROLE);
-                Role role = roleRef != null ? roleRef.getValue() : null;
-                if (role != null && filter.isAffectedBy(e)) {
-                    sqlClient.getCaches().getPropertyCache(RoleProps.PERMISSION_COUNT).delete(role.getId());
-                }
-            });
-        }
     }
 
     @Override
@@ -54,6 +42,7 @@ public class RolePermissionCountResolver implements TransientResolver.Parameteri
 
     @Override
     public SortedMap<String, Object> getParameters() {
+        CacheableFilter<Props> filter = sqlClient.getFilters().getCacheableTargetFilter(RoleProps.PERMISSIONS);
         return filter != null ?
                 filter.getParameters() :
                 Collections.emptySortedMap();

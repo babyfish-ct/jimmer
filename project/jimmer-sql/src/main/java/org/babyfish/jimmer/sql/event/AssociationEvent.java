@@ -23,23 +23,27 @@ public class AssociationEvent {
     public AssociationEvent(
             ImmutableProp prop,
             Object sourceId,
+            Object reason
+    ) {
+        validateConstructorArgs(prop, sourceId);
+        this.prop = prop;
+        this.sourceId = sourceId;
+        this.detachedTargetId = null;
+        this.attachedTargetId = null;
+        this.reason = reason;
+    }
+
+    public AssociationEvent(
+            ImmutableProp prop,
+            Object sourceId,
             Object detachedTargetId,
             Object attachedTargetId,
             Object reason
     ) {
-        if (prop == null) {
-            throw new IllegalArgumentException("prop cannot be null");
-        }
-        if (!prop.isAssociation(TargetLevel.ENTITY)) {
-            throw new IllegalArgumentException("prop must be association");
-        }
-        if (sourceId == null || !Classes.matches(prop.getDeclaringType().getIdProp().getElementClass(), sourceId.getClass())) {
+        validateConstructorArgs(prop, sourceId);
+        if (detachedTargetId == null && attachedTargetId == null) {
             throw new IllegalArgumentException(
-                    "The type of sourceId \"" +
-                            sourceId +
-                            "\" does not match \"" +
-                            prop.getDeclaringType().getIdProp() +
-                            "\""
+                    "Both `detachedTargetId` and `attachedTargetId` is null, this is not allowed"
             );
         }
         Class<?> expectedTargetIdClass = prop.getTargetType().getIdProp().getElementClass();
@@ -68,6 +72,24 @@ public class AssociationEvent {
         this.reason = reason;
     }
 
+    private void validateConstructorArgs(ImmutableProp prop, Object sourceId) {
+        if (prop == null) {
+            throw new IllegalArgumentException("prop cannot be null");
+        }
+        if (!prop.isAssociation(TargetLevel.ENTITY)) {
+            throw new IllegalArgumentException("prop must be association");
+        }
+        if (sourceId == null || !Classes.matches(prop.getDeclaringType().getIdProp().getElementClass(), sourceId.getClass())) {
+            throw new IllegalArgumentException(
+                    "The type of sourceId \"" +
+                            sourceId +
+                            "\" does not match \"" +
+                            prop.getDeclaringType().getIdProp() +
+                            "\""
+            );
+        }
+    }
+
     @NotNull
     public ImmutableProp getImmutableProp() {
         return prop;
@@ -80,11 +102,13 @@ public class AssociationEvent {
 
     @Nullable
     public Object getDetachedTargetId() {
+        validateTarget();
         return detachedTargetId;
     }
 
     @Nullable
     public Object getAttachedTargetId() {
+        validateTarget();
         return attachedTargetId;
     }
 
@@ -95,13 +119,22 @@ public class AssociationEvent {
 
     @NotNull
     public EventType getEventType() {
+        if (detachedTargetId == null && attachedTargetId == null) {
+            return EventType.EVICT;
+        }
         if (detachedTargetId == null) {
             return EventType.INSERT;
         }
         if (attachedTargetId == null) {
             return EventType.DELETE;
         }
-        return EventType.UPDATE;
+        throw new AssertionError("Internal bug: The type of AssociationEvent cannot be UPDATE");
+    }
+
+    private void validateTarget() {
+        if (detachedTargetId == null && attachedTargetId == null) {
+            throw new IllegalStateException("Cannot get target id because the event type is `EVICT`");
+        }
     }
 
     @Override

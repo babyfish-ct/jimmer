@@ -11,7 +11,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
-import java.util.Optional;
 
 public class EntityEvent<E> {
 
@@ -148,8 +147,62 @@ public class EntityEvent<E> {
         if (valueEqual(prop, oldValue, newValue)) {
             return Ref.of(oldValue);
         }
-        // Ignore the waring of Intellij, cannot replace it to "Optional.empty()"
         return null;
+    }
+
+    @Nullable
+    public <T> ChangedRef<T> getChangedFieldTuple(ImmutableProp prop) {
+        return getChangedFieldTuple(prop.getId());
+    }
+
+    @Nullable
+    public <T> ChangedRef<T> getChangedFieldTuple(TypedProp<?, ?> prop) {
+        return getChangedFieldTuple(prop.unwrap().getId());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nullable
+    public <T> ChangedRef<T> getChangedFieldTuple(int propId) {
+        ImmutableProp prop = getImmutableType().getProp(propId);
+        if (!(prop.getStorage() instanceof Column)) {
+            throw new IllegalArgumentException(
+                    "Cannot get the unchanged the value of \"" +
+                            prop +
+                            "\" " +
+                            "because it is not a property mapped by column"
+            );
+        }
+        ImmutableSpi oe = (ImmutableSpi) oldEntity;
+        ImmutableSpi ne = (ImmutableSpi) newEntity;
+        if (oe == null) {
+            if (!ne.__isLoaded(propId)) {
+                return null;
+            }
+            T newValue = (T)ne.__get(propId);
+            if (newValue == null) {
+                return null;
+            }
+            return new ChangedRef<>(null, newValue);
+        } else if (ne == null) {
+            if (!oe.__isLoaded(propId)) {
+                return null;
+            }
+            T oldValue = (T)oe.__get(propId);
+            if (oldValue == null) {
+                return null;
+            }
+            return new ChangedRef<>(oldValue, null);
+        } else {
+            if (!oe.__isLoaded(propId) || !ne.__isLoaded(propId)) {
+                return null;
+            }
+            T oldValue = (T)oe.__get(propId);
+            T newValue = (T)ne.__get(propId);
+            if (valueEqual(prop, oldValue, newValue)) {
+                return null;
+            }
+            return new ChangedRef<>(oldValue, newValue);
+        }
     }
 
     @Override

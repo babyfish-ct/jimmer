@@ -18,8 +18,8 @@ repositories {
 
 dependencies {
 
-	implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.3.0-early-access-9")
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.3.0-early-access-9")
+	implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.3.0-early-access-14")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.3.0-early-access-14")
 
 	implementation("org.springframework.boot:spring-boot-starter-graphql")
 	implementation("org.springframework.boot:spring-boot-starter-web")

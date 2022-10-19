@@ -18,8 +18,8 @@ repositories {
 
 dependencies {
 
-	implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.3.0-early-access-13")
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.3.0-early-access-13")
+	implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.3.0-early-access-14")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.3.0-early-access-14")
 
 	implementation("org.springframework.boot:spring-boot-starter")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
