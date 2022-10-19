@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.kt.KTransientResolver
 import org.babyfish.jimmer.sql.kt.ast.expression.asNonNull
 import org.babyfish.jimmer.sql.kt.ast.expression.avg
 import org.babyfish.jimmer.sql.kt.ast.expression.valueIn
+import org.babyfish.jimmer.sql.kt.event.getChangedFieldRef
 import org.babyfish.jimmer.sql.kt.event.getUnchangedFieldRef
 import java.math.BigDecimal
 import java.sql.Connection
@@ -31,7 +32,7 @@ class BookStoreAvgPriceResolver(
             val storeId = it.getUnchangedFieldRef(Book::store)?.value?.id
             if (storeId !== null) {
                 // 2. Otherwise, check whether `Book.price` is changed
-                if (it.getUnchangedFieldRef(Book::price) === null) {
+                if (it.getChangedFieldRef(Book::price) !== null) {
                     sqlClient.caches.getPropertyCache<Any, Any>(BookStore::avgPrice)?.delete(storeId)
                 }
             }
