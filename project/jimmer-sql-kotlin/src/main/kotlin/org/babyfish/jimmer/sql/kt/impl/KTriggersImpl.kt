@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.ImmutableSpi
 import org.babyfish.jimmer.sql.Triggers
+import org.babyfish.jimmer.sql.association.meta.AssociationType
 import org.babyfish.jimmer.sql.event.AssociationListener
 import org.babyfish.jimmer.sql.event.EntityListener
 import org.babyfish.jimmer.sql.kt.KTriggers
@@ -47,5 +48,9 @@ internal class KTriggersImpl(
 
     override fun fireMiddleTableInsert(prop: ImmutableProp, sourceId: Any, targetId: Any, reason: Any?) {
         javaTriggers.fireMiddleTableInsert(prop, sourceId, targetId, reason)
+    }
+
+    override fun fireAssociationEvict(prop: ImmutableProp, sourceId: Any, reason: Any?) {
+        javaTriggers.fireAssociationEvict(prop, sourceId, reason);
     }
 }

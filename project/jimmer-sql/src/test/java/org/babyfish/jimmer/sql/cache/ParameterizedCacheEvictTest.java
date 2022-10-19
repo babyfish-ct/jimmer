@@ -188,11 +188,11 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
                 ctx -> {}
         );
         Assertions.assertEquals(
-                "[" +
-                        "Role.permissionCount-100, " +
-                        "Role.permissions-100" +
-                        "]",
-                deleteMessages.toString()
+                Arrays.asList(
+                        "Role.permissions-100",
+                        "Role.permissionCount-100"
+                ),
+                deleteMessages
         );
     }
 
@@ -218,14 +218,74 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
                 ctx -> {}
         );
         Assertions.assertEquals(
-                "[" +
-                        "Role.permissions-100, " +
-                        "Role.permissions-200, " +
-                        "Permission.role-1000, " +
-                        "Role.permissionCount-100, " +
-                        "Role.permissionCount-200" +
-                        "]",
-                deleteMessages.toString()
+                Arrays.asList(
+                        "Permission.role-1000",
+                        "Role.permissions-100",
+                        "Role.permissionCount-100",
+                        "Role.permissions-200",
+                        "Role.permissionCount-200"
+                ),
+                deleteMessages
+        );
+    }
+
+    /**
+     * Classic user-cases not about parameterized cache,
+     * but about middle table association is mapped super class
+     */
+    @Test
+    public void testMiddleTableInsertBinLog() {
+        connectAndExpect(
+                con -> {
+                    try {
+                        sqlClient.getCaches().invalidateByBinLog(
+                                "administrator_role_mapping",
+                                null,
+                                MAPPER.readTree("{\"administrator_id\":1, \"role_id\": 400}")
+                        );
+                    } catch (JsonProcessingException ex) {
+                        Assertions.fail(ex);
+                    }
+                    return null;
+                },
+                ctx -> {}
+        );
+        Assertions.assertEquals(
+                Arrays.asList(
+                        "Administrator.roles-1",
+                        "Role.administrators-400"
+                ),
+                deleteMessages
+        );
+    }
+
+    /**
+     * Classic user-cases not about parameterized cache,
+     * but about middle table association is mapped super class
+     */
+    @Test
+    public void testMiddleTableDeleteBinLog() {
+        connectAndExpect(
+                con -> {
+                    try {
+                        sqlClient.getCaches().invalidateByBinLog(
+                                "administrator_role_mapping",
+                                MAPPER.readTree("{\"administrator_id\":1, \"role_id\": 200}"),
+                                null
+                        );
+                    } catch (JsonProcessingException ex) {
+                        Assertions.fail(ex);
+                    }
+                    return null;
+                },
+                ctx -> {}
+        );
+        Assertions.assertEquals(
+                Arrays.asList(
+                        "Administrator.roles-1",
+                        "Role.administrators-200"
+                ),
+                deleteMessages
         );
     }
 

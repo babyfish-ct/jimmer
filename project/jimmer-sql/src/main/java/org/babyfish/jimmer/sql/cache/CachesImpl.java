@@ -20,13 +20,13 @@ import java.util.function.Consumer;
 
 public class CachesImpl implements Caches {
 
+    private final EntityManager entityManager;
+
     private final Triggers triggers;
 
     private final Map<ImmutableType, LocatedCacheImpl<?, ?>> objectCacheMap;
 
     private final Map<ImmutableProp, LocatedCacheImpl<?, ?>> propCacheMap;
-
-    private final Map<String, ImmutableType> tableNameTypeMap;
 
     private final CacheOperator operator;
     
@@ -39,49 +39,13 @@ public class CachesImpl implements Caches {
     private final Set<ImmutableProp> disabledProps;
 
     public CachesImpl(
+            EntityManager entityManager,
             Triggers triggers,
             Map<ImmutableType, Cache<?, ?>> objectCacheMap,
             Map<ImmutableProp, Cache<?, ?>> propCacheMap,
             CacheOperator operator,
             BinLogParser binLogParser
     ) {
-        Map<String, ImmutableType> tableNameTypeMap = new HashMap<>();
-        for (ImmutableType type : objectCacheMap.keySet()) {
-            String tableName = DatabaseIdentifiers.standardIdentifier(type.getTableName());
-            ImmutableType oldType = tableNameTypeMap.put(tableName, type);
-            if (oldType != null) {
-                throw new IllegalArgumentException(
-                        "Illegal mapping, the table \"" +
-                                tableName +
-                                "\" is shared by both \"" +
-                                oldType +
-                                "\" and \"" +
-                                type +
-                                "\""
-                );
-            }
-        }
-        for (ImmutableProp prop : propCacheMap.keySet()) {
-            if (prop.getMappedBy() != null) {
-                prop = RedirectedProp.source(prop.getMappedBy(), prop.getTargetType());
-            }
-            if (prop.getStorage() instanceof MiddleTable) {
-                AssociationType type = AssociationType.of(prop);
-                String tableName = DatabaseIdentifiers.standardIdentifier(type.getTableName());
-                ImmutableType oldType = tableNameTypeMap.put(tableName, type);
-                if (oldType != null && oldType != type) {
-                    throw new IllegalArgumentException(
-                            "Illegal mapping, the table \"" +
-                                    tableName +
-                                    "\" is shared by both \"" +
-                                    oldType +
-                                    "\" and \"" +
-                                    type +
-                                    "\""
-                    );
-                }
-            }
-        }
         Map<ImmutableType, LocatedCacheImpl<?, ?>> objectCacheWrapperMap = new LinkedHashMap<>();
         for (Map.Entry<ImmutableType, Cache<?, ?>> e : objectCacheMap.entrySet()) {
             ImmutableType type = e.getKey();
@@ -92,10 +56,10 @@ public class CachesImpl implements Caches {
             ImmutableProp prop = e.getKey();
             propCacheWrapperMap.put(prop, wrapPropCache(triggers, e.getValue(), prop));
         }
+        this.entityManager = entityManager;
         this.triggers = triggers;
         this.objectCacheMap = objectCacheWrapperMap;
         this.propCacheMap = propCacheWrapperMap;
-        this.tableNameTypeMap = tableNameTypeMap;
         this.operator = operator;
         this.binLogParser = binLogParser;
         this.disableAll = false;
@@ -107,10 +71,10 @@ public class CachesImpl implements Caches {
             CachesImpl base,
             CacheDisableConfig cfg
     ) {
+        entityManager = base.entityManager;
         triggers = base.triggers;
         objectCacheMap = base.objectCacheMap;
         propCacheMap = base.propCacheMap;
-        tableNameTypeMap = base.tableNameTypeMap;
         operator = base.operator;
         binLogParser = base.binLogParser;
         disableAll = cfg.isDisableAll();
@@ -152,9 +116,16 @@ public class CachesImpl implements Caches {
 
     @Override
     public boolean isAffectedBy(String tableName) {
-        return tableNameTypeMap.containsKey(
-                DatabaseIdentifiers.databaseIdentifier(tableName)
-        );
+        ImmutableType type = entityManager.getTypeByTableName(tableName);
+        if (type instanceof AssociationType) {
+            ImmutableProp prop = ((AssociationType) type).getBaseProp();
+            return propCacheMap.containsKey(prop) ||
+                    propCacheMap.containsKey(prop.getOpposite());
+        }
+        if (type != null) {
+            return objectCacheMap.containsKey(type);
+        }
+        return false;
     }
 
     @Override
@@ -164,14 +135,12 @@ public class CachesImpl implements Caches {
         if (isOldNull && isNewNull) {
             return;
         }
-        ImmutableType type = tableNameTypeMap.get(
-                DatabaseIdentifiers.databaseIdentifier(tableName)
-        );
+        ImmutableType type = entityManager.getTypeByTableName(tableName);
         if (type == null) {
             throw new IllegalArgumentException(
                     "Illegal table name \"" +
                             tableName +
-                            "\", it is not managed by cache"
+                            "\", it is not managed by current entity manager"
             );
         }
         if (type instanceof AssociationType) {
@@ -269,6 +238,6 @@ public class CachesImpl implements Caches {
         if (block != null) {
             block.accept(cfg);
         }
-        return cfg.build(triggers, scalarProviderMap);
+        return cfg.build(entityManager, triggers, scalarProviderMap);
     }
 }

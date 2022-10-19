@@ -12,25 +12,12 @@ class RolePermissionCountResolver(
     private val sqlClient: KSqlClient
 ) : KTransientResolver.Parameterized<Long, Int> {
 
-    private val filter = sqlClient.filters.getCacheableTargetFilter(Role::permissions)
-
     init {
         sqlClient.triggers.addAssociationListener(Role::permissions) {
             sqlClient
                 .caches
                 .getPropertyCache<Long, Int>(Role::permissionCount)
                 ?.delete(it.sourceId as Long)
-        }
-        sqlClient.triggers.addEntityListener(Permission::class) {
-            if (filter !== null && filter.isAffectedBy(it)) {
-                val role = it.getUnchangedFieldRef(Permission::role)?.value
-                if (role !== null) {
-                    sqlClient
-                        .caches
-                        .getPropertyCache<Long, Int>(Role::permissionCount)
-                        ?.delete(role.id)
-                }
-            }
         }
     }
 
@@ -51,6 +38,9 @@ class RolePermissionCountResolver(
                 it._2.toInt()
             }
 
-    override fun getParameters(): SortedMap<String, Any> =
-        filter?.getParameters() ?: sortedMapOf()
+    override fun getParameters(): SortedMap<String, Any>? =
+        sqlClient
+            .filters
+            .getCacheableTargetFilter(Role::permissions)
+            ?.getParameters()
 }
