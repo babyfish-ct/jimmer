@@ -14,19 +14,17 @@ public class BookStoreAvgPriceResolver implements TransientResolver.Parameterize
 
     private final JSqlClient sqlClient;
 
-    private final CacheableFilter<?> cacheableBooksFilter;
-
     public BookStoreAvgPriceResolver(JSqlClient sqlClient) {
 
         this.sqlClient = sqlClient;
-        this.cacheableBooksFilter = sqlClient
-                .getFilters()
-                .getCacheableTargetFilter(BookStoreProps.BOOKS);
 
         // Unlike object caches and associative caches that can be automatically synchronized,
         // business computing caches require users to implement their synchronization logic.
 
-        // 1. Check whether the association `BookStore.books` is changed
+        // 1. Check whether the association `BookStore.books` is changed,
+        //    this event includes 2 cases:
+        //    i. The foreign key of book is changed.
+        //    ii. The `TenantFilter` is enabled and the tenant of book is changed.
         sqlClient.getTriggers().addAssociationListener(BookStoreProps.BOOKS, e -> {
             sqlClient.getCaches().getPropertyCache(BookStoreProps.AVG_PRICE).delete(e.getSourceId());
         });
@@ -34,15 +32,8 @@ public class BookStoreAvgPriceResolver implements TransientResolver.Parameterize
             Ref<BookStore> storeRef = e.getUnchangedFieldRef(BookProps.STORE);
             BookStore store = storeRef != null ? storeRef.getValue() : null;
             if (store != null) {
-                // 2, Otherwise, check whether `Book.price` is changed or
-                // `cacheableBooksFilter` is affected
-                boolean evict = false;
+                // 2, Otherwise, check whether `Book.price` is changed
                 if (e.getUnchangedFieldRef(BookProps.PRICE) == null) {
-                    evict = true;
-                } else if (cacheableBooksFilter != null && cacheableBooksFilter.isAffectedBy(e)) {
-                    evict = true;
-                }
-                if (evict) {
                     sqlClient
                             .getCaches()
                             .getPropertyCache(BookStoreProps.AVG_PRICE)
@@ -54,7 +45,10 @@ public class BookStoreAvgPriceResolver implements TransientResolver.Parameterize
 
     @Override
     public SortedMap<String, Object> getParameters() {
-        return cacheableBooksFilter != null ? cacheableBooksFilter.getParameters() : null;
+        CacheableFilter<?> filter = sqlClient
+                .getFilters()
+                .getCacheableTargetFilter(BookStoreProps.BOOKS);
+        return filter != null ? filter.getParameters() : null;
     }
 
     @Override
