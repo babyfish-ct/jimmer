@@ -1034,7 +1034,8 @@ val books = query
 @org.springframework.graphql.data.method.annotation.BatchMapping
 public Map<Book, BookStore> store(Collection<Book> books) {
     return sqlClient
-        .getReferenceLoader(BookProps.STORE)
+        .getLoaders()
+        .reference(BookProps.STORE)
         .batchLoad(books);
 }
 
@@ -1042,12 +1043,8 @@ public Map<Book, BookStore> store(Collection<Book> books) {
 @org.springframework.graphql.data.method.annotation.BatchMapping
 public Map<Book, List<Author>> authors(List<Book> books) {
     return sqlClient
-        .getListLoader(BookTableEx.class, BookTableEx::authors)
-        .forFilter(
-            args -> args
-                .orderBy(args.getTable().firstName())
-                .orderBy(args.getTable().lastName())
-        )
+        .getLoaders()
+        .list(BookProps.AUTHORS)
         .batchLoad(books);
 }
 ```
@@ -1063,7 +1060,8 @@ fun store(
     books: java.util.List<Book>
 ): Map<Book, BookStore> =
     sqlClient
-        .getReferenceLoader(Book::store)
+        .getLoaders()
+        .reference(Book::store)
         .batchLoad(books)
 
 // 实现多对多关联: 'Book::authors'
@@ -1073,11 +1071,8 @@ fun authors(
     books: java.util.List<Book>
 ): Map<Book, List<Author>> =
     sqlClient
-        .getListLoader(Book::authors)
-        .forFilter {
-            orderBy(table.firstName)
-            orderBy(table.lastName)
-        }
+        .loaders
+        .list(Book::authors)
         .batchLoad(books)
 ```
 
