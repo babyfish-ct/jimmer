@@ -8,6 +8,7 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.Triggers;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.table.Props;
@@ -552,16 +553,15 @@ public class FilterManager implements Filters {
                 List<Filter<Props>> filters = allCacheableCache.get(prop.getTargetType());
                 if (!filters.isEmpty()) {
                     sqlClient.getTriggers().addEntityListener(prop.getTargetType(), e -> {
-                        onEntityEvent(prop, cache, filters, e);
+                        handleTargetChange(prop, filters, e);
                     });
                 }
             }
         }
     }
 
-    private void onEntityEvent(
+    private void handleTargetChange(
             ImmutableProp prop,
-            Cache<?, ?> cache,
             List<Filter<Props>> filters,
             EntityEvent<?> e
     ) {
@@ -581,12 +581,13 @@ public class FilterManager implements Filters {
             }
         }
         if (affected) {
-            removeCache(prop, cache, e);
+            fireAssociationEvent(prop, e);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private void removeCache(ImmutableProp prop, Cache<?, ?> cache, EntityEvent<?> e) {
+    private void fireAssociationEvent(ImmutableProp prop, EntityEvent<?> e) {
+        Triggers triggers = sqlClient.getTriggers();
         ImmutableProp mappedBy = prop.getMappedBy();
         if (mappedBy != null && mappedBy.getStorage() instanceof Column) {
             Ref<Object> ref = e.getUnchangedFieldRef(mappedBy);
@@ -595,7 +596,7 @@ public class FilterManager implements Filters {
                 if (source != null) {
                     ImmutableType sourceType = source.__type();
                     Object sourceId = source.__get(sourceType.getIdProp().getId());
-                    ((Cache<Object, Object>)cache).delete(sourceId);
+                    triggers.fireAssociationEvict(prop, sourceId);
                 }
             }
         } else {
@@ -615,8 +616,8 @@ public class FilterManager implements Filters {
                         })
                         .distinct()
                         .execute();
-                if (!sourceIds.isEmpty()) {
-                    ((Cache<Object, Object>)cache).deleteAll(sourceIds);
+                for (Object sourceId : sourceIds) {
+                    triggers.fireAssociationEvict(prop, sourceId);
                 }
             }
         }

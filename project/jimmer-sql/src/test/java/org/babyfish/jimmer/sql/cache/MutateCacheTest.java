@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
@@ -130,17 +131,21 @@ public class MutateCacheTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 String.format(
-                        "[Book-" +
-                                graphQLInActionId3 +
-                                ", BookStore.books-00000000-0000-0000-0000-000000000000, " +
-                                "BookStore.books-" +
-                                oreillyId +
-                                ", Book.store-" +
-                                graphQLInActionId3 +
+                        "[Book-" + graphQLInActionId3 +
+                                ", Book.store-" + graphQLInActionId3 +
+                                ", BookStore.books-00000000-0000-0000-0000-000000000000" +
+                                ", BookStore.books-" + oreillyId +
                                 "]"
                 ),
                 cacheOpRecords.toString()
         );
+        /*
+        [Book-780bdf07-05af-48bf-9be9-f8c65236fecc,
+        Book.store-780bdf07-05af-48bf-9be9-f8c65236fecc,
+        BookStore.books-00000000-0000-0000-0000-000000000000,
+        BookStore.books-d38c10da-6be8-4924-b9b9-5e81899612a0
+        ]
+         */
         executeAndExpect(
                 sqlClient.createQuery(BookTable.class, (q, book) -> {
                     return q.select(
@@ -251,7 +256,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }
         );
         sqlClient.getTriggers().fireMiddleTableInsert(
-                BookProps.AUTHORS,
+                BookProps.AUTHORS.unwrap(),
                 graphQLInActionId3,
                 danId
         );
@@ -374,7 +379,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }
         );
         sqlClient.getTriggers().fireMiddleTableInsert(
-                AuthorProps.BOOKS,
+                AuthorProps.BOOKS.unwrap(),
                 danId,
                 graphQLInActionId3
         );

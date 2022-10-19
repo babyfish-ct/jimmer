@@ -60,51 +60,6 @@ public class TriggersTest {
     }
 
     @Test
-    public void testRemoveListener() {
-
-        Assertions.assertTrue(triggers.hasListeners(ImmutableType.get(Book.class)));
-        Assertions.assertTrue(triggers.hasListeners(BookProps.STORE));
-        Assertions.assertTrue(triggers.hasListeners(BookStoreProps.BOOKS));
-        Assertions.assertTrue(triggers.hasListeners(BookProps.AUTHORS));
-        Assertions.assertTrue(triggers.hasListeners(AuthorProps.BOOKS));
-
-        triggers.removeEntityListener(Book.class, bookHandler);
-        Assertions.assertTrue(triggers.hasListeners(ImmutableType.get(Book.class)));
-        Assertions.assertTrue(triggers.hasListeners(BookProps.STORE));
-        Assertions.assertTrue(triggers.hasListeners(BookStoreProps.BOOKS));
-        Assertions.assertTrue(triggers.hasListeners(BookProps.AUTHORS));
-        Assertions.assertTrue(triggers.hasListeners(AuthorProps.BOOKS));
-
-        triggers.removeAssociationListener(BookProps.STORE, bookStoreHandler);
-        Assertions.assertTrue(triggers.hasListeners(ImmutableType.get(Book.class)));
-        Assertions.assertTrue(triggers.hasListeners(BookProps.STORE));
-        Assertions.assertTrue(triggers.hasListeners(BookStoreProps.BOOKS));
-        Assertions.assertTrue(triggers.hasListeners(BookProps.AUTHORS));
-        Assertions.assertTrue(triggers.hasListeners(AuthorProps.BOOKS));
-
-        triggers.removeAssociationListener(BookStoreProps.BOOKS, storeBookListHandler);
-        Assertions.assertFalse(triggers.hasListeners(ImmutableType.get(Book.class)));
-        Assertions.assertFalse(triggers.hasListeners(BookProps.STORE));
-        Assertions.assertFalse(triggers.hasListeners(BookStoreProps.BOOKS));
-        Assertions.assertTrue(triggers.hasListeners(BookProps.AUTHORS));
-        Assertions.assertTrue(triggers.hasListeners(AuthorProps.BOOKS));
-
-        triggers.removeAssociationListener(BookProps.AUTHORS, bookAuthorListHandler);
-        Assertions.assertFalse(triggers.hasListeners(ImmutableType.get(Book.class)));
-        Assertions.assertFalse(triggers.hasListeners(BookProps.STORE));
-        Assertions.assertFalse(triggers.hasListeners(BookStoreProps.BOOKS));
-        Assertions.assertTrue(triggers.hasListeners(BookProps.AUTHORS));
-        Assertions.assertTrue(triggers.hasListeners(AuthorProps.BOOKS));
-
-        triggers.removeAssociationListener(AuthorProps.BOOKS, authorBookListHandler);
-        Assertions.assertFalse(triggers.hasListeners(ImmutableType.get(Book.class)));
-        Assertions.assertFalse(triggers.hasListeners(BookProps.STORE));
-        Assertions.assertFalse(triggers.hasListeners(BookStoreProps.BOOKS));
-        Assertions.assertFalse(triggers.hasListeners(BookProps.AUTHORS));
-        Assertions.assertFalse(triggers.hasListeners(AuthorProps.BOOKS));
-    }
-
-    @Test
     public void fireInsertBookWithNullParent() {
         triggers.fireEntityTableChange(
                 null,
@@ -313,7 +268,7 @@ public class TriggersTest {
     @Test
     public void fireDeleteAssociation() {
         triggers.fireMiddleTableDelete(
-                BookProps.AUTHORS,
+                BookProps.AUTHORS.unwrap(),
                 graphQLInActionId3,
                 danId
         );
@@ -349,7 +304,7 @@ public class TriggersTest {
     @Test
     public void fireInsertAssociation() {
         triggers.fireMiddleTableInsert(
-                BookProps.AUTHORS,
+                BookProps.AUTHORS.unwrap(),
                 graphQLInActionId3,
                 danId
         );
@@ -385,7 +340,7 @@ public class TriggersTest {
     @Test
     public void fireDeleteInverseAssociation() {
         triggers.fireMiddleTableDelete(
-                AuthorProps.BOOKS,
+                AuthorProps.BOOKS.unwrap(),
                 danId,
                 graphQLInActionId3
         );
@@ -421,7 +376,7 @@ public class TriggersTest {
     @Test
     public void fireInsertInverseAssociation() {
         triggers.fireMiddleTableInsert(
-                AuthorProps.BOOKS,
+                AuthorProps.BOOKS.unwrap(),
                 danId,
                 graphQLInActionId3
         );

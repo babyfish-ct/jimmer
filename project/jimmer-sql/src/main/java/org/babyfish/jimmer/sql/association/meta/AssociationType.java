@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.association.meta;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.association.Association;
@@ -36,6 +37,10 @@ public class AssociationType implements ImmutableType {
 
     public static AssociationType of(ImmutableProp prop) {
         return CACHE.get(prop);
+    }
+
+    public static AssociationType of(TypedProp.Association<?, ?> prop) {
+        return CACHE.get(prop.unwrap());
     }
 
     private AssociationType(ImmutableProp baseProp) {

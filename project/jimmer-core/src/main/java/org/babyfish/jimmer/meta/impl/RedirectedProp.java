@@ -28,6 +28,9 @@ public class RedirectedProp implements ImmutableProp {
     }
 
     public static ImmutableProp source(ImmutableProp prop, ImmutableType sourceType) {
+        if (prop == null) {
+            return null;
+        }
         if (!prop.getDeclaringType().isAssignableFrom(sourceType)) {
             throw new IllegalArgumentException(
                     "Cannot redirect source type of \"" +
@@ -54,6 +57,9 @@ public class RedirectedProp implements ImmutableProp {
     }
 
     public static ImmutableProp target(ImmutableProp prop, ImmutableType targetType) {
+        if (prop == null) {
+            return null;
+        }
         if (prop.getTargetType() == null) {
             throw new IllegalArgumentException(
                     "Cannot redirect target type of \"" +
