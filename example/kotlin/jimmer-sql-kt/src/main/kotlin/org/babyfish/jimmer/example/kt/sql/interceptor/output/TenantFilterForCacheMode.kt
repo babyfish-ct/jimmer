@@ -27,4 +27,5 @@ class TenantFilterForCacheMode(
 
     override fun isAffectedBy(e: EntityEvent<*>): Boolean =
         e.getUnchangedFieldRef(TenantAware::tenant) === null
+        // Can also return `e.getChangedFieldRef(TenantAware::tenant) != null`
 }

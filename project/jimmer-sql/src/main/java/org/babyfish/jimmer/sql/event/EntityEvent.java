@@ -151,18 +151,18 @@ public class EntityEvent<E> {
     }
 
     @Nullable
-    public <T> ChangedRef<T> getChangedFieldTuple(ImmutableProp prop) {
-        return getChangedFieldTuple(prop.getId());
+    public <T> ChangedRef<T> getChangedFieldRef(ImmutableProp prop) {
+        return getChangedFieldRef(prop.getId());
     }
 
     @Nullable
-    public <T> ChangedRef<T> getChangedFieldTuple(TypedProp<?, ?> prop) {
-        return getChangedFieldTuple(prop.unwrap().getId());
+    public <T> ChangedRef<T> getChangedFieldRef(TypedProp<?, ?> prop) {
+        return getChangedFieldRef(prop.unwrap().getId());
     }
 
     @SuppressWarnings("unchecked")
     @Nullable
-    public <T> ChangedRef<T> getChangedFieldTuple(int propId) {
+    public <T> ChangedRef<T> getChangedFieldRef(int propId) {
         ImmutableProp prop = getImmutableType().getProp(propId);
         if (!(prop.getStorage() instanceof Column)) {
             throw new IllegalArgumentException(

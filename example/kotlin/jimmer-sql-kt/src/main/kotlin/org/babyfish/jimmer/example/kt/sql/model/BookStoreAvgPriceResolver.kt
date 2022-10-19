@@ -14,14 +14,15 @@ class BookStoreAvgPriceResolver(
     private val sqlClient: KSqlClient
 ) : KTransientResolver.Parameterized<Long, BigDecimal> {
 
-    private val cacheableBooksFilter = sqlClient.filters.getCacheableTargetFilter(BookStore::books)
-
     init {
 
         // Unlike object caches and associative caches that can be automatically synchronized,
         // business computing caches require users to implement their synchronization logic.
 
-        // 1. Check whether the association `BookStore.books` is changed.
+        // 1. Check whether the association `BookStore.books` is changed,
+        //    this event includes 2 cases:
+        //    i. The foreign key of book is changed.
+        //    ii. The `TenantFilter` is enabled and the tenant of book is changed.
         sqlClient.triggers.addAssociationListener(BookStore::books) {
             sqlClient.caches.getPropertyCache<Any, Any>(BookStore::avgPrice)?.delete(it.sourceId)
         }
@@ -29,15 +30,8 @@ class BookStoreAvgPriceResolver(
         sqlClient.triggers.addEntityListener(Book::class) {
             val storeId = it.getUnchangedFieldRef(Book::store)?.value?.id
             if (storeId !== null) {
-                // 2. Otherwise, check whether `Book.price` is changed
-                // or `cacheableBooksFilter is affected`.
-                var evict = false
+                // 2. Otherwise, check whether `Book.price` is changed.
                 if (it.getUnchangedFieldRef(Book::price) === null) {
-                    evict = true
-                } else if (cacheableBooksFilter !== null && cacheableBooksFilter.isAffectedBy(it)) {
-                    evict = true
-                }
-                if (evict) {
                     sqlClient.caches.getPropertyCache<Any, Any>(BookStore::avgPrice)?.delete(storeId)
                 }
             }
@@ -45,7 +39,7 @@ class BookStoreAvgPriceResolver(
     }
 
     override fun getParameters(): SortedMap<String, Any>? =
-        cacheableBooksFilter?.getParameters()
+        sqlClient.filters.getCacheableTargetFilter(BookStore::books)?.getParameters()
 
     override fun resolve(
         ids: Collection<Long>,
