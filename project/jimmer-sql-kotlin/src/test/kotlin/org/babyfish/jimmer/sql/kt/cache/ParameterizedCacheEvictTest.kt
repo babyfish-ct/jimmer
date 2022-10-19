@@ -132,8 +132,11 @@ class ParameterizedCacheEvictTest : AbstractQueryTest() {
         }
         expect(
             listOf(
-                "delete Administrator.roles-[1, 2, 3]",
-                "delete Permission.role-[1000, 2000]"
+                "delete Administrator.roles-[1]",
+                "delete Administrator.roles-[2]",
+                "delete Administrator.roles-[3]",
+                "delete Permission.role-[1000]",
+                "delete Permission.role-[2000]"
             )
         ) {
             messages
@@ -152,8 +155,8 @@ class ParameterizedCacheEvictTest : AbstractQueryTest() {
         }
         expect(
             listOf(
-                "delete Role.permissionCount-[100]",
-                "delete Role.permissions-[100]"
+                "delete Role.permissions-[100]",
+                "delete Role.permissionCount-[100]"
             )
         ) {
             messages
@@ -176,10 +179,10 @@ class ParameterizedCacheEvictTest : AbstractQueryTest() {
         }
         expect(
             listOf(
-                "delete Role.permissions-[100]",
-                "delete Role.permissions-[200]",
                 "delete Permission.role-[1000]",
+                "delete Role.permissions-[100]",
                 "delete Role.permissionCount-[100]",
+                "delete Role.permissions-[200]",
                 "delete Role.permissionCount-[200]"
             )
         ) {

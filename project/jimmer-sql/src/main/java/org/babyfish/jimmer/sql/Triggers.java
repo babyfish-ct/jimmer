@@ -7,8 +7,6 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.event.AssociationListener;
 import org.babyfish.jimmer.sql.event.EntityListener;
 
-import java.util.function.Function;
-
 public interface Triggers {
 
     @SuppressWarnings("unchecked")
@@ -43,31 +41,21 @@ public interface Triggers {
 
     void fireEntityTableChange(Object oldRow, Object newRow, Object reason);
 
-    default void fireMiddleTableDelete(TypedProp<?, ?> prop, Object sourceId, Object targetId) {
-        fireMiddleTableDelete(prop.unwrap(), sourceId, targetId, null);
-    }
-
-    default void fireMiddleTableDelete(TypedProp<?, ?> prop, Object sourceId, Object targetId, Object reason) {
-        fireMiddleTableDelete(prop.unwrap(), sourceId, targetId, reason);
-    }
-
     default void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId) {
         fireMiddleTableDelete(prop, sourceId, targetId, null);
     }
 
     void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId, Object reason);
 
-    default void fireMiddleTableInsert(TypedProp<?, ?> prop, Object sourceId, Object targetId) {
-        fireMiddleTableInsert(prop.unwrap(), sourceId, targetId, null);
-    }
-
-    default void fireMiddleTableInsert(TypedProp<?, ?> prop, Object sourceId, Object targetId, Object reason) {
-        fireMiddleTableInsert(prop.unwrap(), sourceId, targetId, reason);
-    }
-
     default void fireMiddleTableInsert(ImmutableProp prop, Object sourceId, Object targetId) {
         fireMiddleTableInsert(prop, sourceId, targetId, null);
     }
 
     void fireMiddleTableInsert(ImmutableProp prop, Object sourceId, Object targetId, Object reason);
+
+    default void fireAssociationEvict(ImmutableProp prop, Object sourceId) {
+        fireAssociationEvict(prop, sourceId, null);
+    }
+
+    void fireAssociationEvict(ImmutableProp prop, Object sourceId, Object reason);
 }

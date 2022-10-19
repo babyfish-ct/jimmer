@@ -181,7 +181,7 @@ public class CacheConfig {
         return this;
     }
 
-    Caches build(Triggers triggers, Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap) {
+    Caches build(EntityManager entityManager, Triggers triggers, Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap) {
         for (ImmutableProp prop : propCacheMap.keySet()) {
             if (prop.isAssociation(TargetLevel.ENTITY) && !objectCacheMap.containsKey(prop.getTargetType())) {
                 throw new IllegalStateException(
@@ -194,6 +194,7 @@ public class CacheConfig {
             }
         }
         return new CachesImpl(
+                entityManager,
                 triggers,
                 objectCacheMap,
                 propCacheMap,
