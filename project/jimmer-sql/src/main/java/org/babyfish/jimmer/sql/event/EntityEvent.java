@@ -92,14 +92,14 @@ public class EntityEvent<E> {
     }
 
     @NotNull
-    public EventType getEventType() {
+    public Type getType() {
         if (oldEntity == null) {
-            return EventType.INSERT;
+            return Type.INSERT;
         }
         if (newEntity == null) {
-            return EventType.DELETE;
+            return Type.DELETE;
         }
-        return EventType.UPDATE;
+        return Type.UPDATE;
     }
 
     @Nullable
@@ -244,5 +244,11 @@ public class EntityEvent<E> {
         Object targetId1 = ((ImmutableSpi) a).__get(targetIdPropId);
         Object targetId2 = ((ImmutableSpi) b).__get(targetIdPropId);
         return targetId1.equals(targetId2);
+    }
+
+    public enum Type {
+        DELETE,
+        INSERT,
+        UPDATE,
     }
 }

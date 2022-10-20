@@ -121,6 +121,10 @@ class ImmutableType(
             map
         }
 
+    val propsOrderById: List<ImmutableProp> by lazy {
+        properties.values.sortedBy { it -> it.id }
+    }
+
     val idProp: ImmutableProp? = properties
         .values
         .filter { it.isId }

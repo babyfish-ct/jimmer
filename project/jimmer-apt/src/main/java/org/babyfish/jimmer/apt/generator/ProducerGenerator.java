@@ -118,31 +118,36 @@ public class ProducerGenerator {
             }
             if (prop == type.getIdProp()) {
                 builder.add(
-                        ".id($S, $T.class)\n",
+                        ".id($L, $S, $T.class)\n",
+                        prop.getId(),
                         prop.getName(),
                         prop.getElementTypeName()
                 );
             } else if (prop == type.getVersionProp()) {
                 builder.add(
-                        ".version($S)\n",
+                        ".version($L, $S)\n",
+                        prop.getId(),
                         prop.getName()
                 );
             } else if (prop.getAnnotation(Key.class) != null && !prop.isAssociation()) {
                 builder.add(
-                        ".key($S, $T.class)\n",
+                        ".key($L, $S, $T.class)\n",
+                        prop.getId(),
                         prop.getName(),
                         prop.getElementTypeName()
                 );
             } else if (prop.getAnnotation(Key.class) != null && prop.isAssociation()) {
                 builder.add(
-                        ".keyReference($S, $T.class, $L)\n",
+                        ".keyReference($L, $S, $T.class, $L)\n",
+                        prop.getId(),
                         prop.getName(),
                         prop.getElementTypeName(),
                         prop.isNullable() ? "true" : "false"
                 );
             } else if (prop.getAssociationAnnotation() != null) {
                 builder.add(
-                        ".add($S, $T.class, $T.class, $L)\n",
+                        ".add($L, $S, $T.class, $T.class, $L)\n",
+                        prop.getId(),
                         prop.getName(),
                         prop.getAssociationAnnotation().annotationType(),
                         prop.getElementTypeName(),
@@ -150,7 +155,8 @@ public class ProducerGenerator {
                 );
             } else {
                 builder.add(
-                        ".add($S, $T.$L, $T.class, $L)\n",
+                        ".add($L, $S, $T.$L, $T.class, $L)\n",
+                        prop.getId(),
                         prop.getName(),
                         ImmutablePropCategory.class,
                         category.name(),

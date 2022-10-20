@@ -76,28 +76,36 @@ class ProducerGenerator(
         when {
             fullName == ID_FULL_NAME ->
                 add(
-                    ".id(%S, %T::class.java)\n",
+                    ".id(%L, %S, %T::class.java)\n",
+                    prop.id,
                     prop.name,
                     prop.targetTypeName(overrideNullable = false)
                 )
             fullName == VERSION_FULL_NAME ->
-                add(".version(%S)\n", prop.name)
+                add(
+                    ".version(%L, %S)\n",
+                    prop.id,
+                    prop.name
+                )
             prop.isKey && prop.isAssociation ->
                 add(
-                    ".keyReference(%S, %T::class.java, %L)\n",
+                    ".keyReference(%L, %S, %T::class.java, %L)\n",
+                    prop.id,
                     prop.name,
                     prop.targetTypeName(overrideNullable = false),
                     prop.isNullable
                 )
             prop.isKey && !prop.isAssociation ->
                 add(
-                    ".key(%S, %T::class.java)\n",
+                    ".key(%L, %S, %T::class.java)\n",
+                    prop.id,
                     prop.name,
                     prop.targetTypeName(overrideNullable = false)
                 )
             fullName !== null ->
                 add(
-                    ".add(%S, %T::class.java, %T::class.java, %L)\n",
+                    ".add(%L, %S, %T::class.java, %T::class.java, %L)\n",
+                    prop.id,
                     prop.name,
                     when (fullName) {
                         ONE_TO_ONE_FULL_NAME -> ONE_TO_ONE_CLASS_NAME
@@ -111,7 +119,8 @@ class ProducerGenerator(
                 )
             else ->
                 add(
-                    ".add(%S, %T.%L, %T::class.java, %L)\n",
+                    ".add(%L, %S, %T.%L, %T::class.java, %L)\n",
+                    prop.id,
                     prop.name,
                     IMMUTABLE_PROP_CATEGORY_CLASS_NAME,
                     when {

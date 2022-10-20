@@ -4,7 +4,6 @@ import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.KTransientResolver
 import org.babyfish.jimmer.sql.kt.ast.expression.count
 import org.babyfish.jimmer.sql.kt.ast.expression.valueIn
-import org.babyfish.jimmer.sql.kt.event.getUnchangedFieldRef
 import java.sql.Connection
 import java.util.*
 
@@ -41,6 +40,6 @@ class RolePermissionCountResolver(
     override fun getParameters(): SortedMap<String, Any>? =
         sqlClient
             .filters
-            .getCacheableTargetFilter(Role::permissions)
+            .getParameterizedTargetFilter(Role::permissions)
             ?.getParameters()
 }

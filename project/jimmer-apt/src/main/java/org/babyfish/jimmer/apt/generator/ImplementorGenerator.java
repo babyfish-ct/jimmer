@@ -44,7 +44,7 @@ public class ImplementorGenerator {
                 .addParameter(argType, "prop")
                 .returns(Object.class);
         builder.beginControlFlow("switch (prop)");
-        for (ImmutableProp prop : type.getProps().values()) {
+        for (ImmutableProp prop : type.getPropsOrderById()) {
             if (prop.getBoxType() != null) {
                 builder.addStatement("case $L: return ($T)$L()",
                         argType == int.class ? prop.getId() : '"' + prop.getName() + '"',

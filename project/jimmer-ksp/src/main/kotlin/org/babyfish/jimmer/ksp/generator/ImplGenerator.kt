@@ -170,7 +170,7 @@ class ImplGenerator(
                         .apply {
                             add("return ")
                             beginControlFlow("when (prop)")
-                            for (prop in type.properties.values) {
+                            for (prop in type.propsOrderById) {
                                 val arg = if (argType == Int::class) prop.id else "\"${prop.name}\""
                                 val cond = prop.loadedFieldName ?: "${prop.valueFieldName} !== null"
                                 addStatement("%L -> %L", arg, cond)

@@ -428,7 +428,9 @@ class ImmutableTypeImpl implements ImmutableType {
 
         private String versionPropName;
 
-        private List<String> keyPropNames = new ArrayList<>();
+        private final List<String> keyPropNames = new ArrayList<>();
+
+        private final Set<Integer> propIds;
 
         BuilderImpl(
                 Class<?> javaClass,
@@ -436,6 +438,9 @@ class ImmutableTypeImpl implements ImmutableType {
                 BiFunction<DraftContext, Object, Draft> draftFactory
         ) {
             this.type = new ImmutableTypeImpl(javaClass, superType, draftFactory);
+            this.propIds = superType != null ?
+                    superType.getProps().values().stream().map(ImmutableProp::getId).collect(Collectors.toSet()) :
+                    new HashSet<>();
         }
 
         BuilderImpl(
@@ -444,10 +449,13 @@ class ImmutableTypeImpl implements ImmutableType {
                 BiFunction<DraftContext, Object, Draft> draftFactory
         ) {
             this.type = new ImmutableTypeImpl(kotlinType, superType, draftFactory);
+            this.propIds = superType != null ?
+                    superType.getProps().values().stream().map(ImmutableProp::getId).collect(Collectors.toSet()) :
+                    new HashSet<>();
         }
 
         @Override
-        public Builder id(String name, Class<?> elementType) {
+        public Builder id(int id, String name, Class<?> elementType) {
             if (!type.javaClass.isAnnotationPresent(Entity.class)
                 && !type.javaClass.isAnnotationPresent(MappedSuperclass.class)) {
                 throw new IllegalStateException("Cannot set id for type that is not entity");
@@ -456,31 +464,32 @@ class ImmutableTypeImpl implements ImmutableType {
                 throw new IllegalStateException("id property has been set");
             }
             idPropName = name;
-            return add(name, ImmutablePropCategory.SCALAR, elementType, false);
+            return add(id, name, ImmutablePropCategory.SCALAR, elementType, false);
         }
 
         @Override
-        public Builder key(String name, Class<?> elementType) {
+        public Builder key(int id, String name, Class<?> elementType) {
             if (!type.javaClass.isAnnotationPresent(Entity.class) &&
                 !type.javaClass.isAnnotationPresent(MappedSuperclass.class)) {
                 throw new IllegalStateException("Cannot add key for type that is not entity");
             }
             keyPropNames.add(name);
-            return add(name, ImmutablePropCategory.SCALAR, elementType, false);
+            return add(id, name, ImmutablePropCategory.SCALAR, elementType, false);
         }
 
         @Override
         public Builder keyReference(
+                int id,
                 String name,
                 Class<?> elementType,
                 boolean nullable
         ) {
             keyPropNames.add(name);
-            return add(name, ImmutablePropCategory.REFERENCE, elementType, nullable, ManyToOne.class);
+            return add(id, name, ImmutablePropCategory.REFERENCE, elementType, nullable, ManyToOne.class);
         }
 
         @Override
-        public Builder version(String name) {
+        public Builder version(int id, String name) {
             if (!type.javaClass.isAnnotationPresent(Entity.class) &&
                 !type.javaClass.isAnnotationPresent(MappedSuperclass.class)) {
                 throw new IllegalStateException("Cannot set version for type that is not entity");
@@ -489,17 +498,19 @@ class ImmutableTypeImpl implements ImmutableType {
                 throw new IllegalStateException("version property has been set");
             }
             versionPropName = name;
-            return add(name, ImmutablePropCategory.SCALAR, int.class, false);
+            return add(id, name, ImmutablePropCategory.SCALAR, int.class, false);
         }
 
         @Override
         public Builder add(
+                int id,
                 String name,
                 ImmutablePropCategory category,
                 Class<?> elementType,
                 boolean nullable
         ) {
             return add(
+                    id,
                     name,
                     category,
                     elementType,
@@ -510,6 +521,7 @@ class ImmutableTypeImpl implements ImmutableType {
 
         @Override
         public Builder add(
+                int id,
                 String name,
                 Class<? extends Annotation> associationType,
                 Class<?> elementType,
@@ -524,6 +536,7 @@ class ImmutableTypeImpl implements ImmutableType {
                 throw new IllegalArgumentException("Invalid association type");
             }
             return add(
+                    id,
                     name,
                     category,
                     elementType,
@@ -533,6 +546,7 @@ class ImmutableTypeImpl implements ImmutableType {
         }
 
         private Builder add(
+                int id,
                 String name,
                 ImmutablePropCategory category,
                 Class<?> elementType,
@@ -540,6 +554,15 @@ class ImmutableTypeImpl implements ImmutableType {
                 Class<? extends Annotation> associationType
         ) {
             validate();
+            if (!propIds.add(id)) {
+                throw new IllegalArgumentException(
+                        "The property id \"" +
+                                id +
+                                "." +
+                                name +
+                                "\" is already exists in current type or the super type"
+                );
+            }
             if (type.declaredProps.containsKey(name)) {
                 throw new IllegalArgumentException(
                         "The property \"" +
@@ -562,9 +585,7 @@ class ImmutableTypeImpl implements ImmutableType {
                     name,
                     new ImmutablePropImpl(
                             type,
-                            (type.superType != null ? type.superType.getProps().size() : 0) +
-                                    type.declaredProps.size() +
-                                    1,
+                            id,
                             name,
                             category,
                             elementType,
