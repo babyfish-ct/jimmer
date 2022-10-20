@@ -9,8 +9,6 @@ import org.babyfish.jimmer.sql.example.App;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.runtime.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -29,8 +27,6 @@ import java.util.function.Function;
 
 @Configuration
 public class SqlClientConfig {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SqlClientConfig.class);
 
     @Bean
     public JSqlClient sqlClient(
