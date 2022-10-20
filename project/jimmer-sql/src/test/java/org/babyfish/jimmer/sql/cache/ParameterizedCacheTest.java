@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.filter.Filter;
+import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
@@ -604,7 +604,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
         }
     }
 
-    private static class UndeletedFilter implements Filter.Parameterized<NamedEntityProps> {
+    private static class UndeletedFilter implements CacheableFilter<NamedEntityProps> {
 
         @Override
         public void filter(FilterArgs<NamedEntityProps> args) {
@@ -624,7 +624,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
         }
     }
 
-    private static class DeletedFilter implements Filter.Parameterized<NamedEntityProps> {
+    private static class DeletedFilter implements CacheableFilter<NamedEntityProps> {
 
         @Override
         public void filter(FilterArgs<NamedEntityProps> args) {
