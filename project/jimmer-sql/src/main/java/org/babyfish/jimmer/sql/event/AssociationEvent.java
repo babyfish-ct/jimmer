@@ -118,17 +118,17 @@ public class AssociationEvent {
     }
 
     @NotNull
-    public EventType getEventType() {
+    public Type getType() {
         if (detachedTargetId == null && attachedTargetId == null) {
-            return EventType.EVICT;
+            return Type.EVICT;
         }
         if (detachedTargetId == null) {
-            return EventType.INSERT;
+            return Type.ATTACH;
         }
         if (attachedTargetId == null) {
-            return EventType.DELETE;
+            return Type.DETACH;
         }
-        throw new AssertionError("Internal bug: The type of AssociationEvent cannot be UPDATE");
+        return Type.REPLACE;
     }
 
     private void validateTarget() {
@@ -163,5 +163,12 @@ public class AssociationEvent {
                 ", attachedTargetId=" + attachedTargetId +
                 ", reason=" + reason +
                 '}';
+    }
+
+    public enum Type {
+        DETACH,
+        ATTACH,
+        REPLACE,
+        EVICT
     }
 }

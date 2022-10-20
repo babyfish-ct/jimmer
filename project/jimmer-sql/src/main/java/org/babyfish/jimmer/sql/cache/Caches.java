@@ -26,4 +26,6 @@ public interface Caches {
     }
 
     void invalidateByBinLog(String tableName, JsonNode oldData, JsonNode newData, Object reason);
+
+    CacheAbandonedCallback getAbandonedCallback();
 }

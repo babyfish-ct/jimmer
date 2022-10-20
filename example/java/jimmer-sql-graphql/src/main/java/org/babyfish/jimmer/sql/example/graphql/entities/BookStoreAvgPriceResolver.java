@@ -33,7 +33,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver.Parameterize
             BookStore store = storeRef != null ? storeRef.getValue() : null;
             if (store != null) {
                 // 2, Otherwise, check whether `Book.price` is changed
-                if (e.getUnchangedFieldRef(BookProps.PRICE) == null) {
+                if (e.getChangedFieldRef(BookProps.PRICE) != null) {
                     sqlClient
                             .getCaches()
                             .getPropertyCache(BookStoreProps.AVG_PRICE)

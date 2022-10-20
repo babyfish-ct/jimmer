@@ -15,11 +15,11 @@ public interface Filters {
 
     Filter<Props> getTargetFilter(TypedProp.Association<?, ?> prop);
 
-    CacheableFilter<Props> getCacheableFilter(Class<?> type);
+    Filter.Parameterized<Props> getParameterizedFilter(Class<?> type);
 
-    CacheableFilter<Props> getCacheableFilter(ImmutableType type);
+    Filter.Parameterized<Props> getParameterizedFilter(ImmutableType type);
 
-    CacheableFilter<Props> getCacheableTargetFilter(ImmutableProp prop);
+    Filter.Parameterized<Props> getParameterizedTargetFilter(ImmutableProp prop);
 
-    CacheableFilter<Props> getCacheableTargetFilter(TypedProp.Association<?, ?> prop);
+    Filter.Parameterized<Props> getParameterizedTargetFilter(TypedProp.Association<?, ?> prop);
 }

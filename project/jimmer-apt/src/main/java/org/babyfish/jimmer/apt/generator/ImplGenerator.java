@@ -124,7 +124,7 @@ public class ImplGenerator {
                 .addParameter(argType, "prop")
                 .returns(boolean.class);
         builder.beginControlFlow("switch (prop)");
-        for (ImmutableProp prop : type.getProps().values()) {
+        for (ImmutableProp prop : type.getPropsOrderById()) {
             Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
             if (prop.isLoadedStateRequired()) {
                 builder.addStatement("case $L: return $L", arg, prop.getLoadedStateName());

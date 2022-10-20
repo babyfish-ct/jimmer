@@ -9,7 +9,7 @@ interface KFilters {
 
     fun <T: Any> getTargetFilter(prop: KProperty1<*, T?>): KFilter<T>?
 
-    fun <T: Any> getCacheableFilter(type: KClass<T>): KCacheableFilter<T>?
+    fun <T: Any> getParameterizedFilter(type: KClass<T>): KFilter.Parameterized<T>?
 
-    fun <T: Any> getCacheableTargetFilter(prop: KProperty1<*, T?>): KCacheableFilter<T>?
+    fun <T: Any> getParameterizedTargetFilter(prop: KProperty1<*, T?>): KFilter.Parameterized<T>?
 }

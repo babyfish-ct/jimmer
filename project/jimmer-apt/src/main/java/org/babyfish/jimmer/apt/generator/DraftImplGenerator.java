@@ -440,7 +440,7 @@ public class DraftImplGenerator {
                 .addParameter(argType, "prop")
                 .addParameter(Object.class, "value");
         builder.beginControlFlow("switch (prop)");
-        for (ImmutableProp prop : type.getProps().values()) {
+        for (ImmutableProp prop : type.getPropsOrderById()) {
             Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
             Object castTo = prop.getBoxType();
             if (castTo == null) {
@@ -485,7 +485,7 @@ public class DraftImplGenerator {
                 .addAnnotation(Override.class)
                 .addParameter(argType, "prop");
         builder.beginControlFlow("switch (prop)");
-        for (ImmutableProp prop : type.getProps().values()) {
+        for (ImmutableProp prop : type.getPropsOrderById()) {
             Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
             if (prop.isLoadedStateRequired()) {
                 builder.addStatement(
