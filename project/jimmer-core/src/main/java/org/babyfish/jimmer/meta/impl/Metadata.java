@@ -58,7 +58,11 @@ public class Metadata {
         }
         Class<?> draftClass;
         try {
-            draftClass = Class.forName(immutableJavaClass.getName() + "Draft");
+            draftClass = Class.forName(
+                    immutableJavaClass.getName() + "Draft",
+                    true,
+                    immutableJavaClass.getClassLoader()
+            );
         } catch (ClassNotFoundException ex) {
             throw new IllegalArgumentException(
                     "Cannot find draft type for \"" + immutableJavaClass.getName() + "\""

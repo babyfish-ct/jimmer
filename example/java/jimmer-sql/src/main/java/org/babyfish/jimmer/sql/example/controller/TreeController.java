@@ -10,6 +10,8 @@ import org.babyfish.jimmer.sql.example.model.TreeNodeTable;
 import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cglib.core.ReflectUtils;
+import org.springframework.core.GenericTypeResolver;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;

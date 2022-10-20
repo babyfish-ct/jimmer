@@ -51,7 +51,11 @@ public class TableWrappers {
     private static Constructor<?> createConstructor(Class<?> javaClass) {
         Class<?> tableClass;
         try {
-            tableClass = Class.forName(javaClass.getName() + "TableEx");
+            tableClass = Class.forName(
+                    javaClass.getName() + "TableEx",
+                    true,
+                    javaClass.getClassLoader()
+            );
         } catch (ClassNotFoundException ex) {
             return null;
         }
