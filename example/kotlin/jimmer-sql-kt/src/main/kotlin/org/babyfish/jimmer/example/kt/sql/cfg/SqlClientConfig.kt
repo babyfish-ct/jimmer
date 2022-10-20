@@ -25,8 +25,6 @@ import javax.sql.DataSource
 @Configuration
 class SqlClientConfig {
 
-    private val LOGGER = LoggerFactory.getLogger(SqlClientConfig::class.java)
-
     @Bean
     fun sqlClient(
         dataSource: DataSource,

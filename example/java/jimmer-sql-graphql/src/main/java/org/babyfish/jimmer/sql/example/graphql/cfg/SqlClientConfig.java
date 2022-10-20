@@ -6,13 +6,9 @@ import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.example.graphql.App;
-import org.babyfish.jimmer.sql.example.graphql.entities.Author;
 import org.babyfish.jimmer.sql.example.graphql.entities.Book;
-import org.babyfish.jimmer.sql.example.graphql.entities.BookStore;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.runtime.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -25,16 +21,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 
 @Configuration
 public class SqlClientConfig {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SqlClientConfig.class);
 
     @Bean
     public JSqlClient sqlClient(

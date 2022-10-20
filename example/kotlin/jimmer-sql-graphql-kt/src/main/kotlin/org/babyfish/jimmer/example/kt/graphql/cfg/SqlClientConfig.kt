@@ -1,9 +1,7 @@
 package org.babyfish.jimmer.example.kt.graphql.cfg
 
 import org.babyfish.jimmer.example.kt.graphql.App
-import org.babyfish.jimmer.example.kt.graphql.entities.Author
 import org.babyfish.jimmer.example.kt.graphql.entities.Book
-import org.babyfish.jimmer.example.kt.graphql.entities.BookStore
 import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.cache.CacheFactory
 import org.babyfish.jimmer.sql.dialect.H2Dialect
@@ -13,7 +11,6 @@ import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.newKSqlClient
 import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.babyfish.jimmer.sql.runtime.Executor
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -24,8 +21,6 @@ import javax.sql.DataSource
 
 @Configuration
 class SqlClientConfig {
-
-    private val LOGGER = LoggerFactory.getLogger(SqlClientConfig::class.java)
 
     @Bean
     fun sqlClient(
