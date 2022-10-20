@@ -27,6 +27,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FieldFilterArgsImpl;
+import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.impl.AbstractFilterArgsImpl;
 import org.babyfish.jimmer.sql.meta.Column;
@@ -688,8 +689,8 @@ public abstract class AbstractDataLoader {
 
     private SortedMap<String, Object> getParameters() {
         Filter<?> filter = globalFiler;
-        if (filter instanceof Filter.Parameterized<?>) {
-            SortedMap<String, Object> parameters = ((Filter.Parameterized<?>) filter).getParameters();
+        if (filter instanceof CacheableFilter<?>) {
+            SortedMap<String, Object> parameters = ((CacheableFilter<?>) filter).getParameters();
             if (parameters != null && parameters.isEmpty()) {
                 return null;
             }
@@ -715,7 +716,7 @@ public abstract class AbstractDataLoader {
         if (parameters == ILLEGAL_PARAMETERS) {
             CacheAbandonedCallback callback = sqlClient.getCaches().getAbandonedCallback();
             if (callback != null) {
-                callback.abandoned(prop, CacheAbandonedCallback.Reason.PARAMETERIZED_FILTER_REQUIRED);
+                callback.abandoned(prop, CacheAbandonedCallback.Reason.CACHEABLE_FILTER_REQUIRED);
             }
             return false;
         }

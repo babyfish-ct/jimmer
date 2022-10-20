@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.filter.Filter;
+import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.fluent.Fluent;
 
 import java.sql.Connection;
@@ -39,7 +39,7 @@ public class RolePermissionCountResolver implements TransientResolver.Parameteri
 
     @Override
     public SortedMap<String, Object> getParameters() {
-        Filter.Parameterized<Props> filter = sqlClient.getFilters().getParameterizedTargetFilter(RoleProps.PERMISSIONS);
+        CacheableFilter<Props> filter = sqlClient.getFilters().getCacheableTargetFilter(RoleProps.PERMISSIONS);
         return filter != null ?
                 filter.getParameters() :
                 Collections.emptySortedMap();
