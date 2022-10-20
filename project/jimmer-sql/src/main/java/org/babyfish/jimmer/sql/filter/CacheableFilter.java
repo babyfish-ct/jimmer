@@ -5,8 +5,9 @@ import org.babyfish.jimmer.sql.event.EntityEvent;
 
 import java.util.SortedMap;
 
-public interface Filter<P extends Props> {
+public interface CacheableFilter<P extends Props> extends Filter<P> {
 
-    void filter(FilterArgs<P> args);
+    SortedMap<String, Object> getParameters();
 
+    boolean isAffectedBy(EntityEvent<?> e);
 }

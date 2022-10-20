@@ -10,13 +10,13 @@ public interface CacheAbandonedCallback {
 
         /**
          * Associated objects are filtered by some filters,
-         * but some filters are not parameterized filter.
+         * but some filters are not cacheable filter.
          */
-        PARAMETERIZED_FILTER_REQUIRED,
+        CACHEABLE_FILTER_REQUIRED,
 
         /**
          * The method `getParameters()` of
-         * parameterized filter or parameterized transient resolver
+         * cacheable filter or parameterized transient resolver
          * returns a map which is not empty,
          * but the cache is not parameterized.
          */
