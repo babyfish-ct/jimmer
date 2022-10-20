@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.kt.filter.KFilter
 
 fun <E: Any> Filter<Props>.toKtFilter(): KFilter<E> =
     if (this is CacheableFilter<*>) {
-        KtCacheableFilterFilter(this as CacheableFilter<Props>)
+        KtCacheableFilter(this as CacheableFilter<Props>)
     } else {
         KtFilter(this)
     }
