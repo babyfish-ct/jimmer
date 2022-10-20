@@ -20,22 +20,21 @@ class BookController(
     fun stores(
         @RequestParam(defaultValue = "false") fetch: Boolean,
     ): List<BookStore> =
-        if (fetch) {
-            sqlClient.entities.findAll(
-                newFetcher(BookStore::class).by {
-                    allScalarFields()
+        sqlClient.entities.findAll(
+            newFetcher(BookStore::class).by {
+                allScalarFields()
+                if (fetch) {
                     avgPrice()
                     books {
                         allScalarFields()
+                        authors {
+                            allScalarFields()
+                        }
                     }
                 }
-            ) {
-                asc(BookStore::name)
             }
-        } else {
-            sqlClient.entities.findAll(BookStore::class) {
-                asc(BookStore::name)
-            }
+        ) {
+            asc(BookStore::name)
         }
 
     @GetMapping("/books")

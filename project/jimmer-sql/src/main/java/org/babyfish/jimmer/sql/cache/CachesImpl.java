@@ -32,6 +32,8 @@ public class CachesImpl implements Caches {
     
     private final BinLogParser binLogParser;
 
+    private final CacheAbandonedCallback abandonedCallback;
+
     private final boolean disableAll;
 
     private final Set<ImmutableType> disabledTypes;
@@ -44,7 +46,8 @@ public class CachesImpl implements Caches {
             Map<ImmutableType, Cache<?, ?>> objectCacheMap,
             Map<ImmutableProp, Cache<?, ?>> propCacheMap,
             CacheOperator operator,
-            BinLogParser binLogParser
+            BinLogParser binLogParser,
+            CacheAbandonedCallback abandonedCallback
     ) {
         Map<ImmutableType, LocatedCacheImpl<?, ?>> objectCacheWrapperMap = new LinkedHashMap<>();
         for (Map.Entry<ImmutableType, Cache<?, ?>> e : objectCacheMap.entrySet()) {
@@ -62,6 +65,7 @@ public class CachesImpl implements Caches {
         this.propCacheMap = propCacheWrapperMap;
         this.operator = operator;
         this.binLogParser = binLogParser;
+        this.abandonedCallback = abandonedCallback;
         this.disableAll = false;
         this.disabledTypes = Collections.emptySet();
         this.disabledProps = Collections.emptySet();
@@ -77,6 +81,7 @@ public class CachesImpl implements Caches {
         propCacheMap = base.propCacheMap;
         operator = base.operator;
         binLogParser = base.binLogParser;
+        abandonedCallback = base.abandonedCallback;
         disableAll = cfg.isDisableAll();
         disabledTypes = cfg.getDisabledTypes();
         disabledProps = cfg.getDisabledProps();
@@ -170,6 +175,11 @@ public class CachesImpl implements Caches {
                     reason
             );
         }
+    }
+
+    @Override
+    public CacheAbandonedCallback getAbandonedCallback() {
+        return abandonedCallback;
     }
 
     @SuppressWarnings("unchecked")

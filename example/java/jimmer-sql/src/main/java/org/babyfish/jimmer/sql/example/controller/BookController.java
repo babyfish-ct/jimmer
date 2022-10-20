@@ -24,24 +24,21 @@ public class BookController {
     public List<BookStore> stores(
             @RequestParam(defaultValue = "false") boolean fetch
     ) {
+        BookStoreFetcher fetcher = BookStoreFetcher.$.allScalarFields();
         if (fetch) {
-            return sqlClient.getEntities().findAll(
-                    BookStoreFetcher.$
-                            .allScalarFields()
-                            .avgPrice()
-                            .books(
-                                    BookFetcher.$
-                                            .allScalarFields()
-                                            .authors(
-                                                    AuthorFetcher.$
-                                                            .allScalarFields()
-                                            )
-                            ),
-                    BookStoreProps.NAME.asc()
-            );
+            fetcher = fetcher
+                    .avgPrice()
+                    .books(
+                            BookFetcher.$
+                                    .allScalarFields()
+                                    .authors(
+                                            AuthorFetcher.$
+                                                    .allScalarFields()
+                                    )
+                    );
         }
         return sqlClient.getEntities().findAll(
-                BookStore.class,
+                fetcher,
                 BookStoreProps.NAME.asc()
         );
     }
@@ -127,23 +124,25 @@ public class BookController {
                 draft.setGender(gender);
             }
         });
+        AuthorFetcher fetcher = null;
+        if (fetch) {
+            fetcher = AuthorFetcher.$
+                    .allScalarFields()
+                    .books(
+                            BookFetcher.$
+                                    .allScalarFields()
+                                    .store(
+                                            BookStoreFetcher.$
+                                                    .allScalarFields()
+                                                    .avgPrice()
+                                    )
+                    );
+        }
         return sqlClient.getEntities().findByExample(
                 Example.of(author)
                         .ilike(AuthorProps.FIRST_NAME)
                         .ilike(AuthorProps.LAST_NAME),
-                fetch ?
-                        AuthorFetcher.$
-                                .allScalarFields()
-                                .books(
-                                        BookFetcher.$
-                                                .allScalarFields()
-                                                .store(
-                                                        BookStoreFetcher.$
-                                                                .allScalarFields()
-                                                                .avgPrice()
-                                                )
-                                ) :
-                        null
+                fetcher
         );
     }
 

@@ -5,19 +5,16 @@ import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.cache.Cache
 import org.babyfish.jimmer.sql.event.EntityEvent
 import org.babyfish.jimmer.sql.kt.KSqlClient
-import org.babyfish.jimmer.sql.kt.ast.expression.all
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.createCache
 import org.babyfish.jimmer.sql.kt.common.createParameterizedCache
 import org.babyfish.jimmer.sql.kt.event.getUnchangedFieldRef
-import org.babyfish.jimmer.sql.kt.filter.KCacheableFilter
+import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.filter.KFilterArgs
 import org.babyfish.jimmer.sql.kt.model.inheritance.*
 import org.babyfish.jimmer.sql.runtime.EntityManager
-import java.sql.Connection
 import java.util.*
-import java.util.function.Function
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
@@ -697,7 +694,7 @@ class ParameterizedCacheTest : AbstractQueryTest() {
         }
     }
 
-    private class UndeleteFilter : KCacheableFilter<NamedEntity> {
+    private class UndeleteFilter : KFilter.Parameterized<NamedEntity> {
 
         override fun filter(args: KFilterArgs<NamedEntity>) {
             args.where(args.table.deleted eq false)
@@ -710,7 +707,7 @@ class ParameterizedCacheTest : AbstractQueryTest() {
             e.getUnchangedFieldRef(NamedEntity::deleted) == null
     }
 
-    private class DeleteFilter : KCacheableFilter<NamedEntity> {
+    private class DeleteFilter : KFilter.Parameterized<NamedEntity> {
 
         override fun filter(args: KFilterArgs<NamedEntity>) {
             args.where(args.table.deleted eq true)

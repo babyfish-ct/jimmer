@@ -6,7 +6,7 @@ plugins {
 }
 
 group 'org.babyfish.jimmer.example.sql'
-version '0.2.23'
+version '0.3.0'
 
 repositories {
     mavenCentral()
@@ -14,8 +14,8 @@ repositories {
 
 dependencies {
 
-    implementation 'org.babyfish.jimmer:jimmer-sql:0.3.0-early-access-15'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.3.0-early-access-15'
+    implementation 'org.babyfish.jimmer:jimmer-sql:0.3.0'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.3.0'
 
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -23,7 +23,6 @@ dependencies {
     implementation 'org.springframework.data:spring-data-redis'
     implementation 'org.springframework.kafka:spring-kafka:2.9.0'
     implementation 'org.springdoc:springdoc-openapi-ui:1.6.11'
-    implementation 'org.reflections:reflections:0.10.2'
 
     // In order to work with java-8, caffeine 2.x must be used
     implementation 'com.github.ben-manes.caffeine:caffeine:2.9.1'

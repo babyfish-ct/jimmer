@@ -78,19 +78,21 @@ public interface ImmutableType {
 
     interface Builder {
 
-        Builder id(String name, Class<?> elementType);
+        Builder id(int id, String name, Class<?> elementType);
 
-        Builder key(String name, Class<?> elementType);
+        Builder key(int id, String name, Class<?> elementType);
 
         Builder keyReference(
+                int id,
                 String name,
                 Class<?> elementType,
                 boolean nullable
         );
 
-        Builder version(String name);
+        Builder version(int id, String name);
 
         Builder add(
+                int id,
                 String name,
                 ImmutablePropCategory category,
                 Class<?> elementType,
@@ -98,6 +100,7 @@ public interface ImmutableType {
         );
 
         Builder add(
+                int id,
                 String name,
                 Class<? extends Annotation> associationType,
                 Class<?> elementType,

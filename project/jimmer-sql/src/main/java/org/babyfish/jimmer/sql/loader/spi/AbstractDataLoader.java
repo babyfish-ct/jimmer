@@ -21,12 +21,13 @@ import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.cache.Cache;
+import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FieldFilterArgsImpl;
-import org.babyfish.jimmer.sql.filter.CacheableFilter;
+import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.impl.AbstractFilterArgsImpl;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
@@ -34,6 +35,8 @@ import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.util.*;
@@ -41,6 +44,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public abstract class AbstractDataLoader {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDataLoader.class);
+
+    /* For globalFilter is not null but not `Filter.Parameterized` */
+    private static final SortedMap<String, Object> ILLEGAL_PARAMETERS =
+            Collections.unmodifiableSortedMap(new TreeMap<>());
 
     private final JSqlClient sqlClient;
 
@@ -186,25 +195,47 @@ public abstract class AbstractDataLoader {
 
     @SuppressWarnings("unchecked")
     private Map<ImmutableSpi, Object> loadTransients(Collection<ImmutableSpi> sources) {
+
         Collection<Object> sourceIds = toSourceIds(sources);
         TransientResolver<Object, Object> resolver =
                 ((TransientResolver<Object, Object>) this.resolver);
         Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
-        TransientResolver.Parameterized<Object, Object> parameterizedResolver =
+        SortedMap<String, Object> parameters =
                 resolver instanceof TransientResolver.Parameterized<?, ?> ?
-                        (TransientResolver.Parameterized<Object, Object>) resolver :
+                        ((TransientResolver.Parameterized<Object, Object>) resolver).getParameters() :
                         null;
         Cache.Parameterized<Object, Object> parameterizedCache =
                 cache instanceof Cache.Parameterized<?, ?> ?
                         (Cache.Parameterized<Object, Object>)cache :
                         null;
-        if (cache == null || (parameterizedResolver != null && parameterizedCache == null)) {
+
+        boolean useCache;
+        if (cache != null) {
+            if (parameters != null && !parameters.isEmpty()) {
+                if (parameterizedCache != null) {
+                    useCache = true;
+                } else {
+                    useCache = false;
+                    CacheAbandonedCallback callback = sqlClient.getCaches().getAbandonedCallback();
+                    if (callback != null) {
+                        callback.abandoned(prop, CacheAbandonedCallback.Reason.PARAMETERIZED_CACHE_REQUIRED);
+                    }
+                }
+            } else {
+                useCache = true;
+            }
+        } else {
+            useCache = false;
+        }
+
+        if (!useCache) {
             return Utils.joinCollectionAndMap(
                     sources,
                     this::toSourceId,
                     resolver.resolve(sourceIds, con)
             );
         }
+
         CacheEnvironment<Object, Object> env = new CacheEnvironment<>(
                 sqlClient,
                 con,
@@ -212,8 +243,8 @@ public abstract class AbstractDataLoader {
                 false
         );
         Map<Object, Object> valueMap =
-                parameterizedResolver != null ?
-                        parameterizedCache.getAll(sourceIds, parameterizedResolver.getParameters(), env) :
+                parameters != null ?
+                        parameterizedCache.getAll(sourceIds, parameters, env) :
                         cache.getAll(sourceIds, env);
         return Utils.joinCollectionAndMap(
                 sources,
@@ -223,25 +254,11 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<ImmutableSpi, ImmutableSpi> loadParents(Collection<ImmutableSpi> sources) {
-
         Cache<Object, Object> fkCache = sqlClient.getCaches().getPropertyCache(prop);
-        CacheableFilter<Props> cacheableGlobalFilter = globalFiler instanceof CacheableFilter<?> ?
-                (CacheableFilter<Props>) globalFiler :
-                null;
-        Cache.Parameterized<Object, Object> parameterizedFkCache = fkCache instanceof Cache.Parameterized<?, ?> ?
-                (Cache.Parameterized<Object, Object>) fkCache :
-                null;
-        if (fkCache == null ||
-                propFilter != null ||
-                (globalFiler != null && cacheableGlobalFilter == null) ||
-                (cacheableGlobalFilter != null && parameterizedFkCache == null)
-        ) {
+        SortedMap<String, Object> parameters = getParameters();
+        if (!useCache(fkCache, parameters)) {
             return loadParentsDirectly(sources);
         }
-
-        SortedMap<String, Object> parameterMap = cacheableGlobalFilter != null ?
-                cacheableGlobalFilter.getParameters() :
-                Collections.emptySortedMap();
         Map<Object, Object> fkMap = new LinkedHashMap<>(
                 (sources.size() * 4 + 2) / 3
         );
@@ -268,8 +285,8 @@ public abstract class AbstractDataLoader {
                     this::queryForeignKeyMap,
                     false
             );
-            Map<Object, Object> cachedFkMap = parameterizedFkCache != null ?
-                    parameterizedFkCache.getAll(missedFkSourceIds, parameterMap, env) :
+            Map<Object, Object> cachedFkMap = parameters != null ?
+                    ((Cache.Parameterized<Object, Object>)fkCache).getAll(missedFkSourceIds, parameters, env) :
                     fkCache.getAll(missedFkSourceIds, env);
             for (Object sourceId : missedFkSourceIds) {
                 Object fk = cachedFkMap.get(sourceId);
@@ -350,25 +367,11 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<ImmutableSpi, ImmutableSpi> loadTargetMap(Collection<ImmutableSpi> sources) {
-
         Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
-        CacheableFilter<Props> cacheableGlobalFilter = globalFiler instanceof CacheableFilter<?> ?
-                (CacheableFilter<Props>) globalFiler :
-                null;
-        Cache.Parameterized<Object, Object> parameterizedCache = cache instanceof Cache.Parameterized<?, ?> ?
-                (Cache.Parameterized<Object, Object>) cache :
-                null;
-        if (cache == null ||
-                propFilter != null ||
-                (globalFiler != null && cacheableGlobalFilter == null) ||
-                (cacheableGlobalFilter != null && parameterizedCache == null)
-        ) {
+        SortedMap<String, Object> parameters = getParameters();
+        if (!useCache(cache, parameters)) {
             return loadTargetMapDirectly(sources);
         }
-
-        SortedMap<String, Object> parameterMap = cacheableGlobalFilter != null ?
-                cacheableGlobalFilter.getParameters() :
-                Collections.emptySortedMap();
         List<Object> sourceIds = toSourceIds(sources);
         CacheEnvironment<Object, Object> env = new CacheEnvironment<>(
                 sqlClient,
@@ -378,8 +381,8 @@ public abstract class AbstractDataLoader {
                 ),
                 false
         );
-        Map<Object, Object> idMap = parameterizedCache != null ?
-                parameterizedCache.getAll(sourceIds, parameterMap, env) :
+        Map<Object, Object> idMap = parameters != null ?
+                ((Cache.Parameterized<Object, Object>)cache).getAll(sourceIds, parameters, env) :
                 cache.getAll(sourceIds, env);
         Map<Object, ImmutableSpi> targetMap = Utils.toMap(
                 this::toTargetId,
@@ -414,23 +417,10 @@ public abstract class AbstractDataLoader {
 
     private Map<ImmutableSpi, List<ImmutableSpi>> loadTargetMultiMap(Collection<ImmutableSpi> sources) {
         Cache<Object, List<Object>> cache = sqlClient.getCaches().getPropertyCache(prop);
-        CacheableFilter<Props> cacheableGlobalFilter = globalFiler instanceof CacheableFilter<?> ?
-                (CacheableFilter<Props>) globalFiler :
-                null;
-        Cache.Parameterized<Object, List<Object>> parameterizedCache = cache instanceof Cache.Parameterized<?, ?> ?
-                (Cache.Parameterized<Object, List<Object>>) cache :
-                null;
-        if (cache == null ||
-                propFilter != null ||
-                (globalFiler != null && cacheableGlobalFilter == null) ||
-                (cacheableGlobalFilter != null && parameterizedCache == null)
-        ) {
+        SortedMap<String, Object> parameters = getParameters();
+        if (!useCache(cache, parameters)) {
             return loadTargetMultiMapDirectly(sources);
         }
-
-        SortedMap<String, Object> parameterMap = cacheableGlobalFilter != null ?
-                cacheableGlobalFilter.getParameters() :
-                Collections.emptySortedMap();
         List<Object> sourceIds = toSourceIds(sources);
         CacheEnvironment<Object, List<Object>> env = new CacheEnvironment<>(
                 sqlClient,
@@ -440,8 +430,8 @@ public abstract class AbstractDataLoader {
                 ),
                 false
         );
-        Map<Object, List<Object>> idMultiMap = parameterizedCache != null ?
-                parameterizedCache.getAll(sourceIds, parameterMap, env) :
+        Map<Object, List<Object>> idMultiMap = parameters != null ?
+                ((Cache.Parameterized<Object, List<Object>>)cache).getAll(sourceIds, parameters, env) :
                 cache.getAll(sourceIds, env);
         Map<Object, ImmutableSpi> targetMap = Utils.toMap(
                 this::toTargetId,
@@ -694,6 +684,49 @@ public abstract class AbstractDataLoader {
             DraftSpi targetDraft = (DraftSpi) draft;
             targetDraft.__set(targetIdProp.getId(), id);
         });
+    }
+
+    private SortedMap<String, Object> getParameters() {
+        Filter<?> filter = globalFiler;
+        if (filter instanceof Filter.Parameterized<?>) {
+            SortedMap<String, Object> parameters = ((Filter.Parameterized<?>) filter).getParameters();
+            if (parameters != null && parameters.isEmpty()) {
+                return null;
+            }
+            return parameters;
+        }
+        if (filter != null) {
+            return ILLEGAL_PARAMETERS;
+        }
+        return null;
+    }
+
+    private boolean useCache(Cache<?, ?> cache, Map<String, Object> parameters) {
+        if (cache == null) {
+            return false;
+        }
+        if (propFilter != null) {
+            CacheAbandonedCallback callback = sqlClient.getCaches().getAbandonedCallback();
+            if (callback != null) {
+                callback.abandoned(prop, CacheAbandonedCallback.Reason.FIELD_FILTER_USED);
+            }
+            return false;
+        }
+        if (parameters == ILLEGAL_PARAMETERS) {
+            CacheAbandonedCallback callback = sqlClient.getCaches().getAbandonedCallback();
+            if (callback != null) {
+                callback.abandoned(prop, CacheAbandonedCallback.Reason.PARAMETERIZED_FILTER_REQUIRED);
+            }
+            return false;
+        }
+        if (parameters != null && !(cache instanceof Cache.Parameterized<?, ?>)) {
+            CacheAbandonedCallback callback = sqlClient.getCaches().getAbandonedCallback();
+            if (callback != null) {
+                callback.abandoned(prop, CacheAbandonedCallback.Reason.PARAMETERIZED_CACHE_REQUIRED);
+            }
+            return false;
+        }
+        return true;
     }
     
     private static class FilterArgsImpl extends AbstractFilterArgsImpl<Props> {
