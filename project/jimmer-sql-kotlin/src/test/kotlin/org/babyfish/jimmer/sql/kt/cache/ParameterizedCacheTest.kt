@@ -10,7 +10,7 @@ import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.createCache
 import org.babyfish.jimmer.sql.kt.common.createParameterizedCache
 import org.babyfish.jimmer.sql.kt.event.getUnchangedFieldRef
-import org.babyfish.jimmer.sql.kt.filter.KFilter
+import org.babyfish.jimmer.sql.kt.filter.KCacheableFilter
 import org.babyfish.jimmer.sql.kt.filter.KFilterArgs
 import org.babyfish.jimmer.sql.kt.model.inheritance.*
 import org.babyfish.jimmer.sql.runtime.EntityManager
@@ -694,7 +694,7 @@ class ParameterizedCacheTest : AbstractQueryTest() {
         }
     }
 
-    private class UndeleteFilter : KFilter.Parameterized<NamedEntity> {
+    private class UndeleteFilter : KCacheableFilter<NamedEntity> {
 
         override fun filter(args: KFilterArgs<NamedEntity>) {
             args.where(args.table.deleted eq false)
@@ -707,7 +707,7 @@ class ParameterizedCacheTest : AbstractQueryTest() {
             e.getUnchangedFieldRef(NamedEntity::deleted) == null
     }
 
-    private class DeleteFilter : KFilter.Parameterized<NamedEntity> {
+    private class DeleteFilter : KCacheableFilter<NamedEntity> {
 
         override fun filter(args: KFilterArgs<NamedEntity>) {
             args.where(args.table.deleted eq true)

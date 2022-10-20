@@ -40,6 +40,6 @@ class RolePermissionCountResolver(
     override fun getParameters(): SortedMap<String, Any>? =
         sqlClient
             .filters
-            .getParameterizedTargetFilter(Role::permissions)
+            .getCacheableTargetFilter(Role::permissions)
             ?.getParameters()
 }

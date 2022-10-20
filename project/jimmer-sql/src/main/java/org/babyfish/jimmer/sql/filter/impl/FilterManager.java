@@ -19,6 +19,7 @@ import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
 import org.babyfish.jimmer.sql.cache.LocatedCache;
 import org.babyfish.jimmer.sql.event.EntityEvent;
+import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.babyfish.jimmer.sql.filter.Filters;
@@ -40,13 +41,13 @@ public class FilterManager implements Filters {
 
     private final Map<ImmutableType, List<Filter<Props>>> filterMap;
 
-    private final Map<ImmutableType, List<Filter<Props>>> allParameterizedFilterMap;
+    private final Map<ImmutableType, List<Filter<Props>>> allCacheableFilterMap;
 
     private final StaticCache<ImmutableType, Filter<Props>> cache =
             new StaticCache<>(this::create, true);
 
-    private final StaticCache<ImmutableType, List<Filter<Props>>> allParameterizedCache =
-            new StaticCache<>(this::createAllParameterized, false);
+    private final StaticCache<ImmutableType, List<Filter<Props>>> allCacheableCache =
+            new StaticCache<>(this::createAllCacheable, false);
 
     private JSqlClient sqlClient;
 
@@ -57,8 +58,8 @@ public class FilterManager implements Filters {
         this.allFilters = filters(filters);
         this.disabledFilters = disable(null, disabledFilters, this.allFilters);
         this.filterMap = filterMap(this.allFilters, this.disabledFilters);
-        this.allParameterizedFilterMap = filterMap(
-                this.allFilters.stream().filter(it -> it instanceof Filter.Parameterized<?>).collect(Collectors.toList()),
+        this.allCacheableFilterMap = filterMap(
+                this.allFilters.stream().filter(it -> it instanceof CacheableFilter<?>).collect(Collectors.toList()),
                 Collections.emptyList()
         );
     }
@@ -67,12 +68,12 @@ public class FilterManager implements Filters {
             Set<Filter<?>> filters,
             Set<Filter<?>> disabledFilters,
             Map<ImmutableType, List<Filter<Props>>> filterMap,
-            Map<ImmutableType, List<Filter<Props>>> allParameterizedFilterMap
+            Map<ImmutableType, List<Filter<Props>>> allCacheableFilterMap
     ) {
         this.allFilters = filters;
         this.disabledFilters = disabledFilters;
         this.filterMap = filterMap;
-        this.allParameterizedFilterMap = allParameterizedFilterMap;
+        this.allCacheableFilterMap = allCacheableFilterMap;
     }
 
     @Override
@@ -104,37 +105,37 @@ public class FilterManager implements Filters {
     }
 
     @Override
-    public Filter.Parameterized<Props> getParameterizedFilter(Class<?> type) {
+    public CacheableFilter<Props> getCacheableFilter(Class<?> type) {
         Filter<Props> filter = getFilter(type);
-        if (filter instanceof Filter.Parameterized<?>) {
-            return (Filter.Parameterized<Props>) filter;
+        if (filter instanceof CacheableFilter<?>) {
+            return (CacheableFilter<Props>) filter;
         }
         return null;
     }
 
     @Override
-    public Filter.Parameterized<Props> getParameterizedFilter(ImmutableType type) {
+    public CacheableFilter<Props> getCacheableFilter(ImmutableType type) {
         Filter<Props> filter = getFilter(type);
-        if (filter instanceof Filter.Parameterized<?>) {
-            return (Filter.Parameterized<Props>) filter;
+        if (filter instanceof CacheableFilter<?>) {
+            return (CacheableFilter<Props>) filter;
         }
         return null;
     }
 
     @Override
-    public Filter.Parameterized<Props> getParameterizedTargetFilter(ImmutableProp prop) {
+    public CacheableFilter<Props> getCacheableTargetFilter(ImmutableProp prop) {
         Filter<Props> filter = getTargetFilter(prop);
-        if (filter instanceof Filter.Parameterized<?>) {
-            return (Filter.Parameterized<Props>) filter;
+        if (filter instanceof CacheableFilter<?>) {
+            return (CacheableFilter<Props>) filter;
         }
         return null;
     }
 
     @Override
-    public Filter.Parameterized<Props> getParameterizedTargetFilter(TypedProp.Association<?, ?> prop) {
+    public CacheableFilter<Props> getCacheableTargetFilter(TypedProp.Association<?, ?> prop) {
         Filter<Props> filter = getTargetFilter(prop);
-        if (filter instanceof Filter.Parameterized<?>) {
-            return (Filter.Parameterized<Props>) filter;
+        if (filter instanceof CacheableFilter<?>) {
+            return (CacheableFilter<Props>) filter;
         }
         return null;
     }
@@ -152,7 +153,7 @@ public class FilterManager implements Filters {
                 allFilters,
                 disabledSet,
                 filterMap(allFilters, disabledSet),
-                allParameterizedFilterMap
+                allCacheableFilterMap
         );
     }
 
@@ -168,7 +169,7 @@ public class FilterManager implements Filters {
                 allFilters,
                 disabledSet,
                 filterMap(allFilters, disabledSet),
-                allParameterizedFilterMap
+                allCacheableFilterMap
         );
     }
 
@@ -228,11 +229,11 @@ public class FilterManager implements Filters {
         }
         if (sqlClient.getEntityManager() == null) {
             for (Filter<?> filter : allFilters) {
-                if (filter instanceof Filter.Parameterized<?>) {
+                if (filter instanceof CacheableFilter<?>) {
                     throw new IllegalStateException(
                             "The EntityManager of SqlClient must be configured " +
                                     "when \"" +
-                                    Filter.Parameterized.class.getName() +
+                                    CacheableFilter.class.getName() +
                                     "\" is used"
                     );
                 }
@@ -240,11 +241,11 @@ public class FilterManager implements Filters {
         }
         if (sqlClient.getConnectionManager() == ConnectionManager.ILLEGAL) {
             for (Filter<?> filter : allFilters) {
-                if (filter instanceof Filter.Parameterized<?>) {
+                if (filter instanceof CacheableFilter<?>) {
                     throw new IllegalStateException(
                             "The ConnectionManager of SqlClient must be configured " +
                                     "when \"" +
-                                    Filter.Parameterized.class.getName() +
+                                    CacheableFilter.class.getName() +
                                     "\" is used"
                     );
                 }
@@ -271,18 +272,18 @@ public class FilterManager implements Filters {
             return null;
         }
         for (Filter<?> filter : filters) {
-            if (!(filter instanceof Filter.Parameterized<?>)) {
+            if (!(filter instanceof CacheableFilter<?>)) {
                 return new CompositeFilter(filters);
             }
         }
-        return new CompositeParameterizedFilter(type, (Collection<Filter.Parameterized<Props>>)(Collection<?>)filters);
+        return new CompositeCacheableFilter(type, (Collection<CacheableFilter<Props>>)(Collection<?>)filters);
     }
 
     @SuppressWarnings("unchecked")
-    private List<Filter<Props>> createAllParameterized(ImmutableType type) {
+    private List<Filter<Props>> createAllCacheable(ImmutableType type) {
         List<Filter<Props>> filters = new ArrayList<>();
         while (type != null) {
-            List<Filter<Props>> list = allParameterizedFilterMap.get(type);
+            List<Filter<Props>> list = allCacheableFilterMap.get(type);
             if (list != null) {
                 for (Filter<Props> filter : list) {
                     if (!disabledFilters.contains(filter)) {
@@ -460,13 +461,13 @@ public class FilterManager implements Filters {
         }
     }
 
-    private static class CompositeParameterizedFilter implements Filter.Parameterized<Props> {
+    private static class CompositeCacheableFilter implements CacheableFilter<Props> {
 
         private final ImmutableType type;
 
-        private final List<Filter.Parameterized<Props>> filters;
+        private final List<CacheableFilter<Props>> filters;
 
-        private CompositeParameterizedFilter(ImmutableType type, Collection<Filter.Parameterized<Props>> filters) {
+        private CompositeCacheableFilter(ImmutableType type, Collection<CacheableFilter<Props>> filters) {
             this.type = type;
             this.filters = new ArrayList<>(filters);
         }
@@ -485,7 +486,7 @@ public class FilterManager implements Filters {
                 return map != null ? map : Collections.emptySortedMap();
             }
             SortedMap<String, Object> map = new TreeMap<>();
-            for (Filter.Parameterized<Props> filter : filters) {
+            for (CacheableFilter<Props> filter : filters) {
                 SortedMap<String, Object> subMap = filter.getParameters();
                 if (subMap == null || subMap.isEmpty()) {
                     continue;
@@ -525,7 +526,7 @@ public class FilterManager implements Filters {
         @Override
         public boolean isAffectedBy(EntityEvent<?> e) {
             if (type.isAssignableFrom(e.getImmutableType())) {
-                for (Filter.Parameterized<Props> filter : filters) {
+                for (CacheableFilter<Props> filter : filters) {
                     if (filter.isAffectedBy(e)) {
                         return true;
                     }
@@ -536,7 +537,7 @@ public class FilterManager implements Filters {
 
         @Override
         public String toString() {
-            return "CompositeParameterizedFilter{" +
+            return "CompositeCacheableFilter{" +
                     "filters=" + filters +
                     '}';
         }
@@ -548,7 +549,7 @@ public class FilterManager implements Filters {
             ImmutableProp prop = entry.getKey();
             Cache<?, ?> cache = entry.getValue();
             if (prop.isAssociation(TargetLevel.ENTITY)) {
-                List<Filter<Props>> filters = allParameterizedCache.get(prop.getTargetType());
+                List<Filter<Props>> filters = allCacheableCache.get(prop.getTargetType());
                 if (!filters.isEmpty()) {
                     sqlClient.getTriggers().addEntityListener(prop.getTargetType(), e -> {
                         handleTargetChange(prop, filters, e);
@@ -573,7 +574,7 @@ public class FilterManager implements Filters {
         }
         boolean affected = false;
         for (Filter<Props> filter : filters) {
-            if (filter instanceof Filter.Parameterized<?> && ((Filter.Parameterized<?>)filter).isAffectedBy(e)) {
+            if (filter instanceof CacheableFilter<?> && ((CacheableFilter<?>)filter).isAffectedBy(e)) {
                 affected = true;
                 break;
             }

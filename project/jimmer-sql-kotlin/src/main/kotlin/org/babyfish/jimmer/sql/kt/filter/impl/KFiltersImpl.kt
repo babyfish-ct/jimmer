@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.filter.impl
 
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.sql.filter.Filters
+import org.babyfish.jimmer.sql.kt.filter.KCacheableFilter
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.filter.KFilters
 import kotlin.reflect.KClass
@@ -21,9 +22,9 @@ internal class KFiltersImpl(
             it.toKtFilter()
         }
 
-    override fun <T : Any> getParameterizedFilter(type: KClass<T>): KFilter.Parameterized<T>? =
-        getFilter(type) as? KFilter.Parameterized<T>
+    override fun <T : Any> getCacheableFilter(type: KClass<T>): KCacheableFilter<T>? =
+        getFilter(type) as? KCacheableFilter<T>
 
-    override fun <T : Any> getParameterizedTargetFilter(prop: KProperty1<*, T?>): KFilter.Parameterized<T>? =
-        getTargetFilter(prop) as? KFilter.Parameterized<T>
+    override fun <T : Any> getCacheableTargetFilter(prop: KProperty1<*, T?>): KCacheableFilter<T>? =
+        getTargetFilter(prop) as? KCacheableFilter<T>
 }
