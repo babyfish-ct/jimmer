@@ -40,7 +40,7 @@ class ImplementorGenerator(
                         .builder()
                         .beginControlFlow("return when (prop)")
                         .apply {
-                            for (prop in type.properties.values) {
+                            for (prop in type.propsOrderById) {
                                 if (argType == Int::class) {
                                     addStatement("%L -> %L", prop.id, prop.name)
                                 } else {

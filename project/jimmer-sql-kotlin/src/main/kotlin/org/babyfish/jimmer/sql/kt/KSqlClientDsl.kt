@@ -209,6 +209,10 @@ class KSqlClientDsl internal constructor(
         fun <R> setResolverCache(prop: KProperty1<*, R>, cache: Cache<*, R>) {
             javaCfg.setResolverCache(prop.toImmutableProp(), cache)
         }
+
+        fun setAbandonedCallback(callback: CacheAbandonedCallback?) {
+            javaCfg.setAbandonedCallback(callback);
+        }
     }
 
     internal fun buildKSqlClient(): KSqlClient =

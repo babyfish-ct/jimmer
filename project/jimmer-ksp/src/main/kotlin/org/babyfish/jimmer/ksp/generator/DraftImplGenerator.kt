@@ -271,7 +271,7 @@ class DraftImplGenerator(
                         .builder()
                         .apply {
                             beginControlFlow("when (prop)")
-                            for (prop in type.properties.values) {
+                            for (prop in type.propsOrderById) {
                                 if (argType == Int::class) {
                                     add(prop.id.toString())
                                 } else {
@@ -310,7 +310,7 @@ class DraftImplGenerator(
                         .builder()
                         .apply {
                             beginControlFlow("when (prop)")
-                            for (prop in type.properties.values) {
+                            for (prop in type.propsOrderById) {
                                 if (argType == Int::class) {
                                     add(prop.id.toString())
                                 } else {

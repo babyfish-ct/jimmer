@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.filter.Filter
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 import java.util.*
 
-internal class KtCacheableFilter<E: Any>(
+internal class KtParameterizedFilter<E: Any>(
     javaFilter: Filter.Parameterized<Props>
 ) : KtFilter<E>(javaFilter), KFilter.Parameterized<E> {
 

@@ -40,6 +40,8 @@ public class ImmutableType {
 
     private Map<String, ImmutableProp> props;
 
+    private List<ImmutableProp> propsOrderById;
+
     private ImmutableProp idProp;
 
     private ImmutableProp versionProp;
@@ -353,6 +355,18 @@ public class ImmutableType {
             this.props = props;
         }
         return props;
+    }
+
+    public List<ImmutableProp> getPropsOrderById() {
+        List<ImmutableProp> list = propsOrderById;
+        if (list == null) {
+            this.propsOrderById = list = getProps()
+                    .values()
+                    .stream()
+                    .sorted(Comparator.comparing(ImmutableProp::getId))
+                    .collect(Collectors.toList());
+        }
+        return list;
     }
 
     public ImmutableProp getIdProp() {

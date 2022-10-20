@@ -33,6 +33,8 @@ public class CacheConfig {
 
     private ObjectMapper binLogObjectMapper;
 
+    private CacheAbandonedCallback abandonedCallback;
+
     public CacheConfig(EntityManager entityManager) {
         this.entityManager = entityManager;
     }
@@ -65,17 +67,17 @@ public class CacheConfig {
                 }
                 for (ImmutableProp prop : type.getProps().values()) {
                     if (prop.isAssociation(TargetLevel.ENTITY) || prop.hasTransientResolver()) {
-                        ImmutableProp cacheableProp = RedirectedProp.source(prop, type);
-                        if (!propCacheMap.containsKey(cacheableProp)) {
+                        ImmutableProp redirectedProp = RedirectedProp.source(prop, type);
+                        if (!propCacheMap.containsKey(redirectedProp)) {
                             Cache<?, ?> propCache =
-                                    cacheableProp.hasTransientResolver() ?
-                                            cacheFactory.createResolverCache(cacheableProp) : (
-                                            cacheableProp.isReferenceList(TargetLevel.ENTITY) ?
-                                                    cacheFactory.createAssociatedIdListCache(cacheableProp) :
-                                                    cacheFactory.createAssociatedIdCache(cacheableProp)
+                                    redirectedProp.hasTransientResolver() ?
+                                            cacheFactory.createResolverCache(redirectedProp) : (
+                                            redirectedProp.isReferenceList(TargetLevel.ENTITY) ?
+                                                    cacheFactory.createAssociatedIdListCache(redirectedProp) :
+                                                    cacheFactory.createAssociatedIdCache(redirectedProp)
                                     );
                             if (propCache != null) {
-                                propCacheMap.put(cacheableProp, propCache);
+                                propCacheMap.put(redirectedProp, propCache);
                             }
                         }
                     }
@@ -181,6 +183,12 @@ public class CacheConfig {
         return this;
     }
 
+    @OldChain
+    public CacheConfig setAbandonedCallback(CacheAbandonedCallback callback) {
+        this.abandonedCallback = callback;
+        return this;
+    }
+
     Caches build(EntityManager entityManager, Triggers triggers, Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap) {
         for (ImmutableProp prop : propCacheMap.keySet()) {
             if (prop.isAssociation(TargetLevel.ENTITY) && !objectCacheMap.containsKey(prop.getTargetType())) {
@@ -199,7 +207,8 @@ public class CacheConfig {
                 objectCacheMap,
                 propCacheMap,
                 operator,
-                new BinLogParser(scalarProviderMap, binLogObjectMapper)
+                new BinLogParser(scalarProviderMap, binLogObjectMapper),
+                abandonedCallback
         );
     }
 }
