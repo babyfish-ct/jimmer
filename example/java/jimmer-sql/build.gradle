@@ -6,7 +6,7 @@ plugins {
 }
 
 group 'org.babyfish.jimmer.example.sql'
-version '0.3.0'
+version '0.3.1'
 
 repositories {
     mavenCentral()
@@ -14,8 +14,8 @@ repositories {
 
 dependencies {
 
-    implementation 'org.babyfish.jimmer:jimmer-sql:0.3.0'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.3.0'
+    implementation 'org.babyfish.jimmer:jimmer-sql:0.3.1'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.3.1'
 
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
