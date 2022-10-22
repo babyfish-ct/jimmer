@@ -1,13 +1,16 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
+import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTableWrapper;
+import org.babyfish.jimmer.sql.ast.table.spi.TableWrapper;
 import org.babyfish.jimmer.util.StaticCache;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Objects;
 
 public class TableWrappers {
 
@@ -16,10 +19,21 @@ public class TableWrappers {
 
     private TableWrappers() {}
 
-    @SuppressWarnings("unchecked")
     public static <T extends TableEx<?>> T wrap(TableImplementor<?> table) {
-        if (table.getImmutableType() instanceof AssociationType || table instanceof AbstractTableWrapper<?>) {
+        return wrap(table, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends TableEx<?>> T wrap(Table<?> table, String joinDisabledReason) {
+        if (table.getImmutableType() instanceof AssociationType) {
             return (T)table;
+        }
+        if (table instanceof TableWrapper<?>) {
+            TableWrapper<?> wrapper = (TableWrapper<?>) table;
+            if (Objects.equals(wrapper.getJoinDisabledReason(), joinDisabledReason)) {
+                return (T) table;
+            }
+            table = wrapper.unwrap();
         }
         Class<?> javaClass = table.getImmutableType().getJavaClass();
         Constructor<?> constructor = CACHE.get(javaClass);
@@ -27,7 +41,7 @@ public class TableWrappers {
             return (T) table;
         }
         try {
-            return (T) constructor.newInstance(table);
+            return (T) constructor.newInstance(table, joinDisabledReason);
         } catch (InstantiationException | IllegalAccessException ex) {
             throw new AssertionError(
                     "Internal bug: Can not create instance of " +
@@ -60,21 +74,35 @@ public class TableWrappers {
             return null;
         }
         if (!AbstractTableWrapper.class.isAssignableFrom(tableClass)) {
-            return null;
+            throw new ModelException(
+                    "\"" +
+                            tableClass +
+                            "\" is not derived type of \"" +
+                            AbstractTableWrapper.class.getName() +
+                            "\""
+            );
         }
         try {
-            return tableClass.getConstructor(TableEx.class);
+            return tableClass.getConstructor(TableImplementor.class, String.class);
         } catch (NoSuchMethodException ex) {
-            return null;
+            throw new ModelException(
+                    "\"" +
+                            tableClass +
+                            "\" dose not have constructor whose argument types are \"" +
+                            TableImplementor.class.getName() +
+                            "\" and \"" +
+                            String.class.getName() +
+                            "\""
+            );
         }
     }
 
-    public static TableImplementor<?> unwrap(Table<?> table) {
+    public static <E> TableImplementor<E> unwrap(Table<E> table) {
         if (table instanceof TableImplementor<?>) {
-            return (TableImplementor<?>) table;
+            return (TableImplementor<E>) table;
         }
-        if (table instanceof AbstractTableWrapper<?>) {
-            return unwrap(((AbstractTableWrapper<?>) table).__unwrap());
+        if (table instanceof TableWrapper<?>) {
+            return ((TableWrapper<E>) table).unwrap();
         }
         throw new IllegalArgumentException("Unknown table implementation");
     }

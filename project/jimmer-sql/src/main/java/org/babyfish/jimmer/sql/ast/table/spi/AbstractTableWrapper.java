@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
@@ -16,12 +17,15 @@ import org.babyfish.jimmer.sql.fluent.FluentTable;
 
 import java.util.function.Function;
 
-public abstract class AbstractTableWrapper<E> implements Table<E>, FluentTable<E> {
+public abstract class AbstractTableWrapper<E> implements TableWrapper<E>, FluentTable<E> {
 
-    protected Table<E> _raw;
+    private String joinDisabledReason;
 
-    public AbstractTableWrapper(Table<E> raw) {
+    protected TableImplementor<E> _raw;
+
+    public AbstractTableWrapper(TableImplementor<E> raw, String joinDisabledReason) {
         this._raw = raw;
+        this.joinDisabledReason = joinDisabledReason;
     }
 
     // For fluent-API
@@ -34,7 +38,7 @@ public abstract class AbstractTableWrapper<E> implements Table<E>, FluentTable<E
         if (raw == null) {
             throw new IllegalArgumentException("raw cannot be null");
         }
-        _raw = (Table<E>) TableWrappers.unwrap(raw);
+        _raw = TableWrappers.unwrap(raw);
     }
 
     @Override
@@ -74,36 +78,43 @@ public abstract class AbstractTableWrapper<E> implements Table<E>, FluentTable<E
 
     @Override
     public <XT extends Table<?>> XT join(String prop) {
+        validateTableJoin();
         return raw().join(prop);
     }
 
     @Override
     public <XT extends Table<?>> XT join(String prop, JoinType joinType) {
+        validateTableJoin();
         return raw().join(prop, joinType);
     }
 
     @Override
     public <XT extends Table<?>> XT join(String prop, JoinType joinType, ImmutableType treatedAs) {
+        validateTableJoin();
         return raw().join(prop, joinType, treatedAs);
     }
 
     @Override
     public <XT extends Table<?>> XT inverseJoin(ImmutableProp prop) {
+        validateTableJoin();
         return raw().inverseJoin(prop);
     }
 
     @Override
     public <XT extends Table<?>> XT inverseJoin(ImmutableProp prop, JoinType joinType) {
+        validateTableJoin();
         return raw().inverseJoin(prop, joinType);
     }
 
     @Override
     public <XT extends Table<?>> XT inverseJoin(TypedProp.Association<?, ?> prop) {
+        validateTableJoin();
         return raw().inverseJoin(prop);
     }
 
     @Override
     public <XT extends Table<?>> XT inverseJoin(TypedProp.Association<?, ?> prop, JoinType joinType) {
+        validateTableJoin();
         return raw().inverseJoin(prop, joinType);
     }
 
@@ -112,6 +123,7 @@ public abstract class AbstractTableWrapper<E> implements Table<E>, FluentTable<E
             Class<XT> targetTableType,
             Function<XT, ? extends Table<?>> backPropBlock
     ) {
+        validateTableJoin();
         return raw().inverseJoin(targetTableType, backPropBlock);
     }
 
@@ -121,6 +133,7 @@ public abstract class AbstractTableWrapper<E> implements Table<E>, FluentTable<E
             Function<XT, ? extends Table<?>> backPropBlock,
             JoinType joinType
     ) {
+        validateTableJoin();
         return raw().inverseJoin(targetTableType, backPropBlock, joinType);
     }
 
@@ -134,8 +147,14 @@ public abstract class AbstractTableWrapper<E> implements Table<E>, FluentTable<E
         return raw().asTableEx();
     }
 
-    public Table<E> __unwrap() {
+    @Override
+    public TableImplementor<E> unwrap() {
         return raw();
+    }
+
+    @Override
+    public String getJoinDisabledReason() {
+        return joinDisabledReason;
     }
 
     @Override
@@ -153,11 +172,17 @@ public abstract class AbstractTableWrapper<E> implements Table<E>, FluentTable<E
         return raw().toString();
     }
 
-    private Table<E> raw() {
-        Table<E> raw = _raw;
+    private TableImplementor<E> raw() {
+        TableImplementor<E> raw = _raw;
         if (raw == null) {
             throw new IllegalStateException("FluentTable has not been bound");
         }
         return raw;
+    }
+
+    private void validateTableJoin() {
+        if (joinDisabledReason != null) {
+            throw new IllegalStateException("Table join is disabled because " + joinDisabledReason);
+        }
     }
 }
