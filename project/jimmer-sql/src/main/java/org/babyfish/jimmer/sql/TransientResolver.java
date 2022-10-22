@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql;
 
+import org.babyfish.jimmer.lang.Ref;
+
 import java.sql.Connection;
 import java.util.Collection;
 import java.util.Map;
@@ -9,8 +11,7 @@ public interface TransientResolver<ID, V> {
 
     Map<ID, V> resolve(Collection<ID> ids, Connection con);
 
-    interface Parameterized<ID, V> extends TransientResolver<ID, V> {
-
-        SortedMap<String, Object> getParameters();
+    default Ref<SortedMap<String, Object>> getParameterMapRef() {
+        return Ref.empty();
     }
 }

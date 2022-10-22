@@ -105,39 +105,37 @@ public class FilterManager implements Filters {
     }
 
     @Override
-    public CacheableFilter<Props> getCacheableFilter(Class<?> type) {
+    public Ref<SortedMap<String, Object>> getParameterMapRef(Class<?> type) {
+        return getParameterMapRef(ImmutableType.get(type));
+    }
+
+    @Override
+    public Ref<SortedMap<String, Object>> getParameterMapRef(ImmutableType type) {
         Filter<Props> filter = getFilter(type);
+        if (filter == null) {
+            return Ref.empty();
+        }
         if (filter instanceof CacheableFilter<?>) {
-            return (CacheableFilter<Props>) filter;
+            return Ref.of(((CacheableFilter<Props>) filter).getParameters());
         }
         return null;
     }
 
     @Override
-    public CacheableFilter<Props> getCacheableFilter(ImmutableType type) {
-        Filter<Props> filter = getFilter(type);
-        if (filter instanceof CacheableFilter<?>) {
-            return (CacheableFilter<Props>) filter;
-        }
-        return null;
-    }
-
-    @Override
-    public CacheableFilter<Props> getCacheableTargetFilter(ImmutableProp prop) {
+    public Ref<SortedMap<String, Object>> getTargetParameterMapRef(ImmutableProp prop) {
         Filter<Props> filter = getTargetFilter(prop);
+        if (filter == null) {
+            return Ref.empty();
+        }
         if (filter instanceof CacheableFilter<?>) {
-            return (CacheableFilter<Props>) filter;
+            return Ref.of(((CacheableFilter<Props>) filter).getParameters());
         }
         return null;
     }
 
     @Override
-    public CacheableFilter<Props> getCacheableTargetFilter(TypedProp.Association<?, ?> prop) {
-        Filter<Props> filter = getTargetFilter(prop);
-        if (filter instanceof CacheableFilter<?>) {
-            return (CacheableFilter<Props>) filter;
-        }
-        return null;
+    public Ref<SortedMap<String, Object>> getTargetParameterMapRef(TypedProp.Association<?, ?> prop) {
+        return getTargetParameterMapRef(prop.unwrap());
     }
 
     public FilterManager enable(Collection<Filter<?>> filters) {

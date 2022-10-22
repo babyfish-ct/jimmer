@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.loader.spi;
 
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.OrderedItem;
@@ -200,29 +201,32 @@ public abstract class AbstractDataLoader {
         TransientResolver<Object, Object> resolver =
                 ((TransientResolver<Object, Object>) this.resolver);
         Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
-        SortedMap<String, Object> parameters =
-                resolver instanceof TransientResolver.Parameterized<?, ?> ?
-                        ((TransientResolver.Parameterized<Object, Object>) resolver).getParameters() :
-                        null;
+        Ref<SortedMap<String, Object>> parameterMapRef = resolver.getParameterMapRef();
+        SortedMap<String, Object> parameterMap = parameterMapRef != null ?
+                parameterMapRef.getValue() :
+                null;
         Cache.Parameterized<Object, Object> parameterizedCache =
                 cache instanceof Cache.Parameterized<?, ?> ?
                         (Cache.Parameterized<Object, Object>)cache :
                         null;
-
         boolean useCache;
         if (cache != null) {
-            if (parameters != null && !parameters.isEmpty()) {
-                if (parameterizedCache != null) {
-                    useCache = true;
-                } else {
+            if (parameterMapRef == null) {
+                useCache = false;
+                CacheAbandonedCallback callback = sqlClient.getCaches().getAbandonedCallback();
+                if (callback != null) {
+                    callback.abandoned(prop, CacheAbandonedCallback.Reason.CACHEABLE_FILTER_REQUIRED);
+                }
+            } else {
+                if (parameterMap != null && !parameterMap.isEmpty() && parameterizedCache == null) {
                     useCache = false;
                     CacheAbandonedCallback callback = sqlClient.getCaches().getAbandonedCallback();
                     if (callback != null) {
                         callback.abandoned(prop, CacheAbandonedCallback.Reason.PARAMETERIZED_CACHE_REQUIRED);
                     }
+                } else {
+                    useCache = true;
                 }
-            } else {
-                useCache = true;
             }
         } else {
             useCache = false;
@@ -243,8 +247,8 @@ public abstract class AbstractDataLoader {
                 false
         );
         Map<Object, Object> valueMap =
-                parameters != null ?
-                        parameterizedCache.getAll(sourceIds, parameters, env) :
+                parameterMap != null && !parameterMap.isEmpty() ?
+                        parameterizedCache.getAll(sourceIds, parameterMapRef.getValue(), env) :
                         cache.getAll(sourceIds, env);
         return Utils.joinCollectionAndMap(
                 sources,
