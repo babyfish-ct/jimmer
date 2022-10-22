@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.loader.spi;
 
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.OrderedItem;
@@ -29,13 +30,12 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FieldFilterArgsImpl;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
-import org.babyfish.jimmer.sql.filter.impl.AbstractFilterArgsImpl;
+import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -201,29 +201,32 @@ public abstract class AbstractDataLoader {
         TransientResolver<Object, Object> resolver =
                 ((TransientResolver<Object, Object>) this.resolver);
         Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
-        SortedMap<String, Object> parameters =
-                resolver instanceof TransientResolver.Parameterized<?, ?> ?
-                        ((TransientResolver.Parameterized<Object, Object>) resolver).getParameters() :
-                        null;
+        Ref<SortedMap<String, Object>> parameterMapRef = resolver.getParameterMapRef();
+        SortedMap<String, Object> parameterMap = parameterMapRef != null ?
+                parameterMapRef.getValue() :
+                null;
         Cache.Parameterized<Object, Object> parameterizedCache =
                 cache instanceof Cache.Parameterized<?, ?> ?
                         (Cache.Parameterized<Object, Object>)cache :
                         null;
-
         boolean useCache;
         if (cache != null) {
-            if (parameters != null && !parameters.isEmpty()) {
-                if (parameterizedCache != null) {
-                    useCache = true;
-                } else {
+            if (parameterMapRef == null) {
+                useCache = false;
+                CacheAbandonedCallback callback = sqlClient.getCaches().getAbandonedCallback();
+                if (callback != null) {
+                    callback.abandoned(prop, CacheAbandonedCallback.Reason.CACHEABLE_FILTER_REQUIRED);
+                }
+            } else {
+                if (parameterMap != null && !parameterMap.isEmpty() && parameterizedCache == null) {
                     useCache = false;
                     CacheAbandonedCallback callback = sqlClient.getCaches().getAbandonedCallback();
                     if (callback != null) {
                         callback.abandoned(prop, CacheAbandonedCallback.Reason.PARAMETERIZED_CACHE_REQUIRED);
                     }
+                } else {
+                    useCache = true;
                 }
-            } else {
-                useCache = true;
             }
         } else {
             useCache = false;
@@ -244,8 +247,8 @@ public abstract class AbstractDataLoader {
                 false
         );
         Map<Object, Object> valueMap =
-                parameters != null ?
-                        parameterizedCache.getAll(sourceIds, parameters, env) :
+                parameterMap != null && !parameterMap.isEmpty() ?
+                        parameterizedCache.getAll(sourceIds, parameterMapRef.getValue(), env) :
                         cache.getAll(sourceIds, env);
         return Utils.joinCollectionAndMap(
                 sources,
@@ -599,7 +602,9 @@ public abstract class AbstractDataLoader {
 
     private void applyGlobalFilter(Sortable sortable, Table<?> table) {
         if (globalFiler != null) {
-            globalFiler.filter(new FilterArgsImpl(sortable, table));
+            globalFiler.filter(
+                    new FilterArgsImpl<>(sortable, table, globalFiler instanceof CacheableFilter<?>)
+            );
         }
     }
 
@@ -728,20 +733,5 @@ public abstract class AbstractDataLoader {
             return false;
         }
         return true;
-    }
-    
-    private static class FilterArgsImpl extends AbstractFilterArgsImpl<Props> {
-
-        private final Props table;
-        
-        public FilterArgsImpl(Sortable sortable, Props table) {
-            super(sortable);
-            this.table = table;
-        }
-
-        @Override
-        public @NotNull Props getTable() {
-            return table;
-        }
     }
 }

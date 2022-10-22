@@ -11,7 +11,7 @@ package org.babyfish.jimmer.lang
  * not only its internal value is allowed to be null,
  * the Ref itself can also be null, to represent unknown data.
  */
-data class Ref<T> private constructor(
+class Ref<T> private constructor(
     val value: T?
 ) {
     companion object {
@@ -26,5 +26,10 @@ data class Ref<T> private constructor(
             } else {
                 Ref(value)
             }
+
+        @Suppress("UNCHECKED_CAST")
+        @JvmStatic
+        fun <T> empty(): Ref<T> =
+            EMPTY as Ref<T>
     }
 }

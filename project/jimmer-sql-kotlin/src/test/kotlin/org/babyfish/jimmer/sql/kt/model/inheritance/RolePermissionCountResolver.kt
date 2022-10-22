@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.model.inheritance
 
+import org.babyfish.jimmer.lang.Ref
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.KTransientResolver
 import org.babyfish.jimmer.sql.kt.ast.expression.count
@@ -9,7 +10,7 @@ import java.util.*
 
 class RolePermissionCountResolver(
     private val sqlClient: KSqlClient
-) : KTransientResolver.Parameterized<Long, Int> {
+) : KTransientResolver<Long, Int> {
 
     init {
         sqlClient.triggers.addAssociationListener(Role::permissions) {
@@ -37,9 +38,8 @@ class RolePermissionCountResolver(
                 it._2.toInt()
             }
 
-    override fun getParameters(): SortedMap<String, Any>? =
+    override fun getParameterMapRef(): Ref<SortedMap<String, Any>?>? =
         sqlClient
             .filters
-            .getCacheableTargetFilter(Role::permissions)
-            ?.getParameters()
+            .getTargetParameterMapRef(Role::permissions)
 }
