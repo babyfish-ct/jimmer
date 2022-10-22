@@ -29,13 +29,12 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FieldFilterArgsImpl;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
-import org.babyfish.jimmer.sql.filter.impl.AbstractFilterArgsImpl;
+import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -599,7 +598,9 @@ public abstract class AbstractDataLoader {
 
     private void applyGlobalFilter(Sortable sortable, Table<?> table) {
         if (globalFiler != null) {
-            globalFiler.filter(new FilterArgsImpl(sortable, table));
+            globalFiler.filter(
+                    new FilterArgsImpl<>(sortable, table, globalFiler instanceof CacheableFilter<?>)
+            );
         }
     }
 
@@ -728,20 +729,5 @@ public abstract class AbstractDataLoader {
             return false;
         }
         return true;
-    }
-    
-    private static class FilterArgsImpl extends AbstractFilterArgsImpl<Props> {
-
-        private final Props table;
-        
-        public FilterArgsImpl(Sortable sortable, Props table) {
-            super(sortable);
-            this.table = table;
-        }
-
-        @Override
-        public @NotNull Props getTable() {
-            return table;
-        }
     }
 }

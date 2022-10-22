@@ -14,13 +14,13 @@ import static org.babyfish.jimmer.apt.generator.Constants.*;
 
 public class TableGenerator {
 
-    private TypeUtils typeUtils;
+    private final TypeUtils typeUtils;
 
-    private ImmutableType type;
+    private final ImmutableType type;
     
-    private boolean isTableEx;
+    private final boolean isTableEx;
 
-    private Filer filer;
+    private final Filer filer;
 
     private TypeSpec.Builder typeBuilder;
 
@@ -108,7 +108,7 @@ public class TableGenerator {
                 .constructorBuilder()
                 .addModifiers(Modifier.PUBLIC)
                 .addComment("For fluent-API")
-                .addStatement("super(null)");
+                .addStatement("super(null, null)");
         typeBuilder.addMethod(builder.build());
     }
 
@@ -116,21 +116,14 @@ public class TableGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
                 .addModifiers(Modifier.PUBLIC);
-        TypeName tableTypeName;
-        if (isTableEx) {
-            tableTypeName = ParameterizedTypeName.get(
-                    TABLE_EX_CLASS_NAME,
-                    type.getClassName()
-            );
-        } else {
-            tableTypeName = ParameterizedTypeName.get(
-                    TABLE_CLASS_NAME,
-                    type.getClassName()
-            );
-        }
+        TypeName tableTypeName = ParameterizedTypeName.get(
+                TABLE_IMPLEMENTOR_CLASS_NAME,
+                type.getClassName()
+        );
         builder
                 .addParameter(tableTypeName, "table")
-                .addStatement("super(table)");
+                .addParameter(String.class, "joinDisabledReason")
+                .addStatement("super(table, joinDisabledReason)");
         typeBuilder.addMethod(builder.build());
     }
 
