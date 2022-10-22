@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.util.*;
 
-public class BookStoreAvgPriceResolver implements TransientResolver.Parameterized<Long, BigDecimal> {
+public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDecimal> {
 
     private final JSqlClient sqlClient;
 
@@ -44,11 +44,8 @@ public class BookStoreAvgPriceResolver implements TransientResolver.Parameterize
     }
 
     @Override
-    public SortedMap<String, Object> getParameters() {
-        CacheableFilter<?> filter = sqlClient
-                .getFilters()
-                .getCacheableTargetFilter(BookStoreProps.BOOKS);
-        return filter != null ? filter.getParameters() : null;
+    public Ref<SortedMap<String, Object>> getParameterMapRef() {
+        return sqlClient.getFilters().getTargetParameterMapRef(BookStoreProps.BOOKS);
     }
 
     @Override
