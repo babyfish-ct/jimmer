@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.example.kt.graphql.entities
 
+import org.babyfish.jimmer.lang.Ref
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.KTransientResolver
 import org.babyfish.jimmer.sql.kt.ast.expression.asNonNull
@@ -13,7 +14,7 @@ import java.util.*
 
 class BookStoreAvgPriceResolver(
     private val sqlClient: KSqlClient
-) : KTransientResolver.Parameterized<Long, BigDecimal> {
+) : KTransientResolver<Long, BigDecimal> {
 
     init {
 
@@ -39,8 +40,8 @@ class BookStoreAvgPriceResolver(
         }
     }
 
-    override fun getParameters(): SortedMap<String, Any>? =
-        sqlClient.filters.getCacheableTargetFilter(BookStore::books)?.getParameters()
+    override fun getParameterMapRef(): Ref<SortedMap<String, Any>?>? =
+        sqlClient.filters.getTargetParameterMapRef(BookStore::books)
 
     override fun resolve(
         ids: Collection<Long>,
