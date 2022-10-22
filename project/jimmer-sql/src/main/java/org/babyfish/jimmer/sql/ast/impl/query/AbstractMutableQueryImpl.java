@@ -14,11 +14,11 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
-import org.babyfish.jimmer.sql.filter.impl.AbstractFilterArgsImpl;
+import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -113,7 +113,9 @@ public abstract class AbstractMutableQueryImpl
         if (!ignoreFilter) {
             Filter<Props> filter = getSqlClient().getFilters().getFilter(getTable().getImmutableType());
             if (filter != null) {
-                filter.filter(new FilterArgsImpl(this));
+                filter.filter(
+                        new FilterArgsImpl<>(this, this.getTable(), filter instanceof CacheableFilter<?>)
+                );
             }
         }
         super.onFrozen();
@@ -243,18 +245,6 @@ public abstract class AbstractMutableQueryImpl
                 getSqlBuilder().useTable(table);
                 use(table.getParent());
             }
-        }
-    }
-
-    private static class FilterArgsImpl extends AbstractFilterArgsImpl<Props> {
-
-        public FilterArgsImpl(AbstractMutableQueryImpl sortable) {
-            super(sortable);
-        }
-
-        @Override
-        public @NotNull Table<?> getTable() {
-            return ((AbstractMutableQueryImpl)sortable).getTable();
         }
     }
 }

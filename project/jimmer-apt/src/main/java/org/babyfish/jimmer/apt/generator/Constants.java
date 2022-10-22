@@ -70,6 +70,12 @@ class Constants {
                     "TableEx"
             );
 
+    public static final ClassName TABLE_IMPLEMENTOR_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.table",
+                    "TableImplementor"
+            );
+
     public static final ClassName ABSTRACT_TABLE_WRAPPER_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.table.spi",

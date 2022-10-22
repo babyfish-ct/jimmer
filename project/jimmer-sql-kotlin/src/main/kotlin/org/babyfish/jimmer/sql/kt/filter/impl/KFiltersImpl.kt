@@ -1,10 +1,12 @@
 package org.babyfish.jimmer.sql.kt.filter.impl
 
 import org.babyfish.jimmer.kt.toImmutableProp
+import org.babyfish.jimmer.lang.Ref
 import org.babyfish.jimmer.sql.filter.Filters
 import org.babyfish.jimmer.sql.kt.filter.KCacheableFilter
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.filter.KFilters
+import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -22,9 +24,9 @@ internal class KFiltersImpl(
             it.toKtFilter()
         }
 
-    override fun <T : Any> getCacheableFilter(type: KClass<T>): KCacheableFilter<T>? =
-        getFilter(type) as? KCacheableFilter<T>
+    override fun getParameterMapRef(type: KClass<*>): Ref<SortedMap<String, Any>?>? =
+        javaFilters.getParameterMapRef(type.java)
 
-    override fun <T : Any> getCacheableTargetFilter(prop: KProperty1<*, T?>): KCacheableFilter<T>? =
-        getTargetFilter(prop) as? KCacheableFilter<T>
+    override fun getTargetParameterMapRef(prop: KProperty1<*, *>): Ref<SortedMap<String, Any>?>? =
+        javaFilters.getTargetParameterMapRef(prop.toImmutableProp())
 }
