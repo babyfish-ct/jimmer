@@ -15,11 +15,14 @@ A revolutionary ORM framework for both java and kotlin.
       <td>https://www.youtube.com/watch?v=Rt5zNv0YR2E</td>
    </tr>
    <tr>
-      <td rowspan="2">Chinese</td>
+      <td rowspan="3">Chinese</td>
       <td>Global introduction: https://www.bilibili.com/video/BV1kd4y1A7K3</td>
    </tr>
    <tr>
       <td>Table Join Topic: https://www.bilibili.com/video/BV19t4y177PX</td>
+   </tr>
+   <tr>
+      <td>Global filters and parameterized cache: https://www.bilibili.com/video/BV1Mt4y1u7fz/</td>
    </tr>
 <table>
 

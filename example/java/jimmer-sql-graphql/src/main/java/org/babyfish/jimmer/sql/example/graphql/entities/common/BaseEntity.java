@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
  * set CommonEntityDraftInterceptor
  */
 @MappedSuperclass
-public interface CommonEntity {
+public interface BaseEntity {
 
     LocalDateTime createdTime();
 

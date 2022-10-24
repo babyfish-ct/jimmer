@@ -1,10 +1,10 @@
 package org.babyfish.jimmer.example.kt.sql.model
 
-import org.babyfish.jimmer.example.kt.sql.model.common.CommonEntity
+import org.babyfish.jimmer.example.kt.sql.model.common.BaseEntity
 import org.babyfish.jimmer.sql.*
 
 @Entity
-interface Author : CommonEntity {
+interface Author : BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

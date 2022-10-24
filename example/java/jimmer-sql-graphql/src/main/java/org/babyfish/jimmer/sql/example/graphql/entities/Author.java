@@ -1,13 +1,13 @@
 package org.babyfish.jimmer.sql.example.graphql.entities;
 
 import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.example.graphql.entities.common.CommonEntity;
+import org.babyfish.jimmer.sql.example.graphql.entities.common.BaseEntity;
 
 import javax.validation.constraints.NotBlank;
 import java.util.List;
 
 @Entity
-public interface Author extends CommonEntity {
+public interface Author extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
