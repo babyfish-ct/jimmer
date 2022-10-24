@@ -1,12 +1,12 @@
 package org.babyfish.jimmer.sql.example.model;
 
 import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.example.model.common.CommonEntity;
+import org.babyfish.jimmer.sql.example.model.common.BaseEntity;
 
 import java.util.List;
 
 @Entity
-public interface Author extends CommonEntity {
+public interface Author extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

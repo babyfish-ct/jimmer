@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.example.kt.graphql.entities.common
+package org.babyfish.jimmer.example.kt.sql.model.common
 
 import org.babyfish.jimmer.sql.MappedSuperclass
 import java.time.LocalDateTime
@@ -7,7 +7,7 @@ import java.time.LocalDateTime
  * see CommonEntityDraftInterceptor
  */
 @MappedSuperclass
-interface CommonEntity {
+interface BaseEntity {
 
     val createdTime: LocalDateTime
 
