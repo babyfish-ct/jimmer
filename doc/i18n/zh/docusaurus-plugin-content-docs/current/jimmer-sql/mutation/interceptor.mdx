@@ -8,12 +8,249 @@ import TabItem from '@theme/TabItem';
 
 Draft拦截器和[Save指令](./save指令)配合使用，在对象被保存之前调整数据。
 
-假如大部分实体表都具备created_time和modified_time两个字段，可以提供如下超类
+## 定义被拦截数据格式
 
+假如大部分实体表都具备created_time、modified_time、created_by和modified_by四个字段，可以提供如下超类
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
+
+```java
+// highlight-next-line
+@MappedSuperclass
+public interface BaseEntity {
+
+    LocalDateTime createdTime();
+
+    LocalDateTime modifiedTime();
+
+    @ManyToOne
+    User createdBy();
+
+    @ManyToOne
+    User modifiedBy();
+}
+```
+
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+// highlight-next-line
+@MappedSuperclass
+interface BaseEntity {
+
+    val createdTime: LocalDateTime
+
+    val modifiedTime: LocalDateTime
+
+    @ManyToOne
+    val creator: User
+
+    @ManyToOne
+    val editor: User
+}
+```
+
 </TabItem>
 </Tabs>
+
+所有需要这些字段的实体都从此超类派生即可
+
+## 定义拦截器
+
+假设有一个叫做`UserService`的服务类，其java方法`getCurrentUserId()`或kotlin属性`currentUserId`返回当前返回当前登录用户的id。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Component
+public class BaseEntityDraftInterceptor implements DraftInterceptor<BaseEntityDraft> {
+
+    private final UserService userService;
+
+    public BaseEntityDraftInterceptor(UserService userService) {
+        this.userService = userService;
+    }
+
+    @Override
+    public void beforeSave(BaseEntityDraft draft, boolean isNew) {
+        if (!ImmutableObjects.isLoaded(draft, BaseEntityProps.MODIFIED_TIME)) {
+            draft.setModifiedTime(LocalDateTime.now());
+        }
+        if (!ImmutableObjects.isLoaded(draft, BaseEntityProps.EDITOR)) {
+            draft.setEditor(editor - > {
+                editor.setId(userService.getCurrentUserId());
+            });
+        }
+        if (isNew) {
+            if (!ImmutableObjects.isLoaded(draft, BaseEntityProps.CREATED_TIME)) {
+                draft.setCreatedTime(LocalDateTime.now());
+            }
+            if (!ImmutableObjects.isLoaded(draft, BaseEntityProps.CREATOR)) {
+                draft.setCreator(creator - > {
+                    creator.setId(userService.getCurrentUserId());
+                });
+            }   
+        }
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Component
+class BaseEntityDraftInterceptor(
+    private val userService: UserService
+) : DraftInterceptor<BaseEntityDraft> {
+
+    override fun beforeSave(draft: BaseEntityDraft, isNew: Boolean) {
+        if (!isLoaded(draft, BaseEntity::modifiedTime)) {
+            draft.modifiedTime = LocalDateTime.now()
+        }
+        if (!isLoaded(draft, BaseEntity::editor)) {
+            draft.editor().apply {
+                id = userService.currentUserId
+            }
+        }
+        if (isNew) {
+            if (!isLoaded(draft, BaseEntity::createdTime)) {
+                draft.createdTime = LocalDateTime.now()
+            }
+            if (!isLoaded(draft, BaseEntity::creator)) {
+                draft.creator().apply {
+                    id = userService.currentUserId
+                }
+            }
+        }
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+其中，`beforeSave`方法在某个对象被保存之前被调用，用户可以即将保存的数据做出最后调整。
+
+如果参数`isNew`为true，则表示稍后操作是insert操作；否则，是update操作。
+
+:::warning
+请不要在`beforeSave`方法中，修改被`@Id`或`@Key`修饰的属性。
+:::
+
+## 配置拦截器
+
+将拦截器挂接到SqlClinet对象上，即可生效
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public JSqlClient sqlClient(
+    List<DraftInterceptor<?>> interceptors,
+    ...省略其他参数...
+) {
+    return JSqlClient
+        .newBuilder()
+        // highlight-next-line
+        .addDraftinterceptors(interceptors)
+        ...省略其他配置...
+        .build();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun sqlClient(
+    interceptors: List<DraftInterceptor<?>>,
+    ...省略其他参数...
+): KSqlClient =
+    newKSqlClient {
+        // highlight-next-line
+        addDraftinterceptors(interceptors)
+        ...省略其他配置...
+    }
+```
+
+</TabItem>
+</Tabs>
+
+:::tip
+虽然在本文的中，仅示范了一个`DraftInterceptor`，实际项目中可能有很多个。
+
+所以，这里使用集合，让Spring注入所有的`DraftInterceptor`。
+:::
+
+## 最终使用
+
+假如`Book`继承了`BaseEntity`，则可以这么使用
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Book book = BookDraft.$.produce(draft -> {
+    draft.setName("SQL in Action");
+    draft.setEdition(1);
+    draft.setPrice(new BigDecimal("59"));
+    draft.setStore(store -> store.setId(2L));
+});
+sqlClient.getEntities().save(book);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val book = new(Book::class).by {
+    name = "SQL in Action"
+    edition = 1
+    price = BigDecimal("59")
+    store().id = 2
+}
+sqlClient.entities.save(book)
+```
+
+</TabItem>
+</Tabs>
+
+-   如果上面的保存指令最终导致了insert操作，生成的SQL如下
+    ```sql
+    insert into BOOK(
+        /* highlight-start */
+        CREATED_TIME,
+        MODIFIED_TIME,
+        CREATOR_ID,
+        EDITOR_ID,
+        /* highlight-end */
+        NAME, 
+        EDITION, 
+        PRICE, 
+        STORE_ID
+    ) values(
+        /* hightlight-next-line */
+        ?, ?, ?, ?,
+        ?, ?, ?, ?
+    )
+    ```
+
+-   如果上面的保存指令最终导致了update操作，生成的SQL如下
+    ```sql
+    update BOOK set 
+        /* highlight-start */
+        MODIFIED_TIME = ?,
+        EDITOR_ID = ?,
+        /* highlight-end */
+        PRICE = ?, 
+        STORE_ID = ? 
+    where ID = ?
+    ```
+
+我们看到，虽然用户并没有为被保存对象的`createdTime`, `modifiedTime`, `creator`, `editor`等字段指定值，但`DraftIntercetor`还是为这些缺失属性设置了值。
