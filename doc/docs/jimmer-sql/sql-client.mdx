@@ -737,9 +737,9 @@ enum class GcObjColor {
     ```java
     return JSqlBuilder
         .newBuilder()
-        .addScalarProvoder(
+        .addScalarProvider(
             // highlight-next-line
-            ScalarProvoder.enumProviderByString(
+            ScalarProvider.enumProviderByString(
                 GcObjColor.class
             )
         )
@@ -752,9 +752,9 @@ enum class GcObjColor {
     
     ```kotlin
     return newKSqlClient {
-        addScalarProvoder(
+        addScalarProvider(
             // highlight-next-line
-            ScalarProvoder.enumProviderByString(
+            ScalarProvider.enumProviderByString(
                 GcObjColor::class.java
             )
         )
@@ -773,8 +773,8 @@ enum class GcObjColor {
     ```java
     return JSqlBuilder
         .newBuilder()
-        .addScalarProvoder(
-            ScalarProvoder.enumProviderByString(
+        .addScalarProvider(
+            ScalarProvider.enumProviderByString(
                 GcObjColor.class, 
                 // highlight-next-line
                 it -> it.map(GcObjColor.GRAY, "GREY")
@@ -789,8 +789,8 @@ enum class GcObjColor {
 
     ```kotlin
     return newKSqlClient {
-        addScalarProvoder(
-            ScalarProvoder.enumProviderByString(
+        addScalarProvider(
+            ScalarProvider.enumProviderByString(
                 GcObjColor::class.java
             ) {
                 // highlight-next-line
@@ -812,9 +812,9 @@ enum class GcObjColor {
     ```java
     return SqlBuilder
         .newBuilder()
-        .addScalarProvoder(
+        .addScalarProvider(
             // highlight-next-line
-            ScalarProvoder.enumProviderByInt(
+            ScalarProvider.enumProviderByInt(
                 GcObjColor.class
             )
         )
@@ -827,9 +827,9 @@ enum class GcObjColor {
     
     ```kotlin
     return newKSqlClient {
-        addScalarProvoder(
+        addScalarProvider(
             // highlight-next-line
-            ScalarProvoder.enumProviderByInt(
+            ScalarProvider.enumProviderByInt(
                 GcObjColor::class.java
             )
         )
@@ -848,8 +848,8 @@ enum class GcObjColor {
     ```java
     return JSqlBuilder
         .newBuilder()
-        .addScalarProvoder(
-            ScalarProvoder.enumProviderByInt(
+        .addScalarProvider(
+            ScalarProvider.enumProviderByInt(
                 GcObjColor.class, 
                 // highlight-next-line
                 it -> it.map(GcObjColor.GRAY, 3)
@@ -864,8 +864,8 @@ enum class GcObjColor {
 
     ```kotlin
     return newKSqlClient {
-        addScalarProvoder(
-            ScalarProvoder.enumProviderByInt(
+        addScalarProvider(
+            ScalarProvider.enumProviderByInt(
                 GcObjColor::class.java
             ) {
                 // highlight-next-line

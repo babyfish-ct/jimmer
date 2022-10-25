@@ -25,10 +25,12 @@ public interface BaseEntity {
     LocalDateTime modifiedTime();
 
     @ManyToOne
-    User createdBy();
+    @OnDissociate(DissociateAction.SET_NULL)
+    User creator();
 
     @ManyToOne
-    User modifiedBy();
+    @OnDissociate(DissociateAction.SET_NULL)
+    User editor();
 }
 ```
 
@@ -45,9 +47,11 @@ interface BaseEntity {
     val modifiedTime: LocalDateTime
 
     @ManyToOne
+    @OnDissociate(DissociateAction.SET_NULL)
     val creator: User
 
     @ManyToOne
+    @OnDissociate(DissociateAction.SET_NULL)
     val editor: User
 }
 ```
@@ -55,11 +59,17 @@ interface BaseEntity {
 </TabItem>
 </Tabs>
 
-所有需要这些字段的实体都从此超类派生即可
+所有需要这些字段的实体都从此超类派生即可。
+
+:::note
+这里的`@OnDissociate(DissociateAction.SET_NULL)`是为了防止因这两个外键导致相关`User`数据的删除操作被阻止。当相关`User`被删除后，这两个外键自动清空。
+:::
 
 ## 定义拦截器
 
 假设有一个叫做`UserService`的服务类，其java方法`getCurrentUserId()`或kotlin属性`currentUserId`返回当前返回当前登录用户的id。
+
+拦截器必须实现`org.babyfish.jimmer.sql.DraftInterceptor`接口，如果使用Spring托管，代码方式如下：
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
