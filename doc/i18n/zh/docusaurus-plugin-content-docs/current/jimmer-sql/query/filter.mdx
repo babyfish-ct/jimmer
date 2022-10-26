@@ -784,7 +784,7 @@ fun sqlClient(
 |Author.boooks-1|[1, 2, 3]|
 |Author.boooks-2|[4, 5, 6]|
 
-如果过滤支持缓存且缓存支持参数化，那么关联缓存看起来就会变成这样
+如果过滤器支持缓存且缓存支持参数化，那么关联缓存看起来就会变成这样
 
 <table>
     <thead>
@@ -824,6 +824,77 @@ fun sqlClient(
     </tbody>
 </table>
 
+### 是否采用这种能力
+
+在这里，我们看到了缓存条目的膨胀，如果活跃的过滤器参数越多，消耗的缓存就越多。
+
+所以，仅应针对重要的关联才使用这种缓存能力，且推荐使用redis集群。
+
+|过滤器是否支持缓存|缓存是否支持参数化|最终效果|
+|---|----|-----|
+| 否 | NA | 不使用用关联缓存 |
+| 是 | 否 | 使用关联缓存，但仅缓存无参过滤器的结果 |
+| 是 | 是 | 使用关联缓存，且缓存所有过滤器的结果 |
+
 ## 参数化缓存一致性
 
-Will come soon
+参数化关联缓存缓存的结果，不仅受到表关系影响，还会受到关联对象过滤器影响。
+
+对于普通过滤器而言，你可以施加任何SQL过滤规则。
+
+然而，支持缓存的过滤器不同，被施加了限制，既不支持表连接，也不支持子查询。
+
+这种限制意味着，支持缓存的过滤器只能使用被过滤表的字段实施筛选。反过来讲，除表之间的关系外，只有被过滤表的数据变更，才会影响有过滤条件的关联缓存。
+
+`CacheableFilter`/`KCacheableFilter`还需实现一个`isAffectedBy`方法，用于指定被过滤表的修改时间，是否会导致关联缓存的失效。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Component
+public class TenantFilter implements Filter<TenantAwareProps> {
+
+    @Override
+    public boolean isAffectedBy(EntityEvent<?> e) {
+        // 如果被过滤表的tenant字段被修改，则清除参数化缓存
+        return e.getChangedFieldRef(TenantAwareProps.TENANT) != null;
+    }
+
+    ...忽略其他方法...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Component
+class TenantFilter(
+    ...忽略注入依赖...
+) : KFilter<TenantAware> {
+
+    override fun isAffectedBy(e: EntityEvent<*>): Boolean =
+        // 如果被过滤表的tenant字段被修改，则清除参数化缓存
+        e.getChangedFieldRef(TenantAware::tenant) !== null
+
+    ...忽略其他方法...
+}
+```
+
+</TabItem>
+</Tabs>
+
+参考[外部缓存-数据一致性](./cache#数据一致性)，完成数据一致性的基础开发后，运行程序，打开任何SQL工具，执行
+```sql
+update book set tenant = 'b' where id = 3;
+```
+
+假设被修改的`Book-3`关联到`BookStore-1`、`Author-1`和`Author-2`，可以在日志中找到
+```
+Delete object data from redis: [Book-3]
+Delete property data from redis: [BookStore.books-3]
+Delete property data from redis: [BookStore.avgPrice-3]
+Delete property data from redis: [Author.books-1]
+Delete property data from redis: [Author.books-2]
+```
