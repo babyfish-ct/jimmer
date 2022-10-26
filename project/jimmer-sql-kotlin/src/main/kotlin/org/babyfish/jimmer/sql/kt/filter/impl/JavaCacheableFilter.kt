@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.filter.CacheableFilter
 import org.babyfish.jimmer.sql.kt.filter.KCacheableFilter
 import java.util.*
 
-internal class JavaCacheableFilter(
+internal open class JavaCacheableFilter(
     ktFilter: KCacheableFilter<*>
 ) : JavaFilter(ktFilter), CacheableFilter<Props> {
 

@@ -11,13 +11,29 @@ import java.util.SortedMap;
 
 public interface Filters {
 
-    Filter<Props> getFilter(Class<?> type);
+    default Filter<Props> getFilter(Class<?> type) {
+        return getFilter(type, false);
+    }
 
-    Filter<Props> getFilter(ImmutableType type);
+    default Filter<Props> getFilter(ImmutableType type) {
+        return getFilter(type, false);
+    }
 
-    Filter<Props> getTargetFilter(ImmutableProp prop);
+    default Filter<Props> getTargetFilter(ImmutableProp prop) {
+        return getTargetFilter(prop, false);
+    }
 
-    Filter<Props> getTargetFilter(TypedProp.Association<?, ?> prop);
+    default Filter<Props> getTargetFilter(TypedProp.Association<?, ?> prop) {
+        return getTargetFilter(prop, false);
+    }
+
+    Filter<Props> getFilter(Class<?> type, boolean coerciveOnly);
+
+    Filter<Props> getFilter(ImmutableType type, boolean coerciveOnly);
+
+    Filter<Props> getTargetFilter(ImmutableProp prop, boolean coerciveOnly);
+
+    Filter<Props> getTargetFilter(TypedProp.Association<?, ?> prop, boolean coerciveOnly);
 
     /**
      * Returns the reference wrapper of parameterMap

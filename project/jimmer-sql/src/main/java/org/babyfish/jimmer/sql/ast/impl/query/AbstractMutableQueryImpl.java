@@ -110,13 +110,11 @@ public abstract class AbstractMutableQueryImpl
 
     @Override
     protected void onFrozen() {
-        if (!ignoreFilter) {
-            Filter<Props> filter = getSqlClient().getFilters().getFilter(getTable().getImmutableType());
-            if (filter != null) {
-                filter.filter(
-                        new FilterArgsImpl<>(this, this.getTable(), filter instanceof CacheableFilter<?>)
-                );
-            }
+        Filter<Props> filter = getSqlClient().getFilters().getFilter(getTable().getImmutableType(), ignoreFilter);
+        if (filter != null) {
+            filter.filter(
+                    new FilterArgsImpl<>(this, this.getTable(), filter instanceof CacheableFilter<?>)
+            );
         }
         super.onFrozen();
         havingPredicates = mergePredicates(havingPredicates);

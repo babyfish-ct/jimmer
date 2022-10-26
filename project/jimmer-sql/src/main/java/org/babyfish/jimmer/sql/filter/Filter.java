@@ -8,5 +8,4 @@ import java.util.SortedMap;
 public interface Filter<P extends Props> {
 
     void filter(FilterArgs<P> args);
-
 }
