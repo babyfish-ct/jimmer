@@ -70,7 +70,7 @@ interface TenantAware {
 下面的示例中，`TenantProvider`类的Java方法`get()`和kotlin属性`tenant`用于返回当前操作着所属租户。
 
 - Java下，拦截器需实现`org.babyfish.jimmer.sql.filter.Filter`接口，
-- Kotlin下，拦截器需实现`filter.KFilter`接口。
+- Kotlin下，拦截器需实现`org.babyfish.jimmer.sql.kt.filter.KFilter`接口。
 
 如果使用Spring托管，代码方式如下：
 
@@ -166,7 +166,7 @@ fun sqlClient(
 
 所以，这里使用集合，让Spring注入所有的`Filter`/`KFilter`。
 
-## 过滤聚合根读对象
+## 过滤聚合根对象
 
 过滤聚合根对象是全局过滤器最简单的用法。
 
@@ -410,7 +410,7 @@ val authors = SqlClient
 为了使过滤器支持缓存
 
 - Java下，需实现`org.babyfish.jimmer.sql.filter.CacheableFilter`接口，
-- Kotlin下，需实现`filter.KCacheableFilter`接口。
+- Kotlin下，需实现`org.babyfish.jimmer.sql.kt.filter.KCacheableFilter`接口。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -484,9 +484,9 @@ class TenantFilter(
 在本文的例子中，仅使用了一个过滤器。如果某个实体类被多个过滤器过滤，系统会自动把多个过滤器合并成一个过滤器。
 
 - 任何一个过滤器不支持缓存，最终合并后的过滤器不支持缓存
-- 如果合并后的过滤器仍然支持缓存，那么合并后的过滤器的`getParameters()`方法返回的map是所有过滤的`getParameters()`方法返回的map的并集
+- 如果合并后的过滤器仍然支持缓存，那么合并后的过滤器的`getParameters()`方法返回的map是所有原始过滤器的`getParameters()`方法返回的map的并集
 
-与此对应，关联缓存必需是一个嵌套的双层KeyValue结构，合并后的过滤返回map，序列化为字符串后，作为内层的键。
+与此对应，关联缓存必需是一个嵌套的双层KeyValue结构，合并后的过滤器返回map，序列化为字符串后，作为内层的键。
 
 ### 让缓存支持参数化
 
@@ -579,7 +579,6 @@ Cache<K, V> cache = ChainCacheBuilder<K, V>()
     |------|----------|------------|
     |Java需要实现的接口|SimpleBinder<K, V>|SimpleBinder.**Parameterized**<K, V>|
     |Kotlin需要实现的接口|KSimpleBinder<K, V>|KSimpleBinder.**Parameterized**<K, V>|
-    |Kotlin需要实现的接口|KSimpleBinder<K, V>|KSimpleBinder.**Parameterized**<K, V>|
     |Java推荐的抽象基类|AbstractRemoteValueBinder<K, V>|AbstractRemote**Hash**Binder<K, V>|
     |kotlin推荐的抽象基类|AbstractKRemoteValueBinder<K, V>|AbstractKRemote**Hash**Binder<K, V>|
 
@@ -592,7 +591,7 @@ Cache<K, V> cache = ChainCacheBuilder<K, V>()
 
 为`AbstractRemoteHashBinder`或`AbstractKRemoteHashBinder`提供派生类，可以快速实现参数化的缓存`Binder`，进一步实现参数化的缓存。
 
-这里不再赘述，请参考项目附带例子中的RedisHashBinder实现，请点击[Java示范链接](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql/src/main/java/org/babyfish/jimmer/sql/example/cache/binder/RedisHashBinder.java)或[Kotlin示范链接](https://github.com/babyfish-ct/jimmer/blob/main/example/kotlin/jimmer-sql-kt/src/main/kotlin/org/babyfish/jimmer/example/kt/sql/cache/binder/RedisHashBinder.kt)
+这里不再赘述，请参考项目附带例子中的`RedisHashBinder`实现，请点击[Java示范链接](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql/src/main/java/org/babyfish/jimmer/sql/example/cache/binder/RedisHashBinder.java)或[Kotlin示范链接](https://github.com/babyfish-ct/jimmer/blob/main/example/kotlin/jimmer-sql-kt/src/main/kotlin/org/babyfish/jimmer/example/kt/sql/cache/binder/RedisHashBinder.kt)
 
 最后，借助于`RedisHashBinder`，我们可以把关联缓存和计算属性缓存配置为参数化缓存
 
