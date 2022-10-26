@@ -27,13 +27,13 @@ public interface Filters {
         return getTargetFilter(prop, false);
     }
 
-    Filter<Props> getFilter(Class<?> type, boolean coerciveOnly);
+    Filter<Props> getFilter(Class<?> type, boolean shardingOnly);
 
-    Filter<Props> getFilter(ImmutableType type, boolean coerciveOnly);
+    Filter<Props> getFilter(ImmutableType type, boolean shardingOnly);
 
-    Filter<Props> getTargetFilter(ImmutableProp prop, boolean coerciveOnly);
+    Filter<Props> getTargetFilter(ImmutableProp prop, boolean shardingOnly);
 
-    Filter<Props> getTargetFilter(TypedProp.Association<?, ?> prop, boolean coerciveOnly);
+    Filter<Props> getTargetFilter(TypedProp.Association<?, ?> prop, boolean shardingOnly);
 
     /**
      * Returns the reference wrapper of parameterMap

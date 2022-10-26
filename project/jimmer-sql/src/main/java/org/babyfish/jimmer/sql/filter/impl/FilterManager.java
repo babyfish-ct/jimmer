@@ -43,8 +43,8 @@ public class FilterManager implements Filters {
     private final StaticCache<ImmutableType, Filter<Props>> cache =
             new StaticCache<>(this::create, true);
 
-    private final StaticCache<ImmutableType, Filter<Props>> coerciveOnlyCache =
-            new StaticCache<>(this::createCoerciveOnly, true);
+    private final StaticCache<ImmutableType, Filter<Props>> shardingOnlyCache =
+            new StaticCache<>(this::createShardingOnly, true);
 
     private final StaticCache<ImmutableType, List<Filter<Props>>> allCacheableCache =
             new StaticCache<>(this::createAllCacheable, false);
@@ -77,25 +77,25 @@ public class FilterManager implements Filters {
     }
 
     @Override
-    public Filter<Props> getFilter(Class<?> type, boolean coerciveOnly) {
-        return getFilter(ImmutableType.get(type), coerciveOnly);
+    public Filter<Props> getFilter(Class<?> type, boolean shardingOnly) {
+        return getFilter(ImmutableType.get(type), shardingOnly);
     }
 
     @Override
-    public Filter<Props> getFilter(ImmutableType type, boolean coerciveOnly) {
-        if (coerciveOnly) {
-            return coerciveOnlyCache.get(type);
+    public Filter<Props> getFilter(ImmutableType type, boolean shardingOnly) {
+        if (shardingOnly) {
+            return shardingOnlyCache.get(type);
         }
         return cache.get(type);
     }
 
     @Override
-    public Filter<Props> getTargetFilter(TypedProp.Association<?, ?> prop, boolean coerciveOnly) {
-        return getTargetFilter(prop.unwrap(), coerciveOnly);
+    public Filter<Props> getTargetFilter(TypedProp.Association<?, ?> prop, boolean shardingOnly) {
+        return getTargetFilter(prop.unwrap(), shardingOnly);
     }
 
     @Override
-    public Filter<Props> getTargetFilter(ImmutableProp prop, boolean coerciveOnly) {
+    public Filter<Props> getTargetFilter(ImmutableProp prop, boolean shardingOnly) {
         ImmutableType targetType = prop.getTargetType();
         if (targetType == null) {
             throw new IllegalArgumentException(
@@ -104,7 +104,7 @@ public class FilterManager implements Filters {
                             "` is not association property"
             );
         }
-        return getFilter(targetType, coerciveOnly);
+        return getFilter(targetType, shardingOnly);
     }
 
     @Override
@@ -260,18 +260,18 @@ public class FilterManager implements Filters {
         return create(type, false);
     }
 
-    private Filter<Props> createCoerciveOnly(ImmutableType type) {
+    private Filter<Props> createShardingOnly(ImmutableType type) {
         return create(type, true);
     }
 
     @SuppressWarnings("unchecked")
-    private Filter<Props> create(ImmutableType type, boolean coerciveOnly) {
+    private Filter<Props> create(ImmutableType type, boolean shardingOnly) {
         Set<Filter<Props>> filters = new LinkedHashSet<>();
         for (ImmutableType t = type; t != null; t = t.getSuperType()) {
             List<Filter<Props>> list = filterMap.get(t);
             if (list != null) {
                 for (Filter<Props> filter : list) {
-                    if ((!coerciveOnly || filter instanceof CoerciveFilter<?>) &&
+                    if ((!shardingOnly || filter instanceof ShardingFilter<?>) &&
                             !disabledFilters.contains(filter)) {
                         filters.add(filter);
                     }
