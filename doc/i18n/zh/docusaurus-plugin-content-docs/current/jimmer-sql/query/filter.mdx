@@ -893,8 +893,7 @@ update book set tenant = 'b' where id = 3;
 假设被修改的`Book-3`关联到`BookStore-1`、`Author-1`和`Author-2`，可以在日志中找到
 ```
 Delete object data from redis: [Book-3]
-Delete property data from redis: [BookStore.books-3]
-Delete property data from redis: [BookStore.avgPrice-3]
+Delete property data from redis: [BookStore.books-1]
 Delete property data from redis: [Author.books-1]
 Delete property data from redis: [Author.books-2]
 ```
