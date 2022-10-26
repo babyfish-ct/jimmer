@@ -14,15 +14,11 @@ internal class KFiltersImpl(
     private val javaFilters: Filters
 ) : KFilters {
 
-    override fun <T : Any> getFilter(type: KClass<T>): KFilter<T>? =
-        javaFilters.getFilter(type.java)?.let {
-            it.toKtFilter()
-        }
+    override fun <T : Any> getFilter(type: KClass<T>, coerciveOnly: Boolean): KFilter<T>? =
+        javaFilters.getFilter(type.java, coerciveOnly)?.toKtFilter()
 
-    override fun <T : Any> getTargetFilter(prop: KProperty1<*, T?>): KFilter<T>? =
-        javaFilters.getTargetFilter(prop.toImmutableProp())?.let {
-            it.toKtFilter()
-        }
+    override fun <T : Any> getTargetFilter(prop: KProperty1<*, T?>, coerciveOnly: Boolean): KFilter<T>? =
+        javaFilters.getTargetFilter(prop.toImmutableProp(), coerciveOnly)?.toKtFilter()
 
     override fun getParameterMapRef(type: KClass<*>): Ref<SortedMap<String, Any>?>? =
         javaFilters.getParameterMapRef(type.java)

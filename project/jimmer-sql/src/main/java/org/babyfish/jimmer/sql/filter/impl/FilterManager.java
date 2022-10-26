@@ -19,10 +19,7 @@ import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
 import org.babyfish.jimmer.sql.cache.LocatedCache;
 import org.babyfish.jimmer.sql.event.EntityEvent;
-import org.babyfish.jimmer.sql.filter.CacheableFilter;
-import org.babyfish.jimmer.sql.filter.Filter;
-import org.babyfish.jimmer.sql.filter.FilterArgs;
-import org.babyfish.jimmer.sql.filter.Filters;
+import org.babyfish.jimmer.sql.filter.*;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
@@ -45,6 +42,9 @@ public class FilterManager implements Filters {
 
     private final StaticCache<ImmutableType, Filter<Props>> cache =
             new StaticCache<>(this::create, true);
+
+    private final StaticCache<ImmutableType, Filter<Props>> coerciveOnlyCache =
+            new StaticCache<>(this::createCoerciveOnly, true);
 
     private final StaticCache<ImmutableType, List<Filter<Props>>> allCacheableCache =
             new StaticCache<>(this::createAllCacheable, false);
@@ -77,22 +77,25 @@ public class FilterManager implements Filters {
     }
 
     @Override
-    public Filter<Props> getFilter(Class<?> type) {
-        return getFilter(ImmutableType.get(type));
+    public Filter<Props> getFilter(Class<?> type, boolean coerciveOnly) {
+        return getFilter(ImmutableType.get(type), coerciveOnly);
     }
 
     @Override
-    public Filter<Props> getFilter(ImmutableType type) {
+    public Filter<Props> getFilter(ImmutableType type, boolean coerciveOnly) {
+        if (coerciveOnly) {
+            return coerciveOnlyCache.get(type);
+        }
         return cache.get(type);
     }
 
     @Override
-    public Filter<Props> getTargetFilter(TypedProp.Association<?, ?> prop) {
-        return getTargetFilter(prop.unwrap());
+    public Filter<Props> getTargetFilter(TypedProp.Association<?, ?> prop, boolean coerciveOnly) {
+        return getTargetFilter(prop.unwrap(), coerciveOnly);
     }
 
     @Override
-    public Filter<Props> getTargetFilter(ImmutableProp prop) {
+    public Filter<Props> getTargetFilter(ImmutableProp prop, boolean coerciveOnly) {
         ImmutableType targetType = prop.getTargetType();
         if (targetType == null) {
             throw new IllegalArgumentException(
@@ -101,7 +104,7 @@ public class FilterManager implements Filters {
                             "` is not association property"
             );
         }
-        return getFilter(targetType);
+        return getFilter(targetType, coerciveOnly);
     }
 
     @Override
@@ -253,14 +256,23 @@ public class FilterManager implements Filters {
         onInitialized();
     }
 
-    @SuppressWarnings("unchecked")
     private Filter<Props> create(ImmutableType type) {
+        return create(type, false);
+    }
+
+    private Filter<Props> createCoerciveOnly(ImmutableType type) {
+        return create(type, true);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Filter<Props> create(ImmutableType type, boolean coerciveOnly) {
         Set<Filter<Props>> filters = new LinkedHashSet<>();
         for (ImmutableType t = type; t != null; t = t.getSuperType()) {
             List<Filter<Props>> list = filterMap.get(t);
             if (list != null) {
                 for (Filter<Props> filter : list) {
-                    if (!disabledFilters.contains(filter)) {
+                    if ((!coerciveOnly || filter instanceof CoerciveFilter<?>) &&
+                            !disabledFilters.contains(filter)) {
                         filters.add(filter);
                     }
                 }
@@ -562,6 +574,9 @@ public class FilterManager implements Filters {
             List<Filter<Props>> filters,
             EntityEvent<?> e
     ) {
+        if (!(sqlClient.getCaches().getPropertyCache(prop) instanceof Cache.Parameterized<?, ?>)) {
+            return;
+        }
         if (prop.isReferenceList(TargetLevel.ENTITY)) {
             ImmutableProp mappedBy = prop.getMappedBy();
             if (mappedBy != null && mappedBy.getStorage() instanceof Column) {
