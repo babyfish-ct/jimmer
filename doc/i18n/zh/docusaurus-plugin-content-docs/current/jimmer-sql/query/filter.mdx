@@ -69,7 +69,8 @@ interface TenantAware {
 
 下面的示例中，`TenantProvider`类的Java方法`get()`和kotlin属性`tenant`用于返回当前操作着所属租户。
 
-Java拦截器必须实现`org.babyfish.jimmer.sql.filter.Filter`接口，Kotlin拦截器必须实现`org.babyfish.jimmer.sql.kt.filter.KFilter`接口。
+- Java下，拦截器需实现`org.babyfish.jimmer.sql.filter.Filter`接口，
+- Kotlin下，拦截器需实现`filter.KFilter`接口。
 
 如果使用Spring托管，代码方式如下：
 
@@ -399,14 +400,430 @@ val authors = SqlClient
 
 为了，Jimmer支持更高级的缓存功能，和全局过滤器配合，让不同的操作者看到不同的缓存。
 
-### 缓存友好的过滤器
+让缓存能和过滤器配合，开发人员需要
 
-Will come soon
+- 让过滤器支持缓存
+- 让缓存支持参数化
 
-### 参数化缓存
+### 让过滤器支持缓存
 
-Will come soon
+为了使过滤器支持缓存
 
-### 参数化缓存一致性
+- Java下，需实现`org.babyfish.jimmer.sql.filter.CacheableFilter`接口，
+- Kotlin下，需实现`filter.KCacheableFilter`接口。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Component
+public class TenantFilter implements Filter<TenantAwareProps> {
+
+    protected final TenantProvider tenantProvider;
+
+    public TenantFilterForNonCacheMode(TenantProvider tenantProvider) {
+        this.tenantProvider = tenantProvider;
+    }
+
+    @Override
+    public void filter(FilterArgs<TenantAwareProps> args) {
+        String tenant = tenantProvider.get();
+        if (tenant != null) {
+            args.where(args.getTable().tenant().eq(tenant));
+        }
+    }
+
+    // highlight-next-line
+    @Override
+    public SortedMap<String, Object> getParameters() {
+        String tenant = tenantProvider.get();
+        if (tenant == null) {
+            return null;
+        }
+        SortedMap<String, Object> map = new TreeMap<>();
+        map.put("tenant", tenant);
+        return map;
+    }
+
+    ...忽略其他方法...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Component
+class TenantFilter(
+    protected val tenantProvider: TenantProvider
+) : KFilter<TenantAware> {
+
+    override fun filter(args: KFilterArgs<TenantAware>) {
+        tenantProvider.tenant?.let {
+            args.apply {
+                where(table.tenant.eq(it))
+            }
+        }
+    }
+
+    // highlight-next-line
+    override fun getParameters(): SortedMap<String, Any>? =
+        tenantProvider.tenant?.let {
+            sortedMapOf("tenant" to it)
+        }
+
+    ...忽略其他方法...
+}
+```
+
+</TabItem>
+</Tabs>
+
+为`CacheableFilter`/`KCacheableFilter`实现`getParameters()`方法，返回一个map。
+
+在本文的例子中，仅使用了一个过滤器。如果某个实体类被多个过滤器过滤，系统会自动把多个过滤器合并成一个过滤器。
+
+- 任何一个过滤器不支持缓存，最终合并后的过滤器不支持缓存
+- 如果合并后的过滤器仍然支持缓存，那么合并后的过滤器的`getParameters()`方法返回的map是所有过滤的`getParameters()`方法返回的map的并集
+
+与此对应，关联缓存必需是一个嵌套的双层KeyValue结构，合并后的过滤返回map，序列化为字符串后，作为内层的键。
+
+### 让缓存支持参数化
+
+为让缓存是嵌套的双层KeyValue结构，缓存需要实现`Cache.Parameterized<K, V>`接口
+
+```java title="Cache.java"
+// 普通缓存
+public interface Cache<K, V> {
+
+    V get(@NotNull K key, CacheEnvironment<K, V> env);
+
+    Map<K, V> getAll(Collection<K> keys, CacheEnvironment<K, V> env);
+
+    void delete(K key);
+
+    void delete(K key, Object reason);
+
+    void deleteAll(Collection<K> keys);
+
+    void deleteAll(Collection<K> keys, Object reason);
+
+    // 参数化的缓存
+    // highlight-next-line
+    interface Parameterized<K, V> extends Cache<K, V> {
+
+        @Nullable
+        V get(
+                K key,
+                // highlight-next-line
+                SortedMap<String, Object> parameterMap,
+                CacheEnvironment<K, V> env
+        ) {
+            return getAll(Collections.singleton(key), parameterMap, env).get(key);
+        }
+
+        @NotNull
+        Map<K, V> getAll(
+                Collection<K> keys,
+                // highlight-next-line
+                SortedMap<String, Object> parameterMap,
+                CacheEnvironment<K, V> env
+        );
+    }
+}
+```
+
+创建缓存的代码如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Cache<K, V> cache = new ChainCacheBuilder<K, V>()
+    .add(level1Binder)
+    .add(level2Binder)
+    ... 
+    .add(levelNBinder)
+    .build()
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+Cache<K, V> cache = ChainCacheBuilder<K, V>()
+    .add(level1Binder)
+    .add(level2Binder)
+    ... 
+    .add(levelNBinder)
+    .build()
+```
+
+</TabItem>
+</Tabs>
+
+即使使用参数化的缓存，也只需要声明`Cache<K, V>`类型的变量。开发人员只需要创建`Cache.Parameterized<K, V>`类型的对象实例即可。
+
+为了构建多级缓存，需构建Binder对象
+
+-   如果缓存能自动loading，如caffine, guava
+
+    |      |普通缓存的Binder|**参数化**缓存的Binder|
+    |------|----------|------------|
+    |Java需要实现的接口|LoadingBinder<K, V>|LoadingBinder.**Parameterized**<K, V>|
+    |Kotlin需要实现的接口|KLoadingBinder<K, V>|KLoadingBinder.**Parameterized**<K, V>|
+
+-   如果缓存能不能自动loading，需要jimmer调用其set, 如redis
+
+    |      |普通缓存的Binder|**参数化**缓存的Binder|
+    |------|----------|------------|
+    |Java需要实现的接口|SimpleBinder<K, V>|SimpleBinder.**Parameterized**<K, V>|
+    |Kotlin需要实现的接口|KSimpleBinder<K, V>|KSimpleBinder.**Parameterized**<K, V>|
+    |Kotlin需要实现的接口|KSimpleBinder<K, V>|KSimpleBinder.**Parameterized**<K, V>|
+    |Java推荐的抽象基类|AbstractRemoteValueBinder<K, V>|AbstractRemote**Hash**Binder<K, V>|
+    |kotlin推荐的抽象基类|AbstractKRemoteValueBinder<K, V>|AbstractKRemote**Hash**Binder<K, V>|
+
+:::warning
+构建多级缓存时
+- 如果所有`Binder`都是参数化的，最终创建的缓存也是参数化的
+- 如果所有`Binder`都是非参数化的，最终创建的缓存也是非参数化的
+- 如果两种`Binder`混用，报错
+:::
+
+为`AbstractRemoteHashBinder`或`AbstractKRemoteHashBinder`提供派生类，可以快速实现参数化的缓存`Binder`，进一步实现参数化的缓存。
+
+这里不再赘述，请参考项目附带例子中的RedisHashBinder实现，请点击[Java示范链接](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql/src/main/java/org/babyfish/jimmer/sql/example/cache/binder/RedisHashBinder.java)或[Kotlin示范链接](https://github.com/babyfish-ct/jimmer/blob/main/example/kotlin/jimmer-sql-kt/src/main/kotlin/org/babyfish/jimmer/example/kt/sql/cache/binder/RedisHashBinder.kt)
+
+最后，借助于`RedisHashBinder`，我们可以把关联缓存和计算属性缓存配置为参数化缓存
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public JSqlClient sqlClient(
+    RedisTemplate<stirng, byte[]> redisTemplate,
+    ObjectMapper objectMapper,
+    ...其他参数...
+) {
+    return JSqlBuilder
+        .newBuilder()
+        .setEntityManager( // 设置Cache前，需先设置EntityManager
+            new setEntityManager(
+                App.class.getClassLoader(),
+                "yourpackage.model" //实体所在包
+            )
+        )
+        .setCaches(it -> {
+            it.setCacheFactory(
+                new CacheFactory() {
+
+                    // 对象缓存，普通缓存即可
+                    @Override
+                    public Cache<?, ?> createObjectCache(ImmutableType type) {
+                        return new ChainCacheBuilder<>()
+                                .add(new CaffeineBinder<>(512, Duration.ofSeconds(1)))
+                                .add(
+                                    new RedisValueBinder<>(
+                                        redisTemplate, 
+                                        objectMapper, 
+                                        type, 
+                                        Duration.ofMinutes(10)
+                                    )
+                                )
+                                .build();
+                    }
+
+                    // 一对一/多对一关联缓存，这里支持参数化
+                    @Override
+                    public Cache<?, ?> createAssociatedIdCache(ImmutableProp prop) {
+                        return new ChainCacheBuilder<>()
+                                .add(
+                                    // highlight-next-line
+                                    new RedisHashBinder<>(
+                                        redisTemplate, 
+                                        objectMapper, 
+                                        prop, 
+                                        Duration.ofMinutes(5)
+                                    )
+                                )
+                                .build();
+                    }
+
+                    // 一对多/多对多关联缓存，这里支持参数化
+                    @Override
+                    public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
+                        return new ChainCacheBuilder<Object, List<?>>()
+                                .add(
+                                    // highlight-next-line
+                                    new RedisHashBinder<>(
+                                        redisTemplate, 
+                                        objectMapper, 
+                                        prop, 
+                                        Duration.ofMinutes(5)
+                                    )
+                                )
+                                .build();
+                    }
+
+                    // 计算字段缓存，这里支持参数化
+                    @Override
+                    public Cache<?, ?> createResolverCache(ImmutableProp prop) {
+                        return new ChainCacheBuilder<Object, List<?>>()
+                                .add(
+                                    // highlight-next-line
+                                    new RedisHashBinder<>(
+                                        redisTemplate, 
+                                        objectMapper, 
+                                        prop, 
+                                        Duration.ofHours(1)
+                                    )
+                                )
+                                .build();
+                    }
+                }
+            )；
+        })
+        ...省略其他配置...
+        .build()
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun sqlClient(
+    redisTemplate: RedisTemplate<stirng, ByteArray>,
+    objectMapper: ObjectMapper,
+    ...其他参数...
+): KSqlClient =
+    newKSqlClient {
+        setEntityManager( // 设置Cache前，需先设置EntityManager
+            new setEntityManager(
+                App.class.getClassLoader(),
+                "yourpackage.model" //实体所在包
+            )
+        )
+        setCacheFactory {
+            setCacheFactory(
+                object : CacheFactory {
+
+                    // 对象缓存，普通缓存即可
+                    override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+                        ChainCacheBuilder<Any, Any>()
+                            .add(CaffeineBinder(512, Duration.ofSeconds(1)))
+                            .add(
+                                RedisValueBinder(
+                                    redisTemplate, 
+                                    objectMapper, 
+                                    type, 
+                                    Duration.ofMinutes(10)
+                                )
+                            )
+                            .build()
+
+                    // 一对一/多对一关联缓存，这里支持参数化
+                    override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
+                        ChainCacheBuilder<Any, Any>()
+                            .add(
+                                // highlight-next-line
+                                RedisHashBinder(
+                                    redisTemplate, 
+                                    objectMapper, 
+                                    prop, 
+                                    Duration.ofMinutes(5)
+                                )
+                            )
+                            .build()
+
+                    // 一对多/多对多关联缓存，这里支持参数化
+                    override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
+                        ChainCacheBuilder<Any, List<*>>()
+                            .add(
+                                // highlight-next-line
+                                RedisHashBinder(
+                                    redisTemplate, 
+                                    objectMapper, 
+                                    prop, 
+                                    Duration.ofMinutes(5)
+                                )
+                            )
+                            .build()
+
+                    // // 计算字段缓存，这里支持参数化
+                    override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? =
+                        ChainCacheBuilder<Any, List<*>>()
+                            .add(
+                                // highlight-next-line
+                                RedisHashBinder(
+                                    redisTemplate, 
+                                    objectMapper, 
+                                    prop, 
+                                    Duration.ofHours(1)
+                                )
+                            )
+                            .build()
+                }
+            )
+        }
+        ...省略其他配置...
+    }
+```
+
+</TabItem>
+</Tabs>
+
+### 结合起来，不同人看到不同的缓存
+
+之前提及，普通的关联缓存看起来如此
+
+|key|value|
+|---|-----|
+|Author.boooks-1|[1, 2, 3]|
+|Author.boooks-2|[4, 5, 6]|
+
+如果过滤支持缓存且缓存支持参数化，那么关联缓存看起来就会变成这样
+
+<table>
+    <thead>
+        <tr>
+            <th>key</th>
+            <th>hash</th>
+            <th>value</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td rowspan="3">Author.boooks-1</td>
+            <td>&#123;&#125;</td>
+            <td>[1, 2, 3]</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"a"&#125;</td>
+            <td>[1, 3]</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"b"&#125;</td>
+            <td>[2]</td>
+        </tr>
+        <tr>
+            <td rowspan="3">Author.boooks-2</td>
+            <td>&#123;&#125;</td>
+            <td>[4, 5, 6]</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"a"&#125;</td>
+            <td>[4, 6]</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"b"&#125;</td>
+            <td>[5]</td>
+        </tr>
+    </tbody>
+</table>
+
+## 参数化缓存一致性
 
 Will come soon
