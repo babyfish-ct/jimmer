@@ -38,7 +38,7 @@ import TabItem from '@theme/TabItem';
 
 ### 提供抽象实体基类
 
-首先，提供一个`MappedSuperclass`超类，所有需要多租户管理的实体类都可以继承它
+首先，提供一个`MappedSuperclass`超类，让所有需要多租户管理的实体类都继承它
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -83,7 +83,7 @@ public class TenantFilter implements Filter<TenantAwareProps> {
 
     protected final TenantProvider tenantProvider;
 
-    public TenantFilterForNonCacheMode(TenantProvider tenantProvider) {
+    public TenantFilter(TenantProvider tenantProvider) {
         this.tenantProvider = tenantProvider;
     }
 
@@ -119,7 +119,7 @@ class TenantFilter(
 </TabItem>
 </Tabs>
 
-`TenantFilter`首先从提取当前操作者的所属租户，如果所属租户部位null，则使用它来过滤数据，只查询和指定租户匹配的数据。
+`TenantFilter`首先从提取当前操作者的所属租户，如果所属租户非null，则使用它来过滤数据，只查询和指定租户匹配的数据。
 
 ### 配置过滤器
 
@@ -162,7 +162,7 @@ fun sqlClient(
 </TabItem>
 </Tabs>
 
-虽然在本文的中，仅示范了一个`Filter`/`KFilter`，实际项目中可能有很多个。
+虽然这里仅示范了一个`Filter`/`KFilter`，但是实际项目中可能有很多个过滤器。
 
 所以，这里使用集合，让Spring注入所有的`Filter`/`KFilter`。
 
@@ -381,13 +381,134 @@ val authors = SqlClient
 这里通过[对象抓取器](./fetcher)演示了关联对象的过滤。事实上，Jimmer提供的[GraphQL](../../spring-graphql)功能同样可以利用全局过滤器过滤关联对象，二者效果一样，不再赘述。
 :::
 
+## 启用禁用过滤器
+
+这节我们以软删除为例，假设有两个过滤器类
+
+- UndeletedFilter: 查询状态没有被设置成“已删除”的数据
+- DeletedFilter: 查询转台已经被设置成“已删除”的数据
+
+软删除相关的过滤器非常简单，无需展示这两个过滤器的代码。
+
+现在，我们把这两个过滤器挂接到SqlClient上
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public JSqlClient sqlClient(
+    List<Filter<?>> filters,
+    ...省略其他参数...
+) {
+    return JSqlBuilder
+        .newBuilder()
+        .addFilters(new UndeletedFilter())
+        // highlight-next-line
+        .addDisabledFilters(new DeletedFilter())
+        ...省略其他配置...
+        .build();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun sqlClient(
+    filters: List<KFilter<?>>,
+    ...省略其他参数...
+): KSqlClient =
+    newKSqlClient {
+        .addFilters(UndeletedFilter())
+        // highlight-next-line
+        .addDisabledFilters(DeletedFilter())
+        ...省略其他配置...
+    }
+```
+
+</TabItem>
+</Tabs>
+
+显然，如果两个过滤器同时使用的话，将查询不到任何数据。
+
+所以，`DeletedFilter`虽然被添加上去了，但是并没有启用。而`UndeletedFilter`是启用状态，默认情况下，所有业务关心未被删除的数据。
+
+假如有少量业务与众不同，不查看未被删除的数据，专门查看已经被删除的数据
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+JSqlClient tmpSqlClient =
+    sqlClient.filters(it -> {
+        it
+            // highlight-next-line
+            .disableByTypes(UndeletedFilter.class);
+            // highlight-next-line
+            .enableByTypes(DeletedFilter.class);
+    });
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val tmpSqlClient = 
+    sqlClient.filters {
+        // highlight-next-line
+        disableByTypes(UndeletedFilter::class)
+        // highlight-next-line
+        enableByTypes(DeletedFilter::class)
+    }
+```
+
+</TabItem>
+</Tabs>
+
+在这里，我们把原本启用的`UndeletedFilter`禁用了，而把原本禁用的`DeletedFilter`启用了，创建了全新的`tmpSqlClient`。
+
+`tmpSqlClient`的行为和默认的`sqlClient`刚好相反，不查询未被删除的数据，专门查询已经被删除的数据。
+
+## Sharding过滤器
+
+默认情况下，使用简单查询API按照id查询对象不会应用过滤器，这里既包括用户的`sqlClient.entities.findById(s)`行为，也包括jimmer内部利用对象缓存把id转化为对象的行为。
+
+:::warning
+注意: 
+
+这里指直接按照id查询对象，而不是对象抓取器器针对基于外键的多对一关联的查询。
+
+即使外键数据非null, 如果父对象不满足其过滤条件，对象抓取器也是会认为父对象为null。
+
+此时，如果多对一关联属性不允许为null，会导致异常。
+
+查询基于外键的多对一关联有两种方法：
+1. 使用对象抓取器，显式抓取某个基于外键的多对一关联，或隐式地使用对象抓取器的`allTableFields()`方法
+
+2. 不使用对象对象抓取器，而是直接查询表对象。在这种情况下，所有的外键都会被设置为只有id的父对象或null
+
+其中，第一种情况下会使用过滤器，第二种情况不会使用过滤器。
+:::
+
+大部分情况下，按照id查询对象忽略过滤器是正确的，因为id唯一确定了对象。
+
+然而，如果JDBC层面使用了[sharding-jdbc](https://shardingsphere.apache.org/document/4.1.1/en/manual/sharding-jdbc/)技术，且过滤器适用的字段就是sharding-jdbc中分库分表的字段，这时，仅仅根据id查询对sharding-jdbc而言是灾难。
+
+为了解决这个问题，让过滤器实现`ShardingFilter`接口*(Java)*或`KShardingFilter`接口*(Kotlin)*即可，该接口无任何行为，仅仅做类型标记。
+
+一旦过滤器是`ShardingFilter`或`KShardingFilter`，简单查询API所对应的基于id的简单查询，无论是用户的`sqlClient.entities.findById(s)`行为还是Jimmer内部行为，将不再忽略过滤此过滤器，坚持应用过滤条件。
+
+这可以保证最终SQL一定包含sharding-jdbc所需的sharding字段，从而实现只查询单个分库，而非所有分库都查询一次。
+
 ## 过滤器和缓存
 
 前文提到，全局过滤器可以和[对象抓取器](./fetcher)或GraphQL配合使用，用于过滤关联对象。
 
 这表示，不同的操作者，可以看到不同的对象关联。
 
-然而，在[外部缓存](./cache)一文中，我么提到Jimmer支持关联缓存，例如
+然而，在[外部缓存](./cache)一文中，我们提到Jimmer支持关联缓存看起来是这样的
 
 |key|value|
 |---|-----|
@@ -534,7 +655,7 @@ class TenantFilter(
 - 任何一个过滤器不支持缓存，最终合并后的过滤器不支持缓存
 - 如果合并后的过滤器仍然支持缓存，那么合并后的过滤器的`getParameters()`方法返回的map是所有原始过滤器的`getParameters()`方法返回的map的并集
 
-与此对应，关联缓存必需是一个嵌套的双层KeyValue结构，合并后的过滤器返回map，序列化为字符串后，作为内层的键。
+如果关联缓存支持参数化的，也就是说缓存是一个嵌套的双层KeyValue结构，那么合并后的过滤器返回map，被序列化为字符串后，即可作为内层KeyValue结构的键。
 
 ### 让缓存支持参数化
 
@@ -798,15 +919,15 @@ fun sqlClient(
 
 ## 参数化缓存一致性
 
-参数化关联缓存缓存的结果，不仅受到表关系影响，还会受到关联对象过滤器影响。
+参数化关联缓存缓存的结果，不仅会受到表之间关系的影响，还会受到关联对象过滤器影响。
 
 对于普通过滤器而言，你可以施加任何SQL过滤规则。
 
 然而，支持缓存的过滤器不同，被施加了限制，既不支持表连接，也不支持子查询。
 
-这种限制意味着，支持缓存的过滤器只能使用被过滤表的字段实施筛选。反过来讲，除表之间的关系外，只有被过滤表的数据变更，才会影响有过滤条件的关联缓存。
+这种限制意味着，支持缓存的过滤器只能使用被过滤表的字段实施筛选。反过来讲，除表之间的关系外，只有被过滤表的数据变更，才会影响当前过滤器所对应的关联缓存。
 
-`CacheableFilter`/`KCacheableFilter`还需实现一个`isAffectedBy`方法，用于指定被过滤表的修改时间，是否会导致关联缓存的失效。
+`CacheableFilter`/`KCacheableFilter`还需实现一个`isAffectedBy`方法，用于询问被过滤表的数据变更是否会对当前过滤器有影响。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -817,7 +938,7 @@ public class TenantFilter implements Filter<TenantAwareProps> {
 
     @Override
     public boolean isAffectedBy(EntityEvent<?> e) {
-        // 如果被过滤表的tenant字段被修改，则清除参数化缓存
+        // 如果被过滤表的tenant字段被修改，则当前过滤器受影响
         return e.getChangedFieldRef(TenantAwareProps.TENANT) != null;
     }
 
@@ -835,7 +956,7 @@ class TenantFilter(
 ) : KFilter<TenantAware> {
 
     override fun isAffectedBy(e: EntityEvent<*>): Boolean =
-        // 如果被过滤表的tenant字段被修改，则清除参数化缓存
+        // 如果被过滤表的tenant字段被修改，则当前过滤器受影响
         e.getChangedFieldRef(TenantAware::tenant) !== null
 
     ...忽略其他方法...
@@ -854,6 +975,173 @@ update book set tenant = 'b' where id = 3;
 ```
 Delete object data from redis: [Book-3]
 Delete property data from redis: [BookStore.books-1]
+Delete property data from redis: [Author.books-1]
+Delete property data from redis: [Author.books-2]
+```
+
+## 过滤器和计算属性
+
+在[计算属性及缓存](calculated-prop)一文中，我们讨论过如何实现计算属性和相关缓存。
+
+`TransientResolver`或`KTransientResolver`接口支持一个方法`getParameterMapRef()`，返回类型`Ref<SortedMap<String, Object>>`。
+
+此方法具备默认实现，并非必须覆盖。默认行为返回一个非null的Ref，但内部的值为null。
+
+|getParameterMapRef方法返回的Ref|缓存是否支持参数化|
+|---|---|---|
+|null|NA|不使用计算缓存|
+|Ref本身非null，但内部的map为null或长度为0|NA|使用计算缓存，缓存当前无参过滤器对应的计算结果|
+|Ref内部的map长度非0|否|不使用计算缓存|
+|Ref内部的map长度非0|是|使用计算缓存，缓存当前有参过滤器对应的计算结果|
+
+对于最后两种情况，计算缓存看起来可能是这样的
+
+<table>
+    <thead>
+        <tr>
+            <th>key</th>
+            <th>hash</th>
+            <th>value</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td rowspan="3">BookStore.avgPrice-1</td>
+            <td>&#123;&#125;</td>
+            <td>67.33333</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"a"&#125;</td>
+            <td>66.5</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"b"&#125;</td>
+            <td>69</td>
+        </tr>
+        <tr>
+            <td rowspan="3">BookStore.avgPrice-2</td>
+            <td>&#123;&#125;</td>
+            <td>39.4</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"a"&#125;</td>
+            <td>39.75</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"b"&#125;</td>
+            <td>38.7</td>
+        </tr>
+    </tbody>
+</table>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStoreAvgPriceResolver.java"
+public class BookStoreAvgPriceResolver 
+implements TransientResolver<Long, BigDecimal> {
+
+    private final JSqlClient sqlClient;
+
+    public BookStoreAvgPriceResolver(JSqlClient sqlClient) {
+        
+        this.sqlClient = sqlClient;
+
+        // 1. Check whether the association when `BookStore.books` is changed
+        sqlClient.getTriggers().addAssociationListener(
+            // highlight-next-line
+            BookStoreProps.BOOKS, // α
+            e -> {
+                ...和“计算缓存及其缓存”一文的例子相比，逻辑没变，省略...
+            }
+        );
+        sqlClient.getTriggers().addEntityListener(
+            Book.class, 
+            e -> {
+                ...和“计算缓存及其缓存”一文的例子相比，逻辑没变，省略...
+            }
+        );
+    }
+
+    @Override
+    public Ref<SortedMap<String, Object>> getParameterMapRef() {
+        return sqlClient
+            .filters
+            // highlight-next-line
+            .getTargetParameterMapRef(BookStoreProps.BOOKS) // β
+    }
+
+    @Override
+    public Map<Long, BigDecimal> resolve(
+            Collection<Long> ids, 
+            Connection con
+    ) {
+        ...omit calculation code...
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreAvgPriceResolver.kt"
+class BookStoreAvgPriceResolver(
+    private val sqlClient: KSqlClient
+) : KTransientResolver<Long, BigDecimal> {
+
+    init {
+        // 1. Check whether the association `BookStore.books` is changed.
+        sqlClient
+            .triggers
+            // highlight-next-line
+            .addAssociationListener(BookStore::books) { // α
+                ...和“计算缓存及其缓存”一文的例子相比，逻辑没变，省略...
+            }
+
+        sqlClient.triggers.addEntityListener(Book::class) {
+            ...和“计算缓存及其缓存”一文的例子相比，逻辑没变，省略...
+        }
+    }
+
+    override fun getParameterMapRef(): Ref<SortedMap<String, Any>?>? =
+        sqlClient
+            .filters
+            // highlight-next-line
+            .getTargetParameterMapRef(BookStore::books) // β
+
+    override fun resolve(
+        ids: Collection<Long>,
+        con: Connection
+    ): Map<Long, BigDecimal> =
+        ... omit calculation code ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+- α:    监听一对多关联`BookStore.books`的变化，以下两种情况都会触发该事件
+        - `BOOK`表的外键`STORE_ID`被修改
+        - `BOOK`表的`TENANT`字段被修改
+
+- β:    返回一对多关联`Book.books`的关联对象，即`Book`，的过滤器的参数的Ref包装
+        - 如果`Book`类没有过滤器，返回的Ref本身非null, 但内部的值为null
+        - 如果`Book`类有过滤器但过滤器不支持缓存，返回null
+        - 如果`Book`类有过滤器且过滤器支持缓存，返回的Ref非null，其内部的值就是过滤器参数
+
+修改`BOOK`表的`TENANT_ID`字段，会影响一对多关联`BookStore.books`的缓存，从而进一步影响计算属性`BookStore.avgPrice`的缓存。
+
+参考[外部缓存-数据一致性](./cache#数据一致性)，完成数据一致性的基础开发后，运行程序，打开任何SQL工具，执行
+```sql
+update book set tenant = 'b' where id = 3;
+```
+
+假设被修改的`Book-3`关联到`BookStore-1`、`Author-1`和`Author-2`，可以在日志中找到
+```java
+Delete object data from redis: [Book-3]
+Delete property data from redis: [BookStore.books-1]
+// highlight-next-line
+Delete property data from redis: [BookStore.avgPrice-1]
 Delete property data from redis: [Author.books-1]
 Delete property data from redis: [Author.books-2]
 ```
