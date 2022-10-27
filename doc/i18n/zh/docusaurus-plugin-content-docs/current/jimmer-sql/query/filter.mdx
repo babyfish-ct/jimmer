@@ -398,9 +398,57 @@ val authors = SqlClient
 
 这个例子中，`Author.books`这个多对多关联被缓存所描述，然而，所有操作者看到的缓存数据是一样的，这和全局过滤器可以让不同的操作者看到不同的对象关联不相符。
 
-为了，Jimmer支持更高级的缓存功能，和全局过滤器配合，让不同的操作者看到不同的缓存。
+为了，Jimmer支持更高级的缓存功能，和全局过滤器配合，让不同的操作者看到不同的缓存。这样的缓存看起来应该如此
 
-让缓存能和过滤器配合，开发人员需要
+<table>
+    <thead>
+        <tr>
+            <th>key</th>
+            <th>hash</th>
+            <th>value</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td rowspan="3">Author.boooks-1</td>
+            <td>&#123;&#125;</td>
+            <td>[1, 2, 3]</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"a"&#125;</td>
+            <td>[1, 3]</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"b"&#125;</td>
+            <td>[2]</td>
+        </tr>
+        <tr>
+            <td rowspan="3">Author.boooks-2</td>
+            <td>&#123;&#125;</td>
+            <td>[4, 5, 6]</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"a"&#125;</td>
+            <td>[4, 6]</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"b"&#125;</td>
+            <td>[5]</td>
+        </tr>
+    </tbody>
+</table>
+
+在这里，我们看到了缓存条目的膨胀，如果活跃的过滤器参数越多，消耗的缓存就越多。
+
+所以，仅应针对重要的关联才使用这种缓存能力，且推荐使用redis集群。
+
+|过滤器是否支持缓存|缓存是否支持参数化|最终效果|
+|---|----|-----|
+| 否 | NA | 不使用用关联缓存 |
+| 是 | 否 | 使用关联缓存，但仅缓存无参过滤器的结果 |
+| 是 | 是 | 使用关联缓存，且缓存所有过滤器的结果 *(就是上面介绍的这种缓存条目膨胀后的缓存)*|
+
+由此可见，如果要为所有过滤器参数提供缓存，开发人员需要
 
 - 让过滤器支持缓存
 - 让缓存支持参数化
@@ -496,39 +544,13 @@ class TenantFilter(
 // 普通缓存
 public interface Cache<K, V> {
 
-    V get(@NotNull K key, CacheEnvironment<K, V> env);
-
-    Map<K, V> getAll(Collection<K> keys, CacheEnvironment<K, V> env);
-
-    void delete(K key);
-
-    void delete(K key, Object reason);
-
-    void deleteAll(Collection<K> keys);
-
-    void deleteAll(Collection<K> keys, Object reason);
+    ...省略方法..
 
     // 参数化的缓存
     // highlight-next-line
     interface Parameterized<K, V> extends Cache<K, V> {
 
-        @Nullable
-        V get(
-                K key,
-                // highlight-next-line
-                SortedMap<String, Object> parameterMap,
-                CacheEnvironment<K, V> env
-        ) {
-            return getAll(Collections.singleton(key), parameterMap, env).get(key);
-        }
-
-        @NotNull
-        Map<K, V> getAll(
-                Collection<K> keys,
-                // highlight-next-line
-                SortedMap<String, Object> parameterMap,
-                CacheEnvironment<K, V> env
-        );
+        ...省略方法...
     }
 }
 ```
@@ -773,67 +795,6 @@ fun sqlClient(
 
 </TabItem>
 </Tabs>
-
-### 结合起来，不同人看到不同的缓存
-
-之前提及，普通的关联缓存看起来如此
-
-|key|value|
-|---|-----|
-|Author.boooks-1|[1, 2, 3]|
-|Author.boooks-2|[4, 5, 6]|
-
-如果过滤器支持缓存且缓存支持参数化，那么关联缓存看起来就会变成这样
-
-<table>
-    <thead>
-        <tr>
-            <th>key</th>
-            <th>hash</th>
-            <th>value</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td rowspan="3">Author.boooks-1</td>
-            <td>&#123;&#125;</td>
-            <td>[1, 2, 3]</td>
-        </tr>
-        <tr>
-            <td>&#123;"tenant":"a"&#125;</td>
-            <td>[1, 3]</td>
-        </tr>
-        <tr>
-            <td>&#123;"tenant":"b"&#125;</td>
-            <td>[2]</td>
-        </tr>
-        <tr>
-            <td rowspan="3">Author.boooks-2</td>
-            <td>&#123;&#125;</td>
-            <td>[4, 5, 6]</td>
-        </tr>
-        <tr>
-            <td>&#123;"tenant":"a"&#125;</td>
-            <td>[4, 6]</td>
-        </tr>
-        <tr>
-            <td>&#123;"tenant":"b"&#125;</td>
-            <td>[5]</td>
-        </tr>
-    </tbody>
-</table>
-
-### 是否采用这种能力
-
-在这里，我们看到了缓存条目的膨胀，如果活跃的过滤器参数越多，消耗的缓存就越多。
-
-所以，仅应针对重要的关联才使用这种缓存能力，且推荐使用redis集群。
-
-|过滤器是否支持缓存|缓存是否支持参数化|最终效果|
-|---|----|-----|
-| 否 | NA | 不使用用关联缓存 |
-| 是 | 否 | 使用关联缓存，但仅缓存无参过滤器的结果 |
-| 是 | 是 | 使用关联缓存，且缓存所有过滤器的结果 |
 
 ## 参数化缓存一致性
 
