@@ -67,7 +67,7 @@ interface BaseEntity {
 
 ## 定义拦截器
 
-假设有一个叫做`UserService`的服务类，其java方法`getCurrentUserId()`或kotlin属性`currentUserId`返回当前返回当前登录用户的id。
+假设有一个叫做`UserService`的服务类，其java方法`getCurrentUserId()`或kotlin属性`currentUserId`返回当前登录用户的id。
 
 拦截器必须实现`org.babyfish.jimmer.sql.DraftInterceptor`接口，如果使用Spring托管，代码方式如下：
 
@@ -193,7 +193,7 @@ fun sqlClient(
 </Tabs>
 
 :::tip
-虽然在本文的中，仅示范了一个`DraftInterceptor`，实际项目中可能有很多个。
+虽然在本文仅示范了一个`DraftInterceptor`，实际项目中可能有很多个。
 
 所以，这里使用集合，让Spring注入所有的`DraftInterceptor`。
 :::

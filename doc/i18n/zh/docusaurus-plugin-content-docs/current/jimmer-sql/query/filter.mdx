@@ -65,7 +65,7 @@ interface TenantAware {
 </TabItem>
 </Tabs>
 
-### 提供过滤器
+### 定义过滤器
 
 下面的示例中，`TenantProvider`类的Java方法`get()`和kotlin属性`tenant`用于返回当前操作着所属租户。
 
@@ -123,7 +123,7 @@ class TenantFilter(
 
 ### 配置过滤器
 
-将过滤器挂接到SqlClinet对象上，即可生效
+将过滤器挂接到SqlClient对象上，即可生效
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -245,7 +245,7 @@ where tb_1_.TENANT = ?
 
 ## 过滤关联对象
 
-不仅可以过滤聚合根读对象，关联对象也可以被过滤。
+不仅可以过滤聚合根对象，关联对象也可以被过滤。
 
 假设`Book`实体继承了`TenantAware`，用法如下
 
@@ -487,7 +487,7 @@ val tmpSqlClient =
 查询基于外键的多对一关联有两种方法：
 1. 使用对象抓取器，显式抓取某个基于外键的多对一关联，或隐式地使用对象抓取器的`allTableFields()`方法
 
-2. 不使用对象对象抓取器，而是直接查询表对象。在这种情况下，所有的外键都会被设置为只有id的父对象或null
+2. 不使用对象抓取器，而是直接查询表对象。在这种情况下，所有的外键都会被设置为只有id的父对象或null
 
 其中，第一种情况下会使用过滤器，第二种情况不会使用过滤器。
 :::
@@ -665,7 +665,7 @@ class TenantFilter(
 // 普通缓存
 public interface Cache<K, V> {
 
-    ...省略方法..
+    ...省略方法...
 
     // 参数化的缓存
     // highlight-next-line
@@ -716,7 +716,7 @@ Cache<K, V> cache = ChainCacheBuilder<K, V>()
     |Java需要实现的接口|LoadingBinder<K, V>|LoadingBinder.**Parameterized**<K, V>|
     |Kotlin需要实现的接口|KLoadingBinder<K, V>|KLoadingBinder.**Parameterized**<K, V>|
 
--   如果缓存能不能自动loading，需要jimmer调用其set, 如redis
+-   如果缓存不能自动loading，需要jimmer调用其set, 如redis
 
     |      |普通缓存的Binder|**参数化**缓存的Binder|
     |------|----------|------------|
@@ -894,7 +894,7 @@ fun sqlClient(
                             )
                             .build()
 
-                    // // 计算字段缓存，这里支持参数化
+                    // 计算字段缓存，这里支持参数化
                     override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? =
                         ChainCacheBuilder<Any, List<*>>()
                             .add(
@@ -1052,13 +1052,13 @@ implements TransientResolver<Long, BigDecimal> {
             // highlight-next-line
             BookStoreProps.BOOKS, // α
             e -> {
-                ...和“计算缓存及其缓存”一文的例子相比，逻辑没变，省略...
+                ...和“计算属性及其缓存”一文的例子相比，逻辑没变，省略...
             }
         );
         sqlClient.getTriggers().addEntityListener(
             Book.class, 
             e -> {
-                ...和“计算缓存及其缓存”一文的例子相比，逻辑没变，省略...
+                ...和“计算属性及其缓存”一文的例子相比，逻辑没变，省略...
             }
         );
     }
@@ -1095,11 +1095,11 @@ class BookStoreAvgPriceResolver(
             .triggers
             // highlight-next-line
             .addAssociationListener(BookStore::books) { // α
-                ...和“计算缓存及其缓存”一文的例子相比，逻辑没变，省略...
+                ...和“计算属性及其缓存”一文的例子相比，逻辑没变，省略...
             }
 
         sqlClient.triggers.addEntityListener(Book::class) {
-            ...和“计算缓存及其缓存”一文的例子相比，逻辑没变，省略...
+            ...和“计算属性及其缓存”一文的例子相比，逻辑没变，省略...
         }
     }
 
