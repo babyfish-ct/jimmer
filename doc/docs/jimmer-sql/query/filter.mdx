@@ -1,9 +1,1162 @@
 ---
 sidebar_position: 9
-title: Global filter
+title: Gobal Filter
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Will come soon
+In actual projects, there is a type of requirement that is very common, such as
+
+-   Soft delete
+
+    The delete operation at the business level does not correspond to the delete operation of the database, but sets a "deleted" state for the data. Most of the query operations do not query the data with the "deleted" state. In this way, data marked as "deleted" will be hiden until the "deleted" state is revoked.
+
+-   Multi-tenancy
+
+    The data has a "tenant" field. If the login information of the system can also be parsed into "current tenant", the "current tenant" is used to filter the query data, so that visitors of different tenants can see different data after logging in.
+
+-   Data authorization
+
+    The data may be indirectly related to the user through certain authorization-related associations. Using the login identity, each user can only query the data he is authorized to access.
+
+The above requirements are essentially the same. This is a requirement to implicitly implant where conditions for queries. Jimmer provides global filters to solve this problem.
+
+:::tip
+If the reader is familiar with the Oracle database, you can use [VPD](https://docs.oracle.com/database/121/DBSEG/vpd.htm) to understand by analogy. Jimmer global filters introduce Oracle VPD-like capabilities for all databases.
+:::
+
+Among the above requirements, the complexity of multi-tenancy is relatively moderate. This article uses multi-tenancy as an example to explain global filters.
+
+:::note
+In some multi-tenant systems, data of different tenants needs to be stored in separate tables or even separate databases.
+
+If there is a request in this regard, please use it in conjunction with [sharding-jdbc](https://shardingsphere.apache.org/document/4.1.1/en/manual/sharding-jdbc/). Solve the problem of database sharding and table sharding at the JDBC level instead of the ORM level.
+:::
+
+## Provide filter
+
+### Provides an abstract entity base class
+
+First, provide a `MappedSuperclass` superclass, all entity classes that need multi-tenant management can inherit it
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@MappedSuperclass
+public interface TenantAware {
+
+    String tenant();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@MappedSuperclass
+interface TenantAware {
+
+    val tenant: String
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Define filter
+
+In the following example, the Java method `get()` or the kotlin property `tenant` of the `TenantProvider` class is used to return the tenant to which the current user belongs.
+
+- Under Java, the interceptor needs to implement the `org.babyfish.jimmer.sql.filter.Filter` interface,
+- Under Kotlin, the interceptor needs to implement the `org.babyfish.jimmer.sql.kt.filter.KFilter` interface.
+
+If using Spring hosting, the code is as follows:
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Component
+public class TenantFilter implements Filter<TenantAwareProps> {
+
+    protected final TenantProvider tenantProvider;
+
+    public TenantFilter(TenantProvider tenantProvider) {
+        this.tenantProvider = tenantProvider;
+    }
+
+    @Override
+    public void filter(FilterArgs<TenantAwareProps> args) {
+        String tenant = tenantProvider.get();
+        if (tenant != null) {
+            args.where(args.getTable().tenant().eq(tenant));
+        }
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Component
+class TenantFilter(
+    protected val tenantProvider: TenantProvider
+) : KFilter<TenantAware> {
+
+    override fun filter(args: KFilterArgs<TenantAware>) {
+        tenantProvider.tenant?.let {
+            args.apply {
+                where(table.tenant.eq(it))
+            }
+        }
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+`TenantFilter` first extracts the tenant of the current user. If the tenant is not null, use it to filter the data, and only query the data that matches the specified tenant.
+
+### Configure filter
+
+Hook the filter to the SqlClient object to take effect
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public JSqlClient sqlClient(
+    List<Filter<?>> filters,
+    ...Omit other parameters...
+) {
+    return JSqlBuilder
+        .newBuilder()
+        // highlight-next-line
+        .addFilters(filters)
+        ...Omit other configuration...
+        .build();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun sqlClient(
+    filters: List<KFilter<?>>,
+    ...Omit other parameters...
+): KSqlClient =
+    newKSqlClient {
+        // highlight-next-line
+        addFilters(filters)
+        ...Omit other configuration...
+    }
+```
+
+</TabItem>
+</Tabs>
+
+Although only one `Filter`/`KFilter` is demonstrated here, there may be many filters in the actual project.
+
+So, use a collection here and let Spring inject all `Filter`/`KFilter` objects.
+
+## Filter aggregate root objects
+
+Filtering aggregate root objects is the simplest use of global filters.
+
+Assuming that the `Book` entity inherits `TenantAware`, the usage is as follows
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+List<Book> books = sqlClient.getEntities.findAll(Book.class);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient.entities.findAll(Book::class);
+```
+
+</TabItem>
+</Tabs>
+Or
+<Tabs groupId="language">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+BookTable book = new BookTable();
+List<Book> books = fluent
+    .query(book)
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lamda" label="Java(Lambda)">
+
+```java
+List<Book> books = sqlClient
+    .createQuery(BookTable.class, (q, book) -> {
+        return q.select(book);
+    })
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = SqlClient
+    .createQuery(Book::class) {
+        select(table)
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+The generated SQL is as follows
+
+```sql
+select 
+    tb_1_.ID, 
+    tb_1_.TENANT, 
+    tb_1_.NAME, 
+    tb_1_.EDITION, 
+    tb_1_.PRICE, 
+    tb_1_.STORE_ID 
+from BOOK as tb_1_
+/* highlight-next-line */ 
+where tb_1_.TENANT = ?
+```
+
+It is not difficult to find that the simplest query is used here, without any sql conditional. Howvery, the final generated SQL still filters `tb_1_.TENANT`
+
+## filter associated objects
+
+Not only aggregate root objects can be filtered, but also associated objects can be filtered.
+
+Assuming that the `Book` entity inherits `TenantAware`, the usage is as follows
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+List<Author> authors = sqlClient.getEntities.findAll(
+    AuthorFetcher.$
+        .allScalarFields()
+        // highlight-next-line
+        .books(
+            BookFetcher.$
+                .allScalarFields()
+        )
+);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient.entities.findAll(
+    newFetcher(Author::class).by {
+        allScalarFields()
+        // highlight-next-line
+        books {
+            allScalarFields()
+        }
+    }
+);
+```
+
+</TabItem>
+</Tabs>
+or
+<Tabs groupId="language">
+<TabItem value="java" label="Java(Fluent)">
+
+```java
+Fluent fluent = sqlClient.createFluent();
+AuthorTable author = new AuthorTable();
+List<Author> authors = fluent
+    .query(author)
+    .select(
+        author.fetch(
+            AuthorFetcher.$
+                .allScalarFields()
+                // highlight-next-line
+                .books(
+                    BookFetcher.$
+                        .allScalarFields()
+                )
+        )
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="java-lamda" label="Java(Lambda)">
+
+```java
+List<Author> authors = sqlClient
+    .createQuery(AuthorTable.class, (q, author) -> {
+        return q.select(
+            author.fetch(
+                AuthorFetcher.$
+                    .allScalarFields()
+                    // highlight-next-line
+                    .books(
+                        BookFetcher.$
+                            .allScalarFields()
+                    )
+            )
+        );
+    })
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val authors = SqlClient
+    .createQuery(Author::class) {
+        select(
+            table.fetchBy {
+                allScalarFields()
+                // highlight-next-line
+                books {
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+This will result in the following two SQL statements being generated
+
+1.  Query aggregate root objects
+    ```sql
+    select 
+        tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER 
+    from AUTHOR as tb_1_
+    ```
+
+2.  Query associated objects
+    ```sql
+    select 
+        tb_2_.AUTHOR_ID, 
+        tb_1_.ID, 
+        tb_1_.TENANT, 
+        tb_1_.NAME, 
+        tb_1_.EDITION, 
+        tb_1_.PRICE 
+    from BOOK as tb_1_ 
+    inner join BOOK_AUTHOR_MAPPING as tb_2_ 
+        on tb_1_.ID = tb_2_.BOOK_ID 
+    where 
+        tb_2_.AUTHOR_ID in (?, ?, ?, ?, ?) 
+    and 
+        /* highlight-next-line */
+        tb_1_.TENANT = ?
+    ```
+
+It's not hard to see that an object fetcher is used here. Although the object fetcher does not impose any [field-level filters] (../query/fetcher#field-filters) on the associated property `Author.books`, the global filters for the `Book` class still take effect. As a result, the final generated SQL still filters tenant field.
+
+:::info
+The filtering of associated objects is demonstrated here through [object fetcher](./fetcher). In fact, the [GraphQL](../../spring-graphql) function provided by Jimmer can also use global filters to filter associated objects.
+:::
+
+## Enable/disable filter
+
+In this section, we take soft delete as an example, assuming there are two filter classes
+
+- UndeletedFilter: query data whose with "deleted" state
+- DeletedFilter: query data whose without "deleted" state
+
+Soft-deleting is very simple, and there is no need to show the code for both filters.
+
+Now, we hook these two filters to SqlClient
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public JSqlClient sqlClient(
+    List<Filter<?>> filters,
+    ...Omit other parameters...
+) {
+    return JSqlBuilder
+        .newBuilder()
+        .addFilters(new UndeletedFilter())
+        // highlight-next-line
+        .addDisabledFilters(new DeletedFilter())
+        ...Omit other configuration...
+        .build();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun sqlClient(
+    filters: List<KFilter<?>>,
+    ...Omit other parameters...
+): KSqlClient =
+    newKSqlClient {
+        .addFilters(UndeletedFilter())
+        // highlight-next-line
+        .addDisabledFilters(DeletedFilter())
+        ...Omit other configuration...
+    }
+```
+
+</TabItem>
+</Tabs>
+
+Obviously, if both filters are used at the same time, no data will be queried.
+
+So, `DeletedFilter` is added, but not enabled. And `UndeletedFilter` is enabled, by default, all businesses care about undeleted data.
+
+If there is a small amount of business out of the ordinary, do not view the data that has not been deleted, but specifically view the data that has already been deleted
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+JSqlClient tmpSqlClient =
+    sqlClient.filters(it -> {
+        it
+            // highlight-next-line
+            .disableByTypes(UndeletedFilter.class);
+            // highlight-next-line
+            .enableByTypes(DeletedFilter.class);
+    });
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val tmpSqlClient = 
+    sqlClient.filters {
+        // highlight-next-line
+        disableByTypes(UndeletedFilter::class)
+        // highlight-next-line
+        enableByTypes(DeletedFilter::class)
+    }
+```
+
+</TabItem>
+</Tabs>
+
+Here, we disable the originally enabled `UndeletedFilter`, and enable the originally disabled `DeletedFilter`, creating a new `tmpSqlClient`.
+
+The behavior of `tmpSqlClient` is just the opposite of the default `sqlClient`. It does not query data that has not been deleted, but specifically queries data that has been deleted.
+
+## Sharding Filter
+
+By default, querying objects by id using the Simple Query API will not apply filters, including both the user's `sqlClient.entities.findById(s)` behavior and jimmer's internal behavior about use the object cache to convert ids to objects.
+
+:::warning
+Notice: 
+
+This refers to querying objects directly by id, rather than resvoling many-to-one associations based on foreign keys in object fetcher.
+
+Even if the foreign key data is not null, if the parent object does not meet its filter conditions, the object fetcher will consider the parent object to be null.
+
+At this point, if the many-to-one associated property is not nullable, it will cause an exception.
+
+There are two ways to fetch many-to-one associations based on foreign keys:
+
+1. Using an object fetcher, explicitly fetch a foreign key based many-to-one association, or implicitly use the object fetchers `allTableFields()` method
+
+2. Instead of using the object fetcher, query the table object directly. In this case all foreign keys will be set to the id-only parent object or null
+
+Among them, the filter will be applied in the first case, and will not be appiled in the second case.
+:::
+
+In most cases, query object(s) by is(s) ignores the filter, because the id uniquely identifies the unique object.
+
+However, if the [sharding-jdbc](https://shardingsphere.apache.org/document/4.1.1/en/manual/sharding-jdbc/) technology is used at the JDBC level, and the field to which the filter applies is the sharding field of sharding-jdbc, at this time, querying by only id is a disaster for sharding-jdbc.
+
+In order to solve this problem, let the filter implement the `ShardingFilter` interface*(Java)* or the `KShardingFilter` interface*(Kotlin)*, which has no methods, just type marking.
+
+Once the filter is `ShardingFilter` or `KShardingFilter`, the id-based simple query corresponding to the simple query API, whether it is the user's `sqlClient.entities.findById(s)` behavior or Jimmer internal behavior, will no longer ignore filtering this filter, persist to apply the filter condition.
+
+This ensures that the final SQL must contain the condition of sharding fields required by sharding-jdbc, so that only a single sharding database is queried instead of all sharding databases being queried once.
+
+## Filters and Caching
+
+As mentioned earlier, global filters can be used in conjunction with [object fetcher](./fetcher) or GraphQL to filter associated objects.
+
+This means that different operators can see different object associations.
+
+However, in the [External Cache](./cache) article, we mention that Jimmer supports associative caching that looks like this
+
+|key|value|
+|---|-----|
+|Author.boooks-1|[1, 2, 3]|
+|Author.boooks-2|[4, 5, 6]|
+
+This means that the books associated with the author whose `id` is `1` are `1`, `2`, and `3`, while the books associated with the author whose `id` is `2` are `4`, `5` ` and `6`.
+
+In this example, the many-to-many association of `Author.books` is described by the cache, however, all users see the same cached data, However, the global filter that allows different users to see different object associations.
+
+Let Jimmer supports more advanced cache functions, and cooperates with global filters, so that different users can see different cache-data. Such a cache structure should be look like 
+
+<table>
+    <thead>
+        <tr>
+            <th>key</th>
+            <th>hash</th>
+            <th>value</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td rowspan="3">Author.boooks-1</td>
+            <td>&#123;&#125;</td>
+            <td>[1, 2, 3]</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"a"&#125;</td>
+            <td>[1, 3]</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"b"&#125;</td>
+            <td>[2]</td>
+        </tr>
+        <tr>
+            <td rowspan="3">Author.boooks-2</td>
+            <td>&#123;&#125;</td>
+            <td>[4, 5, 6]</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"a"&#125;</td>
+            <td>[4, 6]</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"b"&#125;</td>
+            <td>[5]</td>
+        </tr>
+    </tbody>
+</table>
+
+Here we see cache entry inflation, the more cache is consumed if more filter parameters are active.
+
+Therefore, this capability should only be used for important associations, and redis clustering is recommended.
+
+|Does the filter support cache|Does the cache support parameterization|Final effect|
+|---|----|-----|
+| No | NA | Do not use association cache |
+| Yes | No | Use association cache, but only cache the results of the parameterless filter |
+| Yes | Yes | Use an associative cache, and cache the results of all filters * (that is, the new cache strucuture discuessed above)*|
+
+From this, if you want to provide caching for all filter parameters, the developer needs to
+
+- Make filters support caching
+- Make the cache support parameterization
+
+### Make the filter support cache
+
+To enable the filter to support cache
+
+- For Java, the `org.babyfish.jimmer.sql.filter.CacheableFilter` interface needs to be implemented,
+- For Kotlin, the `org.babyfish.jimmer.sql.kt.filter.KCacheableFilter` interface needs to be implemented.
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Component
+public class TenantFilter implements Filter<TenantAwareProps> {
+
+    protected final TenantProvider tenantProvider;
+
+    public TenantFilterForNonCacheMode(TenantProvider tenantProvider) {
+        this.tenantProvider = tenantProvider;
+    }
+
+    @Override
+    public void filter(FilterArgs<TenantAwareProps> args) {
+        String tenant = tenantProvider.get();
+        if (tenant != null) {
+            args.where(args.getTable().tenant().eq(tenant));
+        }
+    }
+
+    // highlight-next-line
+    @Override
+    public SortedMap<String, Object> getParameters() {
+        String tenant = tenantProvider.get();
+        if (tenant == null) {
+            return null;
+        }
+        SortedMap<String, Object> map = new TreeMap<>();
+        map.put("tenant", tenant);
+        return map;
+    }
+
+    ...忽略其他方法...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Component
+class TenantFilter(
+    protected val tenantProvider: TenantProvider
+) : KFilter<TenantAware> {
+
+    override fun filter(args: KFilterArgs<TenantAware>) {
+        tenantProvider.tenant?.let {
+            args.apply {
+                where(table.tenant.eq(it))
+            }
+        }
+    }
+
+    // highlight-next-line
+    override fun getParameters(): SortedMap<String, Any>? =
+        tenantProvider.tenant?.let {
+            sortedMapOf("tenant" to it)
+        }
+
+    ...忽略其他方法...
+}
+```
+
+</TabItem>
+</Tabs>
+
+Implement the `getParameters()` method for `CacheableFilter`/`KCacheableFilter`, returning a map.
+
+In this examples, only one filter is used. If an entity class is filtered by multiple filters, the system will automatically combine the multiple filters into one filter.
+
+- Any filter does not support cache, and the final merged filter does not support cache
+- If all filters support cache, the map returned by the `getParameters()` method of the merged filter is the union of all the maps returned by the `getParameters()` method of the original filters
+
+If the association cache supports parameterization, that is, the cache is a nested 2-layer KeyValue structure, then the combined filter returns a map, which can be used as the key of the inner KeyValue structure after being serialized into a string.
+
+### Make the cache support parameterized
+
+In order for the cache to be a nested two-level KeyValue structure, the cache needs to implement the `Cache.Parameterized<K, V>` interface
+
+```java title="Cache.java"
+// Ordinary cache
+public interface Cache<K, V> {
+
+    ...Ommit methods...
+
+    // Parameterized cache
+    // highlight-next-line
+    interface Parameterized<K, V> extends Cache<K, V> {
+
+        ...Ommit methods...
+    }
+}
+```
+
+The code to create the cache is as follows
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Cache<K, V> cache = new ChainCacheBuilder<K, V>()
+    .add(level1Binder)
+    .add(level2Binder)
+    ... 
+    .add(levelNBinder)
+    .build()
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+Cache<K, V> cache = ChainCacheBuilder<K, V>()
+    .add(level1Binder)
+    .add(level2Binder)
+    ... 
+    .add(levelNBinder)
+    .build()
+```
+
+</TabItem>
+</Tabs>
+
+Even with parameterized caches, you only need to declare variables of type `Cache<K, V>`. The developer only needs to create an object instance of type `Cache.Parameterized<K, V>`.
+
+In order to build a multi-level cache, you need to build `Binder` objects
+
+-   If the cache can be automatically loaded, such as caffine, guava
+
+    |      |Ordinary binder|Binder for **parameterized** cache|
+    |------|----------|------------|
+    |Interfaces that Java needs to implement|LoadingBinder<K, V>|LoadingBinder.**Parameterized**<K, V>|
+    |Interfaces that Kotlin needs to implement|KLoadingBinder<K, V>|KLoadingBinder.**Parameterized**<K, V>|
+
+-   If the cache cannot be loaded automatically, jimmer needs to call its set, such as redis
+
+    |      |Ordinary binder|Binder for **parameterized** cache|
+    |------|----------|------------|
+    |Interfaces that Java needs to implement|SimpleBinder<K, V>|SimpleBinder.**Parameterized**<K, V>|
+    |Interfaces that Kotlin needs to implement|KSimpleBinder<K, V>|KSimpleBinder.**Parameterized**<K, V>|
+    |Recommended abstract base class for Java|AbstractRemoteValueBinder<K, V>|AbstractRemote**Hash**Binder<K, V>|
+    |Recommended abstract base class for Kotlin|AbstractKRemoteValueBinder<K, V>|AbstractKRemote**Hash**Binder<K, V>|
+
+:::warning
+When building a multi-level cache
+- If all `Binder`s are parameterized, the resulting cache is also parameterized
+- If all `Binder`s are non-parameterized, the resulting cache is also non-parameterized
+- If the two `Binder` are mixed, an error will be reported
+:::
+
+Provide a derived class for `AbstractRemoteHashBinder` or `AbstractKRemoteHashBinder`, which can quickly implement parameterized cache `Binder`, and further implement parameterized cache.
+
+I won't go into details here, please refer to the implementation of `RedisHashBinder` in the example attached to the project, please click [Java Demonstration Link](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql /src/main/java/org/babyfish/jimmer/sql/example/cache/binder/RedisHashBinder.java) or [Kotlin demo link](https://github.com/babyfish-ct/jimmer/blob/main/ example/kotlin/jimmer-sql-kt/src/main/kotlin/org/babyfish/jimmer/example/kt/sql/cache/binder/RedisHashBinder.kt)
+
+Finally, with the help of `RedisHashBinder`, we can configure association caches and calucation caches as parameterized caches
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public JSqlClient sqlClient(
+    RedisTemplate<stirng, byte[]> redisTemplate,
+    ObjectMapper objectMapper,
+    ...其他参数...
+) {
+    return JSqlBuilder
+        .newBuilder()
+        // Before setting Cache, EntityManager must be set first
+        .setEntityManager(
+            new setEntityManager(
+                App.class.getClassLoader(),
+                "yourpackage.model" // The package where the entity is located
+            )
+        )
+        .setCaches(it -> {
+            it.setCacheFactory(
+                new CacheFactory() {
+
+                    // Object cache, ordinary cache is enough
+                    @Override
+                    public Cache<?, ?> createObjectCache(ImmutableType type) {
+                        return new ChainCacheBuilder<>()
+                                .add(new CaffeineBinder<>(512, Duration.ofSeconds(1)))
+                                .add(
+                                    new RedisValueBinder<>(
+                                        redisTemplate, 
+                                        objectMapper, 
+                                        type, 
+                                        Duration.ofMinutes(10)
+                                    )
+                                )
+                                .build();
+                    }
+
+                    // One-to-one/many-to-one association cache, support parameterization 
+                    @Override
+                    public Cache<?, ?> createAssociatedIdCache(ImmutableProp prop) {
+                        return new ChainCacheBuilder<>()
+                                .add(
+                                    // highlight-next-line
+                                    new RedisHashBinder<>(
+                                        redisTemplate, 
+                                        objectMapper, 
+                                        prop, 
+                                        Duration.ofMinutes(5)
+                                    )
+                                )
+                                .build();
+                    }
+
+                    // One-to-many/many-to-many association cache, support parameterization 
+                    @Override
+                    public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
+                        return new ChainCacheBuilder<Object, List<?>>()
+                                .add(
+                                    // highlight-next-line
+                                    new RedisHashBinder<>(
+                                        redisTemplate, 
+                                        objectMapper, 
+                                        prop, 
+                                        Duration.ofMinutes(5)
+                                    )
+                                )
+                                .build();
+                    }
+
+                    // Calculated property cache, support parameterization 
+                    @Override
+                    public Cache<?, ?> createResolverCache(ImmutableProp prop) {
+                        return new ChainCacheBuilder<Object, List<?>>()
+                                .add(
+                                    // highlight-next-line
+                                    new RedisHashBinder<>(
+                                        redisTemplate, 
+                                        objectMapper, 
+                                        prop, 
+                                        Duration.ofHours(1)
+                                    )
+                                )
+                                .build();
+                    }
+                }
+            )；
+        })
+        ...Omit other configuration...
+        .build()
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun sqlClient(
+    redisTemplate: RedisTemplate<stirng, ByteArray>,
+    objectMapper: ObjectMapper,
+    ...其他参数...
+): KSqlClient =
+    newKSqlClient {
+        // Before setting Cache, EntityManager must be set first
+        setEntityManager(
+            new setEntityManager(
+                App.class.getClassLoader(),
+                "yourpackage.model" //The package where the entity is located
+            )
+        )
+        setCacheFactory {
+            setCacheFactory(
+                object : CacheFactory {
+
+                    // Object cache, ordinary cache is enough
+                    override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+                        ChainCacheBuilder<Any, Any>()
+                            .add(CaffeineBinder(512, Duration.ofSeconds(1)))
+                            .add(
+                                RedisValueBinder(
+                                    redisTemplate, 
+                                    objectMapper, 
+                                    type, 
+                                    Duration.ofMinutes(10)
+                                )
+                            )
+                            .build()
+
+                    // One-to-one/many-to-one association cache, support parameterization 
+                    override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
+                        ChainCacheBuilder<Any, Any>()
+                            .add(
+                                // highlight-next-line
+                                RedisHashBinder(
+                                    redisTemplate, 
+                                    objectMapper, 
+                                    prop, 
+                                    Duration.ofMinutes(5)
+                                )
+                            )
+                            .build()
+
+                    // One-to-many/many-to-many association cache, support parameterization 
+                    override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
+                        ChainCacheBuilder<Any, List<*>>()
+                            .add(
+                                // highlight-next-line
+                                RedisHashBinder(
+                                    redisTemplate, 
+                                    objectMapper, 
+                                    prop, 
+                                    Duration.ofMinutes(5)
+                                )
+                            )
+                            .build()
+
+                    // Calculated property cache, support parameterization 
+                    override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? =
+                        ChainCacheBuilder<Any, List<*>>()
+                            .add(
+                                // highlight-next-line
+                                RedisHashBinder(
+                                    redisTemplate, 
+                                    objectMapper, 
+                                    prop, 
+                                    Duration.ofHours(1)
+                                )
+                            )
+                            .build()
+                }
+            )
+        }
+        ...Omit other configuration...
+    }
+```
+
+</TabItem>
+</Tabs>
+
+## Consistency for Parameterized Caches
+
+for parameterized association caches, the cached results are not only affected by relationships between tables, but also by global filters of associated objects.
+
+For ordinary filters, you can apply any SQL filter rules.
+
+However, filters that support caching are different and are restricted from supporting neither table joins nor subqueries.
+
+This limitation means that cacheable filters can only filter fields of the filtered table. Conversely, in addition to the relationship between the tables, only the data change of the filtered table will affect the association cache corresponding to the current filter.
+
+`CacheableFilter`/`KCacheableFilter` also needs to implement an `isAffectedBy` method, which is used to ask whether the data change of the filtered table will affect the current filter.
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Component
+public class TenantFilter implements Filter<TenantAwareProps> {
+
+    @Override
+    public boolean isAffectedBy(EntityEvent<?> e) {
+        // If the `tenant` field of the filtered table is modified, 
+        // the current filter will be affected
+        return e.getChangedFieldRef(TenantAwareProps.TENANT) != null;
+    }
+
+    ...Omit other methods...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Component
+class TenantFilter(
+    ...忽略注入依赖...
+) : KFilter<TenantAware> {
+
+    override fun isAffectedBy(e: EntityEvent<*>): Boolean =
+        // If the `tenant` field of the filtered table is modified, 
+        // the current filter will be affected
+        e.getChangedFieldRef(TenantAware::tenant) !== null
+
+    ....Omit other methods...
+}
+```
+
+</TabItem>
+</Tabs>
+
+Refer to [External Cache - Data Consistency](./cache#Data Consistency), after completing the base work of data consistency, run the program, open any SQL tool, and execute
+```sql
+update book set tenant = 'b' where id = 3;
+```
+
+Assuming the modified `Book-3` is associated with `BookStore-1`, `Author-1` and `Author-2`, you can find these output in the application log
+```
+Delete object data from redis: [Book-3]
+Delete property data from redis: [BookStore.books-1]
+Delete property data from redis: [Author.books-1]
+Delete property data from redis: [Author.books-2]
+```
+
+## Filters and calculated  properties
+
+In the article [Calculated Properties and Caching](./calculated-prop), we discussed how to implement calculated properties and associated caching.
+
+The `TransientResolver` or `KTransientResolver` interface supports a method `getParameterMapRef()` with return type `Ref<SortedMap<String, Object>>`.
+
+This method has a default implementation and does not have to be overridden. The default behavior returns a non-null Ref, but the value inside is null.
+
+|The `Ref` returned by the `getParameterMapRef()` method|Does the cache support parameterization|Final effect|
+|---|---|---|
+|null|NA|Do not use calculated cache|
+|`Ref` itself is not null, but the internal map is null or has a length of 0|NA|Use calculated cache, cache the calculation result corresponding to the current parameterless filter|
+|`Ref`内部的map长度非0|No|Do not use calculated cache|
+|`Ref`内部的map长度非0|Yes|Use calculated cache, cache the calculation result corresponding to the current parameterized filter|
+
+For the last two cases, the calculated cache might look like this
+
+<table>
+    <thead>
+        <tr>
+            <th>key</th>
+            <th>hash</th>
+            <th>value</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td rowspan="3">BookStore.avgPrice-1</td>
+            <td>&#123;&#125;</td>
+            <td>67.33333</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"a"&#125;</td>
+            <td>66.5</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"b"&#125;</td>
+            <td>69</td>
+        </tr>
+        <tr>
+            <td rowspan="3">BookStore.avgPrice-2</td>
+            <td>&#123;&#125;</td>
+            <td>39.4</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"a"&#125;</td>
+            <td>39.75</td>
+        </tr>
+        <tr>
+            <td>&#123;"tenant":"b"&#125;</td>
+            <td>38.7</td>
+        </tr>
+    </tbody>
+</table>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStoreAvgPriceResolver.java"
+public class BookStoreAvgPriceResolver 
+implements TransientResolver<Long, BigDecimal> {
+
+    private final JSqlClient sqlClient;
+
+    public BookStoreAvgPriceResolver(JSqlClient sqlClient) {
+        
+        this.sqlClient = sqlClient;
+
+        // 1. Check whether the association when `BookStore.books` is changed
+        sqlClient.getTriggers().addAssociationListener(
+            // highlight-next-line
+            BookStoreProps.BOOKS, // α
+            e -> {
+                ...Compared to the example in the article...
+                ..."Calculated property and its cache", ...
+                ...the logic has not changed, omit...
+            }
+        );
+        sqlClient.getTriggers().addEntityListener(
+            Book.class, 
+            e -> {
+                ...Compared to the example in the article...
+                ..."Calculated property and its cache", ...
+                ...the logic has not changed, omit...
+            }
+        );
+    }
+
+    @Override
+    public Ref<SortedMap<String, Object>> getParameterMapRef() {
+        return sqlClient
+            .filters
+            // highlight-next-line
+            .getTargetParameterMapRef(BookStoreProps.BOOKS) // β
+    }
+
+    @Override
+    public Map<Long, BigDecimal> resolve(
+            Collection<Long> ids, 
+            Connection con
+    ) {
+        ...omit calculation code...
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreAvgPriceResolver.kt"
+class BookStoreAvgPriceResolver(
+    private val sqlClient: KSqlClient
+) : KTransientResolver<Long, BigDecimal> {
+
+    init {
+        // 1. Check whether the association `BookStore.books` is changed.
+        sqlClient
+            .triggers
+            // highlight-next-line
+            .addAssociationListener(BookStore::books) { // α
+                ...Compared to the example in the article...
+                ..."Calculated property and its cache", ...
+                ...the logic has not changed, omit...
+            }
+
+        sqlClient.triggers.addEntityListener(Book::class) {
+            ...Compared to the example in the article...
+                ..."Calculated property and its cache", ...
+                ...the logic has not changed, omit...
+        }
+    }
+
+    override fun getParameterMapRef(): Ref<SortedMap<String, Any>?>? =
+        sqlClient
+            .filters
+            // highlight-next-line
+            .getTargetParameterMapRef(BookStore::books) // β
+
+    override fun resolve(
+        ids: Collection<Long>,
+        con: Connection
+    ): Map<Long, BigDecimal> =
+        ... omit calculation code ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+- α:    Monitor the change of one-to-many association `BookStore.books`, the following two cases will trigger this event
+
+        - The foreign key `STORE_ID` of the `BOOK` table was changed
+        - The `TENANT` field of the `BOOK` table is changed
+
+- β:    The associated type of one-to-many association `Book.books` is `Book`, returns a `Ref` wrapper for the parameters of the filter of `Book` type
+
+        - If the `Book` class has no filter, the returned `Ref` itself is not null, but the internal map is null
+        - If the `Book` class has a filter but the filter does not support cache, return null
+        - If the `Book` class has a filter and the filter supports cache, the returned `Ref` is not null and its internal map is the filter parameters
+
+Modifying the `TENANT_ID` field of the `BOOK` table will affect the cache of the one-to-many association `BookStore.books`, which will further affect the cache of the calculated property `BookStore.avgPrice`.
+
+Refer to [External Cache - Data Consistency](./cache#Data Consistency), after completing the base work of data consistency, run the program, open any SQL tool, and execute
+```sql
+update book set tenant = 'b' where id = 3;
+```
+
+Assuming the modified `Book-3` is associated with `BookStore-1`, `Author-1` and `Author-2`, you can find these output in the application log
+```java
+Delete object data from redis: [Book-3]
+Delete property data from redis: [BookStore.books-1]
+// highlight-next-line
+Delete property data from redis: [BookStore.avgPrice-1]
+Delete property data from redis: [Author.books-1]
+Delete property data from redis: [Author.books-2]
+```
