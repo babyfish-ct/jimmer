@@ -3,6 +3,9 @@ sidebar_position: 2
 title: 映射
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## 注解
 
 jimmer-sql用JPA的注解的部分子集进行实体和数据库之间的映射，到目前为止。支持的注解有
@@ -561,17 +564,25 @@ interface Book {
 
 ## OneToOne
 
-一对一关联只能作为多对一关联的镜像。也就是说，一对一关联必然意味着双向关联。
+有三种方法可以实现一对一关联:
 
+- 主动方：基于外键
+- 主动方：基于中间表
+- 从动方
+
+### 1. 主动方：基于外键
+    
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java title="Address.java"
 @Entity
-public interface Adress {
+public interface Address {
 
-    @ManyToOne
+    @Null
+    @OneToOne
     Customer customer();
+
     ...
 }
 ```
@@ -581,16 +592,146 @@ public interface Adress {
 
 ```kotlin title="Address.kt"
 @Entity
-interface Adress {
+interface Address {
 
-    @ManyToOne
-    val customer: Customer
+    @OneToOne
+    val customer: Customer?
+}
+```
+
+</TabItem>
+</Tabs>
+
+这里并没有配合使用`@JoinColumn`明确指定外键列名，就采用默认列名。
+
+默认列名全部采用大写字母，Java属性名每处从小写字母切换为大写字母的地方，都会自动添加下划线，最后再追加后缀"_ID"。
+
+此处，多对一属性`customer`，会自动推导出外键列名CUSTOMER_ID。
+
+也可以配合`@JoinColum`使用
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Address.java"
+@Entity
+public interface Address {
+
+    @Null
+    @OneToOne
+    @JoinColumn(name = "CUSTOMER_ID")
+    Customer customer();
+
+    ...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Address.kt"
+@Entity
+interface Address {
+
+    @OneToOne
+    @JoinColumn(name = "CUSTOMER_ID")
+    val customer: Customer?
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 2. 基于中间表
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Address.java"
+@Entity
+public interface Address {
+
+    @Null
+    @OneToOne
+    @JoinTable
+    Customer customer();
+
+    ...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java title="Address.kt"
+@Entity
+interface Address {
+
+    @OneToOne
+    @JoinTable
+    val customer: Customer?
+
     ...
 }
 ```
 
 </TabItem>
 </Tabs>
+
+这里，并没有为`@JoinTable`指定任何属性，默认属性如下
+- `name`: ADDRESS_CUSTOMER_MAPPING"。
+- `joinColumns`: ADDRESS_ID。
+- `inverseJoinColumns`: CUSTOMER_ID。
+
+你也可以显式地指定它们
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Address.java"
+@Entity
+public interface Address {
+
+    @Null
+    @OneToOne
+    @JoinTable(
+        name = "ADDRESS_CUSTOMER_MAPPING",
+        joinColumns = @JoinColumn(name = "ADDRESS_ID。")
+        inverseJoinColumns = @JoinColumn(name = "CUSTOMER_ID")
+    )
+    Customer customer();
+
+    ...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Address.kt"
+@Entity
+interface Address {
+
+    @OneToOne
+    @JoinTable(
+        name = "ADDRESS_CUSTOMER_MAPPING",
+        joinColumns = @JoinColumn(name = "ADDRESS_ID。")
+        inverseJoinColumns = @JoinColumn(name = "CUSTOMER_ID")
+    )
+    val customer: Customer?
+
+    ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::caution
+基于中间表的一对一关联必须是可空的
+:::
+
+### 从动方
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -599,9 +740,12 @@ interface Adress {
 @Entity
 public interface Customer {
 
+    @Null
+    // `Address.customer`的镜像
     // highlight-next-line
     @OneToOne(mappedBy = "customer")
     Address address();
+
     ...
 }
 ```
@@ -613,9 +757,12 @@ public interface Customer {
 @Entity
 interface Customer {
 
+    @Null
+    // `Address.customer`的镜像
     // highlight-next-line
     @OneToOne(mappedBy = "customer")
     val address: Address?
+
     ...
 }
 ```
@@ -624,9 +771,7 @@ interface Customer {
 </Tabs>
 
 :::caution
-被`@OneToOne`修饰的属性总是可null的。
-
-对Java而言, `@OneToOne`隐含了必定可空, 所以这里`@Null`不在必须.
+作为从动方的一对一关联必须是可空的
 :::
 
 ## OneToMany
@@ -636,40 +781,11 @@ interface Customer {
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Book.java"
-@Entity
-public interface Book {
-
-    @Null
-    @ManyToOne
-    BookStore store();
-    ...
-}
-```
-
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
-
-```kotlin title="Book.kt"
-@Entity
-interface Book {
-
-    @ManyToOne
-    val store: BookStore?
-    ...
-}
-```
-
-</TabItem>
-</Tabs>
-
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
-
 ```java title="Customer.java"
 @Entity
 public interface BookStore {
 
+    // `Book.store`的镜像
     // highlight-next-line
     @OneToMany(mappedBy = "store")
     List<Book> books();
@@ -684,6 +800,7 @@ public interface BookStore {
 @Entity
 interface BookStore {
 
+    // `Book.store`的镜像
     // highlight-next-line
     @OneToMany(mappedBy = "store")
     val books: List<Book>

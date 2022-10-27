@@ -591,17 +591,25 @@ The many-to-one association based on the middle table must be nullable.
 
 ## OneToOne
 
-A one-to-one association must be the mirror of many-to-one association. That is, a one-to-one association necessarily implies a bidirectional association.
+There are three ways to achieve a one-to-one association:
 
+- As master side: based on foreign key
+- As master side: based on middle table
+- As slave side
+
+### 1. Base one foreign key
+    
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java title="Address.java"
 @Entity
-public interface Adress {
+public interface Address {
 
-    @ManyToOne
+    @Null
+    @OneToOne
     Customer customer();
+
     ...
 }
 ```
@@ -611,16 +619,147 @@ public interface Adress {
 
 ```kotlin title="Address.kt"
 @Entity
-interface Adress {
+interface Address {
 
-    @ManyToOne
-    val customer: Customer
+    @OneToOne
+    val customer: Customer?
+}
+```
+
+</TabItem>
+</Tabs>
+
+Here, the foreign key column name is not explicitly specified by `@JoinColumn`, and the default column name is used.
+
+The default column name uses all uppercase letters, every place where the Java property name is switched from lowercase letter to uppercase letter will automatically add an underscore, and finally append the suffix "_ID".
+
+Here, the many-to-one attribute `customer` will automatically deduce the foreign key column name `CUSTOMER_ID`.
+
+It can also be used with `@JoinColum` with the explicit column name.
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Address.java"
+@Entity
+public interface Address {
+
+    @Null
+    @OneToOne
+    @JoinColumn(name = "CUSTOMER_ID")
+    Customer customer();
+
+    ...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Address.kt"
+@Entity
+interface Address {
+
+    @OneToOne
+    @JoinColumn(name = "CUSTOMER_ID")
+    val customer: Customer?
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 2. Based on middle table
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Address.java"
+@Entity
+public interface Address {
+
+    @Null
+    @OneToOne
+    @JoinTable
+    Customer customer();
+
+    ...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java title="Address.kt"
+@Entity
+interface Address {
+
+    @OneToOne
+    @JoinTable
+    val customer: Customer?
+
     ...
 }
 ```
 
 </TabItem>
 </Tabs>
+
+Here, no annotation properties are specified for `@JoinTable`, the default properties are as follows
+
+- `name`: ADDRESS_CUSTOMER_MAPPING.
+- `joinColumnName`: ADDRESS_ID.
+- `inverseJoinColumnName`: CUSTOMER_ID.
+
+You can also specify them explicitly
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Address.java"
+@Entity
+public interface Address {
+
+    @Null
+    @OneToOne
+    @JoinTable(
+        name = "ADDRESS_CUSTOMER_MAPPING",
+        joinColumns = @JoinColumn(name = "ADDRESS_ID。")
+        inverseJoinColumns = @JoinColumn(name = "CUSTOMER_ID")
+    )
+    Customer customer();
+
+    ...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Address.kt"
+@Entity
+interface Address {
+
+    @OneToOne
+    @JoinTable(
+        name = "ADDRESS_CUSTOMER_MAPPING",
+        joinColumns = @JoinColumn(name = "ADDRESS_ID。")
+        inverseJoinColumns = @JoinColumn(name = "CUSTOMER_ID")
+    )
+    val customer: Customer?
+
+    ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::caution
+The one-to-one association based on the middle table must be nullable. 
+:::
+
+### As slave side
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -629,9 +768,12 @@ interface Adress {
 @Entity
 public interface Customer {
 
+    @Null
+    // The mirror of `Address.customer`
     // highlight-next-line
     @OneToOne(mappedBy = "customer")
     Address address();
+
     ...
 }
 ```
@@ -643,9 +785,12 @@ public interface Customer {
 @Entity
 interface Customer {
 
+    @Null
+    // The mirror of `Address.customer`
     // highlight-next-line
     @OneToOne(mappedBy = "customer")
     val address: Address?
+
     ...
 }
 ```
@@ -654,9 +799,7 @@ interface Customer {
 </Tabs>
 
 :::caution
-Property decorated with `@OneToOne` must be nullable.
-
-For java, `@OneToOne` means nullable, so `@Null` is unnecessary here.
+The slave side of one-to-one association must be nullable. 
 :::
 
 ## OneToMany
@@ -666,40 +809,11 @@ one-to-many association must be mirror of many-to-one association. That is, a on
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Book.java"
-@Entity
-public interface Book {
-
-    @Null
-    @ManyToOne
-    BookStore store();
-    ...
-}
-```
-
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
-
-```kotlin title="Book.kt"
-@Entity
-interface Book {
-
-    @ManyToOne
-    val store: BookStore?
-    ...
-}
-```
-
-</TabItem>
-</Tabs>
-
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
-
 ```java title="Customer.java"
 @Entity
 public interface BookStore {
 
+    // The mirror of `Book.store`
     // highlight-next-line
     @OneToMany(mappedBy = "store")
     List<Book> books();
@@ -714,6 +828,7 @@ public interface BookStore {
 @Entity
 interface BookStore {
 
+    // The mirror of `Book.store`
     // highlight-next-line
     @OneToMany(mappedBy = "store")
     val books: List<Book>
@@ -734,9 +849,9 @@ Collection properties are always treated as non-null.
 Collection properties are always treated as non-null.
 :::
 
-many-to-many associations can be used as the active side, and can also be used as the slave side.
+many-to-many associations can be used as the master side, and can also be used as the slave side.
 
-### 1. Used as active side
+### 1. Used as master side
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -829,6 +944,7 @@ interface Book {
 @Entity title="Author.java"
 public interface Author {
 
+    // The mirror of `Book.authors`
     @ManyToMany(mappedBy = "authors")
     List<Book> books();
 
@@ -843,6 +959,7 @@ public interface Author {
 @Entity title="Author.kt"
 public interface Author {
 
+    // The mirror of `Book.authors`
     @ManyToMany(mappedBy = "authors")
     val books: List<Book>
 
