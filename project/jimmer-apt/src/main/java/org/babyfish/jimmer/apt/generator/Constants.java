@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.apt.generator;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.DraftConsumer;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
@@ -7,11 +8,12 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.validation.Validator;
 
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 class Constants {
+
+    public static final ClassName JSON_IGNORE_CLASS_NAME =
+            ClassName.get(JsonIgnore.class);
 
     public static final ClassName DRAFT_CONTEXT_CLASS_NAME =
             ClassName.get(DraftContext.class);
@@ -81,54 +83,6 @@ class Constants {
                     "org.babyfish.jimmer.sql.ast.table.spi",
                     "AbstractTableWrapper"
             );
-
-    public static final ClassName SQL_CLIENT_CLASS_NAME =
-            ClassName.get(
-                    "org.babyfish.jimmer.sql",
-                    "SqlClient"
-            );
-
-    public static final ClassName FILTERABLE_CLASS_NAME =
-            ClassName.get(
-                    "org.babyfish.jimmer.sql.ast.query",
-                    "Filterable"
-            );
-
-    public static final ClassName MUTABLE_ROOT_QUERY_CLASS_NAME =
-            ClassName.get(
-                    "org.babyfish.jimmer.sql.ast.query",
-                    "MutableRootQuery"
-            );
-
-    public static final ClassName MUTABLE_SUB_QUERY_CLASS_NAME =
-            ClassName.get(
-                    "org.babyfish.jimmer.sql.ast.query",
-                    "MutableSubQuery"
-            );
-
-    public static final ClassName CONFIGURABLE_TYPED_ROOT_QUERY_CLASS_NAME =
-            ClassName.get(
-                    "org.babyfish.jimmer.sql.ast.query",
-                    "ConfigurableTypedRootQuery"
-            );
-
-    public static final ClassName CONFIGURABLE_TYPED_SUB_QUERY_CLASS_NAME =
-            ClassName.get(
-                    "org.babyfish.jimmer.sql.ast.query",
-                    "ConfigurableTypedSubQuery"
-            );
-
-    public static final ClassName QUERIES_CLASS_NAME =
-            ClassName.get(
-                    "org.babyfish.jimmer.sql.ast.impl.query",
-                    "Queries"
-            );
-
-    public static final ClassName BI_FUNCTION_CLASS_NAME =
-            ClassName.get(BiFunction.class);
-
-    public static final ClassName BI_CONSUMER_CLASS_NAME =
-            ClassName.get(BiConsumer.class);
 
     public static final ClassName CONSUMER_CLASS_NAME =
             ClassName.get(Consumer.class);

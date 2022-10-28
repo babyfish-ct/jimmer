@@ -5,6 +5,8 @@ import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.jackson.ImmutableModule;
+import org.babyfish.jimmer.jackson.ImmutableModuleRequiredException;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 
 import javax.lang.model.element.Modifier;
@@ -33,6 +35,7 @@ public class ImplementorGenerator {
         addGet(String.class);
         addType();
         addToString();
+        addDummyProp();
         parentBuilder.addType(typeBuilder.build());
     }
 
@@ -86,6 +89,15 @@ public class ImplementorGenerator {
                 .addAnnotation(Override.class)
                 .returns(String.class)
                 .addStatement("return $T.toString(this)", ImmutableObjects.class);
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addDummyProp() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("getDummyPropForNoImmutableModuleError")
+                .returns(TypeName.INT)
+                .addModifiers(Modifier.PUBLIC)
+                .addStatement("throw new $T()", ImmutableModuleRequiredException.class);
         typeBuilder.addMethod(builder.build());
     }
 }

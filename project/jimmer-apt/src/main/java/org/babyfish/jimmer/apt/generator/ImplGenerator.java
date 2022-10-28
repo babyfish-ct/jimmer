@@ -11,6 +11,8 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.type.PrimitiveType;
 import java.util.Objects;
 
+import static org.babyfish.jimmer.apt.generator.Constants.JSON_IGNORE_CLASS_NAME;
+
 public class ImplGenerator {
 
     private final ImmutableType type;
@@ -100,6 +102,9 @@ public class ImplGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
                 .returns(TypeName.get(prop.getReturnType()));
+        if (prop.isBeanStyle()) {
+            builder.addAnnotation(JSON_IGNORE_CLASS_NAME);
+        }
         if (prop.isLoadedStateRequired()) {
             builder.beginControlFlow("if (!$L)", prop.getLoadedStateName());
         } else {

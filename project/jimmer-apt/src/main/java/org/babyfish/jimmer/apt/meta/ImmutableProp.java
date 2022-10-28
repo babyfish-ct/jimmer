@@ -34,6 +34,8 @@ public class ImmutableProp {
 
     private final String adderByName;
 
+    private final boolean beanStyle;
+
     private final String loadedStateName;
 
     private final TypeMirror returnType;
@@ -95,6 +97,7 @@ public class ImmutableProp {
                     getterName.substring(3);
             setterName = "set" + getterName.substring(2);
             adderByName = "addInto" + getterName.substring(2);
+            beanStyle = true;
         } else if (getterName.startsWith("get") &&
                 getterName.length() > 3 &&
                 Character.isUpperCase(getterName.charAt(3))) {
@@ -103,6 +106,7 @@ public class ImmutableProp {
                             getterName.substring(4);
             setterName = "set" + getterName.substring(3);
             adderByName = "addInto" + getterName.substring(3);
+            beanStyle = true;
         } else {
             name = getterName;
             setterName =
@@ -113,6 +117,7 @@ public class ImmutableProp {
                     "addInto" +
                     getterName.substring(0, 1).toUpperCase() +
                     getterName.substring(1);
+            beanStyle = false;
         }
 
         loadedStateName = name + "Loaded";
@@ -219,6 +224,8 @@ public class ImmutableProp {
     public String getAdderByName() {
         return adderByName;
     }
+
+    public boolean isBeanStyle() { return beanStyle; }
 
     public String getLoadedStateName() {
         if (!isLoadedStateRequired()) {

@@ -274,6 +274,9 @@ public class DraftImplGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
                 .returns(prop.getDraftTypeName(false));
+        if (prop.isBeanStyle()) {
+            builder.addAnnotation(JSON_IGNORE_CLASS_NAME);
+        }
         if (prop.isList()) {
             builder.addCode(
                     "return $L.$L($L.$L(), $T.class, $L);",

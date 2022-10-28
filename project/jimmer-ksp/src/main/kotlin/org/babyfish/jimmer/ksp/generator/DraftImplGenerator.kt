@@ -152,6 +152,7 @@ class DraftImplGenerator(
                 .getter(
                     FunSpec
                         .getterBuilder()
+                        .addAnnotation(JSON_IGNORE_CLASS_NAME)
                         .apply {
                             if (prop.isList || prop.isScalarList) {
                                 addCode(

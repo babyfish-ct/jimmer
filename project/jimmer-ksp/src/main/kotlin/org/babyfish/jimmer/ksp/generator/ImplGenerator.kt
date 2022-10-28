@@ -134,6 +134,7 @@ class ImplGenerator(
                 .getter(
                     FunSpec
                         .getterBuilder()
+                        .addAnnotation(JSON_IGNORE_CLASS_NAME)
                         .addCode(
                             CodeBlock
                                 .builder()

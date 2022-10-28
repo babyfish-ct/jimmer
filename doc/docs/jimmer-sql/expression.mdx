@@ -283,7 +283,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    where(table.price gt new BigDecimal(50))
+    where(table.price gt BigDecimal(50))
     ```
 
     </TabItem>
@@ -302,7 +302,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    where(table.price ge new BigDecimal(50))
+    where(table.price ge BigDecimal(50))
     ```
 
     </TabItem>
@@ -321,7 +321,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    where(table.price lt new BigDecimal(50))
+    where(table.price lt BigDecimal(50))
     ```
 
     </TabItem>
@@ -340,7 +340,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    where(table.price le new BigDecimal(50))
+    where(table.price le BigDecimal(50))
     ```
 
     </TabItem>
@@ -355,7 +355,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     where(
         book.price().between(
             new BigDecimal(40), 
-            new BigDecimal(40)
+            new BigDecimal(50)
         )
     );
     ```
@@ -366,8 +366,8 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     ```java
     where(
         table.price.between(
-            new BigDecimal(40), 
-            new BigDecimal(40)
+            BigDecimal(40), 
+            BigDecimal(50)
         )
     )
     ```
@@ -384,7 +384,7 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     where(
         book.price().notBetween(
             new BigDecimal(40), 
-            new BigDecimal(40)
+            new BigDecimal(50)
         )
     );
     ```
@@ -395,8 +395,8 @@ Using constant expressions incorrectly can have serious consequences. Implanting
     ```java
     where(
         table.price.notBetween(
-            new BigDecimal(40), 
-            new BigDecimal(40)
+            BigDecimal(40), 
+            BigDecimal(50)
         )
     )
     ```
