@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.ksp.generator
 
 import com.squareup.kotlinpoet.*
+import org.babyfish.jimmer.jackson.ImmutableModuleRequiredException
 import org.babyfish.jimmer.ksp.meta.ImmutableType
 import kotlin.reflect.KClass
 
@@ -21,6 +22,7 @@ class ImplementorGenerator(
                     addGetFun(String::class)
                     addTypeFun()
                     addToStringFun()
+                    addDummyPropForNoImmutableModuleError()
                 }
                 .build()
         )
@@ -74,6 +76,20 @@ class ImplementorGenerator(
                 .addModifiers(KModifier.OVERRIDE)
                 .returns(STRING)
                 .addCode("return %T.toString(this)", IMMUTABLE_OBJECTS_CLASS_NAME)
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addDummyPropForNoImmutableModuleError() {
+        addProperty(
+            PropertySpec
+                .builder("dummyPropForNoImmutableModuleError", INT)
+                .getter(
+                    FunSpec
+                        .getterBuilder()
+                        .addStatement("throw %T()", ImmutableModuleRequiredException::class)
+                        .build()
+                )
                 .build()
         )
     }

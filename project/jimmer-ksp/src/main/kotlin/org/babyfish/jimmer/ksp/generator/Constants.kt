@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.ksp.generator
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.asClassName
 import org.babyfish.jimmer.*
@@ -22,6 +23,7 @@ internal const val PROPS = "Props"
 internal const val FETCHER = "Fetcher"
 internal const val FETCHER_DSL = "FetcherDsl"
 
+internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
 internal val INTERNAL_TYPE_CLASS_NAME = Internal::class.asClassName()
 internal val IMMUTABLE_PROP_CATEGORY_CLASS_NAME = ImmutablePropCategory::class.asClassName()
 internal val IMMUTABLE_TYPE_CLASS_NAME = ImmutableType::class.asClassName()
