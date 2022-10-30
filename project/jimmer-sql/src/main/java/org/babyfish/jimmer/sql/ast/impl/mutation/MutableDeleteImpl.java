@@ -7,11 +7,12 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
+import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
@@ -30,9 +31,9 @@ public class MutableDeleteImpl
     private MutableRootQueryImpl<TableEx<?>> deleteQuery;
 
     public MutableDeleteImpl(JSqlClient sqlClient, ImmutableType immutableType) {
-        super(new TableAliasAllocator(), sqlClient, ExecutionPurpose.DELETE);
+        super(sqlClient, immutableType);
         deleteQuery = new MutableRootQueryImpl<>(
-                this.getTableAliasAllocator(),
+                new StatementContext(ExecutionPurpose.QUERY, false),
                 sqlClient,
                 immutableType
         );
@@ -42,6 +43,21 @@ public class MutableDeleteImpl
     @Override
     public <T extends Table<?>> T getTable() {
         return deleteQuery.getTable();
+    }
+
+    @Override
+    public TableImplementor<?> getTableImplementor() {
+        return deleteQuery.getTableImplementor();
+    }
+
+    @Override
+    public AbstractMutableStatementImpl getParent() {
+        return null;
+    }
+
+    @Override
+    public StatementContext getContext() {
+        return deleteQuery.getContext();
     }
 
     @Override
@@ -69,13 +85,14 @@ public class MutableDeleteImpl
 
     @SuppressWarnings("unchecked")
     private Integer executeImpl(Connection con) {
+        freeze();
         JSqlClient sqlClient = getSqlClient();
-        TableImplementor<?> table = TableWrappers.unwrap(deleteQuery.getTable());
+        TableImplementor<?> table = getTableImplementor();
         if (table.getChildren().isEmpty()) {
-            SqlBuilder builder = new SqlBuilder(sqlClient);
-            Ast ast = (Ast) deleteQuery.getPredicate();
-            if (ast != null) {
-                ast.accept(new UseTableVisitor(builder));
+            SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+            Predicate predicate = deleteQuery.getPredicate();
+            if (predicate != null) {
+                ((Ast)predicate).accept(new UseTableVisitor(builder.getAstContext()));
             }
             renderDirectly(builder);
             Tuple2<String, List<Object>> sqlResult = builder.build();
@@ -102,7 +119,7 @@ public class MutableDeleteImpl
     }
 
     private void renderDirectly(SqlBuilder builder) {
-        TableImplementor<?> table = TableWrappers.unwrap(deleteQuery.getTable());
+        TableImplementor<?> table = getTableImplementor();
         builder.sql("delete");
         if (getSqlClient().getDialect().needDeletedAlias()) {
             builder.sql(" ");
@@ -115,7 +132,7 @@ public class MutableDeleteImpl
         Predicate predicate = deleteQuery.getPredicate();
         if (predicate != null) {
             builder.sql(" where ");
-            ((Ast)predicate).renderTo(builder);
+            ((Ast) predicate).renderTo(builder);
         }
     }
 }

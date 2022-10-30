@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -40,7 +41,7 @@ class ChildTableOperator {
             return 0;
         }
 
-        SqlBuilder builder = new SqlBuilder(sqlClient);
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
                 .sql("update ")
                 .sql(parentProp.getDeclaringType().getTableName())
@@ -71,7 +72,7 @@ class ChildTableOperator {
     }
 
     public int unsetParent(Object parentId, Collection<Object> retainedChildIds) {
-        SqlBuilder builder = new SqlBuilder(sqlClient);
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
                 .sql("update ")
                 .sql(parentProp.getDeclaringType().getTableName())
@@ -92,7 +93,7 @@ class ChildTableOperator {
     }
 
     public List<Object> getDetachedChildIds(Object parentId, Collection<Object> retainedChildIds) {
-        SqlBuilder builder = new SqlBuilder(sqlClient);
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         ImmutableProp idProp = parentProp.getDeclaringType().getIdProp();
         builder
                 .sql("select ")

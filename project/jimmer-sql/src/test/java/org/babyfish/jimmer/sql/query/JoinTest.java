@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.query;
 
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
@@ -14,6 +15,7 @@ public class JoinTest extends AbstractQueryTest {
 
     @Test
     public void testSimple() {
+        JSqlClient sqlClient = getSqlClient();
         executeAndExpect(
                 getSqlClient().createQuery(BookTable.class, (q, book) -> {
                     return q.select(book);

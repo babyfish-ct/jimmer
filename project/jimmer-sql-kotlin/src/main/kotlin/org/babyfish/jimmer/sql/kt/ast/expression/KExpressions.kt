@@ -92,8 +92,8 @@ fun <T: Any> sqlNullable(type: KClass<T>, sql: String, block: (SqlDSL.() -> Unit
 
 
 infix fun <E: Any> KTable<E>.eq(right: KTable<E>): KNonNullExpression<Boolean> {
-    val immutableType = (this as TableSelection<*>).immutableType
-    if (immutableType !== (right as TableSelection<*>).immutableType) {
+    val immutableType = (this as TableSelection).immutableType
+    if (immutableType !== (right as TableSelection).immutableType) {
         throw IllegalArgumentException("Different table can not be compared")
     }
     val idPropName = immutableType.idProp.name
@@ -234,7 +234,7 @@ fun count(expression: KExpression<*>, distinct: Boolean = false): KNonNullExpres
     }
 
 fun count(table: KTable<*>, distinct: Boolean = false): KNonNullExpression<Long> {
-    val idProp = (table as TableSelection<*>).immutableType.idProp
+    val idProp = (table as TableSelection).immutableType.idProp
     val idExpr = table.get<Any, KPropExpression<Any>>(idProp.name)
     return count(idExpr, distinct)
 }

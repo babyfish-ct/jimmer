@@ -5,10 +5,16 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
-import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.*;
+import org.babyfish.jimmer.sql.filter.CacheableFilter;
+import org.babyfish.jimmer.sql.filter.Filter;
+import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 
 import java.util.Arrays;
@@ -18,32 +24,60 @@ public class MutableRootQueryImpl<T extends Table<?>>
         extends AbstractMutableQueryImpl
         implements MutableRootQuery<T> {
 
+    private final StatementContext ctx;
+
     public MutableRootQueryImpl(
             JSqlClient sqlClient,
             ImmutableType immutableType,
             ExecutionPurpose purpose,
             boolean ignoreFilter
     ) {
-        super(new TableAliasAllocator(), sqlClient, immutableType, purpose, ignoreFilter);
+        super(sqlClient, immutableType);
+        ctx = new StatementContext(purpose, ignoreFilter);
+    }
+
+    public MutableRootQueryImpl(
+            JSqlClient sqlClient,
+            TableProxy<?> table,
+            ExecutionPurpose purpose,
+            boolean ignoreFilter
+    ) {
+        super(sqlClient, table);
+        ctx = new StatementContext(purpose, ignoreFilter);
     }
 
     @SuppressWarnings("unchecked")
     public MutableRootQueryImpl(
-            TableAliasAllocator aliasAllocator,
+            StatementContext ctx,
             JSqlClient sqlClient,
             ImmutableType immutableType
     ) {
-        super(
-                aliasAllocator,
-                sqlClient,
-                immutableType,
-                ExecutionPurpose.DELETE, // Join for delete statement
-                true
-        );
+        super(sqlClient, immutableType);
+        this.ctx = ctx;
+    }
+
+    public MutableRootQueryImpl(
+            StatementContext ctx,
+            JSqlClient sqlClient,
+            TableProxy<?> table
+    ) {
+        super(sqlClient, table);
+        this.ctx = ctx;
+    }
+
+    @Override
+    public AbstractMutableStatementImpl getParent() {
+        return null;
+    }
+
+    @Override
+    public StatementContext getContext() {
+        return ctx;
     }
 
     @Override
     public <R> ConfigurableRootQuery<T, R> select(Selection<R> selection) {
+        freeze();
         return new ConfigurableRootQueryImpl<>(
                 new TypedQueryData(Collections.singletonList(selection)),
                 this
@@ -205,5 +239,19 @@ public class MutableRootQueryImpl<T extends Table<?>>
     @Override
     public MutableRootQueryImpl<T> orderBy(Order... orders) {
         return (MutableRootQueryImpl<T>) super.orderBy(orders);
+    }
+
+    @Override
+    protected void onFrozen() {
+        Filter<Props> filter = getSqlClient().getFilters().getFilter(
+                getTable().getImmutableType(),
+                getContext().isFilterIgnored()
+        );
+        if (filter != null) {
+            filter.filter(
+                    new FilterArgsImpl<>(this, this.getTable(), filter instanceof CacheableFilter<?>)
+            );
+        }
+        super.onFrozen();
     }
 }

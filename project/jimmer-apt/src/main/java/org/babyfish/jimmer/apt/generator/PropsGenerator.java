@@ -5,7 +5,6 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.JoinType;
 
 import javax.annotation.processing.Filer;
@@ -185,7 +184,6 @@ public class PropsGenerator {
         if (withJoinType && !prop.isAssociation()) {
             return null;
         }
-
         TypeName returnType;
         if (prop.isAssociation()) {
             if (isTableEx) {
@@ -222,7 +220,6 @@ public class PropsGenerator {
                 );
             }
         }
-
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)

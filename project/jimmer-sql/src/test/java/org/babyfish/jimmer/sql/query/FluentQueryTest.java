@@ -1,10 +1,8 @@
 package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
-import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.babyfish.jimmer.sql.model.AuthorTableEx;
 import org.babyfish.jimmer.sql.model.BookTable;
-import org.babyfish.jimmer.sql.model.BookTableEx;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -15,12 +13,11 @@ public class FluentQueryTest extends AbstractQueryTest {
     @Test
     public void testSimpleQuery() {
 
-        Fluent fluent = getSqlClient().createFluent();
-        BookTable book = new BookTable();
+        BookTable book = BookTable.$;
 
         executeAndExpect(
-                fluent
-                        .query(book)
+                getSqlClient()
+                        .createQuery(book)
                         .where(book.name().eq("GraphQL in Action"))
                         .orderBy(book.edition().asc())
                         .select(book),
@@ -60,17 +57,17 @@ public class FluentQueryTest extends AbstractQueryTest {
 
     @Test
     public void testSubQuery() {
-        Fluent fluent = getSqlClient().createFluent();
-        BookTable book = new BookTable();
-        AuthorTableEx author = new AuthorTableEx();
+
+        BookTable book = BookTable.$;
+        AuthorTableEx author = AuthorTableEx.$;
 
         executeAndExpect(
-                fluent
-                        .query(book)
+                getSqlClient()
+                        .createQuery(book)
                         .where(
                                 book.id().in(
-                                        fluent
-                                                .subQuery(author)
+                                        getSqlClient()
+                                                .createSubQuery(author)
                                                 .where(author.firstName().eq("Alex"))
                                                 .select(author.books().id())
                                 )
@@ -119,16 +116,16 @@ public class FluentQueryTest extends AbstractQueryTest {
 
     @Test
     public void testWildSubQuery() {
-        Fluent fluent = getSqlClient().createFluent();
-        BookTable book = new BookTable();
-        AuthorTableEx author = new AuthorTableEx();
+
+        BookTable book = BookTable.$;
+        AuthorTableEx author = AuthorTableEx.$;
 
         executeAndExpect(
-                fluent
-                        .query(book)
+                getSqlClient()
+                        .createQuery(book)
                         .where(
-                                fluent
-                                        .subQuery(author)
+                                getSqlClient()
+                                        .createSubQuery(author)
                                         .where(author.books().eq(book))
                                         .where(author.firstName().eq("Alex"))
                                         .exists()
@@ -179,12 +176,12 @@ public class FluentQueryTest extends AbstractQueryTest {
 
     @Test
     public void testAsTableEx() {
-        Fluent fluent = getSqlClient().createFluent();
-        BookTable book = new BookTable();
+
+        BookTable book = BookTable.$;
 
         executeAndExpect(
-                fluent
-                        .query(book)
+                getSqlClient()
+                        .createQuery(book)
                         .where(book.asTableEx().authors().firstName().eq("Alex"))
                         .select(book.id())
                         .distinct(),
@@ -204,13 +201,5 @@ public class FluentQueryTest extends AbstractQueryTest {
                     });
                 }
         );
-    }
-
-    @Test
-    public void testIllegalArgument() {
-        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            getSqlClient().createFluent().query(new BookTableEx());
-        });
-        Assertions.assertEquals("Top-level query does not accept TableEx", ex.getMessage());
     }
 }

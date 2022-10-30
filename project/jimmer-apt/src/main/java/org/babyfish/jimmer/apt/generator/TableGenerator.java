@@ -82,13 +82,15 @@ public class TableGenerator {
         } else {
             typeBuilder.superclass(
                     ParameterizedTypeName.get(
-                            Constants.ABSTRACT_TABLE_WRAPPER_CLASS_NAME,
+                            Constants.ABSTRACT_TYPED_TABLE_CLASS_NAME,
                             type.getClassName()
                     )
             );
         }
+        addInstanceField();
         addDefaultConstructor();
-        addParameterizedConstructor();
+        addDelayedConstructor();
+        addWrapperConstructor();
         try {
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.isList() == isTableEx) {
@@ -103,16 +105,46 @@ public class TableGenerator {
         }
     }
 
+    private void addInstanceField() {
+        ClassName className = isTableEx ? type.getTableExClassName() : type.getTableClassName();
+        FieldSpec.Builder builder = FieldSpec
+                .builder(className, "$", Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
+                .initializer("new $T()", className);
+        typeBuilder.addField(builder.build());
+    }
+
     private void addDefaultConstructor() {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
-                .addModifiers(Modifier.PUBLIC)
-                .addComment("For fluent-API")
-                .addStatement("super(null, null)");
+                .addModifiers(Modifier.PUBLIC);
+        if (isTableEx) {
+            builder.addStatement("super()");
+        } else {
+            builder.addStatement("super($T.class)", type.getClassName());
+        }
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addParameterizedConstructor() {
+    private void addDelayedConstructor() {
+        MethodSpec.Builder builder = MethodSpec
+                .constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                DELAYED_OPERATION_CLASS_NAME,
+                                type.getClassName()
+                        ),
+                        "delayedOperation"
+                );
+        if (isTableEx) {
+            builder.addStatement("super(delayedOperation)");
+        } else {
+            builder.addStatement("super($T.class, delayedOperation)", type.getClassName());
+        }
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addWrapperConstructor() {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
                 .addModifiers(Modifier.PUBLIC);

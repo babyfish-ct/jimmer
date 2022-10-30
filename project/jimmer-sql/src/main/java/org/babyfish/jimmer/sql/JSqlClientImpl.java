@@ -5,12 +5,16 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.meta.impl.RedirectedProp;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
+import org.babyfish.jimmer.sql.ast.query.MutableQuery;
+import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
+import org.babyfish.jimmer.sql.ast.table.TableEx;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.filter.impl.FilterManager;
-import org.babyfish.jimmer.sql.fluent.Fluent;
-import org.babyfish.jimmer.sql.fluent.impl.FluentImpl;
 import org.babyfish.jimmer.sql.loader.Loaders;
 import org.babyfish.jimmer.sql.loader.impl.LoadersImpl;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
@@ -182,8 +186,21 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
-    public Fluent createFluent() {
-        return new FluentImpl(this);
+    public <T extends TableProxy<?>> MutableRootQuery<T> createQuery(T table) {
+        if (table instanceof TableEx<?>) {
+            throw new IllegalArgumentException("Top-level query does not support TableEx");
+        }
+        return new MutableRootQueryImpl<>(
+                this,
+                table,
+                ExecutionPurpose.QUERY,
+                false
+        );
+    }
+
+    @Override
+    public <T extends TableProxy<?>> MutableSubQuery createSubQuery(T table) {
+        return new MutableSubQueryImpl(this, table);
     }
 
     @Override

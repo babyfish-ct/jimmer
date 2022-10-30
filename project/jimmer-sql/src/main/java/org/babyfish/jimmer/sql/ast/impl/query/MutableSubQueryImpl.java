@@ -1,15 +1,17 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.ExistsPredicate;
+import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
-import org.babyfish.jimmer.sql.filter.Filter;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -18,25 +20,37 @@ public class MutableSubQueryImpl
         extends AbstractMutableQueryImpl
         implements MutableSubQuery {
 
-    private final AbstractMutableStatementImpl parent;
+    private AbstractMutableStatementImpl parent;
+
+    private StatementContext ctx;
 
     public MutableSubQueryImpl(
             AbstractMutableStatementImpl parent,
             ImmutableType immutableType
     ) {
-        super(
-                parent.getTableAliasAllocator(),
-                parent.getSqlClient(),
-                immutableType,
-                parent.getPurpose(),
-                parent instanceof AbstractMutableQueryImpl &&
-                        ((AbstractMutableQueryImpl) parent).isFilterIgnored()
-        );
+        super(parent.getSqlClient(), immutableType);
         this.parent = parent;
+        this.ctx = parent.getContext();
+        if (ctx == null) {
+            throw new IllegalArgumentException("the parent of lambda query cannot be fluent query");
+        }
     }
 
+    public MutableSubQueryImpl(
+            JSqlClient sqlClient,
+            TableProxy<?> table
+    ) {
+        super(sqlClient, table);
+    }
+
+    @Override
     public AbstractMutableStatementImpl getParent() {
         return parent;
+    }
+
+    @Override
+    public StatementContext getContext() {
+        return ctx;
     }
 
     @Override
@@ -280,6 +294,13 @@ public class MutableSubQueryImpl
     @Override
     public Predicate notExists() {
         return ExistsPredicate.of(this, true);
+    }
+
+    public void initializeParentIfNecessary(AbstractMutableStatementImpl parent) {
+        if (this.parent == null) {
+            this.parent = parent;
+            ctx = parent.getContext();
+        }
     }
 }
 

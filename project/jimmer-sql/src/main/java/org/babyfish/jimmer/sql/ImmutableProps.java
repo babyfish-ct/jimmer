@@ -5,9 +5,11 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
+import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
+import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 
 import java.util.function.Function;
 
@@ -21,17 +23,17 @@ public class ImmutableProps {
             Function<T, PropExpression<?>> block
     ) {
         TableImplementor<?> tableImpl = TableImplementor.create(
-                AbstractMutableStatementImpl.fake(),
+                null,
                 ImmutableType.get(tableType)
         );
-        T table = TableWrappers.wrap(tableImpl);
+        T table = TableProxies.wrap(tableImpl);
         PropExpressionImpl<?> propExpr = (PropExpressionImpl<?>) block.apply(table);
         if (propExpr == null) {
             throw new IllegalStateException(
                     "The lambda expression of ImmutableProps.get cannot return null"
             );
         }
-        if (propExpr.getTableImplementor() != tableImpl) {
+        if (propExpr.getTable() != tableImpl) {
             throw new IllegalStateException(
                     "The lambda expression of ImmutableProps.get must return an expression bases on its argument"
             );
@@ -45,17 +47,17 @@ public class ImmutableProps {
             Function<ST, ? extends Table<?>> block
     ) {
         TableImplementor<?> tableImpl = TableImplementor.create(
-                AbstractMutableStatementImpl.fake(),
+                new FakeStatement(ImmutableType.get(sourceTableType)),
                 ImmutableType.get(sourceTableType)
         );
-        ST table = TableWrappers.wrap(tableImpl);
+        ST table = TableProxies.wrap(tableImpl);
         Table<?> joinedTable = block.apply(table);
         if (joinedTable == null) {
             throw new IllegalStateException(
                     "The lambda expression of ImmutableProps.join cannot return null"
             );
         }
-        TableImplementor<?> joinedTableImpl = TableWrappers.unwrap(joinedTable);
+        TableImplementor<?> joinedTableImpl = TableProxies.resolve(joinedTable, null);
         if (joinedTableImpl.getParent() != tableImpl) {
             throw new IllegalStateException(
                     "The lambda expression of ImmutableProps.join must return an child table bases on its argument"
@@ -69,5 +71,25 @@ public class ImmutableProps {
             return opposite;
         }
         return joinedTableImpl.getJoinProp();
+    }
+
+    private static class FakeStatement extends AbstractMutableStatementImpl {
+
+        private StatementContext ctx;
+
+        public FakeStatement(ImmutableType type) {
+            super(null, type);
+            this.ctx = new StatementContext(ExecutionPurpose.QUERY, false);
+        }
+
+        @Override
+        public AbstractMutableStatementImpl getParent() {
+            return null;
+        }
+
+        @Override
+        public StatementContext getContext() {
+            return ctx;
+        }
     }
 }

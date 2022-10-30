@@ -109,7 +109,6 @@ internal class KEntitiesImpl(
             dsl.block()
             dsl.applyTo(query)
         }
-        query.freeze()
         return query.select(
             if (fetcher !== null) {
                 table.fetch(fetcher)

@@ -78,10 +78,17 @@ class Constants {
                     "TableImplementor"
             );
 
-    public static final ClassName ABSTRACT_TABLE_WRAPPER_CLASS_NAME =
+    public static final ClassName ABSTRACT_TYPED_TABLE_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.table.spi",
-                    "AbstractTableWrapper"
+                    "AbstractTypedTable"
+            );
+
+    public static final ClassName DELAYED_OPERATION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.table.spi",
+                    "AbstractTypedTable",
+                    "DelayedOperation"
             );
 
     public static final ClassName CONSUMER_CLASS_NAME =

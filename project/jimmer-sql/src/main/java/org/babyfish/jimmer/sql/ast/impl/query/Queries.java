@@ -36,9 +36,7 @@ public class Queries {
                 ExecutionPurpose.QUERY,
                 false
         );
-        ConfigurableRootQuery<T, R> typedQuery = block.apply(query, (T)query.getTable());
-        query.freeze();
-        return typedQuery;
+        return block.apply(query, query.getTable());
     }
 
     @SuppressWarnings("unchecked")
@@ -52,9 +50,7 @@ public class Queries {
                 (AbstractMutableStatementImpl) parent,
                 immutableType
         );
-        ConfigurableSubQuery<R> typedQuery = block.apply(query, (T)query.getTable());
-        query.freeze();
-        return typedQuery;
+        return block.apply(query, query.getTable());
     }
 
     @SuppressWarnings("unchecked")
@@ -68,8 +64,7 @@ public class Queries {
                 (AbstractMutableStatementImpl) parent,
                 immutableType
         );
-        block.accept(query, (T)query.getTable());
-        query.freeze();
+        block.accept(query, query.getTable());
         return query;
     }
 
@@ -95,9 +90,7 @@ public class Queries {
                 purpose,
                 ignoreFilter
         );
-        ConfigurableRootQuery<Table<?>, R> typedQuery = block.apply(query, query.getTable());
-        query.freeze();
-        return typedQuery;
+        return block.apply(query, query.getTable());
     }
 
     @SuppressWarnings("unchecked")
@@ -121,10 +114,7 @@ public class Queries {
                 ExecutionPurpose.QUERY,
                 false
         );
-        ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R> typedQuery =
-                block.apply(query, (AssociationTable<SE, ST, TE, TT>)query.getTable());
-        query.freeze();
-        return typedQuery;
+        return block.apply(query, query.getTable());
     }
 
     @SuppressWarnings("unchecked")
@@ -146,10 +136,7 @@ public class Queries {
                 (AbstractMutableStatementImpl) parent,
                 associationType
         );
-        ConfigurableSubQuery<R> typedSubQuery =
-                block.apply(subQuery, (AssociationTableEx<SE, ST, TE, TT>)subQuery.getTable());
-        subQuery.freeze();
-        return typedSubQuery;
+        return block.apply(subQuery, subQuery.getTable());
     }
 
     @SuppressWarnings("unchecked")
@@ -170,8 +157,7 @@ public class Queries {
                 (AbstractMutableStatementImpl) parent,
                 associationType
         );
-        block.accept(subQuery, (AssociationTableEx<SE, ST, TE, TT>)subQuery.getTable());
-        subQuery.freeze();
+        block.accept(subQuery, subQuery.getTable());
         return subQuery;
     }
 
@@ -205,9 +191,6 @@ public class Queries {
                 purpose,
                 false
         );
-        ConfigurableRootQuery<AssociationTable<?, ?, ?, ?>, R> typedQuery =
-                block.apply(query, (AssociationTable<?, ?, ?, ?>)query.getTable());
-        query.freeze();
-        return typedQuery;
+        return block.apply(query, query.getTable());
     }
 }

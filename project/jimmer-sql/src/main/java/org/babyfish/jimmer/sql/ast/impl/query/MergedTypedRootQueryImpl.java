@@ -3,9 +3,9 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -67,7 +67,7 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, Typed
     }
 
     private List<R> executeImpl(Connection con) {
-        Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(sqlClient));
+        Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
         return Selectors.select(sqlClient, con, sqlResult.get_1(), sqlResult.get_2(), selections, ExecutionPurpose.QUERY);
     }
 
@@ -85,12 +85,12 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, Typed
     }
 
     private void forEachImpl(Connection con, int batchSize, Consumer<R> consumer) {
-        Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(sqlClient));
+        Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
         Selectors.forEach(sqlClient, con, sqlResult.get_1(), sqlResult.get_2(), selections, ExecutionPurpose.QUERY, batchSize, consumer);
     }
 
     private Tuple2<String, List<Object>> preExecute(SqlBuilder builder) {
-        AstVisitor visitor = new UseTableVisitor(builder);
+        AstVisitor visitor = new UseTableVisitor(builder.getAstContext());
         accept(visitor);
         renderTo(builder);
         return builder.build();
@@ -158,8 +158,7 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, Typed
 
     private static boolean isSameType(Selection<?> a, Selection<?> b) {
         if (a instanceof Table<?> && b instanceof Table<?>) {
-            return TableWrappers.unwrap((Table<?>) a).getImmutableType() ==
-                    TableWrappers.unwrap((Table<?>) b).getImmutableType();
+            return ((Table<?>) a).getImmutableType() == ((Table<?>) b).getImmutableType();
         }
         if (a instanceof Expression<?> && b instanceof Expression<?>) {
             return ((ExpressionImplementor<?>) a).getType() ==

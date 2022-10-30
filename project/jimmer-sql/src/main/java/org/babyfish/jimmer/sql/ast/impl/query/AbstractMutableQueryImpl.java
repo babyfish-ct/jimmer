@@ -7,17 +7,10 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.*;
-import org.babyfish.jimmer.sql.ast.impl.table.TableAliasAllocator;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableRowCountDestructive;
-import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.query.*;
-import org.babyfish.jimmer.sql.ast.table.Props;
-import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.filter.CacheableFilter;
-import org.babyfish.jimmer.sql.filter.Filter;
-import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.ArrayList;
@@ -27,36 +20,25 @@ public abstract class AbstractMutableQueryImpl
         extends AbstractMutableStatementImpl
         implements MutableQuery {
 
-    private final Table<?> table;
-
     private final List<Expression<?>> groupByExpressions = new ArrayList<>();
 
     private List<Predicate> havingPredicates = new ArrayList<>();
 
     private final List<Order> orders = new ArrayList<>();
 
-    private final boolean ignoreFilter;
-
     @SuppressWarnings("unchecked")
     protected AbstractMutableQueryImpl(
-            TableAliasAllocator tableAliasAllocator,
             JSqlClient sqlClient,
-            ImmutableType immutableType,
-            ExecutionPurpose purpose,
-            boolean ignoreFilter
+            ImmutableType immutableType
     ) {
-        super(tableAliasAllocator, sqlClient, purpose);
-        if (!immutableType.isEntity()) {
-            throw new IllegalArgumentException(
-                    "`" +
-                            immutableType +
-                            "` is not entity"
-            );
-        }
-        this.table = TableWrappers.wrap(
-                TableImplementor.create(this, immutableType)
-        );
-        this.ignoreFilter = ignoreFilter;
+        super(sqlClient, immutableType);
+    }
+
+    protected AbstractMutableQueryImpl(
+            JSqlClient sqlClient,
+            TableProxy<?> table
+    ) {
+        super(sqlClient, table);
     }
 
     @Override
@@ -103,25 +85,9 @@ public abstract class AbstractMutableQueryImpl
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T extends Table<?>> T getTable() {
-        return (T)table;
-    }
-
-    @Override
     protected void onFrozen() {
-        Filter<Props> filter = getSqlClient().getFilters().getFilter(getTable().getImmutableType(), ignoreFilter);
-        if (filter != null) {
-            filter.filter(
-                    new FilterArgsImpl<>(this, this.getTable(), filter instanceof CacheableFilter<?>)
-            );
-        }
-        super.onFrozen();
         havingPredicates = mergePredicates(havingPredicates);
-    }
-
-    boolean isFilterIgnored() {
-        return ignoreFilter;
+        super.onFrozen();
     }
 
     void accept(
@@ -129,23 +95,25 @@ public abstract class AbstractMutableQueryImpl
             List<Selection<?>> overriddenSelections,
             boolean withoutSortingAndPaging
     ) {
+        Predicate predicate = getPredicate();
+        Predicate havingPredicate = havingPredicates.isEmpty() ? null : havingPredicates.get(0);
         if (groupByExpressions.isEmpty() && !havingPredicates.isEmpty()) {
             throw new IllegalStateException(
                     "Having clause cannot be used without group clause"
             );
         }
-        Predicate predicate = getPredicate();
         if (predicate != null) {
             ((Ast)predicate).accept(visitor);
         }
         for (Expression<?> expression : groupByExpressions) {
             ((Ast)expression).accept(visitor);
         }
-        for (Predicate havingPredicate : havingPredicates) {
+        if (havingPredicate != null) {
             ((Ast)havingPredicate).accept(visitor);
         }
+        AstContext astContext = visitor.getAstContext();
         if (withoutSortingAndPaging) {
-            AstVisitor ignoredVisitor = new UseJoinOfIgnoredClauseVisitor(visitor.getSqlBuilder());
+            AstVisitor ignoredVisitor = new UseJoinOfIgnoredClauseVisitor(astContext);
             for (Order order : orders) {
                 ((Ast)order.getExpression()).accept(ignoredVisitor);
             }
@@ -155,9 +123,9 @@ public abstract class AbstractMutableQueryImpl
             }
         }
         if (overriddenSelections != null) {
-            AstVisitor ignoredVisitor = new UseJoinOfIgnoredClauseVisitor(visitor.getSqlBuilder());
+            AstVisitor ignoredVisitor = new UseJoinOfIgnoredClauseVisitor(astContext);
             for (Selection<?> selection : overriddenSelections) {
-                Ast.from(selection).accept(ignoredVisitor);
+                Ast.from(selection, astContext).accept(ignoredVisitor);
             }
         }
     }
@@ -167,8 +135,8 @@ public abstract class AbstractMutableQueryImpl
         Predicate predicate = getPredicate();
         Predicate havingPredicate = havingPredicates.isEmpty() ? null : havingPredicates.get(0);
 
-        TableImplementor<?> table = TableWrappers.unwrap(this.table);
-        table.renderTo(builder);
+        TableImplementor<?> tableImplementor = getTableImplementor();
+        tableImplementor.renderTo(builder);
 
         if (predicate != null) {
             builder.sql(" where ");
@@ -213,8 +181,8 @@ public abstract class AbstractMutableQueryImpl
 
     private static class UseJoinOfIgnoredClauseVisitor extends AstVisitor {
 
-        public UseJoinOfIgnoredClauseVisitor(SqlBuilder sqlBuilder) {
-            super(sqlBuilder);
+        public UseJoinOfIgnoredClauseVisitor(AstContext ctx) {
+            super(ctx);
         }
 
         @Override
@@ -223,14 +191,14 @@ public abstract class AbstractMutableQueryImpl
         }
 
         @Override
-        public void visitTableReference(Table<?> table, ImmutableProp prop) {
-            handle(TableWrappers.unwrap(table), prop != null && prop.isId());
+        public void visitTableReference(TableImplementor<?> table, ImmutableProp prop) {
+            handle(table, prop != null && prop.isId());
         }
 
         private void handle(TableImplementor<?> table, boolean isId) {
             if (table.getDestructive() != TableRowCountDestructive.NONE) {
                 if (isId) {
-                    getSqlBuilder().useTableId(table);
+                    getAstContext().useTableId(table);
                     use(table.getParent());
                 } else {
                     use(table);
@@ -240,7 +208,7 @@ public abstract class AbstractMutableQueryImpl
 
         private void use(TableImplementor<?> table) {
             if (table != null) {
-                getSqlBuilder().useTable(table);
+                getAstContext().useTable(table);
                 use(table.getParent());
             }
         }

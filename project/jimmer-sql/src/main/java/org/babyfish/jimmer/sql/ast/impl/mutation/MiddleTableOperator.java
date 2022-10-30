@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -35,7 +36,7 @@ class MiddleTableOperator {
     }
 
     List<Object> getTargetIds(Object id) {
-        SqlBuilder builder = new SqlBuilder(sqlClient);
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
                 .sql("select ")
                 .sql(middleTable.getTargetJoinColumnName())
@@ -67,7 +68,7 @@ class MiddleTableOperator {
     }
 
     int add(IdPairReader reader) {
-        SqlBuilder builder = new SqlBuilder(sqlClient);
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
                 .sql("insert into ")
                 .sql(middleTable.getTableName())
@@ -109,7 +110,7 @@ class MiddleTableOperator {
     }
 
     int remove(IdPairReader reader) {
-        SqlBuilder builder = new SqlBuilder(sqlClient);
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
                 .sql("delete from ")
                 .sql(middleTable.getTableName())

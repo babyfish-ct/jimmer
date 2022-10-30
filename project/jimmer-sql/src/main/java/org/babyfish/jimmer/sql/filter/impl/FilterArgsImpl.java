@@ -11,7 +11,8 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
+import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
@@ -20,7 +21,7 @@ import org.babyfish.jimmer.sql.ast.table.AssociationTableEx;
 import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
-import org.babyfish.jimmer.sql.ast.table.spi.TableWrapper;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.jetbrains.annotations.NotNull;
@@ -47,12 +48,13 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     public FilterArgsImpl(Sortable sortable, Props props, boolean forCache) {
         this.sortable = sortable;
         if (forCache) {
-            props = TableWrappers.wrap(
-                    (Table<?>) props,
-                    CACHEABLE_TABLE_JOIN_ERROR_MESSAGE
-            );
-            if (!(props instanceof TableWrapper<?>)) {
-                props = new CacheableTable<>((Table<?>)props);
+            if (props instanceof TableImplementor<?>) {
+                props = new UntypedTableProxy<>((TableImplementor<?>)props);
+            } else {
+                props = TableProxies.wrap(
+                        (Table<?>) props,
+                        CACHEABLE_TABLE_JOIN_ERROR_MESSAGE
+                );
             }
         }
         this.props = (P)props;
@@ -132,17 +134,22 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
         return (AbstractMutableQueryImpl) sortable;
     }
 
-    private static class CacheableTable<E> implements TableWrapper<E> {
+    private static class UntypedTableProxy<E> implements TableProxy<E> {
 
         private final TableImplementor<E> table;
 
-        private CacheableTable(Table<E> table) {
-            this.table = TableWrappers.unwrap(table);
+        private UntypedTableProxy(TableImplementor<E> table) {
+            this.table = table;
         }
 
         @Override
         public ImmutableType getImmutableType() {
             return table.getImmutableType();
+        }
+
+        @Override
+        public TableImplementor<E> __resolve(RootTableResolver resolver) {
+            return null;
         }
 
         @Override
@@ -231,12 +238,12 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
         }
 
         @Override
-        public TableImplementor<E> unwrap() {
+        public TableImplementor<E> __unwrap() {
             return table;
         }
 
         @Override
-        public String getJoinDisabledReason() {
+        public String __joinDisabledReason() {
             return CACHEABLE_TABLE_JOIN_ERROR_MESSAGE;
         }
     }

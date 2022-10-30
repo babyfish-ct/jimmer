@@ -11,13 +11,13 @@ import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
-class FetcherSelectionImpl<E> implements FetcherSelection<E>, Ast {
+public class FetcherSelectionImpl<E> implements FetcherSelection<E>, Ast {
 
-    private final TableImpl<E> table;
+    private final Table<E> table;
 
     private final Fetcher<E> fetcher;
 
-    FetcherSelectionImpl(TableImpl<E> table, Fetcher<E> fetcher) {
+    public FetcherSelectionImpl(Table<E> table, Fetcher<E> fetcher) {
         this.table = table;
         this.fetcher = fetcher;
     }
@@ -32,7 +32,7 @@ class FetcherSelectionImpl<E> implements FetcherSelection<E>, Ast {
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
             if (prop.getStorage() instanceof Column) {
-                visitor.visitTableReference(table, prop);
+                visitor.visitTableReference((TableImplementor<?>) table, prop);
             }
         }
     }
@@ -46,7 +46,7 @@ class FetcherSelectionImpl<E> implements FetcherSelection<E>, Ast {
                 builder.sql(separator);
                 separator = ", ";
                 builder
-                        .sql(table.getAlias())
+                        .sql(((TableImplementor<?>)table).getAlias())
                         .sql(".")
                         .sql(prop.<Column>getStorage().getName());
             }
