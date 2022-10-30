@@ -11,11 +11,11 @@ interface KTable<E: Any> : KProps<E> {
 }
 
 fun KTable<*>.isNull(): KNonNullExpression<Boolean> {
-    val idProp = (this as TableSelection<*>).immutableType.idProp
+    val idProp = (this as TableSelection).immutableType.idProp
     return get<Any, KPropExpression<Any>>(idProp.name).isNull()
 }
 
 fun KTable<*>.isNotNull(): KNonNullExpression<Boolean> {
-    val idProp = (this as TableSelection<*>).immutableType.idProp
+    val idProp = (this as TableSelection).immutableType.idProp
     return get<Any, KPropExpression<Any>>(idProp.name).isNotNull()
 }

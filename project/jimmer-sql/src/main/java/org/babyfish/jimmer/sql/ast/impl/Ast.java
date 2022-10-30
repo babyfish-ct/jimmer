@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Selection;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
+import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
+import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -13,9 +13,9 @@ public interface Ast {
 
     void renderTo(@NotNull SqlBuilder builder);
 
-    static Ast from(Selection<?> selection) {
+    static Ast from(Selection<?> selection, RootTableResolver resolver) {
         if (selection instanceof Table<?>) {
-            return TableWrappers.unwrap((Table<?>) selection);
+            return TableProxies.resolve((Table<?>) selection, resolver);
         }
         return (Ast) selection;
     }

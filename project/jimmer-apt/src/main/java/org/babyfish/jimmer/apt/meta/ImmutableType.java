@@ -405,6 +405,10 @@ public class ImmutableType {
         return tableClassName;
     }
 
+    public ClassName getNewTableClassName() {
+        return toClassName(name -> name + "s");
+    }
+
     public ClassName getTableExClassName() {
         return tableExClassName;
     }

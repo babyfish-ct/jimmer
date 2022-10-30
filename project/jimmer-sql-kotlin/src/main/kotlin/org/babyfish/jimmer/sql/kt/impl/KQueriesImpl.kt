@@ -32,11 +32,11 @@ internal class KQueriesImpl(
             ExecutionPurpose.QUERY,
             false
         )
-        val typedQuery = KMutableRootQueryImpl(
+        return KMutableRootQueryImpl(
             query as MutableRootQueryImpl<Table<E>>
-        ).block()
-        query.freeze()
-        return typedQuery
+        ).block().apply {
+            query.freeze()
+        }
     }
 
     override fun <S : Any, T : Any, R> forReference(
@@ -66,10 +66,10 @@ internal class KQueriesImpl(
                 ExecutionPurpose.QUERY,
                 false
             )
-        val typedQuery = KMutableRootQueryImpl(
+        return KMutableRootQueryImpl(
             query as MutableRootQueryImpl<Table<Association<S, T>>>
-        ).block()
-        query.freeze()
-        return typedQuery
+        ).block().apply {
+            query.freeze()
+        }
     }
 }

@@ -2,30 +2,26 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
-import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 public class AstVisitor {
 
-    private SqlBuilder sqlBuilder;
+    private final AstContext ctx;
 
-    protected AstVisitor(SqlBuilder sqlBuilder) {
-        this.sqlBuilder = sqlBuilder;
+    public AstVisitor(AstContext ctx) {
+        this.ctx = ctx;
     }
 
-    public final SqlBuilder getSqlBuilder() {
-        if (sqlBuilder == null) {
-            throw new IllegalStateException("SqlBuilder is not supported by current Ast");
-        }
-        return sqlBuilder;
+    public AstContext getAstContext() {
+        return ctx;
     }
 
-    public void visitTableReference(Table<?> table, ImmutableProp prop) {}
+    public void visitTableReference(TableImplementor<?> table, ImmutableProp prop) {}
+
+    public void visitAggregation(String functionName, Expression<?> expression, String prefix) {}
 
     public boolean visitSubQuery(TypedSubQuery<?> subQuery) {
         return true;
     }
-
-    public void visitAggregation(String functionName, Expression<?> expression, String prefix) {}
 }

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.DissociateAction;
@@ -158,7 +159,7 @@ public class Deleter {
             MiddleTable middleTable,
             Collection<Object> ids
     ) {
-        SqlBuilder builder = new SqlBuilder(data.getSqlClient());
+        SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         builder.sql("delete from ");
         builder.sql(middleTable.getTableName());
         builder.sql(" where ");
@@ -193,7 +194,7 @@ public class Deleter {
         ImmutableType childType = manyToOneProp.getDeclaringType();
 
         String fkColumnName = ((Column)manyToOneProp.getStorage()).getName();
-        SqlBuilder builder = new SqlBuilder(data.getSqlClient());
+        SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         builder
                 .sql("update ")
                 .sql(childType.getTableName())
@@ -228,7 +229,7 @@ public class Deleter {
         ImmutableProp manyToOneProp = prop.getMappedBy();
         ImmutableType childType = manyToOneProp.getDeclaringType();
         String fkColumnName = ((Column)manyToOneProp.getStorage()).getName();
-        SqlBuilder builder = new SqlBuilder(data.getSqlClient());
+        SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         builder
                 .sql("select ")
                 .sql(childType.getIdProp().<Column>getStorage().getName())
@@ -296,7 +297,7 @@ public class Deleter {
 
     private void deleteFromSelfTable(ImmutableType type, Collection<Object> ids) {
         String fkColumnName = ((Column)type.getIdProp().getStorage()).getName();
-        SqlBuilder builder = new SqlBuilder(data.getSqlClient());
+        SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         builder.sql("delete from ");
         builder.sql(type.getTableName());
         builder.sql(" where ");

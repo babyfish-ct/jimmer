@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.runtime;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
@@ -12,9 +13,7 @@ import java.util.function.Function;
 
 public class SqlBuilder {
 
-    private JSqlClient sqlClient;
-
-    private Map<Table<?>, TableUsedState> tableUsedStateMap;
+    private AstContext ctx;
 
     private SqlBuilder parent;
 
@@ -26,29 +25,18 @@ public class SqlBuilder {
 
     private boolean terminated;
 
-    public SqlBuilder(JSqlClient sqlClient) {
-        this.sqlClient = sqlClient;
-        this.tableUsedStateMap = new HashMap<>();
+    public SqlBuilder(AstContext ctx) {
+        this.ctx = ctx;
     }
 
     private SqlBuilder(SqlBuilder parent) {
-        this.sqlClient = parent.sqlClient;
-        this.tableUsedStateMap = parent.tableUsedStateMap;
+        this.ctx = parent.ctx;
         this.parent = parent;
         parent.childBuilderCount++;
     }
 
-    public void useTableId(Table<?> table) {
-        tableUsedStateMap.computeIfAbsent(table, t -> TableUsedState.ID_ONLY);
-    }
-
-    public void useTable(Table<?> table) {
-        tableUsedStateMap.put(table, TableUsedState.USED);
-    }
-
-    public TableUsedState getTableUsedState(Table<?> table) {
-        TableUsedState state = tableUsedStateMap.get(table);
-        return state != null ? state : TableUsedState.NONE;
+    public AstContext getAstContext() {
+        return ctx;
     }
 
     public SqlBuilder sql(String sql) {
@@ -199,7 +187,7 @@ public class SqlBuilder {
             );
         }
         ScalarProvider<Object, Object> scalarProvider =
-                sqlClient.getScalarProvider((Class<Object>)value.getClass());
+                ctx.getSqlClient().getScalarProvider((Class<Object>)value.getClass());
         Object finalValue;
         if (scalarProvider != null) {
             finalValue = scalarProvider.toSql(value);
@@ -224,7 +212,7 @@ public class SqlBuilder {
     public SqlBuilder nullVariable(Class<?> type) {
         validate();
         ScalarProvider<Object, Object> scalarProvider =
-                sqlClient.getScalarProvider((Class<Object>)type);
+                ctx.getSqlClient().getScalarProvider((Class<Object>)type);
         Object finalValue;
         if (scalarProvider != null) {
             finalValue = new DbNull(scalarProvider.getSqlType());

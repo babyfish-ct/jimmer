@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.OptimisticLockException;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
@@ -334,7 +335,7 @@ class Saver {
                             "\" without any properties"
             );
         }
-        SqlBuilder builder = new SqlBuilder(data.getSqlClient());
+        SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         builder
                 .sql("insert into ")
                 .sql(type.getTableName())
@@ -450,7 +451,7 @@ class Saver {
         if (updatedProps.isEmpty() && version == null) {
             return;
         }
-        SqlBuilder builder = new SqlBuilder(data.getSqlClient());
+        SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         builder
                 .sql("update ")
                 .sql(type.getTableName())

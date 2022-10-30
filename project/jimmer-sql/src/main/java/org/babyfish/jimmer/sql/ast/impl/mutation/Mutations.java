@@ -23,7 +23,6 @@ public class Mutations {
                 ImmutableType.get(tableType)
         );
         block.accept(update, update.getTable());
-        update.freeze();
         return update;
     }
 
@@ -37,7 +36,6 @@ public class Mutations {
                 type
         );
         block.accept(update, update.getTable());
-        update.freeze();
         return update;
     }
 
@@ -51,7 +49,6 @@ public class Mutations {
                 ImmutableType.get(tableType)
         );
         block.accept(delete, delete.getTable());
-        delete.freeze();
         return delete;
     }
 }

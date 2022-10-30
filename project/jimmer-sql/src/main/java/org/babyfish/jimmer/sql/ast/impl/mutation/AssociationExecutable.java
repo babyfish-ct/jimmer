@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
@@ -119,7 +120,7 @@ class AssociationExecutable implements Executable<Integer> {
                 associationType.getMiddleTable();
         Tuple2<Expression<?>, Expression<?>> expressionPair = getExpressionPair();
 
-        SqlBuilder builder = new SqlBuilder(sqlClient);
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
                 .sql("select ")
                 .sql(middleTable.getJoinColumnName())

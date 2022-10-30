@@ -12,7 +12,6 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -51,8 +50,6 @@ class TableImpl<E> implements TableImplementor<E> {
     private final Map<String, TableImpl<?>> childTableMap =
             new LinkedHashMap<>();
 
-    private Selection<E> fetcherSelection;
-
     public TableImpl(
             AbstractMutableStatementImpl statement,
             ImmutableType immutableType,
@@ -77,12 +74,12 @@ class TableImpl<E> implements TableImplementor<E> {
 
         if (joinProp != null) {
             if (joinProp.getStorage() instanceof MiddleTable) {
-                middleTableAlias = statement.getTableAliasAllocator().allocate();
+                middleTableAlias = statement.getContext().allocateTableAlias();
             } else if (joinProp.getStorage() == null) {
                 throw new AssertionError("Internal bug: Join property has not storage");
             }
         }
-        alias = statement.getTableAliasAllocator().allocate();
+        alias = statement.getContext().allocateTableAlias();
     }
 
     @Override
@@ -126,7 +123,7 @@ class TableImpl<E> implements TableImplementor<E> {
 
     @Override
     public Predicate eq(Table<E> other) {
-        if (TableWrappers.unwrap(other).getImmutableType() != immutableType) {
+        if (other.getImmutableType() != immutableType) {
             throw new IllegalArgumentException("Cannot compare tables of different types");
         }
         String idPropName = immutableType.getIdProp().getName();
@@ -158,68 +155,50 @@ class TableImpl<E> implements TableImplementor<E> {
     @SuppressWarnings("unchecked")
     @Override
     public <XE extends Expression<?>> XE get(String prop) {
-        ImmutableProp immutableProp = immutableType.getProps().get(prop);
-        if (immutableProp == null || !immutableProp.isScalar()) {
-            throw new IllegalArgumentException(
-                    "\"" + prop + "\" is not scalar property of \"" + immutableType + "\"");
-        }
+        ImmutableProp immutableProp = immutableType.getProp(prop);
         return (XE) PropExpressionImpl.of(this, immutableProp);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <XT extends Table<?>> XT join(String prop) {
-        return join(prop, JoinType.INNER);
+        return (XT) TableProxies.wrap(joinImplementor(prop));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <XT extends Table<?>> XT join(String prop, JoinType joinType) {
-        return join(prop, joinType, null);
+        return (XT) TableProxies.wrap(joinImplementor(prop, joinType));
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <XT extends Table<?>> XT join(String prop, JoinType joinType, ImmutableType treatedAs) {
-        ImmutableProp immutableProp = immutableType.getProps().get(prop);
-        if (treatedAs != null) {
-            immutableProp = RedirectedProp.target(immutableProp, treatedAs);
-        }
-        if (immutableProp == null || !immutableProp.isAssociation(TargetLevel.ENTITY)) {
-            throw new IllegalArgumentException(
-                    "\"" +
-                            prop +
-                            "\" is not association property of \"" +
-                            this.immutableType +
-                            "\""
-            );
-        }
-        return (XT)join0(false, immutableProp, joinType);
-    }
-
-    @Override
-    public <XT extends Table<?>> XT inverseJoin(ImmutableProp prop) {
-        return inverseJoin(prop, JoinType.INNER);
+        return (XT) TableProxies.wrap(joinImplementor(prop, joinType, treatedAs));
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <XT extends Table<?>> XT inverseJoin(ImmutableProp backProp, JoinType joinType) {
-        if (backProp.getTargetType() != immutableType) {
-            throw new IllegalArgumentException("'" + backProp + "' is not back association property");
-        }
-        if (!backProp.getDeclaringType().isEntity()) {
-            throw new IllegalArgumentException("'" + backProp + "' is not declared in entity");
-        }
-        return (XT)join0(true, backProp, joinType);
+    public <XT extends Table<?>> XT inverseJoin(ImmutableProp prop) {
+        return (XT) TableProxies.wrap(inverseJoinImplementor(prop));
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public <XT extends Table<?>> XT inverseJoin(ImmutableProp prop, JoinType joinType) {
+        return (XT) TableProxies.wrap(inverseJoinImplementor(prop, joinType));
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
     public <XT extends Table<?>> XT inverseJoin(TypedProp.Association<?, ?> prop) {
-        return inverseJoin(prop.unwrap(), JoinType.INNER);
+        return (XT) TableProxies.wrap(inverseJoinImplementor(prop));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <XT extends Table<?>> XT inverseJoin(TypedProp.Association<?, ?> prop, JoinType joinType) {
-        return inverseJoin(prop.unwrap(), joinType);
+        return (XT) TableProxies.wrap(inverseJoinImplementor(prop, joinType));
     }
 
     @Override
@@ -239,7 +218,63 @@ class TableImpl<E> implements TableImplementor<E> {
         return inverseJoin(ImmutableProps.join(targetTableType, backPropBlock), joinType);
     }
 
-    private Table<?> join0(
+    @Override
+    public <X> TableImplementor<X> joinImplementor(String prop) {
+        return joinImplementor(prop, JoinType.INNER);
+    }
+
+    @Override
+    public <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType) {
+        return joinImplementor(prop, joinType, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType, ImmutableType treatedAs) {
+        ImmutableProp immutableProp = immutableType.getProp(prop);
+        if (!immutableProp.isAssociation(TargetLevel.ENTITY)) {
+            throw new IllegalArgumentException(
+                    "\"" +
+                            prop +
+                            "\" is not association property of \"" +
+                            this.immutableType +
+                            "\""
+            );
+        }
+        if (treatedAs != null) {
+            immutableProp = RedirectedProp.target(immutableProp, treatedAs);
+        }
+        return (TableImplementor<X>) join0(false, immutableProp, joinType);
+    }
+
+    @Override
+    public <X> TableImplementor<X>  inverseJoinImplementor(ImmutableProp prop) {
+        return inverseJoinImplementor(prop, JoinType.INNER);
+    }
+
+    @Override
+    public <X> TableImplementor<X>  inverseJoinImplementor(TypedProp.Association<?, ?> prop) {
+        return inverseJoinImplementor(prop.unwrap(), JoinType.INNER);
+    }
+
+    @Override
+    public <X> TableImplementor<X>  inverseJoinImplementor(TypedProp.Association<?, ?> prop, JoinType joinType) {
+        return inverseJoinImplementor(prop.unwrap(), joinType);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <X> TableImplementor<X>  inverseJoinImplementor(ImmutableProp backProp, JoinType joinType) {
+        if (backProp.getTargetType() != immutableType) {
+            throw new IllegalArgumentException("'" + backProp + "' is not back association property");
+        }
+        if (!backProp.getDeclaringType().isEntity()) {
+            throw new IllegalArgumentException("'" + backProp + "' is not declared in entity");
+        }
+        return (TableImplementor<X>) join0(true, backProp, joinType);
+    }
+
+    private TableImplementor<?> join0(
             boolean isInverse,
             ImmutableProp prop,
             JoinType joinType
@@ -257,7 +292,8 @@ class TableImpl<E> implements TableImplementor<E> {
             );
         }
 
-        statement.validateMutable();
+        // TODO:
+        //statement.validateMutable();
 
         String joinName;
         if (!isInverse) {
@@ -279,7 +315,7 @@ class TableImpl<E> implements TableImplementor<E> {
         return join1(joinName, isInverse, prop, joinType);
     }
 
-    private Table<?> join1(
+    private TableImplementor<?> join1(
             String joinName,
             boolean isInverse,
             ImmutableProp prop,
@@ -290,7 +326,7 @@ class TableImpl<E> implements TableImplementor<E> {
             if (existing.joinType != joinType) {
                 existing.joinType = JoinType.INNER;
             }
-            return TableWrappers.wrap(existing);
+            return existing;
         }
         TableImpl<?> newTable = new TableImpl<>(
                 statement,
@@ -301,7 +337,7 @@ class TableImpl<E> implements TableImplementor<E> {
                 joinType
         );
         childTableMap.put(joinName, newTable);
-        return TableWrappers.wrap(newTable);
+        return newTable;
     }
 
     @Override
@@ -321,23 +357,9 @@ class TableImpl<E> implements TableImplementor<E> {
         return new FetcherSelectionImpl<>(this, fetcher);
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Selection<E> toFetcherSelection() {
-        Selection<E> fetcherSelection = this.fetcherSelection;
-        if (fetcherSelection == null) {
-            Fetcher<E> fetcher =
-                    new FetcherImpl<>(
-                            (Class<E>) immutableType.getJavaClass()
-                    ).allTableFields();
-            this.fetcherSelection = fetcherSelection = fetch(fetcher);
-        }
-        return fetcherSelection;
-    }
-
     @Override
     public TableEx<E> asTableEx() {
-        return TableWrappers.wrap(this);
+        return TableProxies.wrap(this);
     }
 
     @Override
@@ -353,7 +375,7 @@ class TableImpl<E> implements TableImplementor<E> {
         if (mode == RenderMode.NORMAL) {
             throw new IllegalStateException("Internal bug: renderJoinAsFrom does not accept render mode ALL");
         }
-        TableUsedState usedState = builder.getTableUsedState(this);
+        TableUsedState usedState = builder.getAstContext().getTableUsedState(this);
         if (usedState != TableUsedState.NONE) {
             renderSelf(builder, mode);
             if (mode == RenderMode.DEEPER_JOIN_ONLY) {
@@ -366,7 +388,7 @@ class TableImpl<E> implements TableImplementor<E> {
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        TableUsedState usedState = builder.getTableUsedState(this);
+        TableUsedState usedState = builder.getAstContext().getTableUsedState(this);
         if (parent == null || usedState != TableUsedState.NONE) {
             renderSelf(builder, RenderMode.NORMAL);
             for (TableImpl<?> childTable : childTableMap.values()) {
@@ -392,7 +414,7 @@ class TableImpl<E> implements TableImplementor<E> {
     private void renderJoin(SqlBuilder builder, RenderMode mode) {
 
         if (joinProp instanceof AssociationProp) {
-            if (builder.getTableUsedState(this) == TableUsedState.USED) {
+            if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED) {
                 renderJoinImpl(
                         builder,
                         joinType,
@@ -425,7 +447,7 @@ class TableImpl<E> implements TableImplementor<E> {
                     middleTable.getJoinColumnName(),
                     mode
             );
-            if (builder.getTableUsedState(this) == TableUsedState.USED && (
+            if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED && (
                     mode == RenderMode.NORMAL ||
                             mode == RenderMode.DEEPER_JOIN_ONLY)
             ) {
@@ -440,7 +462,7 @@ class TableImpl<E> implements TableImplementor<E> {
                         RenderMode.NORMAL
                 );
             }
-        } else if (builder.getTableUsedState(this) == TableUsedState.USED) {
+        } else if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED) {
             renderJoinImpl(
                     builder,
                     joinType,
@@ -474,7 +496,7 @@ class TableImpl<E> implements TableImplementor<E> {
                     middleTable.getTargetJoinColumnName(),
                     mode
             );
-            if (sqlBuilder.getTableUsedState(this) == TableUsedState.USED && (
+            if (sqlBuilder.getAstContext().getTableUsedState(this) == TableUsedState.USED && (
                     mode == RenderMode.NORMAL ||
                             mode == RenderMode.DEEPER_JOIN_ONLY)
             ) {
@@ -586,7 +608,7 @@ class TableImpl<E> implements TableImplementor<E> {
             if (opposite != null) {
                 text = parent.toString() + '.' + opposite.getName();
             } else {
-                text = "← " + parent + '.' + joinProp.getName();
+                text = parent + "[← " + joinProp + ']';
             }
         } else {
             return parent.toString() + '.' + joinProp.getName();

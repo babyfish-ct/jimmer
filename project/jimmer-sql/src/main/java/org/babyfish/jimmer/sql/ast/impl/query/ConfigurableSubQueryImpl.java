@@ -7,7 +7,6 @@ import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.ExistsPredicate;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.SubQueryFunctionExpression;
-import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
@@ -17,10 +16,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public class ConfigurableSubQueryImpl<R>
-        extends AbstractConfigurableTypedQueryImpl<R>
+        extends AbstractConfigurableTypedQueryImpl
         implements ConfigurableSubQuery<R>, ExpressionImplementor<R> {
 
-    private Class<R> type;
+    private final Class<R> type;
 
     @SuppressWarnings("unchecked")
     ConfigurableSubQueryImpl(
@@ -33,7 +32,7 @@ public class ConfigurableSubQueryImpl<R>
             case 1:
                 Selection<?> selection = selections.get(0);
                 if (selection instanceof Table<?>) {
-                    type = (Class<R>) TableWrappers.unwrap((Table<?>) selection).getImmutableType().getJavaClass();
+                    type = (Class<R>) ((Table<?>) selection).getImmutableType().getJavaClass();
                 } else {
                     type = (Class<R>)((ExpressionImplementor<?>)selection).getType();
                 }
@@ -65,6 +64,7 @@ public class ConfigurableSubQueryImpl<R>
             default:
                 throw new IllegalArgumentException("selection count must between 1 and 9");
         }
+        baseQuery.freeze();
     }
 
     @Override
@@ -133,6 +133,7 @@ public class ConfigurableSubQueryImpl<R>
     @Override
     public void accept(@NotNull AstVisitor visitor) {
         if (visitor.visitSubQuery(this)) {
+            getBaseQuery().initializeParentIfNecessary(visitor.getAstContext().getStatement());
             super.accept(visitor);
         }
     }

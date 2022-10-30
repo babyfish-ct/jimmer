@@ -3,8 +3,9 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.meta.Column;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,11 +13,11 @@ public class PropExpressionImpl<T>
         extends AbstractExpression<T>
         implements PropExpression<T> {
 
-    private TableImplementor<?> table;
+    private Table<?> table;
 
     private ImmutableProp prop;
 
-    public static PropExpressionImpl<?> of(TableImplementor<?> table, ImmutableProp prop) {
+    public static PropExpressionImpl<?> of(Table<?> table, ImmutableProp prop) {
         Class<?> elementClass = prop.getElementClass();
         if (String.class.isAssignableFrom(elementClass)) {
             return new StrImpl(table, prop);
@@ -30,7 +31,7 @@ public class PropExpressionImpl<T>
         return new PropExpressionImpl<>(table, prop);
     }
 
-    PropExpressionImpl(TableImplementor<?> table, ImmutableProp prop) {
+    PropExpressionImpl(Table<?> table, ImmutableProp prop) {
         if (prop.isAssociation(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException("prop '" + prop + "' cannot be association property");
         }
@@ -41,7 +42,7 @@ public class PropExpressionImpl<T>
         this.prop = prop;
     }
 
-    public TableImplementor<?> getTableImplementor() {
+    public Table<?> getTable() {
         return table;
     }
 
@@ -51,12 +52,12 @@ public class PropExpressionImpl<T>
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        visitor.visitTableReference(table, prop);
+        visitor.visitTableReference(TableProxies.resolve(table, visitor.getAstContext()), prop);
     }
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        table.renderSelection(prop, builder);
+        TableProxies.resolve(table, builder.getAstContext()).renderSelection(prop, builder);
     }
 
     @Override
@@ -74,7 +75,7 @@ public class PropExpressionImpl<T>
             extends PropExpressionImpl<String>
             implements PropExpression.Str, StringExpressionImplementor {
 
-        StrImpl(TableImplementor<?> table, ImmutableProp prop) {
+        StrImpl(Table<?> table, ImmutableProp prop) {
             super(table, prop);
         }
 
@@ -94,8 +95,8 @@ public class PropExpressionImpl<T>
         }
 
         @Override
-        public TableImplementor<?> getTableImplementor() {
-            return super.getTableImplementor();
+        public Table<?> getTable() {
+            return super.getTable();
         }
     }
 
@@ -103,7 +104,7 @@ public class PropExpressionImpl<T>
             extends PropExpressionImpl<N>
             implements PropExpression.Num<N>, NumericExpressionImplementor<N> {
 
-        NumImpl(TableImplementor<?> table, ImmutableProp prop) {
+        NumImpl(Table<?> table, ImmutableProp prop) {
             super(table, prop);
         }
 
@@ -127,7 +128,7 @@ public class PropExpressionImpl<T>
             extends PropExpressionImpl<T>
             implements PropExpression.Cmp<T>, ComparableExpressionImplementor<T> {
 
-        CmpImpl(TableImplementor<?> table, ImmutableProp prop) {
+        CmpImpl(Table<?> table, ImmutableProp prop) {
             super(table, prop);
         }
 

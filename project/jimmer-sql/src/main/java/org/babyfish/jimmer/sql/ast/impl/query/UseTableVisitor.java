@@ -1,37 +1,34 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableWrappers;
-import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 public class UseTableVisitor extends AstVisitor {
 
-    public UseTableVisitor(SqlBuilder sqlBuilder) {
-        super(sqlBuilder);
+    public UseTableVisitor(AstContext ctx) {
+        super(ctx);
     }
 
     @Override
-    public void visitTableReference(Table<?> table, ImmutableProp prop) {
+    public void visitTableReference(TableImplementor<?> table, ImmutableProp prop) {
 
-        TableImplementor<?> tableImpl = TableWrappers.unwrap(table);
         if (prop == null) {
-            if (tableImpl.getImmutableType().getSelectableProps().size() > 1) {
-                use(tableImpl);
+            if (table.getImmutableType().getSelectableProps().size() > 1) {
+                use(table);
             }
         } else if (prop.isId()) {
-            getSqlBuilder().useTableId(tableImpl);
-            use(tableImpl.getParent());
+            getAstContext().useTableId(table);
+            use(table.getParent());
         } else {
-            use(tableImpl);
+            use(table);
         }
     }
 
     private void use(TableImplementor<?> table) {
         if (table != null) {
-            getSqlBuilder().useTable(table);
+            getAstContext().useTable(table);
             use(table.getParent());
         }
     }
