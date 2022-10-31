@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.SortableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
@@ -34,14 +35,14 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     private static final String SUB_QUERY_DISABLED_MESSAGE =
             "The cacheable filter cannot be used to create sub query";
 
-    private final Sortable sortable;
+    private final SortableImplementor sortable;
 
     private final P props;
 
     private boolean forCache;
 
     @SuppressWarnings("unchecked")
-    public FilterArgsImpl(Sortable sortable, Props props, boolean forCache) {
+    public FilterArgsImpl(SortableImplementor sortable, Props props, boolean forCache) {
         this.sortable = sortable;
         if (forCache) {
             if (props instanceof TableImplementor<?>) {

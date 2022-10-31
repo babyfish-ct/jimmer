@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
+import org.babyfish.jimmer.sql.ast.impl.query.SortableImplementor;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.Props;
@@ -603,7 +604,7 @@ public abstract class AbstractDataLoader {
     private void applyGlobalFilter(Sortable sortable, Table<?> table) {
         if (globalFiler != null) {
             globalFiler.filter(
-                    new FilterArgsImpl<>(sortable, table, globalFiler instanceof CacheableFilter<?>)
+                    new FilterArgsImpl<>((SortableImplementor) sortable, table, globalFiler instanceof CacheableFilter<?>)
             );
         }
     }

@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 
 import java.util.function.Supplier;
 
-public interface Filterable extends SubQueryProvider {
+public interface Filterable {
 
     @OldChain
     Filterable where(Predicate...predicates);

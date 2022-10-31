@@ -32,7 +32,7 @@ public class FetcherSelectionImpl<E> implements FetcherSelection<E>, Ast {
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
             if (prop.getStorage() instanceof Column) {
-                visitor.visitTableReference((TableImplementor<?>) table, prop);
+                visitor.visitTableReference(TableProxies.resolve(table, visitor.getAstContext()), prop);
             }
         }
     }
@@ -46,7 +46,7 @@ public class FetcherSelectionImpl<E> implements FetcherSelection<E>, Ast {
                 builder.sql(separator);
                 separator = ", ";
                 builder
-                        .sql(((TableImplementor<?>)table).getAlias())
+                        .sql(TableProxies.resolve(table, builder.getAstContext()).getAlias())
                         .sql(".")
                         .sql(prop.<Column>getStorage().getName());
             }
