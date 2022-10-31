@@ -7,11 +7,8 @@ import org.babyfish.jimmer.sql.example.model.TreeNode;
 import org.babyfish.jimmer.sql.example.model.TreeNodeDraft;
 import org.babyfish.jimmer.sql.example.model.TreeNodeFetcher;
 import org.babyfish.jimmer.sql.example.model.TreeNodeTable;
-import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cglib.core.ReflectUtils;
-import org.springframework.core.GenericTypeResolver;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
@@ -50,10 +47,9 @@ public class TreeController {
                     .collect(Collectors.toSet());
         }
 
-        Fluent fluent = sqlClient.createFluent();
-        TreeNodeTable treeNode = new TreeNodeTable();
-        return fluent
-                .query(treeNode)
+        TreeNodeTable treeNode = TreeNodeTable.$;
+        return sqlClient
+                .createQuery(treeNode)
                 .where(treeNode.parent().isNull())
                 .whereIf(
                         !rootName.isEmpty(),

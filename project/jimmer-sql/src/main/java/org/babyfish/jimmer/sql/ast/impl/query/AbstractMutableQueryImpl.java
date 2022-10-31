@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 
 public abstract class AbstractMutableQueryImpl
         extends AbstractMutableStatementImpl
-        implements MutableQuery {
+        implements MutableQuery, SortableImplementor {
 
     private final List<Expression<?>> groupByExpressions = new ArrayList<>();
 

@@ -5,7 +5,6 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.example.model.*;
-import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -53,24 +52,23 @@ public class BookController {
             @RequestParam(defaultValue = "5") int pageSize
     ) {
 
-        Fluent fluent = sqlClient.createFluent();
-        BookTable book = new BookTable();
-        AuthorTableEx author = new AuthorTableEx();
+        BookTable book = BookTable.$;
+        AuthorTableEx author = AuthorTableEx.$;
 
-        ConfigurableRootQuery<BookTable, Book> query = fluent
-                .query(book)
+        ConfigurableRootQuery<BookTable, Book> query = sqlClient
+                .createQuery(book)
                 .whereIf(
                         name != null && !name.isEmpty(),
-                        () -> book.name().ilike(name)
+                        book.name().ilike(name)
                 )
                 .whereIf(
                         storeName != null && !storeName.isEmpty(),
-                        () -> book.store().name().ilike(storeName)
+                        book.store().name().ilike(storeName)
                 )
                 .whereIf(
                         authorName != null && !authorName.isEmpty(),
-                        () -> book.id().in(fluent
-                                .subQuery(author)
+                        book.id().in(sqlClient
+                                .createSubQuery(author)
                                 .where(
                                         Predicate.or(
                                                 author.firstName().ilike(authorName),

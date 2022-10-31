@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.Filterable;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
+import org.babyfish.jimmer.sql.ast.query.SubQueryProvider;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
@@ -11,7 +12,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public interface FilterableImplementor extends Filterable {
+public interface FilterableImplementor extends Filterable, SubQueryProvider {
 
     default <T extends Table<?>, R> ConfigurableSubQuery<R> createSubQuery(
             Class<T> tableType, BiFunction<MutableSubQuery, T, ConfigurableSubQuery<R>> block
