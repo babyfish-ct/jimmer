@@ -27,11 +27,14 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
     private final String joinDisabledReason;
 
+    private final Object identitfier;
+
     protected AbstractTypedTable(ImmutableType type) {
         this.immutableType = type;
         this.raw = null;
         this.delayedOperation = null;
         this.joinDisabledReason = null;
+        this.identitfier = new Object();
     }
 
     protected AbstractTypedTable(Class<E> entityType) {
@@ -39,6 +42,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = null;
         this.delayedOperation = null;
         this.joinDisabledReason = null;
+        this.identitfier = new Object();
     }
 
     protected AbstractTypedTable(Class<E> entityType, DelayedOperation<E> delayedOperation) {
@@ -46,6 +50,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = null;
         this.delayedOperation = delayedOperation;
         this.joinDisabledReason = null;
+        this.identitfier = new Object();
     }
 
     protected AbstractTypedTable(TableImplementor<E> raw) {
@@ -53,6 +58,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = raw;
         this.joinDisabledReason = null;
         this.delayedOperation = null;
+        this.identitfier = new Object();
     }
 
     protected AbstractTypedTable(AbstractTypedTable<E> base, String joinDisabledReason) {
@@ -60,6 +66,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = base.raw;
         this.delayedOperation = base.delayedOperation;
         this.joinDisabledReason = joinDisabledReason != null ? joinDisabledReason : base.joinDisabledReason;
+        this.identitfier = base.identitfier;
     }
 
     @Override
@@ -307,10 +314,6 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         }
     }
 
-    protected boolean __isFluentRoot() {
-        return raw == null && delayedOperation == null && delayedOperation == null;
-    }
-
     @Override
     public String toString() {
         if (raw != null) {
@@ -332,6 +335,16 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
     protected <X> DelayedOperation<X> joinOperation(String prop, JoinType joinType, ImmutableType treatedAs) {
         return new DelayJoin<>(this, immutableType.getProp(prop), joinType, treatedAs);
+    }
+
+    public static boolean __refEquals(Table<?> a, Table<?> b) {
+        if (a == b) {
+            return true;
+        }
+        if (a instanceof AbstractTypedTable<?> && b instanceof AbstractTypedTable<?>) {
+            return ((AbstractTypedTable<?>)a).identitfier == ((AbstractTypedTable<?>)b).identitfier;
+        }
+        return false;
     }
 
     public interface DelayedOperation<E> {

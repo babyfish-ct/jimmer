@@ -88,7 +88,6 @@ public class TableGenerator {
             );
         }
         addInstanceField();
-        addTableExField();
         addDefaultConstructor();
         addDelayedConstructor();
         addWrapperConstructor();
@@ -111,17 +110,13 @@ public class TableGenerator {
     private void addInstanceField() {
         ClassName className = isTableEx ? type.getTableExClassName() : type.getTableClassName();
         FieldSpec.Builder builder = FieldSpec
-                .builder(className, "$", Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
-                .initializer("new $T()", className);
-        typeBuilder.addField(builder.build());
-    }
-
-    private void addTableExField() {
-        if (!isTableEx) {
-            FieldSpec.Builder builder = FieldSpec
-                    .builder(type.getTableExClassName(), "tableEx", Modifier.PRIVATE);
-            typeBuilder.addField(builder.build());
+                .builder(className, "$", Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL);
+        if (isTableEx) {
+            builder.initializer("new $T($T.$L, null)", className, type.getTableClassName(), "$");
+        } else {
+            builder.initializer("new $T()", className);
         }
+        typeBuilder.addField(builder.build());
     }
 
     private void addDefaultConstructor() {
@@ -205,17 +200,7 @@ public class TableGenerator {
         if (isTableEx) {
             builder.addStatement("return this");
         } else {
-            builder
-                    .addStatement("$T tableEx = this.tableEx", tableExClassName)
-                    .beginControlFlow("if (tableEx == null)")
-                    .addStatement(
-                            "return this.tableEx = tableEx = __isFluentRoot() ? $T.$L : new $T(this, null)",
-                            tableExClassName,
-                            "$",
-                            tableExClassName
-                    )
-                    .endControlFlow()
-                    .addStatement("return tableEx", tableExClassName);
+            builder.addStatement("return new $T(this, null)", tableExClassName);
         }
         typeBuilder.addMethod(builder.build());
     }
