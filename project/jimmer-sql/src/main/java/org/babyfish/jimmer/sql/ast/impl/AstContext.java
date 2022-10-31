@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
+import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 
@@ -62,13 +63,7 @@ public class AstContext implements RootTableResolver {
         }
         for (AbstractMutableStatementImpl statement : stack) {
             Table<?> stmtTable = statement.getTable();
-            if (table == stmtTable) {
-                return (TableImplementor<E>) statement.getTableImplementor();
-            }
-            if (table instanceof TableEx<?>
-                    && !(stmtTable instanceof TableEx<?>) &&
-                    table == stmtTable.asTableEx()
-            ) {
+            if (AbstractTypedTable.__refEquals(stmtTable, table)) {
                 return (TableImplementor<E>) statement.getTableImplementor();
             }
         }
