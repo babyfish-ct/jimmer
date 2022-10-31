@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -95,7 +96,10 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                 TableSelection tableSelection = (TableSelection) selection;
                 renderAllProps(tableSelection, builder);
             } else if (selection instanceof Table<?>) {
-                TableSelection tableSelection = builder.getAstContext().resolveRootTable((Table<?>)selection);
+                TableSelection tableSelection = TableProxies.resolve(
+                        (Table<? extends Object>) selection,
+                        builder.getAstContext()
+                );
                 renderAllProps(tableSelection, builder);
             } else {
                 Ast.from(selection, builder.getAstContext()).renderTo(builder);

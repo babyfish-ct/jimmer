@@ -59,15 +59,59 @@ public interface JSqlClient {
 
     int getDefaultListBatchSize();
 
+    /**
+     * Create fluent style query
+     * @param table
+     * @return
+     */
     <T extends TableProxy<?>> MutableRootQuery<T> createQuery(T table);
 
-    <T extends TableProxy<?>> MutableSubQuery createSubQuery(T table);
+    /**
+     * Create fluent style sub query
+     * @param table
+     * @return
+     */
+    MutableSubQuery createSubQuery(TableProxy<?> table);
 
+    /**
+     * Create fluent style-update
+     * @param table
+     * @return
+     */
+    MutableUpdate createUpdate(TableProxy<?> table);
+
+    /**
+     * Create fluent style delete
+     * @param table
+     * @return
+     */
+    MutableDelete createDelete(TableProxy<?> table);
+
+    /**
+     * create labmda style query
+     * @param tableType
+     * @param block
+     * @param <T>
+     * @param <R>
+     * @return
+     */
     <T extends Table<?>, R> ConfigurableRootQuery<T, R> createQuery(
             Class<T> tableType,
             BiFunction<MutableRootQuery<T>, T, ConfigurableRootQuery<T, R>> block
     );
 
+    /**
+     * Create lambda style association query
+     * @param sourceTableType
+     * @param targetTableGetter
+     * @param block
+     * @param <SE>
+     * @param <ST>
+     * @param <TE>
+     * @param <TT>
+     * @param <R>
+     * @return
+     */
     <SE, ST extends Table<SE>, TE, TT extends Table<TE>, R>
     ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R> createAssociationQuery(
             Class<ST> sourceTableType,
@@ -79,11 +123,25 @@ public interface JSqlClient {
             > block
     );
 
+    /**
+     * Create lambda style update
+     * @param tableType
+     * @param block
+     * @param <T>
+     * @return
+     */
     <T extends Table<?>> Executable<Integer> createUpdate(
             Class<T> tableType,
             BiConsumer<MutableUpdate, T> block
     );
 
+    /**
+     * Create lambda style delete
+     * @param tableType
+     * @param block
+     * @param <T>
+     * @return
+     */
     <T extends Table<?>> Executable<Integer> createDelete(
             Class<T> tableType,
             BiConsumer<MutableDelete, T> block

@@ -3,7 +3,9 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
+import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 
@@ -59,11 +61,27 @@ public class AstContext implements RootTableResolver {
             return tableImplementor;
         }
         for (AbstractMutableStatementImpl statement : stack) {
-            if (table == statement.getTable()) {
+            Table<?> stmtTable = statement.getTable();
+            if (table == stmtTable) {
+                return (TableImplementor<E>) statement.getTableImplementor();
+            }
+            if (table instanceof TableEx<?>
+                    && !(stmtTable instanceof TableEx<?>) &&
+                    table == stmtTable.asTableEx()
+            ) {
                 return (TableImplementor<E>) statement.getTableImplementor();
             }
         }
-        throw new IllegalArgumentException("Cannot resolve the root table");
+        if (((TableProxy<E>) table).__parent() != null) {
+            throw new IllegalArgumentException(
+                    "\"" +
+                            AstContext.class.getName() +
+                            ".resolveRootTable\" only does not accept non-root table, you can use \"" +
+                            TableProxies.class.getName() +
+                            ".resolve\""
+            );
+        }
+        throw new IllegalArgumentException("Cannot resolve the root table " + table);
     }
 
     public AbstractMutableStatementImpl getStatement() {

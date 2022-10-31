@@ -5,9 +5,10 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.meta.impl.RedirectedProp;
+import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl;
+import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
-import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -199,8 +200,18 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
-    public <T extends TableProxy<?>> MutableSubQuery createSubQuery(T table) {
+    public MutableSubQuery createSubQuery(TableProxy<?> table) {
         return new MutableSubQueryImpl(this, table);
+    }
+
+    @Override
+    public MutableUpdate createUpdate(TableProxy<?> table) {
+        return new MutableUpdateImpl(this, table);
+    }
+
+    @Override
+    public MutableDelete createDelete(TableProxy<?> table) {
+        return new MutableDeleteImpl(this, table);
     }
 
     @Override

@@ -13,7 +13,6 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
 import java.util.function.Function;
@@ -22,31 +21,38 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
     private final ImmutableType immutableType;
 
-    private final TableImplementor<E> raw;
-
-    private final String joinDisabledReason;
+    protected final TableImplementor<E> raw;
 
     private final DelayedOperation<E> delayedOperation;
 
-    public AbstractTypedTable(Class<E> entityType) {
+    private final String joinDisabledReason;
+
+    protected AbstractTypedTable(Class<E> entityType) {
         this.immutableType = ImmutableType.get(entityType);
         this.raw = null;
-        this.joinDisabledReason = null;
         this.delayedOperation = null;
+        this.joinDisabledReason = null;
     }
 
-    public AbstractTypedTable(Class<E> entityType, DelayedOperation<E> delayedOperation) {
+    protected AbstractTypedTable(Class<E> entityType, DelayedOperation<E> delayedOperation) {
         this.immutableType = ImmutableType.get(entityType);
         this.raw = null;
-        this.joinDisabledReason = null;
         this.delayedOperation = delayedOperation;
+        this.joinDisabledReason = null;
     }
 
-    public AbstractTypedTable(TableImplementor<E> raw, String joinDisabledReason) {
+    protected AbstractTypedTable(TableImplementor<E> raw) {
         this.immutableType = raw.getImmutableType();
         this.raw = raw;
-        this.joinDisabledReason = joinDisabledReason;
+        this.joinDisabledReason = null;
         this.delayedOperation = null;
+    }
+
+    protected AbstractTypedTable(AbstractTypedTable<E> base, String joinDisabledReason) {
+        this.immutableType = base.immutableType;
+        this.raw = base.raw;
+        this.delayedOperation = base.delayedOperation;
+        this.joinDisabledReason = joinDisabledReason != null ? joinDisabledReason : base.joinDisabledReason;
     }
 
     @Override
@@ -115,10 +121,10 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
     @Override
     public <XT extends Table<?>> XT join(String prop) {
         if (raw != null) {
-            beforeJoin();
+            __beforeJoin();
             return raw.join(prop);
         }
-        return TableProxies.create(
+        return TableProxies.fluent(
                 new DelayJoin<>(
                         this,
                         immutableType.getProp(prop),
@@ -131,10 +137,10 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
     @Override
     public <XT extends Table<?>> XT join(String prop, JoinType joinType) {
         if (raw != null) {
-            beforeJoin();
+            __beforeJoin();
             return raw.join(prop, joinType);
         }
-        return TableProxies.create(
+        return TableProxies.fluent(
                 new DelayJoin<>(
                         this,
                         immutableType.getProp(prop),
@@ -147,10 +153,10 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
     @Override
     public <XT extends Table<?>> XT join(String prop, JoinType joinType, ImmutableType treatedAs) {
         if (raw != null) {
-            beforeJoin();
+            __beforeJoin();
             return raw.join(prop, joinType, treatedAs);
         }
-        return TableProxies.create(
+        return TableProxies.fluent(
                 new DelayJoin<>(
                         this,
                         immutableType.getProp(prop),
@@ -163,10 +169,10 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
     @Override
     public <XT extends Table<?>> XT inverseJoin(ImmutableProp prop) {
         if (raw != null) {
-            beforeJoin();
+            __beforeJoin();
             return raw.inverseJoin(prop);
         }
-        return TableProxies.create(
+        return TableProxies.fluent(
                 new DelayInverseJoin<>(
                         this,
                         prop,
@@ -178,28 +184,28 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
     @Override
     public <XT extends Table<?>> XT inverseJoin(ImmutableProp prop, JoinType joinType) {
         if (raw != null) {
-            beforeJoin();
+            __beforeJoin();
             return raw.inverseJoin(prop, joinType);
         }
-        return TableProxies.create(new DelayInverseJoin<>(this, prop, joinType));
+        return TableProxies.fluent(new DelayInverseJoin<>(this, prop, joinType));
     }
 
     @Override
     public <XT extends Table<?>> XT inverseJoin(TypedProp.Association<?, ?> prop) {
         if (raw != null) {
-            beforeJoin();
+            __beforeJoin();
             return raw.inverseJoin(prop);
         }
-        return TableProxies.create(new DelayInverseJoin<>(this, prop.unwrap(), JoinType.INNER));
+        return TableProxies.fluent(new DelayInverseJoin<>(this, prop.unwrap(), JoinType.INNER));
     }
 
     @Override
     public <XT extends Table<?>> XT inverseJoin(TypedProp.Association<?, ?> prop, JoinType joinType) {
         if (raw != null) {
-            beforeJoin();
+            __beforeJoin();
             return raw.inverseJoin(prop, joinType);
         }
-        return TableProxies.create(new DelayInverseJoin<>(this, prop.unwrap(), joinType));
+        return TableProxies.fluent(new DelayInverseJoin<>(this, prop.unwrap(), joinType));
     }
 
     @Override
@@ -208,10 +214,10 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             Function<XT, ? extends Table<?>> backPropBlock
     ) {
         if (raw != null) {
-            beforeJoin();
+            __beforeJoin();
             return raw.inverseJoin(targetTableType, backPropBlock);
         }
-        return TableProxies.create(
+        return TableProxies.fluent(
                 new DelayInverseJoin<>(
                         this,
                         ImmutableProps.join(targetTableType, backPropBlock),
@@ -227,10 +233,10 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             JoinType joinType
     ) {
         if (raw != null) {
-            beforeJoin();
+            __beforeJoin();
             return raw.inverseJoin(targetTableType, backPropBlock, joinType);
         }
-        return TableProxies.create(
+        return TableProxies.fluent(
                 new DelayInverseJoin<>(
                         this,
                         ImmutableProps.join(targetTableType, backPropBlock),
@@ -247,19 +253,26 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         return new FetcherSelectionImpl<E>(this, fetcher);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public TableEx<E> asTableEx() {
-        if (this instanceof TableEx<?>) {
-            return (TableEx<E>) this;
-        }
+    public Table<?> __parent() {
         if (raw != null) {
-            return raw.asTableEx();
+            return raw.getParent();
         }
         if (delayedOperation != null) {
-            return TableProxies.create(delayedOperation);
+            return delayedOperation.parent();
         }
-        return TableProxies.create(immutableType);
+        return null;
+    }
+
+    @Override
+    public ImmutableProp __prop() {
+        if (raw != null) {
+            return raw.getJoinProp();
+        }
+        if (delayedOperation != null) {
+            return delayedOperation.prop();
+        }
+        return null;
     }
 
     @Override
@@ -275,12 +288,16 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         if (delayedOperation != null) {
             return delayedOperation.resolve(resolver);
         }
+        if (resolver == null) {
+            throw new IllegalArgumentException("resolver cannot be null when the table proxy is not wrapper");
+        }
         return resolver.resolveRootTable(this);
     }
 
-    @Override
-    public String __joinDisabledReason() {
-        return joinDisabledReason;
+    protected void __beforeJoin() {
+        if (joinDisabledReason != null) {
+            throw new IllegalStateException("Table join is disabled because " + joinDisabledReason);
+        }
     }
 
     @Override
@@ -294,13 +311,19 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         return immutableType.toString();
     }
 
-    private void beforeJoin() {
-        if (joinDisabledReason != null) {
-            throw new IllegalStateException("Table join is disabled because " + joinDisabledReason);
-        }
+    protected <X> DelayedOperation<X> joinOperation(String prop) {
+        return new DelayJoin<>(this, immutableType.getProp(prop), JoinType.INNER, null);
+    }
+
+    protected <X> DelayedOperation<X> joinOperation(String prop, JoinType joinType) {
+        return new DelayJoin<>(this, immutableType.getProp(prop), joinType, null);
     }
 
     public interface DelayedOperation<E> {
+
+        Table<?> parent();
+
+        ImmutableProp prop();
 
         ImmutableType targetType();
 
@@ -331,6 +354,16 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         }
 
         @Override
+        public Table<?> parent() {
+            return parent;
+        }
+
+        @Override
+        public ImmutableProp prop() {
+            return prop;
+        }
+
+        @Override
         public ImmutableType targetType() {
             return treatedAs != null ? treatedAs : prop.getTargetType();
         }
@@ -358,6 +391,16 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             this.parent = parent;
             this.prop = prop;
             this.joinType = joinType;
+        }
+
+        @Override
+        public Table<?> parent() {
+            return parent;
+        }
+
+        @Override
+        public ImmutableProp prop() {
+            return prop;
         }
 
         @Override

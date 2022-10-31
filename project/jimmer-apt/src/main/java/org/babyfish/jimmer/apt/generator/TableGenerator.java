@@ -88,9 +88,11 @@ public class TableGenerator {
             );
         }
         addInstanceField();
+        addTableExField();
         addDefaultConstructor();
         addDelayedConstructor();
         addWrapperConstructor();
+        addCopyConstructor();
         try {
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.isList() == isTableEx) {
@@ -99,6 +101,7 @@ public class TableGenerator {
                 }
             }
             addAsTableEx();
+            addDisableJoin();
             return typeBuilder.build();
         } finally {
             typeBuilder = oldTypeBuilder;
@@ -111,6 +114,14 @@ public class TableGenerator {
                 .builder(className, "$", Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
                 .initializer("new $T()", className);
         typeBuilder.addField(builder.build());
+    }
+
+    private void addTableExField() {
+        if (!isTableEx) {
+            FieldSpec.Builder builder = FieldSpec
+                    .builder(type.getTableExClassName(), "tableEx", Modifier.PRIVATE);
+            typeBuilder.addField(builder.build());
+        }
     }
 
     private void addDefaultConstructor() {
@@ -154,8 +165,17 @@ public class TableGenerator {
         );
         builder
                 .addParameter(tableTypeName, "table")
+                .addStatement("super(table)");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addCopyConstructor() {
+        MethodSpec.Builder builder = MethodSpec
+                .constructorBuilder()
+                .addModifiers(Modifier.PROTECTED)
+                .addParameter(type.getTableClassName(), "base")
                 .addParameter(String.class, "joinDisabledReason")
-                .addStatement("super(table, joinDisabledReason)");
+                .addStatement("super(base, joinDisabledReason)");
         typeBuilder.addMethod(builder.build());
     }
 
@@ -176,18 +196,34 @@ public class TableGenerator {
     }
 
     private void addAsTableEx() {
-        if (isTableEx) {
-            return;
-        }
+        ClassName tableExClassName = type.getTableExClassName();
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("asTableEx")
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
-                .returns(type.getTableExClassName())
-                .addStatement(
-                        "return ($T)super.asTableEx()",
-                        type.getTableExClassName()
-                );
+                .returns(tableExClassName);
+        if (isTableEx) {
+            builder.addStatement("return this");
+        } else {
+            builder
+                    .addStatement("$T tableEx = this.tableEx", tableExClassName)
+                    .beginControlFlow("if (tableEx == null)")
+                    .addStatement("return this.tableEx = tableEx = new $T(this, null)", tableExClassName)
+                    .endControlFlow()
+                    .addStatement("return tableEx", tableExClassName);
+        }
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addDisableJoin() {
+        ClassName selfClassName = isTableEx ? type.getTableExClassName() : type.getTableClassName();
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("__disableJoin")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .returns(selfClassName)
+                .addParameter(String.class, "reason")
+                .addStatement("return new $T(this, reason)", selfClassName);
         typeBuilder.addMethod(builder.build());
     }
 }

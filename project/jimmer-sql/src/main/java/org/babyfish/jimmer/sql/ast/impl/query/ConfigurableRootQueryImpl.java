@@ -47,21 +47,29 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         if (getData().getOldSelections() != null) {
             throw new IllegalStateException("The current query has been reselected, it cannot be reselect again");
         }
-        if (getBaseQuery().isGroupByClauseUsed()) {
+        MutableRootQueryImpl<T> baseQuery = getBaseQuery();
+        if (baseQuery.isGroupByClauseUsed()) {
             throw new IllegalStateException("The current query uses group by clause, it cannot be reselected");
         }
-        AstVisitor visitor = new ReselectValidator();
-        for (Selection<?> selection : getData().getSelections()) {
-            Ast.from(selection, visitor.getAstContext()).accept(visitor);
+
+        AstContext astContext = new AstContext(baseQuery.getSqlClient());
+        AstVisitor visitor = new ReselectValidator(astContext);
+        astContext.pushStatement(baseQuery);
+        try {
+            for (Selection<?> selection : getData().getSelections()) {
+                Ast.from(selection, visitor.getAstContext()).accept(visitor);
+            }
+        } finally {
+            astContext.popStatement();
         }
         ConfigurableRootQuery<T, X> reselected = block.apply(
-                getBaseQuery(),
-                (T)getBaseQuery().getTable()
+                baseQuery,
+                baseQuery.getTable()
         );
         List<Selection<?>> selections = ((ConfigurableRootQueryImpl<T, X>)reselected).getData().getSelections();
         return new ConfigurableRootQueryImpl<>(
                 getData().reselect(selections),
-                getBaseQuery()
+                baseQuery
         );
     }
 
@@ -192,7 +200,6 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     }
 
     private Tuple2<String, List<Object>> preExecute(SqlBuilder builder) {
-        MutableRootQueryImpl<?> baseQuery = this.getBaseQuery();
         AstVisitor visitor = new UseTableVisitor(builder.getAstContext());
         accept(visitor);
         renderTo(builder);
@@ -226,8 +233,8 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
 
     private static class ReselectValidator extends AstVisitor {
 
-        ReselectValidator() {
-            super(null);
+        ReselectValidator(AstContext astContext) {
+            super(astContext);
         }
 
         @Override

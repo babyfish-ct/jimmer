@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.*;
@@ -10,22 +9,23 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.util.Arrays;
 
-public class SubQueryTest extends AbstractQueryTest {
+public class FluentSubQueryTest extends AbstractQueryTest {
 
     @Test
     public void testColumnInSubQuery() {
+        BookTable book = BookTable.$;
+        AuthorTableEx author = AuthorTableEx.$;
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
-                    q.where(
-                            book.id().in(
-                                    q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
-                                        sq.where(author.firstName().eq("Alex"));
-                                        return sq.select(author.books().id());
-                                    })
-                            )
-                    );
-                    return q.select(book);
-                }),
+                getSqlClient()
+                        .createQuery(book)
+                        .where(
+                                book.id().in(
+                                        getSqlClient().createSubQuery(author)
+                                                .where(author.firstName().eq("Alex"))
+                                                .select(author.books().id())
+                                )
+                        )
+                        .select(book),
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
@@ -44,22 +44,21 @@ public class SubQueryTest extends AbstractQueryTest {
 
     @Test
     public void testTwoColumnsInSubQuery() {
+        BookTable book = BookTable.$;
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
-                    q.where(
-                        Expression.tuple(book.name(), book.price()).in(
-                                q.createSubQuery(BookTableEx.class, (sq, book2) ->
-                                        sq
-                                                .groupBy(book2.name())
+                getSqlClient()
+                        .createQuery(book)
+                        .where(
+                                Expression.tuple(book.name(), book.price()).in(
+                                        getSqlClient().createSubQuery(book)
+                                                .groupBy(book.name())
                                                 .select(
-                                                        book2.name(),
-                                                        book2.price().max()
+                                                        book.name(),
+                                                        book.price().max()
                                                 )
                                 )
                         )
-                    );
-                    return q.select(book);
-                }),
+                        .select(book),
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
@@ -76,18 +75,21 @@ public class SubQueryTest extends AbstractQueryTest {
 
     @Test
     public void testExists() {
+        BookTable book = BookTable.$;
+        AuthorTableEx author = AuthorTableEx.$;
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
-                        q.where(
-                                q.createWildSubQuery(AuthorTableEx.class, (sq, author) -> {
-                                    sq.where(
-                                            book.eq(author.books()),
-                                            author.firstName().eq("Alex")
-                                    );
-                                }).exists()
-                        );
-                        return q.select(book);
-                }),
+                getSqlClient()
+                        .createQuery(book)
+                        .where(
+                                getSqlClient()
+                                        .createSubQuery(author)
+                                        .where(
+                                                book.eq(author.books()),
+                                                author.firstName().eq("Alex")
+                                        )
+                                        .exists()
+                        )
+                        .select(book),
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
@@ -106,19 +108,24 @@ public class SubQueryTest extends AbstractQueryTest {
 
     @Test
     public void testExistsWithTypedQuery() {
+
+        BookTable book = BookTable.$;
+        AuthorTableEx author = AuthorTableEx.$;
+
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
-                    q.where(
-                            q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
-                                sq.where(
-                                        book.eq(author.books()),
-                                        author.firstName().eq("Alex")
-                                );
-                                return sq.select(author);
-                            }).exists()
-                    );
-                    return q.select(book);
-                }),
+                getSqlClient()
+                        .createQuery(book)
+                        .where(
+                                getSqlClient()
+                                        .createSubQuery(author)
+                                        .where(
+                                            book.eq(author.books()),
+                                            author.firstName().eq("Alex")
+                                        )
+                                        .select(author)
+                                        .exists()
+                        )
+                        .select(book),
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
@@ -137,17 +144,20 @@ public class SubQueryTest extends AbstractQueryTest {
 
     @Test
     public void testSubQueryAsSimpleExpression() {
+
+        BookTable book = BookTable.$;
+
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
-                    q.where(
-                            book.price().gt(
-                                    q.createSubQuery(BookTableEx.class, (sq, book2) -> {
-                                        return sq.select(book2.price().avg().coalesce(BigDecimal.ZERO));
-                                    })
-                            )
-                    );
-                    return q.select(book);
-                }),
+                getSqlClient()
+                        .createQuery(book)
+                        .where(
+                                book.price().gt(
+                                    getSqlClient()
+                                            .createSubQuery(book)
+                                            .select(book.price().avg().coalesce(BigDecimal.ZERO))
+                                )
+                        )
+                        .select(book),
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
@@ -162,18 +172,20 @@ public class SubQueryTest extends AbstractQueryTest {
 
     @Test
     public void testSubQueryAsSelectionOrderByClause() {
+
+        BookStoreTable store = BookStoreTable.$;
+        BookTable book = BookTable.$;
+
+        TypedSubQuery<BigDecimal> subQuery =
+                getSqlClient().createSubQuery(book)
+                        .where(store.eq(book.store()))
+                        .select(
+                            book.price().avg().coalesce(BigDecimal.ZERO)
+                        );
         executeAndExpect(
-                getSqlClient().createQuery(BookStoreTable.class, (q, store) -> {
-                    TypedSubQuery<BigDecimal> subQuery =
-                            q.createSubQuery(BookTableEx.class, (sq, book) -> {
-                                sq.where(store.eq(book.store()));
-                                return sq.select(
-                                        book.price().avg().coalesce(BigDecimal.ZERO)
-                                );
-                            });
-                    q.orderBy(subQuery.desc());
-                    return q.select(store, subQuery);
-                }),
+                getSqlClient().createQuery(store)
+                    .orderBy(subQuery.desc())
+                    .select(store, subQuery),
                 ctx -> {
                     ctx.sql(
                             "select " +
@@ -200,18 +212,21 @@ public class SubQueryTest extends AbstractQueryTest {
 
     @Test
     public void testSubQueryWithAny() {
+
+        BookTable book = BookTable.$;
+        AuthorTableEx author = AuthorTableEx.$;
+
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
-                    q.where(
-                            book.id().eq(
-                                    q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
-                                        sq.where(author.firstName().in(Arrays.asList("Alex", "Bill")));
-                                        return sq.select(author.books().id());
-                                    }).any()
-                            )
-                    );
-                    return q.select(book);
-                }),
+                getSqlClient().createQuery(book)
+                        .where(
+                                book.id().eq(
+                                        getSqlClient()
+                                                .createSubQuery(author)
+                                                .where(author.firstName().in(Arrays.asList("Alex", "Bill")))
+                                                .select(author.books().id())
+                                                .any()
+                                )
+                        ).select(book),
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
@@ -230,18 +245,21 @@ public class SubQueryTest extends AbstractQueryTest {
 
     @Test
     public void testSubQueryWithAll() {
+
+        BookTable book = BookTable.$;
+        AuthorTableEx author = AuthorTableEx.$;
+
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
-                    q.where(
-                            book.id().eq(
-                                    q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
-                                        sq.where(author.firstName().in(Arrays.asList("Alex", "Bill")));
-                                        return sq.select(author.books().id());
-                                    }).all()
-                            )
-                    );
-                    return q.select(book);
-                }),
+                getSqlClient().createQuery(book)
+                        .where(
+                                book.id().eq(
+                                        getSqlClient()
+                                                .createSubQuery(author)
+                                                .where(author.firstName().in(Arrays.asList("Alex", "Bill")))
+                                                .select(author.books().id())
+                                                .all()
+                                )
+                        ).select(book),
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +

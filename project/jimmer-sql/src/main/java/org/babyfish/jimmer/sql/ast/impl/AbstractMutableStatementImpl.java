@@ -51,7 +51,7 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
             TableProxy<?> table
     ) {
         if (table.__unwrap() != null) {
-            throw new IllegalArgumentException("table cannot be wrapper");
+            throw new IllegalArgumentException("table proxy cannot be wrapper");
         }
         this.sqlClient = Objects.requireNonNull(
                 sqlClient,
