@@ -1,6 +1,18 @@
 package org.babyfish.jimmer.sql.common;
 
+import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.Triggers;
+import org.babyfish.jimmer.sql.ast.Executable;
+import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
+import org.babyfish.jimmer.sql.ast.impl.query.Queries;
+import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
+import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
+import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.table.AssociationTable;
+import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.TableEx;
+import org.babyfish.jimmer.sql.loader.Loaders;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.h2.Driver;
@@ -17,7 +29,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class AbstractTest {
 
@@ -39,6 +54,8 @@ public class AbstractTest {
         UserIdGenerator idGenerator = this::autoId;
         it.setIdGenerator(idGenerator);
     });
+
+    private LambdaClient lambdaClient = new LambdaClient(getSqlClient());
 
     private List<Execution> executions = new ArrayList<>();
 
@@ -69,6 +86,14 @@ public class AbstractTest {
             block.accept(builder);
         }
         return builder.build();
+    }
+
+    protected LambdaClient getLambdaClient() {
+        return lambdaClient;
+    }
+
+    protected LambdaClient getLambdaClient(Consumer<JSqlClient.Builder> block) {
+        return new LambdaClient(getSqlClient(block));
     }
 
     protected List<Execution> getExecutions() {
@@ -158,7 +183,6 @@ public class AbstractTest {
         return autoIds.get();
     }
 
-
     private static class AutoIds {
 
         private List<Object> ids;
@@ -172,9 +196,96 @@ public class AbstractTest {
         public Object get() {
             return ids.get(index++);
         }
+    }
 
-        public void reset() {
-            index = 0;
+    protected static class LambdaClient {
+
+        private final JSqlClient sqlClient;
+
+        public LambdaClient(JSqlClient sqlClient) {
+            this.sqlClient = sqlClient;
+        }
+
+        public Entities getEntities() {
+            return sqlClient.getEntities();
+        }
+
+        public Triggers getTriggers() {
+            return sqlClient.getTriggers();
+        }
+
+        public Loaders getLoaders() {
+            return sqlClient.getLoaders();
+        }
+
+        public <T extends Table<?>, R> ConfigurableRootQuery<T, R> createQuery(
+                Class<T> tableType,
+                BiFunction<MutableRootQuery<T>, T, ConfigurableRootQuery<T, R>> block
+        ) {
+            return Queries.createQuery(sqlClient, tableType, block);
+        }
+
+        public <SE, ST extends Table<SE>, TE, TT extends Table<TE>, R>
+        ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R> createAssociationQuery(
+                Class<ST> sourceTableType,
+                Function<ST, TT> targetTableGetter,
+                BiFunction<
+                    MutableRootQuery<AssociationTable<SE, ST, TE, TT>>,
+                    AssociationTable<SE, ST, TE, TT>,
+                    ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R>
+                > block
+        ) {
+            return Queries.createAssociationQuery(sqlClient, sourceTableType, targetTableGetter, block);
+        }
+
+        public <T extends Table<?>> Executable<Integer> createUpdate(
+                Class<T> tableType,
+                BiConsumer<MutableUpdate, T> block
+        ) {
+            return Mutations.createUpdate(sqlClient, tableType, block);
+        }
+
+        public <T extends Table<?>> Executable<Integer> createDelete(
+                Class<T> tableType,
+                BiConsumer<MutableDelete, T> block
+        ) {
+            return Mutations.createDelete(sqlClient, tableType, block);
+        }
+
+        public <T extends Table<?>, R> ConfigurableSubQuery<R> createSubQuery(
+                Filterable parent,
+                Class<T> tableType,
+                BiFunction<MutableSubQuery, T, ConfigurableSubQuery<R>> block
+        ) {
+            return Queries.createSubQuery(parent, tableType, block);
+        }
+
+        public <T extends Table<?>> MutableSubQuery createWildSubQuery(
+                Filterable parent,
+                Class<T> tableType,
+                BiConsumer<MutableSubQuery, T> block
+        ) {
+            return Queries.createWildSubQuery(parent, tableType, block);
+        }
+
+        public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R>
+        ConfigurableSubQuery<R> createAssociationSubQuery(
+                Filterable parent,
+                Class<ST> sourceTableType,
+                Function<ST, TT> targetTableGetter,
+                BiFunction<MutableSubQuery, AssociationTable<SE, ST, TE, TT>, ConfigurableSubQuery<R>> block
+        ) {
+            return Queries.createAssociationSubQuery(parent, sourceTableType, targetTableGetter, block);
+        }
+
+        public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R>
+        MutableSubQuery createAssociationWildSubQuery(
+                Filterable parent,
+                Class<ST> sourceTableType,
+                Function<ST, TT> targetTableGetter,
+                BiConsumer<MutableSubQuery, AssociationTable<SE, ST, TE, TT>> block
+        ) {
+            return Queries.createAssociationWildSubQuery(parent, sourceTableType, targetTableGetter, block);
         }
     }
 }

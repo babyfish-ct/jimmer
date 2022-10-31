@@ -208,7 +208,12 @@ public class TableGenerator {
             builder
                     .addStatement("$T tableEx = this.tableEx", tableExClassName)
                     .beginControlFlow("if (tableEx == null)")
-                    .addStatement("return this.tableEx = tableEx = new $T(this, null)", tableExClassName)
+                    .addStatement(
+                            "return this.tableEx = tableEx = __isFluentRoot() ? $T.$L : new $T(this, null)",
+                            tableExClassName,
+                            "$",
+                            tableExClassName
+                    )
                     .endControlFlow()
                     .addStatement("return tableEx", tableExClassName);
         }

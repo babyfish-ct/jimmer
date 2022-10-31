@@ -52,10 +52,11 @@ public class FluentDMLTest extends AbstractMutationTest {
 
     @Test
     public void testUpdateWithNullArgument() {
+        BookStoreTable store = BookStoreTable.$;
         executeAndExpectRowCount(
-                getSqlClient().createUpdate(BookStoreTableEx.class, (u, store) -> {
-                    u.set(store.website(), Expression.nullValue(String.class));
-                }),
+                getSqlClient()
+                        .createUpdate(store)
+                        .set(store.website(), Expression.nullValue(String.class)),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("update BOOK_STORE tb_1_ set WEBSITE = null");

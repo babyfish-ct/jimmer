@@ -3,25 +3,21 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.impl.query.Queries;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.Filterable;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
-import org.babyfish.jimmer.sql.ast.table.AssociationTableEx;
+import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
-public abstract class AbstractMutableStatementImpl implements Filterable {
+public abstract class AbstractMutableStatementImpl implements FilterableImplementor {
 
     private final JSqlClient sqlClient;
 
@@ -87,6 +83,18 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
 
     public abstract AbstractMutableStatementImpl getParent();
 
+    @Override
+    public MutableSubQuery createSubQuery(TableProxy<?> table) {
+        return sqlClient.createSubQuery(table);
+    }
+
+    @Override
+    public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>> MutableSubQuery createAssociationSubQuery(
+            AssociationTable<SE, ST, TE, TT> table
+    ) {
+        return sqlClient.createAssociationSubQuery(table);
+    }
+
     public final boolean freeze() {
         if (frozen) {
             return false;
@@ -121,40 +129,6 @@ public abstract class AbstractMutableStatementImpl implements Filterable {
             }
         }
         return this;
-    }
-
-    @Override
-    public <T extends Table<?>, R> ConfigurableSubQuery<R> createSubQuery(
-            Class<T> tableType, BiFunction<MutableSubQuery, T, ConfigurableSubQuery<R>> block
-    ) {
-        return Queries.createSubQuery(this, tableType, block);
-    }
-
-    @Override
-    public <T extends Table<?>> MutableSubQuery createWildSubQuery(
-            Class<T> tableType, BiConsumer<MutableSubQuery, T> block
-    ) {
-        return Queries.createWildSubQuery(this, tableType, block);
-    }
-
-    @Override
-    public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R>
-    ConfigurableSubQuery<R> createAssociationSubQuery(
-            Class<ST> sourceTableType,
-            Function<ST, TT> targetTableGetter,
-            BiFunction<MutableSubQuery, AssociationTableEx<SE, ST, TE, TT>, ConfigurableSubQuery<R>> block
-    ) {
-        return Queries.createAssociationSubQuery(this, sourceTableType, targetTableGetter, block);
-    }
-
-    @Override
-    public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R>
-    MutableSubQuery createAssociationWildSubQuery(
-            Class<ST> sourceTableType,
-            Function<ST, TT> targetTableGetter,
-            BiConsumer<MutableSubQuery, AssociationTableEx<SE, ST, TE, TT>> block
-    ) {
-        return Queries.createAssociationWildSubQuery(this, sourceTableType, targetTableGetter, block);
     }
 
     public ExecutionPurpose getPurpose() {

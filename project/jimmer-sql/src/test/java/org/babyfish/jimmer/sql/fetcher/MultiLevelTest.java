@@ -11,7 +11,7 @@ public class MultiLevelTest extends AbstractQueryTest {
     @Test
     public void testFromBookStore() {
         executeAndExpect(
-                getSqlClient().createQuery(BookStoreTable.class, (q, store) -> {
+                getLambdaClient().createQuery(BookStoreTable.class, (q, store) -> {
                     q.orderBy(store.name());
                     return q.select(
                             store.fetch(
@@ -151,7 +151,7 @@ public class MultiLevelTest extends AbstractQueryTest {
     @Test
     public void testFromAuthor() {
         executeAndExpect(
-                getSqlClient().createQuery(AuthorTable.class, (q, author) -> {
+                getLambdaClient().createQuery(AuthorTable.class, (q, author) -> {
                     q.orderBy(author.firstName());
                     return q.select(
                             author.fetch(

@@ -15,7 +15,7 @@ public class InverseJoinTest extends AbstractQueryTest {
     @Test
     public void testReverseJoinOnInverseProp() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(
                             book
                                     .inverseJoin(AuthorTableEx.class, AuthorTableEx::books)
@@ -40,7 +40,7 @@ public class InverseJoinTest extends AbstractQueryTest {
     @Test
     public void testReverseJoinOnNormalProp() {
         executeAndExpect(
-                getSqlClient().createQuery(AuthorTable.class, (q, author) -> {
+                getLambdaClient().createQuery(AuthorTable.class, (q, author) -> {
                     q.where(
                             author
                                     .inverseJoin(BookTableEx.class, BookTableEx::authors)
@@ -65,7 +65,7 @@ public class InverseJoinTest extends AbstractQueryTest {
     @Test
     public void testInverseHalfJoinOnInverseProp() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(
                             book
                                     .inverseJoin(AuthorTableEx.class, AuthorTableEx::books)
@@ -89,7 +89,7 @@ public class InverseJoinTest extends AbstractQueryTest {
     @Test
     public void testInverseHalfJoinOnNormalProp() {
         executeAndExpect(
-                getSqlClient().createQuery(AuthorTable.class, (q, author) -> {
+                getLambdaClient().createQuery(AuthorTable.class, (q, author) -> {
                     q.where(
                             author
                                     .inverseJoin(BookTableEx.class, BookTableEx::authors)
@@ -113,7 +113,7 @@ public class InverseJoinTest extends AbstractQueryTest {
     @Test
     public void mergeNormalJoinsAndInverseJoins() {
         executeAndExpect(
-                getSqlClient().createQuery(BookStoreTable.class, (q, store) -> {
+                getLambdaClient().createQuery(BookStoreTable.class, (q, store) -> {
                     q.where(
                             store
                                     .inverseJoin(BookTable.class, BookTable::store, JoinType.LEFT)
@@ -147,7 +147,7 @@ public class InverseJoinTest extends AbstractQueryTest {
     @Test
     public void mergeNormalJoinsAndInverseJoinsWithDiffJoinTypes() {
         executeAndExpect(
-                getSqlClient().createQuery(BookStoreTable.class, (q, store) -> {
+                getLambdaClient().createQuery(BookStoreTable.class, (q, store) -> {
                     q.where(
                             store
                                     .inverseJoin(BookTable.class, BookTable::store, JoinType.LEFT)

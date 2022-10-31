@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
+import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -19,6 +20,7 @@ import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.function.Supplier;
 
 public class MutableRootQueryImpl<T extends Table<?>>
         extends AbstractMutableQueryImpl
@@ -215,6 +217,24 @@ public class MutableRootQueryImpl<T extends Table<?>>
     @Override
     public MutableRootQueryImpl<T> where(Predicate... predicates) {
         return (MutableRootQueryImpl<T>) super.where(predicates);
+    }
+
+    @OldChain
+    @Override
+    public MutableRootQueryImpl<T> whereIf(boolean condition, Predicate predicates) {
+        if (condition) {
+            where(predicates);
+        }
+        return this;
+    }
+
+    @OldChain
+    @Override
+    public MutableRootQueryImpl<T> whereIf(boolean condition, Supplier<Predicate> block) {
+        if (condition) {
+            where(block.get());
+        }
+        return this;
     }
 
     @SuppressWarnings("unchecked")

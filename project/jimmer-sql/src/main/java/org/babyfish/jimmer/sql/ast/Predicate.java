@@ -36,7 +36,15 @@ public interface Predicate extends Expression<Boolean> {
     }
 
     static Predicate sql(String sql) {
-        return sql(sql, null);
+        return SqlExpressions.of(Boolean.class, sql, null);
+    }
+
+    static Predicate sql(String sql, Expression<?> expression, Object ... values) {
+        return SqlExpressions.of(Boolean.class, sql, new Expression[] { expression }, values);
+    }
+
+    static Predicate sql(String sql, Expression<?>[] expressions, Object ... values) {
+        return SqlExpressions.of(Boolean.class, sql, expressions, values);
     }
 
     static Predicate sql(String sql, Consumer<SqlExpressionContext> block) {

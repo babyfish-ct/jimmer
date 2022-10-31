@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
+import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -15,6 +16,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.function.Supplier;
 
 public class MutableSubQueryImpl
         extends AbstractMutableQueryImpl
@@ -29,11 +31,21 @@ public class MutableSubQueryImpl
             ImmutableType immutableType
     ) {
         super(parent.getSqlClient(), immutableType);
-        this.parent = parent;
-        this.ctx = parent.getContext();
+        StatementContext ctx = parent.getContext();
         if (ctx == null) {
-            throw new IllegalArgumentException("the parent of lambda query cannot be fluent query");
+            throw new IllegalStateException(
+                    "The current statement if lambda style, so the parent cannot be fluent style"
+            );
         }
+        this.parent = parent;
+        this.ctx = ctx;
+    }
+
+    public MutableSubQueryImpl(
+            JSqlClient sqlClient,
+            ImmutableType immutableType
+    ) {
+        super(sqlClient, immutableType);
     }
 
     public MutableSubQueryImpl(
@@ -56,6 +68,24 @@ public class MutableSubQueryImpl
     @Override
     public MutableSubQueryImpl where(Predicate... predicates) {
         return (MutableSubQueryImpl) super.where(predicates);
+    }
+
+    @OldChain
+    @Override
+    public MutableSubQueryImpl whereIf(boolean condition, Predicate predicates) {
+        if (condition) {
+            where(predicates);
+        }
+        return this;
+    }
+
+    @OldChain
+    @Override
+    public MutableSubQueryImpl whereIf(boolean condition, Supplier<Predicate> block) {
+        if (condition) {
+            where(block.get());
+        }
+        return this;
     }
 
     @Override

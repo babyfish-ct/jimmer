@@ -10,7 +10,7 @@ public class FieldFilterTest extends AbstractQueryTest {
     @Test
     public void testByOneToMany() {
         executeAndExpect(
-                getSqlClient().createQuery(BookStoreTable.class, (q, store) -> {
+                getLambdaClient().createQuery(BookStoreTable.class, (q, store) -> {
                     return q.select(
                             store.fetch(
                                     BookStoreFetcher.$
@@ -21,11 +21,10 @@ public class FieldFilterTest extends AbstractQueryTest {
                                                         BookTable book = args.getTable();
                                                         args.where(
                                                                 Expression.tuple(book.name(), book.edition()).in(
-                                                                        args.createSubQuery(BookTable.class, (sq, book2) -> {
-                                                                            sq.where(book2.store().id().in(args.getKeys()));
-                                                                            sq.groupBy(book2.name());
-                                                                            return sq.select(book2.name(), book2.edition().max());
-                                                                        })
+                                                                        args.createSubQuery(BookTable.$)
+                                                                                .where(BookTable.$.store().id().in(args.getKeys()))
+                                                                                .groupBy(BookTable.$.name())
+                                                                                .select(BookTable.$.name(), BookTable.$.edition().max())
                                                                 )
                                                         );
                                                     })
@@ -71,7 +70,7 @@ public class FieldFilterTest extends AbstractQueryTest {
     @Test
     public void testByInverseManyToMany() {
         executeAndExpect(
-                getSqlClient().createQuery(AuthorTable.class, (q, store) -> {
+                getLambdaClient().createQuery(AuthorTable.class, (q, store) -> {
                     return q.select(
                             store.fetch(
                                     AuthorFetcher.$
@@ -83,11 +82,10 @@ public class FieldFilterTest extends AbstractQueryTest {
                                                         BookTable book = args.getTable();
                                                         args.where(
                                                                 Expression.tuple(book.name(), book.edition()).in(
-                                                                        args.createSubQuery(BookTableEx.class, (sq, book2) -> {
-                                                                            sq.where(book2.authors().id().in(args.getKeys()));
-                                                                            sq.groupBy(book2.name());
-                                                                            return sq.select(book2.name(), book2.edition().max());
-                                                                        })
+                                                                        args.createSubQuery(BookTableEx.$)
+                                                                                .where(BookTableEx.$.authors().id().in(args.getKeys()))
+                                                                                .groupBy(BookTableEx.$.name())
+                                                                                .select(BookTableEx.$.name(), BookTableEx.$.edition().max())
                                                                 )
                                                         );
                                                     })

@@ -12,7 +12,7 @@ public class RecursiveTest extends AbstractQueryTest {
     @Test
     public void testFindTwoLevel() {
         executeAndExpect(
-                getSqlClient().createQuery(TreeNodeTable.class, (q, node) -> {
+                getLambdaClient().createQuery(TreeNodeTable.class, (q, node) -> {
                     q.where(node.parent().isNull());
                     return q.select(
                             node.fetch(
@@ -71,7 +71,7 @@ public class RecursiveTest extends AbstractQueryTest {
     @Test
     public void testFindThreeLevel() {
         executeAndExpect(
-                getSqlClient().createQuery(TreeNodeTable.class, (q, node) -> {
+                getLambdaClient().createQuery(TreeNodeTable.class, (q, node) -> {
                     q.where(node.parent().isNull());
                     return q.select(
                             node.fetch(
@@ -168,7 +168,7 @@ public class RecursiveTest extends AbstractQueryTest {
     @Test
     public void testFindUnlimitedLevel() {
         executeAndExpect(
-                getSqlClient().createQuery(TreeNodeTable.class, (q, node) -> {
+                getLambdaClient().createQuery(TreeNodeTable.class, (q, node) -> {
                     q.where(node.parent().isNull());
                     return q.select(
                             node.fetch(
@@ -303,7 +303,7 @@ public class RecursiveTest extends AbstractQueryTest {
     @Test
     public void testFindByDynamicalRecursionStrategy() {
         executeAndExpect(
-                getSqlClient().createQuery(TreeNodeTable.class, (q, node) -> {
+                getLambdaClient().createQuery(TreeNodeTable.class, (q, node) -> {
                     q.where(node.parent().isNull());
                     return q.select(
                             node.fetch(
@@ -443,7 +443,7 @@ public class RecursiveTest extends AbstractQueryTest {
     @Test
     public void findOnlyRoot() {
         executeAndExpect(
-                getSqlClient().createQuery(TreeNodeTable.class, (q, node) -> {
+                getLambdaClient().createQuery(TreeNodeTable.class, (q, node) -> {
                     q.where(node.parent().isNull());
                     return q.select(
                             node.fetch(
@@ -470,7 +470,7 @@ public class RecursiveTest extends AbstractQueryTest {
     @Test
     public void findNullTerminal() {
         executeAndExpect(
-                getSqlClient().createQuery(TreeNodeTable.class, (q, treeNode) -> {
+                getLambdaClient().createQuery(TreeNodeTable.class, (q, treeNode) -> {
                     q.where(
                             treeNode.id().in(Arrays.asList(12L, 13L, 14L, 16L, 17L))
                     );
@@ -524,7 +524,7 @@ public class RecursiveTest extends AbstractQueryTest {
     @Test
     public void findNullTerminalWithoutChildFetcher() {
         executeAndExpect(
-                getSqlClient().createQuery(TreeNodeTable.class, (q, treeNode) -> {
+                getLambdaClient().createQuery(TreeNodeTable.class, (q, treeNode) -> {
                     q.where(
                             treeNode.id().in(Arrays.asList(12L, 13L, 14L, 16L, 17L))
                     );

@@ -9,7 +9,7 @@ import java.util.Objects;
 
 public abstract class CompositePredicate extends AbstractPredicate {
 
-    private Predicate[] predicates;
+    private final Predicate[] predicates;
 
     CompositePredicate(
             Predicate[] predicates

@@ -10,11 +10,11 @@ public class MergeTest extends AbstractQueryTest {
     @Test
     public void test() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(
                             book.name().ilike("G"),
                             book.id().in(
-                                    q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
+                                    getLambdaClient().createSubQuery(q, AuthorTableEx.class, (sq, author) -> {
                                         sq.where(author.firstName().like("A"));
                                         return sq.select(author.books().id());
                                     })
@@ -22,11 +22,11 @@ public class MergeTest extends AbstractQueryTest {
                     );
                     return q.select(book);
                 }).minus(
-                        getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                        getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                             q.where(
                                     book.name().ilike("F"),
                                     book.id().in(
-                                            q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
+                                            getLambdaClient().createSubQuery(q, AuthorTableEx.class, (sq, author) -> {
                                                 sq.where(author.firstName().like("C"));
                                                 return sq.select(author.books().id());
                                             })

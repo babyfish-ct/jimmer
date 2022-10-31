@@ -11,7 +11,6 @@ import org.babyfish.jimmer.util.StaticCache;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Objects;
 
 public class TableProxies {
 
@@ -55,40 +54,10 @@ public class TableProxies {
         );
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T> T invokeConstructor(Constructor<?> constructor, Object ... args) {
-        if (constructor == null) {
-            throw new IllegalStateException(
-                    "There is no constructor whose parameter list \"(" +
-                            AbstractTypedTable.class.getName() +
-                            ", " +
-                            AbstractTypedTable.DelayedOperation.class.getName() +
-                            ")\""
-            );
-        }
-        try {
-            return (T) constructor.newInstance(args);
-        } catch (InstantiationException | IllegalAccessException ex) {
-            throw new AssertionError(
-                    "Internal bug: Can not create instance of " +
-                            constructor.getDeclaringClass().getName()
-            );
-        } catch (InvocationTargetException ex) {
-            Throwable target = ex.getTargetException();
-            if (target instanceof RuntimeException) {
-                throw (RuntimeException)target;
-            }
-            if (target instanceof Error) {
-                throw (Error)target;
-            }
-            throw new AssertionError(
-                    "Internal bug: Can not create instance of " +
-                            constructor.getDeclaringClass().getName()
-            );
-        }
-    }
-
     private static Constructor<?> createFluentConstructor(ImmutableType type) {
+        if (type instanceof AssociationType) {
+            throw new IllegalStateException("\"" + type + "\" cannot be AssociationType");
+        }
         return createConstructor(type, new Class[]{AbstractTypedTable.DelayedOperation.class});
     }
 
@@ -123,6 +92,39 @@ public class TableProxies {
                             "\" and \"" +
                             String.class.getName() +
                             "\""
+            );
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T invokeConstructor(Constructor<?> constructor, Object ... args) {
+        if (constructor == null) {
+            throw new IllegalStateException(
+                    "There is no constructor whose parameter list \"(" +
+                            AbstractTypedTable.class.getName() +
+                            ", " +
+                            AbstractTypedTable.DelayedOperation.class.getName() +
+                            ")\""
+            );
+        }
+        try {
+            return (T) constructor.newInstance(args);
+        } catch (InstantiationException | IllegalAccessException ex) {
+            throw new AssertionError(
+                    "Internal bug: Can not create instance of " +
+                            constructor.getDeclaringClass().getName()
+            );
+        } catch (InvocationTargetException ex) {
+            Throwable target = ex.getTargetException();
+            if (target instanceof RuntimeException) {
+                throw (RuntimeException)target;
+            }
+            if (target instanceof Error) {
+                throw (Error)target;
+            }
+            throw new AssertionError(
+                    "Internal bug: Can not create instance of " +
+                            constructor.getDeclaringClass().getName()
             );
         }
     }

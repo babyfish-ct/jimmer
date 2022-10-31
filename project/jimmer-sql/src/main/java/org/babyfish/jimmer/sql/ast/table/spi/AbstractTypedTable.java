@@ -27,6 +27,13 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
     private final String joinDisabledReason;
 
+    protected AbstractTypedTable(ImmutableType type) {
+        this.immutableType = type;
+        this.raw = null;
+        this.delayedOperation = null;
+        this.joinDisabledReason = null;
+    }
+
     protected AbstractTypedTable(Class<E> entityType) {
         this.immutableType = ImmutableType.get(entityType);
         this.raw = null;
@@ -300,6 +307,10 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         }
     }
 
+    protected boolean __isFluentRoot() {
+        return raw == null && delayedOperation == null && delayedOperation == null;
+    }
+
     @Override
     public String toString() {
         if (raw != null) {
@@ -317,6 +328,10 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
     protected <X> DelayedOperation<X> joinOperation(String prop, JoinType joinType) {
         return new DelayJoin<>(this, immutableType.getProp(prop), joinType, null);
+    }
+
+    protected <X> DelayedOperation<X> joinOperation(String prop, JoinType joinType, ImmutableType treatedAs) {
+        return new DelayJoin<>(this, immutableType.getProp(prop), joinType, treatedAs);
     }
 
     public interface DelayedOperation<E> {

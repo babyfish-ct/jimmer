@@ -14,7 +14,7 @@ public class InheritanceQueryTest extends AbstractQueryTest {
     @Test
     public void testFetchLonely() {
         executeAndExpect(
-                getSqlClient().createQuery(RoleTable.class, (q, role) -> {
+                getLambdaClient().createQuery(RoleTable.class, (q, role) -> {
                     return q.select(
                             role.fetch(
                                     RoleFetcher.$
@@ -39,7 +39,7 @@ public class InheritanceQueryTest extends AbstractQueryTest {
     @Test
     public void testFetchIdOnlyChildren() {
         executeAndExpect(
-                getSqlClient().createQuery(RoleTable.class, (q, role) -> {
+                getLambdaClient().createQuery(RoleTable.class, (q, role) -> {
                     return q.select(
                             role.fetch(
                                     RoleFetcher.$
@@ -83,7 +83,7 @@ public class InheritanceQueryTest extends AbstractQueryTest {
     @Test
     public void testFetchChildren() {
         executeAndExpect(
-                getSqlClient().createQuery(RoleTable.class, (q, role) -> {
+                getLambdaClient().createQuery(RoleTable.class, (q, role) -> {
                     return q.select(
                             role.fetch(
                                     RoleFetcher.$
@@ -127,7 +127,7 @@ public class InheritanceQueryTest extends AbstractQueryTest {
     @Test
     public void testQueryByTime() {
         executeAndExpect(
-                getSqlClient().createQuery(RoleTable.class, (q, role) -> {
+                getLambdaClient().createQuery(RoleTable.class, (q, role) -> {
                     q.where(
                             role.createdTime().between(
                                     LocalDateTime.of(2022, 10, 3, 0, 0, 0),
