@@ -2,13 +2,11 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
-import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
@@ -16,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -26,7 +25,7 @@ import java.util.List;
 
 public class MutableDeleteImpl
         extends AbstractMutableStatementImpl
-        implements MutableDelete, Executable<Integer> {
+        implements MutableDelete {
 
     private MutableRootQueryImpl<TableEx<?>> deleteQuery;
 
@@ -36,6 +35,15 @@ public class MutableDeleteImpl
                 new StatementContext(ExecutionPurpose.QUERY, false),
                 sqlClient,
                 immutableType
+        );
+    }
+
+    public MutableDeleteImpl(JSqlClient sqlClient, TableProxy<?> table) {
+        super(sqlClient, table);
+        deleteQuery = new MutableRootQueryImpl<>(
+                new StatementContext(ExecutionPurpose.QUERY, false),
+                sqlClient,
+                table
         );
     }
 
@@ -86,24 +94,38 @@ public class MutableDeleteImpl
     @SuppressWarnings("unchecked")
     private Integer executeImpl(Connection con) {
         freeze();
+
         JSqlClient sqlClient = getSqlClient();
         TableImplementor<?> table = getTableImplementor();
-        if (table.getChildren().isEmpty()) {
-            SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+
+        AstContext astContext = new AstContext(sqlClient);
+        astContext.pushStatement(deleteQuery);
+        try {
             Predicate predicate = deleteQuery.getPredicate();
             if (predicate != null) {
-                ((Ast)predicate).accept(new UseTableVisitor(builder.getAstContext()));
+                ((Ast) predicate).accept(new UseTableVisitor(astContext));
             }
-            renderDirectly(builder);
-            Tuple2<String, List<Object>> sqlResult = builder.build();
-            return sqlClient.getExecutor().execute(
-                    con,
-                    sqlResult.get_1(),
-                    sqlResult.get_2(),
-                    getPurpose(),
-                    null,
-                    PreparedStatement::executeUpdate
-            );
+        } finally {
+            astContext.popStatement();
+        }
+
+        if (table.getChildren().isEmpty()) {
+            SqlBuilder builder = new SqlBuilder(astContext);
+            astContext.pushStatement(this);
+            try {
+                renderDirectly(builder);
+                Tuple2<String, List<Object>> sqlResult = builder.build();
+                return sqlClient.getExecutor().execute(
+                        con,
+                        sqlResult.get_1(),
+                        sqlResult.get_2(),
+                        getPurpose(),
+                        null,
+                        PreparedStatement::executeUpdate
+                );
+            } finally {
+                astContext.popStatement();
+            }
         }
         List<Object> ids = deleteQuery
                 .select((Expression<Object>)table.get(table.getImmutableType().getIdProp().getName()))

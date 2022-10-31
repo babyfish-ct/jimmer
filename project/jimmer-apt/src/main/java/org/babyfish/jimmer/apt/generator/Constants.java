@@ -6,6 +6,7 @@ import org.babyfish.jimmer.DraftConsumer;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftContext;
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.validation.Validator;
 
 import java.util.function.Consumer;
@@ -41,6 +42,9 @@ class Constants {
 
     public static final ClassName TYPED_PROP_CLASS_NAME =
             ClassName.get(TypedProp.class);
+
+    public static final ClassName JOIN_TYPE_CLASS_NAME =
+            ClassName.get(JoinType.class);
 
     public static final ClassName REDIRECTED_PROP_CLASS_NAME =
             ClassName.get(

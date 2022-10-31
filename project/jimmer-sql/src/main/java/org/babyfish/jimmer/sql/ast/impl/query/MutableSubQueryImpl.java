@@ -296,10 +296,14 @@ public class MutableSubQueryImpl
         return ExistsPredicate.of(this, true);
     }
 
-    public void initializeParentIfNecessary(AbstractMutableStatementImpl parent) {
+    public void setParent(AbstractMutableStatementImpl parent) {
         if (this.parent == null) {
             this.parent = parent;
             ctx = parent.getContext();
+        } else if (this.parent != parent) {
+            throw new IllegalStateException(
+                    "The sub query cannot be added to parent query because it is belong to another parent query"
+            );
         }
     }
 }

@@ -4,9 +4,10 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
@@ -30,7 +31,7 @@ import java.util.*;
 
 public class MutableUpdateImpl
         extends AbstractMutableStatementImpl
-        implements MutableUpdate, Executable<Integer>, Ast {
+        implements MutableUpdate, Ast {
 
     private final StatementContext ctx;
 
@@ -38,6 +39,11 @@ public class MutableUpdateImpl
 
     public MutableUpdateImpl(JSqlClient sqlClient, ImmutableType immutableType) {
         super(sqlClient, immutableType);
+        this.ctx = new StatementContext(ExecutionPurpose.UPDATE, false);
+    }
+
+    public MutableUpdateImpl(JSqlClient sqlClient, TableProxy<?> table) {
+        super(sqlClient, table);
         this.ctx = new StatementContext(ExecutionPurpose.UPDATE, false);
     }
 
@@ -72,7 +78,7 @@ public class MutableUpdateImpl
         }
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         boolean joinedTableUpdatable = updateJoin != null && updateJoin.isJoinedTableUpdatable();
-        if (!joinedTableUpdatable && target.tableImpl != getTableImplementor()) {
+        if (!joinedTableUpdatable && (target.table != getTable() && target.table != getTableImplementor())) {
             throw new IllegalArgumentException(
                     "The current dialect '" +
                             getSqlClient().getDialect().getClass().getName() +
@@ -130,38 +136,50 @@ public class MutableUpdateImpl
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        for (Map.Entry<Target, Expression<?>> e : assignmentMap.entrySet()) {
-            ((Ast) e.getKey().expr).accept(visitor);
-            ((Ast) e.getValue()).accept(visitor);
-        }
-        Predicate predicate = getPredicate();
-        if (predicate != null) {
-            ((Ast)predicate).accept(visitor);
+        AstContext astContext = visitor.getAstContext();
+        astContext.pushStatement(this);
+        try {
+            for (Map.Entry<Target, Expression<?>> e : assignmentMap.entrySet()) {
+                ((Ast) e.getKey().expr).accept(visitor);
+                ((Ast) e.getValue()).accept(visitor);
+            }
+            Predicate predicate = getPredicate();
+            if (predicate != null) {
+                ((Ast) predicate).accept(visitor);
+            }
+        } finally {
+            astContext.popStatement();
         }
     }
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        TableImplementor<?> table = getTableImplementor();
-        Dialect dialect = getSqlClient().getDialect();
-        this.accept(new VisitorImpl(builder.getAstContext(), dialect));
-        builder
-                .sql("update ")
-                .sql(table.getImmutableType().getTableName())
-                .sql(" ")
-                .sql(table.getAlias());
+        AstContext astContext = builder.getAstContext();
+        astContext.pushStatement(this);
+        try {
+            TableImplementor<?> table = getTableImplementor();
+            Dialect dialect = getSqlClient().getDialect();
+            this.accept(new VisitorImpl(builder.getAstContext(), dialect));
+            builder
+                    .sql("update ")
+                    .sql(table.getImmutableType().getTableName())
+                    .sql(" ")
+                    .sql(table.getAlias());
 
-        UpdateJoin updateJoin = dialect.getUpdateJoin();
-        if (updateJoin != null && updateJoin.getFrom() == UpdateJoin.From.UNNECESSARY) {
-            for (TableImplementor<?> child : table.getChildren()) {
-                child.renderTo(builder);
+            UpdateJoin updateJoin = dialect.getUpdateJoin();
+            if (updateJoin != null && updateJoin.getFrom() == UpdateJoin.From.UNNECESSARY) {
+                for (TableImplementor<?> child : table.getChildren()) {
+                    child.renderTo(builder);
+                }
             }
+            builder.sql(" set ");
+            renderAssignments(builder);
+            renderTables(builder);
+            renderDeeperJoins(builder);
+            renderPredicates(builder);
+        } finally {
+            astContext.popStatement();
         }
-        builder.sql(" set ");
-        renderAssignments(builder);
-        renderTables(builder);
-        renderDeeperJoins(builder);
-        renderPredicates(builder);
     }
 
     private void renderAssignments(SqlBuilder builder) {
@@ -183,7 +201,8 @@ public class MutableUpdateImpl
 
     private void renderTarget(SqlBuilder builder, Target target, boolean withPrefix) {
         if (withPrefix) {
-            builder.sql(target.tableImpl.getAlias()).sql(".");
+            TableImplementor<?> impl = TableProxies.resolve(target.table, builder.getAstContext());
+            builder.sql(impl.getAlias()).sql(".");
         }
         builder.sql(((Column) target.prop.getStorage()).getName());
     }
@@ -243,23 +262,32 @@ public class MutableUpdateImpl
 
     private static class Target {
 
-        TableImplementor<?> tableImpl;
+        Table<?> table;
 
         ImmutableProp prop;
 
         PropExpression<?> expr;
 
-        private Target(TableImplementor<?> tableImpl, ImmutableProp prop, PropExpression<?> expr) {
-            this.tableImpl = tableImpl;
+        private Target(Table<?> table, ImmutableProp prop, PropExpression<?> expr) {
+            this.table = table;
             this.prop = prop;
             this.expr = expr;
         }
 
         static Target of(PropExpression<?> expr) {
             PropExpressionImpl<?> exprImpl = (PropExpressionImpl<?>) expr;
-            TableImplementor<?> targetTable = TableProxies.resolve(exprImpl.getTable(), null);
-            if (targetTable.getParent() != null && exprImpl.getProp().isId()) {
-                return new Target(targetTable.getParent(), targetTable.getJoinProp(), expr);
+            Table<?> targetTable = exprImpl.getTable();
+            Table<?> parent;
+            ImmutableProp prop;
+            if (targetTable instanceof TableImplementor<?>) {
+                parent = ((TableImplementor<?>)targetTable).getParent();
+                prop = ((TableImplementor<?>)targetTable).getJoinProp();
+            } else {
+                parent = ((TableProxy<?>)targetTable).__parent();
+                prop = ((TableProxy<?>)targetTable).__prop();
+            }
+            if (parent != null && exprImpl.getProp().isId()) {
+                return new Target(parent, prop, expr);
             } else {
                 return new Target(targetTable, exprImpl.getProp(), expr);
             }
@@ -270,12 +298,12 @@ public class MutableUpdateImpl
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Target target = (Target) o;
-            return tableImpl.equals(target.tableImpl) && prop.equals(target.prop);
+            return table.equals(target.table) && prop.equals(target.prop);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(tableImpl, prop);
+            return Objects.hash(table, prop);
         }
     }
 

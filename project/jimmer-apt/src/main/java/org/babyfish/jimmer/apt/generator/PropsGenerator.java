@@ -232,14 +232,23 @@ public class PropsGenerator {
             builder.addModifiers(Modifier.ABSTRACT);
         }
         if (withJoinType) {
-            builder.addParameter(JoinType.class, "joinType");
+            builder.addParameter(Constants.JOIN_TYPE_CLASS_NAME, "joinType");
         }
         if (withImplementation) {
             if (prop.isAssociation()) {
+                builder.addStatement("__beforeJoin()");
                 if (withJoinType) {
-                    builder.addStatement("return join($S, joinType)", prop.getName());
+                    builder
+                            .beginControlFlow("if (raw != null)")
+                            .addStatement("return new $T(raw.joinImplementor($S, joinType))", returnType, prop.getName())
+                            .endControlFlow()
+                            .addStatement("return new $T(joinOperation($S, joinType))", returnType, prop.getName());
                 } else {
-                    builder.addStatement("return join($S)", prop.getName());
+                    builder
+                            .beginControlFlow("if (raw != null)")
+                            .addStatement("return new $T(raw.joinImplementor($S))", returnType, prop.getName())
+                            .endControlFlow()
+                            .addStatement("return new $T(joinOperation($S))", returnType, prop.getName());
                 }
             } else {
                 builder.addStatement("return get($S)", prop.getName());

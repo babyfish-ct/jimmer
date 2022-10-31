@@ -18,54 +18,40 @@ public class TableProxies {
     private static final StaticCache<Class<?>, Constructor<?>> WRAPPER_CACHE =
             new StaticCache<>(TableProxies::createWrapperConstructor);
 
-    private static final StaticCache<ImmutableType, Constructor<?>> ROOT_FLUENT_CACHE =
-            new StaticCache<>(TableProxies::createRootFluentConstructor);
-
-    private static final StaticCache<ImmutableType, Constructor<?>> CHILD_FLUENT_CACHE =
-            new StaticCache<>(TableProxies::createChildFluentConstructor);
+    private static final StaticCache<ImmutableType, Constructor<?>> FLUENT_CACHE =
+            new StaticCache<>(TableProxies::createFluentConstructor);
 
     private TableProxies() {}
 
-    public static <T extends TableEx<?>> T wrap(TableImplementor<?> table) {
-        return wrap(table, null);
-    }
-
     @SuppressWarnings("unchecked")
-    public static <T extends TableEx<?>> T wrap(Table<?> table, String joinDisabledReason) {
+    public static <T extends TableEx<?>> T wrap(Table<?> table) {
         if (table.getImmutableType() instanceof AssociationType) {
             return (T)table;
-        }
-        if (table instanceof TableProxy<?>) {
-            TableProxy<?> wrapper = (TableProxy<?>) table;
-            if (Objects.equals(wrapper.__joinDisabledReason(), joinDisabledReason)) {
-                return (T) table;
-            }
-            table = wrapper.__unwrap();
         }
         Class<?> javaClass = table.getImmutableType().getJavaClass();
         Constructor<?> constructor = WRAPPER_CACHE.get(javaClass);
         if (constructor == null) {
             return (T) table;
         }
-        return invokeConstructor(constructor, table, joinDisabledReason);
+        return invokeConstructor(constructor, table);
     }
 
-    public static <T extends Table<?>> T create(ImmutableType type) {
-        Constructor<?> constructor = ROOT_FLUENT_CACHE.get(type);
-        return invokeConstructor(constructor);
+    public static <T extends Table<?>> T fluent(ImmutableType type) {
+        Constructor<?> constructor = FLUENT_CACHE.get(type);
+        return invokeConstructor(constructor, new Object[] { null });
     }
 
-    public static <T extends Table<?>> T create(
+    public static <T extends Table<?>> T fluent(
             AbstractTypedTable.DelayedOperation<?> delayedOperation
     ) {
-        Constructor<?> constructor = CHILD_FLUENT_CACHE.get(delayedOperation.targetType());
+        Constructor<?> constructor = FLUENT_CACHE.get(delayedOperation.targetType());
         return invokeConstructor(constructor, delayedOperation);
     }
 
     private static Constructor<?> createWrapperConstructor(Class<?> javaClass) {
         return createConstructor(
                 ImmutableType.get(javaClass),
-                new Class[] {TableImplementor.class, String.class}
+                new Class[] {TableImplementor.class}
         );
     }
 
@@ -102,11 +88,7 @@ public class TableProxies {
         }
     }
 
-    private static Constructor<?> createRootFluentConstructor(ImmutableType type) {
-        return createConstructor(type, new Class[0]);
-    }
-
-    private static Constructor<?> createChildFluentConstructor(ImmutableType type) {
+    private static Constructor<?> createFluentConstructor(ImmutableType type) {
         return createConstructor(type, new Class[]{AbstractTypedTable.DelayedOperation.class});
     }
 
