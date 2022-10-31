@@ -17,7 +17,7 @@ public class MixedTest extends AbstractQueryTest {
     @Test
     public void test() {
         executeAndExpect(
-                getSqlClient().createQuery(TreeNodeTable.class, (q, node) -> {
+                getLambdaClient().createQuery(TreeNodeTable.class, (q, node) -> {
                     q.where(node.parent().isNull());
                     return q.select(
                             node.fetch(

@@ -22,7 +22,7 @@ public class PagingTest extends AbstractQueryTest {
     @Test
     public void testCountQuerySkipUnnecessaryJoinOfIgnoredOrderByClause() {
 
-        ConfigurableRootQuery<BookTable, Book> query = getSqlClient().createQuery(BookTable.class, (q, book) -> {
+        ConfigurableRootQuery<BookTable, Book> query = getLambdaClient().createQuery(BookTable.class, (q, book) -> {
             q.where(book.price().between(new BigDecimal(20), new BigDecimal(30)));
             q.orderBy(book.store(JoinType.LEFT).name());
             q.orderBy(book.name());
@@ -65,7 +65,7 @@ public class PagingTest extends AbstractQueryTest {
     @Test
     public void testCountQueryKeepNecessaryJoinOfIgnoredOrderByClause() {
 
-        ConfigurableRootQuery<BookTable, Book> query = getSqlClient().createQuery(BookTable.class, (q, book) -> {
+        ConfigurableRootQuery<BookTable, Book> query = getLambdaClient().createQuery(BookTable.class, (q, book) -> {
             q.where(book.price().between(new BigDecimal(20), new BigDecimal(30)));
             q.orderBy(book.store().name());
             q.orderBy(book.name());
@@ -110,7 +110,7 @@ public class PagingTest extends AbstractQueryTest {
     public void testCountQuerySkipNecessaryJoinOfIgnoredSelectClause() {
 
         ConfigurableRootQuery<BookTable, Tuple2<Book, BookStore>> query =
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(book.price().between(new BigDecimal(20), new BigDecimal(30)));
                     q.orderBy(book.name());
                     return q.select(book, book.store(JoinType.LEFT));
@@ -155,7 +155,7 @@ public class PagingTest extends AbstractQueryTest {
     public void testCountQueryKeepNecessaryJoinOfIgnoredSelectClause() {
 
         ConfigurableRootQuery<BookTable, Tuple2<Book, BookStore>> query =
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(book.price().between(new BigDecimal(20), new BigDecimal(30)));
                     q.orderBy(book.name());
                     return q.select(book, book.store());
@@ -201,7 +201,7 @@ public class PagingTest extends AbstractQueryTest {
     public void testReselectTwice() {
 
         ConfigurableRootQuery<BookTable, Tuple2<Book, BookStore>> query =
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(book.price().between(new BigDecimal(20), new BigDecimal(30)));
                     q.orderBy(book.name());
                     return q.select(book, book.store());
@@ -218,7 +218,7 @@ public class PagingTest extends AbstractQueryTest {
     public void testReselectBaseOnGroupBy() {
 
         ConfigurableRootQuery<BookTable, UUID> query =
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.groupBy(book.id());
                     return q.select(book.id());
                 });
@@ -232,7 +232,7 @@ public class PagingTest extends AbstractQueryTest {
     public void testReselectBaseOnAggregation() {
 
         ConfigurableRootQuery<BookTable, Long> query =
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     return q.select(book.count());
                 });
 
@@ -244,7 +244,7 @@ public class PagingTest extends AbstractQueryTest {
     @Test
     public void testMySqlDialect() {
         executeAndExpect(
-                getSqlClient(
+                getLambdaClient(
                         it -> it.setDialect(new MySqlDialect())
                 ).createQuery(BookTable.class, (q, book) -> {
                     q.orderBy(book.name());
@@ -266,7 +266,7 @@ public class PagingTest extends AbstractQueryTest {
     @Test
     public void testSqlServerDialect() {
         executeAndExpect(
-                getSqlClient(
+                getLambdaClient(
                         it -> it.setDialect(new SqlServerDialect())
                 ).createQuery(BookTable.class, (q, book) -> {
                     q.orderBy(book.name());
@@ -288,7 +288,7 @@ public class PagingTest extends AbstractQueryTest {
     @Test
     public void testOracleDialect() {
         executeAndExpect(
-                getSqlClient(
+                getLambdaClient(
                         it -> it.setDialect(new OracleDialect())
                 ).createQuery(BookTable.class, (q, book) -> {
                     q.orderBy(book.name());
@@ -314,7 +314,7 @@ public class PagingTest extends AbstractQueryTest {
     @Test
     public void testOracleDialectWithOnlyLimit() {
         executeAndExpect(
-                getSqlClient(
+                getLambdaClient(
                         it -> it.setDialect(new OracleDialect())
                 ).createQuery(BookTable.class, (q, book) -> {
                     q.orderBy(book.name());

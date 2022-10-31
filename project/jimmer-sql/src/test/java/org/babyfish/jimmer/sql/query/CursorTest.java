@@ -14,7 +14,7 @@ public class CursorTest extends AbstractQueryTest {
         connectAndExpect(
                 con -> {
                     List<Book> books = new ArrayList<>();
-                    getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                    getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                         return q
                                 .where(book.edition().eq(3))
                                 .orderBy(book.name().asc())

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
+import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JSqlClient;
@@ -15,6 +16,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 public abstract class AbstractMutableQueryImpl
         extends AbstractMutableStatementImpl
@@ -44,6 +46,24 @@ public abstract class AbstractMutableQueryImpl
     @Override
     public AbstractMutableQueryImpl where(Predicate... predicates) {
         return (AbstractMutableQueryImpl) super.where(predicates);
+    }
+
+    @OldChain
+    @Override
+    public AbstractMutableQueryImpl whereIf(boolean condition, Predicate predicates) {
+        if (condition) {
+            where(predicates);
+        }
+        return this;
+    }
+
+    @OldChain
+    @Override
+    public AbstractMutableQueryImpl whereIf(boolean condition, Supplier<Predicate> block) {
+        if (condition) {
+            where(block.get());
+        }
+        return this;
     }
 
     @Override

@@ -2,9 +2,7 @@ package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
 import org.babyfish.jimmer.sql.model.*;
@@ -19,14 +17,14 @@ import java.util.UUID;
 
 public class MutateCacheTest extends AbstractQueryTest {
 
-    private JSqlClient sqlClient;
+    private LambdaClient lambdaClient;
 
     private List<CacheOpRecord> cacheOpRecords = new ArrayList<>();
 
     @BeforeEach
     public void initialize() {
         cacheOpRecords.clear();
-        sqlClient = getSqlClient(builder -> {
+        lambdaClient = getLambdaClient(builder -> {
             builder.setEntityManager(
                     new EntityManager(
                             BookStore.class,
@@ -67,7 +65,7 @@ public class MutateCacheTest extends AbstractQueryTest {
     @Test
     public void testChangeBook() {
         executeAndExpect(
-                sqlClient.createQuery(BookTable.class, (q, book) -> {
+                lambdaClient.createQuery(BookTable.class, (q, book) -> {
                     return q.select(
                             book.fetch(
                                     BookFetcher.$
@@ -92,7 +90,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }
         );
         executeAndExpect(
-                sqlClient.createQuery(BookStoreTable.class, (q, store) -> {
+                lambdaClient.createQuery(BookStoreTable.class, (q, store) -> {
                     return q.select(
                             store.fetch(
                                     BookStoreFetcher.$
@@ -121,7 +119,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                     );
                 }
         );
-        sqlClient.getTriggers().fireEntityTableChange(
+        lambdaClient.getTriggers().fireEntityTableChange(
                 BookDraft.$.produce(book -> {
                     book.setId(graphQLInActionId3).setStore(store -> store.setId(UUID.fromString("00000000-0000-0000-0000-000000000000")));
                 }),
@@ -147,7 +145,7 @@ public class MutateCacheTest extends AbstractQueryTest {
         ]
          */
         executeAndExpect(
-                sqlClient.createQuery(BookTable.class, (q, book) -> {
+                lambdaClient.createQuery(BookTable.class, (q, book) -> {
                     return q.select(
                             book.fetch(
                                     BookFetcher.$
@@ -167,7 +165,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }
         );
         executeAndExpect(
-                sqlClient.createQuery(BookStoreTable.class, (q, store) -> {
+                lambdaClient.createQuery(BookStoreTable.class, (q, store) -> {
                     return q.select(
                             store.fetch(
                                     BookStoreFetcher.$
@@ -198,7 +196,7 @@ public class MutateCacheTest extends AbstractQueryTest {
     @Test
     public void testInsertMiddleTable() {
         executeAndExpect(
-                sqlClient.createQuery(BookTable.class, (q, book) -> {
+                lambdaClient.createQuery(BookTable.class, (q, book) -> {
                     return q.select(
                             book.fetch(
                                     BookFetcher.$
@@ -226,7 +224,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }
         );
         executeAndExpect(
-                sqlClient.createQuery(AuthorTable.class, (q, author) -> {
+                lambdaClient.createQuery(AuthorTable.class, (q, author) -> {
                     return q.select(
                             author.fetch(
                                     AuthorFetcher.$
@@ -255,7 +253,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                     );
                 }
         );
-        sqlClient.getTriggers().fireMiddleTableInsert(
+        lambdaClient.getTriggers().fireMiddleTableInsert(
                 BookProps.AUTHORS.unwrap(),
                 graphQLInActionId3,
                 danId
@@ -269,7 +267,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                 cacheOpRecords.toString()
         );
         executeAndExpect(
-                sqlClient.createQuery(BookTable.class, (q, book) -> {
+                lambdaClient.createQuery(BookTable.class, (q, book) -> {
                     return q.select(
                             book.fetch(
                                     BookFetcher.$
@@ -292,7 +290,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }
         );
         executeAndExpect(
-                sqlClient.createQuery(AuthorTable.class, (q, author) -> {
+                lambdaClient.createQuery(AuthorTable.class, (q, author) -> {
                     return q.select(
                             author.fetch(
                                     AuthorFetcher.$
@@ -321,7 +319,7 @@ public class MutateCacheTest extends AbstractQueryTest {
     @Test
     public void testInsertInverseMiddleTable() {
         executeAndExpect(
-                sqlClient.createQuery(BookTable.class, (q, book) -> {
+                lambdaClient.createQuery(BookTable.class, (q, book) -> {
                     return q.select(
                             book.fetch(
                                     BookFetcher.$
@@ -349,7 +347,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }
         );
         executeAndExpect(
-                sqlClient.createQuery(AuthorTable.class, (q, author) -> {
+                lambdaClient.createQuery(AuthorTable.class, (q, author) -> {
                     return q.select(
                             author.fetch(
                                     AuthorFetcher.$
@@ -378,7 +376,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                     );
                 }
         );
-        sqlClient.getTriggers().fireMiddleTableInsert(
+        lambdaClient.getTriggers().fireMiddleTableInsert(
                 AuthorProps.BOOKS.unwrap(),
                 danId,
                 graphQLInActionId3
@@ -392,7 +390,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                 cacheOpRecords.toString()
         );
         executeAndExpect(
-                sqlClient.createQuery(BookTable.class, (q, book) -> {
+                lambdaClient.createQuery(BookTable.class, (q, book) -> {
                     return q.select(
                             book.fetch(
                                     BookFetcher.$
@@ -415,7 +413,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }
         );
         executeAndExpect(
-                sqlClient.createQuery(AuthorTable.class, (q, author) -> {
+                lambdaClient.createQuery(AuthorTable.class, (q, author) -> {
                     return q.select(
                             author.fetch(
                                     AuthorFetcher.$
@@ -444,7 +442,7 @@ public class MutateCacheTest extends AbstractQueryTest {
     @Test
     public void testChangeTreeNode() {
         executeAndExpect(
-                sqlClient.createQuery(TreeNodeTable.class, (q, treeNode) -> {
+                lambdaClient.createQuery(TreeNodeTable.class, (q, treeNode) -> {
                     q.where(treeNode.parent().isNull());
                     return q.select(
                             treeNode.fetch(
@@ -474,7 +472,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }
         );
         executeAndExpect(
-                sqlClient.createQuery(TreeNodeTable.class, (q, treeNode) -> {
+                lambdaClient.createQuery(TreeNodeTable.class, (q, treeNode) -> {
                     q.where(treeNode.parent().isNull());
                     return q.select(
                             treeNode.fetch(
@@ -492,7 +490,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                     );
                 }
         );
-        sqlClient.getTriggers().fireEntityTableChange(
+        lambdaClient.getTriggers().fireEntityTableChange(
                 TreeNodeDraft.$.produce(treeNode -> {
                     treeNode.setParent(parent -> {
                         parent.setId(1L);
@@ -503,7 +501,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                 })
         );
         executeAndExpect(
-                sqlClient.createQuery(TreeNodeTable.class, (q, treeNode) -> {
+                lambdaClient.createQuery(TreeNodeTable.class, (q, treeNode) -> {
                     q.where(treeNode.parent().isNull());
                     return q.select(
                             treeNode.fetch(

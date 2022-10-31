@@ -26,26 +26,28 @@ public class GlobalFilterTest extends AbstractQueryTest {
                 }
             };
 
-    private JSqlClient sqlClient;
+    private LambdaClient lambdaClient;
 
-    private JSqlClient sqlClientForDeletedData;
+    private LambdaClient lambdaClientForDeletedData;
 
     @BeforeEach
     public void initialize() {
-        this.sqlClient = getSqlClient(it -> {
+        JSqlClient sqlClient = getSqlClient(it -> {
            it.addFilters(UNDELETED_FILTER);
            it.addDisabledFilters(DELETED_FILTER);
         });
-        this.sqlClientForDeletedData = sqlClient.filters(it -> {
+        JSqlClient sqlClientForDeletedData = sqlClient.filters(it -> {
             it.enable(DELETED_FILTER);
             it.disable(UNDELETED_FILTER);
         });
+        lambdaClient = new LambdaClient(sqlClient);
+        lambdaClientForDeletedData = new LambdaClient(sqlClientForDeletedData);
     }
 
     @Test
     public void testQueryUndeletedRoleWithIdOnlyPermissions() {
         executeAndExpect(
-                sqlClient.createQuery(RoleTable.class, (q, role) -> {
+                lambdaClient.createQuery(RoleTable.class, (q, role) -> {
                     return q.select(
                             role.fetch(
                                     RoleFetcher.$
@@ -87,7 +89,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
     @Test
     public void testQueryUndeletedRoleWithPermissions() {
         executeAndExpect(
-                sqlClient.createQuery(RoleTable.class, (q, role) -> {
+                lambdaClient.createQuery(RoleTable.class, (q, role) -> {
                     return q.select(
                             role.fetch(
                                     RoleFetcher.$
@@ -138,7 +140,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
     @Test
     public void testQueryUndeletedPermissionAndIdOnlyRole() {
         executeAndExpect(
-                sqlClient.createQuery(PermissionTable.class, (q, permisson) -> {
+                lambdaClient.createQuery(PermissionTable.class, (q, permisson) -> {
                     return q.select(
                             permisson.fetch(
                                     PermissionFetcher.$
@@ -184,7 +186,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
     @Test
     public void testQueryUndeletedPermissionAndRole() {
         executeAndExpect(
-                sqlClient.createQuery(PermissionTable.class, (q, permission) -> {
+                lambdaClient.createQuery(PermissionTable.class, (q, permission) -> {
                     return q.select(
                             permission.fetch(
                                     PermissionFetcher.$
@@ -239,7 +241,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
     @Test
     public void testQueryUndeletedAdministratorWithIdOnlyRoles() {
         executeAndExpect(
-                sqlClient.createQuery(AdministratorTable.class, (q, administrator) -> {
+                lambdaClient.createQuery(AdministratorTable.class, (q, administrator) -> {
                     return q.select(
                             administrator.fetch(
                                     AdministratorFetcher.$
@@ -291,7 +293,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
     @Test
     public void testQueryUndeletedAdministratorWithRoles() {
         executeAndExpect(
-                sqlClient.createQuery(AdministratorTable.class, (q, administrator) -> {
+                lambdaClient.createQuery(AdministratorTable.class, (q, administrator) -> {
                     return q.select(
                             administrator.fetch(
                                     AdministratorFetcher.$
@@ -358,7 +360,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
     @Test
     public void testQueryUndeletedRoleAndIdOnlyAdministrators() {
         executeAndExpect(
-                sqlClient.createQuery(RoleTable.class, (q, role) -> {
+                lambdaClient.createQuery(RoleTable.class, (q, role) -> {
                     return q.select(
                             role.fetch(
                                     RoleFetcher.$
@@ -401,7 +403,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
     @Test
     public void testQueryUndeletedRoleAndAdministrators() {
         executeAndExpect(
-                sqlClient.createQuery(RoleTable.class, (q, role) -> {
+                lambdaClient.createQuery(RoleTable.class, (q, role) -> {
                     return q.select(
                             role.fetch(
                                     RoleFetcher.$
@@ -458,7 +460,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
     @Test
     public void testQueryDeletedRoleWithIdOnlyPermissions() {
         executeAndExpect(
-                sqlClientForDeletedData.createQuery(RoleTable.class, (q, role) -> {
+                lambdaClientForDeletedData.createQuery(RoleTable.class, (q, role) -> {
                     return q.select(
                             role.fetch(
                                     RoleFetcher.$
@@ -499,7 +501,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
     @Test
     public void testQueryDeletedRoleWithPermissions() {
         executeAndExpect(
-                sqlClientForDeletedData.createQuery(RoleTable.class, (q, role) -> {
+                lambdaClientForDeletedData.createQuery(RoleTable.class, (q, role) -> {
                     return q.select(
                             role.fetch(
                                     RoleFetcher.$
@@ -549,7 +551,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
     @Test
     public void testQueryDeletedPermissionAndIdOnlyRole() {
         executeAndExpect(
-                sqlClientForDeletedData.createQuery(PermissionTable.class, (q, permission) -> {
+                lambdaClientForDeletedData.createQuery(PermissionTable.class, (q, permission) -> {
                     return q.select(
                             permission.fetch(
                                     PermissionFetcher.$
@@ -594,7 +596,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
     @Test
     public void testQueryDeletedPermissionAndRole() {
         executeAndExpect(
-                sqlClientForDeletedData.createQuery(PermissionTable.class, (q, permission) -> {
+                lambdaClientForDeletedData.createQuery(PermissionTable.class, (q, permission) -> {
                     return q.select(
                             permission.fetch(
                                     PermissionFetcher.$
@@ -649,7 +651,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
     @Test
     public void testQueryDeletedAdministratorWithIdOnlyRoles() {
         executeAndExpect(
-                sqlClientForDeletedData.createQuery(AdministratorTable.class, (q, administrator) -> {
+                lambdaClientForDeletedData.createQuery(AdministratorTable.class, (q, administrator) -> {
                     return q.select(
                             administrator.fetch(
                                     AdministratorFetcher.$
@@ -701,7 +703,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
     @Test
     public void testQueryDeletedAdministratorWithRoles() {
         executeAndExpect(
-                sqlClientForDeletedData.createQuery(AdministratorTable.class, (q, administrator) -> {
+                lambdaClientForDeletedData.createQuery(AdministratorTable.class, (q, administrator) -> {
                     return q.select(
                             administrator.fetch(
                                     AdministratorFetcher.$
@@ -768,7 +770,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
     @Test
     public void testQueryDeletedRoleAndIdOnlyAdministrators() {
         executeAndExpect(
-                sqlClientForDeletedData.createQuery(RoleTable.class, (q, role) -> {
+                lambdaClientForDeletedData.createQuery(RoleTable.class, (q, role) -> {
                     return q.select(
                             role.fetch(
                                     RoleFetcher.$
@@ -811,7 +813,7 @@ public class GlobalFilterTest extends AbstractQueryTest {
     @Test
     public void testQueryDeletedRoleAndAdministrators() {
         executeAndExpect(
-                sqlClientForDeletedData.createQuery(RoleTable.class, (q, role) -> {
+                lambdaClientForDeletedData.createQuery(RoleTable.class, (q, role) -> {
                     return q.select(
                             role.fetch(
                                     RoleFetcher.$

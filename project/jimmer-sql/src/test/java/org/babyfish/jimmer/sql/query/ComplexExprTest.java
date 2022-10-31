@@ -17,20 +17,18 @@ public class ComplexExprTest extends AbstractQueryTest {
     @Test
     public void testSqlExpression() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     return q.select(
                             book,
                             Expression.numeric().sql(
                                     Integer.class,
                                     "rank() over(order by %e desc)",
-                                    it -> it.expression(book.price())
+                                    book.price()
                             ),
                             Expression.numeric().sql(
                                     Integer.class,
                                     "rank() over(partition by %e order by %e desc)",
-                                    it -> it
-                                            .expression(book.store().id())
-                                            .expression(book.price())
+                                    new Expression[] { book.store().id(), book.price() }
                             )
                     );
                 }),
@@ -67,7 +65,7 @@ public class ComplexExprTest extends AbstractQueryTest {
     @Test
     public void testSqlPredicate() {
         executeAndExpect(
-                getSqlClient().createQuery(AuthorTable.class, (q, author) -> {
+                getLambdaClient().createQuery(AuthorTable.class, (q, author) -> {
                     q.where(
                             Predicate.sql(
                                     "regexp_like(%e, %v)",
@@ -90,7 +88,7 @@ public class ComplexExprTest extends AbstractQueryTest {
     @Test
     public void testTupleInList() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(
                             Expression.tuple(book.name(), book.edition()).in(
                                     Arrays.asList(
@@ -115,7 +113,7 @@ public class ComplexExprTest extends AbstractQueryTest {
     @Test
     public void testSimpleCase() {
         executeAndExpect(
-                getSqlClient().createQuery(BookStoreTable.class, (q, store) -> {
+                getLambdaClient().createQuery(BookStoreTable.class, (q, store) -> {
                     return q.select(
                             store,
                             Expression.string()
@@ -149,7 +147,7 @@ public class ComplexExprTest extends AbstractQueryTest {
     @Test
     public void testCase() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     return q.select(
                             book,
                             Expression.string().caseBuilder()

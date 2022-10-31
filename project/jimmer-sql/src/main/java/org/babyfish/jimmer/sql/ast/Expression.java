@@ -199,6 +199,10 @@ public interface Expression<T> extends Selection<T> {
 
         StringExpression sql(String sql);
 
+        StringExpression sql(String sql, Expression<?> expression, Object ... values);
+
+        StringExpression sql(String sql, Expression<?>[] expressions, Object ... values);
+
         StringExpression sql(String sql, Consumer<SqlExpressionContext> block);
 
         <C> SimpleCaseBuilder.Str<C> caseBuilder(C value);
@@ -213,6 +217,20 @@ public interface Expression<T> extends Selection<T> {
         <N extends Number> NumericExpression<N> value(N value);
 
         <N extends Number> NumericExpression<N> sql(Class<N> type, String sql);
+
+        <N extends Number> NumericExpression<N> sql(
+                Class<N> type,
+                String sql,
+                Expression<?> expression,
+                Object ... values
+        );
+
+        <N extends Number> NumericExpression<N> sql(
+                Class<N> type,
+                String sql,
+                Expression<?>[] expressions,
+                Object ... values
+        );
 
         <N extends Number> NumericExpression<N> sql(
                 Class<N> type,
@@ -241,6 +259,20 @@ public interface Expression<T> extends Selection<T> {
         <T extends Comparable<?>> ComparableExpression<T> sql(
                 Class<T> type,
                 String sql,
+                Expression<?> expression,
+                Object ... values
+        );
+
+        <T extends Comparable<?>> ComparableExpression<T> sql(
+                Class<T> type,
+                String sql,
+                Expression<?>[] expressions,
+                Object ... values
+        );
+
+        <T extends Comparable<?>> ComparableExpression<T> sql(
+                Class<T> type,
+                String sql,
                 Consumer<SqlExpressionContext> block
         );
 
@@ -258,6 +290,20 @@ public interface Expression<T> extends Selection<T> {
         <T> Expression<T> nullValue(Class<T> type);
 
         <T> Expression<T> sql(Class<T> type, String sql);
+
+        <T> Expression<T> sql(
+                Class<T> type,
+                String sql,
+                Expression<?> expression,
+                Object ... values
+        );
+
+        <T> Expression<T> sql(
+                Class<T> type,
+                String sql,
+                Expression<?>[] expressions,
+                Object ... values
+        );
 
         <T> Expression<T> sql(
                 Class<T> type,

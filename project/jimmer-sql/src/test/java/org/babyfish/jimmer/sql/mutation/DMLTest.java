@@ -16,7 +16,7 @@ public class DMLTest extends AbstractMutationTest {
     @Test
     public void testUpdate() {
         executeAndExpectRowCount(
-                getSqlClient().createUpdate(AuthorTable.class, (u, author) -> {
+                getLambdaClient().createUpdate(AuthorTable.class, (u, author) -> {
                     u.set(author.firstName(), author.firstName().concat("*"));
                     u.where(author.firstName().eq("Dan"));
                 }),
@@ -37,7 +37,7 @@ public class DMLTest extends AbstractMutationTest {
     @Test
     public void testUpdateWithNullArgument() {
         executeAndExpectRowCount(
-                getSqlClient().createUpdate(BookStoreTableEx.class, (u, store) -> {
+                getLambdaClient().createUpdate(BookStoreTableEx.class, (u, store) -> {
                     u.set(store.website(), Expression.nullValue(String.class));
                 }),
                 ctx -> {
@@ -56,7 +56,7 @@ public class DMLTest extends AbstractMutationTest {
 
         executeAndExpectRowCount(
                 NativeDatabases.MYSQL_DATA_SOURCE,
-                getSqlClient(
+                getLambdaClient(
                         it -> it.setDialect(new MySqlDialect())
                 ).createUpdate(AuthorTableEx.class, (u, author) -> {
                     u.set(author.firstName(), author.firstName().concat("*"));
@@ -90,7 +90,7 @@ public class DMLTest extends AbstractMutationTest {
 
         executeAndExpectRowCount(
                 NativeDatabases.POSTGRES_DATA_SOURCE,
-                getSqlClient(
+                getLambdaClient(
                         it -> it.setDialect(new PostgresDialect())
                 ).createUpdate(AuthorTableEx.class, (u, author) -> {
                     u.set(author.firstName(), author.firstName().concat("*"));
@@ -123,7 +123,7 @@ public class DMLTest extends AbstractMutationTest {
 
         executeAndExpectRowCount(
                 NativeDatabases.POSTGRES_DATA_SOURCE,
-                getSqlClient(
+                getLambdaClient(
                         it -> it.setDialect(new PostgresDialect())
                 ).createUpdate(AuthorTableEx.class, (u, author) -> {
                     u.set(author.firstName(), author.firstName().concat("*"));
@@ -147,7 +147,7 @@ public class DMLTest extends AbstractMutationTest {
     @Test
     public void testDelete() {
         executeAndExpectRowCount(
-                getSqlClient().createDelete(BookTable.class, (d, book) -> {
+                getLambdaClient().createDelete(BookTable.class, (d, book) -> {
                     d.where(book.name().eq("Learning GraphQL"));
                 }),
                 ctx -> {
@@ -163,7 +163,7 @@ public class DMLTest extends AbstractMutationTest {
     @Test
     public void testDeleteWithJoin() {
         executeAndExpectRowCount(
-                getSqlClient().createDelete(BookTableEx.class, (d, book) -> {
+                getLambdaClient().createDelete(BookTableEx.class, (d, book) -> {
                     d.where(book.store().name().eq("MANNING"));
                 }),
                 ctx -> {
@@ -196,7 +196,7 @@ public class DMLTest extends AbstractMutationTest {
 
         executeAndExpectRowCount(
                 NativeDatabases.MYSQL_DATA_SOURCE,
-                getSqlClient(
+                getLambdaClient(
                         it -> it.setDialect(new MySqlDialect())
                 ).createDelete(BookTable.class, (d, book) -> {
                     d.where(book.name().eq("Learning GraphQL"));

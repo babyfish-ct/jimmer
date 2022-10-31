@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.AssociationSaveCommand;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.util.Collection;

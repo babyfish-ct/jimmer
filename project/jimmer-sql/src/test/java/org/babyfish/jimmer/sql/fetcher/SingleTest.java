@@ -13,7 +13,7 @@ public class SingleTest extends AbstractQueryTest {
     @Test
     public void testManyToOne() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(book.name().eq("GraphQL in Action"));
                     q.orderBy(book.edition());
                     return q.select(
@@ -59,7 +59,7 @@ public class SingleTest extends AbstractQueryTest {
     @Test
     public void testOneToMany() {
         executeAndExpect(
-                getSqlClient().createQuery(BookStoreTable.class, (q, store) -> {
+                getLambdaClient().createQuery(BookStoreTable.class, (q, store) -> {
                     q.orderBy(store.name());
                     return q.select(
                             store.fetch(
@@ -99,7 +99,7 @@ public class SingleTest extends AbstractQueryTest {
     @Test
     public void testManyToMany() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(book.name().eq("Learning GraphQL"));
                     q.orderBy(book.edition());
                     return q.select(
@@ -152,7 +152,7 @@ public class SingleTest extends AbstractQueryTest {
     @Test
     public void testInverseManyToMany() {
         executeAndExpect(
-                getSqlClient().createQuery(AuthorTable.class, (q, author) -> {
+                getLambdaClient().createQuery(AuthorTable.class, (q, author) -> {
                     q.where(author.id().in(Arrays.asList(borisId, sammerId)));
                     q.orderBy(author.firstName());
                     return q.select(

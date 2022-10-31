@@ -8,42 +8,42 @@ interface ComparableExpressionImplementor<T extends Comparable<?>> extends Compa
 
     @Override
     default Predicate lt(Expression<T> other) {
-        return null;
+        return new ComparisonPredicate.Lt(this, other);
     }
 
     @Override
     default Predicate lt(T other) {
-        return null;
+        return new ComparisonPredicate.Lt(this, Expression.comparable().value(other));
     }
 
     @Override
     default Predicate le(Expression<T> other) {
-        return null;
+        return new ComparisonPredicate.Le(this, other);
     }
 
     @Override
     default Predicate le(T other) {
-        return null;
+        return new ComparisonPredicate.Le(this, Expression.comparable().value(other));
     }
 
     @Override
     default Predicate gt(Expression<T> other) {
-        return null;
+        return new ComparisonPredicate.Gt(this, other);
     }
 
     @Override
     default Predicate gt(T other) {
-        return null;
+        return new ComparisonPredicate.Gt(this, Expression.comparable().value(other));
     }
 
     @Override
     default Predicate ge(Expression<T> other) {
-        return null;
+        return new ComparisonPredicate.Ge(this, other);
     }
 
     @Override
     default Predicate ge(T other) {
-        return null;
+        return new ComparisonPredicate.Ge(this, Expression.comparable().value(other));
     }
 
     @Override

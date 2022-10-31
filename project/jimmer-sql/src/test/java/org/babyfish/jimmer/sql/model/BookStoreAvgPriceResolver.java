@@ -19,15 +19,15 @@ public class BookStoreAvgPriceResolver implements TransientResolver<UUID, BigDec
 
     @Override
     public Map<UUID, BigDecimal> resolve(Collection<UUID> ids, Connection con) {
+        BookTable book = BookTable.$;
         List<Tuple2<UUID, BigDecimal>> tuples =
-                sqlClient.createQuery(BookTable.class, (q, book) -> {
-                            q.where(book.store().id().in(ids));
-                            q.groupBy(book.store().id());
-                            return q.select(
-                                    book.store().id(),
-                                    book.price().avg().coalesce(BigDecimal.ZERO)
-                            );
-                        })
+                sqlClient.createQuery(book)
+                        .where(book.store().id().in(ids))
+                        .groupBy(book.store().id())
+                        .select(
+                                book.store().id(),
+                                book.price().avg().coalesce(BigDecimal.ZERO)
+                        )
                         .execute(con);
         return Tuple2.toMap(tuples);
     }

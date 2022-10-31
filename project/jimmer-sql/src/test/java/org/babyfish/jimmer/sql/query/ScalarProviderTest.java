@@ -11,7 +11,7 @@ public class ScalarProviderTest extends AbstractQueryTest {
     @Test
     public void test() {
         executeAndExpect(
-                getSqlClient().createQuery(AuthorTable.class, (q, author) -> {
+                getLambdaClient().createQuery(AuthorTable.class, (q, author) -> {
                     q.where(author.gender().eq(Gender.MALE));
                     return q.select(author);
                 }),

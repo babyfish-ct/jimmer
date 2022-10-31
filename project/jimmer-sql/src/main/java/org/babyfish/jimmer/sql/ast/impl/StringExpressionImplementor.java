@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.LikeMode;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.StringExpression;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -18,11 +19,13 @@ interface StringExpressionImplementor extends StringExpression, ComparableExpres
     }
 
     @Override
+    @Nullable
     default Predicate like(String pattern, LikeMode likeMode) {
         return LikePredicate.of(this, pattern, false, likeMode);
     }
 
     @Override
+    @Nullable
     default Predicate ilike(String pattern, LikeMode likeMode) {
         return LikePredicate.of(this, pattern, true, likeMode);
     }

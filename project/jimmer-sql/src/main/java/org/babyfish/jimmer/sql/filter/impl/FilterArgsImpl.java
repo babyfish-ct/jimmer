@@ -16,10 +16,7 @@ import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
-import org.babyfish.jimmer.sql.ast.table.AssociationTableEx;
-import org.babyfish.jimmer.sql.ast.table.Props;
-import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
+import org.babyfish.jimmer.sql.ast.table.*;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
@@ -63,52 +60,6 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     }
 
     @Override
-    public <T extends Table<?>, R> ConfigurableSubQuery<R> createSubQuery(
-            Class<T> tableType,
-            BiFunction<MutableSubQuery, T, ConfigurableSubQuery<R>> block
-    ) {
-        if (forCache) {
-            throw new IllegalStateException(SUB_QUERY_DISABLED_MESSAGE);
-        }
-        return sortable.createSubQuery(tableType, block);
-    }
-
-    @Override
-    public <T extends Table<?>> MutableSubQuery createWildSubQuery(
-            Class<T> tableType,
-            BiConsumer<MutableSubQuery, T> block
-    ) {
-        if (forCache) {
-            throw new IllegalStateException(SUB_QUERY_DISABLED_MESSAGE);
-        }
-        return sortable.createWildSubQuery(tableType, block);
-    }
-
-    @Override
-    public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R> ConfigurableSubQuery<R> createAssociationSubQuery(
-            Class<ST> sourceTableType,
-            Function<ST, TT> targetTableGetter,
-            BiFunction<MutableSubQuery, AssociationTableEx<SE, ST, TE, TT>, ConfigurableSubQuery<R>> block
-    ) {
-        if (forCache) {
-            throw new IllegalStateException(SUB_QUERY_DISABLED_MESSAGE);
-        }
-        return sortable.createAssociationSubQuery(sourceTableType, targetTableGetter, block);
-    }
-
-    @Override
-    public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R> MutableSubQuery createAssociationWildSubQuery(
-            Class<ST> sourceTableType,
-            Function<ST, TT> targetTableGetter,
-            BiConsumer<MutableSubQuery, AssociationTableEx<SE, ST, TE, TT>> block
-    ) {
-        if (forCache) {
-            throw new IllegalStateException(SUB_QUERY_DISABLED_MESSAGE);
-        }
-        return sortable.createAssociationWildSubQuery(sourceTableType, targetTableGetter, block);
-    }
-
-    @Override
     @OldChain
     public Sortable where(Predicate... predicates) {
         return sortable.where(predicates);
@@ -124,6 +75,17 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     @OldChain
     public Sortable orderBy(Order... orders) {
         return sortable.orderBy(orders);
+    }
+
+    @Override
+    public MutableSubQuery createSubQuery(TableProxy<?> table) {
+        return sortable.createSubQuery(table);
+    }
+
+    @Override
+    public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>>
+    MutableSubQuery createAssociationSubQuery(AssociationTable<SE, ST, TE, TT> table) {
+        return sortable.createAssociationSubQuery(table);
     }
 
     public AbstractMutableQueryImpl unwrap() {

@@ -13,6 +13,26 @@ public class SqlExpressions {
 
     private SqlExpressions() {}
 
+    public static <T, E extends Expression<T>> E of(
+            Class<T> type,
+            String sql,
+            Expression<?>[] expressions,
+            Object[] values
+    ) {
+        return of(type, sql, it -> {
+            if (expressions != null) {
+                for (Expression<?> expression : expressions) {
+                    it.expression(expression);
+                }
+            }
+            if (values != null) {
+                for (Object value : values) {
+                    it.value(value);
+                }
+            }
+        });
+    }
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static <T, E extends Expression<T>> E of(
             Class<T> type,

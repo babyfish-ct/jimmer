@@ -1,12 +1,9 @@
 package org.babyfish.jimmer.sql.query;
 
+import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
-import static org.babyfish.jimmer.sql.common.Constants.*;
-
-import org.babyfish.jimmer.sql.model.AuthorTableEx;
-import org.babyfish.jimmer.sql.model.BookTable;
-import org.babyfish.jimmer.sql.model.BookTableEx;
+import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -14,17 +11,20 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 
-public class AssociationQueryTest extends AbstractQueryTest {
+import static org.babyfish.jimmer.sql.common.Constants.*;
+
+public class FluentAssociationQueryTest extends AbstractQueryTest {
 
     @Test()
     public void test() {
 
+        AssociationTable<Book, BookTableEx, Author, AuthorTableEx> association =
+                AssociationTable.of(BookTableEx.class, BookTableEx::authors);
         executeAndExpect(
-                getLambdaClient().createAssociationQuery(BookTableEx.class, BookTableEx::authors, (q, t) -> {
-                    q.where(t.source().name().eq("Learning GraphQL"));
-                    q.where(t.target().firstName().eq("Alex"));
-                    return q.select(t);
-                }),
+                getSqlClient().createAssociationQuery(association)
+                        .where(association.source().name().eq("Learning GraphQL"))
+                        .where(association.target().firstName().eq("Alex"))
+                        .select(association),
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.BOOK_ID, tb_1_.AUTHOR_ID " +

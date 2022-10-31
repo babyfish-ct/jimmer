@@ -8,13 +8,13 @@ import org.jetbrains.annotations.NotNull;
 
 class LikePredicate extends AbstractPredicate {
 
-    private StringExpression expression;
+    private final StringExpression expression;
 
-    private String pattern;
+    private final String pattern;
 
-    private boolean insensitive;
+    private final boolean insensitive;
 
-    private boolean negative;
+    private final boolean negative;
 
     public static LikePredicate of(
             StringExpression expression,
@@ -22,6 +22,9 @@ class LikePredicate extends AbstractPredicate {
             boolean insensitive,
             LikeMode likeMode
     ) {
+        if (pattern == null) {
+            pattern = "";
+        }
         if (!likeMode.isStartExact() && !pattern.startsWith("%")) {
             pattern = '%' + pattern;
         }
@@ -68,14 +71,18 @@ class LikePredicate extends AbstractPredicate {
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        if (insensitive) {
-            builder.sql("lower(");
-            renderChild((Ast) expression, builder);
-            builder.sql(")");
+        if (pattern.equals("%")) {
+            builder.sql("1 = 1");
         } else {
-            renderChild((Ast) expression, builder);
+            if (insensitive) {
+                builder.sql("lower(");
+                renderChild((Ast) expression, builder);
+                builder.sql(")");
+            } else {
+                renderChild((Ast) expression, builder);
+            }
+            builder.sql(negative ? " not like " : " like ");
+            builder.variable(pattern);
         }
-        builder.sql(negative ? " not like " : " like ");
-        builder.variable(pattern);
     }
 }

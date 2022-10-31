@@ -14,7 +14,7 @@ public class TransientResolverTest extends AbstractQueryTest {
     @Test
     public void test() {
         executeAndExpect(
-                getSqlClient().createQuery(BookStoreTable.class, (q, store) -> {
+                getLambdaClient().createQuery(BookStoreTable.class, (q, store) -> {
                     return q.select(
                             store.fetch(
                                     BookStoreFetcher.$

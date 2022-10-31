@@ -21,15 +21,15 @@ public class RolePermissionCountResolver implements TransientResolver<Long, Inte
 
     @Override
     public Map<Long, Integer> resolve(Collection<Long> roleIds, Connection con) {
+        PermissionTable permission = PermissionTable.$;
         List<Tuple2<Long, Long>> tuples = sqlClient
-                .createQuery(PermissionTable.class, (q, permission) -> {
-                    q.where(permission.role().id().in(roleIds));
-                    q.groupBy(permission.role().id());
-                    return q.select(
+                .createQuery(permission)
+                .where(permission.role().id().in(roleIds))
+                .groupBy(permission.role().id())
+                .select(
                             permission.role().id(),
                             permission.count()
-                    );
-                })
+                )
                 .execute(con);
         return Tuple2.toMap(tuples, Long::intValue);
     }

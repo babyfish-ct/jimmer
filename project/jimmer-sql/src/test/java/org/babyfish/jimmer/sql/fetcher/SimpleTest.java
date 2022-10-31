@@ -12,7 +12,7 @@ public class SimpleTest extends AbstractQueryTest {
     @Test
     public void testFetchScalar() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     return q.select(
                             book.fetch(
                                     BookFetcher.$.name()
@@ -37,7 +37,7 @@ public class SimpleTest extends AbstractQueryTest {
     @Test
     public void testFetchManyToOne() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.orderBy(book.name()).orderBy(book.edition());
                     return q.select(
                             book.fetch(
@@ -78,7 +78,7 @@ public class SimpleTest extends AbstractQueryTest {
     @Test
     public void fetchOneToMany() {
         executeAndExpect(
-                getSqlClient().createQuery(BookStoreTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookStoreTable.class, (q, book) -> {
                     return q.select(
                             book.fetch(
                                     BookStoreFetcher.$
@@ -116,7 +116,7 @@ public class SimpleTest extends AbstractQueryTest {
     @Test
     public void testLoadManyToManyWithOnlyId() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     return q.select(
                             book.fetch(
                                     BookFetcher.$
@@ -147,7 +147,7 @@ public class SimpleTest extends AbstractQueryTest {
     @Test
     public void testLoadManyToMany() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     return q.select(
                             book.fetch(
                                     BookFetcher.$
@@ -192,7 +192,7 @@ public class SimpleTest extends AbstractQueryTest {
     @Test
     public void testLoadInverseManyToManyWithOnlyId() {
         executeAndExpect(
-                getSqlClient().createQuery(AuthorTable.class, (q, author) -> {
+                getLambdaClient().createQuery(AuthorTable.class, (q, author) -> {
                     return q.select(
                             author.fetch(
                                     AuthorFetcher.$
@@ -224,7 +224,7 @@ public class SimpleTest extends AbstractQueryTest {
     @Test
     public void testLoadInverseManyToMany() {
         executeAndExpect(
-                getSqlClient().createQuery(AuthorTable.class, (q, author) -> {
+                getLambdaClient().createQuery(AuthorTable.class, (q, author) -> {
                     return q.select(
                             author.fetch(
                                     AuthorFetcher.$

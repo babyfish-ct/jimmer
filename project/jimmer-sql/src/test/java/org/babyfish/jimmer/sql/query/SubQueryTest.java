@@ -1,10 +1,12 @@
 package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
-import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.AuthorTableEx;
+import org.babyfish.jimmer.sql.model.BookStoreTable;
+import org.babyfish.jimmer.sql.model.BookTable;
+import org.babyfish.jimmer.sql.model.BookTableEx;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -15,10 +17,10 @@ public class SubQueryTest extends AbstractQueryTest {
     @Test
     public void testColumnInSubQuery() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(
                             book.id().in(
-                                    q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
+                                    getLambdaClient().createSubQuery(q, AuthorTableEx.class, (sq, author) -> {
                                         sq.where(author.firstName().eq("Alex"));
                                         return sq.select(author.books().id());
                                     })
@@ -45,10 +47,10 @@ public class SubQueryTest extends AbstractQueryTest {
     @Test
     public void testTwoColumnsInSubQuery() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(
                         Expression.tuple(book.name(), book.price()).in(
-                                q.createSubQuery(BookTableEx.class, (sq, book2) ->
+                                getLambdaClient().createSubQuery(q, BookTableEx.class, (sq, book2) ->
                                         sq
                                                 .groupBy(book2.name())
                                                 .select(
@@ -77,9 +79,9 @@ public class SubQueryTest extends AbstractQueryTest {
     @Test
     public void testExists() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                         q.where(
-                                q.createWildSubQuery(AuthorTableEx.class, (sq, author) -> {
+                                getLambdaClient().createWildSubQuery(q, AuthorTableEx.class, (sq, author) -> {
                                     sq.where(
                                             book.eq(author.books()),
                                             author.firstName().eq("Alex")
@@ -107,9 +109,9 @@ public class SubQueryTest extends AbstractQueryTest {
     @Test
     public void testExistsWithTypedQuery() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(
-                            q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
+                            getLambdaClient().createSubQuery(q, AuthorTableEx.class, (sq, author) -> {
                                 sq.where(
                                         book.eq(author.books()),
                                         author.firstName().eq("Alex")
@@ -138,10 +140,10 @@ public class SubQueryTest extends AbstractQueryTest {
     @Test
     public void testSubQueryAsSimpleExpression() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(
                             book.price().gt(
-                                    q.createSubQuery(BookTableEx.class, (sq, book2) -> {
+                                    getLambdaClient().createSubQuery(q, BookTableEx.class, (sq, book2) -> {
                                         return sq.select(book2.price().avg().coalesce(BigDecimal.ZERO));
                                     })
                             )
@@ -163,9 +165,9 @@ public class SubQueryTest extends AbstractQueryTest {
     @Test
     public void testSubQueryAsSelectionOrderByClause() {
         executeAndExpect(
-                getSqlClient().createQuery(BookStoreTable.class, (q, store) -> {
+                getLambdaClient().createQuery(BookStoreTable.class, (q, store) -> {
                     TypedSubQuery<BigDecimal> subQuery =
-                            q.createSubQuery(BookTableEx.class, (sq, book) -> {
+                            getLambdaClient().createSubQuery(q, BookTableEx.class, (sq, book) -> {
                                 sq.where(store.eq(book.store()));
                                 return sq.select(
                                         book.price().avg().coalesce(BigDecimal.ZERO)
@@ -201,10 +203,10 @@ public class SubQueryTest extends AbstractQueryTest {
     @Test
     public void testSubQueryWithAny() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(
                             book.id().eq(
-                                    q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
+                                    getLambdaClient().createSubQuery(q, AuthorTableEx.class, (sq, author) -> {
                                         sq.where(author.firstName().in(Arrays.asList("Alex", "Bill")));
                                         return sq.select(author.books().id());
                                     }).any()
@@ -231,10 +233,10 @@ public class SubQueryTest extends AbstractQueryTest {
     @Test
     public void testSubQueryWithAll() {
         executeAndExpect(
-                getSqlClient().createQuery(BookTable.class, (q, book) -> {
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
                     q.where(
                             book.id().eq(
-                                    q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
+                                    getLambdaClient().createSubQuery(q, AuthorTableEx.class, (sq, author) -> {
                                         sq.where(author.firstName().in(Arrays.asList("Alex", "Bill")));
                                         return sq.select(author.books().id());
                                     }).all()

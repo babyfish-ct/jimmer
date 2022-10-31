@@ -25,13 +25,13 @@ import java.util.function.Function;
 
 public class ParameterizedCacheTest extends AbstractQueryTest {
 
-    private JSqlClient sqlClient;
+    private LambdaClient lambdaClient;
 
-    private JSqlClient sqlClientForDeletedData;
+    private LambdaClient lambdaClientForDeletedData;
 
     @BeforeEach
     public void initialize() {
-        sqlClient = getSqlClient(it -> {
+        JSqlClient sqlClient = getSqlClient(it -> {
             it.addFilters(new UndeletedFilter());
             it.addDisabledFilters(new DeletedFilter());
             it.setEntityManager(
@@ -81,11 +81,13 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                     }
             );
         });
-        sqlClientForDeletedData = sqlClient
+        JSqlClient sqlClientForDeletedData = sqlClient
                 .filters(it -> {
                     it.disableByTypes(UndeletedFilter.class);
                     it.enableByTypes(DeletedFilter.class);
                 });
+        lambdaClient = new LambdaClient(sqlClient);
+        lambdaClientForDeletedData = new LambdaClient(sqlClientForDeletedData);
     }
 
     @Test
@@ -93,7 +95,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             executeAndExpect(
-                    sqlClient.createQuery(RoleTable.class, (q, role) -> {
+                    lambdaClient.createQuery(RoleTable.class, (q, role) -> {
                         return q.select(
                                 role.fetch(
                                         RoleFetcher.$
@@ -147,7 +149,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                     }
             );
             executeAndExpect(
-                    sqlClientForDeletedData.createQuery(RoleTable.class, (q, role) -> {
+                    lambdaClientForDeletedData.createQuery(RoleTable.class, (q, role) -> {
                         return q.select(
                                 role.fetch(
                                         RoleFetcher.$
@@ -208,7 +210,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             executeAndExpect(
-                    sqlClient.createQuery(PermissionTable.class, (q, permission) -> {
+                    lambdaClient.createQuery(PermissionTable.class, (q, permission) -> {
                         return q.select(
                                 permission.fetch(
                                         PermissionFetcher.$
@@ -269,7 +271,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                     }
             );
             executeAndExpect(
-                    sqlClientForDeletedData.createQuery(PermissionTable.class, (q, permission) -> {
+                    lambdaClientForDeletedData.createQuery(PermissionTable.class, (q, permission) -> {
                         return q.select(
                                 permission.fetch(
                                         PermissionFetcher.$
@@ -337,7 +339,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             executeAndExpect(
-                    sqlClient.createQuery(AdministratorTable.class, (q, administrator) -> {
+                    lambdaClient.createQuery(AdministratorTable.class, (q, administrator) -> {
                         return q.select(
                                 administrator.fetch(
                                         AdministratorFetcher.$
@@ -406,7 +408,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                     }
             );
             executeAndExpect(
-                    sqlClientForDeletedData.createQuery(AdministratorTable.class, (q, administrator) -> {
+                    lambdaClientForDeletedData.createQuery(AdministratorTable.class, (q, administrator) -> {
                         return q.select(
                                 administrator.fetch(
                                         AdministratorFetcher.$
@@ -482,7 +484,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             executeAndExpect(
-                    sqlClient.createQuery(RoleTable.class, (q, role) -> {
+                    lambdaClient.createQuery(RoleTable.class, (q, role) -> {
                         return q.select(
                                 role.fetch(
                                         RoleFetcher.$
@@ -542,7 +544,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                     }
             );
             executeAndExpect(
-                    sqlClientForDeletedData.createQuery(RoleTable.class, (q, role) -> {
+                    lambdaClientForDeletedData.createQuery(RoleTable.class, (q, role) -> {
                         return q.select(
                                 role.fetch(
                                         RoleFetcher.$

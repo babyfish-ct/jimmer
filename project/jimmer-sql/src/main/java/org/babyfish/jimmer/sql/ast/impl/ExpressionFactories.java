@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
-import org.babyfish.jimmer.sql.ast.ComparableExpression;
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.NumericExpression;
-import org.babyfish.jimmer.sql.ast.StringExpression;
+import org.babyfish.jimmer.sql.ast.*;
 
 import java.util.function.Consumer;
 
@@ -43,7 +40,17 @@ public class ExpressionFactories {
 
         @Override
         public StringExpression sql(String sql) {
-            return sql(sql, null);
+            return SqlExpressions.of(String.class, sql, null);
+        }
+
+        @Override
+        public StringExpression sql(String sql, Expression<?> expression, Object ... values) {
+            return SqlExpressions.of(String.class, sql, new Expression[] { expression }, values);
+        }
+
+        @Override
+        public StringExpression sql(String sql, Expression<?>[] expressions, Object ... values) {
+            return SqlExpressions.of(String.class, sql, expressions, values);
         }
 
         @Override
@@ -78,7 +85,17 @@ public class ExpressionFactories {
 
         @Override
         public <N extends Number> NumericExpression<N> sql(Class<N> type, String sql) {
-            return sql(type, sql);
+            return SqlExpressions.of(type, sql, null);
+        }
+
+        @Override
+        public <N extends Number> NumericExpression<N> sql(Class<N> type, String sql, Expression<?> expression, Object ... values) {
+            return SqlExpressions.of(type, sql, new Expression[] { expression }, values);
+        }
+
+        @Override
+        public <N extends Number> NumericExpression<N> sql(Class<N> type, String sql, Expression<?>[] expressions, Object ... values) {
+            return SqlExpressions.of(type, sql, expressions, values);
         }
 
         @Override
@@ -113,7 +130,17 @@ public class ExpressionFactories {
 
         @Override
         public <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql) {
-            return sql(type, sql, null);
+            return SqlExpressions.of(type, sql, null);
+        }
+
+        @Override
+        public <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql, Expression<?> expression, Object ... values) {
+            return SqlExpressions.of(type, sql, new Expression[] { expression }, values);
+        }
+
+        @Override
+        public <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql, Expression<?>[] expressions, Object ... values) {
+            return SqlExpressions.of(type, sql, expressions, values);
         }
 
         @Override
@@ -153,7 +180,17 @@ public class ExpressionFactories {
 
         @Override
         public <T> Expression<T> sql(Class<T> type, String sql) {
-            return sql(type, sql, null);
+            return SqlExpressions.of(type, sql, null);
+        }
+
+        @Override
+        public <T> Expression<T> sql(Class<T> type, String sql, Expression<?> expression, Object ... values) {
+            return SqlExpressions.of(type, sql, new Expression[]{expression}, values);
+        }
+
+        @Override
+        public <T> Expression<T> sql(Class<T> type, String sql, Expression<?>[] expressions, Object ... values) {
+            return SqlExpressions.of(type, sql, expressions, values);
         }
 
         @Override

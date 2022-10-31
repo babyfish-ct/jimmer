@@ -5,17 +5,16 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.*;
-import org.babyfish.jimmer.sql.ast.table.AssociationTableEx;
+import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.fetcher.FieldFilterArgs;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class FieldFilterArgsImpl<T extends Table<?>> implements FieldFilterArgs<T> {
 
@@ -77,6 +76,18 @@ public class FieldFilterArgsImpl<T extends Table<?>> implements FieldFilterArgs<
 
     @Override
     @OldChain
+    public Sortable whereIf(boolean condition, Predicate predicates) {
+        return query.whereIf(condition, predicates);
+    }
+
+    @Override
+    @OldChain
+    public Sortable whereIf(boolean condition, Supplier<Predicate> block) {
+        return query.whereIf(condition, block);
+    }
+
+    @Override
+    @OldChain
     public Sortable orderBy(Expression<?> ... expressions) {
         return query.orderBy(expressions);
     }
@@ -88,38 +99,16 @@ public class FieldFilterArgsImpl<T extends Table<?>> implements FieldFilterArgs<
     }
 
     @Override
-    public <X extends Table<?>, R> ConfigurableSubQuery<R> createSubQuery(
-            Class<X> tableType,
-            BiFunction<MutableSubQuery, X, ConfigurableSubQuery<R>> block
-    ) {
-        return query.createSubQuery(tableType, block);
+    public MutableSubQuery createSubQuery(TableProxy<?> table) {
+        return query.createSubQuery(table);
     }
 
     @Override
-    public <X extends Table<?>> MutableSubQuery createWildSubQuery(
-            Class<X> tableType,
-            BiConsumer<MutableSubQuery, X> block
+    public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>>
+    MutableSubQuery createAssociationSubQuery(
+            AssociationTable<SE, ST, TE, TT> table
     ) {
-        return query.createWildSubQuery(tableType, block);
-    }
-
-    @Override
-    public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R> ConfigurableSubQuery<R>
-    createAssociationSubQuery(
-            Class<ST> sourceTableType,
-            Function<ST, TT> targetTableGetter,
-            BiFunction<MutableSubQuery, AssociationTableEx<SE, ST, TE, TT>, ConfigurableSubQuery<R>> block
-    ) {
-        return query.createAssociationSubQuery(sourceTableType, targetTableGetter, block);
-    }
-
-    @Override
-    public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>, R> MutableSubQuery createAssociationWildSubQuery(
-            Class<ST> sourceTableType,
-            Function<ST, TT> targetTableGetter,
-            BiConsumer<MutableSubQuery, AssociationTableEx<SE, ST, TE, TT>> block
-    ) {
-        return query.createAssociationWildSubQuery(sourceTableType, targetTableGetter, block);
+        return query.createAssociationSubQuery(table);
     }
 
     public AbstractMutableQueryImpl unwrap() {
