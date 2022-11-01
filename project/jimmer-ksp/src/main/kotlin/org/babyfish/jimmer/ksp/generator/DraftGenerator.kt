@@ -65,12 +65,12 @@ class DraftGenerator(
             TypeSpec
                 .interfaceBuilder("${type.simpleName}${DRAFT}")
                 .addAnnotation(DSL_SCOPE_CLASS_NAME)
+                .addSuperinterface(type.className)
                 .apply {
                     type.superType?.let {
                         addSuperinterface(it.draftClassName)
                     } ?: addSuperinterface(DRAFT_CLASS_NAME)
                 }
-                .addSuperinterface(type.className)
                 .apply {
                     for (prop in type.declaredProperties.values) {
                         addProp(prop)
