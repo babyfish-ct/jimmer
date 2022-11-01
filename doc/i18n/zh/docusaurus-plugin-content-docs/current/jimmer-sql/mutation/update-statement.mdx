@@ -11,36 +11,18 @@ import TabItem from '@theme/TabItem';
 Update语句用法如下
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-AuthorTable author = new AuthorTable();
+AuthorTable author = AuthorTable.$;
 
-int affectedRowCount = fluent
-    .update(author)
+int affectedRowCount = sqlClient
+    .createUpdate(author)
     .set(
         author.firstName(),
         author.firstName().concat("*")
     )
     .where(author.firstName().eq("Dan"))
-    .execute();
-System.out.println("Affected row count: " + affectedRowCount);
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-int affectedRowCount = sqlClient
-    .createUpdate(AuthorTable.class, (u, author) -> {
-        u
-            .set(
-                author.firstName(), 
-                author.firstName().concat("*")
-            )
-            .where(author.firstName().eq("Dan"));
-    })
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```
@@ -77,14 +59,13 @@ where tb_1_.FIRST_NAME = ?
 默认情况下，update语句不支持join，这会导致异常
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-AuthorTableEx author = new AuthorTableEx();
+AuthorTableEx author = AuthorTableEx.$;
 
-int affectedRowCount = fluent
-    .update(author)
+int affectedRowCount = sqlClient
+    .createUpdate(author)
     .set(
         author.firstName(),
         author.firstName().concat("*")
@@ -96,29 +77,6 @@ int affectedRowCount = fluent
             .name()
             .eq("Learning GraphQL")
     )
-    .execute();
-System.out.println("Affected row count: " + affectedRowCount);
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-int affectedRowCount = sqlClient
-    .createUpdate(AuthorTableEx.class, (u, author) -> {
-        u
-            .set(
-                author.firstName(),
-                author.firstName().concat("*")
-            )
-            .where(
-                author
-                    // highlight-next-line
-                    .books()
-                    .name()
-                    .eq("Learning GraphQL")
-            );
-    })
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```
@@ -187,14 +145,13 @@ val sqlClient = newKSqlClient {
 然后，就可以在update中使用JOIN了
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-AuthorTableEx author = new AuthorTableEx();
+AuthorTableEx author = AuthorTableEx.$;
 
-int affectedRowCount = fluent
-    .update(author)
+int affectedRowCount = sqlClient
+    .createUpdate(author)
     .set(
         author.firstName(),
         author.firstName().concat("*")
@@ -210,33 +167,6 @@ int affectedRowCount = fluent
     .where(
         author.books().store().name().eq("MANNING")
     )
-    .execute();
-System.out.println("Affected row count: " + affectedRowCount);
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-int affectedRowCount = sqlClient
-    .createUpdate(AuthorTableEx.class, (u, author) -> {
-        u
-            .set(
-                author.firstName(), 
-                author.firstName().concat("*")
-            )
-            .set(
-                author.books().name(), 
-                author.books().name().concat("*")
-            )
-            .set(
-                author.books().store().name(), 
-                author.books().store().name().concat("*")
-            )
-            .where(
-                author.books().store().name().eq("MANNING")
-            );
-    })
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```
@@ -321,14 +251,13 @@ val sqlClient = newKSqlClient {
 然后，就可以在update中使用JOIN了
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-AuthorTableEx author = new AuthorTableEx();
+AuthorTableEx author = AuthorTableEx.$;
 
-int affectedRowCount = fluent
-    .update(author)
+int affectedRowCount = sqlClient
+    .createUpdate(author)
     .set(
         author.firstName(),
         author.firstName().concat("*")
@@ -336,25 +265,6 @@ int affectedRowCount = fluent
     .where(
         author.books().store().name().eq("MANNING")
     )
-    .execute();
-System.out.println("Affected row count: " + affectedRowCount);
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-int affectedRowCount = sqlClient
-    .createUpdate(AuthorTableEx.class, (u, author) -> {
-        u
-            .set(
-                author.firstName(),
-                author.firstName().concat("*")
-            )
-            .where(
-                author.books().store().name().eq("MANNING")
-            );
-    })
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```

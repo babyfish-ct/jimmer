@@ -11,36 +11,11 @@ import TabItem from '@theme/TabItem';
 先来看个例子 *（这个查询没有实际业务意义，仅为演示）*
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<
-    Tuple5<
-        String,
-        Long,
-        OffsetDateTime,
-        String,
-        Boolean
-    >
-> tuples = fluent
-    .query(book)
-    .select(
-        Expression.string().value("String"),
-        Expression.numeric().value(3L),
-        Expression.comparable().value(OffsetDateTime.now()),
-        Expression.any().value("String"),
-        Expression.nullValue(Boolean.class)
-    )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
 List<
     Tuple5<
         String,
@@ -50,15 +25,14 @@ List<
         Boolean
     >
 > tuples = sqlClient
-    .createQuery(BookTable.class, (q, store) -> {
-        return q.select(
-            Expression.string().value("String"),
-            Expression.numeric().value(3L),
-            Expression.comparable().value(OffsetDateTime.now()),
-            Expression.any().value("String"),
-            Expression.nullValue(Boolean.class)
-        );
-    })
+    .createQuery(book)
+    .select(
+        Expression.string().value("String"),
+        Expression.numeric().value(3L),
+        Expression.comparable().value(OffsetDateTime.now()),
+        Expression.any().value("String"),
+        Expression.nullValue(Boolean.class)
+    )
     .execute();
 ```
 
@@ -162,32 +136,18 @@ where(table.name eq "Java in Action")
 常量表达式和字面量表达式高度类似，先看例子 *（这个查询没有实际业务意义，仅为演示）*
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Integer> constants = fluent
-    .query(book)
+List<Integer> constants = sqlClient
+    .createQuery(book)
     .select(
         // highlight-next-line
         Expression.constant(1)
     )
     .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Integer> constants = sqlClient
-    .createQuery(BookTable.class, (q, store) -> {
-        return q.select(
-            // highlight-next-line
-            Expression.constant(1)
-        );
-    }).execute();
 ```
 
 </TabItem>
@@ -950,11 +910,10 @@ jimmer-sql尽量避免在SQL中直接使用not，但无论如何，最终SQL逻�
 ## 聚合函数
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
 List<
     Tuple6<
@@ -965,8 +924,8 @@ List<
         BigDecimal,
         BigDecimal
     >
-> tuples = fluent
-    .query(book)
+> tuples = sqlClient
+    .createQuery(book)
     .select(
         book.count(),
         book.id().count(/* disintct */ true),
@@ -975,33 +934,6 @@ List<
         book.price().max(),
         book.price().avg()
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<
-    Tuple6<
-        Long, 
-        Long, 
-        BigDecimal, 
-        BigDecimal, 
-        BigDecimal, 
-        BigDecimal
-    >
-> tuples = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q.select(
-                book.count(),
-                book.id().count(/* disintct */ true),
-                book.price().sum(),
-                book.price().min(),
-                book.price().max(),
-                book.price().avg()
-        );
-    })
     .execute();
 ```
 
@@ -1044,14 +976,13 @@ from BOOK as tb_1_
 Coalesce语句指定一系列表达式，返回第一个非null值。
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookStoreTable store = new BookStoreTable();
+BookStoreTable store = BookStoreTable.$;
 
-List<String> results = fluent
-    .query(store)
+List<String> results = sqlClient
+    .createQuery(store)
     .select(
         store.website() // 1
             // highlight-next-line
@@ -1061,23 +992,6 @@ List<String> results = fluent
             .build()
     )
     .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<String> results = sqlClient
-    .createQuery(BookStoreTable.class, (q, store) -> {
-        return q.select(
-            store.website() // 1
-                // highlight-next-line
-                .coalesceBuilder()
-                .or(store.name()) // 2
-                .or("Default Value") // 3
-                .build()
-        );
-    }).execute();
 ```
 
 </TabItem>
@@ -1143,32 +1057,17 @@ from BOOK_STORE as tb_1_
 特别地，如果SQL的coalesce函数只有两个参数，即上述Java代码中`or()`方法只会被调用一次时，有一个快捷写法：
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookStoreTable store = new BookStoreTable();
+BookStoreTable store = BookStoreTable.$;
 
-List<String> results = fluent
-    .query(store)
+List<String> results = sqlClient
+    .createQuery(store)
     .select(
         // highlight-next-line
         store.website().coalesce(store.name())
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<String> results = sqlClient
-    .createQuery(BookStoreTable.class, (q, store) -> {
-        return q.select(
-            // highlight-next-line
-            store.website().coalesce(store.name())
-        );
-    })
     .execute();
 ```
 
@@ -1207,14 +1106,13 @@ Contact表达式用于字符串拼接。
 这个例子以空格作为连接符，把作者的firstName和lastName拼起来
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-AuthorTable author = new AuthorTable();
+AuthorTable author = AuthorTable.$;
 
-List<String> results = fluent
-    .query(author)
+List<String> results = sqlClient
+    .createQuery(author)
     .select(
         author
             .firstName()
@@ -1225,24 +1123,6 @@ List<String> results = fluent
             )
     )
     .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<String> fullNames = sqlClient
-    .createQuery(AuthorTable.class, (q, author) -> {
-        return q.select(
-            author
-                .firstName()
-                // highlight-next-line
-                .concat(
-                        Expression.string().value(" "),
-                        author.lastName()
-                )
-        );
-    }).execute();
 ```
 
 </TabItem>
@@ -1288,14 +1168,13 @@ case表达式分为两种，简单的case和普通的case
 简单的case语句，需要在语句开头处指定一个表达式，后续每一个判断分支指定一个期望值，检查指定的表达式是否和某个期望值匹配。
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<String> results = fluent
-    .query(book)
+List<String> results = sqlClient
+    .createQuery(book)
     .select(
         Expression.string()
             // highlight-next-line
@@ -1304,24 +1183,6 @@ List<String> results = fluent
             .when("SQL in Action", "Matched")
             .otherwise("Not matched")
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<String> results = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q.select(
-            Expression.string()
-                // highlight-next-line
-                .caseBuilder(book.name())
-                .when("Java in Action", "Matched")
-                .when("SQL in Action", "Matched")
-                .otherwise("Not matched")
-        );
-    })
     .execute();
 ```
 
@@ -1363,14 +1224,13 @@ from BOOK as tb_1_
 普通的case语句，语句开头处不需要指定任何参数，但后续每一个判断分支都可以指定一个任意复杂度的逻辑判断表达式，检查是否有分支的逻辑判断成立。
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<String> results = fluent
-    .query(book)
+List<String> results = sqlClient
+    .createQuery(book)
     .select(
         Expression.string()
             // highlight-next-line
@@ -1385,30 +1245,6 @@ List<String> results = fluent
             )
             .otherwise("Appropriate")
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<String> results = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q.select(
-            Expression.string()
-                // highlight-next-line
-                .caseBuilder()
-                .when(
-                    book.price().lt(new BigDecimal(30)),
-                    "Cheap"
-                )
-                .when(
-                    book.price().gt(new BigDecimal(70)),
-                    "Expensive"
-                )
-                .otherwise("Appropriate")
-        );
-    })
     .execute();
 ```
 
@@ -1451,14 +1287,13 @@ NativeSQL表达式是一个重要的功能，数据库产品总会有特有的�
 这个例子，演示如何使用Oracle和HSQLDB的正则表达式匹配。
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-AuthorTable author = new AuthorTable();
+AuthorTable author = AuthorTable.$;
 
-List<Author> authors = fluent
-    .query(author)
+List<Author> authors = sqlClient
+    .createQuery(author)
     .where(
         Predicate.sql(
             "regexp_like(%e, %v)",
@@ -1468,25 +1303,6 @@ List<Author> authors = fluent
         )
     )
     .select(author)
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Author> authors = sqlClient.
-    .createQuery(AuthorTable.class, (q, author) -> {
-        q.where(
-            // highlight-next-line
-            Predicate.sql(
-                "regexp_like(%e, %v)",
-                it -> it
-                        .expression(author.firstName())
-                        .value("^Ste(v|ph)en$")
-            )
-        );
-    })
     .execute();
 ```
 

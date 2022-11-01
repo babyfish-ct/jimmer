@@ -15,41 +15,18 @@ import TabItem from '@theme/TabItem';
 jimmer-sql对分页查询进行了特别设计，开发者只需要编写data-query，jimmer-sql会自动创建count-query。
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-ConfigurableRootQuery<Book> query = fluent
-    .query(book)
+ConfigurableRootQuery<Book> query = sqlClient
+    .createQuery(book)
     ... 省略其它逻辑: ...
     ... 1. 任意复杂的动态条件 ...
     ... 2. 任意复杂的动态牌型 ...
     ... 3. 任意复杂的子查询 ...
     .select(book);
-
-// highlight-next-line
-int rowCount = query.count();
-
-List<Book> books = query
-    // highlight-next-line
-    .limit(rowCount / 3, rowCount / 3)
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-ConfigurableTypedRootQuery<BookTable, Book> query = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        ... 省略其它逻辑: ...
-        ... 1. 任意复杂的动态条件 ...
-        ... 2. 任意复杂的动态牌型 ...
-        ... 3. 任意复杂的子查询 ...
-        return q.select(book);
-    });
 
 // highlight-next-line
 int rowCount = query.count();
@@ -213,15 +190,14 @@ reselect的使用限制
 ### 无法优化的场景示范
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
-AuthorTableEx author = new AuthorTableEx();
+BookTable book = BookTable.$;
+AuthorTableEx author = AuthorTableEx.$;
 
-ConfigurableRootQuery<BookTable, Book> query = fluent
-    .query(book)
+ConfigurableRootQuery<BookTable, Book> query = sqlClient
+    .createQuery(book)
     .where(
         book.price().between(
             new BigDecimal(20),
@@ -232,28 +208,6 @@ ConfigurableRootQuery<BookTable, Book> query = fluent
     .orderBy(book.store().name())
     .orderBy(book.name())
     .select(book);
-
-int rowCount = query.count();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-ConfigurableTypedRootQuery<BookTable, Book> query = 
-    sqlClient.createQuery(BookTable.class, (q, book) -> {
-        q.where(
-            book.price().between(
-                new BigDecimal(20),
-                new BigDecimal(30)
-            )
-        );
-        q
-            // highlight-next-line
-            .orderBy(book.store().name()) // α
-            .orderBy(book.name());
-        return q.select(book);
-    });
 
 int rowCount = query.count();
 ```
@@ -310,15 +264,14 @@ where tb_1_.PRICE between ? and ?
 在这里，我们选用第二种方案，左外连接
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
-AuthorTableEx author = new AuthorTableEx();
+BookTable book = BookTable.$;
+AuthorTableEx author = AuthorTableEx.$;
 
-ConfigurableRootQuery<BookTable, Book> query = fluent
-    .query(book)
+ConfigurableRootQuery<BookTable, Book> query = sqlClient
+    .createQuery(book)
     .where(
         book.price().between(
             new BigDecimal(20),
@@ -329,28 +282,6 @@ ConfigurableRootQuery<BookTable, Book> query = fluent
     .orderBy(book.store(JoinType.LEFT).name())
     .orderBy(book.name())
     .select(book);
-
-int rowCount = query.count();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-ConfigurableTypedRootQuery<BookTable, Book> query = 
-    sqlClient.createQuery(BookTable.class, (q, book) -> {
-        q.where(
-            book.price().between(
-                new BigDecimal(20),
-                new BigDecimal(30)
-            )
-        );
-        q
-            // highlight-next-line
-            .orderBy(book.store(JoinType.LEFT).name())
-            .orderBy(book.name());
-        return q.select(book);
-    });
 
 int rowCount = query.count();
 ```

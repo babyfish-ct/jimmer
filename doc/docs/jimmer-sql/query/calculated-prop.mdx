@@ -44,7 +44,7 @@ interface BookStore {
 Here, `BookStoreAvgPriceResolver` is a user-defined class that calculates the average price of all books in the bookstore.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java title="BookStoreAvgPriceResolver.java"
 public class BookStoreAvgPriceResolver
@@ -61,11 +61,10 @@ public class BookStoreAvgPriceResolver
         Collection<Long> ids,
         Connection con
     ) {
-        Fluent fluent = sqlClient.createFluent();
-        BookTable book = new BookTable();
+        BookTable book = BookTable.$;
         
-        List<Tuple2<Long, BigDecimal>> tuples = fluent
-            .query(book)
+        List<Tuple2<Long, BigDecimal>> tuples = sqlClient
+            .createQuery(book)
             .where(book.store().id().in(ids))
             .groupBy(book.store().id())
             .select(
@@ -73,39 +72,6 @@ public class BookStoreAvgPriceResolver
                 book.price().avg()
             )
             .execute(con); // Important to specify connection
-        return Tuple2.toMap(tuples);
-    }
-}
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java title="BookStoreAvgPriceResolver.java"
-public class BookStoreAvgPriceResolver 
-implements TransientResolver<Long, BigDecimal> {
-
-    private final JSqlClient sqlClient;
-
-    public BookStoreAvgPriceResolver(JSqlClient sqlClient) {
-        this.sqlClient = sqlClient;
-    }
-
-    @Override
-    public Map<Long, BigDecimal> resolve(
-            Collection<Long> ids, 
-            Connection con
-    ) {
-        List<Tuple2<Long, BigDecimal>> tuples = sqlClient
-                .createQuery(BookTable.class, (q, book) -> {
-                    q.where(book.store().id().in(ids));
-                    q.groupBy(book.store().id());
-                    return q.select(
-                            book.store().id(),
-                            book.price().avg()
-                    );
-                })
-                .execute(con); // Important to specify connection
         return Tuple2.toMap(tuples);
     }
 }

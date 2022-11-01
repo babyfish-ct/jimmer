@@ -284,31 +284,17 @@ Next, take the top-level query and sub-query as example for a comparative demons
 ### Top-level queries can only use Table
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-fluent
+sqlClient
     // `query` only accept `BookTable`,
     // If the parameter is `BookTableEx`, 
     // exception will be thrown
-    .query(book)
+    .createQuery(book)
     ...omit...
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-sqlClient.createQuery(
-    // `createQuery` only accept `BookTable.class`,
-    // If the paraemter is `BookTableEx.class`, 
-    // exception will be thrown
-    BookTable.class, 
-    (q, book) -> ...
-);
 ```
 
 </TabItem>
@@ -328,14 +314,13 @@ sqlClient.createQuery(Book::class) {
 So, your code looks like this
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .where(
         book
             // highlight-next-line
@@ -359,40 +344,6 @@ List<Book> books = fluent
      * in top-level queries
      */
     .select(book)
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-labmda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(
-                book
-                    // highlight-next-line
-                    .name() // scalar field "name"
-                    .eq("Book Name")
-            )
-            .where(
-                book
-                    // highlight-next-line
-                    .store() // reference association "store"
-                    .name()
-                    .eq("Store Name")
-            )
-            /*
-              * However, "book.authors()" cannot be used 
-              * because the method "authors()" is defined 
-              * in BookTableEx, not BookTable.
-              *
-              * That is, compile-time prohibits users 
-              * from joining collection associations 
-              * in top-level queries
-              */
-            .select(book);
-    })
     .execute();
 ```
 
@@ -455,19 +406,18 @@ Unlike top-level queries, TableEx can be used to create subqueries, update state
 `Author.books` in the following example is the same as `Book.authors` discussed above, and it is also a many-to-many association.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
 // `author` is used by sub query, it is `TableEx`
-AuthorTableEx author = new AuthorTableEx();
+AuthorTableEx author = AuthorTableEx.$;
 
-List<Book> books = fluent
-    .query(book)
-    .where(fluent
-        .subQuery(author)
+List<Book> books = sqlClient
+    .createQuery(book)
+    .where(sqlClient
+        .createSubQuery(author)
         .where(
             author
                 // `author` is TableEx,
@@ -480,33 +430,6 @@ List<Book> books = fluent
         .exists()
     )
     .select(book)
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        q.where(
-            q.createWildSubQuery(
-                // TableEx is allowed to create sub query
-                AuthorTableEx.class, (sq, author) -> {
-                    sq.where(
-                        author
-                            // `author` is TableEx,
-                            // so collection join `books` is allowed
-                            .books()
-                            .eq(book),
-
-                        author.firstName().eq("Alex")
-                    );
-                }
-            ).exists()
-        );
-        return q.select(book);
-    })
     .execute();
 ```
 
@@ -583,14 +506,13 @@ So, this rule is a soft restriction, not a rigid one. it can be easily broken.
 
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Long> bookIds = fluent
-    .query(book)
+List<Long> bookIds = sqlClient
+    .createQuery(book)
     .where(
         book
             // highlight-next-line
@@ -600,27 +522,6 @@ List<Long> bookIds = fluent
             .ilike("A%")
     )
     .select(book.id())
-    .distinct()
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Long> bookIds = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(
-                book
-                    // highlight-next-line
-                    .asTableEx()
-                    .authors()
-                    .firstName()
-                    .ilike("A%")
-            )
-            .select(book.id());
-    })
     .distinct()
     .execute();
 ```

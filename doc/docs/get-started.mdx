@@ -61,17 +61,3 @@ This framework uses a code generator, which is AnnotationProcessor for Java and 
 Therefore, when you open any project in the demo with the framework attached to the IDE for the first time, compilation errors will be reported because the code that should be automatically generated does not exist temporarily.
 
 Don't be afraid, click the "Run" button with confidence, and all problems will disappear automatically and immediately.
-
-### Java Fluent API
-
-For SQL DSL related functions, Jimmer provides two styles of API for the Java language
-
-- Lambda API: The same API style as kotlin API.
-
-- Fluent API: The more common API style for the Java language.
-
-There are two things to be aware of when it comes to the Fluent API.
-
-- The object returned by `JSqlClient.createFluent()` is a short lifecyle object, which needs to be temporarily created each time it is used. Do not sotrage it for reusing.
-
-- Inside a DAO/Repository function, if only one SQL DSL statement is required, the Fluent API is a good choice; otherwise, the Lambda API is more suitable.

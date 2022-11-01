@@ -34,46 +34,22 @@ Benchmark报告[在此](../benchmark)，Benchmark源码在此(https://github.com
 <summary>快速预览</summary>
     
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
-AuthorTableEx author = new AuthorTableEx();
+BookTable book = BookTable.$;
+AuthorTableEx author = AuthorTableEx.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .where(
-        book.id().in(fluent
-            .subQuery(author)
+        book.id().in(sqlClient
+            .createSubQuery(author)
             .where(author.firstName().eq("Alex"))
             .select(author.books().id())
         )
     )
     .select(book)
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lamba" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(
-                book.id().in(
-                    q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
-                        return sq
-                            .where(
-                                author.firstName().eq("Alex")
-                            )
-                            .select(author.books().id());
-                    })
-                )
-            )
-            .select(book);
-    })
     .execute();
 ```
 
@@ -107,14 +83,13 @@ val books = sqlClient
 <summary>快速预览</summary>
     
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Tuple3<Book, Integer, Integer>> rows = fluent
-    .query(book)
+List<Tuple3<Book, Integer, Integer>> rows = sqlClient
+    .createQuery(book)
     .select(
         book,
         Expression.numeric().sql(
@@ -133,34 +108,6 @@ List<Tuple3<Book, Integer, Integer>> rows = fluent
             }
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Tuple3<Book, Integer, Integer>> rows = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q.select(
-            book,
-            Expression.numeric().sql(
-                Integer.class,
-                "rank() over(order by %e desc)",
-                it -> {
-                    it.expression(book.price());
-                }
-            ),
-            Expression.numeric().sql(
-                Integer.class,
-                "rank() over(partition by %e order by %e desc)",
-                it -> {
-                    it.expression(book.store().id());
-                    it.expression(book.price());
-                }
-            )
-        );
-    })
     .execute();
 ```
 
@@ -223,14 +170,13 @@ val rows = sqlClient
 <details>
 <summary>简单抓取器</summary>
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .orderBy(book.name())
     .select(
         book.fetch(
@@ -246,31 +192,6 @@ List<Book> books = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        q.orderBy(book.name());
-        return q.select(
-            book.fetch(
-                BookFetcher.$
-                    .allScalarFields()
-                    .store(
-                        BookStoreFetcher.$
-                            .allScalarFields()
-                    )
-                    .authors(
-                        AuthorFetcher.$
-                            .allScalarFields()
-                    )
-            )
-        );
-    })
     .execute();
 ```
 
@@ -303,14 +224,13 @@ val books = sqlClient
 <details>
 <summary>使用过滤器</summary>
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .orderBy(book.name())
     .select(
         book.fetch(
@@ -331,36 +251,6 @@ List<Book> books = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        q.orderBy(book.name());
-        return q.select(
-            book.fetch(
-                BookFetcher.$
-                    .allScalarFields()
-                    .store(
-                        BookStoreFetcher.$
-                            .allScalarFields()
-                    )
-                    .authors(
-                        AuthorFetcher.$
-                            .allScalarFields(),
-                        // 此过滤器对关联集合进行排序 
-                        it -> it.filter(args -> {
-                            args.orderBy(args.getTable().firstName());
-                            args.orderBy(args.getTable().lastName());
-                        })
-                    )
-            )
-        );
-    })
     .execute();
 ```
 
@@ -399,14 +289,13 @@ val books = sqlClient
 <details>
 <summary>递归查询自关联属性</summary>
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-TreeNodeTable treeNode = new TreeNodeTable();
+TreeNodeTable treeNode = TreeNodeTable.$;
 
-List<TreeNode> rootNodes = fluent
-    .query(treeNode)
+List<TreeNode> rootNodes = sqlClient
+    .createQuery(treeNode)
     .where(treeNode.parent().isNull())
     .orderBy(treeNode.name())
     .select(
@@ -428,37 +317,6 @@ List<TreeNode> rootNodes = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<TreeNode> rootNodes = sqlClient
-    .createQuery(TreeNodeTable.class, (q, treeNode) -> {
-        q.where(treeNode.parent().isNull());
-        q.orderBy(treeNode.name());
-        return q.select(
-            treeNode.fetch(
-                TreeNodeFetcher.$
-                    .allScalarFields()
-                    .childNodes(
-                        TreeNodeFetcher.$.allScalarFields(),
-                        it -> {
-                            // 递归查询，无论多深
-                            it.recursive(args -> 
-                                // 但，排除某些子树
-                                !args.getEntity().name().equals("XX")
-                            );
-                            it.filter(args -> {
-                                args.orderBy(args.getTable().name());
-                            });
-                        }
-                    )
-            )
-        );
-    })
     .execute();
 ```
 
@@ -708,18 +566,17 @@ Jimmer的表连接为非常复杂的查询而设计，具有如下特色
 为了简单起见，仅示范最简单的两表连接。
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
 public List<Book> findBooks(
     @Nullable String storeName,
     @Nullable String storeWebsite
 ) {
-    Fluent fluent = sqlClient.createFluent();
-    BookTable book = new BookTable();
+    BookTable book = BookTable.$;
     
-    return fluent
-        .query(book)
+    return sqlClient
+        .createQuery(book)
         .whereIf(
             storeName != null,
             () -> book.store().name().like(storeName)
@@ -729,28 +586,6 @@ public List<Book> findBooks(
             () -> book.store().website().like(storeWebsite)
         )
         .select(book)
-        .execute();
-}
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-public List<Book> findBooks(
-    @Nullable String storeName,
-    @Nullable String storeWebsite
-) {
-    return sqlClient
-        .createQuery(BookTable.class, (q, book) -> {
-            if (storeName != null) {
-                q.where(book.store().name().like(storeName));
-            }
-            if (storeWebsite != null) {
-                q.where(book.store().website().like(storeName));
-            }
-            return q.select(book);
-        })
         .execute();
 }
 ```
@@ -794,49 +629,19 @@ fun findBooks(
 <summary>快速预览</summary>
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
 // 开发者只需要专注于查询实际数据
-ConfigurableRootQuery<Book> query = fluent
-    .query(book)
+ConfigurableRootQuery<Book> query = sqlClient
+    .createQuery(book)
     ... 省略一些代码逻辑，包含: ...
     ... 1. 任意复杂的动态条件 ...
     ... 2. 任意复杂的动态排序 ...
     ... 3. 任意复杂的子查询 ...
     .select(book);
-
-// 对行数的查询由框架自动生成和优化
-TypedRootQuery<Long> countQuery = query
-    .reselect((q, t) -> 
-        q.select(t.count())
-    )
-    .withoutSortingAndPaging();
-
-int rowCount = countQuery.execute().get(0).intValue();
-
-// 查询从1/3处到2/3的部分数据
-List<Book> books = query
-    .limit(rowCount / 3, rowCount / 3)
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-// 开发者只需要专注于查询实际数据
-ConfigurableRootQuery<Book> query = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        ... 省略一些代码逻辑，包含: ...
-        ... 1. 任意复杂的动态条件 ...
-        ... 2. 任意复杂的动态排序 ...
-        ... 3. 任意复杂的子查询 ...
-        return q.select(book);
-    });
 
 // 对行数的查询由框架自动生成和优化
 TypedRootQuery<Long> countQuery = query

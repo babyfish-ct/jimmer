@@ -32,14 +32,13 @@ jimmer-sql can mount an external cache, whether using a cache or not will cause 
 Take the query `Book` objects and their association collections `authors` as an example:
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             BookFetcher.$
@@ -50,26 +49,6 @@ List<Book> books = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q.select(
-            book.fetch(
-                BookFetcher.$
-                    .allScalarFields()
-                    .authors(
-                        AuthorFetcher.$
-                            .allScalarFields()
-                    )
-            )
-        );
-    })
     .execute();
 ```
 
@@ -185,38 +164,19 @@ Therefore, the SQL mentioned in the rest of this article is only for non-cached 
 ### Fetch scalar property
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         // highlight-next-line
         book.fetch(
             BookFetcher.$.name()
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                // highlight-next-line
-                book.fetch(
-                    BookFetcher.$.name()
-                )
-            );
-    })
     .execute();
 ```
 
@@ -279,38 +239,19 @@ The printed result is as follows (the original output is compact, formatted here
 ### Fetch multiple properties
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             // highlight-next-line
             BookFetcher.$.name().price()
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                book.fetch(
-                    // highlight-next-line
-                    BookFetcher.$.name().price()
-                )
-            );
-    })
     .execute();
 ```
 
@@ -375,38 +316,19 @@ The printed result is as follows (the original output is compact, formatted here
 ### allScalarFields
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             // highlight-next-line
             BookFetcher.$.allScalarFields()
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                book.fetch(
-                    // highlight-next-line
-                    BookFetcher.$.allScalarFields()
-                )
-            );
-    })
     .execute();
 ```
 
@@ -466,14 +388,13 @@ The printed result is as follows (the original output is compact, formatted here
 The properties mentioned above are all positive properties, and properties to be queried are constantly added. Negative properties are the opposite, removing the specified property from the existing object fetcher.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             BookFetcher.$
@@ -482,26 +403,6 @@ List<Book> books = fluent
             .edition(false)
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                book.fetch(
-                    BookFetcher.$
-                        .allScalarFields()
-                        // highlight-next-line
-                        .edition(false)
-                )
-            );
-    })
     .execute();
 ```
 
@@ -565,38 +466,19 @@ The printed result is as follows (the original output is compact, formatted here
 ### allTableFields
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             // highlight-next-line
             BookFetcher.$.allTableFields()
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                book.fetch(
-                    // highlight-next-line
-                    BookFetcher.$.allTableFields()
-                )
-            );
-    })
     .execute();
 ```
 
@@ -704,14 +586,13 @@ Like the default object format, many-to-one properties based on foreign key are 
 We have already explained how to implement this function for foreign key based associations, so let's look at an example of `Book.authors` for many-to-many associations.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             BookFetcher.$.
@@ -720,26 +601,6 @@ List<Book> books = fluent
                 .authors()
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                book.fetch(
-                    BookFetcher.$.
-                        .allScalarFields()
-                        // highlight-next-line
-                        .authors()
-                )
-            );
-    })
     .execute();
 ```
 
@@ -840,14 +701,13 @@ Here, the `in` expression implements a batch query, solving the `N+1` problem.
 If a batch is too large, it will be divided into several batches according to a setting called `batchSize`, such as
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             BookFetcher.$
@@ -858,28 +718,6 @@ List<Book> books = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                book.fetch(
-                    BookFetcher.$
-                        .authors(
-                            AuthorFetcher.$,
-                            // highlight-next-line
-                            it -> it.batch(2)
-                        )
-                )
-            );
-    })
     .execute();
 ```
 
@@ -970,14 +808,13 @@ Neither the object fetcher level `batch Size` nor the global level `batch Size` 
 ### Specify the properties of the associated objects
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             BookFetcher.$.
@@ -994,34 +831,6 @@ List<Book> books = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                book.fetch(
-                    BookFetcher.$.
-                        .allScalarFields()
-                        .store(
-                            BookStoreFetcher.$
-                                // highlight-next-line
-                                .allScalarFields()
-                        )
-                        .authors(
-                            AuthorFetcher.$
-                                // highlight-next-line
-                                .allScalarFields()
-                        )
-                )
-            );
-    })
     .execute();
 ```
 
@@ -1151,14 +960,13 @@ If associative-level pagination is used, `batchSize` must be specified as 1, oth
 
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             BookFetcher.$
@@ -1170,29 +978,6 @@ List<Book> books = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                book.fetch(
-                    BookFetcher.$
-                        .allScalarFields()
-                        .authors(
-                            AuthorFetcher.$.allScalarFields(),
-                            // highlight-next-line
-                            it -> it.batch(1).limit(10, 90)
-                        )
-                )
-            );
-    })
     .execute();
 ```
 
@@ -1274,14 +1059,13 @@ Here, for comparison, we let the query select two columns, both of type `Book`.
 - No filter to the association `Book.autors` of the objects of second column.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         
         // First column
@@ -1315,51 +1099,6 @@ List<Book> books = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Tuple2<Book, Book>> tuples = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-
-                // First column
-                book.fetch(
-                    BookFetcher.$
-                        .allScalarFields()
-                        .authors(
-                            AuthorFetcher.$
-                                .allScalarFields(),
-
-                            // Use filter here
-                            // highlight-next-line
-                            it -> it.filter(args -> {
-                                args.where(
-                                    args.getTable()
-                                        .firstName().ilike("a")
-                                );
-                            })
-                        )
-                ),
-
-                // Second column
-                book.fetch(
-                    BookFetcher.$
-                        .allScalarFields()
-                        .authors(
-                            AuthorFetcher.$
-                                    .allScalarFields()
-
-                            // No filter here
-                        )
-                )
-            );
-    })
     .execute();
 ```
 
@@ -1626,14 +1365,13 @@ insert into tree_node(
 Top down, fetch two layers
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-TreeNodeTable node = new TreeNodeTable();
+TreeNodeTable node = TreeNodeTable.$;
 
-List<TreeNode> treeNodes = fluent
-    .query(node)
+List<TreeNode> treeNodes = sqlClient
+    .createQuery(node)
     .where(node.parent().isNull())
     .select(
         node.fetch(
@@ -1646,28 +1384,6 @@ List<TreeNode> treeNodes = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<TreeNode> treeNodes = sqlClient
-    .createQuery(TreeNodeTable.class, (q, node) -> {
-        q.where(node.parent().isNull());
-        return q.select(
-            node.fetch(
-                TreeNodeFetcher.$
-                    .name()
-                    .childNodes(
-                        TreeNodeFetcher.$.name(),
-                        // highlight-next-line
-                        it -> it.depth(2)
-                    )
-            )
-        );
-    })
     .execute();
 ```
 
@@ -1765,14 +1481,13 @@ The printed result is as follows (the original output is compact, formatted here
 Top-down, fetch infinite layers
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-TreeNodeTable node = new TreeNodeTable();
+TreeNodeTable node = TreeNodeTable.$;
 
-List<TreeNode> treeNodes = fluent
-    .query(node)
+List<TreeNode> treeNodes = sqlClient
+    .createQuery(node)
     .where(node.parent().isNull())
     .select(
         node.fetch(
@@ -1785,28 +1500,6 @@ List<TreeNode> treeNodes = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<TreeNode> treeNodes = sqlClient
-    .createQuery(TreeNodeTable.class, (q, node) -> {
-        q.where(node.parent().isNull());
-        return q.select(
-            node.fetch(
-                TreeNodeFetcher.$
-                    .name()
-                    .childNodes(
-                        TreeNodeFetcher.$.name(),
-                        // highlight-next-line
-                        it -> it.recursive()
-                    )
-            )
-        );
-    })
     .execute();
 ```
 
@@ -1997,14 +1690,13 @@ The printed result is as follows (the original output is compact, formatted here
 From top to bottom, fetch infinite layers. However, for nodes with the name "Clothing", skip recursion
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-TreeNodeTable node = new TreeNodeTable();
+TreeNodeTable node = TreeNodeTable.$;
 
-List<TreeNode> treeNodes = fluent
-    .query(node)
+List<TreeNode> treeNodes = sqlClient
+    .createQuery(node)
     .where(node.parent().isNull())
     .select(
         node.fetch(
@@ -2019,30 +1711,6 @@ List<TreeNode> treeNodes = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<TreeNode> treeNodes = sqlClient
-    .createQuery(TreeNodeTable.class, (q, node) -> {
-        q.where(node.parent().isNull());
-        return q.select(
-            node.fetch(
-                TreeNodeFetcher.$
-                    .name()
-                    .childNodes(
-                        TreeNodeFetcher.$.name(),
-                        it -> it.recursive(args ->
-                            // highlight-next-line
-                            !args.getEntity().name().equals("Clothing")
-                        )
-                    )
-            )
-        );
-    })
     .execute();
 ```
 

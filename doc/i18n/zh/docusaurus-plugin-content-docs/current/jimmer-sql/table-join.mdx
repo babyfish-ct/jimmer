@@ -32,7 +32,7 @@ Jimmer的表连接为非常复杂的查询而设计，具有如下特色
 让我们先来看一个动态连接的示范。
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
 @Repository
@@ -49,11 +49,10 @@ public class BookRepository {
         @Nullable String storeName,
         @Nullable String storeWebsite
     ) {
-        Fluent fluent = sqlClient.createFluent();
-        BookTable book = new BookTable();
+        BookTable book = BookTable.$;
         
-        return fluent
-            .query(book)
+        return sqlClient
+            .createQuery(book)
             .whereIf(
                 name != null,
                 () -> book.name().eq(name)
@@ -75,56 +74,6 @@ public class BookRepository {
                     .eq(storeWebsite)
             )
             .select(book)
-            .execute();
-    }
-}
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-@Repository
-public class BookRepository {
-
-    private final JSqlClient sqlClient;
-
-    public BookRepository(JSqlClient sqlClient) {
-        this.sqlClient = sqlClient;
-    }
-
-    public List<Book> findBooks(
-        @Nullable String name, 
-        @Nullable String storeName,
-        @Nullable String storeWebsite
-    ) {
-        return sqlClient
-            .createQuery(
-                BookTable.class, (q, book) -> {
-                    if (name != null) {
-                        q.where(book.name().eq(name));
-                    }
-                    if (storeName != null) {
-                        q.where(
-                            book
-                                // highlight-next-line
-                                .store() // α
-                                .name()
-                                .eq(storeName)
-                        );
-                    }
-                    if (storeWebsite != null) {
-                        q.where(
-                            book
-                                // highlight-next-line
-                                .store() // β
-                                .website()
-                                .eq(storeWebsite)
-                        );
-                    }
-                    return q.select(book);
-                }
-            )
             .execute();
     }
 }
@@ -414,29 +363,15 @@ book.`store?`
 我们先来看一个普通表连接的例子。
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .where(book.store().name().eq("MANNING"))
     .select(book)
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.store().name().eq("MANNING"))
-            .select(book);
-    })
     .execute();
 ```
 
@@ -476,14 +411,13 @@ where
 现在，再来看一个幻连接的例子
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .where(
         book
         .store()
@@ -492,25 +426,6 @@ List<Book> books = fluent
         .eq(2L)
     )
     .select(book)
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-labmda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(
-                book
-                    .store()
-                    // highlight-next-line
-                    .id() // 只访问id
-                    .eq(2L)
-            )
-            .select(book);
-    })
     .execute();
 ```
 
@@ -565,14 +480,13 @@ from BOOK as tb_1_
 我们先来看一个基于中间表的普通连接。
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Long> bookIds = fluent
-    .query(book)
+List<Long> bookIds = sqlClient
+    .createQuery(book)
     .where(
         book
             .asTableEx()
@@ -581,26 +495,6 @@ List<Long> bookIds = fluent
             .eq("Alex")
     )
     .select(book.id())
-    .distinct()
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Long> bookIds = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(
-                book
-                    .asTableEx()
-                    .authors()
-                    .firstName()
-                    .eq("Alex")
-            )
-            .select(book.id());
-    })
     .distinct()
     .execute();
 ```
@@ -651,14 +545,13 @@ where tb_3_.FIRST_NAME = ?
 接下来，让我们看看半连接的例子
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Long> bookIds = fluent
-    .query(book)
+List<Long> bookIds = sqlClient
+    .createQuery(book)
     .where(
         book
             .asTableEx()
@@ -668,26 +561,6 @@ List<Long> bookIds = fluent
             .eq(2L)
     )
     .select(book.id())
-    .distinct()
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<UUID> bookIds = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(
-                ((BookTableEx)book)
-                    .authors()
-                    // highlight-next-line
-                    .id() // 只访问id
-                    .eq(2L)
-            )
-            .select(book.id());
-    })
     .distinct()
     .execute();
 ```

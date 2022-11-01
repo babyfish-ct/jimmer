@@ -69,19 +69,18 @@ jimmer-sql提供了一个有趣的功能，即便中间表被隐藏没有对应�
 <TabItem value="java" label="Java">
 
 ```java
+AssociationTable<Book, BookTableEx, Author, AuthorTableEx> association =
+    AssociationTable.of(BookTableEx.class, BookTableEx::authors);
+    
 List<Association<Book, Author>> associations =
     sqlClient
         // highlight-next-line
-        .createAssociationQuery(
-            BookTableEx.class,
-            BookTableEx::authors,
-            (q, association) -> {
-                q.where(
-                    association.source().id().eq(3L)
-                );
-                return q.select(association);
-            }
-        ).execute();
+        .createAssociationQuery(association)
+        .where(
+            association.source().id().eq(3L)
+        )
+        .select(association)
+        .execute();
 associations.forEach(System.out::println);
 ```
 
@@ -101,10 +100,6 @@ associations.forEach(::println)
 
 </TabItem>
 </Tabs>
-
-:::warning
-对于Java而言，中间表查询只支持Lambda风格，不支持Fluent风格。
-:::
 
 这里，`createAssociation`表示基于中间表创建查询，而非基于实体表。
 
@@ -328,25 +323,6 @@ Tuple2{
 注意，这里仅指`Association<S, T>`对象<b>本身</b>不支持，其关联属性`source`和`target`仍然支持[对象抓取器](./fetcher)，如：
 
 <Tabs groupId="language">
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-return q.select(
-    association
-        .source()
-        // highlight-next-line
-        .fetch(
-            BookFetcher.$
-                .allScalarFields()
-                .store(
-                    BookStoreFetcher.$.allScalarFields()
-                )
-        ),
-    association.target()
-);
-```
-
-</TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
@@ -470,19 +446,18 @@ where
 ### 2. 不基于中间表子查询实现同样的功能
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
-AuthorTableEx author = new AuthorTableEx();
+BookTable book = BookTable.$;
+AuthorTableEx author = AuthorTableEx.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .where(
-        book.id().in(fluent
+        book.id().in(sqlClient
             // highlight-next-line
-            .subQuery(author)
+            .createSubQuery(author)
             .where(
                 author.firstName().eq("Alex")
             )
@@ -491,34 +466,6 @@ List<Book> books = fluent
     )
     .select(book)
     .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-        .createQuery(BookTable.class, (q, book) -> {
-            q.where(
-                book.id().in(
-                    // highlight-next-line
-                    q.createSubQuery(
-                        AuthorTableEx.class,
-                        (sq, author) -> {
-                            sq.where(
-                                author.firstName()
-                                    .eq("Alex")
-                            );
-                            return sq.select(
-                                author.books() // α
-                                    .id()
-                            );
-                        }
-                    )
-                )
-            );
-            return q.select(book);
-        }).execute();
 ```
 
 </TabItem>

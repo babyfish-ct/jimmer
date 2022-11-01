@@ -69,19 +69,18 @@ jimmer-sql provides an interesting function, even if the middle table is hidden 
 <TabItem value="java" label="Java">
 
 ```java
+AssociationTable<Book, BookTableEx, Author, AuthorTableEx> association =
+    AssociationTable.of(BookTableEx.class, BookTableEx::authors);
+
 List<Association<Book, Author>> associations =
     sqlClient
         // highlight-next-line
-        .createAssociationQuery(
-            BookTableEx.class,
-            BookTableEx::authors,
-            (q, association) -> {
-                q.where(
-                    association.source().id().eq(3L)
-                );
-                return q.select(association);
-            }
-        ).execute();
+        .createAssociationQuery(association)
+        .where(
+            association.source().id().eq(3L)
+        )
+        .select(association)
+        .execute();
 associations.forEach(System.out::println);
 ```
 
@@ -468,19 +467,18 @@ where
 ### 2. Implement the same functionality based on ordinary subquery
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
-AuthorTableEx author = new AuthorTableEx();
+BookTable book = BookTable.$;
+AuthorTableEx author = AuthorTableEx.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .where(
-        book.id().in(fluent
+        book.id().in(sqlClient
             // highlight-next-line
-            .subQuery(author)
+            .createSubQuery(author)
             .where(
                 author.firstName().eq("Alex")
             )
@@ -489,34 +487,6 @@ List<Book> books = fluent
     )
     .select(book)
     .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        q.where(
-            book.id().in(
-                // highlight-next-line
-                q.createSubQuery(
-                    AuthorTableEx.class,
-                    (sq, author) -> {
-                        sq.where(
-                            author.firstName()
-                                .eq("Alex")
-                        );
-                        return sq.select(
-                            author.books() // α
-                                .id()
-                        );
-                    }
-                )
-            )
-        );
-        return q.select(book);
-    }).execute();
 ```
 
 </TabItem>

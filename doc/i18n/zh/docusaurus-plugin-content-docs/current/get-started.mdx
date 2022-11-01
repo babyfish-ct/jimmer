@@ -63,15 +63,3 @@ fun immutableModule() = ImmutableModule()
 所以，首次用IDE打开框架附带demo中任何项目，都会因为本该被自动生成的代码暂时不存在而报编译错。
 
 别怕，放心大胆地点击运行按钮，所有问题将会立即自动消失。
-
-### Java Fluent API
-
-对于SQL DSL相关功能，Jimmer为Java语言提供了两种风格的API
-
-- Lambda API: 和kotlin API同质的API风格。
-- Fluent API: 对Java语言而言更常见的API风格。
-
-对于Fluent API而言，需要注意两件事。
-
-- JSqlClient.createFluent()返回的对象是短生命周期对象，每次要用需临时创建，请勿记下来反复使用。
-- 在某个DAO/Repository函数内部，如果只需一个SQL DSL statemement，Fluent API是一个不错的选择；否则，Lambda API更适合。
