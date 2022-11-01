@@ -11,27 +11,14 @@ import TabItem from '@theme/TabItem';
 Delete statement usage is as follows
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-int affectedRowCount = fluent
-    .delete(book)
-    .where(book.name().eq("Learning GraphQL"))
-    .execute();
-System.out.println("Affected row count: " + affectedRowCount);
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
 int affectedRowCount = sqlClient
-    .createDelete(BookTable.class, (d, book) -> {
-        d.where(book.name().eq("Learning GraphQL"));
-    })
+    .createDelete(book)
+    .where(book.name().eq("Learning GraphQL"))
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```
@@ -63,27 +50,14 @@ where tb_1_.NAME = ?
 The Delete statement supports table joins, like this
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-int affectedRowCount = fluent
-    .delete(book)
-    .where(book.store().name().eq("MANNING"))
-    .execute();
-System.out.println("Affected row count: " + affectedRowCount);
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
 int affectedRowCount = sqlClient
-    .createDelete(BookTable.class, (d, book) -> {
-        d.where(book.store().name().eq("MANNING"));
-    })
+    .createDelete(book)
+    .where(book.store().name().eq("MANNING"))
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```

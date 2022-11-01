@@ -190,25 +190,13 @@ val books = sqlClient.entities.findAll(Book::class);
 </Tabs>
 或
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
-List<Book> books = fluent
-    .query(book)
-    .select(book)
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lamda" label="Java(Lambda)">
-
-```java
+BookTable book = BookTable.$;
 List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q.select(book);
-    })
+    .createQuery(book)
+    .select(book)
     .execute();
 ```
 
@@ -283,13 +271,12 @@ val books = sqlClient.entities.findAll(
 </Tabs>
 或
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-AuthorTable author = new AuthorTable();
-List<Author> authors = fluent
-    .query(author)
+AuthorTable author = AuthorTable.$;
+List<Author> authors = sqlClient
+    .createQuery(author)
     .select(
         author.fetch(
             AuthorFetcher.$
@@ -301,27 +288,6 @@ List<Author> authors = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lamda" label="Java(Lambda)">
-
-```java
-List<Author> authors = sqlClient
-    .createQuery(AuthorTable.class, (q, author) -> {
-        return q.select(
-            author.fetch(
-                AuthorFetcher.$
-                    .allScalarFields()
-                    // highlight-next-line
-                    .books(
-                        BookFetcher.$
-                            .allScalarFields()
-                    )
-            )
-        );
-    })
     .execute();
 ```
 

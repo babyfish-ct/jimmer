@@ -33,46 +33,22 @@ Check for errors at compile time rather than runtime whenever possible with stro
 <summary>Quick view</summary>
     
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
-AuthorTableEx author = new AuthorTableEx();
+BookTable book = BookTable.$;
+AuthorTableEx author = AuthorTableEx.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .where(
-        book.id().in(fluent
-            .subQuery(author)
+        book.id().in(sqlClient
+            .createSubQuery(author)
             .where(author.firstName().eq("Alex"))
             .select(author.books().id())
         )
     )
     .select(book)
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(
-                book.id().in(
-                    q.createSubQuery(AuthorTableEx.class, (sq, author) -> {
-                        return sq
-                            .where(
-                                author.firstName().eq("Alex")
-                            )
-                            .select(author.books().id());
-                    })
-                )
-            )
-            .select(book);
-    })
     .execute();
 ```
 
@@ -106,14 +82,13 @@ Strongly typed SQL DSL and Native SQL can be mixed without extra restrictions, U
 <summary>Quick view</summary>
     
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Tuple3<Book, Integer, Integer>> rows = fluent
-    .query(book)
+List<Tuple3<Book, Integer, Integer>> rows = sqlClient
+    .createQuery(book)
     .select(
         book,
         Expression.numeric().sql(
@@ -132,34 +107,6 @@ List<Tuple3<Book, Integer, Integer>> rows = fluent
             }
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Tuple3<Book, Integer, Integer>> rows = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q.select(
-            book,
-            Expression.numeric().sql(
-                Integer.class,
-                "rank() over(order by %e desc)",
-                it -> {
-                    it.expression(book.price());
-                }
-            ),
-            Expression.numeric().sql(
-                Integer.class,
-                "rank() over(partition by %e order by %e desc)",
-                it -> {
-                    it.expression(book.store().id());
-                    it.expression(book.price());
-                }
-            )
-        );
-    })
     .execute();
 ```
 
@@ -222,14 +169,13 @@ Extend the ability of SQL. If a column in the query is an object type, it can be
 <details>
 <summary>Simple Fetcher</summary>
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .orderBy(book.name())
     .select(
         book.fetch(
@@ -245,31 +191,6 @@ List<Book> books = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        q.orderBy(book.name());
-        return q.select(
-            book.fetch(
-                BookFetcher.$
-                    .allScalarFields()
-                    .store(
-                        BookStoreFetcher.$
-                            .allScalarFields()
-                    )
-                    .authors(
-                        AuthorFetcher.$
-                            .allScalarFields()
-                    )
-            )
-        );
-    })
     .execute();
 ```
 
@@ -303,14 +224,13 @@ val books = sqlClient
 <summary>Fetcher With filter</summary>
 <Tabs groupId="language">
 
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .orderBy(book.name())
     .select(
         book.fetch(
@@ -331,36 +251,6 @@ List<Book> books = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        q.orderBy(book.name());
-        return q.select(
-            book.fetch(
-                BookFetcher.$
-                    .allScalarFields()
-                    .store(
-                        BookStoreFetcher.$
-                            .allScalarFields()
-                    )
-                    .authors(
-                        AuthorFetcher.$
-                            .allScalarFields(),
-                        // This filter sorts the associated collection 
-                        it -> it.filter(args -> {
-                            args.orderBy(args.getTable().firstName());
-                            args.orderBy(args.getTable().lastName());
-                        })
-                    )
-            )
-        );
-    })
     .execute();
 ```
 
@@ -400,14 +290,13 @@ val books = sqlClient
 <summary>Recursively query self-association attributes</summary>
 <Tabs groupId="language">
 
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-TreeNodeTable treeNode = new TreeNodeTable();
+TreeNodeTable treeNode = TreeNodeTable.$;
 
-List<TreeNode> rootNodes = fluent
-    .query(treeNode)
+List<TreeNode> rootNodes = sqlClient
+    .createQuery(treeNode)
     .where(treeNode.parent().isNull())
     .orderBy(treeNode.name())
     .select(
@@ -429,37 +318,6 @@ List<TreeNode> rootNodes = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<TreeNode> rootNodes = sqlClient
-    .createQuery(TreeNodeTable.class, (q, treeNode) -> {
-        q.where(treeNode.parent().isNull());
-        q.orderBy(treeNode.name());
-        return q.select(
-            treeNode.fetch(
-                TreeNodeFetcher.$
-                    .allScalarFields()
-                    .childNodes(
-                        TreeNodeFetcher.$.allScalarFields(),
-                        it -> {
-                            // Recursively query, no matter how deep
-                            it.recursive(args -> 
-                                // but exclude some subtrees
-                                !args.getEntity().name().equals("XX")
-                            );
-                            it.filter(args -> {
-                                args.orderBy(args.getTable().name());
-                            });
-                        }
-                    )
-            )
-        );
-    })
     .execute();
 ```
 
@@ -709,18 +567,17 @@ This example shows automatic merge conflicting table joins.
 For simplicity, only the simplest two-table joins is demonstrated.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
 public List<Book> findBooks(
     @Nullable String storeName,
     @Nullable String storeWebsite
 ) {
-    Fluent fluent = sqlClient.createFluent();
-    BookTable book = new BookTable();
+    BookTable book = BookTable.$;
     
-    return fluent
-        .query(book)
+    return sqlClient
+        .createQuery(book)
         .whereIf(
             storeName != null,
             () -> book.store().name().like(storeName)
@@ -730,28 +587,6 @@ public List<Book> findBooks(
             () -> book.store().website().like(storeWebsite)
         )
         .select(book)
-        .execute();
-}
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-public List<Book> findBooks(
-    @Nullable String storeName,
-    @Nullable String storeWebsite
-) {
-    return sqlClient
-        .createQuery(BookTable.class, (q, book) -> {
-            if (storeName != null) {
-                q.where(book.store().name().like(storeName));
-            }
-            if (storeWebsite != null) {
-                q.where(book.store().website().like(storeWebsite));
-            }
-            return q.select(book);
-        })
         .execute();
 }
 ```
@@ -795,49 +630,19 @@ In the paging scenario, developers only need to focus on querying the actual dat
 <summary>Quick view</summary>
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
 // Developers only need to focus on data-query
-ConfigurableRootQuery<Book> query = fluent
-    .query(book)
+ConfigurableRootQuery<Book> query = sqlClient
+    .createQuery(book)
     ... Omit some code logic, including: ...
     ... 1. Arbitrarily complex dynamic conditions ...
     ... 2. Arbitrarily complex dynamic sorting ...
     ... 3. Arbitrarily complex subqueries ...
     .select(book);
-
-// count-query can be generated and optimized.
-TypedRootQuery<Long> countQuery = query
-    .reselect((q, t) -> 
-        q.select(t.count())
-    )
-    .withoutSortingAndPaging();
-
-int rowCount = countQuery.execute().get(0).intValue();
-
-// Query data from 1/3 to 2/3
-List<Book> books = query
-    .limit(rowCount / 3, rowCount / 3)
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-// Developers only need to focus on data-query
-ConfigurableRootQuery<Book> query = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        ... Omit some code logic, including: ...
-        ... 1. Arbitrarily complex dynamic conditions ...
-        ... 2. Arbitrarily complex dynamic sorting ...
-        ... 3. Arbitrarily complex subqueries ...
-        return q.select(book);
-    });
 
 // count-query can be generated and optimized.
 TypedRootQuery<Long> countQuery = query

@@ -289,29 +289,16 @@ public val KTableEx<Book>.`authors?`: KNullableTableEx<Author>
 ### 只能基于Table创建的顶层查询
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-fluent
+sqlClient
     // `query`只接受`BookTable`类型的实例,
     // 如果参数的类型是`BookTableEx`，会导致异常
-    .query(book)
+    .createQuery(book)
     ...略...
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-sqlClient.createQuery(
-    // `createQuery` 只接受`BookTable.class`,
-    // 如果参数是`BookTableEx.class`，会导致异常
-    BookTable.class, 
-    (q, book) -> ...
-);
 ```
 
 </TabItem>
@@ -331,14 +318,13 @@ sqlClient.createQuery(Book::class) {
 所以，你的代码看起来如此
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .where(
         book
             // highlight-next-line
@@ -359,37 +345,6 @@ List<Book> books = fluent
      * 即，编译时禁止了用户在顶级查询中对集合关联进行join
      */
     .select(book)
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(
-                book
-                    // highlight-next-line
-                    .name() // 可以访问普通字段name
-                    .eq("Book Name")
-            )
-            .where(
-                book
-                    // highlight-next-line
-                    .store() // 也可以对引用关联store进行join
-                    .name()
-                    .eq("Store Name")
-            )
-            /* 
-             * 然而，无法使用"book.authors()"，因为authors()
-             * 方法被定义在了BookTableEx中，而非BookTable中。
-             * 
-             * 即，编译时禁止了用户在顶级查询中对集合关联进行join
-             */
-            .select(book);
-    })
     .execute();
 ```
 
@@ -449,19 +404,18 @@ and
 下面例子中的`Author.books`和上面讨论的`Book.authors`一样，也是一个多对多关联。
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
 // `author`为子查询所用，采用TableEx
-AuthorTableEx author = new AuthorTableEx();
+AuthorTableEx author = AuthorTableEx.$;
 
-List<Book> books = fluent
-    .query(book)
-    .where(fluent
-        .subQuery(author)
+List<Book> books = sqlClient
+    .createQuery(book)
+    .where(sqlClient
+        .createSubQuery(author)
         .where(
             author
                 // `author`是TableEx，
@@ -474,33 +428,6 @@ List<Book> books = fluent
         .exists()
     )
     .select(book)
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        q.where(
-            q.createWildSubQuery(
-                // TableEx可用于创建子查询
-                AuthorTableEx.class, (sq, author) -> {
-                    sq.where(
-                        author
-                            // `author`是TableEx，
-                            // 所以集合关联`books`是允许的
-                            .books()
-                            .eq(book),
-
-                        author.firstName().eq("Alex")
-                    );
-                }
-            ).exists()
-        );
-        return q.select(book);
-    })
     .execute();
 ```
 
@@ -573,14 +500,13 @@ where exists(
 所以，禁止在顶级查询中使用集合关联是一个软性限制，而非刚性限制。可以轻松突破。
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Long> bookIds = fluent
-    .query(book)
+List<Long> bookIds = sqlClient
+    .createQuery(book)
     .where(
         book
             // highlight-next-line
@@ -590,27 +516,6 @@ List<Long> bookIds = fluent
             .ilike("A%")
     )
     .select(book.id())
-    .distinct()
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Long> bookIds = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(
-                book
-                    // highlight-next-line
-                    .asTableEx()
-                    .authors()
-                    .firstName()
-                    .ilike("A%")
-            )
-            .select(book.id());
-    })
     .distinct()
     .execute();
 ```

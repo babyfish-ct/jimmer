@@ -16,8 +16,8 @@ jimmer-sql内容相对较多，后续文章会逐步讲解。本文对其部分�
 ```groovy title="build.gradle"
 depdencies {
     
-    implementation 'org.babyfish.jimmer:jimmer-sql:0.3.5'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.3.5'
+    implementation 'org.babyfish.jimmer:jimmer-sql:0.4.3'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.4.3'
 
     runtimeOnly 'com.h2database:h2:2.1.212'
 }
@@ -31,7 +31,7 @@ depdencies {
     <dependency>
         <groupId>org.babyfish.jimmer</groupId>
         <artifactId>jimmer-sql</artifactId>
-        <version>0.3.5</version>
+        <version>0.4.3</version>
     </dependency>
     <dependency>
         <groupId>com.h2database</groupId>
@@ -52,7 +52,7 @@ depdencies {
                     <path>
                         <groupId>org.babyfish.jimmer</groupId>
                         <artifactId>jimmer-apt</artifactId>
-                        <version>0.3.5</version>
+                        <version>0.4.3</version>
                     </path>
                 </annotationProcessorPaths>
             </configuration>
@@ -74,10 +74,10 @@ plugins {
 depdencies {
     
     // 第二步: 添加jimmer-sql-kotlin
-    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.3.5")
+    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.4.3")
 
     // 第三步: 应用ksp插件
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.3.5")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.4.3")
 
     runtimeOnly("com.h2database:h2:2.1.212")
 
@@ -103,7 +103,7 @@ kotlin {
     <dependency>
         <groupId>org.babyfish.jimmer</groupId>
         <artifactId>jimmer-sql-kotlin</artifactId>
-        <version>0.3.5</version>
+        <version>0.4.3</version>
     </dependency>
     <dependency>
         <groupId>com.h2database</groupId>
@@ -152,7 +152,7 @@ kotlin {
                 <dependency>
                     <groupId>org.babyfish.jimmer</groupId>
                     <artifactId>jimmer-ksp</artifactId>
-                    <version>0.3.5</version>
+                    <version>0.4.3</version>
                 </dependency>
             </dependencies>
         </plugin>
@@ -486,29 +486,15 @@ val sqlClient = newKSqlClient {
 ### 简单查询
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .where(book.name().like("Java"))
     .select(book)
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.name().like("Java"))
-            .select(book);
-    })
     .execute();
 ```
 
@@ -543,14 +529,13 @@ where tb_1_.NAME like ?
 ### 使用表连接
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .where(
         book
             // highlight-next-line
@@ -559,25 +544,6 @@ List<Book> books = fluent
             .eq("MANNING")
     )
     .select(book)
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(
-                book
-                // highlight-next-line
-                .store()
-                .name()
-                .eq("MANNING")
-            )
-            .select(book);
-    })
     .execute();
 ```
 
@@ -619,48 +585,24 @@ where tb_2_.NAME = ?
 ### 使用子查询
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
-AuthorTableEx author = new AuthorTableEx();
+BookTable book = BookTable.$;
+AuthorTableEx author = AuthorTableEx.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .where(
-        book.id().in(fluent
+        book.id().in(sqlClient
             //highlight-next-line
-            .subQuery(author)
+            .createSubQuery(author)
             .where(author.firstName().like("Alex"))
             .select(author.books().id())
         )
     )
     .select(book)
     .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(
-                book.id().in(
-                    //highlight-next-line
-                    q.createSubQuery(
-                        AuthorTableEx.class, (sq, author) -> {
-                            return sq
-                                .where(author.firstName().like("Alex"))
-                                .select(author.books().id());
-                        }
-                    )
-                )
-            )
-            .select(book);
-    }).execute();
 ```
 
 </TabItem>
@@ -707,16 +649,15 @@ where tb_1_.ID in (
 ### 分组查询
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
 // 第一列：书店id
 // 第二列：每个书店的书的平均价格
-List<Tuple2<Long, BigDecimal>> tuples = fluent
-    .query(book)
+List<Tuple2<Long, BigDecimal>> tuples = sqlClient
+    .createQuery(book)
     // highlight-next-line
     .groupBy(book.store().id())
     .select(
@@ -725,25 +666,6 @@ List<Tuple2<Long, BigDecimal>> tuples = fluent
         book.price().avg()
     )
     .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-// 第一列：书店id
-// 第二列：每个书店的书的平均价格
-List<Tuple2<Long, BigDecimal>> tuples = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            // highlight-next-line
-            .groupBy(book.store().id())
-            .select(
-                book.store().id(),
-                // highlight-next-line
-                book.price().avg()
-            );
-    }).execute();
 ```
 
 </TabItem>
@@ -783,45 +705,17 @@ group by tb_1_.STORE_ID
 ### 分页查询
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
 ConfigurableRootQuery<BookTable, Book> bookQuery = 
-    fluent
-        .query(book)
+    sqlClient
+        .createQuery(book)
         .where(book.store().name().eq("O'REILLY"))
         .orderBy(book.name())
         .select(book);
-
-TypedRootQuery<Long> countQuery = bookQuery
-    // highlight-next-line
-    .reselect((q, t) ->
-        q.select(t.count())
-    )
-    .withoutSortingAndPaging();
-
-int rowCount = countQuery.execute().get(0).intValue();
-
-List<Book> rows = bookQuery
-    // highlight-next-line
-    .limit(rowCount / 3, rowCount / 3)
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-ConfigurableTypedRootQuery<BookTable, Book> bookQuery =
-    sqlClient.createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.store().name().eq("O'REILLY"))
-            .orderBy(book.name())
-            .select(book);
-    });
 
 TypedRootQuery<Long> countQuery = bookQuery
     // highlight-next-line
@@ -896,17 +790,16 @@ val books = bookQuery
 ### 混合Native SQL
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
 // 第一列：书籍对象
 // 第二列: 书籍价格的全局排名
 // 第三列: 书籍价格在其所属书店的排名
-List<Tuple3<Book, Integer, Integer>> tuples = fluent
-    .query(book)
+List<Tuple3<Book, Integer, Integer>> tuples = sqlClient
+    .createQuery(book)
     .select(
         book,
         // highlight-next-line
@@ -924,36 +817,6 @@ List<Tuple3<Book, Integer, Integer>> tuples = fluent
                 .expression(book.price())
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-// 第一列：书籍对象
-// 第二列: 书籍价格的全局排名
-// 第三列: 书籍价格在其所属书店的排名
-List<Tuple3<Book, Integer, Integer>> tuples = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q.select(
-            book,
-            // highlight-next-line
-            Expression.numeric().sql(
-                Integer.class,
-                "rank() over(order by %e desc)",
-                it -> it.expression(book.price())
-            ),
-            // highlight-next-line
-            Expression.numeric().sql(
-                Integer.class,
-                "rank() over(partition by %e order by %e desc)",
-                it -> it
-                        .expression(book.store().id())
-                        .expression(book.price())
-            )
-        );
-    })
     .execute();
 ```
 
@@ -1013,14 +876,13 @@ from BOOK as tb_1_
 ### 使用对象抓取器
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         // highlight-next-line
         book.fetch(
@@ -1038,35 +900,6 @@ List<Book> books = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .orderBy(book.name())
-            .select(
-                // highlight-next-line
-                book.fetch(
-                    BookFetcher.$
-                        .allScalarFields()
-                        // highlight-next-line
-                        .store(
-                            BookStoreFetcher.$
-                                .allScalarFields()
-                        )
-                        // highlight-next-line
-                        .authors(
-                            AuthorFetcher.$
-                                .allScalarFields()
-                        )
-                )
-            );
-    })
     .execute();
 ```
 
@@ -1147,37 +980,19 @@ jimmer-sql提供两种方式修改数据库，语句和指令
 #### update语句
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-int affectedRowCount = fluent
+int affectedRowCount = sqlClient
     // highlight-next-line
-    .update(book)
+    .createUpdate(book)
     .set(
         book.price(),
         book.price().plus(new BigDecimal(10))
     )
     .where(book.name().like("Java"))
-    .execute();
-System.out.println("Affected row count: " + affectedRowCount);
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-int affectedRowCount = sqlClient
-    // highlight-next-line
-    .createUpdate(BookTable.class, (u, book) -> {
-        u.set(
-            book.price(), 
-            book.price().plus(new BigDecimal(10))
-        );
-        u.where(book.name().like("Java"));
-    })
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```
@@ -1210,29 +1025,15 @@ where tb_1_.NAME like ?
 #### delete语句
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-int affectedRowCount = fluent
-    // highlight-next-line
-    .delete(book)
-    .where(book.name().like("Java"))
-    .execute();
-System.out.println("Affected row count: " + affectedRowCount);
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
 int affectedRowCount = sqlClient
     // highlight-next-line
-    .createDelete(BookTable.class, (d, book) -> {
-        d.where(book.name().like("Java"));
-    })
+    .createDelete(book)
+    .where(book.name().like("Java"))
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```

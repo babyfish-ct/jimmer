@@ -31,14 +31,13 @@ So, with such support, 9 columns are enough.
 ## Use expressions as the queried columns
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Tuple2<Long, BigDecimal>> tuples = fluent
-    .query(book)
+List<Tuple2<Long, BigDecimal>> tuples = sqlClient
+    .createQuery(book)
     .groupBy(book.store().id())
     // highlight-next-line
     .select(
@@ -46,22 +45,6 @@ List<Tuple2<Long, BigDecimal>> tuples = fluent
         book.price().avg()
     )
     .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Tuple2<Long, BigDecimal>> tuples =
-    sqlClient.createQuery(BookTable.class, (q, book) -> {
-        return q
-            .groupBy(book.store().id())
-            // highlight-next-line
-            .select(
-                book.store().id(),
-                book.price().avg()
-            );
-    }).execute();
 ```
 
 </TabItem>
@@ -102,14 +85,13 @@ Tuple2{_1=1L, _2=58.500000000000}
 ## Use objects as the queried columns
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Tuple2<BookStore, Book>> tuples = fluent
-    .query(book)
+List<Tuple2<BookStore, Book>> tuples = sqlClient
+    .createQuery(book)
     .where(book.store().name().eq("MANNING"))
     // highlight-next-line
     .select(
@@ -117,22 +99,6 @@ List<Tuple2<BookStore, Book>> tuples = fluent
         book
     )
     .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Tuple2<BookStore, Book>> tuples =
-    sqlClient.createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.store().name().eq("MANNING"))
-            // highlight-next-line
-            .select(
-                book.store(),
-                book
-            );
-    }).execute();
 ```
 
 </TabItem>

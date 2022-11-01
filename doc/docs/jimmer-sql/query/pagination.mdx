@@ -15,38 +15,18 @@ These two SQL statements have both the same parts and different parts, and it is
 jimmer-sql is specially designed for paging queries. Developers only need to write data-query, and jimmer-sql will automatically create count-query.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-ConfigurableRootQuery<Book> query = fluent
-    .query(book)
+ConfigurableRootQuery<Book> query = sqlClient
+    .createQuery(book)
     ... Omit some code logic, including: ...
     ... 1. Arbitrarily complex dynamic conditions ...
     ... 2. Arbitrarily complex dynamic sorting ...
     ... 3. Arbitrarily complex subqueries ...
     .select(book);
-
-int rowCount = query.count();
-List<Book> books = query
-    .limit(rowCount / 3, rowCount / 3)
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-ConfigurableTypedRootQuery<BookTable, Book> query = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        ... Omit some code logic, including: ...
-        ... 1. Arbitrarily complex dynamic conditions ...
-        ... 2. Arbitrarily complex dynamic sorting ...
-        ... 3. Arbitrarily complex subqueries ...
-        return q.select(book);
-    });
 
 int rowCount = query.count();
 List<Book> books = query
@@ -204,15 +184,14 @@ In summary, to determine whether a table join copied from the original data-quer
 ### Scenario that cannot be optimized
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
-AuthorTableEx author = new AuthorTableEx();
+BookTable book = BookTable.$;
+AuthorTableEx author = AuthorTableEx.$;
 
-ConfigurableRootQuery<BookTable, Book> query = fluent
-    .query(book)
+ConfigurableRootQuery<BookTable, Book> query = sqlClient
+    .createQuery(book)
     .where(
         book.price().between(
             new BigDecimal(20),
@@ -223,28 +202,6 @@ ConfigurableRootQuery<BookTable, Book> query = fluent
     .orderBy(book.store().name())
     .orderBy(book.name())
     .select(book);
-
-int rowCount = query.count();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-ConfigurableTypedRootQuery<BookTable, Book> query = 
-    sqlClient.createQuery(BookTable.class, (q, book) -> {
-        q.where(
-            book.price().between(
-                new BigDecimal(20),
-                new BigDecimal(30)
-            )
-        );
-        q
-            // highlight-next-line
-            .orderBy(book.store().name()) // α
-            .orderBy(book.name());
-        return q.select(book);
-    });
 
 int rowCount = query.count();
 ```
@@ -301,15 +258,14 @@ For the situation discussed above that cannot be optimized, any of the following
 Here, we choose the second option, use the left outer join
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
-AuthorTableEx author = new AuthorTableEx();
+BookTable book = BookTable.$;
+AuthorTableEx author = AuthorTableEx.$;
 
-ConfigurableRootQuery<BookTable, Book> query = fluent
-    .query(book)
+ConfigurableRootQuery<BookTable, Book> query = sqlClient
+    .createQuery(book)
     .where(
         book.price().between(
             new BigDecimal(20),
@@ -320,28 +276,6 @@ ConfigurableRootQuery<BookTable, Book> query = fluent
     .orderBy(book.store(JoinType.LEFT).name())
     .orderBy(book.name())
     .select(book);
-
-int rowCount = query.count();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-ConfigurableTypedRootQuery<BookTable, Book> query = 
-    sqlClient.createQuery(BookTable.class, (q, book) -> {
-        q.where(
-            book.price().between(
-                new BigDecimal(20),
-                new BigDecimal(30)
-            )
-        );
-        q
-            // highlight-next-line
-            .orderBy(book.store(JoinType.LEFT).name())
-            .orderBy(book.name());
-        return q.select(book);
-    });
 
 int rowCount = query.count();
 ```

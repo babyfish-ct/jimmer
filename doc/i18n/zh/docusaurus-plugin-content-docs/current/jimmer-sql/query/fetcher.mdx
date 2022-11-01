@@ -31,14 +31,13 @@ jimmer-sql可以挂接外部缓存，是否使用缓存，将导致对象抓取�
 以查询`Book`和相关的`authors`关联集合为例：
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             BookFetcher.$
@@ -49,26 +48,6 @@ List<Book> books = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q.select(
-            book.fetch(
-                BookFetcher.$
-                    .allScalarFields()
-                    .authors(
-                        AuthorFetcher.$
-                            .allScalarFields()
-                    )
-            )
-        );
-    })
     .execute();
 ```
 
@@ -180,38 +159,19 @@ where tb_1_.ID in (?, ?, ?, ?, ?)
 ### 抓取标量字段
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         // highlight-next-line
         book.fetch(
             BookFetcher.$.name()
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                // highlight-next-line
-                book.fetch(
-                    BookFetcher.$.name()
-                )
-            );
-    })
     .execute();
 ```
 
@@ -274,38 +234,19 @@ id属性被特殊对待，总是会被查询，并不受对象抓取器的控制
 ### 抓取多个字段
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             // highlight-next-line
             BookFetcher.$.name().price()
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                book.fetch(
-                    // highlight-next-line
-                    BookFetcher.$.name().price()
-                )
-            );
-    })
     .execute();
 ```
 
@@ -370,38 +311,19 @@ where tb_1_.EDITION = ?
 ### allScalarFields
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             // highlight-next-line
             BookFetcher.$.allScalarFields()
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                book.fetch(
-                    // highlight-next-line
-                    BookFetcher.$.allScalarFields()
-                )
-            );
-    })
     .execute();
 ```
 
@@ -461,14 +383,13 @@ where tb_1_.EDITION = ?
 前面讲过的属性都是正属性，不断新增要查询的字段。而负属性则相反，从在已有的对象抓取器的基础上，删除指定属性。
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             BookFetcher.$
@@ -477,26 +398,6 @@ List<Book> books = fluent
             .edition(false)
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                book.fetch(
-                    BookFetcher.$
-                        .allScalarFields()
-                        // highlight-next-line
-                        .edition(false)
-                )
-            );
-    })
     .execute();
 ```
 
@@ -560,38 +461,19 @@ where tb_1_.EDITION = ?
 ### allTableFields
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             // highlight-next-line
             BookFetcher.$.allTableFields()
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                book.fetch(
-                    // highlight-next-line
-                    BookFetcher.$.allTableFields()
-                )
-            );
-    })
     .execute();
 ```
 
@@ -699,14 +581,13 @@ where tb_1_.EDITION = ?
 针对基于外键的关联如何实现这个功能我们已经讲解过，所以，让我们来看一个针对多对多关联`Book.authors`的例子。
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             BookFetcher.$.
@@ -715,26 +596,6 @@ List<Book> books = fluent
                 .authors()
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                book.fetch(
-                    BookFetcher.$.
-                        .allScalarFields()
-                        // highlight-next-line
-                        .authors()
-                )
-            );
-    })
     .execute();
 ```
 
@@ -835,14 +696,13 @@ from BOOK_AUTHOR_MAPPING as tb_1_
 如果一个批量太大，就会根据一个叫`batchSize`的设置进行分批切割，如
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             BookFetcher.$
@@ -853,28 +713,6 @@ List<Book> books = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                book.fetch(
-                    BookFetcher.$
-                        .authors(
-                            AuthorFetcher.$,
-                            // highlight-next-line
-                            it -> it.batch(2)
-                        )
-                )
-            );
-    })
     .execute();
 ```
 
@@ -966,14 +804,13 @@ val sqlClient = newKSqlClient {
 ### 指定关联对象的字段
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             BookFetcher.$.
@@ -990,34 +827,6 @@ List<Book> books = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                book.fetch(
-                    BookFetcher.$.
-                        .allScalarFields()
-                        .store(
-                            BookStoreFetcher.$
-                                // highlight-next-line
-                                .allScalarFields()
-                        )
-                        .authors(
-                            AuthorFetcher.$
-                                // highlight-next-line
-                                .allScalarFields()
-                        )
-                )
-            );
-    })
     .execute();
 ```
 
@@ -1143,14 +952,13 @@ val books = sqlClient
 :::
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
         book.fetch(
             BookFetcher.$
@@ -1162,29 +970,6 @@ List<Book> books = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Book> books = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-                book.fetch(
-                    BookFetcher.$
-                        .allScalarFields()
-                        .authors(
-                            AuthorFetcher.$.allScalarFields(),
-                            // highlight-next-line
-                            it -> it.batch(1).limit(10, 90)
-                        )
-                )
-            );
-    })
     .execute();
 ```
 
@@ -1266,14 +1051,13 @@ val books = sqlClient
 - 第二列对象的`Book.autors`不使用过滤器
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-BookTable book = new BookTable();
+BookTable book = BookTable.$;
 
-List<Book> books = fluent
-    .query(book)
+List<Book> books = sqlClient
+    .createQuery(book)
     .select(
 
         // 第一列
@@ -1307,51 +1091,6 @@ List<Book> books = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<Tuple2<Book, Book>> tuples = sqlClient
-    .createQuery(BookTable.class, (q, book) -> {
-        return q
-            .where(book.edition().eq(3))
-            .select(
-
-                // 第一列
-                book.fetch(
-                    BookFetcher.$
-                        .allScalarFields()
-                        .authors(
-                            AuthorFetcher.$
-                                .allScalarFields(),
-
-                            // 使用过滤器
-                            // highlight-next-line
-                            it -> it.filter(args -> {
-                                args.where(
-                                    args.getTable()
-                                        .firstName().ilike("a")
-                                );
-                            })
-                        )
-                ),
-
-                // 第二列
-                book.fetch(
-                    BookFetcher.$
-                        .allScalarFields()
-                        .authors(
-                            AuthorFetcher.$
-                                    .allScalarFields()
-
-                            // 不使用过滤器
-                        )
-                )
-            );
-    })
     .execute();
 ```
 
@@ -1618,14 +1357,13 @@ insert into tree_node(
 自顶向下，抓取两层
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-TreeNodeTable node = new TreeNodeTable();
+TreeNodeTable node = TreeNodeTable.$;
 
-List<TreeNode> treeNodes = fluent
-    .query(node)
+List<TreeNode> treeNodes = sqlClient
+    .createQuery(node)
     .where(node.parent().isNull())
     .select(
         node.fetch(
@@ -1638,28 +1376,6 @@ List<TreeNode> treeNodes = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<TreeNode> treeNodes = sqlClient
-    .createQuery(TreeNodeTable.class, (q, node) -> {
-        q.where(node.parent().isNull());
-        return q.select(
-            node.fetch(
-                TreeNodeFetcher.$
-                    .name()
-                    .childNodes(
-                        TreeNodeFetcher.$.name(),
-                        // highlight-next-line
-                        it -> it.depth(2)
-                    )
-            )
-        );
-    })
     .execute();
 ```
 
@@ -1757,14 +1473,13 @@ val treeNodes = sqlClient
 自顶向下，抓取无穷层
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-TreeNodeTable node = new TreeNodeTable();
+TreeNodeTable node = TreeNodeTable.$;
 
-List<TreeNode> treeNodes = fluent
-    .query(node)
+List<TreeNode> treeNodes = sqlClient
+    .createQuery(node)
     .where(node.parent().isNull())
     .select(
         node.fetch(
@@ -1777,28 +1492,6 @@ List<TreeNode> treeNodes = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<TreeNode> treeNodes = sqlClient
-    .createQuery(TreeNodeTable.class, (q, node) -> {
-        q.where(node.parent().isNull());
-        return q.select(
-            node.fetch(
-                TreeNodeFetcher.$
-                    .name()
-                    .childNodes(
-                        TreeNodeFetcher.$.name(),
-                        // highlight-next-line
-                        it -> it.recursive()
-                    )
-            )
-        );
-    })
     .execute();
 ```
 
@@ -1989,14 +1682,13 @@ val treeNodes = sqlClient
 自顶向下，抓取无穷层。但是，对名称为“Clothing”的节点，放弃递归
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java(Fluent)">
+<TabItem value="java" label="Java">
 
 ```java
-Fluent fluent = sqlClient.createFluent();
-TreeNodeTable node = new TreeNodeTable();
+TreeNodeTable node = TreeNodeTable.$;
 
-List<TreeNode> treeNodes = fluent
-    .query(node)
+List<TreeNode> treeNodes = sqlClient
+    .createQuery(node)
     .where(node.parent().isNull())
     .select(
         node.fetch(
@@ -2011,30 +1703,6 @@ List<TreeNode> treeNodes = fluent
                 )
         )
     )
-    .execute();
-```
-
-</TabItem>
-<TabItem value="java-lambda" label="Java(Lambda)">
-
-```java
-List<TreeNode> treeNodes = sqlClient
-    .createQuery(TreeNodeTable.class, (q, node) -> {
-        q.where(node.parent().isNull());
-        return q.select(
-            node.fetch(
-                TreeNodeFetcher.$
-                    .name()
-                    .childNodes(
-                        TreeNodeFetcher.$.name(),
-                        it -> it.recursive(args ->
-                            // highlight-next-line
-                            !args.getEntity().name().equals("Clothing")
-                        )
-                    )
-            )
-        );
-    })
     .execute();
 ```
 

@@ -122,33 +122,18 @@ interface KExecutable<R> {
 
     以查询为例：
     <Tabs groupId="language">
-    <TabItem value="java" label="Java(Fluent)">
+    <TabItem value="java" label="Java">
 
     ```java
-    Fluent fluent = sqlClient.createFluent();
-    BookTable book = new BookTable();
+    BookTable book = BookTable.$;
 
-    List<Book> books = fluent
-        .query(book)
+    List<Book> books = sqlClient
+        .createQuery(book)
         .select(book)
         // highlight-next-line
         .execute(con);
     ```
 
-    </TabItem>
-    <TabItem value="java-lambda" label="Java(Lambda)">
-    
-    ```java
-    public List<Book> findBooks(Connection con) {
-        return sqlClient
-            .createQuery(BookTable.class, (q, book) -> {
-                return q.select(book);
-            })
-            // highlight-next-line
-            .execute(con);
-    }
-    ```
-    
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
     
@@ -169,35 +154,20 @@ interface KExecutable<R> {
 
     以查询为例：
     <Tabs groupId="language">
-    <TabItem value="java" label="Java(Fluent)">
+    <TabItem value="java" label="Java">
 
     ```java
     public List<Book> findBooks() {
-        Fluent fluent = sqlClient.createFluent();
-        BookTable book = new BookTable();
+        BookTable book = BookTable.$;
 
-        List<Book> books = fluent
-            .query(book)
+        List<Book> books = sqlClient
+            .createQuery(book)
             .select(book)
             // highlight-next-line
             .execute();
     }
     ```
 
-    </TabItem>
-    <TabItem value="java-lambda" label="Java(Lambda)">
-    
-    ```java
-    public List<Book> findBooks() {
-        return sqlClient
-            .createQuery(BookTable.class, (q, book) -> {
-                return q.select(book);
-            })
-            // highlight-next-line
-            .execute();
-    }
-    ```
-    
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
     
