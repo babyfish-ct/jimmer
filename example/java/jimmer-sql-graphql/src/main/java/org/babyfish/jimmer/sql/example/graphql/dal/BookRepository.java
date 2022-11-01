@@ -1,12 +1,10 @@
 package org.babyfish.jimmer.sql.example.graphql.dal;
 
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.LikeMode;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.example.graphql.entities.AuthorTableEx;
 import org.babyfish.jimmer.sql.example.graphql.entities.Book;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookTable;
-import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
@@ -27,24 +25,23 @@ public class BookRepository {
             @Nullable String storeName,
             @Nullable String authorName
     ) {
-        Fluent fluent = sqlClient.createFluent();
-        BookTable book = new BookTable();
-        AuthorTableEx author = new AuthorTableEx();
+        BookTable book = BookTable.$;
+        AuthorTableEx author = AuthorTableEx.$;
 
-        return fluent
-                .query(book)
+        return sqlClient
+                .createQuery(book)
                 .whereIf(
                         StringUtils.hasText(name),
-                        () -> book.name().ilike(name)
+                        book.name().ilike(name)
                 )
                 .whereIf(
                         StringUtils.hasText(storeName),
-                        () -> book.store().name().ilike(storeName)
+                        book.store().name().ilike(storeName)
                 )
                 .whereIf(
                         StringUtils.hasText(authorName),
-                        () -> book.id().in(fluent
-                                .subQuery(author)
+                        book.id().in(sqlClient
+                                .createSubQuery(author)
                                 .where(
                                         Predicate.or(
                                                 author.firstName().ilike(authorName),

@@ -4,7 +4,6 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.example.graphql.entities.Author;
 import org.babyfish.jimmer.sql.example.graphql.entities.AuthorTable;
-import org.babyfish.jimmer.sql.fluent.Fluent;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
@@ -21,14 +20,14 @@ public class AuthorRepository {
     }
 
     public List<Author> find(@Nullable String name) {
-        Fluent fluent = sqlClient.createFluent();
-        AuthorTable author = new AuthorTable();
 
-        return fluent
-                .query(author)
+        AuthorTable author = AuthorTable.$;
+
+        return sqlClient
+                .createQuery(author)
                 .whereIf(
                         StringUtils.hasText(name),
-                        () -> Predicate.or(
+                        Predicate.or(
                                 author.firstName().ilike(name),
                                 author.lastName().ilike(name)
                         )
