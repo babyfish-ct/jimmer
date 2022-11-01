@@ -50,15 +50,17 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 
     @Override
     public Map<Long, BigDecimal> resolve(Collection<Long> ids, Connection con) {
+
+        BookTable book = BookTable.$;
+
         List<Tuple2<Long, BigDecimal>> tuples = sqlClient
-                .createQuery(BookTable.class, (q, book) -> {
-                    q.where(book.store().id().in(ids));
-                    q.groupBy(book.store().id());
-                    return q.select(
-                            book.store().id(),
-                            book.price().avg()
-                    );
-                })
+                .createQuery(book)
+                .where(book.store().id().in(ids))
+                .groupBy(book.store().id())
+                .select(
+                        book.store().id(),
+                        book.price().avg()
+                )
                 .execute(con); // Important to specify connection
         return ensureKeys(
                 Tuple2.toMap(tuples),
