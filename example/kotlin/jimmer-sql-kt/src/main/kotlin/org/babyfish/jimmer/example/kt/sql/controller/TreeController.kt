@@ -51,9 +51,6 @@ class TreeController(
                                     entity.name.lowercase()
                                 )
                             }
-                            filter {
-                                orderBy(table.name)
-                            }
                         }) {
                             allScalarFields()
                         }

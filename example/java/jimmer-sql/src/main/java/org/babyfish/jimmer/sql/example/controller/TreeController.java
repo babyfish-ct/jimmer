@@ -53,7 +53,7 @@ public class TreeController {
                 .where(treeNode.parent().isNull())
                 .whereIf(
                         !rootName.isEmpty(),
-                        () -> treeNode.name().ilike(rootName)
+                        treeNode.name().ilike(rootName)
                 )
                 .select(
                         treeNode.fetch(
@@ -67,9 +67,6 @@ public class TreeController {
                                                                 !excludedNames.contains(
                                                                         args.getEntity().name().toLowerCase()
                                                                 )
-                                                        )
-                                                        .filter(args ->
-                                                                args.orderBy(args.getTable().name())
                                                         )
                                         )
                         )

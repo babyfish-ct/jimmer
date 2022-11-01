@@ -19,6 +19,6 @@ interface TreeNode : BaseEntity {
     @OnDissociate(DissociateAction.DELETE)
     val parent: TreeNode?
 
-    @OneToMany(mappedBy = "parent")
+    @OneToMany(mappedBy = "parent", orderedProps = [OrderedProp("name")])
     val childNodes: List<TreeNode>
 }

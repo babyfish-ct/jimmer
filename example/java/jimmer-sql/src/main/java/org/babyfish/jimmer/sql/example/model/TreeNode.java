@@ -25,6 +25,6 @@ public interface TreeNode extends BaseEntity {
     @OnDissociate(DissociateAction.DELETE)
     TreeNode parent();
 
-    @OneToMany(mappedBy = "parent")
+    @OneToMany(mappedBy = "parent", orderedProps = @OrderedProp("name"))
     List<TreeNode> childNodes();
 }

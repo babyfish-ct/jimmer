@@ -151,18 +151,42 @@ public class Metadata {
         if (matched) {
             return javaClass;
         }
+        Class<?> existingJavaClass = null;
         Class<?> superClass = javaClass.getSuperclass();
         if (superClass != null && superClass != Object.class) {
-            Class<?> immutableJavaClass = getImmutableJavaClass(superClass);
-            if (immutableJavaClass != null) {
-                return immutableJavaClass;
-            }
+            existingJavaClass = getImmutableJavaClass(superClass);
         }
         for (Class<?> interfaceClass : javaClass.getInterfaces()) {
             Class<?> immutableJavaClass = getImmutableJavaClass(interfaceClass);
             if (immutableJavaClass != null) {
-                return immutableJavaClass;
+                Class<?> mergedClass = mergeImmutableJavaClass(existingJavaClass, immutableJavaClass);
+                if (mergedClass == null) {
+                    throw new IllegalArgumentException(
+                            "\"" +
+                                    javaClass.getName() +
+                                    "\" has conflict super types: \"" +
+                                    existingJavaClass.getName() +
+                                    "\" and \"" +
+                                    immutableJavaClass.getName() +
+                                    "\"");
+                }
+                existingJavaClass = mergedClass;
             }
+        }
+        return existingJavaClass;
+    }
+
+    private static Class<?> mergeImmutableJavaClass(
+            Class<?> existing, Class<?> current
+    ) {
+        if (existing == null) {
+            return current;
+        }
+        if (existing.isAssignableFrom(current)) {
+            return current;
+        }
+        if (current.isAssignableFrom(existing)) {
+            return existing;
         }
         return null;
     }
