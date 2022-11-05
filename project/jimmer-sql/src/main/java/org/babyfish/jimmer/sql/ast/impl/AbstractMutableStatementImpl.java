@@ -135,6 +135,10 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         return getContext().getPurpose();
     }
 
+    public boolean isSubQueryDisabled() {
+        return false;
+    }
+
     protected static List<Predicate> mergePredicates(List<Predicate> predicates) {
         if (predicates.size() < 2) {
             return predicates;

@@ -1,14 +1,14 @@
 package org.babyfish.jimmer.sql.example.model;
 
 import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.example.model.common.TenantAware;
+import org.babyfish.jimmer.sql.example.model.common.BaseEntity;
 
 import javax.validation.constraints.Null;
 import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
-public interface BookStore extends TenantAware {
+public interface BookStore extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

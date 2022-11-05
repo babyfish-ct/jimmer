@@ -267,9 +267,18 @@ public class MutableRootQueryImpl<T extends Table<?>>
                 getTable().getImmutableType(),
                 getContext().isFilterIgnored()
         );
-        if (filter != null) {
+        if (filter instanceof CacheableFilter<?>) {
+            disableSubQuery();
+            try {
+                filter.filter(
+                        new FilterArgsImpl<>(this, this.getTable(), true)
+                );
+            } finally {
+                enableSubQuery();
+            }
+        } else if (filter != null) {
             filter.filter(
-                    new FilterArgsImpl<>(this, this.getTable(), filter instanceof CacheableFilter<?>)
+                    new FilterArgsImpl<>(this, this.getTable(), false)
             );
         }
         super.onFrozen();
