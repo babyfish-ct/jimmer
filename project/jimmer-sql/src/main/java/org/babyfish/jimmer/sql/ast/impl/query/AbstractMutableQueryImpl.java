@@ -28,6 +28,8 @@ public abstract class AbstractMutableQueryImpl
 
     private final List<Order> orders = new ArrayList<>();
 
+    private int subQueryDisabledCount = 0;
+
     @SuppressWarnings("unchecked")
     protected AbstractMutableQueryImpl(
             JSqlClient sqlClient,
@@ -108,6 +110,21 @@ public abstract class AbstractMutableQueryImpl
     protected void onFrozen() {
         havingPredicates = mergePredicates(havingPredicates);
         super.onFrozen();
+    }
+
+    @Override
+    public void disableSubQuery() {
+        this.subQueryDisabledCount++;
+    }
+
+    @Override
+    public void enableSubQuery() {
+        this.subQueryDisabledCount--;
+    }
+
+    @Override
+    public boolean isSubQueryDisabled() {
+        return subQueryDisabledCount != 0;
     }
 
     void accept(

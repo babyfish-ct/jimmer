@@ -1,11 +1,11 @@
 package org.babyfish.jimmer.example.kt.graphql.entities
 
-import org.babyfish.jimmer.example.kt.graphql.entities.common.TenantAware
+import org.babyfish.jimmer.example.kt.graphql.entities.common.BaseEntity
 import org.babyfish.jimmer.sql.*
 import java.math.BigDecimal
 
 @Entity
-interface BookStore : TenantAware {
+interface BookStore : BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

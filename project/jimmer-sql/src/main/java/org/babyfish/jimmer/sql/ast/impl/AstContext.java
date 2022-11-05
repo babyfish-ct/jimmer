@@ -44,6 +44,12 @@ public class AstContext implements RootTableResolver {
     }
 
     public void pushStatement(AbstractMutableStatementImpl statement) {
+        AbstractMutableStatementImpl current = stack.peek();
+        if (current != null && current.isSubQueryDisabled()) {
+            throw new IllegalStateException(
+                    "Cannot use sub query here because the sub query of parent statement is disabled"
+            );
+        }
         stack.push(statement);
     }
 

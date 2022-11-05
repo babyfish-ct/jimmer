@@ -5,7 +5,6 @@ create table book_store(
     id bigint unsigned not null auto_increment primary key,
     name varchar(50) not null,
     website varchar(100),
-    tenant varchar(20),
     created_time datetime not null,
     modified_time datetime not null
 ) engine=innodb;
@@ -90,9 +89,9 @@ alter table tree_node
         foreign key(parent_id)
             references tree_node(node_id);
 
-insert into book_store(id, name, tenant, created_time, modified_time) values
-    (1, 'O''REILLY', 'a', now(), now()),
-    (2, 'MANNING', 'b', now(), now())
+insert into book_store(id, name, created_time, modified_time) values
+    (1, 'O''REILLY', now(), now()),
+    (2, 'MANNING', now(), now())
 ;
 
 insert into book(id, name, edition, price, store_id, tenant, created_time, modified_time) values

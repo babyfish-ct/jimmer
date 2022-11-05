@@ -210,7 +210,7 @@ public abstract class AbstractDataLoader {
                 cache instanceof Cache.Parameterized<?, ?> ?
                         (Cache.Parameterized<Object, Object>)cache :
                         null;
-        boolean useCache;
+        final boolean useCache;
         if (cache != null) {
             if (parameterMapRef == null) {
                 useCache = false;
@@ -248,7 +248,7 @@ public abstract class AbstractDataLoader {
                 false
         );
         Map<Object, Object> valueMap =
-                parameterMap != null && !parameterMap.isEmpty() ?
+                parameterMap != null && !parameterMap.isEmpty() && parameterizedCache != null ?
                         parameterizedCache.getAll(sourceIds, parameterMapRef.getValue(), env) :
                         cache.getAll(sourceIds, env);
         return Utils.joinCollectionAndMap(
@@ -602,9 +602,20 @@ public abstract class AbstractDataLoader {
     }
 
     private void applyGlobalFilter(Sortable sortable, Table<?> table) {
-        if (globalFiler != null) {
+        SortableImplementor sortableImplementor = (SortableImplementor)sortable;
+        Filter<Props> globalFiler = this.globalFiler;
+        if (globalFiler instanceof CacheableFilter<?>) {
+            sortableImplementor.disableSubQuery();
+            try {
+                globalFiler.filter(
+                        new FilterArgsImpl<>(sortableImplementor, table, true)
+                );
+            } finally {
+                sortableImplementor.enableSubQuery();
+            }
+        } else if (globalFiler != null) {
             globalFiler.filter(
-                    new FilterArgsImpl<>((SortableImplementor) sortable, table, globalFiler instanceof CacheableFilter<?>)
+                    new FilterArgsImpl<>(sortableImplementor, table, false)
             );
         }
     }

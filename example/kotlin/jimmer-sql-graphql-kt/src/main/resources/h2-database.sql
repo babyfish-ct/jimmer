@@ -8,7 +8,6 @@ create table book_store(
     id identity(100, 1) not null,
     name varchar(50) not null,
     website varchar(100),
-    tenant varchar(20) not null,
     created_time timestamp not null,
     modified_time timestamp not null
 );
@@ -74,9 +73,9 @@ alter table book_author_mapping
                 on delete cascade
 ;
 
-insert into book_store(id, name, tenant, created_time, modified_time) values
-    (1, 'O''REILLY', 'a', current_timestamp(), current_timestamp()),
-    (2, 'MANNING', 'b', current_timestamp(), current_timestamp())
+insert into book_store(id, name, created_time, modified_time) values
+    (1, 'O''REILLY', current_timestamp(), current_timestamp()),
+    (2, 'MANNING', current_timestamp(), current_timestamp())
 ;
 
 insert into book(id, name, edition, price, store_id, tenant, created_time, modified_time) values

@@ -1,0 +1,117 @@
+---
+sidebar_position: 1
+title: 前言
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+import JavaFetcherMp4 from '@site/static/img/java-fetcher.mp4';
+import KotlinFetcherMp4 from '@site/static/img/kotlin-fetcher.mp4';
+import GraphQLFetcherMp4 from '@site/static/img/graphql-fetcher.mp4';
+
+Jimmer提供了很多明显缺别于传统方案的能力。其中最重要的能力，就是开发人员不再面对零散的实体对象和实体关系，而是以任意复杂的数据结构为操作目标。
+
+## 表达任意复杂的数据结构
+
+![wechat-group](@site/static/img/shape.png)
+
+这幅图示范了一个全局的关系型数据库模型和三个业务视角。
+
+每个业务视角观察全局关系型数据库模型中的某个区域。
+
+-   该区域的形状千变万化，你可以自由决定它是否包含某些实体、关联甚至属性。
+    :::note
+    这里所说的属性，不仅包括图中展示的数据库映射属性，还包括和数据库结构无关的业务性属性。
+    :::
+
+-   该区域的形状无需事先设计，可以灵活变动，随着需求的变化而变化。
+
+当然，作为面向Java和Kotlin的解决方案，Jimmer的实体类型必然是强类型的，但，同时也是动态的。
+
+所谓动态实体，指实体对象的任何属性，无论是普通属性、关联属性还是和数据模型无关的业务性属性，都可以不指定。这样，动态实体可以描述任意复杂的数据结构。
+
+:::note
+不指定对象的某个属性，和把对象的某个属性设置为null，在Jimmer中是完全不同的两回事。
+:::
+
+另外，Jimmer保证动态实体所描述的数据结构不包含环形引用，是一个由聚合根和单向关系构成的树，所以，可以直接通过HTTP协议传递。
+
+:::tip
+动态实体既可以表达任意复杂的数据结构，又能直接参与HTTP传输。所以，开发人员应该**使用统一的实体模型来表达任何业务所需的数据格式，而非为每一个业务场景所需的数据格式定义DTO**，避免冗余的数据定义让系统丧失紧凑型。
+:::
+
+## 查询任意复杂的数据结构
+
+Jimmer提供了两种方法，用于查询任意复杂的数据结构
+
+- 在服务端指定被查询数据结构的形状
+
+- 在客户端端指定被查询数据结构的形状
+
+### 1. 在服务端指定被查询数据结构的形状
+
+Jimmer支持一个叫[对象抓取器](./jimmer-sql/query/fetcher)的功能，该功能赋予开发人员从数据库中查询任意复杂的数据结构的能力。
+
+请观看如下视频。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+    <video width="100%" controls>
+        <source src={JavaFetcherMp4} type="video/mp4"/>
+        <div style={{padding: '1rem', fontSize: '2rem', color: 'red'}}>Your browser does not support the video tag.</div>
+    </video>
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+    <video width="100%" controls>
+        <source src={KotlinFetcherMp4} type="video/mp4"/>
+        <div style={{padding: '1rem', fontSize: '2rem', color: 'red'}}>Your browser does not support the video tag.</div>
+    </video>
+</TabItem>
+</Tabs>
+
+[对象抓取器](./jimmer-sql/query/fetcher)还具备一个视频中没有展示的强大能力，对于自关联属性进行递归抓取，有兴趣可以查阅[自关联递归抓取](./jimmer-sql/query/fetcher#自关联递归抓取)。
+
+### 2. 在客户端端指定被查询数据结构的形状
+
+[GraphQL](https://graphql.org/)是一个用于在客户端查询任意复杂数据的协议，但其缺点是服务端开发成本稍微高。
+
+SpringBoot从2.7.0开始支持[Spring GraphQL](https://spring.io/projects/spring-graphql)，Jimmer为此提供了针对性支持，可以让基于`Spring GraphQL`的开发工作成本变得很低。
+
+<video width="100%" controls>
+    <source src={GraphQLFetcherMp4} type="video/mp4"/>
+    <div style={{padding: '1rem', fontSize: '2rem', color: 'red'}}>Your browser does not support the video tag.</div>
+</video>
+
+:::tip
+注意，受限于目前的GraphQL协议，这种方法并没有[对象抓取器](./jimmer-sql/query/fetcher)那种对自关联属性的递归查询能力。
+
+如果你的业务场景既需要对自关联属性的递归查询能力，又需要把被查数据结构的形状的决定权暴露给客户端，你可以自定义一个类似于GraphQL的文本协议，客户端按照自定义协议提交特定格式的文本，服务端将其转换为[对象抓取器](./jimmer-sql/query/fetcher)再查询，这非常容易。
+:::
+
+## 保存任意复杂的数据结构
+
+开发人员可以利用Jimmer实体的动态性构建任意复杂的数据结构，交由Jimmer保存。
+
+Jimmer会把数据库中现有数据结构和用户期望保存的数据结构做diff，然后修改不一致的部分，最终让数据库中的数据结构和用户期望的数据结构一致。如图
+
+【等美工图片】
+
+图片左上为数据库中现有数据结构；右上为用户期望的数据结构，其中每个对象，要么指定id，要么指定业务key和id增长策略。
+
+图片下方为Jimmer执行的操作，用了四种颜色进行标注。
+
+- 红色部分：当某个对象在数据库现有数据结构中存在，而在用户期望保存的数据结构中不存在时，可能会导致这个此对象及其关联被删除。用户可以干预此环节，选择阻止操作、仅断开关系或删除对象。
+
+- 绿色部分：当某个对象在数据库现有数据结构中不存在，而在用户期望保存的数据结构中存在时，可能会导致这个此对象及其关联被新建。用户可以干预此环节，选择阻止操作、或允许操作。
+
+- 蓝色部分：当某个对象在数据库现有数据结构中和其他对象的关联，和用户期望保存的数据结构中对应对象和其他对象的关联不同时，自动调整关联。
+
+- 黄色部分：当某个对象在数据库现有数据结构中存在，且在用户期望保存的数据结构中对应的对象具备待修改的属性时，修改对象属性。由于Jimmer实体是动态的，允许对象缺失任何属性，只修改部分属性而非全部是被允许的。
+
+:::tip
+和其他持久化方案不同，Jimmer无需事先决定每个关系是否级联保存，是否级联保存完全依赖用户指定的数据结构的形状。
+:::
+
+## 缓存任意复杂的数据结构
+
