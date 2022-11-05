@@ -14,7 +14,7 @@ Jimmer提供了很多明显缺别于传统方案的能力。其中最重要的�
 
 ## 表达任意复杂的数据结构
 
-![wechat-group](@site/static/img/shape.png)
+![shape](@site/static/img/shape.png)
 
 这幅图示范了一个全局的关系型数据库模型和三个业务视角。
 
@@ -113,5 +113,129 @@ Jimmer会把数据库中现有数据结构和用户期望保存的数据结构�
 和其他持久化方案不同，Jimmer无需事先决定每个关系是否级联保存，是否级联保存完全依赖用户指定的数据结构的形状。
 :::
 
-## 缓存任意复杂的数据结构
+## 缓存任意复杂的数据结构（含一致性维护）
+
+前面谈到，Jimmer可以查询任意复杂的数据结构。为了让应用具备性能优势，相应地，Jimmer支持针对任意复杂的数据结构的缓存。
+
+从实现层面讲，Jimmer的缓存有两种，对象缓存和属性缓存。其中，属性缓存又可以进一步分为关联属性缓存和计算属性缓存。
+
+对象缓存和关联缓存在幕后的结合使用，最终，从用户看，就是针对任意复杂的数据结构的缓存。
+
+Jimmer的缓存机制有如下特色
+
+- 对用户采用何种缓存技术不做任何限制。
+
+- 对使用者透明，是否使用缓存不会导致业务代码变化。
+
+- 支持多级缓存，比如第一级采用JVM内部的caffine，第二级别采用集群共享的redis。
+
+- 不是强制的，整个框架可以以无缓存模式工作。即使启用了缓存能力，用户仍然可以精细地控制每个实体类型是否采用对象缓存，以及每个关联属性或计算属性是否采用属性缓存。
+
+- 良好的数据一致性支持。
+
+### 1. 简单对象缓存
+
+简单对象缓存，负责把对象id映射成简单对象。除了外键外，简单对象不具备任何关联属性。
+
+![object-cache](@site/static/img/object-cache.jpeg)
+
+### 2. 关联属性缓存
+
+关联属性缓存，为数据提供邻接表。以支持快速查询任意复杂数据结构
+
+![association-cache](@site/static/img/association-cache.jpeg)
+
+:::note
+对于基于外键而非中间表多对一关联(图中的`Book.store-1`、`Book.store-2`和`Book.store-3`)而言，仅在GraphQL工作模式中开发人员给予的上级对象的外键属性缺失时才使用；其余情况下，以外键为参数查询简单对象缓存得到父对象。
+:::
+
+:::tip
+1. 关系性数据库的缺点之一，在于数据关联需要查询。关联缓存提供访问方式更直接的邻接表数据，很好地缓解了这个问题。
+:::
+
+### 3. 计算属性缓存
+
+Jimmer实体支持非持久化(`@Transient`)属性，这种属性在数据库中没有对应的字段，用于表达面开发人员自定义的业务属性，和数据库结构无关。
+
+非持久化属性有两种
+
+- 手动模式：Jimmer不会对这类属性做任何操作，实体对象是否具备此属性，完全取决于用户的业务代码是否填充它
+
+- 自动模式：如果[对象抓取器](./jimmer-sql/query/fetcher)或GraphQL要查询这类属性，Jimmer会调用当前属性注解中配置的计算解决器，完成计算并自动设置该属性。
+
+其中，自动模式的非持久化属性也称计算属性，计算属性可以选择采用计算缓存。
+
+![calculated-cache](@site/static/img/calculated-cache.jpeg)
+
+### 4. 多视角缓存
+
+Jimmer提供了[全局过滤器](jimmer-sql/query/filter)，可以在所有查询中对某些实体类进行隐式的条件过滤。
+
+该功能可以很方便地实现基于行的数据授权，自然会导致不同的操作者看到的数据不一样。
+
+既然不同的操作者看到的数据不一样，自然也需要让不同的操作者看到的缓存不一样，这就是多视角缓存。
+
+![multi-view-cache](@site/static/img/multi-view-cache.jpeg)
+
+这个例子以多租户为例子展现了多视角缓存。不同的操作者看到的关联缓存和计算缓存不一样。
+
+:::tip
+多视角缓存会导致更快的缓存空间消耗，应仅针对重要的关联属性或计算属性使用。开发人员可以自由决定某个关联属性或计算属性仅使用普通缓存还是要使用多视角缓存。
+:::
+
+### 5. 缓存一致性
+
+Jimmer实现了相对实时的缓存数据一致性。为此，开发人员只需要：
+
+- 采用支持binlog的数据库，并启用binlog
+- 使用任何第三方技术(Maxwell、Canal或DataBus)，接收binlog事件。
+- 调用Jimmer的全局API`invalidateByBinLog`。
+
+然后
+
+- 如果应用仅仅使用了对象缓存和关联缓存，用户不需要做任何事，全自动。
+- 如果应用仅仅使用了计算缓存或多视角缓存，需要用户的辅助，但是非常简单。
+
+示例
+
+1.  修改外键，自动清除关联缓存和计算缓存。
+ 
+    <Tabs groupId="log-mode">
+    <TabItem value="simple" label="静态示范">
+    </TabItem>
+    <TabItem value="animation" label="动画示范">
+    </TabItem>
+    </Tabs>
+
+2.  修改中间表，自动清除关联缓存。
+ 
+    <Tabs groupId="log-mode">
+    <TabItem value="simple" label="静态示范">
+    </TabItem>
+    <TabItem value="animation" label="动画示范">
+    </TabItem>
+    </Tabs>
+
+3.  修改计算依赖字段，自动清除计算缓存。
+
+    <Tabs groupId="log-mode">
+    <TabItem value="simple" label="静态示范">
+    </TabItem>
+    <TabItem value="animation" label="动画示范">
+    </TabItem>
+    </Tabs>
+
+4.  修改被过滤字段，自动清除关联缓存和计算缓存。
+
+    <Tabs groupId="log-mode">
+    <TabItem value="simple" label="静态示范">
+    </TabItem>
+    <TabItem value="animation" label="动画示范">
+    </TabItem>
+    </Tabs>
+
+### 其它功能
+
+
+### 未来可能会加入的功能
 
