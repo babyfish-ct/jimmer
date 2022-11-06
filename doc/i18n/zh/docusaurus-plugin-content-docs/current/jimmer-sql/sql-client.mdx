@@ -367,6 +367,7 @@ public interface Executor {
             Connection con,
             String sql,
             List<Object> variables,
+            ExecutionPurpose purpose,
             StatementFactory factory,
             SqlFunction<PreparedStatement, R> block
     );
@@ -385,9 +386,11 @@ public interface Executor {
     >
     > 该列表不可能包含null，所有的null值都被事先替换成了`org.babyfish.jimmer.sql.runtime.DbNull`类型的对象。
 
-4. `factory`: 如何创建JDBC prepared statement.
+4. `purpose`: SQL被执行的目的。
 
-5. `block`: 将要执行的实质性操作。
+5. `factory`: 如何创建JDBC prepared statement。
+
+6. `block`: 将要执行的实质性操作。
 
     > 注意：
     >
@@ -399,93 +402,150 @@ public interface Executor {
 
 ### 在日志中打印SQL语句和其参数
 
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
+有两种方法可以实现这个功能
 
-```java
-@Configuration
-public class SqlClientConfig {
+-   便捷的方式
+    
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    @Configuration
+    public class SqlClientConfig {
 
-    private static final Logger LOGGER = 
-        LoggerFactory.getLogger(SqlClientConfig.class);
+        private static final Logger LOGGER = 
+            LoggerFactory.getLogger(SqlClientConfig.class);
 
-    @Bean
-    public JSqlClient sqlClient() {
-        return JSqlClient
-            .newBuilder()
-            .setConnectionManager(...)
-            .setDialect(new H2Dialect())
-            // highlight-next-line
-            .setExecutor(
-                new Executor() {
-                    @Override
-                    public <R> R execute(
-                            Connection con,
-                            String sql,
-                            List<Object> variables,
-                            StatementFactory factory,
-                            SqlFunction<PreparedStatement, R> block
-                    ) {
-                        // Log SQL and variables.
-                        LOGGER.info(
-                            "Execute sql : \"{}\", " +
-                            "with variables: {}", 
-                            sql, 
-                            variables
-                        );
-                        // Call DefaultExecutor
-                        // highlight-next-line
-                        return DefaultExecutor
-                            .INSTANCE
-                            .execute(
-                                con,
-                                sql,
-                                variables,
-                                factory,
-                                block
-                            );
-                    }
-                }
-            )
-            .build();
-    }
-}
-```
-
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
-
-```java
-@Configuration
-class SqlClientConfig {
-
-    @Bean
-    fun sqlClient() = 
-        newKSqlClient {
-            setConnectionManager { ... }
-            setDialect(H2Dialect())
-            // highlight-next-line
-            setExecutor {
-                // Log SQL and variables.
-                LOGGER.info(
-                    "Execute sql : \"{}\", " +
-                    "with variables: {}", 
-                    sql, 
-                    variables
-                );
-                // Call DefaultExecutor
+        @Bean
+        public JSqlClient sqlClient() {
+            return JSqlClient
+                .newBuilder()
+                .setConnectionManager(...)
+                .setDialect(new H2Dialect())
                 // highlight-next-line
-                proceed()
-            }
+                .setExecutor(Executor.log())
+                .build();
         }
-}
+    }
+    ```
 
-private val LOGGER = 
-    LoggerFactory.getLogger(SqlClientConfig::class.java)
-```
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    @Configuration
+    class SqlClientConfig {
 
-</TabItem>
-</Tabs>
+        @Bean
+        fun sqlClient() = 
+            newKSqlClient {
+                setConnectionManager { ... }
+                setDialect(H2Dialect())
+                // highlight-next-line
+                setExecutor(Executor.log())
+            }
+    }
+
+    private val LOGGER = 
+        LoggerFactory.getLogger(SqlClientConfig::class.java)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   可控性高的方式
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    @Configuration
+    public class SqlClientConfig {
+
+        private static final Logger LOGGER = 
+            LoggerFactory.getLogger(SqlClientConfig.class);
+
+        @Bean
+        public JSqlClient sqlClient() {
+            return JSqlClient
+                .newBuilder()
+                .setConnectionManager(...)
+                .setDialect(new H2Dialect())
+                // highlight-next-line
+                .setExecutor(
+                    new Executor() {
+                        @Override
+                        public <R> R execute(
+                                Connection con,
+                                String sql,
+                                List<Object> variables,
+                                ExecutionPurpose purpose,
+                                StatementFactory factory,
+                                SqlFunction<PreparedStatement, R> block
+                        ) {
+                            // Log SQL and variables.
+                            LOGGER.info(
+                                "Execute sql : \"{}\", " +
+                                ", variables: {}, purpose: {}", 
+                                sql, 
+                                variables,
+                                purpose
+                            );
+                            // Call DefaultExecutor
+                            // highlight-next-line
+                            return DefaultExecutor
+                                .INSTANCE
+                                .execute(
+                                    con,
+                                    sql,
+                                    variables,
+                                    purpose,
+                                    factory,
+                                    block
+                                );
+                        }
+                    }
+                )
+                .build();
+        }
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    @Configuration
+    class SqlClientConfig {
+
+        @Bean
+        fun sqlClient() = 
+            newKSqlClient {
+                setConnectionManager { ... }
+                setDialect(H2Dialect())
+                // highlight-next-line
+                setExecutor {
+                    // Log SQL and variables.
+                    LOGGER.info(
+                        "Execute sql : \"{}\", " +
+                        "with variables: {}, purpose: {}", 
+                        sql, 
+                        variables,
+                        purpose
+                    );
+                    // Call DefaultExecutor
+                    // highlight-next-line
+                    proceed()
+                }
+            }
+    }
+
+    private val LOGGER = 
+        LoggerFactory.getLogger(SqlClientConfig::class.java)
+    ```
+
+    </TabItem>
+    </Tabs>
 
 ### 搜集执行缓慢的SQL以求改进
 
@@ -513,6 +573,7 @@ public class SqlClientConfig {
                             Connection con,
                             String sql,
                             List<Object> variables,
+                            ExecutionPurpose purpose,
                             StatementFactory factory,
                             SqlFunction<PreparedStatement, R> block
                     ) {
@@ -525,6 +586,7 @@ public class SqlClientConfig {
                                 con,
                                 sql,
                                 variables,
+                                purpose,
                                 factory,
                                 block
                             );
