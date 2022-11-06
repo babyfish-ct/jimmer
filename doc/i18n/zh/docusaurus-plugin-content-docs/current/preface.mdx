@@ -194,48 +194,36 @@ Jimmer实现了相对实时的缓存数据一致性。为此，开发人员只�
 然后
 
 - 如果应用仅仅使用了对象缓存和关联缓存，用户不需要做任何事，全自动。
-- 如果应用仅仅使用了计算缓存或多视角缓存，需要用户的辅助，但是非常简单。
+- 如果应用使用了计算缓存或多视角缓存，需要用户的辅助，但是非常简单。
 
 示例
 
 1.  修改外键，自动清除关联缓存和计算缓存。
  
-    <Tabs groupId="log-mode">
-    <TabItem value="simple" label="静态示范">
-    </TabItem>
-    <TabItem value="animation" label="动画示范">
-    </TabItem>
-    </Tabs>
+    ![modify_fk](@site/static/img/modify_fk.gif)
 
 2.  修改中间表，自动清除关联缓存。
  
-    <Tabs groupId="log-mode">
-    <TabItem value="simple" label="静态示范">
-    </TabItem>
-    <TabItem value="animation" label="动画示范">
-    </TabItem>
-    </Tabs>
+    ![insert_middle_table](@site/static/img/insert_middle_table.gif)
 
-3.  修改计算依赖字段，自动清除计算缓存。
+3.  修改计算属性依赖的字段，自动清除计算缓存。
 
-    <Tabs groupId="log-mode">
-    <TabItem value="simple" label="静态示范">
-    </TabItem>
-    <TabItem value="animation" label="动画示范">
-    </TabItem>
-    </Tabs>
+    ![modify_price](@site/static/img/modify_price.gif)
 
-4.  修改被过滤字段，自动清除关联缓存和计算缓存。
+4.  修改过滤器依赖的字段，自动清除关联缓存和计算缓存。
 
-    <Tabs groupId="log-mode">
-    <TabItem value="simple" label="静态示范">
-    </TabItem>
-    <TabItem value="animation" label="动画示范">
-    </TabItem>
-    </Tabs>
+    ![modify_tenant](@site/static/img/modify_tenant.gif)
 
-### 其它功能
+## 其它功能
 
+- 强类型的DSL，尽可能在编译发现错误；强类型DSL可以和Native SQL混合使用。
 
-### 未来可能会加入的功能
+- 基于属性路径的、超简单的多表连接操作，自动合并不同路径中的冲突连接，并自动优化去掉不必要的表连接。
 
+- 基于数据对象查询，自动生成并优化分页业务所需的行数查询。
+
+## 未来可能会加入的功能
+
+- 不限制用户的微服务治理框架，让实体对象支持跨越微服务边界的远程关联。
+
+- 虽然可以利用SQL分组和聚合来实现计算属性，但分组和聚合统计类业务并不是关系性OLTP数据库的专长，未来可能支持把计算属性映射到Clickhouse这类基于列的OLAP数据库。

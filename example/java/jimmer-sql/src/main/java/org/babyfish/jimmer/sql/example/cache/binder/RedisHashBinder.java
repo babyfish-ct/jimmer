@@ -83,7 +83,7 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
 
     @Override
     protected void delete(Collection<String> keys) {
-        LOGGER.info("Delete property data form redis: " + keys);
+        LOGGER.info("Delete property data from redis: {}", keys);
         operations.delete(keys);
     }
 

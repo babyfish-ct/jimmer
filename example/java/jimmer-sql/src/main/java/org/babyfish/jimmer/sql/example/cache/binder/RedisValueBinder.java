@@ -70,7 +70,7 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
 
     @Override
     protected void delete(Collection<String> keys) {
-        LOGGER.info("delete object data from redis: {}", keys);
+        LOGGER.info("Delete object data from redis: {}", keys);
         operations.delete(keys);
     }
 
