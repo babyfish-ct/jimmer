@@ -60,11 +60,11 @@ class DraftImplGenerator(
         )
         addProperty(
             PropertySpec
-                .builder("__base", type.draftClassName(PRODUCER, IMPLEMENTOR))
+                .builder("__base", type.draftClassName(PRODUCER, IMPL))
                 .addModifiers(KModifier.PRIVATE)
                 .initializer(
-                    "base as %T? ?: %T(null)",
-                    type.draftClassName(PRODUCER, IMPLEMENTOR),
+                    "base as %T? ?: %T()",
+                    type.draftClassName(PRODUCER, IMPL),
                     type.draftClassName(PRODUCER, IMPL)
                 )
                 .build()

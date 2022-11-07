@@ -11,6 +11,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.type.PrimitiveType;
 import java.util.Objects;
 
+import static org.babyfish.jimmer.apt.generator.Constants.CLONEABLE_CLASS_NAME;
 import static org.babyfish.jimmer.apt.generator.Constants.JSON_IGNORE_CLASS_NAME;
 
 public class ImplGenerator {
@@ -29,12 +30,13 @@ public class ImplGenerator {
     public void generate(TypeSpec.Builder parentBuilder) {
         typeBuilder = TypeSpec.classBuilder("Impl")
                 .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
-                .superclass(type.getImplementorClassName());
+                .superclass(type.getImplementorClassName())
+                .addSuperinterface(CLONEABLE_CLASS_NAME);
         addFields();
-        addConstructor();
         for (ImmutableProp prop : type.getProps().values()) {
             addGetter(prop);
         }
+        addClone();
         addIsLoaded(int.class);
         addIsLoaded(String.class);
         addHashCode(false);
@@ -62,38 +64,10 @@ public class ImplGenerator {
                 FieldSpec.Builder stateBuilder = FieldSpec.builder(
                         boolean.class,
                         prop.getLoadedStateName()
-                );
+                ).initializer("false");
                 typeBuilder.addField(stateBuilder.build());
             }
         }
-    }
-
-    private void addConstructor() {
-        MethodSpec.Builder builder = MethodSpec.constructorBuilder();
-        builder.addParameter(type.getClassName(), "base");
-        builder.beginControlFlow("if (base != null)");
-        builder.addStatement("Implementor from = (Implementor)base");
-        for (ImmutableProp prop : type.getProps().values()) {
-            if (prop.isLoadedStateRequired()) {
-                builder.addStatement("$L = from.__isLoaded($L)", prop.getLoadedStateName(), prop.getId());
-                builder.beginControlFlow("if ($L)", prop.getLoadedStateName());
-            } else {
-                builder.beginControlFlow("if (from.__isLoaded($L))", prop.getId());
-            }
-            if (prop.isList()) {
-                builder.addStatement(
-                        "$L = $T.of(null, from.$L())",
-                        prop.getName(),
-                        NonSharedList.class,
-                        prop.getGetterName()
-                );
-            } else {
-                builder.addStatement("$L = from.$L()", prop.getName(), prop.getGetterName());
-            }
-            builder.endControlFlow();
-        }
-        builder.endControlFlow();
-        typeBuilder.addMethod(builder.build());
     }
 
     private void addGetter(ImmutableProp prop) {
@@ -118,6 +92,21 @@ public class ImplGenerator {
                 )
                 .endControlFlow()
                 .addStatement("return $L", prop.getName());
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addClone() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("clone")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .returns(type.getImplClassName());
+        builder
+                .beginControlFlow("try")
+                .addStatement("return ($T)super.clone()", type.getImplClassName())
+                .nextControlFlow("catch($T ex)", Constants.CLONE_NOT_SUPPORTED_EXCEPTION_CLASS_NAME)
+                .addStatement("throw new AssertionError(ex)")
+                .endControlFlow();
         typeBuilder.addMethod(builder.build());
     }
 

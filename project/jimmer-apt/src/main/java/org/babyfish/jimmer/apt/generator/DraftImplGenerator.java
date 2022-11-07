@@ -71,7 +71,7 @@ public class DraftImplGenerator {
         typeBuilder.addField(
                 FieldSpec
                         .builder(
-                                type.getImplementorClassName(),
+                                type.getImplClassName(),
                                 DRAFT_FIELD_BASE,
                                 Modifier.PRIVATE
                         )
@@ -197,10 +197,10 @@ public class DraftImplGenerator {
                 .addParameter(type.getClassName(), "base")
                 .addStatement("$L = ctx", DRAFT_FIELD_CTX)
                 .beginControlFlow("if (base != null)")
-                .addStatement("$L = (Implementor)base", DRAFT_FIELD_BASE)
+                .addStatement("$L = ($T)base", DRAFT_FIELD_BASE, type.getImplClassName())
                 .endControlFlow()
                 .beginControlFlow("else")
-                .addStatement("$L = new Impl(null)", DRAFT_FIELD_BASE)
+                .addStatement("$L = new $T()", DRAFT_FIELD_BASE, type.getImplClassName())
                 .endControlFlow();
         typeBuilder.addMethod(builder.build());
     }
@@ -633,7 +633,7 @@ public class DraftImplGenerator {
                 .returns(type.getImplClassName())
                 .addStatement("$T modified = $L", type.getImplClassName(), DRAFT_FIELD_MODIFIED)
                 .beginControlFlow("if (modified == null)")
-                .addStatement("modified = new $T($L)", type.getImplClassName(), DRAFT_FIELD_BASE)
+                .addStatement("modified = $L.clone()", DRAFT_FIELD_BASE)
                 .addStatement("$L = modified", DRAFT_FIELD_MODIFIED)
                 .endControlFlow()
                 .addStatement("return modified");

@@ -23,6 +23,8 @@ internal const val PROPS = "Props"
 internal const val FETCHER = "Fetcher"
 internal const val FETCHER_DSL = "FetcherDsl"
 
+internal val CLONEABLE_CLASS_NAME = Cloneable::class.asClassName()
+internal val CLONE_NOT_SUPPORTED_EXCEPTION_CLASS_NAME = CloneNotSupportedException::class.asClassName()
 internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
 internal val INTERNAL_TYPE_CLASS_NAME = Internal::class.asClassName()
 internal val IMMUTABLE_PROP_CATEGORY_CLASS_NAME = ImmutablePropCategory::class.asClassName()
@@ -139,6 +141,6 @@ internal val ONE_TO_MANY_FULL_NAME = OneToMany::class.qualifiedName
 internal val MANY_TO_MANY_FULL_NAME = ManyToMany::class.qualifiedName
 
 internal const val CURRENT_IMPLEMENTOR = "(__modified ?: __base)"
-internal const val CURRENT_IMPL = "(__modified ?: $IMPL(__base).also { __modified = it })"
+internal const val CURRENT_IMPL = "(__modified ?: __base.clone()).also { __modified = it }"
 
 internal const val EMAIL_PATTERN = "^[^@]+@[^@]+\$"
