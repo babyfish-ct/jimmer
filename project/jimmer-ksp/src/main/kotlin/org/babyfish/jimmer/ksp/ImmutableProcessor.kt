@@ -24,6 +24,20 @@ class ImmutableProcessor(
 
     private val processed = AtomicBoolean()
 
+    private val includes: Array<String>? =
+        environment.options["jimmer.source.includes"]
+            ?.takeIf { it.isNotEmpty() }
+            ?.let {
+                it.trim().split("\\s*,\\s*").toTypedArray()
+            }
+
+    private val excludes: Array<String>? =
+        environment.options["jimmer.source.excludes"]
+            ?.takeIf { it.isNotEmpty() }
+            ?.let {
+                it.trim().split("\\s*,\\s*").toTypedArray()
+            }
+
     override fun process(resolver: Resolver): List<KSAnnotated> {
         if (!processed.compareAndSet(false, true)) {
             return emptyList()
@@ -62,6 +76,13 @@ class ImmutableProcessor(
         val modelMap = mutableMapOf<KSFile, MutableList<KSClassDeclaration>>()
         for (file in ctx.resolver.getAllFiles()) {
             for (classDeclaration in file.declarations.filterIsInstance<KSClassDeclaration>()) {
+                val qualifiedName = classDeclaration.qualifiedName!!.asString()
+                if (includes !== null && !includes.any { qualifiedName.startsWith(it) }) {
+                    continue
+                }
+                if (excludes !== null && excludes.any { qualifiedName.startsWith(it) }) {
+                    continue
+                }
                 val annotation = ctx.typeAnnotationOf(classDeclaration)
                 if (classDeclaration.qualifiedName !== null && annotation != null) {
                     if (classDeclaration.classKind != ClassKind.INTERFACE) {
