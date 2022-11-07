@@ -168,7 +168,7 @@ public class MutableUpdateImpl
 
             UpdateJoin updateJoin = dialect.getUpdateJoin();
             if (updateJoin != null && updateJoin.getFrom() == UpdateJoin.From.UNNECESSARY) {
-                for (TableImplementor<?> child : table.getChildren()) {
+                for (TableImplementor<?> child : table) {
                     child.renderTo(builder);
                 }
             }
@@ -188,7 +188,7 @@ public class MutableUpdateImpl
         boolean withTargetPrefix =
                 updateJoin != null &&
                         updateJoin.isJoinedTableUpdatable() &&
-                        table.getChildren().stream().anyMatch(it -> builder.getAstContext().getTableUsedState(it) == TableUsedState.USED);
+                        hasUsedChild(table, builder.getAstContext());
         String separator = "";
         for (Map.Entry<Target, Expression<?>> e : assignmentMap.entrySet()) {
             builder.sql(separator);
@@ -209,7 +209,7 @@ public class MutableUpdateImpl
 
     private void renderTables(SqlBuilder builder) {
         TableImplementor<?> table = getTableImplementor();
-        if (table.getChildren().stream().anyMatch(it -> builder.getAstContext().getTableUsedState(it) == TableUsedState.USED)) {
+        if (hasUsedChild(table, builder.getAstContext())) {
             switch (getSqlClient().getDialect().getUpdateJoin().getFrom()) {
                 case AS_ROOT:
                     table.renderTo(builder);
@@ -217,7 +217,7 @@ public class MutableUpdateImpl
                 case AS_JOIN:
                     builder.sql(" from ");
                     String separator = "";
-                    for (TableImplementor<?> child : table.getChildren()) {
+                    for (TableImplementor<?> child : table) {
                         builder.sql(separator);
                         child.renderJoinAsFrom(builder, TableImplementor.RenderMode.FROM_ONLY);
                         separator = ",";
@@ -231,9 +231,9 @@ public class MutableUpdateImpl
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         if (updateJoin != null &&
                 updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
-                table.getChildren().stream().anyMatch(it -> builder.getAstContext().getTableUsedState(it) == TableUsedState.USED)
+                hasUsedChild(table, builder.getAstContext())
         ) {
-            for (TableImplementor<?> child : table.getChildren()) {
+            for (TableImplementor<?> child : table) {
                 child.renderJoinAsFrom(builder, TableImplementor.RenderMode.DEEPER_JOIN_ONLY);
             }
         }
@@ -245,9 +245,9 @@ public class MutableUpdateImpl
         String separator = " where ";
         if (updateJoin != null &&
                 updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
-                table.getChildren().stream().anyMatch(it -> builder.getAstContext().getTableUsedState(it) == TableUsedState.USED)
+                hasUsedChild(table, builder.getAstContext())
         ) {
-            for (TableImplementor<?> child : table.getChildren()) {
+            for (TableImplementor<?> child : table) {
                 builder.sql(separator);
                 separator = " and ";
                 child.renderJoinAsFrom(builder, TableImplementor.RenderMode.WHERE_ONLY);
@@ -354,5 +354,14 @@ public class MutableUpdateImpl
                 validateTable(tableImpl.getParent());
             }
         }
+    }
+
+    private static boolean hasUsedChild(TableImplementor<?> tableImplementor, AstContext astContext) {
+        for (TableImplementor<?> child : tableImplementor) {
+            if (astContext.getTableUsedState(child) == TableUsedState.USED) {
+                return true;
+            }
+        }
+        return false;
     }
 }

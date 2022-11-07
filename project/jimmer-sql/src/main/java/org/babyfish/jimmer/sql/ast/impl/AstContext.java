@@ -4,21 +4,15 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.impl.util.AbstractIdentityDataManager;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.LinkedList;
-import java.util.Map;
-
-public class AstContext implements RootTableResolver {
+public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>, TableUsedState> implements RootTableResolver {
 
     private final JSqlClient sqlClient;
-
-    private final IdentityHashMap<TableImplementor<?>, TableUsedState> tableUsedStateMap = new IdentityHashMap<>();
 
     private StackFrame frame;
 
@@ -30,16 +24,21 @@ public class AstContext implements RootTableResolver {
         return sqlClient;
     }
 
+    @Override
+    protected TableUsedState createValue(TableImplementor<?> key) {
+        return TableUsedState.ID_ONLY;
+    }
+
     public void useTableId(TableImplementor<?> tableImplementor) {
-        tableUsedStateMap.computeIfAbsent(tableImplementor, t -> TableUsedState.ID_ONLY);
+        getOrCreateValue(tableImplementor);
     }
 
     public void useTable(TableImplementor<?> tableImplementor) {
-        tableUsedStateMap.put(tableImplementor, TableUsedState.USED);
+        putValue(tableImplementor, TableUsedState.USED);
     }
 
     public TableUsedState getTableUsedState(TableImplementor<?> tableImplementor) {
-        TableUsedState state = tableUsedStateMap.get(tableImplementor);
+        TableUsedState state = getValue(tableImplementor);
         return state != null ? state : TableUsedState.NONE;
     }
 
