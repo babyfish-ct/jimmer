@@ -4,6 +4,7 @@ import org.babyfish.jimmer.benchmark.exposed.ExposedDataTable;
 import org.babyfish.jimmer.benchmark.exposed.ExposedJavaHelperKt;
 import org.babyfish.jimmer.benchmark.jdbc.JdbcDao;
 import org.babyfish.jimmer.benchmark.jimmer.JimmerDataTable;
+import org.babyfish.jimmer.benchmark.jimmer.kt.JimmerKtJavaHelperKt;
 import org.babyfish.jimmer.benchmark.jooq.JooqData;
 import org.babyfish.jimmer.benchmark.jooq.JooqDataTable;
 import org.babyfish.jimmer.benchmark.ktorm.KtormDataTable;
@@ -14,6 +15,7 @@ import org.babyfish.jimmer.benchmark.springjdbc.SpringJdbcDataRepository;
 import org.babyfish.jimmer.benchmark.mybatis.MyBatisDataMapper;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.query.selectable.RootSelectable;
+import org.babyfish.jimmer.sql.kt.KSqlClient;
 import org.jooq.DSLContext;
 import org.ktorm.database.Database;
 import org.ktorm.entity.EntitySequenceKt;
@@ -37,10 +39,13 @@ public class OrmBenchmark {
     private static final TransactionDefinition TRANSACTION_DEFINITION =
             new DefaultTransactionDefinition();
 
-    @Param({"10", "20", "50", "100", "200", "500", "1000"})
+    @Param("10")
+    //@Param({"10", "20", "50", "100", "200", "500", "1000"})
     private int dataCount;
 
     private JSqlClient sqlClient;
+
+    private KSqlClient kSqlClient;
 
     private MyBatisDataMapper myBatisDataMapper;
 
@@ -65,6 +70,7 @@ public class OrmBenchmark {
         databaseInitializer.initialize(dataCount);
 
         sqlClient = ctx.getBean(JSqlClient.class);
+        kSqlClient = ctx.getBean(KSqlClient.class);
         myBatisDataMapper = ctx.getBean(MyBatisDataMapper.class);
         hibernateEntityManagerFactory = ctx.getBean("hibernateEntityManagerFactory", EntityManagerFactory.class);
         eclipseLinkEntityManagerFactory = ctx.getBean("eclipseLinkEntityManagerFactory", EntityManagerFactory.class);
@@ -96,8 +102,25 @@ public class OrmBenchmark {
          * this is equivalent to the behavior of JPA tests
          */
         sqlClient
-                .createQuery(JimmerDataTable.class, RootSelectable::select)
+                .createQuery(JimmerDataTable.$)
+                .select(JimmerDataTable.$)
                 .execute();
+    }
+
+    @Benchmark
+    public void runJimmerKt() {
+        /*
+         * For jimmer:
+         *
+         * `execute(Connection)` represents execution based on an existing connection.
+         * `execute()` represents execution based on temporarily connection.
+         *
+         * So, this method will open/close connection by itself,
+         * this is equivalent to the behavior of JPA tests
+         */
+        JimmerKtJavaHelperKt
+                .createKtQuery(kSqlClient)
+                .execute(null);
     }
 
     @Benchmark

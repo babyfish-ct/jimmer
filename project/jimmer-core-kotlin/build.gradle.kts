@@ -26,6 +26,10 @@ kotlin {
     }
 }
 
+ksp {
+    arg("jimmer.source.excludes", "org.babyfish.jimmer.kt.model.JavaData")
+}
+
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 java.targetCompatibility = JavaVersion.VERSION_1_8
 
