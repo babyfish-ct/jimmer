@@ -94,7 +94,7 @@ public class ImplementorGenerator {
 
     private void addDummyProp() {
         MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("getDummyPropForNoImmutableModuleError")
+                .methodBuilder("getDummyPropForJacksonError__")
                 .returns(TypeName.INT)
                 .addModifiers(Modifier.PUBLIC)
                 .addStatement("throw new $T()", ImmutableModuleRequiredException.class);

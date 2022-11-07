@@ -83,7 +83,7 @@ class ImplementorGenerator(
     private fun TypeSpec.Builder.addDummyPropForNoImmutableModuleError() {
         addProperty(
             PropertySpec
-                .builder("dummyPropForNoImmutableModuleError", INT)
+                .builder("dummyPropForJacksonError__", INT)
                 .getter(
                     FunSpec
                         .getterBuilder()

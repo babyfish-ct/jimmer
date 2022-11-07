@@ -16,22 +16,15 @@ class ImplGenerator(
                 .classBuilder(IMPL)
                 .addModifiers(KModifier.PRIVATE)
                 .superclass(type.draftClassName(PRODUCER, IMPLEMENTOR))
-                .primaryConstructor(
-                    FunSpec.constructorBuilder()
-                        .addParameter(
-                            "base",
-                            type.className.copy(nullable = true)
-                        )
-                        .build()
-                )
+                .addSuperinterface(CLONEABLE_CLASS_NAME)
                 .apply {
                     for (prop in type.properties.values) {
                         addFields(prop)
                     }
-                    addInitializer()
                     for (prop in type.properties.values) {
                         addProp(prop)
                     }
+                    addCloneFun()
                     addIsLoadedFun(Int::class)
                     addIsLoadedFun(String::class)
                     addHashCodeFun(true)
@@ -59,6 +52,20 @@ class ImplGenerator(
                     }
                 )
                 .addModifiers(KModifier.INTERNAL)
+                .apply {
+                    val defaultValue = if (prop.isPrimitive) {
+                        when (prop.typeName()) {
+                            BOOLEAN -> "false"
+                            CHAR -> "Char.MIN_VALUE"
+                            FLOAT -> "0F"
+                            DOUBLE -> "0.0"
+                            else -> "0"
+                        }
+                    } else {
+                        "null"
+                    }
+                    initializer(defaultValue)
+                }
                 .mutable()
                 .build()
         )
@@ -67,57 +74,11 @@ class ImplGenerator(
                 PropertySpec
                     .builder(it, BOOLEAN)
                     .addModifiers(KModifier.INTERNAL)
+                    .initializer("false")
                     .mutable()
                     .build()
             )
         }
-    }
-
-    private fun TypeSpec.Builder.addInitializer() {
-
-        addInitializerBlock(
-            CodeBlock
-                .builder().apply {
-                    addStatement("val from = base as %T?", type.draftClassName(PRODUCER, IMPLEMENTOR))
-                    for (prop in type.properties.values) {
-                        beginControlFlow("if (from !== null && from.__isLoaded(%L))", prop.id)
-                        if (prop.isList) {
-                            addStatement(
-                                "this.%L = %T.of(null, from.%L)",
-                                prop.valueFieldName,
-                                NON_SHARED_LIST_CLASS_NAME,
-                                prop.name
-                            )
-                        } else {
-                            addStatement("this.%L = from.%L", prop.valueFieldName, prop.name)
-                        }
-                        prop.loadedFieldName?.let {
-                            addStatement("this.%L = true", it)
-                        }
-                        nextControlFlow("else")
-                        addStatement(
-                            "this.%L = %L",
-                            prop.valueFieldName,
-                            if (prop.isPrimitive) {
-                                when (prop.typeName()) {
-                                    BOOLEAN -> "false"
-                                    CHAR -> "0.toChar()"
-                                    FLOAT -> "0F"
-                                    DOUBLE -> "0.0"
-                                    else -> "0"
-                                }
-                            } else {
-                                "null"
-                            }
-                        )
-                        prop.loadedFieldName?.let {
-                            addStatement("this.%L = false", it)
-                        }
-                        endControlFlow()
-                    }
-                }
-                .build()
-        )
     }
 
     private fun TypeSpec.Builder.addProp(prop: ImmutableProp) {
@@ -154,6 +115,17 @@ class ImplGenerator(
                         )
                         .build()
                 )
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addCloneFun() {
+        addFunction(
+            FunSpec
+                .builder("clone")
+                .addModifiers(KModifier.OVERRIDE)
+                .returns(type.draftClassName(PRODUCER, IMPL))
+                .addStatement("return super.clone() as %T", type.draftClassName(PRODUCER, IMPL))
                 .build()
         )
     }

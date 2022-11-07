@@ -13,6 +13,12 @@ import java.util.function.Consumer;
 
 class Constants {
 
+    public static final ClassName CLONEABLE_CLASS_NAME =
+            ClassName.get(Cloneable.class);
+
+    public static final ClassName CLONE_NOT_SUPPORTED_EXCEPTION_CLASS_NAME =
+            ClassName.get(CloneNotSupportedException.class);
+
     public static final ClassName JSON_IGNORE_CLASS_NAME =
             ClassName.get(JsonIgnore.class);
 
