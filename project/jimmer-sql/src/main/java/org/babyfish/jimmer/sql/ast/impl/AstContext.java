@@ -5,12 +5,12 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
@@ -18,9 +18,9 @@ public class AstContext implements RootTableResolver {
 
     private final JSqlClient sqlClient;
 
-    private final Map<Table<?>, TableUsedState> tableUsedStateMap = new HashMap<>();
+    private final IdentityHashMap<TableImplementor<?>, TableUsedState> tableUsedStateMap = new IdentityHashMap<>();
 
-    private final LinkedList<AbstractMutableStatementImpl> stack = new LinkedList<>();
+    private StackFrame frame;
 
     public AstContext(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
@@ -30,31 +30,31 @@ public class AstContext implements RootTableResolver {
         return sqlClient;
     }
 
-    public void useTableId(Table<?> table) {
-        tableUsedStateMap.computeIfAbsent(table, t -> TableUsedState.ID_ONLY);
+    public void useTableId(TableImplementor<?> tableImplementor) {
+        tableUsedStateMap.computeIfAbsent(tableImplementor, t -> TableUsedState.ID_ONLY);
     }
 
-    public void useTable(Table<?> table) {
-        tableUsedStateMap.put(table, TableUsedState.USED);
+    public void useTable(TableImplementor<?> tableImplementor) {
+        tableUsedStateMap.put(tableImplementor, TableUsedState.USED);
     }
 
-    public TableUsedState getTableUsedState(Table<?> table) {
-        TableUsedState state = tableUsedStateMap.get(table);
+    public TableUsedState getTableUsedState(TableImplementor<?> tableImplementor) {
+        TableUsedState state = tableUsedStateMap.get(tableImplementor);
         return state != null ? state : TableUsedState.NONE;
     }
 
     public void pushStatement(AbstractMutableStatementImpl statement) {
-        AbstractMutableStatementImpl current = stack.peek();
-        if (current != null && current.isSubQueryDisabled()) {
+        StackFrame frame = this.frame;
+        if (frame != null && frame.statement.isSubQueryDisabled()) {
             throw new IllegalStateException(
                     "Cannot use sub query here because the sub query of parent statement is disabled"
             );
         }
-        stack.push(statement);
+        this.frame = new StackFrame(statement, frame);
     }
 
     public void popStatement() {
-        stack.pop();
+        this.frame = this.frame.parent;
     }
 
     @SuppressWarnings("unchecked")
@@ -67,7 +67,8 @@ public class AstContext implements RootTableResolver {
         if (tableImplementor != null) {
             return tableImplementor;
         }
-        for (AbstractMutableStatementImpl statement : stack) {
+        for (StackFrame frame = this.frame; frame != null; frame = frame.parent) {
+            AbstractMutableStatementImpl statement = frame.statement;
             Table<?> stmtTable = statement.getTable();
             if (AbstractTypedTable.__refEquals(stmtTable, table)) {
                 return (TableImplementor<E>) statement.getTableImplementor();
@@ -86,6 +87,18 @@ public class AstContext implements RootTableResolver {
     }
 
     public AbstractMutableStatementImpl getStatement() {
-        return stack.peek();
+        return frame.statement;
+    }
+
+    private static class StackFrame {
+
+        final AbstractMutableStatementImpl statement;
+
+        final StackFrame parent;
+
+        private StackFrame(AbstractMutableStatementImpl statement, StackFrame parent) {
+            this.statement = statement;
+            this.parent = parent;
+        }
     }
 }

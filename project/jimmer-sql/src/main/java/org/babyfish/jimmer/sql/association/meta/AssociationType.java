@@ -104,6 +104,11 @@ public class AssociationType implements ImmutableType {
     }
 
     @Override
+    public boolean isKotlinClass() {
+        return false;
+    }
+
+    @Override
     public boolean isEntity() {
         return true;
     }

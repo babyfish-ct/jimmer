@@ -24,20 +24,16 @@ public class TableProxies {
 
     @SuppressWarnings("unchecked")
     public static <T extends TableEx<?>> T wrap(Table<?> table) {
-        if (table.getImmutableType() instanceof AssociationType) {
+        ImmutableType immutableType = table.getImmutableType();
+        if (immutableType instanceof AssociationType || immutableType.isKotlinClass()) {
             return (T)table;
         }
-        Class<?> javaClass = table.getImmutableType().getJavaClass();
+        Class<?> javaClass = immutableType.getJavaClass();
         Constructor<?> constructor = WRAPPER_CACHE.get(javaClass);
         if (constructor == null) {
             return (T) table;
         }
         return invokeConstructor(constructor, table);
-    }
-
-    public static <T extends Table<?>> T fluent(ImmutableType type) {
-        Constructor<?> constructor = FLUENT_CACHE.get(type);
-        return invokeConstructor(constructor, new Object[] { null });
     }
 
     public static <T extends Table<?>> T fluent(
