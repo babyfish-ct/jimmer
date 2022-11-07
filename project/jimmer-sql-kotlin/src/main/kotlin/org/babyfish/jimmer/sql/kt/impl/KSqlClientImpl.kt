@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.sql.loader.impl.LoadersImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
@@ -13,6 +14,9 @@ import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableDeleteImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KMutableUpdateImpl
+import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableRootQueryImpl
 import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilters
 import org.babyfish.jimmer.sql.kt.filter.impl.KFiltersImpl
@@ -25,6 +29,7 @@ import org.babyfish.jimmer.sql.kt.loader.impl.KLoadersImpl
 import org.babyfish.jimmer.sql.kt.loader.impl.KReferenceLoaderImpl
 import org.babyfish.jimmer.sql.kt.loader.impl.KValueLoaderImpl
 import org.babyfish.jimmer.sql.runtime.EntityManager
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose
 import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -32,6 +37,23 @@ import kotlin.reflect.KProperty1
 internal class KSqlClientImpl(
     private val sqlClient: JSqlClient
 ) : KSqlClient {
+
+    // Override it for performance optimization
+    @Suppress("UNCHECKED_CAST")
+    override fun <E : Any, R> createQuery(
+        entityType: KClass<E>,
+        block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, R>
+    ): KConfigurableRootQuery<E, R> {
+        val query = MutableRootQueryImpl<Table<*>>(
+            sqlClient,
+            ImmutableType.get(entityType.java),
+            ExecutionPurpose.QUERY,
+            false
+        )
+        return KMutableRootQueryImpl(
+            query as MutableRootQueryImpl<Table<E>>
+        ).block()
+    }
 
     override fun <E : Any> createUpdate(
         entityType: KClass<E>,

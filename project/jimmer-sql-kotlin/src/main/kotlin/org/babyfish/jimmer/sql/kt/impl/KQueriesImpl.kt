@@ -34,9 +34,7 @@ internal class KQueriesImpl(
         )
         return KMutableRootQueryImpl(
             query as MutableRootQueryImpl<Table<E>>
-        ).block().apply {
-            query.freeze()
-        }
+        ).block()
     }
 
     override fun <S : Any, T : Any, R> forReference(
@@ -68,8 +66,6 @@ internal class KQueriesImpl(
             )
         return KMutableRootQueryImpl(
             query as MutableRootQueryImpl<Table<Association<S, T>>>
-        ).block().apply {
-            query.freeze()
-        }
+        ).block()
     }
 }

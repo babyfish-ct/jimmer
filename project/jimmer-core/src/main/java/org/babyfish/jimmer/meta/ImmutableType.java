@@ -40,6 +40,8 @@ public interface ImmutableType {
     
     Class<?> getJavaClass();
 
+    boolean isKotlinClass();
+
     boolean isEntity();
 
     boolean isMappedSuperclass();

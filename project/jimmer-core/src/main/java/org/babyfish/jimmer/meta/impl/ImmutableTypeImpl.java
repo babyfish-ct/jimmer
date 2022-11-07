@@ -105,6 +105,11 @@ class ImmutableTypeImpl implements ImmutableType {
     }
 
     @Override
+    public boolean isKotlinClass() {
+        return kotlinClass != null;
+    }
+
+    @Override
     public boolean isEntity() {
         return isEntity;
     }
