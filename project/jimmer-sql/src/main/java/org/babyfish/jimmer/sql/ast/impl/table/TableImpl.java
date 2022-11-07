@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.meta.Column;
@@ -26,10 +27,9 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
 import java.util.function.Function;
 
-class TableImpl<E> implements TableImplementor<E> {
+class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> implements TableImplementor<E> {
 
     private final AbstractMutableStatementImpl statement;
 
@@ -46,9 +46,6 @@ class TableImpl<E> implements TableImplementor<E> {
     private final String alias;
 
     private String middleTableAlias;
-
-    private final Map<String, TableImpl<?>> childTableMap =
-            new LinkedHashMap<>();
 
     public TableImpl(
             AbstractMutableStatementImpl statement,
@@ -94,11 +91,6 @@ class TableImpl<E> implements TableImplementor<E> {
     @Override
     public TableImplementor<?> getParent() {
         return parent;
-    }
-
-    @Override
-    public Collection<TableImplementor<?>> getChildren() {
-        return Collections.unmodifiableCollection(childTableMap.values());
     }
 
     @Override
@@ -321,7 +313,7 @@ class TableImpl<E> implements TableImplementor<E> {
             ImmutableProp prop,
             JoinType joinType
     ) {
-        TableImpl<?> existing = childTableMap.get(joinName);
+        TableImpl<?> existing = (TableImpl<?>) getValue(joinName);
         if (existing != null) {
             if (existing.joinType != joinType) {
                 existing.joinType = JoinType.INNER;
@@ -336,7 +328,7 @@ class TableImpl<E> implements TableImplementor<E> {
                 prop,
                 joinType
         );
-        childTableMap.put(joinName, newTable);
+        putValue(joinName, newTable);
         return newTable;
     }
 
@@ -379,7 +371,7 @@ class TableImpl<E> implements TableImplementor<E> {
         if (usedState != TableUsedState.NONE) {
             renderSelf(builder, mode);
             if (mode == RenderMode.DEEPER_JOIN_ONLY) {
-                for (TableImpl<?> childTable : childTableMap.values()) {
+                for (TableImplementor<?> childTable : this) {
                     childTable.renderTo(builder);
                 }
             }
@@ -391,7 +383,7 @@ class TableImpl<E> implements TableImplementor<E> {
         TableUsedState usedState = builder.getAstContext().getTableUsedState(this);
         if (parent == null || usedState != TableUsedState.NONE) {
             renderSelf(builder, RenderMode.NORMAL);
-            for (TableImpl<?> childTable : childTableMap.values()) {
+            for (TableImplementor<?> childTable : this) {
                 childTable.renderTo(builder);
             }
         }

@@ -16,13 +16,13 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collection;
 import java.util.function.Function;
 
-public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection {
+public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Iterable<TableImplementor<?>> {
 
     TableImplementor<?> getParent();
 
-    Collection<TableImplementor<?>> getChildren();
-
     boolean isInverse();
+
+    boolean isEmpty();
 
     ImmutableProp getJoinProp();
 

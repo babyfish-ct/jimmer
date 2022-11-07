@@ -109,7 +109,7 @@ public class MutableDeleteImpl
             astContext.popStatement();
         }
 
-        if (table.getChildren().isEmpty()) {
+        if (table.isEmpty()) {
             SqlBuilder builder = new SqlBuilder(astContext);
             astContext.pushStatement(this);
             try {
