@@ -7,7 +7,7 @@ plugins {
 }
 
 group 'org.babyfish.jimmer'
-version '0.4.8'
+version '0.4.9'
 
 repositories {
     mavenCentral()
@@ -15,19 +15,19 @@ repositories {
 
 dependencies {
 
-    implementation 'org.babyfish.jimmer:jimmer-sql-kotlin:0.4.8'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.4.8'
-    ksp 'org.babyfish.jimmer:jimmer-ksp:0.4.8'
+    implementation 'org.babyfish.jimmer:jimmer-sql-kotlin:0.4.9'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.4.9'
+    ksp 'org.babyfish.jimmer:jimmer-ksp:0.4.9'
 
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'com.sap.cloud.sdk.frameworks:eclipselink:3.72.0'
+    implementation 'com.sap.cloud.sdk.frameworks:eclipselink:3.75.0'
     implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
     implementation 'org.jooq:jooq:3.16.6'
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.2.2'
-    implementation 'org.jetbrains.exposed:exposed-core:0.38.2'
-    implementation 'org.jetbrains.exposed:exposed-dao:0.38.2'
-    implementation 'org.jetbrains.exposed:exposed-jdbc:0.38.2'
+    implementation 'org.jetbrains.exposed:exposed-core:0.40.1'
+    implementation 'org.jetbrains.exposed:exposed-dao:0.40.1'
+    implementation 'org.jetbrains.exposed:exposed-jdbc:0.40.1'
     implementation 'org.ktorm:ktorm-core:3.5.0'
     implementation 'com.github.braisdom:objsql-springboot:1.3.4'
     implementation 'org.nutz:nutz:1.r.69.20210929'
@@ -36,9 +36,6 @@ dependencies {
     annotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
 
     runtimeOnly 'com.h2database:h2:2.1.212'
-
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 }
 
 java {
