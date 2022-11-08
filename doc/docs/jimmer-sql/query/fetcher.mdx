@@ -505,7 +505,8 @@ val books = sqlClient
 `allTableFields()` contains all the properties declared by the entity interface, including scalar properties, and many-to-one properties based on foreign keys (of course, the parent object only has id).
 
 :::note
-`allTableFields()` returns the default object format, so the following two examples are equivalent
+**In the case where the associated object does not use [global filter](./filter)**,`allTableFields()` returns the default object format, so the following two examples are equivalent
+:::
 
 1. 
     <Tabs groupId="language">
@@ -550,7 +551,6 @@ val books = sqlClient
 
     </TabItem>
     </Tabs>
-:::
 
 The generated SQL is as follows:
 ```sql
@@ -580,6 +580,14 @@ The printed result is as follows (the original output is compact, formatted here
 ```
 
 Like the default object format, many-to-one properties based on foreign key are set to the parent object with only the id property.
+
+:::caution
+If the associated object uses [global filter](./filter), these two ways are no longer equivalent.
+
+- Querying simple table objects: [global filter](./filter) will not be applied, as long as the foreign key is not null, the association property will be set to the parent object with only id.
+
+- `allScalarFields()`: [global filter](./filter) will be applied, even if the foreign key is not null, the parent object may be set to null because the associated object does not meet the filtering rules.
+:::
 
 ### Fetch associated object with only id.
 
@@ -1246,12 +1254,15 @@ Filters can not only filter associated objects, but also sort associated objects
 :::
 
 :::caution
+1.
+    For an associated property that satisfies both of the following conditions
+    - is many-to-one association
+    - is non-null
+    Applying a filter results in an exception
 
-For an associated property that satisfies both of the following conditions
-1. is many-to-one association
-2. is non-null
+2.  When a field-level filter is used, the [external cache](./cache) of the field will be ignored.
 
-Applying a filter results in an exception
+    If you want to use association cache, you can use [cache-friendly global filter](./filter/#filters-and-caching).
 :::
 
 ## Recursively query self-associated properties
