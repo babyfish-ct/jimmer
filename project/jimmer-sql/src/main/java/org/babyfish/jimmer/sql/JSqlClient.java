@@ -21,10 +21,7 @@ import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
-import org.babyfish.jimmer.sql.runtime.ConnectionManager;
-import org.babyfish.jimmer.sql.runtime.EntityManager;
-import org.babyfish.jimmer.sql.runtime.Executor;
-import org.babyfish.jimmer.sql.runtime.ScalarProvider;
+import org.babyfish.jimmer.sql.runtime.*;
 
 import java.util.Collection;
 import java.util.function.Consumer;
@@ -92,6 +89,12 @@ public interface JSqlClient extends SubQueryProvider {
     Filters getFilters();
 
     DraftInterceptor<?> getDraftInterceptor(ImmutableType type);
+
+    Reader<?> getReader(Class<?> type);
+
+    Reader<?> getReader(ImmutableType type);
+
+    Reader<?> getReader(ImmutableProp prop);
 
     interface Builder {
 

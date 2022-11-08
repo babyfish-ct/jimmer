@@ -73,6 +73,8 @@ class JSqlClientImpl implements JSqlClient {
 
     private final Loaders loaders = new LoadersImpl(this);
 
+    private final ReaderManager readerManager = new ReaderManager(this);
+
     private JSqlClientImpl(
             ConnectionManager connectionManager,
             ConnectionManager slaveConnectionManager,
@@ -383,6 +385,21 @@ class JSqlClientImpl implements JSqlClient {
             }
         }
         return manager;
+    }
+
+    @Override
+    public Reader<?> getReader(Class<?> type) {
+        return readerManager.reader(type);
+    }
+
+    @Override
+    public Reader<?> getReader(ImmutableType type) {
+        return readerManager.reader(type);
+    }
+
+    @Override
+    public Reader<?> getReader(ImmutableProp prop) {
+        return readerManager.reader(prop);
     }
 
     public static class BuilderImpl implements JSqlClient.Builder {

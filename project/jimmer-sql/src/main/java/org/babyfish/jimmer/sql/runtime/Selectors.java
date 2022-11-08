@@ -24,11 +24,13 @@ public class Selectors {
             ExecutionPurpose purpose
     ) {
         return sqlClient.getExecutor().execute(con, sql, variables, purpose, null, stmt -> {
+            Reader<?> reader = Readers.createReader(sqlClient, selections);
+            Reader.Col col = new Reader.Col();
             List<R> results = new ArrayList<>();
             try (ResultSet resultSet = stmt.executeQuery()) {
-                ResultMapper resultMapper = new ResultMapper(sqlClient, selections, resultSet);
                 while (resultSet.next()) {
-                    results.add((R)resultMapper.map());
+                    results.add((R)reader.read(resultSet, col));
+                    col.reset();
                 }
             }
             Fetchers.fetch(sqlClient, con, selections, results);
@@ -48,11 +50,13 @@ public class Selectors {
             Consumer<R> consumer
     ) {
         sqlClient.getExecutor().execute(con, sql, variables, purpose, null, stmt -> {
+            Reader<?> reader = Readers.createReader(sqlClient, selections);
+            Reader.Col col = new Reader.Col();
             List<R> results = new ArrayList<>();
             try (ResultSet resultSet = stmt.executeQuery()) {
-                ResultMapper resultMapper = new ResultMapper(sqlClient, selections, resultSet);
                 while (resultSet.next()) {
-                    results.add((R)resultMapper.map());
+                    results.add((R)reader.read(resultSet, col));
+                    col.reset();
                     if (results.size() >= batchSize) {
                         Fetchers.fetch(sqlClient, con, selections, results);
                         for (R result : results) {
