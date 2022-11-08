@@ -4,11 +4,13 @@ import org.jetbrains.annotations.TestOnly
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.statements.api.ExposedConnection
 import org.jetbrains.exposed.sql.transactions.*
+import java.lang.UnsupportedOperationException
 import java.sql.Connection
 
 class FakeTransactionManager(
     private val db: Database
 ) : TransactionManager {
+
     @Volatile
     override var defaultRepetitionAttempts: Int = db.config.defaultRepetitionAttempts
         @Deprecated("Use DatabaseConfig to define the defaultRepetitionAttempts")
@@ -27,7 +29,7 @@ class FakeTransactionManager(
         @TestOnly
         set
 
-    override fun newTransaction(isolation: Int, outerTransaction: Transaction?): Transaction =
+    override fun newTransaction(isolation: Int, readOnly: Boolean, outerTransaction: Transaction?): Transaction =
         (
             outerTransaction?.takeIf { !db.useNestedTransactions } ?: Transaction(
                 FakeTransaction(
@@ -35,23 +37,30 @@ class FakeTransactionManager(
                     outerTransaction = outerTransaction
                 )
             )
-            ).apply {
-                bindTransactionToThread(this)
-            }
+        ).apply {
+            bindTransactionToThread(this)
+        }
 
     override fun currentOrNull(): Transaction? = currentTransaction
 
     override fun bindTransactionToThread(transaction: Transaction?) {
         currentTransaction = transaction
     }
+
+    override var defaultReadOnly: Boolean
+        get() = true
+        set(value) { throw UnsupportedOperationException() }
 }
 
 private var currentTransaction: Transaction? = null
 
 private class FakeTransaction(
     override val db: Database,
-    override val outerTransaction: Transaction?
+    override val outerTransaction: Transaction?,
 ): TransactionInterface {
+
+    override val readOnly: Boolean
+        get() = true
 
     private val connectionLazy = lazy {
         db.connector()

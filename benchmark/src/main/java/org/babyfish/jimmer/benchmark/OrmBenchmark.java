@@ -39,8 +39,7 @@ public class OrmBenchmark {
     private static final TransactionDefinition TRANSACTION_DEFINITION =
             new DefaultTransactionDefinition();
 
-    @Param("10")
-    //@Param({"10", "20", "50", "100", "200", "500", "1000"})
+    @Param({"10", "20", "50", "100", "200", "500", "1000"})
     private int dataCount;
 
     private JSqlClient sqlClient;
