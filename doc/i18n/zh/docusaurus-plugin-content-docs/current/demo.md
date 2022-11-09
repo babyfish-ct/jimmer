@@ -15,6 +15,10 @@ title: 附带demo
 
 所以，你可以直接用intellij打开，等待gradle依赖下载完毕后，直接运行`main`函数即可。
 
+:::caution
+Jimmer使用了预编译器，具备编译时生成源代码的能力，所以某些项目初次打开后会有编译错误。不要管这些错误，直接运行就可以消除这些错误。
+:::
+
 ## 数据库相关demo运行模式
 
 [jimmer-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql)，[jimmer-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt)，[jimmer-sql-graphql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql-graphql)和[jimmer-sql-graphql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql-graphql-kt)都涉及了数据库操作，具备缓存和非缓存两种运行模式。
@@ -55,22 +59,67 @@ title: 附带demo
 
 ## [jimmer-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql)和[jimmer-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt)
 
-这两个项目是Spring REST程序，支持如下操作
+这两个项目是Spring REST程序，启动程序后，用浏览器访问http://localhost:8080/ui或http://localhost:8080/swagger-ui/index.html，即可进入在线文档直接体验。
+
+这个例子支持多租户，可以为当前操作者设置全局的租户名
+- 对查询操作而言，租户设置是可选的
+- 对修改操作而言，租户设置是必须的
+- 租户可以设置为`a`或`b`
+
+要为当前操作者设置全局的租户名，你可以点击在线文档的`Authorize`按钮
+
+![swagger-authorize](@site/static/img/swagger-authorize.jpg)
+
+支持如下操作
 
 ### GET /books
 
-查询所有的书籍
+查询书籍
 
 该命令具有多个可选参数，如下
 
 |参数|描述|默认值|
 |---|----|-----|
-|fetch|查询返回`Book`类型的对象。如果指定了此参数，表示附带查询`Book.store`、`Book.store.avgPrice`和`Book.authors`。||
+|fetch|查询返回`Book`类型的对象。如果此参数为true，表示附带查询`Book.store`、`Book.store.avgPrice`和`Book.authors`。|false|
 |name|`Book.name`的过滤条件||
 |storeName|`Book.store.name`的过滤条件||
 |authorName|`Book.authors.firstName`或`Book.authors.lastName`的过滤条件||
 |pageIndex|分页索引|0|
 |pageSize|分页大小|5|
+
+### PUT /book
+
+保存书籍及其关联对象
+
+该命令要求RequstBody是一个`Book`类型的动态实体对象。格式任意，但是
+- 对当前`Book`对象而言，要么指定`id`，要么指定`name`和`edition`
+- 如果指定了当前对象的多对一关联属性`Book.store`，对关联对象而言，对象要么指定`id`，要么指定`name`
+- 如果指定了当前对象的多对多关联属性`Book.authors`，对每个关联对象而言，对象要么指定`id`，要么指定`firstName`和`lastName`
+- 如果是最终操作是insert而非update，必须当前Book对象的`price`属性
+- 全局的租户必须设置
+
+### GET /stores
+
+查询所有书店
+
+该命令具有可选参数，如下
+
+|参数|描述|默认值|
+|---|----|-----|
+|fetch|查询返回`BookStore`类型的对象。如果此参数为true，表示附带查询`BookStore.avgPrice`、`BookStore.books`和`BookStore.books.authors`。|false|
+
+### GET /authors
+
+查询作者
+
+该命令具有可选参数，如下
+
+|参数|描述|默认值|
+|---|----|-----|
+|fetch|查询返回`Author`类型的对象。如果此参数为true，表示附带查询`Author.books`、`Author.books.store`和`Author.books.store.avgPrice`。|false|
+|firstName|模糊查询条件|""|
+|lastName|模糊查询条件|""|
+|gender|作者性别|null|
 
 ### GET /trees
 
@@ -145,3 +194,11 @@ PUT /tree rootName=MyNode&depth=2&breadth=2
 
 此页面提供了GraphQL API的线上文档，按其指导输入query或mutation请求并执行即可
 
+这个例子支持多租户，可以为当前操作者设置全局的租户名
+- 对查询操作而言，租户设置是可选的
+- 对修改操作而言，租户设置是必须的
+- 租户可以设置为`a`或`b`
+
+要为当前操作者设置全局的租户名，你可以点击在线文档的`Authorize`按钮
+
+![graphiql-headers](@site/static/img/graphiql-headers.jpg)

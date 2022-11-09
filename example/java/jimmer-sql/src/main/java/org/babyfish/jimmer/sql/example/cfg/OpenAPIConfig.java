@@ -14,7 +14,7 @@ public class OpenAPIConfig {
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI()
-                .info(new Info().title("Jimmer App").version("0.3.x"))
+                .info(new Info().title("demo:jimmer-sql").version("0.4.10"))
                 .components(
                         new Components()
                         .addSecuritySchemes(
