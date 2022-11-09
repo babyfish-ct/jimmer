@@ -93,9 +93,15 @@ SpringBoot从2.7.0开始支持[Spring GraphQL](https://spring.io/projects/spring
 
 开发人员可以利用Jimmer实体的动态性构建任意复杂的数据结构，交由Jimmer保存。
 
-Jimmer会把数据库中现有数据结构和用户期望保存的数据结构做diff，然后修改不一致的部分，最终让数据库中的数据结构和用户期望的数据结构一致。如图
+Jimmer会把数据库中现有数据结构和用户期望保存的数据结构做diff，然后修改不一致的部分，最终让数据库中的数据结构和用户期望的数据结构一致。
 
-【等美工图片】
+:::note
+Jimmer的保存功能有点类似web领域的react和vue.
+:::
+
+如图
+
+![save](@site/static/img/save.png)
 
 图片左上为数据库中现有数据结构；右上为用户期望的数据结构，其中每个对象，要么指定id，要么指定业务key和id增长策略。
 
