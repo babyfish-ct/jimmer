@@ -75,7 +75,7 @@ This framework provides three examples
 |Language|Entry point|
 |---|---|
 |English|https://discord.com/channels/1016206034827743283/|
-|Chinese|<img src="doc/static/img/public-wechat.jpg" height=300/>|
+|Chinese|<img src="https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/public-wechat.jpg" height=300/>|
 
 ## 6. Ecosystem
 
