@@ -243,12 +243,11 @@ class ImplGenerator(
                                 )
                                 addStatement("return false")
                                 endControlFlow()
-                                if (prop.isId) {
+                                if (prop.isId && !shallow) {
                                     beginControlFlow("if (%L)", localLoadedName)
                                     addStatement(
-                                        "return this.%L %L otherImpl.%L",
+                                        "return this.%L == otherImpl.%L",
                                         prop.valueFieldName,
-                                        if (shallow && prop.isAssociation) "!==" else "!=",
                                         prop.name
                                     )
                                     endControlFlow()
