@@ -1263,6 +1263,16 @@ Filters can not only filter associated objects, but also sort associated objects
 2.  When a field-level filter is used, the [external cache](./cache) of the field will be ignored.
 
     If you want to use association cache, you can use [cache-friendly global filter](./filter/#filters-and-caching).
+
+3.  There is a common mistake in actual development (take Java as an example)
+
+    `filter(it -> args.getTable().firstName().ilike "a")`.
+
+    This code creates the conditional expression, but does not call `args.where`. Filter code that neither calls `args.where` nor `args.orderBy` makes no sense.
+
+    The correct code is
+
+    `filter(it -> args.where(args.getTable().firstName().ilike "a"))`.
 :::
 
 ## Recursively query self-associated properties
