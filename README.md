@@ -40,7 +40,7 @@ then consider this area as a whole
 
 <kbd>
    <a href="https://babyfish-ct.github.io/jimmer/docs/benchmark/">
-       <img src="[benchmark.png](https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/benchmark-snapshot.jpg)"/>
+       <img src="https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/benchmark-snapshot.jpg"/>
    </a>
 </kbd>
 
