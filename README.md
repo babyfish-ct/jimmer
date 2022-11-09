@@ -39,8 +39,8 @@ then consider this area as a whole
 - The ordinate represents the operation count per second.
 
 <kbd>
-   <a href="https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/benchmark-snapshot.jpg">
-       <img src="benchmark.png"/>
+   <a href="https://babyfish-ct.github.io/jimmer/docs/benchmark/">
+       <img src="[benchmark.png](https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/benchmark-snapshot.jpg)"/>
    </a>
 </kbd>
 
