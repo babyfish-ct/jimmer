@@ -23,6 +23,8 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -39,7 +41,7 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
 
     private final P props;
 
-    private boolean forCache;
+    private boolean sorted;
 
     @SuppressWarnings("unchecked")
     public FilterArgsImpl(SortableImplementor sortable, Props props, boolean forCache) {
@@ -52,7 +54,10 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
             }
         }
         this.props = (P)props;
-        this.forCache = forCache;
+    }
+
+    public boolean isSorted() {
+        return sorted;
     }
 
     @Override
@@ -69,12 +74,18 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     @Override
     @OldChain
     public Sortable orderBy(Expression<?>... expressions) {
+        if (!sorted) {
+            sorted = Arrays.stream(expressions).anyMatch(Objects::nonNull);
+        }
         return sortable.orderBy(expressions);
     }
 
     @Override
     @OldChain
     public Sortable orderBy(Order... orders) {
+        if (!sorted) {
+            sorted = Arrays.stream(orders).anyMatch(Objects::nonNull);
+        }
         return sortable.orderBy(orders);
     }
 
