@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.fetcher.FieldFilterArgs;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
@@ -24,7 +25,9 @@ public class FieldFilterArgsImpl<T extends Table<?>> implements FieldFilterArgs<
 
     private final Collection<Object> keys;
 
-    public static <T extends Table<?>> FieldFilterArgs<T> of(
+    private boolean sorted;
+
+    public static <T extends Table<?>> FieldFilterArgsImpl<T> of(
             AbstractMutableQueryImpl query,
             T table,
             Collection<Object> keys
@@ -44,6 +47,10 @@ public class FieldFilterArgsImpl<T extends Table<?>> implements FieldFilterArgs<
         this.query = query;
         this.table = table;
         this.keys = keys != null ? Collections.unmodifiableCollection(keys) : null;
+    }
+
+    public boolean isSorted() {
+        return sorted;
     }
 
     @Override
@@ -89,12 +96,18 @@ public class FieldFilterArgsImpl<T extends Table<?>> implements FieldFilterArgs<
     @Override
     @OldChain
     public Sortable orderBy(Expression<?> ... expressions) {
+        if (!sorted) {
+            sorted = Arrays.stream(expressions).anyMatch(Objects::nonNull);
+        }
         return query.orderBy(expressions);
     }
 
     @Override
     @OldChain
     public Sortable orderBy(Order ... orders) {
+        if (!sorted) {
+            sorted = Arrays.stream(orders).anyMatch(Objects::nonNull);
+        }
         return query.orderBy(orders);
     }
 
