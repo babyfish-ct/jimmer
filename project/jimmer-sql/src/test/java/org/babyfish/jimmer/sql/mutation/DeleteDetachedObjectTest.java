@@ -32,7 +32,8 @@ public class DeleteDetachedObjectTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from BOOK_STORE as tb_1_ " +
-                                        "where tb_1_.NAME = ?"
+                                        "where tb_1_.NAME = ? " +
+                                        "for update"
                         );
                         it.variables("O'REILLY");
                     });
@@ -45,7 +46,7 @@ public class DeleteDetachedObjectTest extends AbstractMutationTest {
                         it.variables(oreillyId, learningGraphQLId1, learningGraphQLId2, learningGraphQLId3);
                     });
                     ctx.statement(it -> {
-                        it.sql("select ID from BOOK where STORE_ID = ? and ID not in(?, ?, ?)");
+                        it.sql("select ID from BOOK where STORE_ID = ? and ID not in(?, ?, ?) for update");
                         it.variables(oreillyId, learningGraphQLId1, learningGraphQLId2, learningGraphQLId3);
                     });
                     ctx.statement(it -> {

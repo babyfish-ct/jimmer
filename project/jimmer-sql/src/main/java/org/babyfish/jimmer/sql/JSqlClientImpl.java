@@ -12,6 +12,9 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.event.TriggerType;
+import org.babyfish.jimmer.sql.event.Triggers;
+import org.babyfish.jimmer.sql.event.TriggersImpl;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
@@ -32,7 +35,6 @@ import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
 import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
-import org.babyfish.jimmer.sql.event.TriggersImpl;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 
@@ -65,6 +67,8 @@ class JSqlClientImpl implements JSqlClient {
 
     private final Triggers triggers;
 
+    private final Triggers transactionTriggers;
+
     private final TransientResolverManager transientResolverManager;
 
     private final FilterManager filterManager;
@@ -88,6 +92,7 @@ class JSqlClientImpl implements JSqlClient {
             EntityManager entityManager,
             Caches caches,
             Triggers triggers,
+            Triggers transactionTriggers,
             FilterManager filterManager,
             TransientResolverManager transientResolverManager,
             DraftInterceptorManager draftInterceptorManager) {
@@ -118,6 +123,7 @@ class JSqlClientImpl implements JSqlClient {
                         caches :
                         CachesImpl.of(triggers, scalarProviderMap, entityManager, null);
         this.triggers = triggers;
+        this.transactionTriggers = transactionTriggers;
         this.filterManager = filterManager;
         this.transientResolverManager =
                 transientResolverManager != null ?
@@ -240,8 +246,35 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
+    public TriggerType getTriggerType() {
+        if (transactionTriggers == null) {
+            return TriggerType.BINLOG_ONLY;
+        }
+        if (transactionTriggers == triggers) {
+            return TriggerType.TRANSACTION_ONLY;
+        }
+        return TriggerType.BOTH;
+    }
+
+    @Override
     public Triggers getTriggers() {
         return triggers;
+    }
+
+    @Override
+    public Triggers getTriggers(boolean transaction) {
+        if (transaction) {
+            Triggers tt = this.transactionTriggers;
+            if (tt == null) {
+                throw new IllegalStateException("Transaction triggers is not supported by current sql client");
+            }
+            return tt;
+        }
+        return triggers;
+    }
+
+    public Triggers tryGetTransactionTriggers() {
+        return transactionTriggers;
     }
 
     @Override
@@ -294,6 +327,7 @@ class JSqlClientImpl implements JSqlClient {
                 entityManager,
                 new CachesImpl((CachesImpl) caches, cfg),
                 triggers,
+                transactionTriggers,
                 filterManager,
                 transientResolverManager,
                 draftInterceptorManager
@@ -323,6 +357,7 @@ class JSqlClientImpl implements JSqlClient {
                 entityManager,
                 caches,
                 triggers,
+                transactionTriggers,
                 cfg.getFilterManager(),
                 transientResolverManager,
                 draftInterceptorManager
@@ -347,6 +382,7 @@ class JSqlClientImpl implements JSqlClient {
                 entityManager,
                 caches,
                 triggers,
+                transactionTriggers,
                 filterManager,
                 transientResolverManager,
                 draftInterceptorManager
@@ -424,7 +460,11 @@ class JSqlClientImpl implements JSqlClient {
 
         private Caches caches;
 
-        private final Triggers triggers = new TriggersImpl();
+        private TriggerType triggerType = TriggerType.BINLOG_ONLY;
+
+        private Triggers triggers;
+
+        private Triggers transactionTriggers;
 
         private final List<Filter<?>> filters = new ArrayList<>();
 
@@ -524,7 +564,19 @@ class JSqlClientImpl implements JSqlClient {
         @Override
         @OldChain
         public JSqlClient.Builder setCaches(Consumer<CacheConfig> block) {
+            createTriggersIfNecessary();
             caches = CachesImpl.of(triggers, scalarProviderMap, entityManager, block);
+            return this;
+        }
+
+        @Override
+        public Builder setTriggerType(TriggerType triggerType) {
+            if (caches != null) {
+                throw new IllegalStateException(
+                        "Cannot set trigger type after setting the cache"
+                );
+            }
+            this.triggerType = Objects.requireNonNull(triggerType, "`triggerType` cannot be null");
             return this;
         }
 
@@ -570,6 +622,7 @@ class JSqlClientImpl implements JSqlClient {
 
         @Override
         public JSqlClient build() {
+            createTriggersIfNecessary();
             FilterManager filterManager = new FilterManager(filters, disabledFilters);
             JSqlClient sqlClient = new JSqlClientImpl(
                     connectionManager,
@@ -584,12 +637,31 @@ class JSqlClientImpl implements JSqlClient {
                     entityManager,
                     caches,
                     triggers,
+                    transactionTriggers,
                     filterManager,
                     null,
                     new DraftInterceptorManager(interceptors)
             );
             filterManager.initialize(sqlClient);
             return sqlClient;
+        }
+
+        private void createTriggersIfNecessary() {
+            if (triggers == null) {
+                switch (triggerType) {
+                    case BINLOG_ONLY:
+                        triggers = new TriggersImpl();
+                        transactionTriggers = null;
+                        break;
+                    case BOTH:
+                        triggers = new TriggersImpl();
+                        transactionTriggers = new TriggersImpl();
+                        break;
+                    case TRANSACTION_ONLY:
+                        transactionTriggers = triggers = new TriggersImpl();
+                        break;
+                }
+            }
         }
     }
 }

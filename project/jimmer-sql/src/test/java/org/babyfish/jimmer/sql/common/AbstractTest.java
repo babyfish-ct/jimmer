@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.common;
 
 import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.Triggers;
+import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;

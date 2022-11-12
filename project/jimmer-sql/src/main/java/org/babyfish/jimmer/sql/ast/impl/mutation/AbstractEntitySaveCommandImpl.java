@@ -5,6 +5,8 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.event.TriggerType;
+import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JSqlClient;
@@ -51,7 +53,9 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
     static class Data implements Cfg {
 
-        private JSqlClient sqlClient;
+        private final JSqlClient sqlClient;
+
+        private final Triggers triggers;
 
         private boolean frozen;
 
@@ -67,6 +71,9 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         Data(JSqlClient sqlClient) {
             this.sqlClient = sqlClient;
+            this.triggers = sqlClient.getTriggerType() != TriggerType.BINLOG_ONLY ?
+                    sqlClient.getTriggers(true) :
+                    null;
             this.mode = SaveMode.UPSERT;
             this.keyPropMultiMap = new LinkedHashMap<>();
             this.autoAttachingSet = new LinkedHashSet<>();
@@ -75,6 +82,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         Data(Data base) {
             this.sqlClient = base.sqlClient;
+            this.triggers = base.triggers;
             this.mode = SaveMode.UPSERT;
             this.keyPropMultiMap = new LinkedHashMap<>(base.keyPropMultiMap);
             this.autoAttachingAll = base.autoAttachingAll;
@@ -84,6 +92,10 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         public JSqlClient getSqlClient() {
             return sqlClient;
+        }
+
+        public Triggers getTriggers() {
+            return triggers;
         }
 
         public SaveMode getMode() {

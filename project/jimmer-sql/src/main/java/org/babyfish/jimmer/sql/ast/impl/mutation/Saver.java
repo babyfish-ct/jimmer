@@ -581,7 +581,7 @@ class Saver {
                             IdAndKeyFetchers.getFetcher(type)
                     )
             );
-        }).execute(con);
+        }).forUpdate().execute(con);
 
         if (rows.size() > 1) {
             throw new ExecutionException(
