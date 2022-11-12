@@ -29,6 +29,25 @@ public class Internal {
         });
     }
 
+    public static Object produce(
+            ImmutableType type,
+            Object base,
+            DraftConsumer<?> block,
+            Consumer<DraftContext> resolver
+    ) {
+        return usingDraftContext((ctx, isRoot) -> {
+            Object draft = createDraft(ctx, type, base);
+            modifyDraft(draft, block);
+            if (!isRoot) {
+                if (resolver != null) {
+                    resolver.accept(ctx);
+                }
+                return ctx.resolveObject(draft);
+            }
+            return draft;
+        });
+    }
+
     public static List<Object> produceList(
             ImmutableType type,
             Collection<?> bases,

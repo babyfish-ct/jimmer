@@ -25,8 +25,6 @@ public class Deleter {
 
     private final Connection con;
 
-    private final MutationCache cache;
-
     private final Map<AffectedTable, Integer> affectedRowCountMap;
 
     private Map<ImmutableType, Set<Object>> preHandleIdInputMap =
@@ -69,7 +67,6 @@ public class Deleter {
     ) {
         this.data = data;
         this.con = con;
-        this.cache = cache;
         this.affectedRowCountMap = affectedRowCountMap;
     }
 
