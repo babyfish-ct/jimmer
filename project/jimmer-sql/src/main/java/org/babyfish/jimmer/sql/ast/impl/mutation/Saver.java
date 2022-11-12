@@ -41,6 +41,8 @@ class Saver {
 
     private final Map<AffectedTable, Integer> affectedRowCountMap;
 
+    private final List<Changed> changedList;
+
     private final String path;
 
     Saver(
@@ -59,6 +61,7 @@ class Saver {
         this.con = con;
         this.cache = cache;
         this.affectedRowCountMap = affectedRowCountMap;
+        this.changedList = data.getTriggers() != null ? new ArrayList<>() : null;
         this.path = "<root>";
     }
 
@@ -67,6 +70,7 @@ class Saver {
         this.con = base.con;
         this.cache = base.cache;
         this.affectedRowCountMap = base.affectedRowCountMap;
+        this.changedList = base.changedList;
         this.path = base.path + '.' + subPath;
     }
 
@@ -76,6 +80,7 @@ class Saver {
         E newEntity = (E)Internal.produce(immutableType, entity, draft -> {
             saveImpl((DraftSpi) draft);
         });
+        System.out.println(changedList);
         return new SimpleSaveResult<>(affectedRowCountMap, entity, newEntity);
     }
 
@@ -87,13 +92,15 @@ class Saver {
 
     @SuppressWarnings("unchecked")
     private void saveAssociations(DraftSpi currentDraftSpi, ObjectType currentObjectType, boolean forParent) {
-        for (ImmutableProp prop : currentDraftSpi.__type().getProps().values()) {
+
+        ImmutableType currentType = currentDraftSpi.__type();
+
+        for (ImmutableProp prop : currentType.getProps().values()) {
             if (prop.isAssociation(TargetLevel.ENTITY) &&
                     prop.getStorage() instanceof Column == forParent &&
                     currentDraftSpi.__isLoaded(prop.getId())
             ) {
                 ImmutableType targetType = prop.getTargetType();
-                ImmutableType currentType = currentDraftSpi.__type();
                 int currentIdPropId = currentType.getIdProp().getId();
                 Object currentId = currentDraftSpi.__isLoaded(currentIdPropId) ?
                         currentDraftSpi.__get(currentIdPropId) :
@@ -131,8 +138,57 @@ class Saver {
                             }
                         }
                         if (!updatingTargetIds.isEmpty()) {
-                            int rowCount = childTableOperator.setParent(currentId, updatingTargetIds);
-                            addOutput(AffectedTable.of(targetType), rowCount);
+                            if (changedList != null) {
+                                List<ImmutableSpi> rows =
+                                        cache.loadByIds(targetType, updatingTargetIds, con);
+                                Object currentIdOnly = makeIdOnly(currentType, currentId);
+                                int mappedByPropId = mappedBy.getId();
+                                for (ImmutableSpi row : rows) {
+                                    Object rowId = idOf(row);
+                                    Object oldParentId = idOf((ImmutableSpi) row.__get(mappedByPropId));
+                                    Object changedRow = Internal.produce(targetType, row, (draft) -> {
+                                        ((DraftSpi)draft).__set(mappedByPropId, currentIdOnly);
+                                    });
+                                    if (Objects.equals(currentId, oldParentId)) {
+                                        updatingTargetIds.remove(rowId);
+                                    } else {
+                                        changedList.add(new ChangedEntity(row, changedRow));
+                                        changedList.add(
+                                                new ChangedAssociation(
+                                                        mappedBy,
+                                                        rowId,
+                                                        oldParentId,
+                                                        currentId
+                                                )
+                                        );
+                                        if (oldParentId != null) {
+                                            changedList.add(
+                                                    new ChangedAssociation(
+                                                            prop,
+                                                            oldParentId,
+                                                            rowId,
+                                                            null
+                                                    )
+                                            );
+                                        }
+                                        changedList.add(
+                                                new ChangedAssociation(
+                                                        prop,
+                                                        currentId,
+                                                        null,
+                                                        rowId
+                                                )
+                                        );
+                                    }
+                                    if (!updatingTargetIds.isEmpty()) {
+                                        int rowCount = childTableOperator.setParent(currentId, updatingTargetIds);
+                                        addOutput(AffectedTable.of(targetType), rowCount);
+                                    }
+                                }
+                            } else {
+                                int rowCount = childTableOperator.setParent(currentId, updatingTargetIds);
+                                addOutput(AffectedTable.of(targetType), rowCount);
+                            }
                         }
                     }
                     for (DraftSpi associatedObject : associatedObjects) {
@@ -686,6 +742,19 @@ class Saver {
         spi.__set(idProp.getId(), convertedId);
     }
 
+    private static ImmutableSpi makeIdOnly(ImmutableType type, Object id) {
+        return (ImmutableSpi) Internal.produce(type, null, draft -> {
+            ((DraftSpi)draft).__set(type.getIdProp().getId(), id);
+        });
+    }
+
+    private static Object idOf(ImmutableSpi spi) {
+        if (spi == null) {
+            return null;
+        }
+        return spi.__get(spi.__type().getIdProp().getId());
+    }
+
     private static void increaseDraftVersion(DraftSpi spi) {
         ImmutableType type = spi.__type();
         ImmutableProp versionProp = type.getVersionProp();
@@ -699,5 +768,55 @@ class Saver {
         UNKNOWN,
         NEW,
         EXISTING
+    }
+
+    private interface Changed {}
+
+    private static class ChangedEntity implements Changed {
+
+        final Object oldEntity;
+
+        final Object newEntity;
+
+        private ChangedEntity(Object oldEntity, Object newEntity) {
+            this.oldEntity = oldEntity;
+            this.newEntity = newEntity;
+        }
+
+        @Override
+        public String toString() {
+            return "ChangedEntity{" +
+                    "oldEntity=" + oldEntity +
+                    ", newEntity=" + newEntity +
+                    '}';
+        }
+    }
+
+    private static class ChangedAssociation implements Changed {
+
+        final ImmutableProp prop;
+
+        final Object sourceId;
+
+        final Object detachedTargetId;
+
+        final Object attachedTargetId;
+
+        private ChangedAssociation(ImmutableProp prop, Object sourceId, Object detachedTargetId, Object attachedTargetId) {
+            this.prop = prop;
+            this.sourceId = sourceId;
+            this.detachedTargetId = detachedTargetId;
+            this.attachedTargetId = attachedTargetId;
+        }
+
+        @Override
+        public String toString() {
+            return "ChangedAssociation{" +
+                    "prop=" + prop +
+                    ", sourceId=" + sourceId +
+                    ", detachedTargetId=" + detachedTargetId +
+                    ", attachedTargetId=" + attachedTargetId +
+                    '}';
+        }
     }
 }

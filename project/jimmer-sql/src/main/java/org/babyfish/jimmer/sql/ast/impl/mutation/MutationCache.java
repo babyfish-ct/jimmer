@@ -6,8 +6,12 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 
+import java.sql.Connection;
 import java.util.*;
 
 class MutationCache {
@@ -36,6 +40,36 @@ class MutationCache {
         }
         TypedKey key = TypedKey.of(example, keyProps(type), true);
         return keyObjMap.get(key);
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<ImmutableSpi> loadByIds(ImmutableType type, Collection<Object> ids, Connection con) {
+        if (!(ids instanceof Set<?>)) {
+            ids = new HashSet<>(ids);
+        }
+        List<ImmutableSpi> list = new ArrayList<>(ids.size());
+        Collection<Object> missedIds = new ArrayList<>();
+        for (Object id : ids) {
+            ImmutableSpi spi = idObjMap.get(new TypedId(type, id));
+            if (spi != null) {
+                list.add(spi);
+            } else {
+                missedIds.add(id);
+            }
+        }
+        if (!missedIds.isEmpty()) {
+            String idPropName = type.getIdProp().getName();
+            List<ImmutableSpi> rows = (List<ImmutableSpi>)
+                    Queries.createQuery(sqlClientWithoutCache, type, ExecutionPurpose.MUTATE, true, (q, t) -> {
+                        q.where(t.<Expression<Object>>get(idPropName).in(missedIds));
+                        return q.select(t);
+                    }).forUpdate().execute(con);
+            for (ImmutableSpi row : rows) {
+                save(row, false);
+                list.add(row);
+            }
+        }
+        return list;
     }
 
     public ImmutableSpi save(ImmutableSpi spi, boolean saved) {
