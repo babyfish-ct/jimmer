@@ -8,7 +8,6 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 
-import java.sql.Connection;
 import java.util.*;
 
 class MutationCache {
@@ -37,57 +36,6 @@ class MutationCache {
         }
         TypedKey key = TypedKey.of(example, keyProps(type), true);
         return keyObjMap.get(key);
-    }
-
-    public ImmutableSpi findById(ImmutableType type, Object id, Connection con) {
-        TypedId typedId = new TypedId(type, id);
-        ImmutableSpi spi = idObjMap.get(typedId);
-        if (spi != null || idObjMap.containsKey(typedId)) {
-            return spi;
-        }
-        spi = (ImmutableSpi) sqlClientWithoutCache
-                .getEntities()
-                .forUpdate()
-                .forConnection(con)
-                .findById(type.getJavaClass(), id);
-        idObjMap.put(typedId, spi);
-        return spi;
-    }
-
-    @SuppressWarnings("unchecked")
-    public Map<Object, ImmutableSpi> findByIds(ImmutableType type, Collection<?> ids, Connection con) {
-        if (ids.isEmpty()) {
-            return Collections.emptyMap();
-        }
-        Map<Object, ImmutableSpi> resultMap = new LinkedHashMap<>((ids.size() * 4 + 2) / 3);
-        for (Object id : ids) {
-            TypedId typedId = new TypedId(type, id);
-            ImmutableSpi spi = idObjMap.get(typedId);
-            if (spi != null || idObjMap.containsKey(typedId)) {
-                resultMap.put(id, spi);
-            }
-        }
-        if (resultMap.size() < ids.size()) {
-            List<Object> missedIds = new ArrayList<>(ids.size() - resultMap.size());
-            for (Object id : ids) {
-                if (!resultMap.containsKey(id)) {
-                    missedIds.add(id);
-                }
-            }
-            if (!missedIds.isEmpty()) { // "ids" is not Set
-                Map<Object, ImmutableSpi> loadedMap =
-                        sqlClientWithoutCache.getEntities().findMapByIds(
-                                (Class<ImmutableSpi>) type.getJavaClass(),
-                                missedIds
-                        );
-                for (Object id : missedIds) {
-                    ImmutableSpi spi = loadedMap.get(id);
-                    resultMap.put(id, spi);
-                    idObjMap.put(new TypedId(type, id), spi);
-                }
-            }
-        }
-        return resultMap;
     }
 
     public ImmutableSpi save(ImmutableSpi spi, boolean saved) {

@@ -45,7 +45,8 @@ class MiddleTableOperator {
                 .sql(" where ")
                 .sql(middleTable.getJoinColumnName())
                 .sql(" = ")
-                .variable(id);
+                .variable(id)
+                .sql(" for update");
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return Selectors.select(
                 sqlClient,

@@ -8,8 +8,7 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
-import org.babyfish.jimmer.sql.ImmutableProps;
-import org.babyfish.jimmer.sql.Triggers;
+import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
@@ -17,7 +16,6 @@ import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 public class CacheConfig {
 

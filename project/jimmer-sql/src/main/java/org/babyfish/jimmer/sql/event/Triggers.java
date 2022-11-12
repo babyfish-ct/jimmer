@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql;
+package org.babyfish.jimmer.sql.event;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;

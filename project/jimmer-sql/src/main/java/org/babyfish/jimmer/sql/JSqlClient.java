@@ -12,6 +12,8 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.cache.CacheConfig;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.cache.Caches;
+import org.babyfish.jimmer.sql.event.TriggerType;
+import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
@@ -61,7 +63,11 @@ public interface JSqlClient extends SubQueryProvider {
 
     Entities getEntities();
 
+    TriggerType getTriggerType();
+
     Triggers getTriggers();
+
+    Triggers getTriggers(boolean transaction);
 
     Associations getAssociations(TypedProp.Association<?, ?> prop);
 
@@ -130,6 +136,9 @@ public interface JSqlClient extends SubQueryProvider {
 
         @OldChain
         Builder setCaches(Consumer<CacheConfig> block);
+
+        @OldChain
+        Builder setTriggerType(TriggerType triggerType);
 
         @OldChain
         Builder addFilters(Filter<?>... filters);

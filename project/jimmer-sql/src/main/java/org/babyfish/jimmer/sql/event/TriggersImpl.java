@@ -5,7 +5,6 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.Triggers;
 import org.babyfish.jimmer.sql.meta.Column;
 
 import java.util.ArrayList;

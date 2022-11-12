@@ -101,6 +101,7 @@ class ChildTableOperator {
                 .sql(" from ")
                 .sql(parentProp.getDeclaringType().getTableName());
         addDetachConditions(builder, parentId, retainedChildIds);
+        builder.sql(" for update");
 
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(

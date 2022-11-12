@@ -3,8 +3,7 @@ package org.babyfish.jimmer.sql.kt.impl
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.ImmutableSpi
-import org.babyfish.jimmer.sql.Triggers
-import org.babyfish.jimmer.sql.association.meta.AssociationType
+import org.babyfish.jimmer.sql.event.Triggers
 import org.babyfish.jimmer.sql.event.AssociationListener
 import org.babyfish.jimmer.sql.event.EntityListener
 import org.babyfish.jimmer.sql.kt.KTriggers
