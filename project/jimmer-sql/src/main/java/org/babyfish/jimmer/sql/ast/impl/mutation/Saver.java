@@ -241,11 +241,15 @@ class Saver {
         }
 
         if (data.getMode() == SaveMode.INSERT_ONLY) {
+            if (trigger != null) {
+                trigger.prepare(null, draftSpi);
+            }
             insert(draftSpi);
             return ObjectType.NEW;
         }
 
-        if (data.getMode() == SaveMode.UPDATE_ONLY &&
+        if (trigger == null &&
+                data.getMode() == SaveMode.UPDATE_ONLY &&
                 draftSpi.__isLoaded(draftSpi.__type().getIdProp().getId())) {
             update(draftSpi, false);
             return ObjectType.EXISTING;
@@ -253,6 +257,9 @@ class Saver {
 
         ImmutableSpi existingSpi = find(draftSpi);
         if (existingSpi != null) {
+            if (trigger != null) {
+                trigger.prepare(existingSpi, draftSpi);
+            }
             int idPropId = draftSpi.__type().getIdProp().getId();
             if (draftSpi.__isLoaded(idPropId)) {
                 update(draftSpi, false);
@@ -268,6 +275,10 @@ class Saver {
                             path +
                             "\" because insert operation for this path is disabled"
             );
+        }
+
+        if (trigger != null) {
+            trigger.prepare(null, draftSpi);
         }
         insert(draftSpi);
         return ObjectType.NEW;
@@ -585,6 +596,9 @@ class Saver {
                         q.where(table.<Expression<Object>>get(keyProp.getName()).isNull());
                     }
                 }
+            }
+            if (trigger != null) {
+                return q.select((Table<ImmutableSpi>)table);
             }
             return q.select(
                     ((Table<ImmutableSpi>)table).fetch(
