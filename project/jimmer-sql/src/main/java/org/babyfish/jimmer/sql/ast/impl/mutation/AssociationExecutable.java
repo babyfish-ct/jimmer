@@ -177,21 +177,31 @@ class AssociationExecutable implements Executable<Integer> {
                 sqlClient,
                 con,
                 reversed ?
-                        associationType.getMiddleTable().getInverse() :
-                        associationType.getMiddleTable(),
+                        associationType.getBaseProp().getOpposite() :
+                        associationType.getBaseProp(),
                 (reversed ? associationType.getSourceType() : associationType.getTargetType())
                         .getIdProp()
-                        .getElementClass()
+                        .getElementClass(),
+                null,
+                null
         );
     }
 
     private static class TupleReader implements MiddleTableOperator.IdPairReader {
+
+        private final Collection<Tuple2<Object, Object>> idTuples;
 
         private Iterator<Tuple2<Object, Object>> idTupleItr;
 
         private Tuple2<Object, Object> currentIdPair;
 
         TupleReader(Collection<Tuple2<Object, Object>> idTuples) {
+            this.idTuples = idTuples;
+            idTupleItr = idTuples.iterator();
+        }
+
+        @Override
+        public void reset() {
             idTupleItr = idTuples.iterator();
         }
 

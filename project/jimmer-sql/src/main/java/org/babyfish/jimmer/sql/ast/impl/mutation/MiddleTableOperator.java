@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.JSqlClient;
@@ -15,24 +16,45 @@ import java.util.*;
 
 class MiddleTableOperator {
 
-    private JSqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
-    private Connection con;
+    private final Connection con;
 
-    private MiddleTable middleTable;
+    private final ImmutableProp prop;
 
-    private Expression<?> targetIdExpression;
+    private final MiddleTable middleTable;
+
+    private final Expression<?> targetIdExpression;
+
+    private final MutationCache cache;
+
+    private final MutationTrigger trigger;
 
     MiddleTableOperator(
             JSqlClient sqlClient,
             Connection con,
-            MiddleTable middleTable,
-            Class<?> targetIdType
+            ImmutableProp prop,
+            Class<?> targetIdType,
+            MutationCache cache,
+            MutationTrigger trigger
     ) {
+        ImmutableProp mappedBy = prop.getMappedBy();
         this.sqlClient = sqlClient;
         this.con = con;
-        this.middleTable = middleTable;
+        this.prop = prop;
+        if (mappedBy != null) {
+            this.middleTable = mappedBy.<MiddleTable>getStorage().getInverse();
+        } else {
+            this.middleTable = prop.getStorage();
+        }
         this.targetIdExpression = Expression.any().nullValue(targetIdType);
+        if (trigger != null) {
+            this.cache = cache;
+            this.trigger = trigger;
+        } else {
+            this.cache = null;
+            this.trigger = null;
+        }
     }
 
     List<Object> getTargetIds(Object id) {
@@ -69,6 +91,9 @@ class MiddleTableOperator {
     }
 
     int add(IdPairReader reader) {
+
+        tryPrepareEvent(true, reader);
+
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
                 .sql("insert into ")
@@ -111,6 +136,9 @@ class MiddleTableOperator {
     }
 
     int remove(IdPairReader reader) {
+
+        tryPrepareEvent(false, reader);
+
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
                 .sql("delete from ")
@@ -156,7 +184,35 @@ class MiddleTableOperator {
         return removeTargetIds(id, removingTargetIds) + addTargetIds(id, addingTargetIds);
     }
 
+    private void tryPrepareEvent(boolean insert, IdPairReader reader) {
+
+        MutationTrigger trigger = this.trigger;
+        if (trigger == null) {
+            return;
+        }
+
+        ImmutableProp oppositeProp = prop.getOpposite();
+        while (reader.read()) {
+            Object sourceId = reader.sourceId();
+            Object targetId = reader.targetId();
+            if (insert) {
+                trigger.prepare(prop, sourceId, null, targetId);
+                if (oppositeProp != null) {
+                    trigger.prepare(oppositeProp, targetId, null, sourceId);
+                }
+            } else {
+                trigger.prepare(prop, sourceId, targetId, null);
+                if (oppositeProp != null) {
+                    trigger.prepare(oppositeProp, targetId, sourceId, null);
+                }
+            }
+        }
+
+        reader.reset();
+    }
+
     interface IdPairReader {
+        void reset();
         boolean read();
         Object sourceId();
         Object targetId();
@@ -164,16 +220,22 @@ class MiddleTableOperator {
 
     private static class OneToManyReader implements IdPairReader {
 
-        private Object sourceId;
+        private final Object sourceId;
+
+        private final Collection<Object> targetIds;
 
         private Iterator<Object> targetIdItr;
 
         private Object currentTargetId;
 
-        private int index = -1;
-
         OneToManyReader(Object sourceId, Collection<Object> targetIds) {
             this.sourceId = sourceId;
+            this.targetIds = targetIds;
+            this.targetIdItr = targetIds.iterator();
+        }
+
+        @Override
+        public void reset() {
             this.targetIdItr = targetIds.iterator();
         }
 
