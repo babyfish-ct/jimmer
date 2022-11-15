@@ -508,7 +508,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.variables("Learning GraphQL", 3);
                     });
                     ctx.statement(it -> {
-                        it.sql("select AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID = ? for update");
+                        it.sql("select AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID = ?");
                         it.variables(learningGraphQLId3);
                     });
                     ctx.statement(it -> {
@@ -631,7 +631,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.variables("Eve", "Procello");
                     });
                     ctx.statement(it -> {
-                        it.sql("select BOOK_ID from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ? for update");
+                        it.sql("select BOOK_ID from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ?");
                         it.variables(eveId);
                     });
                     ctx.statement(it -> {

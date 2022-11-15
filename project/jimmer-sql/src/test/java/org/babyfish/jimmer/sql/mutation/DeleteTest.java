@@ -53,7 +53,7 @@ public class DeleteTest extends AbstractMutationTest {
                 }),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = null where STORE_ID in(?)");
+                        it.sql("update BOOK set STORE_ID = null where STORE_ID = ?");
                         it.variables(manningId);
                     });
                     ctx.statement(it -> {

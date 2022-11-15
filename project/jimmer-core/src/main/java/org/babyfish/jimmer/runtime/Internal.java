@@ -33,18 +33,13 @@ public class Internal {
             ImmutableType type,
             Object base,
             DraftConsumer<?> block,
-            Consumer<DraftContext> resolver
+            Consumer<DraftContext> disposer
     ) {
         return usingDraftContext((ctx, isRoot) -> {
+            ctx.addDisposer(disposer);
             Object draft = createDraft(ctx, type, base);
             modifyDraft(draft, block);
-            if (!isRoot) {
-                if (resolver != null) {
-                    resolver.accept(ctx);
-                }
-                return ctx.resolveObject(draft);
-            }
-            return draft;
+            return isRoot ? ctx.resolveObject(draft) : draft;
         });
     }
 
@@ -93,7 +88,9 @@ public class Internal {
         ctx = new DraftContext(null);
         DRAFT_CONTEXT_LOCAL.set(ctx);
         try {
-            return block.apply(ctx, true);
+            T result = block.apply(ctx, true);
+            ctx.dispose();
+            return result;
         } finally {
             DRAFT_CONTEXT_LOCAL.remove();
         }

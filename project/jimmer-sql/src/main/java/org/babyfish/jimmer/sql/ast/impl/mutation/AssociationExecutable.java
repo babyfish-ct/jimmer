@@ -92,7 +92,7 @@ class AssociationExecutable implements Executable<Integer> {
         }
 
         if (mode == Mode.DELETE) {
-            return getMiddleTypeOperator(con).remove(new TupleReader(idTuples));
+            return getMiddleTypeOperator(con).remove(new MiddleTableOperator.TupleReader(idTuples));
         }
 
         Set<Tuple2<Object, Object>> addingPairs = idTuples;
@@ -104,7 +104,7 @@ class AssociationExecutable implements Executable<Integer> {
                 return 0;
             }
         }
-        return getMiddleTypeOperator(con).add(new TupleReader(addingPairs));
+        return getMiddleTypeOperator(con).add(new MiddleTableOperator.TupleReader(addingPairs));
     }
 
     public enum Mode {
@@ -173,55 +173,14 @@ class AssociationExecutable implements Executable<Integer> {
     }
 
     private MiddleTableOperator getMiddleTypeOperator(Connection con) {
-        return new MiddleTableOperator(
+        return MiddleTableOperator.tryGet(
                 sqlClient,
                 con,
                 reversed ?
                         associationType.getBaseProp().getOpposite() :
                         associationType.getBaseProp(),
-                (reversed ? associationType.getSourceType() : associationType.getTargetType())
-                        .getIdProp()
-                        .getElementClass(),
                 null,
                 null
         );
-    }
-
-    private static class TupleReader implements MiddleTableOperator.IdPairReader {
-
-        private final Collection<Tuple2<Object, Object>> idTuples;
-
-        private Iterator<Tuple2<Object, Object>> idTupleItr;
-
-        private Tuple2<Object, Object> currentIdPair;
-
-        TupleReader(Collection<Tuple2<Object, Object>> idTuples) {
-            this.idTuples = idTuples;
-            idTupleItr = idTuples.iterator();
-        }
-
-        @Override
-        public void reset() {
-            idTupleItr = idTuples.iterator();
-        }
-
-        @Override
-        public boolean read() {
-            if (idTupleItr.hasNext()) {
-                currentIdPair = idTupleItr.next();
-                return true;
-            }
-            return false;
-        }
-
-        @Override
-        public Object sourceId() {
-            return currentIdPair.get_1();
-        }
-
-        @Override
-        public Object targetId() {
-            return currentIdPair.get_2();
-        }
     }
 }

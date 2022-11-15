@@ -59,11 +59,14 @@ class MutationCache {
         }
         if (!missedIds.isEmpty()) {
             String idPropName = type.getIdProp().getName();
-            List<ImmutableSpi> rows = (List<ImmutableSpi>)
-                    Queries.createQuery(sqlClientWithoutCache, type, ExecutionPurpose.MUTATE, true, (q, t) -> {
-                        q.where(t.<Expression<Object>>get(idPropName).in(missedIds));
-                        return q.select(t);
-                    }).forUpdate().execute(con);
+            List<ImmutableSpi> rows = Internal.requiresNewDraftContext(ctx -> {
+                List<ImmutableSpi> spiList = (List<ImmutableSpi>)
+                        Queries.createQuery(sqlClientWithoutCache, type, ExecutionPurpose.MUTATE, true, (q, t) -> {
+                            q.where(t.<Expression<Object>>get(idPropName).in(missedIds));
+                            return q.select(t);
+                        }).forUpdate().execute(con);
+                return ctx.resolveList(spiList);
+            });
             for (ImmutableSpi row : rows) {
                 save(row, false);
                 list.add(row);

@@ -19,10 +19,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 class ChildTableOperator {
 
@@ -40,7 +37,8 @@ class ChildTableOperator {
             JSqlClient sqlClient,
             Connection con,
             ImmutableProp parentProp,
-            MutationCache cache, MutationTrigger trigger
+            MutationCache cache,
+            MutationTrigger trigger
     ) {
         this.sqlClient = sqlClient;
         this.con = con;
@@ -77,38 +75,13 @@ class ChildTableOperator {
             Object changedRow = Internal.produce(childType, childRow, (draft) -> {
                 ((DraftSpi)draft).__set(parentPropId, currentIdOnly);
             });
-            if (!Objects.equals(parentId, oldParentId)) {
+            if (Objects.equals(parentId, oldParentId)) {
                 if (newChildIds == null) {
                     newChildIds = new ArrayList<>(childIds);
                 }
                 newChildIds.remove(childId);
             } else {
-                trigger.prepare(childRow, changedRow);
-                trigger.prepare(
-                        parentProp,
-                        childId,
-                        oldParentId,
-                        parentId
-                );
-                ImmutableProp oppositeProp = parentProp.getOpposite();
-                if (oppositeProp != null) {
-                    if (oldParentId != null) {
-                        trigger.prepare(
-                                oppositeProp,
-                                oldParentId,
-                                childId,
-                                null
-                        );
-                    }
-                    if (parentId != null) {
-                        trigger.prepare(
-                                oppositeProp,
-                                oldParentId,
-                                childId,
-                                null
-                        );
-                    }
-                }
+                trigger.modifyEntityTable(childRow, changedRow);
             }
         }
         if (newChildIds != null) {
@@ -127,9 +100,13 @@ class ChildTableOperator {
                 .sql(parentProp.getDeclaringType().getTableName())
                 .sql(" set ")
                 .sql(parentProp.<Column>getStorage().getName())
-                .sql(" = ")
-                .variable(parentId)
-                .sql(" where ")
+                .sql(" = ");
+        if (parentId == null) {
+            builder.sql("null");
+        } else {
+            builder.variable(parentId);
+        }
+        builder.sql(" where ")
                 .sql(parentProp.getDeclaringType().getIdProp().<Column>getStorage().getName())
                 .sql(" in(");
         String separator = "";
@@ -152,29 +129,44 @@ class ChildTableOperator {
     }
 
     public int unsetParent(Object parentId, Collection<Object> retainedChildIds) {
-        return unsetParentImpl(parentId, retainedChildIds);
+        if (trigger != null) {
+            return unsetParentAndPrepareEvents(Collections.singleton(parentId), retainedChildIds);
+        }
+        return unsetParentImpl(Collections.singleton(parentId), retainedChildIds);
+    }
+
+    public int unsetParents(Collection<Object> parentIds) {
+        if (trigger != null) {
+            return unsetParentAndPrepareEvents(parentIds, Collections.emptyList());
+        }
+        return unsetParentImpl(parentIds, Collections.emptyList());
     }
 
     @SuppressWarnings("unchecked")
-    private int unsetParentAndPrepareEvents(Object parentId, Collection<Object> retainedChildIds) {
+    private int unsetParentAndPrepareEvents(Collection<Object> parentIds, Collection<Object> retainedChildIds) {
         assert trigger != null;
         int parentPropId = parentProp.getId();
         ImmutableType childType = parentProp.getDeclaringType();
         String parentIdPropName = parentProp.getTargetType().getIdProp().getName();
         String childIdPropName = childType.getIdProp().getName();
         int childIdPropId = childType.getIdProp().getId();
-        List<ImmutableSpi> childRows = (List<ImmutableSpi>) Queries
-                .createQuery(sqlClient, parentProp.getDeclaringType(), ExecutionPurpose.MUTATE, true, (q, child) -> {
-                    q.where(
-                            child
-                                    .join(parentProp.getName())
-                                    .<PropExpression<Object>>get(parentIdPropName)
-                                    .eq(parentId)
-                    );
-                    q.where(child.<PropExpression<Object>>get(childIdPropName).notIn(retainedChildIds));
-                    return q.select(child);
-                })
-                .execute(con);
+        List<ImmutableSpi> childRows = Internal.requiresNewDraftContext(ctx -> {
+            List<ImmutableSpi> list = (List<ImmutableSpi>) Queries
+                    .createQuery(sqlClient, parentProp.getDeclaringType(), ExecutionPurpose.MUTATE, true, (q, child) -> {
+                        PropExpression<Object> parentIdExpr = child.join(parentProp.getName()).get(parentIdPropName);
+                        if (parentIds.size() > 1) {
+                            q.where(parentIdExpr.in(parentIds));
+                        } else {
+                            q.where(parentIdExpr.eq(parentIds.iterator().next()));
+                        }
+                        if (!retainedChildIds.isEmpty()) {
+                            q.where(child.<PropExpression<Object>>get(childIdPropName).notIn(retainedChildIds));
+                        }
+                        return q.select(child);
+                    })
+                    .execute(con);
+            return ctx.resolveList(list);
+        });
         if (childRows.isEmpty()) {
             return 0;
         }
@@ -185,27 +177,12 @@ class ChildTableOperator {
             ImmutableSpi changedRow = (ImmutableSpi) Internal.produce(childType, childRow, draft -> {
                 ((DraftSpi)draft).__set(parentPropId, null);
             });
-            trigger.prepare(childRow, changedRow);
-            trigger.prepare(
-                    parentProp,
-                    childId,
-                    parentId,
-                    null
-            );
-            ImmutableProp oppositeProp = parentProp.getOpposite();
-            if (oppositeProp != null) {
-                trigger.prepare(
-                        oppositeProp,
-                        parentId,
-                        childId,
-                        null
-                );
-            }
+            trigger.modifyEntityTable(childRow, changedRow);
         }
         return setParentImpl(null, affectedChildIds);
     }
     
-    private int unsetParentImpl(Object parentId, Collection<Object> retainedChildIds) {
+    private int unsetParentImpl(Collection<Object> parentId, Collection<Object> retainedChildIds) {
         
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
@@ -235,7 +212,7 @@ class ChildTableOperator {
                 .sql(idProp.<Column>getStorage().getName())
                 .sql(" from ")
                 .sql(parentProp.getDeclaringType().getTableName());
-        addDetachConditions(builder, parentId, retainedChildIds);
+        addDetachConditions(builder, Collections.singleton(parentId), retainedChildIds);
         builder.sql(" for update");
 
         Tuple2<String, List<Object>> sqlResult = builder.build();
@@ -266,23 +243,39 @@ class ChildTableOperator {
 
     private void addDetachConditions(
             SqlBuilder builder,
-            Object parentId,
+            Collection<Object> parentIds,
             Collection<Object> retainedChildIds
     ) {
         builder
                 .sql(" where ")
-                .sql(parentProp.<Column>getStorage().getName())
-                .sql(" = ")
-                .variable(parentId);
+                .sql(parentProp.<Column>getStorage().getName());
+        if (parentIds.size() > 0) {
+            builder.sql(" = ").variable(parentIds.iterator().next());
+        } else {
+            builder.sql(" in(");
+            boolean addComma = false;
+            for (Object parentId : parentIds) {
+                if (addComma) {
+                    builder.sql(", ");
+                } else {
+                    addComma = true;
+                }
+                builder.variable(parentId);
+            }
+            builder.sql(")");
+        }
         if (!retainedChildIds.isEmpty()) {
             builder
                     .sql(" and ")
                     .sql(parentProp.getDeclaringType().getIdProp().<Column>getStorage().getName())
                     .sql(" not in(");
-            String separator = "";
+            boolean addComma = false;
             for (Object retainedChildId : retainedChildIds) {
-                builder.sql(separator);
-                separator = ", ";
+                if (addComma) {
+                    builder.sql(", ");
+                } else {
+                    addComma = true;
+                }
                 builder.variable(retainedChildId);
             }
             builder.sql(")");

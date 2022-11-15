@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
@@ -14,7 +13,6 @@ import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.util.StaticCache;
 
-import java.lang.reflect.TypeVariable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.ResultSet;

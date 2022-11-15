@@ -6,6 +6,7 @@ import org.babyfish.jimmer.Draft;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class DraftContext {
 
@@ -14,6 +15,8 @@ public class DraftContext {
     private final IdentityHashMap<Object, Draft> objDraftMap = new IdentityHashMap<>();
 
     private final IdentityHashMap<List<?>, ListDraft<?>> listDraftMap = new IdentityHashMap<>();
+
+    private DisposerHolder disposerHolder;
 
     public DraftContext(DraftContext parent) {
         this.parent = parent;
@@ -124,6 +127,39 @@ public class DraftContext {
                 }
             }
             throw new IllegalArgumentException(errorMessage);
+        }
+    }
+
+    public void addDisposer(Consumer<DraftContext> disposer) {
+        if (disposer != null) {
+            disposerHolder = new DisposerHolder(disposerHolder, disposer);
+        }
+    }
+
+    public void dispose() {
+        DisposerHolder holder = disposerHolder;
+        if (holder != null) {
+            holder.dispose(this);
+            this.disposerHolder = null;
+        }
+    }
+
+    private static class DisposerHolder {
+
+        private final DisposerHolder parent;
+
+        private final Consumer<DraftContext> disposer;
+
+        private DisposerHolder(DisposerHolder parent, Consumer<DraftContext> disposer) {
+            this.parent = parent;
+            this.disposer = disposer;
+        }
+
+        public void dispose(DraftContext ctx) {
+            disposer.accept(ctx);
+            if (parent != null) {
+                parent.dispose(ctx);
+            }
         }
     }
 }
