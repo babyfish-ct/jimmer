@@ -77,9 +77,17 @@ class Saver {
     @SuppressWarnings("unchecked")
     public <E> SimpleSaveResult<E> save(E entity) {
         ImmutableType immutableType = ImmutableType.get(entity.getClass());
-        E newEntity = (E)Internal.produce(immutableType, entity, draft -> {
-            saveImpl((DraftSpi) draft);
-        });
+        E newEntity = (E)Internal.produce(
+                immutableType,
+                entity,
+                draft -> {
+                    saveImpl((DraftSpi) draft);
+                },
+                trigger == null ? null : trigger::prepareSubmit
+        );
+        if (trigger != null) {
+            trigger.submit(data.getSqlClient());
+        }
         return new SimpleSaveResult<>(affectedRowCountMap, entity, newEntity);
     }
 
@@ -147,26 +155,10 @@ class Saver {
                         associatedObjectIds.add(saveAssociatedObjectAndGetId(prop, associatedObject));
                     }
                 }
-                ImmutableProp middleTableProp = null;
-                MiddleTable middleTable = null;
-                if (prop.getStorage() instanceof MiddleTable) {
-                    middleTableProp = prop;
-                    middleTable = middleTableProp.getStorage();
-                } else {
-                    if (mappedBy != null && mappedBy.getStorage() instanceof MiddleTable) {
-                        middleTableProp = mappedBy;
-                        middleTable = middleTableProp.<MiddleTable>getStorage().getInverse();
-                    }
-                }
-                if (middleTable != null) {
-                    MiddleTableOperator middleTableOperator = new MiddleTableOperator(
-                            data.getSqlClient(),
-                            con,
-                            prop,
-                            prop.getTargetType().getIdProp().getElementClass(),
-                            cache,
-                            trigger
-                    );
+                MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGet(
+                    data.getSqlClient(), con, prop, cache, trigger
+                );
+                if (middleTableOperator != null) {
                     int rowCount;
                     if (currentObjectType == ObjectType.NEW) {
                         rowCount = middleTableOperator.addTargetIds(
@@ -179,7 +171,7 @@ class Saver {
                                 associatedObjectIds
                         );
                     }
-                    addOutput(AffectedTable.of(middleTableProp), rowCount);
+                    addOutput(AffectedTable.of(prop), rowCount);
                 } else if (childTableOperator != null && currentObjectType != ObjectType.NEW) {
                     DissociateAction dissociateAction = data.getDissociateAction(prop.getMappedBy());
                     if (dissociateAction == DissociateAction.DELETE) {
@@ -190,6 +182,8 @@ class Saver {
                         Deleter deleter = new Deleter(
                                 new DeleteCommandImpl.Data(data.getSqlClient(), data.dissociateActionMap()),
                                 con,
+                                cache,
+                                trigger,
                                 affectedRowCountMap
                         );
                         deleter.addPreHandleInput(prop.getTargetType(), detachedTargetIds);
@@ -242,7 +236,7 @@ class Saver {
 
         if (data.getMode() == SaveMode.INSERT_ONLY) {
             if (trigger != null) {
-                trigger.prepare(null, draftSpi);
+                trigger.modifyEntityTable(null, draftSpi);
             }
             insert(draftSpi);
             return ObjectType.NEW;
@@ -257,15 +251,16 @@ class Saver {
 
         ImmutableSpi existingSpi = find(draftSpi);
         if (existingSpi != null) {
-            if (trigger != null) {
-                trigger.prepare(existingSpi, draftSpi);
-            }
+            boolean updated = false;
             int idPropId = draftSpi.__type().getIdProp().getId();
             if (draftSpi.__isLoaded(idPropId)) {
-                update(draftSpi, false);
+                updated = update(draftSpi, false);
             } else {
                 draftSpi.__set(idPropId, existingSpi.__get(idPropId));
-                update(draftSpi, true);
+                updated = update(draftSpi, true);
+            }
+            if (updated && trigger != null) {
+                trigger.modifyEntityTable(existingSpi, draftSpi);
             }
             return ObjectType.EXISTING;
         }
@@ -278,7 +273,7 @@ class Saver {
         }
 
         if (trigger != null) {
-            trigger.prepare(null, draftSpi);
+            trigger.modifyEntityTable(null, draftSpi);
         }
         insert(draftSpi);
         return ObjectType.NEW;
@@ -426,7 +421,7 @@ class Saver {
         cache.save(draftSpi, true);
     }
 
-    private void update(DraftSpi draftSpi, boolean excludeKeyProps) {
+    private boolean update(DraftSpi draftSpi, boolean excludeKeyProps) {
 
         callInterceptor(draftSpi, false);
 
@@ -470,7 +465,7 @@ class Saver {
             );
         }
         if (updatedProps.isEmpty() && version == null) {
-            return;
+            return false;
         }
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         builder
@@ -539,6 +534,7 @@ class Saver {
                     path
             );
         }
+        return true;
     }
 
     @SuppressWarnings("unchecked")
@@ -574,38 +570,41 @@ class Saver {
 
         Collection<ImmutableProp> actualKeyProps = actualKeyProps(example);
 
-        List<ImmutableSpi> rows = Queries.createQuery(data.getSqlClient(), type, ExecutionPurpose.MUTATE, true, (q, table) -> {
-            for (ImmutableProp keyProp : actualKeyProps) {
-                if (keyProp.isReference(TargetLevel.ENTITY)) {
-                    ImmutableProp targetIdProp = keyProp.getTargetType().getIdProp();
-                    Expression<Object> targetIdExpression =
-                            table
-                                    .<Table<?>>join(keyProp.getName())
-                                    .get(targetIdProp.getName());
-                    ImmutableSpi target = (ImmutableSpi) example.__get(keyProp.getId());
-                    if (target != null) {
-                        q.where(targetIdExpression.eq(target.__get(targetIdProp.getId())));
+        List<ImmutableSpi> rows = Internal.requiresNewDraftContext(ctx -> {
+            List<ImmutableSpi> list = Queries.createQuery(data.getSqlClient(), type, ExecutionPurpose.MUTATE, true, (q, table) -> {
+                for (ImmutableProp keyProp : actualKeyProps) {
+                    if (keyProp.isReference(TargetLevel.ENTITY)) {
+                        ImmutableProp targetIdProp = keyProp.getTargetType().getIdProp();
+                        Expression<Object> targetIdExpression =
+                                table
+                                        .<Table<?>>join(keyProp.getName())
+                                        .get(targetIdProp.getName());
+                        ImmutableSpi target = (ImmutableSpi) example.__get(keyProp.getId());
+                        if (target != null) {
+                            q.where(targetIdExpression.eq(target.__get(targetIdProp.getId())));
+                        } else {
+                            q.where(targetIdExpression.isNull());
+                        }
                     } else {
-                        q.where(targetIdExpression.isNull());
-                    }
-                } else {
-                    Object value = example.__get(keyProp.getId());
-                    if (value != null) {
-                        q.where(table.<Expression<Object>>get(keyProp.getName()).eq(value));
-                    } else {
-                        q.where(table.<Expression<Object>>get(keyProp.getName()).isNull());
+                        Object value = example.__get(keyProp.getId());
+                        if (value != null) {
+                            q.where(table.<Expression<Object>>get(keyProp.getName()).eq(value));
+                        } else {
+                            q.where(table.<Expression<Object>>get(keyProp.getName()).isNull());
+                        }
                     }
                 }
-            }
-            if (trigger != null) {
-                return q.select((Table<ImmutableSpi>)table);
-            }
-            return q.select(
-                    ((Table<ImmutableSpi>)table).fetch(
-                            IdAndKeyFetchers.getFetcher(type)
-                    )
-            );
-        }).forUpdate().execute(con);
+                if (trigger != null) {
+                    return q.select((Table<ImmutableSpi>)table);
+                }
+                return q.select(
+                        ((Table<ImmutableSpi>)table).fetch(
+                                IdAndKeyFetchers.getFetcher(type)
+                        )
+                );
+            }).forUpdate().execute(con);
+            return ctx.resolveList(list);
+        });
 
         if (rows.size() > 1) {
             throw new ExecutionException(

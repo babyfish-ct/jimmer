@@ -6,6 +6,7 @@ import org.babyfish.jimmer.DraftConsumer;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftContext;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.validation.Validator;
 
@@ -21,6 +22,9 @@ class Constants {
 
     public static final ClassName JSON_IGNORE_CLASS_NAME =
             ClassName.get(JsonIgnore.class);
+
+    public static final ClassName IMMUTABLE_SPI_CLASS_NAME =
+            ClassName.get(ImmutableSpi.class);
 
     public static final ClassName DRAFT_CONTEXT_CLASS_NAME =
             ClassName.get(DraftContext.class);

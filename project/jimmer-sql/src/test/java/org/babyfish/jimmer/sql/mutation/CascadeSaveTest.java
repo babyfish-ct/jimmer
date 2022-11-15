@@ -517,7 +517,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.variables("F", borisId);
                     });
                     ctx.statement(it -> {
-                        it.sql("select AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID = ? for update");
+                        it.sql("select AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID = ?");
                         it.variables(learningGraphQLId3);
                     });
                     ctx.statement(it -> {
@@ -716,7 +716,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.variables(new BigDecimal(28), graphQLInActionId3);
                     });
                     ctx.statement(it -> {
-                        it.sql("select BOOK_ID from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ? for update");
+                        it.sql("select BOOK_ID from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ?");
                         it.variables(eveId);
                     });
                     ctx.statement(it -> {

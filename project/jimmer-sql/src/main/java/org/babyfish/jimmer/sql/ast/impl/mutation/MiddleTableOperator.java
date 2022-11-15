@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -24,30 +25,28 @@ class MiddleTableOperator {
 
     private final MiddleTable middleTable;
 
+    private final Expression<?> sourceIdExpression;
+
     private final Expression<?> targetIdExpression;
 
     private final MutationCache cache;
 
     private final MutationTrigger trigger;
 
-    MiddleTableOperator(
+    private MiddleTableOperator(
             JSqlClient sqlClient,
             Connection con,
             ImmutableProp prop,
-            Class<?> targetIdType,
+            MiddleTable middleTable,
             MutationCache cache,
             MutationTrigger trigger
     ) {
-        ImmutableProp mappedBy = prop.getMappedBy();
         this.sqlClient = sqlClient;
         this.con = con;
         this.prop = prop;
-        if (mappedBy != null) {
-            this.middleTable = mappedBy.<MiddleTable>getStorage().getInverse();
-        } else {
-            this.middleTable = prop.getStorage();
-        }
-        this.targetIdExpression = Expression.any().nullValue(targetIdType);
+        this.middleTable = middleTable;
+        this.sourceIdExpression = Expression.any().nullValue(prop.getDeclaringType().getIdProp().getElementClass());
+        this.targetIdExpression = Expression.any().nullValue(prop.getTargetType().getIdProp().getElementClass());
         if (trigger != null) {
             this.cache = cache;
             this.trigger = trigger;
@@ -55,6 +54,31 @@ class MiddleTableOperator {
             this.cache = null;
             this.trigger = null;
         }
+    }
+
+    public static MiddleTableOperator tryGet(
+            JSqlClient sqlClient,
+            Connection con,
+            ImmutableProp prop,
+            MutationCache cache,
+            MutationTrigger trigger
+    ) {
+        Storage storage = prop.getStorage();
+        if (storage instanceof MiddleTable) {
+            return new MiddleTableOperator(
+                    sqlClient, con, prop, (MiddleTable) storage, cache, trigger
+            );
+        }
+        ImmutableProp mappedBy = prop.getMappedBy();
+        if (mappedBy != null) {
+            storage = mappedBy.getStorage();
+            if (storage instanceof MiddleTable) {
+                return new MiddleTableOperator(
+                        sqlClient, con, prop, ((MiddleTable) storage).getInverse(), cache, trigger
+                );
+            }
+        }
+        return null;
     }
 
     List<Object> getTargetIds(Object id) {
@@ -67,8 +91,7 @@ class MiddleTableOperator {
                 .sql(" where ")
                 .sql(middleTable.getJoinColumnName())
                 .sql(" = ")
-                .variable(id)
-                .sql(" for update");
+                .variable(id);
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return Selectors.select(
                 sqlClient,
@@ -80,14 +103,48 @@ class MiddleTableOperator {
         );
     }
 
-    int addTargetIds(Object id, Collection<Object> targetIds) {
+    IdPairReader getIdPairReader(Collection<Object> sourceIds) {
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        builder
+                .sql("select ")
+                .sql(middleTable.getJoinColumnName())
+                .sql(", ")
+                .sql(middleTable.getTargetJoinColumnName())
+                .sql(" from ")
+                .sql(middleTable.getTableName())
+                .sql(" where ")
+                .sql(middleTable.getJoinColumnName())
+                .sql(" in(");
+        boolean addComma = false;
+        for (Object sourceId : sourceIds) {
+            if (addComma) {
+                builder.sql(", ");
+            } else {
+                addComma = true;
+            }
+            builder.variable(sourceId);
+        }
+        builder.sql(")");
+        Tuple2<String, List<Object>> sqlResult = builder.build();
+        List<Tuple2<Object, Object>> tuples = Selectors.select(
+                sqlClient,
+                con,
+                sqlResult.get_1(),
+                sqlResult.get_2(),
+                Arrays.asList(sourceIdExpression, targetIdExpression),
+                ExecutionPurpose.MUTATE
+        );
+        return new TupleReader(tuples);
+    }
+
+    int addTargetIds(Object sourceId, Collection<Object> targetIds) {
         if (targetIds.isEmpty()) {
             return 0;
         }
         Set<Object> set = targetIds instanceof Set<?> ?
                 (Set<Object>)targetIds :
                 new LinkedHashSet<>(targetIds);
-        return add(new OneToManyReader(id, set));
+        return add(new OneToManyReader(sourceId, set));
     }
 
     int add(IdPairReader reader) {
@@ -125,14 +182,14 @@ class MiddleTableOperator {
         );
     }
 
-    int removeTargetIds(Object id, Collection<Object> targetIds) {
+    int removeTargetIds(Object sourceId, Collection<Object> targetIds) {
         if (targetIds.isEmpty()) {
             return 0;
         }
         Set<Object> set = targetIds instanceof Set<?> ?
                 (Set<Object>)targetIds :
                 new LinkedHashSet<>(targetIds);
-        return remove(new OneToManyReader(id, set));
+        return remove(new OneToManyReader(sourceId, set));
     }
 
     int remove(IdPairReader reader) {
@@ -171,9 +228,9 @@ class MiddleTableOperator {
         );
     }
 
-    int setTargetIds(Object id, Collection<Object> targetIds) {
+    int setTargetIds(Object sourceId, Collection<Object> targetIds) {
 
-        Set<Object> oldTargetIds = new LinkedHashSet<>(getTargetIds(id));
+        Set<Object> oldTargetIds = new LinkedHashSet<>(getTargetIds(sourceId));
 
         Set<Object> addingTargetIds = new LinkedHashSet<>(targetIds);
         addingTargetIds.removeAll(oldTargetIds);
@@ -181,7 +238,38 @@ class MiddleTableOperator {
         Set<Object> removingTargetIds = new LinkedHashSet<>(oldTargetIds);
         removingTargetIds.removeAll(targetIds);
 
-        return removeTargetIds(id, removingTargetIds) + addTargetIds(id, addingTargetIds);
+        return removeTargetIds(sourceId, removingTargetIds) + addTargetIds(sourceId, addingTargetIds);
+    }
+
+    public int removeBySourceIds(Collection<Object> sourceIds) {
+        if (trigger != null) {
+            IdPairReader reader = getIdPairReader(sourceIds);
+            return remove(reader);
+        }
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        builder.sql("delete from ");
+        builder.sql(middleTable.getTableName());
+        builder.sql(" where ");
+        builder.sql(middleTable.getJoinColumnName());
+        builder.sql(" in(");
+        String separator = "";
+        for (Object id : sourceIds) {
+            builder.sql(separator);
+            separator = ", ";
+            builder.variable(id);
+        }
+        builder.sql(")");
+        Tuple2<String, List<Object>> sqlResult = builder.build();
+        return sqlClient
+                .getExecutor()
+                .execute(
+                        con,
+                        sqlResult.get_1(),
+                        sqlResult.get_2(),
+                        ExecutionPurpose.DELETE,
+                        null,
+                        PreparedStatement::executeUpdate
+                );
     }
 
     private void tryPrepareEvent(boolean insert, IdPairReader reader) {
@@ -191,20 +279,13 @@ class MiddleTableOperator {
             return;
         }
 
-        ImmutableProp oppositeProp = prop.getOpposite();
         while (reader.read()) {
             Object sourceId = reader.sourceId();
             Object targetId = reader.targetId();
             if (insert) {
-                trigger.prepare(prop, sourceId, null, targetId);
-                if (oppositeProp != null) {
-                    trigger.prepare(oppositeProp, targetId, null, sourceId);
-                }
+                trigger.insertMiddleTable(prop, sourceId, targetId);
             } else {
-                trigger.prepare(prop, sourceId, targetId, null);
-                if (oppositeProp != null) {
-                    trigger.prepare(oppositeProp, targetId, sourceId, null);
-                }
+                trigger.deleteMiddleTable(prop, sourceId, targetId);
             }
         }
 
@@ -256,6 +337,44 @@ class MiddleTableOperator {
         @Override
         public Object targetId() {
             return currentTargetId;
+        }
+    }
+
+    public static class TupleReader implements MiddleTableOperator.IdPairReader {
+
+        private final Collection<Tuple2<Object, Object>> idTuples;
+
+        private Iterator<Tuple2<Object, Object>> idTupleItr;
+
+        private Tuple2<Object, Object> currentIdPair;
+
+        public TupleReader(Collection<Tuple2<Object, Object>> idTuples) {
+            this.idTuples = idTuples;
+            idTupleItr = idTuples.iterator();
+        }
+
+        @Override
+        public void reset() {
+            idTupleItr = idTuples.iterator();
+        }
+
+        @Override
+        public boolean read() {
+            if (idTupleItr.hasNext()) {
+                currentIdPair = idTupleItr.next();
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public Object sourceId() {
+            return currentIdPair.get_1();
+        }
+
+        @Override
+        public Object targetId() {
+            return currentIdPair.get_2();
         }
     }
 }

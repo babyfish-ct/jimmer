@@ -7,14 +7,12 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
+import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.runtime.Converters;
 
 import java.sql.Connection;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class DeleteCommandImpl implements DeleteCommand {
@@ -99,7 +97,14 @@ public class DeleteCommandImpl implements DeleteCommand {
     }
 
     private DeleteResult executeImpl(Connection con) {
-        Deleter deleter = new Deleter(data, con);
+        boolean binLogOnly = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY;
+        Deleter deleter = new Deleter(
+                data,
+                con,
+                binLogOnly ? null : new MutationCache(sqlClient),
+                binLogOnly ? null : new MutationTrigger(),
+                new HashMap<>()
+        );
         deleter.addPreHandleInput(immutableType, ids);
         return deleter.execute();
     }
