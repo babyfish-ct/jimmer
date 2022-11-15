@@ -5,16 +5,15 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -22,9 +21,19 @@ public class AbstractTriggerTest extends AbstractMutationTest {
 
     private List<String> events = new ArrayList<>();
 
+    private boolean eventAsserted = false;
+
     @BeforeEach
     public void initializeTriggerTest() {
         events.clear();
+        eventAsserted = false;
+    }
+
+    @AfterEach
+    public void terminateTriggerTest() {
+        if (!eventAsserted) {
+            Assertions.fail("`assertEvents` has not been called");
+        }
     }
 
     @Override
@@ -54,6 +63,7 @@ public class AbstractTriggerTest extends AbstractMutationTest {
     }
 
     protected void assertEvents(String ... events) {
+        eventAsserted = true;
         int len = Math.min(events.length, this.events.size());
         for (int i = 0; i < len; i++) {
             String expected = events[i].replace("--->", "");

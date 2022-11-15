@@ -9,7 +9,9 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.meta.Column;
 
 public class ImmutableObjects {
@@ -187,26 +189,70 @@ public class ImmutableObjects {
         throw new IllegalArgumentException("The first argument is immutable object created by jimmer");
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T> T makeIdOnly(ImmutableType type, Object id) {
+        ImmutableProp idProp = type.getIdProp();
+        if (idProp == null) {
+            throw new IllegalArgumentException("No id property in \"" + type + "\"");
+        }
+        if (id == null) {
+            return null;
+        }
+        return (T) Internal.produce(type, null, draft -> {
+            DraftSpi targetDraft = (DraftSpi) draft;
+            targetDraft.__set(idProp.getId(), id);
+        });
+    }
+
     public static boolean isLonely(Object immutable) {
         if (immutable instanceof ImmutableSpi) {
             ImmutableSpi spi = (ImmutableSpi) immutable;
             ImmutableType type = spi.__type();
             for (ImmutableProp prop : type.getProps().values()) {
-                if (prop.isAssociation(TargetLevel.OBJECT)) {
-                    if (spi.__isLoaded(prop.getId())) {
-                        if (prop.getStorage() instanceof Column) {
-                            ImmutableSpi target = (ImmutableSpi) spi.__get(prop.getId());
-                            if (!isIdOnly(target)) {
-                                return false;
-                            }
-                        } else {
+                if (prop.isAssociation(TargetLevel.ENTITY) && spi.__isLoaded(prop.getId())) {
+                    if (prop.getStorage() instanceof Column) {
+                        ImmutableSpi target = (ImmutableSpi) spi.__get(prop.getId());
+                        if (target != null && !isIdOnly(target)) {
                             return false;
                         }
+                    } else {
+                        return false;
                     }
                 }
             }
         }
         throw new IllegalArgumentException("The first argument is immutable object created by jimmer");
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T toLonely(T immutable) {
+        if (immutable == null) {
+            return null;
+        }
+        ImmutableSpi spi = (ImmutableSpi) immutable;
+        ImmutableType type = spi.__type();
+        return (T)Internal.produce(type, immutable, draft -> {
+            for (ImmutableProp prop : type.getProps().values()) {
+                int propId = prop.getId();
+                if (prop.isAssociation(TargetLevel.ENTITY) && spi.__isLoaded(propId)) {
+                    if (prop.getStorage() instanceof Column) {
+                        ImmutableSpi target = (ImmutableSpi) spi.__get(propId);
+                        if (target != null) {
+                            ImmutableType targetType = prop.getTargetType();
+                            int targetIdPropId = targetType.getIdProp().getId();
+                            if (!target.__isLoaded(targetIdPropId)) {
+                                ((DraftSpi) draft).__unload(propId);
+                            } else if (!isIdOnly(target)) {
+                                Object targetId = target.__get(targetIdPropId);
+                                ((DraftSpi) draft).__set(propId, makeIdOnly(targetType, targetId));
+                            }
+                        }
+                    } else {
+                        ((DraftSpi) draft).__unload(propId);
+                    }
+                }
+            }
+        });
     }
 
     /**
