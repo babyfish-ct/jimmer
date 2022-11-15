@@ -532,11 +532,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "--->newEntity={" +
                         "--->--->\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
                         "--->--->\"name\":\"TURING\"," +
-                        "--->--->\"version\":0," +
-                        "--->--->\"books\":[" +
-                        "--->--->--->{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
-                        "--->--->--->{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}" +
-                        "--->--->]" +
+                        "--->--->\"version\":0" +
                         "--->}, " +
                         "--->reason=null" +
                         "}",
@@ -733,13 +729,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "--->}, newEntity={" +
                         "--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
                         "--->--->\"name\":\"O'REILLY\"," +
-                        "--->--->\"version\":1," +
-                        "--->--->\"books\":[" +
-                        "--->--->--->{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"}," +
-                        "--->--->--->{\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"}," +
-                        "--->--->--->{\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"}," +
-                        "--->--->--->{\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"}" +
-                        "--->--->]" +
+                        "--->--->\"version\":1" +
                         "--->}, " +
                         "--->reason=null" +
                         "}",
@@ -1029,18 +1019,38 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "--->--->\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
                         "--->--->\"name\":\"Kotlin in Action\"," +
                         "--->--->\"edition\":1," +
-                        "--->--->\"price\":30," +
-                        "--->--->\"authors\":[" +
-                        "--->--->--->{\"id\":\"c14665c8-c689-4ac7-b8cc-6f065b8d835d\"}," +
-                        "--->--->--->{\"id\":\"718795ad-77c1-4fcf-994a-fec6a5a11f0f\"}" +
-                        "--->--->]" +
+                        "--->--->\"price\":30" +
                         "--->}, " +
                         "--->reason=null" +
                         "}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Book.authors, sourceId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, detachedTargetId=null, attachedTargetId=c14665c8-c689-4ac7-b8cc-6f065b8d835d, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Author.books, sourceId=c14665c8-c689-4ac7-b8cc-6f065b8d835d, detachedTargetId=null, attachedTargetId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Book.authors, sourceId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, detachedTargetId=null, attachedTargetId=718795ad-77c1-4fcf-994a-fec6a5a11f0f, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Author.books, sourceId=718795ad-77c1-4fcf-994a-fec6a5a11f0f, detachedTargetId=null, attachedTargetId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, reason=null}"
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
+                        "--->sourceId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=c14665c8-c689-4ac7-b8cc-6f065b8d835d, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
+                        "--->sourceId=c14665c8-c689-4ac7-b8cc-6f065b8d835d, " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
+                        "--->sourceId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=718795ad-77c1-4fcf-994a-fec6a5a11f0f, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
+                        "--->sourceId=718795ad-77c1-4fcf-994a-fec6a5a11f0f, " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->reason=null" +
+                        "}"
         );
     }
 
@@ -1100,14 +1110,62 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                 }
         );
         assertEvents(
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Book.authors, sourceId=64873631-5d82-4bae-8eb8-72dd955bfc56, detachedTargetId=1e93da94-af84-44f4-82d1-d8a9fd52ea94, attachedTargetId=null, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Author.books, sourceId=1e93da94-af84-44f4-82d1-d8a9fd52ea94, detachedTargetId=64873631-5d82-4bae-8eb8-72dd955bfc56, attachedTargetId=null, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Book.authors, sourceId=64873631-5d82-4bae-8eb8-72dd955bfc56, detachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, attachedTargetId=null, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Author.books, sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, detachedTargetId=64873631-5d82-4bae-8eb8-72dd955bfc56, attachedTargetId=null, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Book.authors, sourceId=64873631-5d82-4bae-8eb8-72dd955bfc56, detachedTargetId=null, attachedTargetId=c14665c8-c689-4ac7-b8cc-6f065b8d835d, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Author.books, sourceId=c14665c8-c689-4ac7-b8cc-6f065b8d835d, detachedTargetId=null, attachedTargetId=64873631-5d82-4bae-8eb8-72dd955bfc56, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Book.authors, sourceId=64873631-5d82-4bae-8eb8-72dd955bfc56, detachedTargetId=null, attachedTargetId=718795ad-77c1-4fcf-994a-fec6a5a11f0f, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Author.books, sourceId=718795ad-77c1-4fcf-994a-fec6a5a11f0f, detachedTargetId=null, attachedTargetId=64873631-5d82-4bae-8eb8-72dd955bfc56, reason=null}"
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
+                        "--->sourceId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
+                        "--->detachedTargetId=1e93da94-af84-44f4-82d1-d8a9fd52ea94, " +
+                        "--->attachedTargetId=null, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
+                        "--->sourceId=1e93da94-af84-44f4-82d1-d8a9fd52ea94, " +
+                        "--->detachedTargetId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
+                        "--->attachedTargetId=null, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
+                        "--->sourceId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
+                        "--->detachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->attachedTargetId=null, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
+                        "--->sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->detachedTargetId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
+                        "--->attachedTargetId=null, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
+                        "--->sourceId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=c14665c8-c689-4ac7-b8cc-6f065b8d835d, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
+                        "--->sourceId=c14665c8-c689-4ac7-b8cc-6f065b8d835d, " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
+                        "--->sourceId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=718795ad-77c1-4fcf-994a-fec6a5a11f0f, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
+                        "--->sourceId=718795ad-77c1-4fcf-994a-fec6a5a11f0f, " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
+                        "--->reason=null" +
+                        "}"
         );
     }
 
@@ -1173,11 +1231,44 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                 }
         );
         assertEvents(
-                "Event{oldEntity=null, newEntity={\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\",\"firstName\":\"Jim\",\"lastName\":\"Green\",\"gender\":\"MALE\",\"books\":[{\"id\":\"9eded40f-6d2e-41de-b4e7-33a28b11c8b6\"},{\"id\":\"782b9a9d-eac8-41c4-9f2d-74a5d047f45a\"}]}, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Book.authors, sourceId=9eded40f-6d2e-41de-b4e7-33a28b11c8b6, detachedTargetId=null, attachedTargetId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Author.books, sourceId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, detachedTargetId=null, attachedTargetId=9eded40f-6d2e-41de-b4e7-33a28b11c8b6, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Book.authors, sourceId=782b9a9d-eac8-41c4-9f2d-74a5d047f45a, detachedTargetId=null, attachedTargetId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Author.books, sourceId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, detachedTargetId=null, attachedTargetId=782b9a9d-eac8-41c4-9f2d-74a5d047f45a, reason=null}"
+                "Event{" +
+                        "--->oldEntity=null, " +
+                        "--->newEntity={" +
+                        "--->--->\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
+                        "--->--->\"firstName\":\"Jim\"," +
+                        "--->--->\"lastName\":\"Green\"," +
+                        "--->--->\"gender\":\"MALE\"" +
+                        "--->}, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
+                        "--->sourceId=9eded40f-6d2e-41de-b4e7-33a28b11c8b6, " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
+                        "--->sourceId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=9eded40f-6d2e-41de-b4e7-33a28b11c8b6, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
+                        "--->sourceId=782b9a9d-eac8-41c4-9f2d-74a5d047f45a, " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
+                        "--->sourceId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=782b9a9d-eac8-41c4-9f2d-74a5d047f45a, " +
+                        "--->reason=null" +
+                        "}"
         );
     }
 
@@ -1239,16 +1330,75 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                 }
         );
         assertEvents(
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Book.authors, sourceId=e110c564-23cc-4811-9e81-d587a13db634, detachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, attachedTargetId=null, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Author.books, sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, detachedTargetId=e110c564-23cc-4811-9e81-d587a13db634, attachedTargetId=null, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Book.authors, sourceId=b649b11b-1161-4ad2-b261-af0112fdd7c8, detachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, attachedTargetId=null, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Author.books, sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, detachedTargetId=b649b11b-1161-4ad2-b261-af0112fdd7c8, attachedTargetId=null, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Book.authors, sourceId=64873631-5d82-4bae-8eb8-72dd955bfc56, detachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, attachedTargetId=null, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Author.books, sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, detachedTargetId=64873631-5d82-4bae-8eb8-72dd955bfc56, attachedTargetId=null, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Book.authors, sourceId=9eded40f-6d2e-41de-b4e7-33a28b11c8b6, detachedTargetId=null, attachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Author.books, sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, detachedTargetId=null, attachedTargetId=9eded40f-6d2e-41de-b4e7-33a28b11c8b6, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Book.authors, sourceId=782b9a9d-eac8-41c4-9f2d-74a5d047f45a, detachedTargetId=null, attachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, reason=null}",
-                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.Author.books, sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, detachedTargetId=null, attachedTargetId=782b9a9d-eac8-41c4-9f2d-74a5d047f45a, reason=null}"
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
+                        "--->sourceId=e110c564-23cc-4811-9e81-d587a13db634, " +
+                        "--->detachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->attachedTargetId=null, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
+                        "--->sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->detachedTargetId=e110c564-23cc-4811-9e81-d587a13db634, " +
+                        "--->attachedTargetId=null, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
+                        "--->sourceId=b649b11b-1161-4ad2-b261-af0112fdd7c8, " +
+                        "--->detachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->attachedTargetId=null, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
+                        "--->sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->detachedTargetId=b649b11b-1161-4ad2-b261-af0112fdd7c8, " +
+                        "--->attachedTargetId=null, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
+                        "--->sourceId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
+                        "--->detachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->attachedTargetId=null, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
+                        "--->sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->detachedTargetId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
+                        "--->attachedTargetId=null, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
+                        "--->sourceId=9eded40f-6d2e-41de-b4e7-33a28b11c8b6, " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
+                        "--->sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=9eded40f-6d2e-41de-b4e7-33a28b11c8b6, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
+                        "--->sourceId=782b9a9d-eac8-41c4-9f2d-74a5d047f45a, " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
+                        "--->sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->detachedTargetId=null, attachedTargetId=782b9a9d-eac8-41c4-9f2d-74a5d047f45a, " +
+                        "--->reason=null" +
+                        "}"
         );
     }
 
@@ -1288,5 +1438,6 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     });
                 }
         );
+        assertEvents();
     }
 }
