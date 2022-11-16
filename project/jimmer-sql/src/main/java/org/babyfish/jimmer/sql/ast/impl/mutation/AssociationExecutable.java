@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.Selectors;
@@ -91,8 +92,18 @@ class AssociationExecutable implements Executable<Integer> {
             return 0;
         }
 
+        MutationTrigger trigger = createTrigger();
+        MiddleTableOperator operator = getMiddleTypeOperator(con, trigger);
         if (mode == Mode.DELETE) {
-            return getMiddleTypeOperator(con).remove(new MiddleTableOperator.TupleReader(idTuples));
+            int affectedRowCount = operator
+                    .remove(
+                            new MiddleTableOperator.TupleReader(idTuples),
+                            trigger != null
+                    );
+            if (trigger != null) {
+                trigger.submit(sqlClient);
+            }
+            return affectedRowCount;
         }
 
         Set<Tuple2<Object, Object>> addingPairs = idTuples;
@@ -104,7 +115,13 @@ class AssociationExecutable implements Executable<Integer> {
                 return 0;
             }
         }
-        return getMiddleTypeOperator(con).add(new MiddleTableOperator.TupleReader(addingPairs));
+        int affectedRowCount = operator.add(
+                new MiddleTableOperator.TupleReader(addingPairs)
+        );
+        if (trigger != null) {
+            trigger.submit(sqlClient);
+        }
+        return affectedRowCount;
     }
 
     public enum Mode {
@@ -172,15 +189,20 @@ class AssociationExecutable implements Executable<Integer> {
         );
     }
 
-    private MiddleTableOperator getMiddleTypeOperator(Connection con) {
+    private MiddleTableOperator getMiddleTypeOperator(Connection con, MutationTrigger trigger) {
         return MiddleTableOperator.tryGet(
                 sqlClient,
                 con,
                 reversed ?
                         associationType.getBaseProp().getOpposite() :
                         associationType.getBaseProp(),
-                null,
-                null
+                trigger
         );
+    }
+
+    private MutationTrigger createTrigger() {
+        return sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY ?
+                null :
+                new MutationTrigger();
     }
 }
