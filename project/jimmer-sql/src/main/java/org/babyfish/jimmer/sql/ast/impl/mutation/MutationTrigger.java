@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.DraftContext;
+import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.event.Triggers;
 
@@ -26,26 +27,30 @@ class MutationTrigger {
     }
 
     public void prepareSubmit(DraftContext ctx) {
-        for (ChangedObject changedObject : changedObjects) {
-            if (changedObject instanceof ChangedEntity) {
-                ChangedEntity entity = (ChangedEntity) changedObject;
-                entity.newEntity = ctx.resolveObject(entity.newEntity);
+        if (!changedObjects.isEmpty()) {
+            for (ChangedObject changedObject : changedObjects) {
+                if (changedObject instanceof ChangedEntity) {
+                    ChangedEntity entity = (ChangedEntity) changedObject;
+                    entity.newEntity = ctx.resolveObject(entity.newEntity);
+                }
             }
         }
     }
 
     public void submit(JSqlClient sqlClient) {
-        Triggers triggers = sqlClient.getTriggers(true);
-        for (ChangedObject changedObject : changedObjects) {
-            if (changedObject instanceof ChangedEntity) {
-                ChangedEntity entity = (ChangedEntity) changedObject;
-                triggers.fireEntityTableChange(entity.oldEntity, ImmutableObjects.toLonely(entity.newEntity));
-            } else {
-                ChangedMiddleData association = (ChangedMiddleData) changedObject;
-                if (association.detachedTargetId == null) {
-                    triggers.fireMiddleTableInsert(association.prop, association.sourceId, association.attachedTargetId);
+        if (!changedObjects.isEmpty()) {
+            Triggers triggers = sqlClient.getTriggers(true);
+            for (ChangedObject changedObject : changedObjects) {
+                if (changedObject instanceof ChangedEntity) {
+                    ChangedEntity entity = (ChangedEntity) changedObject;
+                    triggers.fireEntityTableChange(entity.oldEntity, ImmutableObjects.toLonely(entity.newEntity));
                 } else {
-                    triggers.fireMiddleTableDelete(association.prop, association.sourceId, association.detachedTargetId);
+                    ChangedMiddleData association = (ChangedMiddleData) changedObject;
+                    if (association.detachedTargetId == null) {
+                        triggers.fireMiddleTableInsert(association.prop, association.sourceId, association.attachedTargetId);
+                    } else {
+                        triggers.fireMiddleTableDelete(association.prop, association.sourceId, association.detachedTargetId);
+                    }
                 }
             }
         }

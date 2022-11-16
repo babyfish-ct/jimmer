@@ -88,22 +88,21 @@ public class Deleter {
     }
 
     public DeleteResult execute() {
-        MutationTrigger trigger = this.trigger;
-        if (trigger == null) {
-            return executeImpl();
-        }
-        DeleteResult result = executeImpl();
-        trigger.submit(data.getSqlClient());
-        return result;
+        return execute(true);
     }
 
-    private DeleteResult executeImpl() {
+    public DeleteResult execute(boolean submit) {
         while (!preHandleIdInputMap.isEmpty() || !postHandleIdInputMap.isEmpty()) {
             while (!preHandleIdInputMap.isEmpty()) {
                 preHandle();
             }
             postHandle();
         }
+        MutationTrigger trigger = this.trigger;
+        if (!submit || trigger == null) {
+            return new DeleteResult(affectedRowCountMap);
+        }
+        trigger.submit(data.getSqlClient());
         return new DeleteResult(affectedRowCountMap);
     }
 
