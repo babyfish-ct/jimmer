@@ -88,6 +88,16 @@ public class Deleter {
     }
 
     public DeleteResult execute() {
+        MutationTrigger trigger = this.trigger;
+        if (trigger == null) {
+            return executeImpl();
+        }
+        DeleteResult result = executeImpl();
+        trigger.submit(data.getSqlClient());
+        return result;
+    }
+
+    private DeleteResult executeImpl() {
         while (!preHandleIdInputMap.isEmpty() || !postHandleIdInputMap.isEmpty()) {
             while (!preHandleIdInputMap.isEmpty()) {
                 preHandle();
@@ -218,7 +228,7 @@ public class Deleter {
 
     private void deleteImpl(ImmutableType type, Collection<Object> ids) {
 
-        prepareEvents(type, ids);
+        ids = prepareEvents(type, ids);
 
         String fkColumnName = ((Column)type.getIdProp().getStorage()).getName();
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
@@ -249,14 +259,23 @@ public class Deleter {
         addOutput(AffectedTable.of(type), affectedRowCount);
     }
 
-    private void prepareEvents(ImmutableType type, Collection<Object> ids) {
+    private Collection<Object> prepareEvents(ImmutableType type, Collection<Object> ids) {
         MutationTrigger trigger = this.trigger;
         if (trigger == null) {
-            return;
+            return ids;
         }
         List<ImmutableSpi> rows = cache.loadByIds(type, ids, con);
         for (ImmutableSpi row : rows) {
             trigger.modifyEntityTable(row, null);
         }
+        if (rows.size() == ids.size()) {
+            return ids;
+        }
+        int idPropId = type.getIdProp().getId();
+        List<Object> rowIds = new ArrayList<>(ids.size());
+        for (ImmutableSpi row : rows) {
+            rowIds.add(row.__get(idPropId));
+        }
+        return rowIds;
     }
 }
