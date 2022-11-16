@@ -187,7 +187,7 @@ class Saver {
                                 affectedRowCountMap
                         );
                         deleter.addPreHandleInput(prop.getTargetType(), detachedTargetIds);
-                        deleter.execute();
+                        deleter.execute(false);
                     } else if (dissociateAction == DissociateAction.SET_NULL) {
                         int rowCount = childTableOperator.unsetParent(currentId, associatedObjectIds);
                         addOutput(AffectedTable.of(targetType), rowCount);
