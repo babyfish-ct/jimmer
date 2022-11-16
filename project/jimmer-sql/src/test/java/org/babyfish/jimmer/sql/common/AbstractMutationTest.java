@@ -269,9 +269,14 @@ public abstract class AbstractMutationTest extends AbstractTest {
 
         public void unorderedVariables(Object ... values) {
             Assertions.assertEquals(
+                    values.length,
+                    this.execution.getVariables().size(),
+                    "statements[" + index + "].variables"
+            );
+            Assertions.assertEquals(
                     new HashSet<>(Arrays.asList(values)),
                     new HashSet<>(execution.getVariables()),
-                    "statements[" + index + "].variables."
+                    "statements[" + index + "].variables"
             );
         }
 

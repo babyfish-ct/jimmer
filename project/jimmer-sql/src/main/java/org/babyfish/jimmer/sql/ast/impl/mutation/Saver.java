@@ -156,7 +156,7 @@ class Saver {
                     }
                 }
                 MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGet(
-                    data.getSqlClient(), con, prop, cache, trigger
+                    data.getSqlClient(), con, prop, trigger
                 );
                 if (middleTableOperator != null) {
                     int rowCount;

@@ -123,7 +123,6 @@ public class Deleter {
                     data.getSqlClient(),
                     con,
                     prop,
-                    cache,
                     trigger
             );
             if (middleTableOperator != null) {
@@ -227,7 +226,13 @@ public class Deleter {
 
     private void deleteImpl(ImmutableType type, Collection<Object> ids) {
 
+        if (ids.isEmpty()) {
+            return;
+        }
         ids = prepareEvents(type, ids);
+        if (ids.isEmpty()) {
+            return;
+        }
 
         String fkColumnName = ((Column)type.getIdProp().getStorage()).getName();
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));

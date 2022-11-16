@@ -1329,4 +1329,31 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                         "}"
         );
     }
+
+    @Test
+    public void deleteIllegalId() {
+        UUID illegalId = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        executeAndExpectResult(
+                getSqlClient().getEntities().deleteCommand(
+                        Book.class,
+                        illegalId
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("select BOOK_ID, AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID in(?)");
+                        it.variables(illegalId);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.ID in (?) " +
+                                        "for update"
+                        );
+                        it.variables(illegalId);
+                    });
+                }
+        );
+        assertEvents();
+    }
 }
