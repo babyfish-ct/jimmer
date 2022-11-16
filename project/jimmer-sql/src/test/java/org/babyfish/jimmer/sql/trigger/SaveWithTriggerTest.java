@@ -100,12 +100,13 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
         assertEvents(
                 "Event{" +
                         "--->oldEntity={" +
-                        "--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                        "--->--->\"id\":\"" + oreillyId + "\"," +
                         "--->--->\"name\":\"O'REILLY\"," +
                         "--->--->\"website\":null," +
                         "--->--->\"version\":0" +
-                        "--->}, newEntity={" +
-                        "--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"id\":\"" + oreillyId + "\"," +
                         "--->--->\"name\":\"TURING\"," +
                         "--->--->\"website\":null," +
                         "--->--->\"version\":1" +
@@ -185,13 +186,13 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
         assertEvents(
                 "Event{" +
                         "--->oldEntity={" +
-                        "--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                        "--->--->\"id\":\"" + oreillyId + "\"," +
                         "--->--->\"name\":\"O'REILLY\"," +
                         "--->--->\"website\":null," +
                         "--->--->\"version\":0" +
                         "--->}, " +
                         "--->newEntity={" +
-                        "--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                        "--->--->\"id\":\"" + oreillyId + "\"," +
                         "--->--->\"name\":\"TURING\"," +
                         "--->--->\"version\":1" +
                         "--->}, " +
@@ -294,7 +295,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "--->--->\"website\":null," +
                         "--->--->\"version\":0" +
                         "--->}, newEntity={" +
-                        "--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                        "--->--->\"id\":\"" + oreillyId + "\"," +
                         "--->--->\"name\":\"O'REILLY\"," +
                         "--->--->\"website\":\"http://www.oreilly.com\"," +
                         "--->--->\"version\":1" +
@@ -354,26 +355,28 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                 "Event{" +
                         "--->oldEntity=null, " +
                         "--->newEntity={" +
-                        "--->--->\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
+                        "--->--->\"id\":\"" + newId + "\"," +
                         "--->--->\"name\":\"Kotlin in Action\"," +
                         "--->--->\"edition\":1," +
                         "--->--->\"price\":30," +
-                        "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + manningId + "\"" +
+                        "--->--->}" +
                         "--->}, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.store, " +
-                        "--->sourceId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->sourceId=" + newId + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=2fa3955e-3e83-49b9-902e-0465c109c779, " +
+                        "--->attachedTargetId=" + manningId + ", " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=2fa3955e-3e83-49b9-902e-0465c109c779, " +
+                        "--->sourceId=" + manningId + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->attachedTargetId=" + newId + ", " +
                         "--->reason=null" +
                         "}"
         );
@@ -426,38 +429,43 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
         assertEvents(
                 "Event{" +
                         "--->oldEntity={" +
-                        "--->--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                        "--->--->\"id\":\"" + learningGraphQLId3 + "\"," +
                         "--->--->\"name\":\"Learning GraphQL\"," +
                         "--->--->\"edition\":3," +
                         "--->--->\"price\":51.00," +
-                        "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
-                        "--->}, newEntity={" +
-                        "--->--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"id\":\"" + learningGraphQLId3 + "\"," +
                         "--->--->\"name\":\"Learning GraphQL\"," +
                         "--->--->\"edition\":3," +
-                        "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + manningId + "\"" +
+                        "--->--->}" +
                         "--->}, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.store, " +
-                        "--->sourceId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
-                        "--->detachedTargetId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
-                        "--->attachedTargetId=2fa3955e-3e83-49b9-902e-0465c109c779, " +
+                        "--->sourceId=" + learningGraphQLId3 + ", " +
+                        "--->detachedTargetId=" + oreillyId + ", " +
+                        "--->attachedTargetId=" + manningId + ", " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
-                        "--->detachedTargetId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
+                        "--->sourceId=" + oreillyId + ", " +
+                        "--->detachedTargetId=" + learningGraphQLId3 + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=2fa3955e-3e83-49b9-902e-0465c109c779, " +
+                        "--->sourceId=" + manningId + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
+                        "--->attachedTargetId=" + learningGraphQLId3 + ", " +
                         "--->reason=null" +
                         "}"
         );
@@ -530,7 +538,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                 "Event{" +
                         "--->oldEntity=null, " +
                         "--->newEntity={" +
-                        "--->--->\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
+                        "--->--->\"id\":\"" + newId + "\"," +
                         "--->--->\"name\":\"TURING\"," +
                         "--->--->\"version\":0" +
                         "--->}, " +
@@ -538,82 +546,86 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "}",
                 "Event{" +
                         "--->oldEntity={" +
-                        "--->--->\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"," +
+                        "--->--->\"id\":\"" + learningGraphQLId2 + "\"," +
                         "--->--->\"name\":\"Learning GraphQL\"," +
                         "--->--->\"edition\":2," +
                         "--->--->\"price\":55.00," +
-                        "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
                         "--->}, " +
                         "--->newEntity={" +
-                        "--->--->\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"," +
+                        "--->--->\"id\":\"" + learningGraphQLId2 + "\"," +
                         "--->--->\"name\":\"Learning GraphQL\"," +
                         "--->--->\"edition\":2," +
                         "--->--->\"price\":55.00," +
-                        "--->--->\"store\":{\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"}" +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + newId + "\"" +
+                        "--->--->}" +
                         "--->}, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.store, " +
-                        "--->sourceId=b649b11b-1161-4ad2-b261-af0112fdd7c8, " +
-                        "--->detachedTargetId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
-                        "--->attachedTargetId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->sourceId=" + learningGraphQLId2 + ", " +
+                        "--->detachedTargetId=" + oreillyId + ", " +
+                        "--->attachedTargetId=" + newId + ", " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
-                        "--->detachedTargetId=b649b11b-1161-4ad2-b261-af0112fdd7c8, " +
+                        "--->sourceId=" + oreillyId + ", " +
+                        "--->detachedTargetId=" + learningGraphQLId2 + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->sourceId=" + newId + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=b649b11b-1161-4ad2-b261-af0112fdd7c8, " +
+                        "--->attachedTargetId=" + learningGraphQLId2 + ", " +
                         "--->reason=null" +
                         "}",
                 "Event{" +
                         "--->oldEntity={" +
-                        "--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                        "--->--->\"id\":\"" + learningGraphQLId1 + "\"," +
                         "--->--->\"name\":\"Learning GraphQL\"," +
                         "--->--->\"edition\":1," +
                         "--->--->\"price\":50.00," +
                         "--->--->\"store\":{" +
-                        "--->--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
                         "--->--->}" +
                         "--->}, " +
                         "--->newEntity={" +
-                        "--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                        "--->--->\"id\":\"" + learningGraphQLId1 + "\"," +
                         "--->--->\"name\":\"Learning GraphQL\"," +
                         "--->--->\"edition\":1," +
                         "--->--->\"price\":50.00," +
                         "--->--->\"store\":{" +
-                        "--->--->--->\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"" +
+                        "--->--->--->\"id\":\"" + newId + "\"" +
                         "--->--->}" +
                         "--->}, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.store, " +
-                        "--->sourceId=e110c564-23cc-4811-9e81-d587a13db634, " +
-                        "--->detachedTargetId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
-                        "--->attachedTargetId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->sourceId=" + learningGraphQLId1 + ", " +
+                        "--->detachedTargetId=" + oreillyId + ", " +
+                        "--->attachedTargetId=" + newId + ", " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
-                        "--->detachedTargetId=e110c564-23cc-4811-9e81-d587a13db634, " +
+                        "--->sourceId=" + oreillyId + ", " +
+                        "--->detachedTargetId=" + learningGraphQLId1 + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->sourceId=" + newId + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=e110c564-23cc-4811-9e81-d587a13db634, " +
+                        "--->attachedTargetId=" + learningGraphQLId1 + ", " +
                         "--->reason=null" +
                         "}"
         );
@@ -722,12 +734,13 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
         assertEvents(
                 "Event{" +
                         "--->oldEntity={" +
-                        "--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                        "--->--->\"id\":\"" + oreillyId + "\"," +
                         "--->--->\"name\":\"O'REILLY\"," +
                         "--->--->\"website\":null," +
                         "--->--->\"version\":0" +
-                        "--->}, newEntity={" +
-                        "--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"id\":\"" + oreillyId + "\"," +
                         "--->--->\"name\":\"O'REILLY\"," +
                         "--->--->\"version\":1" +
                         "--->}, " +
@@ -735,51 +748,58 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "}",
                 "Event{" +
                         "--->oldEntity={" +
-                        "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
+                        "--->--->\"id\":\"" + graphQLInActionId1 + "\"," +
                         "--->--->\"name\":\"GraphQL in Action\"," +
                         "--->--->\"edition\":1," +
                         "--->--->\"price\":80.00," +
-                        "--->--->\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}" +
-                        "--->}, newEntity={" +
-                        "--->--->\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + manningId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"id\":\"" + graphQLInActionId1 + "\"," +
                         "--->--->\"name\":\"GraphQL in Action\"," +
                         "--->--->\"edition\":1," +
                         "--->--->\"price\":80.00," +
-                        "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
                         "--->}, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.store, " +
-                        "--->sourceId=a62f7aa3-9490-4612-98b5-98aae0e77120, " +
-                        "--->detachedTargetId=2fa3955e-3e83-49b9-902e-0465c109c779, " +
-                        "--->attachedTargetId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
+                        "--->sourceId=" + graphQLInActionId1 + ", " +
+                        "--->detachedTargetId=" + manningId + ", " +
+                        "--->attachedTargetId=" + oreillyId + ", " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=2fa3955e-3e83-49b9-902e-0465c109c779, " +
-                        "--->detachedTargetId=a62f7aa3-9490-4612-98b5-98aae0e77120, " +
+                        "--->sourceId=" + manningId + ", " +
+                        "--->detachedTargetId=" + graphQLInActionId1 + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
+                        "--->sourceId=" + oreillyId + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=a62f7aa3-9490-4612-98b5-98aae0e77120, " +
+                        "--->attachedTargetId=" + graphQLInActionId1 + ", " +
                         "--->reason=null" +
                         "}",
                 "Event{" +
                         "--->oldEntity={" +
-                        "--->--->\"id\":\"8f30bc8a-49f9-481d-beca-5fe2d147c831\"," +
+                        "--->--->\"id\":\"" + effectiveTypeScriptId1 + "\"," +
                         "--->--->\"name\":\"Effective TypeScript\"," +
                         "--->--->\"edition\":1," +
                         "--->--->\"price\":73.00," +
-                        "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
-                        "}, " +
-                        "newEntity={" +
-                        "--->--->\"id\":\"8f30bc8a-49f9-481d-beca-5fe2d147c831\"," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"id\":\"" + effectiveTypeScriptId1 + "\"," +
                         "--->--->\"name\":\"Effective TypeScript\"," +
                         "--->--->\"edition\":1," +
                         "--->--->\"price\":73.00," +
@@ -789,27 +809,30 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.store, " +
-                        "--->sourceId=8f30bc8a-49f9-481d-beca-5fe2d147c831, " +
-                        "--->detachedTargetId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
+                        "--->sourceId=" + effectiveTypeScriptId1 + ", " +
+                        "--->detachedTargetId=" + oreillyId + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
-                        "--->detachedTargetId=8f30bc8a-49f9-481d-beca-5fe2d147c831, " +
+                        "--->sourceId=" + oreillyId + ", " +
+                        "--->detachedTargetId=" + effectiveTypeScriptId1 + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "Event{" +
                         "--->oldEntity={" +
-                        "--->--->\"id\":\"8e169cfb-2373-4e44-8cce-1f1277f730d1\"," +
+                        "--->--->\"id\":\"" + effectiveTypeScriptId2 + "\"," +
                         "--->--->\"name\":\"Effective TypeScript\"," +
                         "--->--->\"edition\":2," +
                         "--->--->\"price\":69.00," +
-                        "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
-                        "--->}, newEntity={" +
-                        "--->--->\"id\":\"8e169cfb-2373-4e44-8cce-1f1277f730d1\"," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"id\":\"" + effectiveTypeScriptId2 + "\"," +
                         "--->--->\"name\":\"Effective TypeScript\"," +
                         "--->--->\"edition\":2," +
                         "--->--->\"price\":69.00," +
@@ -819,27 +842,30 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.store, " +
-                        "--->sourceId=8e169cfb-2373-4e44-8cce-1f1277f730d1, " +
-                        "--->detachedTargetId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
+                        "--->sourceId=" + effectiveTypeScriptId2 + ", " +
+                        "--->detachedTargetId=" + oreillyId + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
-                        "--->detachedTargetId=8e169cfb-2373-4e44-8cce-1f1277f730d1, " +
+                        "--->sourceId=" + oreillyId + ", " +
+                        "--->detachedTargetId=" + effectiveTypeScriptId2 + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "Event{" +
                         "--->oldEntity={" +
-                        "--->--->\"id\":\"9eded40f-6d2e-41de-b4e7-33a28b11c8b6\"," +
+                        "--->--->\"id\":\"" + effectiveTypeScriptId3 + "\"," +
                         "--->--->\"name\":\"Effective TypeScript\"," +
                         "--->--->\"edition\":3," +
                         "--->--->\"price\":88.00," +
-                        "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
-                        "--->}, newEntity={" +
-                        "--->--->\"id\":\"9eded40f-6d2e-41de-b4e7-33a28b11c8b6\"," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"id\":\"" + effectiveTypeScriptId3 + "\"," +
                         "--->--->\"name\":\"Effective TypeScript\"," +
                         "--->--->\"edition\":3," +
                         "--->--->\"price\":88.00," +
@@ -849,29 +875,30 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.store, " +
-                        "--->sourceId=9eded40f-6d2e-41de-b4e7-33a28b11c8b6, " +
-                        "--->detachedTargetId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
+                        "--->sourceId=" + effectiveTypeScriptId3 + ", " +
+                        "--->detachedTargetId=" + oreillyId + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
-                        "--->detachedTargetId=9eded40f-6d2e-41de-b4e7-33a28b11c8b6, " +
+                        "--->sourceId=" + oreillyId + ", " +
+                        "--->detachedTargetId=" + effectiveTypeScriptId3 + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "Event{" +
                         "--->oldEntity={" +
-                        "--->--->\"id\":\"914c8595-35cb-4f67-bbc7-8029e9e6245a\"," +
+                        "--->--->\"id\":\"" + programmingTypeScriptId1 + "\"," +
                         "--->--->\"name\":\"Programming TypeScript\"," +
                         "--->--->\"edition\":1," +
                         "--->--->\"price\":47.50," +
                         "--->--->\"store\":{" +
-                        "--->--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
                         "--->--->}" +
-                        "--->}, newEntity={" +
-                        "--->--->\"id\":\"914c8595-35cb-4f67-bbc7-8029e9e6245a\"," +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"id\":\"" + programmingTypeScriptId1 + "\"," +
                         "--->--->\"name\":\"Programming TypeScript\"," +
                         "--->--->\"edition\":1," +
                         "--->--->\"price\":47.50," +
@@ -881,26 +908,30 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.store, " +
-                        "--->sourceId=914c8595-35cb-4f67-bbc7-8029e9e6245a, " +
-                        "--->detachedTargetId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
+                        "--->sourceId=" + programmingTypeScriptId1 + ", " +
+                        "--->detachedTargetId=" + oreillyId + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
-                        "--->detachedTargetId=914c8595-35cb-4f67-bbc7-8029e9e6245a, " +
+                        "--->sourceId=" + oreillyId + ", " +
+                        "--->detachedTargetId=" + programmingTypeScriptId1 + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "Event{" +
                         "--->oldEntity={" +
-                        "--->--->\"id\":\"058ecfd0-047b-4979-a7dc-46ee24d08f08\"," +
+                        "--->--->\"id\":\"" + programmingTypeScriptId2 + "\"," +
                         "--->--->\"name\":\"Programming TypeScript\"," +
-                        "--->--->\"edition\":2,\"price\":45.00," +
-                        "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
-                        "--->}, newEntity={" +
-                        "--->--->\"id\":\"058ecfd0-047b-4979-a7dc-46ee24d08f08\"," +
+                        "--->--->\"edition\":2," +
+                        "--->--->\"price\":45.00," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"id\":\"" + programmingTypeScriptId2 + "\"," +
                         "--->--->\"name\":\"Programming TypeScript\"," +
                         "--->--->\"edition\":2," +
                         "--->--->\"price\":45.00," +
@@ -910,27 +941,30 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.store, " +
-                        "--->sourceId=058ecfd0-047b-4979-a7dc-46ee24d08f08, " +
-                        "--->detachedTargetId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
+                        "--->sourceId=" + programmingTypeScriptId2 + ", " +
+                        "--->detachedTargetId=" + oreillyId + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
-                        "--->detachedTargetId=058ecfd0-047b-4979-a7dc-46ee24d08f08, " +
+                        "--->sourceId=" + oreillyId + ", " +
+                        "--->detachedTargetId=" + programmingTypeScriptId2 + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "Event{" +
                         "--->oldEntity={" +
-                        "--->--->\"id\":\"782b9a9d-eac8-41c4-9f2d-74a5d047f45a\"," +
+                        "--->--->\"id\":\"" + programmingTypeScriptId3 + "\"," +
                         "--->--->\"name\":\"Programming TypeScript\"," +
                         "--->--->\"edition\":3," +
                         "--->--->\"price\":48.00," +
-                        "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
-                        "--->}, newEntity={" +
-                        "--->--->\"id\":\"782b9a9d-eac8-41c4-9f2d-74a5d047f45a\"," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"id\":\"" + programmingTypeScriptId3 + "\"," +
                         "--->--->\"name\":\"Programming TypeScript\"," +
                         "--->--->\"edition\":3," +
                         "--->--->\"price\":48.00," +
@@ -940,15 +974,15 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.store, " +
-                        "--->sourceId=782b9a9d-eac8-41c4-9f2d-74a5d047f45a, " +
-                        "--->detachedTargetId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
+                        "--->sourceId=" + programmingTypeScriptId3 + ", " +
+                        "--->detachedTargetId=" + oreillyId + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.BookStore.books, " +
-                        "--->sourceId=d38c10da-6be8-4924-b9b9-5e81899612a0, " +
-                        "--->detachedTargetId=782b9a9d-eac8-41c4-9f2d-74a5d047f45a, " +
+                        "--->sourceId=" + oreillyId + ", " +
+                        "--->detachedTargetId=" + programmingTypeScriptId3 + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}"
@@ -1016,7 +1050,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                 "Event{" +
                         "--->oldEntity=null, " +
                         "--->newEntity={" +
-                        "--->--->\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
+                        "--->--->\"id\":\"" + newId + "\"," +
                         "--->--->\"name\":\"Kotlin in Action\"," +
                         "--->--->\"edition\":1," +
                         "--->--->\"price\":30" +
@@ -1025,30 +1059,30 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
-                        "--->sourceId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->sourceId=" + newId + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=c14665c8-c689-4ac7-b8cc-6f065b8d835d, " +
+                        "--->attachedTargetId=" + danId + ", " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
-                        "--->sourceId=c14665c8-c689-4ac7-b8cc-6f065b8d835d, " +
+                        "--->sourceId=" + danId + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->attachedTargetId=" + newId + ", " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
-                        "--->sourceId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->sourceId=" + newId + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=718795ad-77c1-4fcf-994a-fec6a5a11f0f, " +
+                        "--->attachedTargetId=" + borisId + ", " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
-                        "--->sourceId=718795ad-77c1-4fcf-994a-fec6a5a11f0f, " +
+                        "--->sourceId=" + borisId + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->attachedTargetId=" + newId + ", " +
                         "--->reason=null" +
                         "}"
         );
@@ -1112,58 +1146,58 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
         assertEvents(
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
-                        "--->sourceId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
-                        "--->detachedTargetId=1e93da94-af84-44f4-82d1-d8a9fd52ea94, " +
+                        "--->sourceId=" + learningGraphQLId3 + ", " +
+                        "--->detachedTargetId=" + alexId + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
-                        "--->sourceId=1e93da94-af84-44f4-82d1-d8a9fd52ea94, " +
-                        "--->detachedTargetId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
-                        "--->attachedTargetId=null, " +
-                        "--->reason=null" +
-                        "}",
-                "AssociationEvent{" +
-                        "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
-                        "--->sourceId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
-                        "--->detachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
-                        "--->attachedTargetId=null, " +
-                        "--->reason=null" +
-                        "}",
-                "AssociationEvent{" +
-                        "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
-                        "--->sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
-                        "--->detachedTargetId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
+                        "--->sourceId=" + alexId + ", " +
+                        "--->detachedTargetId=" + learningGraphQLId3 + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
-                        "--->sourceId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
-                        "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=c14665c8-c689-4ac7-b8cc-6f065b8d835d, " +
+                        "--->sourceId=" + learningGraphQLId3 + ", " +
+                        "--->detachedTargetId=" + eveId + ", " +
+                        "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
-                        "--->sourceId=c14665c8-c689-4ac7-b8cc-6f065b8d835d, " +
-                        "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
+                        "--->sourceId=" + eveId + ", " +
+                        "--->detachedTargetId=" + learningGraphQLId3 + ", " +
+                        "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
-                        "--->sourceId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
+                        "--->sourceId=" + learningGraphQLId3 + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=718795ad-77c1-4fcf-994a-fec6a5a11f0f, " +
+                        "--->attachedTargetId=" + danId + ", " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
-                        "--->sourceId=718795ad-77c1-4fcf-994a-fec6a5a11f0f, " +
+                        "--->sourceId=" + danId + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
+                        "--->attachedTargetId=" + learningGraphQLId3 + ", " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
+                        "--->sourceId=" + learningGraphQLId3 + ", " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=" + borisId + ", " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
+                        "--->sourceId=" + borisId + ", " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=" + learningGraphQLId3 + ", " +
                         "--->reason=null" +
                         "}"
         );
@@ -1234,7 +1268,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                 "Event{" +
                         "--->oldEntity=null, " +
                         "--->newEntity={" +
-                        "--->--->\"id\":\"56506a3c-801b-4f7d-a41d-e889cdc3d67d\"," +
+                        "--->--->\"id\":\"" + newId + "\"," +
                         "--->--->\"firstName\":\"Jim\"," +
                         "--->--->\"lastName\":\"Green\"," +
                         "--->--->\"gender\":\"MALE\"" +
@@ -1243,30 +1277,30 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
-                        "--->sourceId=9eded40f-6d2e-41de-b4e7-33a28b11c8b6, " +
+                        "--->sourceId=" + effectiveTypeScriptId3 + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->attachedTargetId=" + newId + ", " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
-                        "--->sourceId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->sourceId=" + newId + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=9eded40f-6d2e-41de-b4e7-33a28b11c8b6, " +
+                        "--->attachedTargetId=" + effectiveTypeScriptId3 + ", " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
-                        "--->sourceId=782b9a9d-eac8-41c4-9f2d-74a5d047f45a, " +
+                        "--->sourceId=" + programmingTypeScriptId3 + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->attachedTargetId=" + newId + ", " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
-                        "--->sourceId=56506a3c-801b-4f7d-a41d-e889cdc3d67d, " +
+                        "--->sourceId=" + newId + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=782b9a9d-eac8-41c4-9f2d-74a5d047f45a, " +
+                        "--->attachedTargetId=" + programmingTypeScriptId3 + ", " +
                         "--->reason=null" +
                         "}"
         );
@@ -1332,71 +1366,72 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
         assertEvents(
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
-                        "--->sourceId=e110c564-23cc-4811-9e81-d587a13db634, " +
-                        "--->detachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->sourceId=" + learningGraphQLId1 + ", " +
+                        "--->detachedTargetId=" + eveId + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
-                        "--->sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
-                        "--->detachedTargetId=e110c564-23cc-4811-9e81-d587a13db634, " +
+                        "--->sourceId=" + eveId + ", " +
+                        "--->detachedTargetId=" + learningGraphQLId1 + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
-                        "--->sourceId=b649b11b-1161-4ad2-b261-af0112fdd7c8, " +
-                        "--->detachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->sourceId=" + learningGraphQLId2 + ", " +
+                        "--->detachedTargetId=" + eveId + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
-                        "--->sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
-                        "--->detachedTargetId=b649b11b-1161-4ad2-b261-af0112fdd7c8, " +
+                        "--->sourceId=" + eveId + ", " +
+                        "--->detachedTargetId=" + learningGraphQLId2 + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
-                        "--->sourceId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
-                        "--->detachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->sourceId=" + learningGraphQLId3 + ", " +
+                        "--->detachedTargetId=" + eveId + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
-                        "--->sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
-                        "--->detachedTargetId=64873631-5d82-4bae-8eb8-72dd955bfc56, " +
+                        "--->sourceId=" + eveId + ", " +
+                        "--->detachedTargetId=" + learningGraphQLId3 + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
-                        "--->sourceId=9eded40f-6d2e-41de-b4e7-33a28b11c8b6, " +
+                        "--->sourceId=" + effectiveTypeScriptId3 + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->attachedTargetId=" + eveId + ", " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
-                        "--->sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->sourceId=" + eveId + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=9eded40f-6d2e-41de-b4e7-33a28b11c8b6, " +
+                        "--->attachedTargetId=" + effectiveTypeScriptId3 + ", " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
-                        "--->sourceId=782b9a9d-eac8-41c4-9f2d-74a5d047f45a, " +
+                        "--->sourceId=" + programmingTypeScriptId3 + ", " +
                         "--->detachedTargetId=null, " +
-                        "--->attachedTargetId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
+                        "--->attachedTargetId=" + eveId + ", " +
                         "--->reason=null" +
                         "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
-                        "--->sourceId=fd6bb6cf-336d-416c-8005-1ae11a6694b5, " +
-                        "--->detachedTargetId=null, attachedTargetId=782b9a9d-eac8-41c4-9f2d-74a5d047f45a, " +
+                        "--->sourceId=" + eveId + ", " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=" + programmingTypeScriptId3 + ", " +
                         "--->reason=null" +
                         "}"
         );
