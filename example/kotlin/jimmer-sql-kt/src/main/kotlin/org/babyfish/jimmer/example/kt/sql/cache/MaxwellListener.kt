@@ -1,19 +1,18 @@
 package org.babyfish.jimmer.example.kt.sql.cache
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.babyfish.jimmer.sql.kt.KCaches
+import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.support.Acknowledgment
 import org.springframework.stereotype.Component
 
-
 @ConditionalOnProperty("spring.redis.host")
 @Component
 class MaxwellListener(sqlClient: KSqlClient) {
 
-    private val caches: KCaches = sqlClient.caches
+    private val binLog: BinLog = sqlClient.binLog
 
     @KafkaListener(topics = ["maxwell"])
     fun onHandle(
@@ -22,17 +21,15 @@ class MaxwellListener(sqlClient: KSqlClient) {
     ) {
         val node = MAPPER.readTree(json)
         val tableName = node["table"].asText()
-        if (caches.isAffectedBy(tableName)) {
-            val type = node["type"].asText()
-            val data = node["data"]
-            when (type) {
-                "insert" ->
-                    caches.invalidateByBinLog(tableName, null, data)
-                "update" ->
-                    caches.invalidateByBinLog(tableName, node["old"], data)
-                "delete" ->
-                    caches.invalidateByBinLog(tableName, data, null)
-            }
+        val type = node["type"].asText()
+        val data = node["data"]
+        when (type) {
+            "insert" ->
+                binLog.accept(tableName, null, data)
+            "update" ->
+                binLog.accept(tableName, node["old"], data)
+            "delete" ->
+                binLog.accept(tableName, data, null)
         }
         acknowledgment.acknowledge()
     }
