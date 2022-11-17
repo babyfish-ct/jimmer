@@ -17,7 +17,7 @@ class DeleteCommandTest : AbstractMutationTest() {
         }) {
             statement {
                 sql(
-                    """update BOOK set STORE_ID = null where STORE_ID in(?)"""
+                    """update BOOK set STORE_ID = null where STORE_ID = ?"""
                 )
                 variables(2L)
             }

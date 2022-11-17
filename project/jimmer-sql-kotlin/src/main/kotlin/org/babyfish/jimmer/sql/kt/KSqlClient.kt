@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt
 
 import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.*
+import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
@@ -59,6 +60,8 @@ interface KSqlClient {
     fun disableSlaveConnectionManager(): KSqlClient
 
     val entityManager: EntityManager
+
+    val binLog: BinLog
 
     val javaClient: JSqlClient
 }

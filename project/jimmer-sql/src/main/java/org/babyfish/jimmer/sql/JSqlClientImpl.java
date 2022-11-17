@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -15,6 +16,8 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.TriggersImpl;
+import org.babyfish.jimmer.sql.event.binlog.BinLog;
+import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
@@ -69,6 +72,8 @@ class JSqlClientImpl implements JSqlClient {
 
     private final Triggers transactionTriggers;
 
+    private final BinLog binLog;
+
     private final TransientResolverManager transientResolverManager;
 
     private final FilterManager filterManager;
@@ -93,6 +98,7 @@ class JSqlClientImpl implements JSqlClient {
             Caches caches,
             Triggers triggers,
             Triggers transactionTriggers,
+            BinLog binLog,
             FilterManager filterManager,
             TransientResolverManager transientResolverManager,
             DraftInterceptorManager draftInterceptorManager) {
@@ -121,9 +127,10 @@ class JSqlClientImpl implements JSqlClient {
         this.caches =
                 caches != null ?
                         caches :
-                        CachesImpl.of(triggers, scalarProviderMap, entityManager, null);
+                        CachesImpl.of(triggers, entityManager, null);
         this.triggers = triggers;
         this.transactionTriggers = transactionTriggers;
+        this.binLog = binLog;
         this.filterManager = filterManager;
         this.transientResolverManager =
                 transientResolverManager != null ?
@@ -278,6 +285,15 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
+    public BinLog getBinLog() {
+        BinLog bl = binLog;
+        if (bl == null) {
+            throw new IllegalStateException("binLog is not supported because the entityManager of sql client is not specified");
+        }
+        return bl;
+    }
+
+    @Override
     public Associations getAssociations(TypedProp.Association<?, ?> prop) {
         return getAssociations(prop.unwrap());
     }
@@ -328,6 +344,7 @@ class JSqlClientImpl implements JSqlClient {
                 new CachesImpl((CachesImpl) caches, cfg),
                 triggers,
                 transactionTriggers,
+                binLog,
                 filterManager,
                 transientResolverManager,
                 draftInterceptorManager
@@ -358,6 +375,7 @@ class JSqlClientImpl implements JSqlClient {
                 caches,
                 triggers,
                 transactionTriggers,
+                binLog,
                 cfg.getFilterManager(),
                 transientResolverManager,
                 draftInterceptorManager
@@ -383,6 +401,7 @@ class JSqlClientImpl implements JSqlClient {
                 caches,
                 triggers,
                 transactionTriggers,
+                binLog,
                 filterManager,
                 transientResolverManager,
                 draftInterceptorManager
@@ -471,6 +490,8 @@ class JSqlClientImpl implements JSqlClient {
         private final Set<Filter<?>> disabledFilters = new HashSet<>();
 
         private final List<DraftInterceptor<?>> interceptors = new ArrayList<>();
+
+        private ObjectMapper binLogObjectMapper;
 
         public BuilderImpl() {}
 
@@ -565,18 +586,13 @@ class JSqlClientImpl implements JSqlClient {
         @OldChain
         public JSqlClient.Builder setCaches(Consumer<CacheConfig> block) {
             createTriggersIfNecessary();
-            caches = CachesImpl.of(triggers, scalarProviderMap, entityManager, block);
+            caches = CachesImpl.of(triggers, entityManager, block);
             return this;
         }
 
         @Override
         public Builder setTriggerType(TriggerType triggerType) {
-            if (caches != null) {
-                throw new IllegalStateException(
-                        "Cannot set trigger type after setting the cache"
-                );
-            }
-            this.triggerType = Objects.requireNonNull(triggerType, "`triggerType` cannot be null");
+            this.triggerType = triggerType != null ? triggerType : TriggerType.BINLOG_ONLY;
             return this;
         }
 
@@ -621,9 +637,25 @@ class JSqlClientImpl implements JSqlClient {
         }
 
         @Override
+        public Builder setBinLogObjectMapper(ObjectMapper mapper) {
+            this.binLogObjectMapper = mapper;
+            return this;
+        }
+
+        @Override
         public JSqlClient build() {
             createTriggersIfNecessary();
             FilterManager filterManager = new FilterManager(filters, disabledFilters);
+            BinLog binLog;
+            if (entityManager != null) {
+                binLog = new BinLog(
+                        entityManager,
+                        new BinLogParser(scalarProviderMap, binLogObjectMapper),
+                        triggers
+                );
+            } else {
+                binLog = null;
+            }
             JSqlClient sqlClient = new JSqlClientImpl(
                     connectionManager,
                     slaveConnectionManager,
@@ -638,6 +670,7 @@ class JSqlClientImpl implements JSqlClient {
                     caches,
                     triggers,
                     transactionTriggers,
+                    binLog,
                     filterManager,
                     null,
                     new DraftInterceptorManager(interceptors)
@@ -649,16 +682,15 @@ class JSqlClientImpl implements JSqlClient {
         private void createTriggersIfNecessary() {
             if (triggers == null) {
                 switch (triggerType) {
-                    case BINLOG_ONLY:
-                        triggers = new TriggersImpl();
-                        transactionTriggers = null;
+                    case TRANSACTION_ONLY:
+                        transactionTriggers = triggers = new TriggersImpl();
                         break;
                     case BOTH:
                         triggers = new TriggersImpl();
                         transactionTriggers = new TriggersImpl();
                         break;
-                    case TRANSACTION_ONLY:
-                        transactionTriggers = triggers = new TriggersImpl();
+                    default:
+                        triggers = new TriggersImpl();
                         break;
                 }
             }

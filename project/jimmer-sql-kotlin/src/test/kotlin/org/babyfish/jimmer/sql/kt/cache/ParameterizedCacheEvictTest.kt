@@ -82,7 +82,7 @@ class ParameterizedCacheEvictTest : AbstractQueryTest() {
     @Test
     fun testAdministratorBinLog() {
         connectAndExpect({
-            _sqlClient.caches.invalidateByBinLog(
+            _sqlClient.binLog.accept(
                 "administrator",
                 MAPPER.readTree("""{"id": 1, "deleted": false}"""),
                 MAPPER.readTree("""{"id": 1, "deleted": true}""")
@@ -112,7 +112,7 @@ class ParameterizedCacheEvictTest : AbstractQueryTest() {
     @Test
     fun testRoleBinLog() {
         connectAndExpect({
-            _sqlClient.caches.invalidateByBinLog(
+            _sqlClient.binLog.accept(
                 "role",
                 MAPPER.readTree("""{"id": 100, "deleted": false}"""),
                 MAPPER.readTree("""{"id": 100, "deleted": true}""")
@@ -146,7 +146,7 @@ class ParameterizedCacheEvictTest : AbstractQueryTest() {
     @Test
     fun testPermissionBinLog() {
         connectAndExpect({
-            _sqlClient.caches.invalidateByBinLog(
+            _sqlClient.binLog.accept(
                 "permission",
                 MAPPER.readTree("""{"id":1000, "deleted":false, "role_id": 100}"""),
                 MAPPER.readTree("""{"id": 1000, "deleted": true}""")
@@ -170,7 +170,7 @@ class ParameterizedCacheEvictTest : AbstractQueryTest() {
     @Test
     fun testPermissionBinLogWithChangedForeignKey() {
         connectAndExpect({
-            _sqlClient.caches.invalidateByBinLog(
+            _sqlClient.binLog.accept(
                 "permission",
                 MAPPER.readTree("""{"id":1000, "deleted":false, "role_id": 100}"""),
                 MAPPER.readTree("""{"id":1000, "deleted":false, "role_id": 200}""")
