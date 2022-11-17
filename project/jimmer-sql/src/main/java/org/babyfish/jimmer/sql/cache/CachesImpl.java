@@ -1,23 +1,17 @@
 package org.babyfish.jimmer.sql.cache;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.event.Triggers;
-import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
 import java.util.*;
 import java.util.function.Consumer;
 
 public class CachesImpl implements Caches {
-
-    private final EntityManager entityManager;
 
     private final Triggers triggers;
 
@@ -26,8 +20,6 @@ public class CachesImpl implements Caches {
     private final Map<ImmutableProp, LocatedCacheImpl<?, ?>> propCacheMap;
 
     private final CacheOperator operator;
-    
-    private final BinLogParser binLogParser;
 
     private final CacheAbandonedCallback abandonedCallback;
 
@@ -38,12 +30,10 @@ public class CachesImpl implements Caches {
     private final Set<ImmutableProp> disabledProps;
 
     public CachesImpl(
-            EntityManager entityManager,
             Triggers triggers,
             Map<ImmutableType, Cache<?, ?>> objectCacheMap,
             Map<ImmutableProp, Cache<?, ?>> propCacheMap,
             CacheOperator operator,
-            BinLogParser binLogParser,
             CacheAbandonedCallback abandonedCallback
     ) {
         Map<ImmutableType, LocatedCacheImpl<?, ?>> objectCacheWrapperMap = new LinkedHashMap<>();
@@ -56,12 +46,10 @@ public class CachesImpl implements Caches {
             ImmutableProp prop = e.getKey();
             propCacheWrapperMap.put(prop, wrapPropCache(triggers, e.getValue(), prop));
         }
-        this.entityManager = entityManager;
         this.triggers = triggers;
         this.objectCacheMap = objectCacheWrapperMap;
         this.propCacheMap = propCacheWrapperMap;
         this.operator = operator;
-        this.binLogParser = binLogParser;
         this.abandonedCallback = abandonedCallback;
         this.disableAll = false;
         this.disabledTypes = Collections.emptySet();
@@ -72,12 +60,10 @@ public class CachesImpl implements Caches {
             CachesImpl base,
             CacheDisableConfig cfg
     ) {
-        entityManager = base.entityManager;
         triggers = base.triggers;
         objectCacheMap = base.objectCacheMap;
         propCacheMap = base.propCacheMap;
         operator = base.operator;
-        binLogParser = base.binLogParser;
         abandonedCallback = base.abandonedCallback;
         disableAll = cfg.isDisableAll();
         disabledTypes = cfg.getDisabledTypes();
@@ -114,64 +100,6 @@ public class CachesImpl implements Caches {
             return null;
         }
         return LocatedCacheImpl.export((LocatedCache<K, V>) propCacheMap.get(prop));
-    }
-
-    @Override
-    public boolean isAffectedBy(String tableName) {
-        ImmutableType type = entityManager.getTypeByTableName(tableName);
-        if (type instanceof AssociationType) {
-            ImmutableProp prop = ((AssociationType) type).getBaseProp();
-            return propCacheMap.containsKey(prop) ||
-                    propCacheMap.containsKey(prop.getOpposite());
-        }
-        if (type != null) {
-            return objectCacheMap.containsKey(type);
-        }
-        return false;
-    }
-
-    @Override
-    public void invalidateByBinLog(String tableName, JsonNode oldData, JsonNode newData, Object reason) {
-        boolean isOldNull = oldData == null || oldData.isNull();
-        boolean isNewNull = newData == null || newData.isNull();
-        if (isOldNull && isNewNull) {
-            return;
-        }
-        ImmutableType type = entityManager.getTypeByTableName(tableName);
-        if (type == null) {
-            throw new IllegalArgumentException(
-                    "Illegal table name \"" +
-                            tableName +
-                            "\", it is not managed by current entity manager"
-            );
-        }
-        if (type instanceof AssociationType) {
-            if (isOldNull) {
-                AssociationType associationType = (AssociationType) type;
-                Tuple2<?, ?> idPair = binLogParser.parseIdPair(associationType, newData);
-                triggers.fireMiddleTableInsert(
-                        associationType.getBaseProp(),
-                        idPair.get_1(),
-                        idPair.get_2(),
-                        reason
-                );
-            } else {
-                AssociationType associationType = (AssociationType) type;
-                Tuple2<?, ?> idPair = binLogParser.parseIdPair(associationType, oldData);
-                triggers.fireMiddleTableDelete(
-                        associationType.getBaseProp(),
-                        idPair.get_1(),
-                        idPair.get_2(),
-                        reason
-                );
-            }
-        } else {
-            triggers.fireEntityTableChange(
-                    binLogParser.parseEntity(type, oldData),
-                    binLogParser.parseEntity(type, newData),
-                    reason
-            );
-        }
     }
 
     @Override
@@ -237,7 +165,6 @@ public class CachesImpl implements Caches {
 
     public static Caches of(
             Triggers triggers,
-            Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
             EntityManager entityManager,
             Consumer<CacheConfig> block
     ) {
@@ -245,6 +172,6 @@ public class CachesImpl implements Caches {
         if (block != null) {
             block.accept(cfg);
         }
-        return cfg.build(entityManager, triggers, scalarProviderMap);
+        return cfg.build(triggers);
     }
 }

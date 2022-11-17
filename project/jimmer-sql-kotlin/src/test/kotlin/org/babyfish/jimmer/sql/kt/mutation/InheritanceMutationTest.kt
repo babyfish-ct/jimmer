@@ -43,7 +43,8 @@ class InheritanceMutationTest : AbstractMutationTest() {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME 
                         |from ROLE as tb_1_ 
-                        |where tb_1_.NAME = ?""".trimMargin()
+                        |where tb_1_.NAME = ? 
+                        |for update""".trimMargin()
                 )
             }
             statement {
@@ -56,7 +57,8 @@ class InheritanceMutationTest : AbstractMutationTest() {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME 
                         |from PERMISSION as tb_1_ 
-                        |where tb_1_.NAME = ?""".trimMargin()
+                        |where tb_1_.NAME = ? 
+                        |for update""".trimMargin()
                 )
             }
             statement {
@@ -69,7 +71,8 @@ class InheritanceMutationTest : AbstractMutationTest() {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME 
                         |from PERMISSION as tb_1_ 
-                        |where tb_1_.NAME = ?""".trimMargin()
+                        |where tb_1_.NAME = ? 
+                        |for update""".trimMargin()
                 )
             }
             statement {
@@ -126,7 +129,10 @@ class InheritanceMutationTest : AbstractMutationTest() {
         }) {
             statement {
                 sql(
-                    """select tb_1_.ID, tb_1_.NAME from ROLE as tb_1_ where tb_1_.NAME = ?"""
+                    """select tb_1_.ID, tb_1_.NAME 
+                        |from ROLE as tb_1_ 
+                        |where tb_1_.NAME = ? 
+                        |for update""".trimMargin()
                 )
             }
             statement {
@@ -137,7 +143,10 @@ class InheritanceMutationTest : AbstractMutationTest() {
             }
             statement {
                 sql(
-                    """select tb_1_.ID, tb_1_.NAME from PERMISSION as tb_1_ where tb_1_.NAME = ?"""
+                    """select tb_1_.ID, tb_1_.NAME 
+                        |from PERMISSION as tb_1_ 
+                        |where tb_1_.NAME = ? 
+                        |for update""".trimMargin()
                 )
             }
             statement {

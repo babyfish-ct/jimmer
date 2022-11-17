@@ -96,7 +96,7 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
         connectAndExpect(
                 con -> {
                     try {
-                        sqlClient.getCaches().invalidateByBinLog(
+                        sqlClient.getBinLog().accept(
                                 "administrator",
                                 MAPPER.readTree("{\"id\":1, \"deleted\":false}"),
                                 MAPPER.readTree("{\"id\":1, \"deleted\":true}")
@@ -134,7 +134,7 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
         connectAndExpect(
                 con -> {
                     try {
-                        sqlClient.getCaches().invalidateByBinLog(
+                        sqlClient.getBinLog().accept(
                                 "role",
                                 MAPPER.readTree("{\"id\":100, \"deleted\":false}"),
                                 MAPPER.readTree("{\"id\":100, \"deleted\":true}")
@@ -175,7 +175,7 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
         connectAndExpect(
                 con -> {
                     try {
-                        sqlClient.getCaches().invalidateByBinLog(
+                        sqlClient.getBinLog().accept(
                                 "permission",
                                 MAPPER.readTree("{\"id\":1000, \"deleted\":false, \"role_id\": 100}"),
                                 MAPPER.readTree("{\"id\":1000, \"deleted\":true}")
@@ -205,7 +205,7 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
         connectAndExpect(
                 con -> {
                     try {
-                        sqlClient.getCaches().invalidateByBinLog(
+                        sqlClient.getBinLog().accept(
                                 "permission",
                                 MAPPER.readTree("{\"id\":1000, \"deleted\":false, \"role_id\": 100}"),
                                 MAPPER.readTree("{\"id\":1000, \"deleted\":true, \"role_id\": 200}")
@@ -238,7 +238,7 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
         connectAndExpect(
                 con -> {
                     try {
-                        sqlClient.getCaches().invalidateByBinLog(
+                        sqlClient.getBinLog().accept(
                                 "administrator_role_mapping",
                                 null,
                                 MAPPER.readTree("{\"administrator_id\":1, \"role_id\": 400}")
@@ -268,7 +268,7 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
         connectAndExpect(
                 con -> {
                     try {
-                        sqlClient.getCaches().invalidateByBinLog(
+                        sqlClient.getBinLog().accept(
                                 "administrator_role_mapping",
                                 MAPPER.readTree("{\"administrator_id\":1, \"role_id\": 200}"),
                                 null

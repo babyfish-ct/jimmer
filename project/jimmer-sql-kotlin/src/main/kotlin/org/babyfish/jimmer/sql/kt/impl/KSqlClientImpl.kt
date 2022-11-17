@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.table.Table
+import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
 import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
@@ -146,6 +147,9 @@ internal class KSqlClientImpl(
 
     override val entityManager: EntityManager
         get() = sqlClient.entityManager
+
+    override val binLog: BinLog
+        get() = sqlClient.binLog
 
     override val javaClient: JSqlClient
         get() = sqlClient

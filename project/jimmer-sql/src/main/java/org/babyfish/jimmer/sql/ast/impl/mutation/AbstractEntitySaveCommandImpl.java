@@ -8,9 +8,7 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.meta.Column;
-import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -18,7 +16,6 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import java.sql.Connection;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveCommand {
 
@@ -71,9 +68,9 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         Data(JSqlClient sqlClient) {
             this.sqlClient = sqlClient;
-            this.triggers = sqlClient.getTriggerType() != TriggerType.BINLOG_ONLY ?
-                    sqlClient.getTriggers(true) :
-                    null;
+            this.triggers = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY ?
+                    null :
+                    sqlClient.getTriggers(true);
             this.mode = SaveMode.UPSERT;
             this.keyPropMultiMap = new LinkedHashMap<>();
             this.autoAttachingSet = new LinkedHashSet<>();

@@ -75,7 +75,7 @@ class MutationCache {
         return list;
     }
 
-    public ImmutableSpi save(ImmutableSpi spi, boolean saved) {
+    public ImmutableSpi save(ImmutableSpi spi, boolean forUserSave) {
 
         ImmutableType type = spi.__type();
         ImmutableProp idProp = type.getIdProp();
@@ -115,7 +115,7 @@ class MutationCache {
             }
         }
 
-        if (saved) {
+        if (forUserSave) {
             savedMap.put(spi, null);
         }
 

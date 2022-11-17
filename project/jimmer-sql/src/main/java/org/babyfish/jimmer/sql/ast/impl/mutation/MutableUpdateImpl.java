@@ -74,7 +74,7 @@ public class MutableUpdateImpl
         Target target = Target.of(path);
         if (target.table != this.getTable() && getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
             throw new IllegalArgumentException(
-                    "Only the primary table can be deleted when intra-transaction trigger is supported"
+                    "Only the primary table can be deleted when transaction trigger is supported"
             );
         }
         if (!(target.prop.getStorage() instanceof Column)) {

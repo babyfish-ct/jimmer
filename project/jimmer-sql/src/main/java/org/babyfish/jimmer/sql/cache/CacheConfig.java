@@ -29,8 +29,6 @@ public class CacheConfig {
 
     private CacheOperator operator;
 
-    private ObjectMapper binLogObjectMapper;
-
     private CacheAbandonedCallback abandonedCallback;
 
     public CacheConfig(EntityManager entityManager) {
@@ -176,18 +174,12 @@ public class CacheConfig {
     }
 
     @OldChain
-    public CacheConfig setBinLogObjectMapper(ObjectMapper objectMapper) {
-        this.binLogObjectMapper = objectMapper;
-        return this;
-    }
-
-    @OldChain
     public CacheConfig setAbandonedCallback(CacheAbandonedCallback callback) {
         this.abandonedCallback = callback;
         return this;
     }
 
-    Caches build(EntityManager entityManager, Triggers triggers, Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap) {
+    Caches build(Triggers triggers) {
         for (ImmutableProp prop : propCacheMap.keySet()) {
             if (prop.isAssociation(TargetLevel.ENTITY) && !objectCacheMap.containsKey(prop.getTargetType())) {
                 throw new IllegalStateException(
@@ -200,12 +192,10 @@ public class CacheConfig {
             }
         }
         return new CachesImpl(
-                entityManager,
                 triggers,
                 objectCacheMap,
                 propCacheMap,
                 operator,
-                new BinLogParser(scalarProviderMap, binLogObjectMapper),
                 abandonedCallback
         );
     }

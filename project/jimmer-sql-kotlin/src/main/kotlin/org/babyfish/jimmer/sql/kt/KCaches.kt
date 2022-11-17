@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.kt
 
-import com.fasterxml.jackson.databind.JsonNode
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.cache.Cache
@@ -16,8 +15,4 @@ interface KCaches {
     fun <K, V> getPropertyCache(prop: KProperty1<*, *>): Cache<K, V>?
 
     fun <K, V> getPropertyCache(prop: ImmutableProp): Cache<K, V>?
-
-    fun isAffectedBy(tableName: String): Boolean
-
-    fun invalidateByBinLog(tableName: String, oldData: JsonNode?, newData: JsonNode?, reason: Any? = null)
 }
