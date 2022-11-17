@@ -2,10 +2,12 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -19,10 +21,7 @@ import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.dialect.UpdateJoin;
-import org.babyfish.jimmer.sql.runtime.ExecutionException;
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
-import org.babyfish.jimmer.sql.runtime.TableUsedState;
+import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -73,6 +72,11 @@ public class MutableUpdateImpl
     public <X> MutableUpdate set(PropExpression<X> path, Expression<X> value) {
         validateMutable();
         Target target = Target.of(path);
+        if (target.table != this.getTable() && getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
+            throw new IllegalArgumentException(
+                    "Only the primary table can be deleted when intra-transaction trigger is supported"
+            );
+        }
         if (!(target.prop.getStorage() instanceof Column)) {
             throw new IllegalArgumentException("The assigned prop expression must be mapped as column");
         }
@@ -114,11 +118,16 @@ public class MutableUpdateImpl
                 .execute(this::executeImpl);
     }
 
-    private Integer executeImpl(Connection con) {
+    private int executeImpl(Connection con) {
         freeze();
         if (assignmentMap.isEmpty()) {
             return 0;
         }
+
+        if (getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
+            return executeWithTrigger(con);
+        }
+
         SqlBuilder builder = new SqlBuilder(new AstContext(getSqlClient()));
         renderTo(builder);
         Tuple2<String, List<Object>> sqlResult = builder.build();
@@ -134,14 +143,84 @@ public class MutableUpdateImpl
                 );
     }
 
+    private int executeWithTrigger(Connection con) {
+
+        SqlBuilder builder = new SqlBuilder(new AstContext(getSqlClient()));
+        renderAsSelect(builder, null);
+        Tuple2<String, List<Object>> sqlResult = builder.build();
+        List<ImmutableSpi> rows = Selectors.select(
+                getSqlClient(),
+                con,
+                sqlResult.get_1(),
+                sqlResult.get_2(),
+                Collections.singletonList(this.getTable()),
+                ExecutionPurpose.UPDATE
+        );
+        if (rows.isEmpty()) {
+            return 0;
+        }
+
+        int idPropId = getTable().getImmutableType().getIdProp().getId();
+        Map<Object, ImmutableSpi> rowMap = new HashMap<>((rows.size() * 4 + 2) / 3);
+        for (ImmutableSpi row : rows) {
+            rowMap.put(row.__get(idPropId), row);
+        }
+
+        builder = new SqlBuilder(new AstContext(getSqlClient()));
+        renderTo(builder, rowMap.keySet());
+        sqlResult = builder.build();
+        int affectRowCount = getSqlClient()
+                .getExecutor()
+                .execute(
+                        con,
+                        sqlResult.get_1(),
+                        sqlResult.get_2(),
+                        getPurpose(),
+                        null,
+                        PreparedStatement::executeUpdate
+                );
+
+        builder = new SqlBuilder(new AstContext(getSqlClient()));
+        renderAsSelect(builder, rowMap.keySet());
+        sqlResult = builder.build();
+        List<ImmutableSpi> changedRows = Selectors.select(
+                getSqlClient(),
+                con,
+                sqlResult.get_1(),
+                sqlResult.get_2(),
+                Collections.singletonList(this.getTable()),
+                ExecutionPurpose.UPDATE
+        );
+        MutationTrigger trigger = new MutationTrigger();
+        for (ImmutableSpi changedRow : changedRows) {
+            ImmutableSpi row = rowMap.get(changedRow.__get(idPropId));
+            if (!row.__equals(changedRow, true)) {
+                trigger.modifyEntityTable(row, changedRow);
+            }
+        }
+        trigger.submit(getSqlClient());
+        return affectRowCount;
+    }
+
     @Override
     public void accept(@NotNull AstVisitor visitor) {
+        accept(visitor, true);
+    }
+
+    @Override
+    public void renderTo(@NotNull SqlBuilder builder) {
+        renderTo(builder, null);
+    }
+
+    private void accept(@NotNull AstVisitor visitor, boolean visitAssignments) {
         AstContext astContext = visitor.getAstContext();
         astContext.pushStatement(this);
         try {
-            for (Map.Entry<Target, Expression<?>> e : assignmentMap.entrySet()) {
-                ((Ast) e.getKey().expr).accept(visitor);
-                ((Ast) e.getValue()).accept(visitor);
+            if (visitAssignments) {
+                for (Map.Entry<Target, Expression<?>> e : assignmentMap.entrySet()) {
+                    ((Ast) e.getKey().expr).accept(visitor);
+                    ((Ast) e.getValue()).accept(visitor);
+                }
             }
             Predicate predicate = getPredicate();
             if (predicate != null) {
@@ -152,8 +231,7 @@ public class MutableUpdateImpl
         }
     }
 
-    @Override
-    public void renderTo(@NotNull SqlBuilder builder) {
+    private void renderTo(@NotNull SqlBuilder builder, Collection<Object> ids) {
         AstContext astContext = builder.getAstContext();
         astContext.pushStatement(this);
         try {
@@ -176,7 +254,53 @@ public class MutableUpdateImpl
             renderAssignments(builder);
             renderTables(builder);
             renderDeeperJoins(builder);
-            renderPredicates(builder);
+            renderPredicates(builder, ids);
+        } finally {
+            astContext.popStatement();
+        }
+    }
+
+    private void renderAsSelect(SqlBuilder builder, Collection<Object> ids) {
+        AstContext astContext = builder.getAstContext();
+        astContext.pushStatement(this);
+        try {
+            accept(new VisitorImpl(builder.getAstContext(), null), false);
+            TableImplementor<?> table = getTableImplementor();
+            builder.sql("select ");
+            boolean addComma = false;
+            for (ImmutableProp prop : table.getImmutableType().getSelectableProps().values()) {
+                if (addComma) {
+                    builder.sql(", ");
+                } else {
+                    addComma = true;
+                }
+                builder.sql(table.getAlias()).sql(".").sql(prop.<Column>getStorage().getName());
+            }
+            builder
+                    .sql(" from ")
+                    .sql(table.getImmutableType().getTableName())
+                    .sql(" as ")
+                    .sql(table.getAlias());
+            if (ids != null) {
+                builder
+                        .sql(" where ")
+                        .sql(table.getAlias())
+                        .sql(".")
+                        .sql(table.getImmutableType().getIdProp().getName())
+                        .sql(" in(");
+                addComma = false;
+                for (Object id : ids) {
+                    if (addComma) {
+                        builder.sql(", ");
+                    } else {
+                        addComma = true;
+                    }
+                    builder.variable(id);
+                }
+                builder.sql(")");
+            } else {
+                renderPredicates(builder, null);
+            }
         } finally {
             astContext.popStatement();
         }
@@ -239,10 +363,30 @@ public class MutableUpdateImpl
         }
     }
 
-    private void renderPredicates(SqlBuilder builder) {
+    private void renderPredicates(SqlBuilder builder, Collection<Object> ids) {
         TableImplementor<?> table = getTableImplementor();
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         String separator = " where ";
+        if (ids != null) {
+            ImmutableProp idProp = table.getImmutableType().getIdProp();
+            builder
+                    .sql(separator)
+                    .sql(table.getAlias())
+                    .sql(".")
+                    .sql(idProp.<Column>getStorage().getName())
+                    .sql(" in(");
+            boolean addComma = false;
+            for (Object id : ids) {
+                if (addComma) {
+                    builder.sql(", ");
+                } else {
+                    addComma = true;
+                }
+                builder.variable(id);
+            }
+            builder.sql(")");
+            separator = " and ";
+        }
         if (updateJoin != null &&
                 updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
                 hasUsedChild(table, builder.getAstContext())
@@ -309,7 +453,7 @@ public class MutableUpdateImpl
 
     private static class VisitorImpl extends UseTableVisitor {
 
-        private Dialect dialect;
+        private final Dialect dialect;
 
         public VisitorImpl(AstContext astContext, Dialect dialect) {
             super(astContext);
@@ -319,7 +463,9 @@ public class MutableUpdateImpl
         @Override
         public void visitTableReference(TableImplementor<?> table, ImmutableProp prop) {
             super.visitTableReference(table, prop);
-            validateTable(table);
+            if (dialect != null) {
+                validateTable(table);
+            }
         }
 
         private void validateTable(TableImplementor<?> tableImpl) {
