@@ -1,16 +1,27 @@
 package org.babyfish.jimmer.sql.trigger;
 
+import org.babyfish.jimmer.sql.common.NativeDatabases;
+import org.babyfish.jimmer.sql.dialect.MySqlDialect;
+import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.BookTable;
+import org.babyfish.jimmer.sql.model.BookTableEx;
+import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.junit.jupiter.api.Test;
+import org.opentest4j.TestAbortedException;
+
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.util.UUID;
 
 public class DMLWithTriggerTest extends AbstractTriggerTest {
 
     @Test
     public void testUpdate() {
+
         BookTable book = BookTable.$;
+
         executeAndExpectRowCount(
                 getSqlClient()
                         .createUpdate(book)
@@ -42,7 +53,7 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK as tb_1_ " +
-                                        "where tb_1_.id in(?, ?, ?)"
+                                        "where tb_1_.ID in(?, ?, ?)"
                         );
                         it.unorderedVariables(graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
                     });
@@ -114,5 +125,268 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
                         "--->reason=null" +
                         "}"
         );
+    }
+
+    @Test
+    public void testUpdateWithJoinByMySql() {
+
+        BookTableEx book = BookTableEx.$;
+
+        try {
+            NativeDatabases.assumeNativeDatabase();
+        } catch (TestAbortedException ex) {
+            assertEvents();
+            throw ex;
+        }
+
+        executeAndExpectRowCount(
+                NativeDatabases.MYSQL_DATA_SOURCE,
+                getSqlClient(it -> {
+                    it.setDialect(new MySqlDialect());
+                    it.addScalarProvider(ScalarProvider.UUID_BY_BYTE_ARRAY);
+                })
+                        .createUpdate(book)
+                        .set(book.price(), book.price().plus(BigDecimal.ONE))
+                        .where(book.authors().firstName().eq("Alex")),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                        "inner join AUTHOR as tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID " +
+                                        "where tb_3_.FIRST_NAME = ?"
+                        );
+                        it.variables("Alex");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update BOOK tb_1_ " +
+                                        "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                        "inner join AUTHOR as tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID " +
+                                        "set tb_1_.PRICE = tb_1_.PRICE + ? " +
+                                        "where tb_1_.ID in(?, ?, ?) " +
+                                        "and tb_3_.FIRST_NAME = ?"
+                        );
+                        it.unorderedVariables(
+                                BigDecimal.ONE,
+                                toBytes(learningGraphQLId1),
+                                toBytes(learningGraphQLId2),
+                                toBytes(learningGraphQLId3),
+                                "Alex"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.ID in(?, ?, ?)"
+                        );
+                        it.unorderedVariables(
+                                toBytes(learningGraphQLId1),
+                                toBytes(learningGraphQLId2),
+                                toBytes(learningGraphQLId3)
+                        );
+                    });
+                    ctx.rowCount(3);
+                }
+        );
+
+        assertEvents(
+                "Event{" +
+                        "--->oldEntity={" +
+                        "--->--->\"id\":\"" + learningGraphQLId3 + "\"," +
+                        "--->--->\"name\":\"Learning GraphQL\"," +
+                        "--->--->\"edition\":3," +
+                        "--->--->\"price\":51.00," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"id\":\"" + learningGraphQLId3 + "\"," +
+                        "--->--->\"name\":\"Learning GraphQL\"," +
+                        "--->--->\"edition\":3," +
+                        "--->--->\"price\":52.00," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->reason=null" +
+                        "}",
+                "Event{" +
+                        "--->oldEntity={" +
+                        "--->--->\"id\":\"" + learningGraphQLId2 + "\"," +
+                        "--->--->\"name\":\"Learning GraphQL\"," +
+                        "--->--->\"edition\":2," +
+                        "--->--->\"price\":55.00," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"id\":\"" + learningGraphQLId2 + "\"," +
+                        "--->--->\"name\":\"Learning GraphQL\"," +
+                        "--->--->\"edition\":2," +
+                        "--->--->\"price\":56.00," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->reason=null" +
+                        "}",
+                "Event{" +
+                        "--->oldEntity={" +
+                        "--->--->\"id\":\"" + learningGraphQLId1 + "\"," +
+                        "--->--->\"name\":\"Learning GraphQL\"," +
+                        "--->--->\"edition\":1," +
+                        "--->--->\"price\":50.00," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"id\":\"" + learningGraphQLId1 + "\"," +
+                        "--->--->\"name\":\"Learning GraphQL\"," +
+                        "--->--->\"edition\":1," +
+                        "--->--->\"price\":51.00," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->reason=null" +
+                        "}"
+        );
+    }
+
+    @Test
+    public void testUpdateWithJoinByPostgres() {
+
+        BookTableEx book = BookTableEx.$;
+
+        try {
+            NativeDatabases.assumeNativeDatabase();
+        } catch (TestAbortedException ex) {
+            assertEvents();
+            throw ex;
+        }
+
+        executeAndExpectRowCount(
+                NativeDatabases.POSTGRES_DATA_SOURCE,
+                getSqlClient(it -> {
+                    it.setDialect(new PostgresDialect());
+                })
+                        .createUpdate(book)
+                        .set(book.price(), book.price().plus(BigDecimal.ONE))
+                        .where(book.authors().firstName().eq("Alex")),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                        "inner join AUTHOR as tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID " +
+                                        "where tb_3_.FIRST_NAME = ?"
+                        );
+                        it.variables("Alex");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update BOOK tb_1_ set PRICE = tb_1_.PRICE + ? " +
+                                        "from BOOK_AUTHOR_MAPPING as tb_2_ " +
+                                        "inner join AUTHOR as tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID " +
+                                        "where tb_1_.ID in(?, ?, ?) " +
+                                        "and tb_1_.ID = tb_2_.BOOK_ID " +
+                                        "and tb_3_.FIRST_NAME = ?"
+                        );
+                        it.unorderedVariables(
+                                BigDecimal.ONE,
+                                learningGraphQLId1, learningGraphQLId2, learningGraphQLId3,
+                                "Alex"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK as tb_1_ " +
+                                        "where tb_1_.ID in(?, ?, ?)"
+                        );
+                        it.unorderedVariables(
+                                learningGraphQLId1, learningGraphQLId2, learningGraphQLId3
+                        );
+                    });
+                    ctx.rowCount(3);
+                }
+        );
+
+        assertEvents(
+                "Event{" +
+                        "--->oldEntity={" +
+                        "--->--->\"id\":\"" + learningGraphQLId1 + "\"," +
+                        "--->--->\"name\":\"Learning GraphQL\"," +
+                        "--->--->\"edition\":1," +
+                        "--->--->\"price\":50.00," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"id\":\"" + learningGraphQLId1 + "\"," +
+                        "--->--->\"name\":\"Learning GraphQL\"," +
+                        "--->--->\"edition\":1," +
+                        "--->--->\"price\":51.00," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->reason=null" +
+                        "}",
+                "Event{" +
+                        "--->oldEntity={" +
+                        "--->--->\"id\":\"" + learningGraphQLId2 + "\"," +
+                        "--->--->\"name\":\"Learning GraphQL\"," +
+                        "--->--->\"edition\":2," +
+                        "--->--->\"price\":55.00," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"id\":\"" + learningGraphQLId2 + "\"," +
+                        "--->--->\"name\":\"Learning GraphQL\"," +
+                        "--->--->\"edition\":2," +
+                        "--->--->\"price\":56.00," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->reason=null" +
+                        "}",
+                "Event{" +
+                        "--->oldEntity={" +
+                        "--->--->\"id\":\"" + learningGraphQLId3 + "\"," +
+                        "--->--->\"name\":\"Learning GraphQL\"," +
+                        "--->--->\"edition\":3," +
+                        "--->--->\"price\":51.00," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"id\":\"" + learningGraphQLId3 + "\"," +
+                        "--->--->\"name\":\"Learning GraphQL\"," +
+                        "--->--->\"edition\":3," +
+                        "--->--->\"price\":52.00," +
+                        "--->--->\"store\":{" +
+                        "--->--->--->\"id\":\"" + oreillyId + "\"" +
+                        "--->--->}" +
+                        "--->}, " +
+                        "--->reason=null" +
+                        "}"
+        );
+    }
+
+    private static byte[] toBytes(UUID uuid) {
+        return ScalarProvider.UUID_BY_BYTE_ARRAY.toSql(uuid);
     }
 }
