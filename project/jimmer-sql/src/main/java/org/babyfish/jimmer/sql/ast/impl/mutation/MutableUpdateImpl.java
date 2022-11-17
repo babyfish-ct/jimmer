@@ -179,6 +179,9 @@ public class MutableUpdateImpl
                         null,
                         PreparedStatement::executeUpdate
                 );
+        if (affectRowCount == 0) {
+            return 0;
+        }
 
         builder = new SqlBuilder(new AstContext(getSqlClient()));
         renderAsSelect(builder, rowMap.keySet());
@@ -196,6 +199,8 @@ public class MutableUpdateImpl
             ImmutableSpi row = rowMap.get(changedRow.__get(idPropId));
             if (!row.__equals(changedRow, true)) {
                 trigger.modifyEntityTable(row, changedRow);
+            } else {
+                System.out.println(changedRow + " -> " + row);
             }
         }
         trigger.submit(getSqlClient());
@@ -254,7 +259,7 @@ public class MutableUpdateImpl
             renderAssignments(builder);
             renderTables(builder);
             renderDeeperJoins(builder);
-            renderPredicates(builder, ids);
+            renderPredicates(builder, true, ids);
         } finally {
             astContext.popStatement();
         }
@@ -276,17 +281,17 @@ public class MutableUpdateImpl
                 }
                 builder.sql(table.getAlias()).sql(".").sql(prop.<Column>getStorage().getName());
             }
-            builder
-                    .sql(" from ")
-                    .sql(table.getImmutableType().getTableName())
-                    .sql(" as ")
-                    .sql(table.getAlias());
             if (ids != null) {
+                builder
+                        .sql(" from ")
+                        .sql(table.getImmutableType().getTableName())
+                        .sql(" as ")
+                        .sql(table.getAlias());
                 builder
                         .sql(" where ")
                         .sql(table.getAlias())
                         .sql(".")
-                        .sql(table.getImmutableType().getIdProp().getName())
+                        .sql(table.getImmutableType().getIdProp().<Column>getStorage().getName())
                         .sql(" in(");
                 addComma = false;
                 for (Object id : ids) {
@@ -299,7 +304,8 @@ public class MutableUpdateImpl
                 }
                 builder.sql(")");
             } else {
-                renderPredicates(builder, null);
+                table.renderTo(builder);
+                renderPredicates(builder, false, null);
             }
         } finally {
             astContext.popStatement();
@@ -363,7 +369,7 @@ public class MutableUpdateImpl
         }
     }
 
-    private void renderPredicates(SqlBuilder builder, Collection<Object> ids) {
+    private void renderPredicates(SqlBuilder builder, boolean forUpdate, Collection<Object> ids) {
         TableImplementor<?> table = getTableImplementor();
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         String separator = " where ";
@@ -387,7 +393,8 @@ public class MutableUpdateImpl
             builder.sql(")");
             separator = " and ";
         }
-        if (updateJoin != null &&
+        if (forUpdate &&
+                updateJoin != null &&
                 updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
                 hasUsedChild(table, builder.getAstContext())
         ) {
