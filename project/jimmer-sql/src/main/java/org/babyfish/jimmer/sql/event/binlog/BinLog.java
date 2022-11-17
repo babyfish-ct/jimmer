@@ -6,8 +6,12 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BinLog {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(BinLog.class);
 
     private final EntityManager entityManager;
 
@@ -33,11 +37,11 @@ public class BinLog {
         }
         ImmutableType type = entityManager.getTypeByTableName(tableName);
         if (type == null) {
-            throw new IllegalArgumentException(
-                    "Illegal table name \"" +
-                            tableName +
-                            "\", it is not managed by current entity manager"
+            LOGGER.warn(
+                    "Illegal table name \"{}\", it is not managed by current entity manager",
+                    tableName
             );
+            return;
         }
         if (type instanceof AssociationType) {
             if (isOldNull) {
