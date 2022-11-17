@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "org.babyfish.jimmer.example.kt"
-version = "0.4.10"
+version = "0.5.0"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
@@ -18,8 +18,8 @@ repositories {
 
 dependencies {
 
-	implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.4.10")
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.4.10")
+	implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.5.0")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.5.0")
 
 	implementation("org.springframework.boot:spring-boot-starter")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
