@@ -12,7 +12,6 @@ import org.opentest4j.TestAbortedException;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import java.math.BigDecimal;
-import java.nio.ByteBuffer;
 import java.util.UUID;
 
 public class DMLWithTriggerTest extends AbstractTriggerTest {
