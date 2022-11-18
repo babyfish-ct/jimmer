@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.cache.*
 import org.babyfish.jimmer.sql.dialect.Dialect
+import org.babyfish.jimmer.sql.event.TriggerType
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.filter.impl.toJavaFilter
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
@@ -66,6 +67,10 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setCaches {
             CacheDsl(it).block()
         }
+    }
+
+    fun setTriggerType(triggerType: TriggerType) {
+        javaBuilder.setTriggerType(triggerType)
     }
 
     fun addFilters(vararg filters: KFilter<*>) {
