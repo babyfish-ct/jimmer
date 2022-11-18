@@ -67,8 +67,37 @@ public interface JSqlClient extends SubQueryProvider {
 
     TriggerType getTriggerType();
 
+    /**
+     * This method is equivalent to `getTriggers(false)`
+     * @return
+     */
     Triggers getTriggers();
 
+    /**
+     * <ul>
+     *     <li>
+     *         If trigger type is 'BINLOG_ONLY'
+     *         <ul>
+     *             <li>If `transaction` is true, throws exception</li>
+     *             <li>If `transaction` is false, return binlog trigger</li>
+     *         </ul>
+     *     </li>
+     *     <li>
+     *         If trigger type is 'TRANSACTION_ONLY', returns transaction trigger
+     *         no matter what the `transaction` is
+     *     </li>
+     *     <li>
+     *         If trigger type is 'BOTH'
+     *         <ul>
+     *             <li>If `transaction` is true, return transaction trigger</li>
+     *             <li>If `transaction` is false, return binlog trigger</li>
+     *         </ul>
+     *         Note that the objects returned by different parameters are independent of each other.
+     *     </li>
+     * </ul>
+     * @param transaction
+     * @return Trigger
+     */
     Triggers getTriggers(boolean transaction);
 
     BinLog getBinLog();

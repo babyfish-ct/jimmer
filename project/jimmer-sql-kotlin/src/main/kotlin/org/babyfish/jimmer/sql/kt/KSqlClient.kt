@@ -40,8 +40,36 @@ interface KSqlClient {
 
     val caches: KCaches
 
+    /**
+     * This property is equivalent to `getTriggers(false)`
+     */
     val triggers: KTriggers
 
+    /**
+     * <ul>
+     *     <li>
+     *         If trigger type is 'BINLOG_ONLY'
+     *         <ul>
+     *             <li>If `transaction` is true, throws exception</li>
+     *             <li>If `transaction` is false, return binlog trigger</li>
+     *         </ul>
+     *     </li>
+     *     <li>
+     *         If trigger type is 'TRANSACTION_ONLY', returns transaction trigger
+     *         no matter what the `transaction` is
+     *     </li>
+     *     <li>
+     *         If trigger type is 'BOTH'
+     *         <ul>
+     *             <li>If `transaction` is true, return transaction trigger</li>
+     *             <li>If `transaction` is false, return binlog trigger</li>
+     *         </ul>
+     *         Note that the objects returned by different parameters are independent of each other.
+     *     </li>
+     * </ul>
+     * @param transaction
+     * @return Trigger
+     */
     fun getTriggers(transaction: Boolean): KTriggers
 
     val filters: KFilters
