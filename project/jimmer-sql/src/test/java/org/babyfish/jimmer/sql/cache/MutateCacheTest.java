@@ -125,7 +125,8 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }),
                 BookDraft.$.produce(book -> {
                     book.setId(graphQLInActionId3).setStore(store -> store.setId(oreillyId));
-                })
+                }),
+                null
         );
         Assertions.assertEquals(
                 String.format(
@@ -256,7 +257,8 @@ public class MutateCacheTest extends AbstractQueryTest {
         lambdaClient.getTriggers().fireMiddleTableInsert(
                 BookProps.AUTHORS.unwrap(),
                 graphQLInActionId3,
-                danId
+                danId,
+                null
         );
         Assertions.assertEquals(
                 "[Book.authors-" +
@@ -379,7 +381,8 @@ public class MutateCacheTest extends AbstractQueryTest {
         lambdaClient.getTriggers().fireMiddleTableInsert(
                 AuthorProps.BOOKS.unwrap(),
                 danId,
-                graphQLInActionId3
+                graphQLInActionId3,
+                null
         );
         Assertions.assertEquals(
                 "[Book.authors-" +
@@ -498,7 +501,8 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }),
                 TreeNodeDraft.$.produce(treeNode -> {
                     treeNode.setId(9L).setParent((TreeNode) null);
-                })
+                }),
+                null
         );
         executeAndExpect(
                 lambdaClient.createQuery(TreeNodeTable.class, (q, treeNode) -> {

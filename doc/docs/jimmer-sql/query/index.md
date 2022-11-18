@@ -10,3 +10,4 @@ title: Query
 - [Query middle table](./association)
 - [External Cache](./cache)
 - [Calculated property and cache](./calculated-prop.mdx)
+- [Gloal filter](./filter)

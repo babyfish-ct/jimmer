@@ -1,0 +1,370 @@
+---
+sidebar_position: 7
+title: 触发器
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Jimmer支持触发器，用户可以监听数据库的变化。
+
+:::tip
+触发器不仅可以告知对象的变更，也可以告知关联的变更。
+:::
+
+## 触发器类型
+
+### 触发器分类
+
+-   BinLog触发器
+    
+    只是默认的触发器类型，不会影响Jimmer本身生成的SQL，具有较高性能，在事务提交后被触发，能监听任何原因导致的数据库变化，包括非Jimmer API引起的数据和变化；但需要底层数据库支持binlog。
+
+-   Transaction触发器
+
+    该触发器不无需底层数据库，在事务提交前被触发；工作机制和[Alibaba Seata的AT模式](https://seata.io/zh-cn/docs/dev/mode/at-mode.html)类似，会在修改过程中生成额外的查询语句，对修改性能有一定影响，也只能监听因Jimmer API导致的数据库的变化。
+
+两种触发器的区别如下
+
+||BinLog触发器|Transaction触发器|
+|---|---|---|
+|触发时机|事务提交后|事务提交前|
+|性能|高|低|
+|可监听的数据库变化|任何原因导致的数据库变化|仅因当前应用调用Jimmer API导致的数据库变化|
+|数据库要求|支持且启用binlog|无任何要求|
+|工作原理|利用第三方技术将数据库binlog变更推送到消息队列，Jimmer应用监听消息队列|Jimmer的任何修改操作API均自动植入额外的SQL查询以找寻数据变更，和[Alibaba Seata的AT模式](https://seata.io/zh-cn/docs/dev/mode/at-mode.html)类似|
+
+除了这个表格中的区别外，两种触发器为用户提供的通知数据完全相同。
+
+### 推荐用法
+
+-   BinLog触发器
+
+    BinLog触发器在事务提交后触发，面对无法更改的既定事实。
+    
+    即，BinLog触发器对原事务毫无影响，被允许做耗时操作。所以适合在其处理逻辑中执行多个任务，尤其是这些任务
+
+    - 缓存一致性维护
+    - 异构数据源同步
+    - 以异步方式向其它微服务发送消息
+
+-   Transaction触发器
+
+    Transaction触发器在事务提交前触发，其处理逻辑会直接植入当前事务。
+    
+    如果其事件处理逻辑异常，会导致当前业务修改失败；如果其处理逻辑不能很快完成，会导致当前事务长时间不释放资源。
+
+    因此，Transaction触发器适合在当前事务中追加更多的修改行为，不会破坏原子性。
+    
+    尤其适合和[save-command](./save-command)一起使用。save-command保存任意复杂的数据结构，是一个非常黑盒化的高级API；而Transaction触发器可以为save-command附加某些的细节监听和相关冗余数据联动行为。
+
+## 设置触发器类型
+
+在讨论设置触发器类型之前，我们先看开发人员如何使用触发器
+-   `sqlClient.getTriggers()`或`sqlClient.getTriggers(false)`:
+    优先返回BinLog触发器，如果没有，则返回Transaction触发器。
+
+-   `sqlClient.getTriggers(true)`:
+    明确返回Transaction触发器，如果没有，抛出异常。
+
+为了影响后续用户通过`sqlClient.getTriggers`能获取的触发器类型，需要在构建SqlClient时指定TriggerType：
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+javax.sql.DataSource dataSource = ...;
+
+JSqlClient sqlClient = JSqlClient
+    .newBuilder()
+    .setEntityManager(
+        new EntityManager(classLoader, packageName)
+    )
+    // highlight-next-line
+    .setTriggerType(TriggerType.BOTH)
+    .builde();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+javax.sql.DataSource dataSource = ...;
+
+var sqlClient = newKSqlClient {
+    setEntityManager(
+        EntityManager(classLoader, packageName)
+    )
+    // highlight-next-line
+    setTriggerType(TriggerType.BOTH)
+}
+```
+
+</TabItem>
+</Tabs>
+
+其中，`setEntityManager`是使用触发器的前提，而`setTriggerType`就是设置触发器的类型，有三个取值
+
+-   BINLOG_ONLY:
+
+    仅支持BinLog触发器，这是默认配置。
+    - `sqlClient.getTriggers()`和`sqlClient.getTriggers(false)`返回BinLog触发器对象
+    - `sqlClient.getTriggers(true)`会异常，无法返回Transaction触发器对象
+
+-   TRANSACTION_ONLY:
+
+    仅支持Transaction触发器。
+    无论`sqlClient.getTriggers`的参数为何，都会返回同一个Transaction触发器对象
+
+-   BOTH:
+
+    同时支持BinLog触发器何Transaction触发器。
+    - `sqlClient.getTriggers()`和`sqlClient.getTriggers(false)`返回BinLog触发器对象
+    - `sqlClient.getTriggers(true)`返回Transaction触发器对象
+
+    :::caution
+    注意：这种情况下，两种用法会得到两个不同的触发器对象。它们挂接的事件响应函数彼此独立，通知行为彼此独立。
+    :::
+
+## 启用BinLog触发器
+
+和Tranaction触发器不同，BinLog触发器需要用户第三方技术将数据库binlog变更推送到消息队列，并让应用监听消息队列。
+
+因此，仅仅在构建SqlClient对象时把TriggerType指定为BINLOG_ONLY(也是默认行为)是不够的，还需要进行如下操作。
+
+消息队列有多有选择，例如Kafka和RebbitMQ；把数据库binlog的增量推送到消息队列的第三方技术也有多种选择，例如MaxWell、Canal和DataBus。
+
+Jimmer对这类选择未做任何限制。但为简化问题讨论，本文档假设消息队列选用Kafka，推送技术采用Maxwell。
+
+### 外部环境搭建
+
+要使用此功能，需要进行搭建以下步骤。
+
+1. 选用支持binlog的的数据库，开启binlog功能。
+2. 安装Kafka，建立一个topic。
+3. 启用Maxwell，将binlog变化发送到上一步建立的kafka topic
+
+你可以点击[这里](https://github.com/babyfish-ct/jimmer/blob/main/example/env-with-cache/install.sh)查看附带例子的docker安装脚本。
+
+### 调用`sqlClient.binLog.accept`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Component
+public class MaxwellListener {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private final Caches caches;
+
+    public MaxwellListener(JSqlClient sqlClient) {
+        this.caches = sqlClient.getCaches();
+    }
+
+    @KafkaListener(topics = "maxwell")
+    public void onHandle(
+            String json,
+            Acknowledgment acknowledgment
+    ) throws JsonProcessingException {
+        JsonNode node = MAPPER.readTree(json);
+        String tableName = node.get("table").asText();
+        String type = node.get("type").asText();
+        JsonNode data = node.get("data");
+        switch (type) {
+            case "insert":
+                binLog.accept(tableName, null, data);
+                break;
+            case "update":
+                binLog.accept(tableName, node.get("old"), data);
+                break;
+            case "delete":
+                binLog.accept(tableName, data, null);
+                break;
+        }
+        acknowledgment.acknowledge();
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Component
+class MaxwellListener(sqlClient: KSqlClient) {
+
+    private val caches: KCaches = sqlClient.caches
+
+    @KafkaListener(topics = ["maxwell"])
+    fun onHandle(
+        json: String,
+        acknowledgment: Acknowledgment
+    ) {
+        val node = MAPPER.readTree(json)
+        val tableName = node["table"].asText()
+        val type = node["type"].asText()
+        val data = node["data"]
+        when (type) {
+            "insert" ->
+                binLog.accept(tableName, null, data)
+            "update" ->
+                binLog.accept(tableName, node["old"], data)
+            "delete" ->
+                binLog.accept(tableName, data, null)
+        }
+        acknowledgment.acknowledge()
+    }
+
+    companion object {
+        private val MAPPER = ObjectMapper()
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## 使用示范
+
+### 准备工作
+
+BinLog触发器和Transaction触发器的使用方式完全相同，故温度仅示范BinLog触发器的使用方式。
+
+:::caution
+- 如果要使用BinLog触发器，必须开启数据库的binlog功能并使用上一节的代码完成对消息队列的监听。
+- 如果要使用Transaction触发器，无连续任何额外的准备工作。
+:::
+
+### 注册处理逻辑
+
+两种触发器的事件通知完全一样，这里的示范对二者皆可用。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+sqlClient.getTriggers().addEntityListener(Book.class, e -> {
+    System.out.println("The object `Book` is changed");
+    System.out.println("\told: " + e.getOldEntity());
+    System.out.println("\tnew: " + e.getNewEntity());
+});
+sqlClient.getTriggers().addAssociationListener(BookProps.STORE, e -> {
+    System.out.println("The many-to-one association `Book.store` is changed");
+    System.out.println("\tbook id: " + e.getSourceId());
+    System.out.println("\tdetached book store id: " + e.getDetachedTargetId());
+    System.out.println("\tattached book store id: " + e.getAttachedTargetId());
+});
+sqlClient.getTriggers().addAssociationListener(BookStoreProps.BOOKS, e -> {
+    System.out.println("The one-to-many association `BookStore.books` is changed");
+    System.out.println("\tbook store id: " + e.getSourceId());
+    System.out.println("\tdetached book id: " + e.getDetachedTargetId());
+    System.out.println("\tattached book id: " + e.getAttachedTargetId());
+});
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient.triggers.addEntityListener(Book::class) {
+    println("The object `Book` is changed");
+    println("\told: ${it.oldEntity}");
+    println("\tnew: ${it.newEntity}");
+}
+sqlClient.triggers.addAssociationListener(BookProps.STORE, e -> {
+    println("The many-to-one association `Book.store` is changed");
+    println("\tbook id: ${it.sourceId}");
+    println("\tdetached book store id: ${it.detachedTargetId}");
+    println("\tattached book store id: ${it.attachedTargetId}");
+});
+sqlClient.triggers.addAssociationListener(BookStoreProps.BOOKS, e -> {
+    println("The one-to-many association `BookStore.books` is changed");
+    println("\tbook store id: ${it.sourceId}");
+    println("\tdetached book id: ${it.detachedTargetId}");
+    println("\tattached book id: ${it.attachedTargetId}");
+});
+```
+
+</TabItem>
+</Tabs>
+
+其中`sqlClient.getTriggers()`或`sqClient.triggers`用于将处理逻辑注册到默认的触发器上。
+
+-   如果sqlClient的TriggerType为`BINLOG_ONLY`，则注册到BinLog触发器上。
+-   如果sqlClient的TriggerType为`TRANSACTION_ONLY`，则注册到Transaction触发器上。
+-   如果sqlClient的TriggerType为`BOTH`，则注册到BinLog触发器上。
+    :::caution
+    注意，此时SqlClient同时具备BinLog触发器和Transaction触发器，它们是两个不同的触发器对象，彼此独立。
+    如果引发事件的触发器对象和注册处理逻辑的触发器对象不是同一个对象，那么处理逻辑讲不会被执行。
+    :::
+
+也可把上面代码中的`sqlClient.getTriggers()`或`sqClient.triggers`替换为`sqlClient.getTriggers(true)`，这样，处理逻辑就被注册到Transaction触发器上。
+
+-   如果sqlClient的TriggerType为`BINLOG_ONLY`，`sqlClient.getTriggers(true)`会抛出异常。
+-   如果sqlClient的TriggerType为`TRANSACTION_ONLY`，则注册到Transaction触发器上。
+-   如果sqlClient的TriggerType为`BOTH`，则注册到Transaction触发器上。
+    :::caution
+    注意，此时SqlClient同时具备BinLog触发器和Transaction触发器，它们是两个不同的触发器对象，彼此独立。
+    如果引发事件的触发器对象和注册处理逻辑的触发器对象不是同一个对象，那么处理逻辑讲不会被执行。
+    :::
+
+### 触发事件
+
+BinLog触发器可以监听任何原因导致的数据库变化，即便绕过应用程序用其他任何手段实现数据库修改，也可以向BinLog触发器发送事件。
+
+比如，你可以直接用SQL工具执行
+
+```sql
+update BOOK set STORE_ID = 2 where ID = 7;
+```
+
+然而，如果要向Transaction触发器发送事件，则必须通过Jimmer的API修改数据库，例如
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable book = BookTable.$;
+sqlClient
+        .createUpdate(book)
+        .set(book.store().id(), 2L)
+        .where(book.$.id().eq(7L))
+        .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+        .createUpdate(Book::class) {
+            set(table.store.id, 2L)
+            where(table.id eq 7L)
+        }
+        .execute()
+```
+
+</TabItem>
+</Tabs>
+
+### 执行结果
+
+```
+The object `Book` is changed
+	old: {"id":7,"name":"Programming TypeScript","edition":1,"price":47.50,"store":{"id":1}}
+	new: {"id":7,"name":"Programming TypeScript","edition":1,"price":47.50,"store":{"id":2}}
+The many-to-one association `Book.store` is changed
+	book id: 7
+	detached book store id: 1
+	attached book store id: 2
+The one-to-many association `BookStore.books` is changed
+	book store id: 1
+	detached book id: 7
+	attached book id: null
+The one-to-many association `BookStore.books` is changed
+	book store id: 2
+	detached book id: null
+	attached book id: 7
+```

@@ -1,5 +1,5 @@
 package org.babyfish.jimmer.sql.event;
-
+;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.meta.Column;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.Connection;
 import java.util.Objects;
 
 public class EntityEvent<E> {
@@ -20,9 +21,11 @@ public class EntityEvent<E> {
 
     private final E newEntity;
 
+    private final Connection con;
+
     private final Object reason;
 
-    public EntityEvent(E oldEntity, E newEntity, Object reason) {
+    public EntityEvent(E oldEntity, E newEntity, Connection con, Object reason) {
         if (oldEntity == null && newEntity == null) {
             throw new IllegalArgumentException("Both oldEntity and newEntity are null");
         }
@@ -59,6 +62,7 @@ public class EntityEvent<E> {
         this.id = oldId != null ? oldId : newId;
         this.oldEntity = oldEntity;
         this.newEntity = newEntity;
+        this.con = con;
         this.reason = reason;
     }
 
@@ -75,6 +79,18 @@ public class EntityEvent<E> {
     @NotNull
     public Object getId() {
         return this.id;
+    }
+
+    /**
+     * <ul>
+     *  <li>If the event is fired by binlog trigger, returns null</li>
+     *  <li>If the event is fired by transaction trigger, returns current trigger</li>
+     * </ul>
+     * @return The current connection or null
+     */
+    @Nullable
+    public Connection getConnection() {
+        return con;
     }
 
     @Nullable

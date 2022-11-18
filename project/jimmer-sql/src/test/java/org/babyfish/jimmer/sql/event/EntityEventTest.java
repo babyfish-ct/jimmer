@@ -20,6 +20,7 @@ public class EntityEventTest {
                             .setName("InsertBookName");
                 }),
                 null,
+                null,
                 null
         );
         Assertions.assertEquals(
@@ -37,6 +38,7 @@ public class EntityEventTest {
                             .setId(graphQLInActionId3)
                             .setName("InsertBookName");
                 }),
+                null,
                 null
         );
         Assertions.assertEquals(
@@ -54,6 +56,7 @@ public class EntityEventTest {
                             .setStore((BookStore) null);
                 }),
                 null,
+                null,
                 null
         );
         Assertions.assertNull(
@@ -69,6 +72,7 @@ public class EntityEventTest {
                             .setId(graphQLInActionId3)
                             .setStore(store -> store.setId(manningId));
                 }),
+                null,
                 null,
                 null
         );
@@ -87,6 +91,7 @@ public class EntityEventTest {
                             .setId(graphQLInActionId3)
                             .setStore((BookStore) null);
                 }),
+                null,
                 null
         );
         Assertions.assertNull(
@@ -103,6 +108,7 @@ public class EntityEventTest {
                             .setId(graphQLInActionId3)
                             .setStore(store -> store.setId(manningId));
                 }),
+                null,
                 null
         );
         Assertions.assertEquals(
@@ -124,6 +130,7 @@ public class EntityEventTest {
                             .setId(graphQLInActionId3)
                             .setStore(store -> store.setId(manningId));
                 }),
+                null,
                 null
         );
         Assertions.assertEquals(
@@ -145,6 +152,7 @@ public class EntityEventTest {
                             .setId(graphQLInActionId3)
                             .setStore((BookStore) null);
                 }),
+                null,
                 null
         );
         Assertions.assertEquals(
@@ -166,6 +174,7 @@ public class EntityEventTest {
                             .setId(graphQLInActionId3)
                             .setStore(store -> store.setId(oreillyId));
                 }),
+                null,
                 null
         );
         Assertions.assertNull(
@@ -186,6 +195,7 @@ public class EntityEventTest {
                             .setId(graphQLInActionId3)
                             .setStore((BookStore) null);
                 }),
+                null,
                 null
         );
         Assertions.assertNull(
@@ -206,6 +216,7 @@ public class EntityEventTest {
                             .setId(graphQLInActionId3)
                             .setStore(store -> store.setId(oreillyId));
                 }),
+                null,
                 null
         );
         Assertions.assertNull(

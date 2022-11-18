@@ -101,7 +101,7 @@ class AssociationExecutable implements Executable<Integer> {
                             trigger != null
                     );
             if (trigger != null) {
-                trigger.submit(sqlClient);
+                trigger.submit(sqlClient, con);
             }
             return affectedRowCount;
         }
@@ -119,7 +119,7 @@ class AssociationExecutable implements Executable<Integer> {
                 new MiddleTableOperator.TupleReader(addingPairs)
         );
         if (trigger != null) {
-            trigger.submit(sqlClient);
+            trigger.submit(sqlClient, con);
         }
         return affectedRowCount;
     }

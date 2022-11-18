@@ -7,6 +7,7 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.event.Triggers;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,19 +38,19 @@ class MutationTrigger {
         }
     }
 
-    public void submit(JSqlClient sqlClient) {
+    public void submit(JSqlClient sqlClient, Connection con) {
         if (!changedObjects.isEmpty()) {
             Triggers triggers = sqlClient.getTriggers(true);
             for (ChangedObject changedObject : changedObjects) {
                 if (changedObject instanceof ChangedEntity) {
                     ChangedEntity entity = (ChangedEntity) changedObject;
-                    triggers.fireEntityTableChange(entity.oldEntity, ImmutableObjects.toLonely(entity.newEntity));
+                    triggers.fireEntityTableChange(entity.oldEntity, ImmutableObjects.toLonely(entity.newEntity), con);
                 } else {
                     ChangedMiddleData association = (ChangedMiddleData) changedObject;
                     if (association.detachedTargetId == null) {
-                        triggers.fireMiddleTableInsert(association.prop, association.sourceId, association.attachedTargetId);
+                        triggers.fireMiddleTableInsert(association.prop, association.sourceId, association.attachedTargetId, con);
                     } else {
-                        triggers.fireMiddleTableDelete(association.prop, association.sourceId, association.detachedTargetId);
+                        triggers.fireMiddleTableDelete(association.prop, association.sourceId, association.detachedTargetId, con);
                     }
                 }
             }

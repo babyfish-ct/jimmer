@@ -6,6 +6,7 @@ import org.babyfish.jimmer.util.Classes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.Connection;
 import java.util.Objects;
 
 public class AssociationEvent {
@@ -18,18 +19,21 @@ public class AssociationEvent {
 
     private final Object attachedTargetId;
 
+    private final Connection con;
+
     private final Object reason;
 
     public AssociationEvent(
             ImmutableProp prop,
             Object sourceId,
-            Object reason
+            Connection con, Object reason
     ) {
         validateConstructorArgs(prop, sourceId);
         this.prop = prop;
         this.sourceId = sourceId;
         this.detachedTargetId = null;
         this.attachedTargetId = null;
+        this.con = con;
         this.reason = reason;
     }
 
@@ -38,7 +42,7 @@ public class AssociationEvent {
             Object sourceId,
             Object detachedTargetId,
             Object attachedTargetId,
-            Object reason
+            Connection con, Object reason
     ) {
         validateConstructorArgs(prop, sourceId);
         if (detachedTargetId == null && attachedTargetId == null) {
@@ -69,6 +73,7 @@ public class AssociationEvent {
         this.sourceId = sourceId;
         this.detachedTargetId = detachedTargetId;
         this.attachedTargetId = attachedTargetId;
+        this.con = con;
         this.reason = reason;
     }
 
@@ -110,6 +115,18 @@ public class AssociationEvent {
     public Object getAttachedTargetId() {
         validateTarget();
         return attachedTargetId;
+    }
+
+    /**
+     * <ul>
+     *  <li>If the event is fired by binlog trigger, returns null</li>
+     *  <li>If the event is fired by transaction trigger, returns current trigger</li>
+     * </ul>
+     * @return The current connection or null
+     */
+    @Nullable
+    public Connection getConnection() {
+        return this.con;
     }
 
     @Nullable

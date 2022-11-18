@@ -22,3 +22,5 @@ jimmer-sql provides two ways to modify the database
 - [&#128161; Save command](./save-command)
 - [Delete command](./delete-command)
 - [Mutate middle table](./association)
+- [Draft interceptor](./interceptor)
+- [Trigger](./trigger)

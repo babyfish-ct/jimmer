@@ -180,13 +180,13 @@ Jimmer的缓存机制有如下特色
 
 > 除了简单外键外，简单对象不具备任何关联属性。
 
-![object-cache](@site/static/img/object-cache.jpeg)
+![object-cache](@site/static/img/object-cache.png)
 
 ### 2. 关联属性缓存
 
 关联属性缓存是Jimmer缓存极具特色的功能，为数据提供**邻接表**，以支持快速查询关联属性。
 
-![association-cache](@site/static/img/association-cache.jpeg)
+![association-cache](@site/static/img/association-cache.png)
 
 :::note
 - 对于基于外键而非中间表多对一关联(图中的`Book.store-1`、`Book.store-2`和`Book.store-3`)而言，仅在GraphQL工作模式中开发人员给予的当前对象的外键属性缺失时才使用；其余情况下，只需以外键为参数查询简单对象缓存即可得到父对象，无需使用关联缓存。
@@ -210,7 +210,7 @@ Jimmer实体支持非持久化(`@Transient`)属性，这种属性在数据库中
 
 其中，自动模式的非持久化属性也称计算属性，计算属性可以选择采用计算缓存。
 
-![calculated-cache](@site/static/img/calculated-cache.jpeg)
+![calculated-cache](@site/static/img/calculated-cache.png)
 
 ### 4. 多视角缓存
 
@@ -220,7 +220,7 @@ Jimmer提供了[全局过滤器](jimmer-sql/query/filter)，可以在所有查�
 
 既然不同的操作者能看到不同的数据，当然也需要让不同的操作者看到的不同的缓存，这就是多视角缓存。
 
-![multi-view-cache](@site/static/img/multi-view-cache.jpeg)
+![multi-view-cache](@site/static/img/multi-view-cache.png)
 
 这个例子以多租户为例子展现了多视角缓存。不同的操作者看到的关联缓存和计算缓存不一样。
 
@@ -234,7 +234,7 @@ Jimmer实现了相对实时的缓存数据一致性。为此，开发人员只�
 
 - 采用支持binlog的数据库，并启用binlog
 - 使用任何第三方技术(Maxwell、Canal或DataBus)，接收binlog事件。
-- 简单调用Jimmer的全局API`invalidateByBinLog`即可。
+- 简单调用Jimmer的全局API`sqlClient.binLog.accept`即可。
 
 然后
 

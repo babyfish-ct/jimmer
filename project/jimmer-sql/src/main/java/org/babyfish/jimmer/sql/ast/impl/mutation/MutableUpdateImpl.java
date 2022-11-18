@@ -203,7 +203,7 @@ public class MutableUpdateImpl
                 System.out.println(changedRow + " -> " + row);
             }
         }
-        trigger.submit(getSqlClient());
+        trigger.submit(getSqlClient(), con);
         return affectRowCount;
     }
 

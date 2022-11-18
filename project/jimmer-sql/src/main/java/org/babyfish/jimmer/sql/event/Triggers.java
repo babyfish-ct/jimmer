@@ -7,6 +7,8 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.event.AssociationListener;
 import org.babyfish.jimmer.sql.event.EntityListener;
 
+import java.sql.Connection;
+
 public interface Triggers {
 
     @SuppressWarnings("unchecked")
@@ -35,23 +37,23 @@ public interface Triggers {
 
     void removeAssociationListener(ImmutableProp prop, AssociationListener listener);
 
-    default void fireEntityTableChange(Object oldRow, Object newRow) {
-        fireEntityTableChange(oldRow, newRow, null);
+    default void fireEntityTableChange(Object oldRow, Object newRow, Connection con) {
+        fireEntityTableChange(oldRow, newRow, con, null);
     }
 
-    void fireEntityTableChange(Object oldRow, Object newRow, Object reason);
+    void fireEntityTableChange(Object oldRow, Object newRow, Connection con, Object reason);
 
-    default void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId) {
-        fireMiddleTableDelete(prop, sourceId, targetId, null);
+    default void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId, Connection con) {
+        fireMiddleTableDelete(prop, sourceId, targetId, con, null);
     }
 
-    void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId, Object reason);
+    void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId, Connection con, Object reason);
 
-    default void fireMiddleTableInsert(ImmutableProp prop, Object sourceId, Object targetId) {
-        fireMiddleTableInsert(prop, sourceId, targetId, null);
+    default void fireMiddleTableInsert(ImmutableProp prop, Object sourceId, Object targetId, Connection con) {
+        fireMiddleTableInsert(prop, sourceId, targetId, con, null);
     }
 
-    void fireMiddleTableInsert(ImmutableProp prop, Object sourceId, Object targetId, Object reason);
+    void fireMiddleTableInsert(ImmutableProp prop, Object sourceId, Object targetId, Connection con, Object reason);
 
     default void fireAssociationEvict(ImmutableProp prop, Object sourceId) {
         fireAssociationEvict(prop, sourceId, null);

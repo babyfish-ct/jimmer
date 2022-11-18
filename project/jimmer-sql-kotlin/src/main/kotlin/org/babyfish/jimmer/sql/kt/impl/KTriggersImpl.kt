@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.event.Triggers
 import org.babyfish.jimmer.sql.event.AssociationListener
 import org.babyfish.jimmer.sql.event.EntityListener
 import org.babyfish.jimmer.sql.kt.KTriggers
+import java.sql.Connection
 import kotlin.reflect.KClass
 
 internal class KTriggersImpl(
@@ -37,16 +38,16 @@ internal class KTriggersImpl(
         javaTriggers.removeAssociationListener(prop, listener)
     }
 
-    override fun fireEntityTableChange(oldRow: Any, newRow: Any, reason: Any?) {
-        javaTriggers.fireEntityTableChange(oldRow, newRow, reason)
+    override fun fireEntityTableChange(oldRow: Any, newRow: Any, con: Connection?, reason: Any?) {
+        javaTriggers.fireEntityTableChange(oldRow, newRow, con, reason)
     }
 
-    override fun fireMiddleTableDelete(prop: ImmutableProp, sourceId: Any, targetId: Any, reason: Any?) {
-        javaTriggers.fireMiddleTableDelete(prop, sourceId, targetId, reason)
+    override fun fireMiddleTableDelete(prop: ImmutableProp, sourceId: Any, targetId: Any, con: Connection?, reason: Any?) {
+        javaTriggers.fireMiddleTableDelete(prop, sourceId, targetId, con, reason)
     }
 
-    override fun fireMiddleTableInsert(prop: ImmutableProp, sourceId: Any, targetId: Any, reason: Any?) {
-        javaTriggers.fireMiddleTableInsert(prop, sourceId, targetId, reason)
+    override fun fireMiddleTableInsert(prop: ImmutableProp, sourceId: Any, targetId: Any, con: Connection?, reason: Any?) {
+        javaTriggers.fireMiddleTableInsert(prop, sourceId, targetId, con, reason)
     }
 
     override fun fireAssociationEvict(prop: ImmutableProp, sourceId: Any, reason: Any?) {

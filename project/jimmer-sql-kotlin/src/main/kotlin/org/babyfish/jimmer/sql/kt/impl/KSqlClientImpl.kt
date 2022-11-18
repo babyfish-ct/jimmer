@@ -88,6 +88,9 @@ internal class KSqlClientImpl(
     override val triggers: KTriggers =
         KTriggersImpl(sqlClient.triggers)
 
+    override fun getTriggers(transaction: Boolean): KTriggers =
+        KTriggersImpl(sqlClient.getTriggers(transaction))
+
     override val filters: KFilters
         get() = KFiltersImpl(javaClient.filters)
 
