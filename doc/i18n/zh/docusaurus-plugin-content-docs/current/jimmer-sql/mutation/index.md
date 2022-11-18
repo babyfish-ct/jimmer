@@ -22,3 +22,5 @@ jimmer-sql提供了两种修改方式
 - [Save指令](./save-command)
 - [Delete指令](./delete-command)
 - [修改中间表](./association)
+- [Draft拦截器](./interceptor)
+- [触发器](./trigger)

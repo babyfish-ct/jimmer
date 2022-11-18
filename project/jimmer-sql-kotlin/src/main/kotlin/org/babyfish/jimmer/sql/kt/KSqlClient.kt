@@ -42,6 +42,8 @@ interface KSqlClient {
 
     val triggers: KTriggers
 
+    fun getTriggers(transaction: Boolean): KTriggers
+
     val filters: KFilters
 
     val loaders: KLoaders

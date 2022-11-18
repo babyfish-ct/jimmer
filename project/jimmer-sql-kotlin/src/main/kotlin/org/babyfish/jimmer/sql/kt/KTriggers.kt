@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.event.AssociationListener
 import org.babyfish.jimmer.sql.event.EntityListener
+import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -39,11 +40,11 @@ interface KTriggers {
 
     fun removeAssociationListener(prop: ImmutableProp, listener: AssociationListener)
 
-    fun fireEntityTableChange(oldRow: Any, newRow: Any, reason: Any? = null)
+    fun fireEntityTableChange(oldRow: Any, newRow: Any, con: Connection? = null, reason: Any? = null)
 
-    fun fireMiddleTableDelete(prop: ImmutableProp, sourceId: Any, targetId: Any, reason: Any? = null)
+    fun fireMiddleTableDelete(prop: ImmutableProp, sourceId: Any, targetId: Any, con: Connection? = null, reason: Any? = null)
 
-    fun fireMiddleTableInsert(prop: ImmutableProp, sourceId: Any, targetId: Any, reason: Any? = null)
+    fun fireMiddleTableInsert(prop: ImmutableProp, sourceId: Any, targetId: Any, con: Connection? = null, reason: Any? = null)
 
     fun fireAssociationEvict(prop: ImmutableProp, sourceId: Any, reason: Any? = null)
 }

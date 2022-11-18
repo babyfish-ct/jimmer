@@ -86,7 +86,7 @@ class Saver {
                 trigger == null ? null : trigger::prepareSubmit
         );
         if (trigger != null) {
-            trigger.submit(data.getSqlClient());
+            trigger.submit(data.getSqlClient(), con);
         }
         return new SimpleSaveResult<>(affectedRowCountMap, entity, newEntity);
     }

@@ -7,6 +7,7 @@ import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.meta.Column;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -68,7 +69,7 @@ public class TriggersImpl implements Triggers {
     }
 
     @Override
-    public void fireEntityTableChange(Object oldRow, Object newRow, Object reason) {
+    public void fireEntityTableChange(Object oldRow, Object newRow, Connection con, Object reason) {
         if (oldRow == null && newRow == null) {
             return;
         }
@@ -78,7 +79,7 @@ public class TriggersImpl implements Triggers {
         if (newRow != null && !(newRow instanceof ImmutableSpi)) {
             throw new IllegalArgumentException("newRow must be immutable");
         }
-        EntityEvent<ImmutableSpi> event = new EntityEvent<>((ImmutableSpi)oldRow, (ImmutableSpi) newRow, reason);
+        EntityEvent<ImmutableSpi> event = new EntityEvent<>((ImmutableSpi)oldRow, (ImmutableSpi) newRow, con, reason);
         List<EntityListener<ImmutableSpi>> listeners =
                 entityTableListenerMultiMap.get(event.getImmutableType());
         Throwable throwable = null;
@@ -120,6 +121,7 @@ public class TriggersImpl implements Triggers {
                             event.getId(),
                             fkRef.getOldValue(),
                             fkRef.getNewValue(),
+                            con,
                             reason,
                             throwable
                     );
@@ -139,6 +141,7 @@ public class TriggersImpl implements Triggers {
             Object childId,
             Object oldFk,
             Object newFk,
+            Connection con,
             Object reason,
             Throwable throwable
     ) {
@@ -146,7 +149,7 @@ public class TriggersImpl implements Triggers {
         List<AssociationListener> listeners = associationListenerMultiMap.get(prop);
         List<AssociationListener> inverseListeners = associationListenerMultiMap.get(inverseProp);
         if (listeners != null && !listeners.isEmpty()) {
-            AssociationEvent e = new AssociationEvent(prop, childId, oldFk, newFk, reason);
+            AssociationEvent e = new AssociationEvent(prop, childId, oldFk, newFk, con, reason);
             for (AssociationListener listener : listeners) {
                 try {
                     listener.onChange(e);
@@ -159,7 +162,7 @@ public class TriggersImpl implements Triggers {
         }
         if (inverseListeners != null && !inverseListeners.isEmpty()) {
             if (oldFk != null) {
-                AssociationEvent e = new AssociationEvent(inverseProp, oldFk, childId, null, reason);
+                AssociationEvent e = new AssociationEvent(inverseProp, oldFk, childId, null, con, reason);
                 for (AssociationListener inverseListener : inverseListeners) {
                     try {
                         inverseListener.onChange(e);
@@ -171,7 +174,7 @@ public class TriggersImpl implements Triggers {
                 }
             }
             if (newFk != null) {
-                AssociationEvent e = new AssociationEvent(inverseProp, newFk, null, childId, reason);
+                AssociationEvent e = new AssociationEvent(inverseProp, newFk, null, childId, con, reason);
                 for (AssociationListener inverseListener : inverseListeners) {
                     try {
                         inverseListener.onChange(e);
@@ -187,22 +190,22 @@ public class TriggersImpl implements Triggers {
     }
 
     @Override
-    public void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId, Object reason) {
+    public void fireMiddleTableDelete(ImmutableProp prop, Object sourceId, Object targetId, Connection con, Object reason) {
         ImmutableProp mappedBy = prop.getMappedBy();
         if (mappedBy != null) {
-            fireMiddleTableDeleteImpl(mappedBy, targetId, sourceId, reason);
+            fireMiddleTableDeleteImpl(mappedBy, targetId, sourceId, con, reason);
         } else {
-            fireMiddleTableDeleteImpl(prop, sourceId, targetId, reason);
+            fireMiddleTableDeleteImpl(prop, sourceId, targetId, con, reason);
         }
     }
 
-    private void fireMiddleTableDeleteImpl(ImmutableProp prop, Object sourceId, Object targetId, Object reason) {
+    private void fireMiddleTableDeleteImpl(ImmutableProp prop, Object sourceId, Object targetId, Connection con, Object reason) {
         ImmutableProp inverseProp = RedirectedProp.source(prop.getOpposite(), prop.getTargetType());
         List<AssociationListener> listeners = associationListenerMultiMap.get(prop);
         List<AssociationListener> inverseListeners = associationListenerMultiMap.get(inverseProp);
         Throwable throwable = null;
         if (listeners != null && !listeners.isEmpty()) {
-            AssociationEvent e = new AssociationEvent(prop, sourceId, targetId, null, reason);
+            AssociationEvent e = new AssociationEvent(prop, sourceId, targetId, null, con, reason);
             for (AssociationListener listener : listeners) {
                 try {
                     listener.onChange(e);
@@ -214,7 +217,7 @@ public class TriggersImpl implements Triggers {
             }
         }
         if (inverseListeners != null && !inverseListeners.isEmpty()) {
-            AssociationEvent e = new AssociationEvent(inverseProp, targetId, sourceId, null, reason);
+            AssociationEvent e = new AssociationEvent(inverseProp, targetId, sourceId, null, con, reason);
             for (AssociationListener inverseListener : inverseListeners) {
                 try {
                     inverseListener.onChange(e);
@@ -234,22 +237,22 @@ public class TriggersImpl implements Triggers {
     }
 
     @Override
-    public void fireMiddleTableInsert(ImmutableProp prop, Object sourceId, Object targetId, Object reason) {
+    public void fireMiddleTableInsert(ImmutableProp prop, Object sourceId, Object targetId, Connection con, Object reason) {
         ImmutableProp mappedBy = prop.getMappedBy();
         if (mappedBy != null) {
-            fireMiddleTableInsertImpl(mappedBy, targetId, sourceId, reason);
+            fireMiddleTableInsertImpl(mappedBy, targetId, sourceId, con, reason);
         } else {
-            fireMiddleTableInsertImpl(prop, sourceId, targetId, reason);
+            fireMiddleTableInsertImpl(prop, sourceId, targetId, con, reason);
         }
     }
 
-    private void fireMiddleTableInsertImpl(ImmutableProp prop, Object sourceId, Object targetId, Object reason) {
+    private void fireMiddleTableInsertImpl(ImmutableProp prop, Object sourceId, Object targetId, Connection con, Object reason) {
         ImmutableProp inverseProp = RedirectedProp.source(prop.getOpposite(), prop.getTargetType());
         List<AssociationListener> listeners = associationListenerMultiMap.get(prop);
         List<AssociationListener> inverseListeners = associationListenerMultiMap.get(inverseProp);
         Throwable throwable = null;
         if (listeners != null && !listeners.isEmpty()) {
-            AssociationEvent e = new AssociationEvent(prop, sourceId, null, targetId, reason);
+            AssociationEvent e = new AssociationEvent(prop, sourceId, null, targetId, con, reason);
             for (AssociationListener listener : listeners) {
                 try {
                     listener.onChange(e);
@@ -261,7 +264,7 @@ public class TriggersImpl implements Triggers {
             }
         }
         if (inverseListeners != null && !inverseListeners.isEmpty()) {
-            AssociationEvent e = new AssociationEvent(inverseProp, targetId, null, sourceId, reason);
+            AssociationEvent e = new AssociationEvent(inverseProp, targetId, null, sourceId, con, reason);
             for (AssociationListener inverseListener : inverseListeners) {
                 try {
                     inverseListener.onChange(e);
@@ -285,7 +288,7 @@ public class TriggersImpl implements Triggers {
         List<AssociationListener> listeners = associationListenerMultiMap.get(prop);
         Throwable throwable = null;
         if (listeners != null && !listeners.isEmpty()) {
-            AssociationEvent e = new AssociationEvent(prop, sourceId, reason);
+            AssociationEvent e = new AssociationEvent(prop, sourceId, null, reason);
             for (AssociationListener listener : listeners) {
                 try {
                     listener.onChange(e);

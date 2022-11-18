@@ -11,3 +11,4 @@ title: 查询
 - [查询中间表](./association)
 - [外部缓存](./cache)
 - [计算属性及其缓存](./calculated-prop.mdx)
+- [全局过滤器](./filter)

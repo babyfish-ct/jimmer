@@ -102,7 +102,7 @@ public class Deleter {
         if (!submit || trigger == null) {
             return new DeleteResult(affectedRowCountMap);
         }
-        trigger.submit(data.getSqlClient());
+        trigger.submit(data.getSqlClient(), con);
         return new DeleteResult(affectedRowCountMap);
     }
 

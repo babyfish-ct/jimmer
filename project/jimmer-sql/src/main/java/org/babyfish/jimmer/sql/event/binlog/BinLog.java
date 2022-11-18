@@ -51,6 +51,7 @@ public class BinLog {
                         associationType.getBaseProp(),
                         idPair.get_1(),
                         idPair.get_2(),
+                        null,
                         reason
                 );
             } else {
@@ -60,6 +61,7 @@ public class BinLog {
                         associationType.getBaseProp(),
                         idPair.get_1(),
                         idPair.get_2(),
+                        null,
                         reason
                 );
             }
@@ -67,6 +69,7 @@ public class BinLog {
             triggers.fireEntityTableChange(
                     binLogParser.parseEntity(type, oldData),
                     binLogParser.parseEntity(type, newData),
+                    null,
                     reason
             );
         }

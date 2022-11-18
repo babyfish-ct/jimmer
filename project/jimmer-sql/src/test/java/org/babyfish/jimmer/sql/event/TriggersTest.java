@@ -68,7 +68,8 @@ public class TriggersTest {
                             .setId(graphQLInActionId3)
                             .setName("GraphQL in Action")
                             .setStore((BookStore) null);
-                })
+                }),
+                null
         );
         TestUtils.expect(
                 "[" +
@@ -99,7 +100,8 @@ public class TriggersTest {
                             .setId(graphQLInActionId3)
                             .setName("GraphQL in Action")
                             .setStore(store -> store.setId(manningId));
-                })
+                }),
+                null
         );
         TestUtils.expect(
                 "[" +
@@ -152,6 +154,7 @@ public class TriggersTest {
                             .setName("GraphQL in Action")
                             .setStore(store -> store.setId(manningId));
                 }),
+                null,
                 null
         );
         TestUtils.expect(
@@ -210,7 +213,8 @@ public class TriggersTest {
                             .setId(graphQLInActionId3)
                             .setName("GraphQL in Action3")
                             .setStore(store -> store.setId(oreillyId));
-                })
+                }),
+                null
         );
         TestUtils.expect(
                 "[" +
@@ -270,7 +274,8 @@ public class TriggersTest {
         triggers.fireMiddleTableDelete(
                 BookProps.AUTHORS.unwrap(),
                 graphQLInActionId3,
-                danId
+                danId,
+                null
         );
         TestUtils.expect("[]", bookEvents);
         TestUtils.expect("[]", bookStoreEvents);
@@ -306,7 +311,8 @@ public class TriggersTest {
         triggers.fireMiddleTableInsert(
                 BookProps.AUTHORS.unwrap(),
                 graphQLInActionId3,
-                danId
+                danId,
+                null
         );
         TestUtils.expect("[]", bookEvents);
         TestUtils.expect("[]", bookStoreEvents);
@@ -342,7 +348,8 @@ public class TriggersTest {
         triggers.fireMiddleTableDelete(
                 AuthorProps.BOOKS.unwrap(),
                 danId,
-                graphQLInActionId3
+                graphQLInActionId3,
+                null
         );
         TestUtils.expect("[]", bookEvents);
         TestUtils.expect("[]", bookStoreEvents);
@@ -378,7 +385,8 @@ public class TriggersTest {
         triggers.fireMiddleTableInsert(
                 AuthorProps.BOOKS.unwrap(),
                 danId,
-                graphQLInActionId3
+                graphQLInActionId3,
+                null
         );
         TestUtils.expect("[]", bookEvents);
         TestUtils.expect("[]", bookStoreEvents);
