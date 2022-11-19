@@ -304,7 +304,7 @@ Where `sqlClient.getTriggers()` or `sqClient.triggers` is used to register the p
 -   If the TriggerType of sqlClient is `BOTH`, processing logic will be registered to the binlog trigger object.
     :::caution
     Note that at this time, SqlClient has both binlog trigger object and transaction trigger object, which are two different trigger objects, independent of each other.
-    
+
     If the trigger object that raised the event and the trigger object that registered the processing logic are not the same object, the processing logic will not be executed.
     :::
 
@@ -339,7 +339,7 @@ BookTable book = BookTable.$;
 sqlClient
         .createUpdate(book)
         .set(book.store().id(), 2L)
-        .where(book.$.id().eq(7L))
+        .where(book.id().eq(7L))
         .execute();
 ```
 
