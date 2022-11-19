@@ -2,10 +2,8 @@ package org.babyfish.jimmer.example.kt.sql.controller
 
 import org.babyfish.jimmer.example.kt.sql.model.*
 import org.babyfish.jimmer.kt.new
-import org.babyfish.jimmer.sql.ast.query.Example
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.expression.*
-import org.babyfish.jimmer.sql.kt.ast.query.KExample
 import org.babyfish.jimmer.sql.kt.ast.query.example
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.springframework.transaction.annotation.Transactional
