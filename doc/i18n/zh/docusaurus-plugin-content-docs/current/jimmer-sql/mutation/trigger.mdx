@@ -122,11 +122,79 @@ var sqlClient = newKSqlClient {
     - `sqlClient.getTriggers()`和`sqlClient.getTriggers(false)`返回BinLog触发器对象
     - `sqlClient.getTriggers(true)`返回Transaction触发器对象
 
-    :::caution
-    注意，此时SqlClient同时具备BinLog触发器和Transaction触发器，它们是两个不同的触发器对象，彼此独立。
+这里，用一张表格来对比三种情况
 
-    如果引发事件的触发器对象和注册处理逻辑的触发器对象不是同一个对象，那么处理逻辑将不会被执行。
-    :::
+<table>
+    <thead>
+        <tr>
+            <th></th>
+            <th>getTriggers(false)</th>
+            <th>getTriggers(true)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>BINLOG_ONLY</td>
+            <td>BinLog Triggers专用对象</td>
+            <td><span style={{color:'red'}}>抛出异常</span></td>
+        </tr>
+        <tr>
+            <td>TRANSACTION_ONLY</td>
+            <td colspan="2"><center><b>共享的</b>Triggers对象</center></td>
+        </tr>
+        <tr>
+            <td>BOTH</td>
+            <td>BinLog Triggers专用对象</td>
+            <td>Transaction Triggers专用对象</td>
+        </tr>
+    </tbody>
+</table>
+
+-   **Q**: 为什么默认`BINLOG_ONLY`模式?
+
+    **A**: Transaction触发器会在所有保存行为中植入额外的查询用于模拟触发器，对性能有影响，默认不支持。
+
+-   **Q**: 为什么`TRANSACTION_ONLY`模式下，两种触发器API共享同一个对象?
+
+    **A**: Jimmer内置的缓存一致性策略，一定使用`sqlClient.getTriggers(false)`，开发人员无法改变。
+
+    这样做的目的是，让缓存一致性维护工作不影响修改事务，在事务提交后才开始执行。因此，原始事务不会被拉长，从而快速结束释放锁资源。
+
+    但是，并非所有数据库产品都支持binlog。这时，`getTriggers(false)`返回Transaction触发器对象，冒充BinLog触发器对象，接手原本应该由BinLog触发器负责的缓存一致性维护工作。
+
+    也就是说，`TRANSACTION_ONLY`是为不支持binlog的数据库设计的，**这是采用该模式的唯一理由**。
+
+-   **Q**: `BOTH`模式下，存在两个不同的触发器API对象，是不是表示任何修改都有两次响应机会？
+
+    **A**: 是的，而且这是一个重要的功能。
+
+    和Jimmer内置的缓存一致性机制必须由`sqlClient.getTriggers(false)`驱动不同；用户的业务代码没有这个限制，开发人员可以自由决定某个处理逻辑究竟注册到`sqlClient.getTriggers(false)`还是`sqlClient.getTriggers(true)`，甚至同时向二者注册。
+
+    - 如果开发人员的处理逻辑包含一些数据联动修改，必须和参与当前事务的原子性作用域，应该选择将处理逻辑注册到`sqlClient.getTriggers(true)`
+
+    - 如果开发人员的处理逻辑没必要参与当前事务，应该选择将处理逻辑注册到`sqlClient.getTriggers(false)`，让当前事务尽快结束，尽快释放锁资源
+
+    - 如果开发人员的处理逻辑同时包含以上两种情况，应该将处理逻辑一分为二，然后分别注册到两种触发器上。
+
+-   **Q**: 对于不支持binlog的数据库而言，其缓存一致性清理是不是无法在事务提交后做？
+
+    **A**: 并非如此，如果开发人员愿意优化，可以做到。
+
+    诚然，这种数据库无法支持BinLog触发器，采用Transaction触发器在事务生命周期内得到数据变更通知是唯一可行的方法。
+
+    然而，不并是收到通知后，必须马上执行缓存清理工作，因为redis这种远程缓存的清理行为有网络通信成本，也有通讯失败的可能，这样做会导致本地事务被拖长甚至失败。
+
+    Jimmer的缓存系统支持自定义CacheOperator，通过自定义CacheOperator，用户可以覆盖缓存系统的删除行为，将缓存删除任务记到ThreadLocal中但不马上执行，等事务提交后再真正执行。
+
+    - 不需要可靠性的做法
+        1. 自定义CacheOperator用ThreadLocal记录要删除的缓存条目，并不马上执行。
+        2. 在Spring的`After commit`事件中，集中清理缓存。
+
+    - 需要可靠性的做法
+        1. 自定义CacheOperator用ThreadLocal记录要删除的缓存条目，并不马上执行。
+        2. 在Spring的`Before Commit`事件中，将零散的记录整合。一次性插入本地事件表。
+        3. 在Spring的`After Commit`事件中，从本地事件表中取数据，清理缓存，如果成功，删除本地事件表的数据。
+        4. 用一个轮询服务，为第3步的失败兜底。
 
 ## 启用BinLog触发器
 
@@ -232,12 +300,7 @@ class MaxwellListener(sqlClient: KSqlClient) {
 
 ## 使用示范
 
-### 准备工作
-
-:::caution
-- 如果要使用BinLog触发器，必须开启数据库的binlog功能并使用上一节的代码完成对消息队列的监听。
-- 如果要使用Transaction触发器，无连续任何额外的准备工作。
-:::
+如果使用BinLog触发器，请先按上文所述，启用BinLog触发器。
 
 ### 注册处理逻辑
 
@@ -273,18 +336,18 @@ sqlClient.triggers.addEntityListener(Book::class) {
     println("\told: ${it.oldEntity}");
     println("\tnew: ${it.newEntity}");
 }
-sqlClient.triggers.addAssociationListener(BookProps.STORE, e -> {
+sqlClient.triggers.addAssociationListener(Book::store) {
     println("The many-to-one association `Book.store` is changed");
     println("\tbook id: ${it.sourceId}");
     println("\tdetached book store id: ${it.detachedTargetId}");
     println("\tattached book store id: ${it.attachedTargetId}");
-});
-sqlClient.triggers.addAssociationListener(BookStoreProps.BOOKS, e -> {
+}
+sqlClient.triggers.addAssociationListener(BookStore::books) {
     println("The one-to-many association `BookStore.books` is changed");
     println("\tbook store id: ${it.sourceId}");
     println("\tdetached book id: ${it.detachedTargetId}");
     println("\tattached book id: ${it.attachedTargetId}");
-});
+}
 ```
 
 </TabItem>
@@ -292,27 +355,11 @@ sqlClient.triggers.addAssociationListener(BookStoreProps.BOOKS, e -> {
 
 其中`sqlClient.getTriggers()`或`sqClient.triggers`用于将处理逻辑注册到默认的触发器上。
 
--   如果sqlClient的TriggerType为`BINLOG_ONLY`，则注册到BinLog触发器上。
--   如果sqlClient的TriggerType为`TRANSACTION_ONLY`，则注册到Transaction触发器上。
--   如果sqlClient的TriggerType为`BOTH`，则注册到BinLog触发器上。
-    :::caution
-    注意，此时SqlClient同时具备BinLog触发器和Transaction触发器，它们是两个不同的触发器对象，彼此独立。
+也可把上面代码中的`sqlClient.getTriggers()`或`sqClient.triggers`替换为**`sqlClient.getTriggers(true)`**，这样，处理逻辑就被注册到Transaction触发器上。
 
-    如果引发事件的触发器对象和注册处理逻辑的触发器对象不是同一个对象，那么处理逻辑将不会被执行。
-    :::
+### 体验触发器
 
-也可把上面代码中的`sqlClient.getTriggers()`或`sqClient.triggers`替换为`sqlClient.getTriggers(true)`，这样，处理逻辑就被注册到Transaction触发器上。
-
--   如果sqlClient的TriggerType为`BINLOG_ONLY`，`sqlClient.getTriggers(true)`会抛出异常。
--   如果sqlClient的TriggerType为`TRANSACTION_ONLY`，则注册到Transaction触发器上。
--   如果sqlClient的TriggerType为`BOTH`，则注册到Transaction触发器上。
-    :::caution
-    注意，此时SqlClient同时具备BinLog触发器和Transaction触发器，它们是两个不同的触发器对象，彼此独立。
-
-    如果引发事件的触发器对象和注册处理逻辑的触发器对象不是同一个对象，那么处理逻辑将不会被执行。
-    :::
-
-### 触发事件
+现在，我们触发事件，体验触发器。
 
 BinLog触发器可以监听因任何原因导致的数据库变化，即便绕过应用程序用其他任何手段实现数据库修改，也可以向BinLog触发器发送事件。
 
@@ -351,7 +398,7 @@ sqlClient
 </TabItem>
 </Tabs>
 
-### 打印结果
+打印结果
 
 ```
 The object `Book` is changed
