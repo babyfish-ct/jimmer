@@ -1150,107 +1150,27 @@ fun sqlClient(
 
 框架提供一种自动保证数据库和缓存之间的一致性的方案。
 
-### 环境搭建
+### 启用触发器
 
-要使用此功能，需要进行搭建以下步骤。
+要保证一致性，必须使用[触发器](../mutation/trigger)。
 
-1. 选用支持binlog的的数据库，开启binlog功能。
-2. 安装kafka，建立一个topic。
-3. 使用某些工具，如maxwell, canal或DataBus，将binlog变化发送到上一步建立的kafka topic
+对于缓存一致性维护，推荐启用[BinLog触发器](../mutation/trigger#启用binlog触发器)
 
-你可以点击[这里](https://github.com/babyfish-ct/jimmer/blob/main/example/env-with-cache/install.sh)查看附带例子的docker安装脚本。
-
-### 保证数据一致性
-
-要保证数据一致性非常简单，只需监听kafka相关事件，并调用jimmer-sql的API即可。
-
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
-
-```java
-@Component
-public class MaxwellListener {
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-
-    private final Caches caches;
-
-    public MaxwellListener(JSqlClient sqlClient) {
-        this.caches = sqlClient.getCaches();
-    }
-
-    @KafkaListener(topics = "maxwell")
-    public void onHandle(
-            String json,
-            Acknowledgment acknowledgment
-    ) throws JsonProcessingException {
-        JsonNode node = MAPPER.readTree(json);
-        String tableName = node.get("table").asText();
-        String type = node.get("type").asText();
-        JsonNode data = node.get("data");
-        switch (type) {
-            case "insert":
-                binLog.accept(tableName, null, data);
-                break;
-            case "update":
-                binLog.accept(tableName, node.get("old"), data);
-                break;
-            case "delete":
-                binLog.accept(tableName, data, null);
-                break;
-        }
-        acknowledgment.acknowledge();
-    }
-}
-```
-
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
-
-```kotlin
-@Component
-class MaxwellListener(sqlClient: KSqlClient) {
-
-    private val caches: KCaches = sqlClient.caches
-
-    @KafkaListener(topics = ["maxwell"])
-    fun onHandle(
-        json: String,
-        acknowledgment: Acknowledgment
-    ) {
-        val node = MAPPER.readTree(json)
-        val tableName = node["table"].asText()
-        val type = node["type"].asText()
-        val data = node["data"]
-        when (type) {
-            "insert" ->
-                binLog.accept(tableName, null, data)
-            "update" ->
-                binLog.accept(tableName, node["old"], data)
-            "delete" ->
-                binLog.accept(tableName, data, null)
-        }
-        acknowledgment.acknowledge()
-    }
-
-    companion object {
-        private val MAPPER = ObjectMapper()
-    }
-}
-```
-
-</TabItem>
-</Tabs>
+:::tip
+一旦确保[触发器](../mutation/trigger)生效，可以自动拥有了缓存一致性。
+:::
 
 ### 体验数据一致性
 
-截止目前为止，我们所介绍的所有功能都是查询相关的，暂未讨论修改相关的功能。你可以通过任意的数据库工具直接执行修改数据的SQL来验证。
+截止目前为止，我们所介绍的所有功能都是查询相关的，暂未讨论修改相关的功能。
+
+为了简化讨论，假设启用的触发器是[BinLog触发器](../mutation/trigger#启用binlog触发器)。后续的讨论就可以绕过应用使用任何SQL工具修改数据库。
 
 上面的代码中，二级缓存适配器`RedisBinder`内部具有日志打印行为，可以利用此日志快速验证数据一致性。
 
 #### 1. 修改外键
 
-执行
+利用任何SQL工具执行
 ```sql
 update book set store_id = 2 where id = 4
 ```
@@ -1272,7 +1192,7 @@ delete from redis: [Book.store-4]
 
 #### 2. 修改多对多关联中间表
 
-执行
+利用任何SQL工具执行
 ```sql
 insert into book_author_mapping(
     book_id, author_id

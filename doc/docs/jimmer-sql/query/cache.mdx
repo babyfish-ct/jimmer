@@ -1168,107 +1168,25 @@ If there are cache configurations in both explicit and implicit configurations f
 
 The framework provides a solution to automatically guarantee consistency between databases and caches.
 
-### Environmental preparation
+### Enable trigger
 
-To use this feature, the following steps are required.
+To guarantee data consistency, [Trigger](../mutation/trigger) must be used. 
 
-1. Select a database that supports binlog, enable binlog.
-2. Install kafka and create a topic.
-3. Use some tools like maxwell, canal or DataBus to send binlog changes to the kafka topic created in the previous step
+For cache consistency maintenance, it is recommended to enable [BinLog trigger](../mutation/trigger#enable-binlog-trigger)
 
-You can click [here](https://github.com/babyfish-ct/jimmer/blob/main/example/env-with-cache/install.sh) to see the docker install script of the examples.
-
-### Ensure data consistency
-
-To ensure data consistency is very simple, just listen to kafka events and call the `sqlClient.binLog.accept`.
-
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
-
-```java
-@Component
-public class MaxwellListener {
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-
-    private final BinLog binLog;
-
-    public MaxwellListener(JSqlClient sqlClient) {
-        this.binLog = sqlClient.getBinLog();
-    }
-
-    @KafkaListener(topics = "maxwell")
-    public void onHandle(
-            String json,
-            Acknowledgment acknowledgment
-    ) throws JsonProcessingException {
-        JsonNode node = MAPPER.readTree(json);
-        String tableName = node.get("table").asText();
-        String type = node.get("type").asText();
-        JsonNode data = node.get("data");
-        switch (type) {
-            case "insert":
-                binLog.accept(tableName, null, data);
-                break;
-            case "update":
-                binLog.accept(tableName, node.get("old"), data);
-                break;
-            case "delete":
-                binLog.accept(tableName, data, null);
-                break;
-        }
-        acknowledgment.acknowledge();
-    }
-}
-```
-
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
-
-```kotlin
-@Component
-class MaxwellListener(sqlClient: KSqlClient) {
-
-    private val binLog: BinLog = sqlClient.binLog
-
-    @KafkaListener(topics = ["maxwell"])
-    fun onHandle(
-        json: String,
-        acknowledgment: Acknowledgment
-    ) {
-        val node = MAPPER.readTree(json)
-        val tableName = node["table"].asText()
-        val type = node["type"].asText()
-        val data = node["data"]
-        when (type) {
-            "insert" ->
-                binLog.accept(tableName, null, data)
-            "update" ->
-                binLog.accept(tableName, node["old"], data)
-            "delete" ->
-                binLog.accept(tableName, data, null)
-        }
-        acknowledgment.acknowledge()
-    }
-
-    companion object {
-        private val MAPPER = ObjectMapper()
-    }
-}
-```
-
-</TabItem>
-</Tabs>
+:::tip
+Once you make sure that [trigger](../mutation/trigger) is enabled, data consistency can be guaranteed automatically.
+:::
 
 ### Experience data consistency
 
-So far, all the functions we have introduced are query-related, and modification-related functions have not been discussed yet. You can verify by directly executing SQL that modifies the data with any database tool.
+So far, all the functions we have introduced are query-related, and modification-related functions have not been discussed yet.
 
-In the above code, the second-level cache adapter `RedisBinder` has log printing behavior internally, which can be used to quickly verify data consistency.
+To simplify the discussion, assume that the enabled trigger is [BinLog trigger](../mutation/trigger#enable-binlog-trigger). Subsequent discussions can bypass the application to directly modify the database using any SQL tool.
 
 #### 1. Modify foreign key
 
-Execute
+Use any SQL tool to execute
 ```sql
 update book set store_id = 2 where id = 4
 ```
@@ -1290,7 +1208,7 @@ This indicates
 
 #### 2. Modify many-to-many association middle table
 
-Execute
+Use any SQL tool to execute
 ```sql
 insert into book_author_mapping(
     book_id, author_id

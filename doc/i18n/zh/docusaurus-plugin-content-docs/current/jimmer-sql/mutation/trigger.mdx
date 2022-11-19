@@ -18,7 +18,7 @@ Jimmer支持触发器，用户可以监听数据库的变化。
 
 -   BinLog触发器
     
-    只是默认的触发器类型，不会影响Jimmer本身生成的SQL，具有较高性能，在事务提交后被触发，能监听任何原因导致的数据库变化，包括非Jimmer API引起的数据和变化；但需要底层数据库支持binlog。
+    这是默认的触发器类型，不会影响Jimmer本身生成的SQL，具有较高性能，在事务提交后被触发，能监听任何原因导致的数据库变化，包括非Jimmer API引起的数据和变化；但需要底层数据库支持binlog。
 
 -   Transaction触发器
 
@@ -123,14 +123,16 @@ var sqlClient = newKSqlClient {
     - `sqlClient.getTriggers(true)`返回Transaction触发器对象
 
     :::caution
-    注意：这种情况下，两种用法会得到两个不同的触发器对象。它们挂接的事件响应函数彼此独立，通知行为彼此独立。
+    注意，此时SqlClient同时具备BinLog触发器和Transaction触发器，它们是两个不同的触发器对象，彼此独立。
+
+    如果引发事件的触发器对象和注册处理逻辑的触发器对象不是同一个对象，那么处理逻辑将不会被执行。
     :::
 
 ## 启用BinLog触发器
 
-和Tranaction触发器不同，BinLog触发器需要用户第三方技术将数据库binlog变更推送到消息队列，并让应用监听消息队列。
+和Tranaction触发器不同，BinLog触发器需要采用第三方技术将数据库binlog变更推送到消息队列，并让应用监听消息队列。
 
-因此，仅仅在构建SqlClient对象时把TriggerType指定为BINLOG_ONLY(也是默认行为)是不够的，还需要进行如下操作。
+因此，仅仅在构建SqlClient对象时把TriggerType指定为`BINLOG_ONLY`(也是默认行为)是不够的。
 
 消息队列有多有选择，例如Kafka和RebbitMQ；把数据库binlog的增量推送到消息队列的第三方技术也有多种选择，例如MaxWell、Canal和DataBus。
 
@@ -142,11 +144,11 @@ Jimmer对这类选择未做任何限制。但为简化问题讨论，本文档�
 
 1. 选用支持binlog的的数据库，开启binlog功能。
 2. 安装Kafka，建立一个topic。
-3. 启用Maxwell，将binlog变化发送到上一步建立的kafka topic
+3. 启用Maxwell，将binlog变化发送到上一步建立的kafka topic。
 
 你可以点击[这里](https://github.com/babyfish-ct/jimmer/blob/main/example/env-with-cache/install.sh)查看附带例子的docker安装脚本。
 
-### 调用`sqlClient.binLog.accept`
+### 监听消息队列
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -226,11 +228,11 @@ class MaxwellListener(sqlClient: KSqlClient) {
 </TabItem>
 </Tabs>
 
+其中`sqlClient.binLog.accept`根据消息队列的BinLog事件触发相关事件，开发人员简单调用此行为即可。
+
 ## 使用示范
 
 ### 准备工作
-
-BinLog触发器和Transaction触发器的使用方式完全相同，故温度仅示范BinLog触发器的使用方式。
 
 :::caution
 - 如果要使用BinLog触发器，必须开启数据库的binlog功能并使用上一节的代码完成对消息队列的监听。
@@ -238,8 +240,6 @@ BinLog触发器和Transaction触发器的使用方式完全相同，故温度仅
 :::
 
 ### 注册处理逻辑
-
-两种触发器的事件通知完全一样，这里的示范对二者皆可用。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -297,7 +297,8 @@ sqlClient.triggers.addAssociationListener(BookStoreProps.BOOKS, e -> {
 -   如果sqlClient的TriggerType为`BOTH`，则注册到BinLog触发器上。
     :::caution
     注意，此时SqlClient同时具备BinLog触发器和Transaction触发器，它们是两个不同的触发器对象，彼此独立。
-    如果引发事件的触发器对象和注册处理逻辑的触发器对象不是同一个对象，那么处理逻辑讲不会被执行。
+
+    如果引发事件的触发器对象和注册处理逻辑的触发器对象不是同一个对象，那么处理逻辑将不会被执行。
     :::
 
 也可把上面代码中的`sqlClient.getTriggers()`或`sqClient.triggers`替换为`sqlClient.getTriggers(true)`，这样，处理逻辑就被注册到Transaction触发器上。
@@ -307,12 +308,13 @@ sqlClient.triggers.addAssociationListener(BookStoreProps.BOOKS, e -> {
 -   如果sqlClient的TriggerType为`BOTH`，则注册到Transaction触发器上。
     :::caution
     注意，此时SqlClient同时具备BinLog触发器和Transaction触发器，它们是两个不同的触发器对象，彼此独立。
-    如果引发事件的触发器对象和注册处理逻辑的触发器对象不是同一个对象，那么处理逻辑讲不会被执行。
+    
+    如果引发事件的触发器对象和注册处理逻辑的触发器对象不是同一个对象，那么处理逻辑将不会被执行。
     :::
 
 ### 触发事件
 
-BinLog触发器可以监听任何原因导致的数据库变化，即便绕过应用程序用其他任何手段实现数据库修改，也可以向BinLog触发器发送事件。
+BinLog触发器可以监听因任何原因导致的数据库变化，即便绕过应用程序用其他任何手段实现数据库修改，也可以向BinLog触发器发送事件。
 
 比如，你可以直接用SQL工具执行
 
@@ -349,7 +351,7 @@ sqlClient
 </TabItem>
 </Tabs>
 
-### 执行结果
+### 打印结果
 
 ```
 The object `Book` is changed
