@@ -129,11 +129,79 @@ Among them, `setEntityManager` is the premise of using trigger, and `setTriggerT
     - `sqlClient.getTriggers()` and `sqlClient.getTriggers(false)` return binlog trigger objects
     - `sqlClient.getTriggers(true)` returns the transaction trigger object
 
-    :::caution
-    Note that at this time, SqlClient has both binlog trigger object and transaction trigger object, which are two different trigger objects, independent of each other.
+Here, a table is used to compare the three cases
 
-    If the trigger object that fire the event and the trigger object that registered the processing logic are not the same object, the processing logic will not be executed.
-    :::
+<table>
+    <thead>
+        <tr>
+            <th></th>
+            <th>getTriggers(false)</th>
+            <th>getTriggers(true)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>BINLOG_ONLY</td>
+            <td>Binlog trigger api object</td>
+            <td><span style={{color:'red'}}>Throws exception</span></td>
+        </tr>
+        <tr>
+            <td>TRANSACTION_ONLY</td>
+            <td colspan="2"><center><b>Shared</b> trigger api object</center></td>
+        </tr>
+        <tr>
+            <td>BOTH</td>
+            <td>Binlog trigger api object</td>
+            <td>Transaction trigger api object</td>
+        </tr>
+    </tbody>
+</table>
+
+-   **Q**: Why is `BINLOG_ONLY` default mode?
+
+    **A**: Transaction triggers will implant additional SQL queries in all save behaviors to simulate triggers, which will affect performance and are not supported by default.
+
+-   **Q**: Why do two trigger APIs share the same object in `TRANSACTION_ONLY` mode?
+
+    **A**: Jimmer's built-in cache consistency mechanism uses `sqlClient.getTriggers(false)`, this behavior cannot be changed by developers.
+
+    The purpose of this is to make the cache consistency mechanism dose not affect current transaction, cache can only be cleared after the transaction is committed. Therefore, the original transaction is not stretched, thus ending quickly releasing lock resources.
+
+    However, not all database products support binlog. At this time, `getTriggers(false)` returns the transaction trigger object, pretending to be the binlog trigger object, and taking over the cache consistency maintenance work that should have been handled by the binlog trigger.
+
+    That is, `TRANSACTION_ONLY` is designed for databases that do not support binlog, **this is the only reason to choose this mode**.
+
+-   **Q**: In `BOTH` mode, there are two different trigger API objects, does it mean that any modification event has two opportunities to process?
+
+    **A**: Yes, and this is an important feature.
+
+    Unlike Jimmer's built-in cache consistency mechanism, which must be caused by `sqlClient.getTriggers(false)`; the user's business code does not have this restriction, and developers can freely decide whether a processing logic should be registered to `sqlClient.getTriggers(false)` or `sqlClient.getTriggers(true)`, or even registering with both.
+
+    - If the developer's processing logic contains some data additional modifications, it must be in the atomic scope of the current transaction, it should be registered to `sqlClient.getTriggers(true)`
+
+    - If the developer's processing logic does not need to participate in the current transaction, it should be registered to `sqlClient.getTriggers(false)`, so that the current transaction ends as soon as possible, and the lock resources are released as soon as possible
+
+    - If the developer's processing logic contains both of the above two cases, the processing logic should be divided into two parts, and then should be registered to the two triggers respectively.
+
+-   **Q**: For database that does not support binlog, is the cache consistency cleaning impossible to do after the transaction is committed?
+
+    **A**: No, if the developer is willing to optimize, it can be done.
+
+    It is true that this kind of database cannot support binlog triggers, and using transaction triggers to be receive the data change event during the transaction life cycle is the only feasible way.
+
+    However, it is not necessary to perform cache cleanup immediately after receiving the notification, because the cleanup behavior of remote caches such as redis has network communication costs and the possibility of communication failure, doing so will cause local transactions to be prolonged or even fail.
+
+    Jimmer's cache system supports custom `CacheOperator`. By customizing `CacheOperator`, users can override the cleanup behavior of the cache system, record the cache deletion task in ThreadLocal but not execute it immediately, and execute it after the transaction is committed.
+
+    -   Practices that do not require reliability
+        1. The custom `CacheOperator` uses `ThreadLocal` to record the cache keys to be deleted and does not execute it immediately.
+        2. In Spring's `After commit` event, centrally clean up the cache.
+
+    -   Practices that require reliability
+        1. The custom `CacheOperator` uses `ThreadLocal` to record the cache keys to be deleted and does not execute it immediately.
+        2. In Spring's `Before Commit` event, integrate the scattered records. A one-time insert into the local event table.
+        3. In Spring's `After Commit` event, fetch data from the local event table, clear the cache, and if successful, delete the data from the local event table.
+        4. Use a polling service to account for the failure of step 3.
 
 ## Enable BinLog trigger
 
@@ -280,18 +348,18 @@ sqlClient.triggers.addEntityListener(Book::class) {
     println("\told: ${it.oldEntity}");
     println("\tnew: ${it.newEntity}");
 }
-sqlClient.triggers.addAssociationListener(BookProps.STORE, e -> {
+sqlClient.triggers.addAssociationListener(Book::store) {
     println("The many-to-one association `Book.store` is changed");
     println("\tbook id: ${it.sourceId}");
     println("\tdetached book store id: ${it.detachedTargetId}");
     println("\tattached book store id: ${it.attachedTargetId}");
-});
-sqlClient.triggers.addAssociationListener(BookStoreProps.BOOKS, e -> {
+}
+sqlClient.triggers.addAssociationListener(BookStore::books) {
     println("The one-to-many association `BookStore.books` is changed");
     println("\tbook store id: ${it.sourceId}");
     println("\tdetached book id: ${it.detachedTargetId}");
     println("\tattached book id: ${it.attachedTargetId}");
-});
+}
 ```
 
 </TabItem>
@@ -299,27 +367,9 @@ sqlClient.triggers.addAssociationListener(BookStoreProps.BOOKS, e -> {
 
 Where `sqlClient.getTriggers()` or `sqClient.triggers` is used to register the processing logic to the default triggers.
 
--   If the TriggerType of sqlClient is `BINLOG_ONLY`, processing logic will be registered on to binlog trigger object.
--   If the TriggerType of sqlClient is `TRANSACTION_ONLY`, processing logic will be registered to the transaction trigger object.
--   If the TriggerType of sqlClient is `BOTH`, processing logic will be registered to the binlog trigger object.
-    :::caution
-    Note that at this time, SqlClient has both binlog trigger object and transaction trigger object, which are two different trigger objects, independent of each other.
-
-    If the trigger object that raised the event and the trigger object that registered the processing logic are not the same object, the processing logic will not be executed.
-    :::
-
 You can also replace `sqlClient.getTriggers()` or `sqClient.triggers` in the above code with **`sqlClient.getTriggers(true)`**, so that the processing logic is registered to the Transaction trigger.
 
--   If the TriggerType of sqlClient is `BINLOG_ONLY`, `sqlClient.getTriggers(true)` will throw an exception.
--   If the TriggerType of sqlClient is `TRANSACTION_ONLY`, processing logic will be registered on the transaction trigger object.
--   If the TriggerType of sqlClient is `BOTH`, processing logic will be registered on the transaction trigger object.
-    :::caution
-    Note that at this time, SqlClient has both binlog trigger object and transaction trigger object, which are two different trigger objects, independent of each other.
-
-    If the trigger object that trigger the event and the trigger object that registered the processing logic are not the same object, the processing logic will not be executed.
-    :::
-
-### Trigger Event
+### Experience triggers
 
 BinLog trigger object can monitor database changes for any reason, and can send events to even if the database is modified by any other means bypassing the application.
 
@@ -358,7 +408,7 @@ sqlClient
 </TabItem>
 </Tabs>
 
-### Output Result
+Output result
 
 ```
 The object `Book` is changed
