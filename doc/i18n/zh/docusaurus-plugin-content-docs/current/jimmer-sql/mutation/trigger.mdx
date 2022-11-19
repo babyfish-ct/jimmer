@@ -308,7 +308,7 @@ sqlClient.triggers.addAssociationListener(BookStoreProps.BOOKS, e -> {
 -   如果sqlClient的TriggerType为`BOTH`，则注册到Transaction触发器上。
     :::caution
     注意，此时SqlClient同时具备BinLog触发器和Transaction触发器，它们是两个不同的触发器对象，彼此独立。
-    
+
     如果引发事件的触发器对象和注册处理逻辑的触发器对象不是同一个对象，那么处理逻辑将不会被执行。
     :::
 
@@ -332,7 +332,7 @@ BookTable book = BookTable.$;
 sqlClient
         .createUpdate(book)
         .set(book.store().id(), 2L)
-        .where(book.$.id().eq(7L))
+        .where(book.id().eq(7L))
         .execute();
 ```
 
