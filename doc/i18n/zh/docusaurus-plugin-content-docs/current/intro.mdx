@@ -8,10 +8,10 @@ import TabItem from '@theme/TabItem';
 
 目的
 
-- 强大的不可变对象模型
-- 基于不可变对象模型的革命性ORM
+- 强类型、动态、不可变的对象模型
+- 革命性ORM
 
-## 第一部分：强大的只读数据模型
+## 第一部分：强类型、动态、不可变的对象模型
 
 我们将流行的JavaScript项目[immer](https://github.com/immerjs/immer)移植到Java/Kotlin。 您可以像操作可变对象一样自然而直观地操作不可变对象，您可以拥有不可变对象的所有众所周知的优点，也不必承担非必需开销。 这是不可变对象最强大的解决方案。
 
@@ -158,7 +158,7 @@ Jimmer可以帮助你
 - 直接使用代码访问时，缺失属性会导致异常；
 - Jackson 序列化过程中会自动忽略缺失属性，并且不会导致异常。
 
-## 第二部分：基于不可变数据模型的革命性的ORM
+## 第二部分：革命性ORM
 
 ORM设计需要考虑三个方面：
 
@@ -692,7 +692,348 @@ val saved = sqlClient
 
 </details>
 
-### 7. **隐式动态表连接**
+### 7. 全局过滤器
+
+开发人员可以定义全局过滤器，将具有业务普适合的性的的SQL查询条件独立出来，由Jimmer自动应用于所有查询，而非手动为每个查询添加这些查询条件。
+
+<details>
+<summary>快速预览</summary>
+
+全局过滤器的典型应用场景：软删除、多租户、基于数据行的数据授权。
+
+这里以多租户为例，简要说明。
+
+<details>
+<summary>定义全局过滤器</summary>
+如果使用Spring托管，代码方式如下：
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Component
+public class TenantFilter implements Filter<TenantAwareProps> {
+
+    protected final TenantProvider tenantProvider;
+
+    public TenantFilter(TenantProvider tenantProvider) {
+        this.tenantProvider = tenantProvider;
+    }
+
+    @Override
+    public void filter(FilterArgs<TenantAwareProps> args) {
+        String tenant = tenantProvider.get();
+        if (tenant != null) {
+            args.where(args.getTable().tenant().eq(tenant));
+        }
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Component
+class TenantFilter(
+    protected val tenantProvider: TenantProvider
+) : KFilter<TenantAware> {
+
+    override fun filter(args: KFilterArgs<TenantAware>) {
+        tenantProvider.tenant?.let {
+            args.apply {
+                where(table.tenant.eq(it))
+            }
+        }
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+这里，假设
+
+- `TenantAware`是所有需要按租户划分的实体的抽象类型*(在Jimmer中修饰这种类的注解是@MappedSupperClass而非@Entity)*。
+- `tenantProvder`是一个简单的依赖对象，它唯一的作用是从当前操作者的身份信息解析出租户名。
+
+开发人员需要为SqlClient配置全局过滤器，方可启用过滤器。这里不讨论此细节，直接看效果。
+</details>
+
+<details>
+<summary>I. 过滤聚合根对象</summary>
+
+假设`Book`实体继承了`TenantAware`，用法如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+List<Book> books = sqlClient.getEntities.findAll(Book.class);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient.entities.findAll(Book::class);
+```
+
+</TabItem>
+</Tabs>
+或
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable book = BookTable.$;
+List<Book> books = sqlClient
+    .createQuery(book)
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = SqlClient
+    .createQuery(Book::class) {
+        select(table)
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+生成的SQL如下
+
+```sql
+select 
+    tb_1_.ID, 
+    tb_1_.TENANT, 
+    tb_1_.NAME, 
+    tb_1_.EDITION, 
+    tb_1_.PRICE, 
+    tb_1_.STORE_ID 
+from BOOK as tb_1_
+/* highlight-next-line */ 
+where tb_1_.TENANT = ?
+```
+
+不难发现，这里使用了最简单的查询，没有任何查询参数。但是最终生产的SQL仍然过滤了`tb_1_.TENANT`。
+
+</details>
+
+<details>
+<summary>II. 过滤关联对象</summary>
+
+不仅可以过滤聚合根对象，关联对象也可以被过滤。
+
+假设`Book`实体继承了`TenantAware`，用法如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+List<Author> authors = sqlClient.getEntities.findAll(
+    AuthorFetcher.$
+        .allScalarFields()
+        // highlight-next-line
+        .books(
+            BookFetcher.$
+                .allScalarFields()
+        )
+);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient.entities.findAll(
+    newFetcher(Author::class).by {
+        allScalarFields()
+        // highlight-next-line
+        books {
+            allScalarFields()
+        }
+    }
+);
+```
+
+</TabItem>
+</Tabs>
+或
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+AuthorTable author = AuthorTable.$;
+List<Author> authors = sqlClient
+    .createQuery(author)
+    .select(
+        author.fetch(
+            AuthorFetcher.$
+                .allScalarFields()
+                // highlight-next-line
+                .books(
+                    BookFetcher.$
+                        .allScalarFields()
+                )
+        )
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val authors = SqlClient
+    .createQuery(Author::class) {
+        select(
+            table.fetchBy {
+                allScalarFields()
+                // highlight-next-line
+                books {
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+这会导致如下两句SQL被生成
+
+1.  查询聚合根
+    ```sql
+    select 
+        tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER 
+    from AUTHOR as tb_1_
+    ```
+
+2.  查询关联对象
+    ```sql
+    select 
+        tb_2_.AUTHOR_ID, 
+        tb_1_.ID, 
+        tb_1_.TENANT, 
+        tb_1_.NAME, 
+        tb_1_.EDITION, 
+        tb_1_.PRICE 
+    from BOOK as tb_1_ 
+    inner join BOOK_AUTHOR_MAPPING as tb_2_ 
+        on tb_1_.ID = tb_2_.BOOK_ID 
+    where 
+        tb_2_.AUTHOR_ID in (?, ?, ?, ?, ?) 
+    and 
+        /* highlight-next-line */
+        tb_1_.TENANT = ?
+    ```
+
+不难发现，这里使用了对象抓取器。虽然对象抓取器没有对关联属性`Author.books`施加任何[字段级过滤器](../query/fetcher#字段过滤器)，但`Book`类的全局过滤器仍然生效。导致，最终生产的SQL仍然过滤了租户信息。
+
+:::info
+这里通过[对象抓取器](./fetcher)演示了关联对象的过滤。事实上，Jimmer提供的[GraphQL](../../spring-graphql)功能同样可以利用全局过滤器过滤关联对象，二者效果一样，不再赘述。
+:::
+
+</details>
+</details>
+
+### 8. 触发器
+
+用户可以通过触发器监听数据库的变化。触发器不仅可以告知对象的变更，也可以告知关联的变更。
+
+<details>
+<summary>快速预览</summary>
+
+注册处理逻辑
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+sqlClient.getTriggers().addEntityListener(Book.class, e -> {
+    System.out.println("The object `Book` is changed");
+    System.out.println("\told: " + e.getOldEntity());
+    System.out.println("\tnew: " + e.getNewEntity());
+});
+sqlClient.getTriggers().addAssociationListener(BookProps.STORE, e -> {
+    System.out.println("The many-to-one association `Book.store` is changed");
+    System.out.println("\tbook id: " + e.getSourceId());
+    System.out.println("\tdetached book store id: " + e.getDetachedTargetId());
+    System.out.println("\tattached book store id: " + e.getAttachedTargetId());
+});
+sqlClient.getTriggers().addAssociationListener(BookStoreProps.BOOKS, e -> {
+    System.out.println("The one-to-many association `BookStore.books` is changed");
+    System.out.println("\tbook store id: " + e.getSourceId());
+    System.out.println("\tdetached book id: " + e.getDetachedTargetId());
+    System.out.println("\tattached book id: " + e.getAttachedTargetId());
+});
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient.triggers.addEntityListener(Book::class) {
+    println("The object `Book` is changed");
+    println("\told: ${it.oldEntity}");
+    println("\tnew: ${it.newEntity}");
+}
+sqlClient.triggers.addAssociationListener(Book::store) {
+    println("The many-to-one association `Book.store` is changed");
+    println("\tbook id: ${it.sourceId}");
+    println("\tdetached book store id: ${it.detachedTargetId}");
+    println("\tattached book store id: ${it.attachedTargetId}");
+}
+sqlClient.triggers.addAssociationListener(BookStore::books) {
+    println("The one-to-many association `BookStore.books` is changed");
+    println("\tbook store id: ${it.sourceId}");
+    println("\tdetached book id: ${it.detachedTargetId}");
+    println("\tattached book id: ${it.attachedTargetId}");
+}
+```
+
+</TabItem>
+</Tabs>
+
+用户还做需要少许额外的工作，方能让触发器生效。这里不讨论此细节，直接看效果。
+
+修改数据中`id`为7的`Book`的外键。
+
+```sql
+update BOOK set STORE_ID = 2 where ID = 7;
+```
+这里，外键被修改为2。假设修改前的旧值为1，可以得到如下输出
+
+```
+The object `Book` is changed
+    old: {"id":7,"name":"Programming TypeScript","edition":1,"price":47.50,"store":{"id":1}}
+    new: {"id":7,"name":"Programming TypeScript","edition":1,"price":47.50,"store":{"id":2}}
+The many-to-one association `Book.store` is changed
+    book id: 7
+    detached book store id: 1
+    attached book store id: 2
+The one-to-many association `BookStore.books` is changed
+    book store id: 1
+    detached book id: 7
+    attached book id: null
+The one-to-many association `BookStore.books` is changed
+    book store id: 2
+    detached book id: null
+    attached book id: 7
+```
+
+</details>
+
+### 9. **隐式动态表连接**
 
 Jimmer的表连接为非常复杂的查询而设计，具有如下特色
 
@@ -769,7 +1110,7 @@ fun findBooks(
 当以上两个条件都满足时，在最终生成的SQL中，`Book::store`的表连接只会出现一次，而非两次。
 </details>
 
-### 8. 分页
+### 10. 极其简单的分页
 
 在分页场景下，开发者只需要专注于查询实际数据，对行数的查询由框架自动生成和优化。
 
@@ -827,7 +1168,7 @@ val books = query
 </Tabs>
 </details>
 
-### 9. 非常轻量
+### 11. 非常轻量
 
 无反射，无动态字节码生成，保证对Graal友好。
 

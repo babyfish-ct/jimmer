@@ -37,6 +37,10 @@ dependencies {
     testImplementation("org.postgresql:postgresql:42.3.6")
 }
 
+tasks.withType(JavaCompile::class) {
+    options.compilerArgs.add("-parameters")
+}
+
 tasks.getByName<Test>("test") {
     useJUnitPlatform()
 }
