@@ -30,6 +30,7 @@ dependencies {
 }
 
 tasks.withType(JavaCompile::class) {
+    options.compilerArgs.add("-parameters")
     options.compilerArgs.add("-Ajimmer.source.excludes=org.babyfish.jimmer.invalid")
 }
 
