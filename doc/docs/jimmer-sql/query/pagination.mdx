@@ -30,7 +30,7 @@ ConfigurableRootQuery<Book> query = sqlClient
 
 int rowCount = query.count();
 List<Book> books = query
-    .limit(rowCount / 3, rowCount / 3)
+    .limit(/*limit*/ rowCount / 3, /*offset*/ rowCount / 3)
     .execute();
 ```
 
@@ -48,7 +48,7 @@ val query = sqlClient.createQuery(Book::class) {
 
 val rowCount = query.count()
 val books = query
-    .limit(rowCount / 3, rowCount / 3)
+    .limit(limit = rowCount / 3, offset = rowCount / 3)
     .execute()
 ```
 
@@ -321,7 +321,7 @@ What we discussed above are all count-query, paging query finally needs to execu
 ```java
 List<Book> books = query
     // highlight-next-line
-    .limit(10, 90)
+    .limit(/*limit*/ 10, /*offset*/ 90)
     .execute();
 ```
 
@@ -331,7 +331,7 @@ List<Book> books = query
 ```kotlin
 val books = query
     // highlight-next-line
-    .limit(10, 90)
+    .limit(limit = 10, offset = 90)
     .execute()
 ```
 

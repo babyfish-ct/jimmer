@@ -901,7 +901,7 @@ int rowCount = countQuery.execute().get(0).intValue();
 
 List<Book> rows = bookQuery
     // highlight-next-line
-    .limit(rowCount / 3, rowCount / 3)
+    .limit(/*limit*/ rowCount / 3, /*offset*/ rowCount / 3)
     .execute();
 ```
 
