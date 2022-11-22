@@ -1,9 +1,9 @@
 ---
 sidebar_position: 1
-title: 基础
+title: Basic
 ---
 
-## 目录
+## Table of contents
 
 - [Usage](./usage)
 - [Mapping](./mapping)
