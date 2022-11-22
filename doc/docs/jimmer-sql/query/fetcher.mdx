@@ -25,6 +25,12 @@ While the code to return the entire object in a query is simple, the default obj
 
 Object fetcher solve this problem nicely, make queries to return objects that are neither over fetched nor under fetched.
 
+As returned results with object fetchers, dynamic objects can describe arbitrarily complex data structures, and you can decide whether each business perspective can protect certain entities, relationships, or even properties.
+
+![shape](@site/static/img/shape.png)
+
+**Please use a unified entity model to express the data format required by any business, instead of defining DTOs for the data format required by each business scenario**
+
 ## Scope of this article
 
 jimmer-sql can mount an external cache, whether using a cache or not will cause the object fetch to generate very different SQL.
