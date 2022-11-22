@@ -974,7 +974,7 @@ List<Book> books = sqlClient
                 .authors(
                     AuthorFetcher.$.allScalarFields(),
                     // highlight-next-line
-                    it -> it.batch(1).limit(10, 90)
+                    it -> it.batch(1).limit(/*limit*/ 10, /*offset*/ 90)
                 )
         )
     )
@@ -995,7 +995,7 @@ val books = sqlClient
                 authors({
                     batch(1)
                     // highlight-next-line
-                    limit(90, 10)
+                    limit(limit = 90, offset = 10)
                 }) {
                     allScalarFields()
                 }

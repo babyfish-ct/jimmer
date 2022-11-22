@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-title: 教程介绍 
+title: 功能列表 
 ---
 
 import Tabs from '@theme/Tabs';
@@ -754,7 +754,7 @@ class TenantFilter(
 
 这里，假设
 
-- `TenantAware`是所有需要按租户划分的实体的抽象类型*(在Jimmer中修饰这种类的注解是@MappedSupperClass而非@Entity)*。
+- `TenantAware`是所有需要按租户划分的实体的抽象类型*(在Jimmer中修饰这种类型的注解是@MappedSupperClass而非@Entity)*。
 - `tenantProvder`是一个简单的依赖对象，它唯一的作用是从当前操作者的身份信息解析出租户名。
 
 开发人员需要为SqlClient配置全局过滤器，方可启用过滤器。这里不讨论此细节，直接看效果。
@@ -937,10 +937,10 @@ val authors = SqlClient
         tb_1_.TENANT = ?
     ```
 
-不难发现，这里使用了对象抓取器。虽然对象抓取器没有对关联属性`Author.books`施加任何[字段级过滤器](../query/fetcher#字段过滤器)，但`Book`类的全局过滤器仍然生效。导致，最终生产的SQL仍然过滤了租户信息。
+不难发现，这里使用了对象抓取器。虽然对象抓取器没有对关联属性`Author.books`施加任何[字段级过滤器](./jimmer-sql/query/fetcher#字段过滤器)，但`Book`类的全局过滤器仍然生效。导致，最终生产的SQL仍然过滤了租户信息。
 
 :::info
-这里通过[对象抓取器](./fetcher)演示了关联对象的过滤。事实上，Jimmer提供的[GraphQL](../../spring-graphql)功能同样可以利用全局过滤器过滤关联对象，二者效果一样，不再赘述。
+这里通过[对象抓取器](./jimmer-sql/query/fetcher)演示了关联对象的过滤。事实上，Jimmer提供的[GraphQL](./spring-graphql)功能同样可以利用全局过滤器过滤关联对象，二者效果一样，不再赘述。
 :::
 
 </details>
@@ -1137,7 +1137,7 @@ int rowCount = query.count();
 
 // 查询从1/3处到2/3的部分数据
 List<Book> books = query
-    .limit(rowCount / 3, rowCount / 3)
+    .limit(/*limit*/ rowCount / 3, /*offset*/ rowCount / 3)
     .execute();
 ```
 
@@ -1160,7 +1160,7 @@ val rowCount = query.count()
 
 // 查询从1/3处到2/3的部分数据
 val books = query
-    .limit(rowCount / 3, rowCount / 3)
+    .limit(limit = rowCount / 3, offset = rowCount / 3)
     .execute()
 ```
 

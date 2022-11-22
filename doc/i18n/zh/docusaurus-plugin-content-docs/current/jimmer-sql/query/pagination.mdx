@@ -33,7 +33,7 @@ int rowCount = query.count();
 
 List<Book> books = query
     // highlight-next-line
-    .limit(rowCount / 3, rowCount / 3)
+    .limit(/*limit*/ rowCount / 3, /*offset*/ rowCount / 3)
     .execute();
 ```
 
@@ -54,7 +54,7 @@ val rowCount = query.count()
 
 val books = query
     // highlight-next-line
-    .limit(limmit = rowCount / 3, offset = rowCount / 3)
+    .limit(limit = rowCount / 3, offset = rowCount / 3)
     .execute()
 ```
 
@@ -327,7 +327,7 @@ where tb_1_.PRICE between ? and ?
 ```java
 List<Book> books = query
     // highlight-next-line
-    .limit(10, 90)
+    .limit(/*limit*/ 10, /*offset*/ 90)
     .execute();
 ```
 
@@ -337,7 +337,7 @@ List<Book> books = query
 ```kotlin
 val books = query
     // highlight-next-line
-    .limit(10, 90)
+    .limit(limit = 10, offset = 90)
     .execute()
 ```
 
