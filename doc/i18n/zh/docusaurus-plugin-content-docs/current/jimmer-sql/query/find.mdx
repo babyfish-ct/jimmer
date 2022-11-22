@@ -111,7 +111,7 @@ Jimmer的`sqlClient.entities`提供如下六个方法用于按id查询对象
 |findMapByIds|对象抓取器|id集合|由id和对象组成的有序Map|一个Map，键为id，值为对象，值的格式由对象抓取器指定，此Map不会改变传入id集合的顺序；由于某些数据可能无法匹配，返回的Map的长度可能比传入的id集合长度小|
 
 :::tip
-这些按照id查询数据的API会利用[外部缓存](./cache)
+这些按照id查询数据的API会利用[外部缓存](../advanced/cache)
 :::
 
 接下来，以`findMapByIds`为例

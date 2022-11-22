@@ -511,7 +511,7 @@ val books = sqlClient
 `allTableFields()` contains all the properties declared by the entity interface, including scalar properties, and many-to-one properties based on foreign keys (of course, the parent object only has id).
 
 :::note
-**In the case where the associated object does not use [global filter](./filter)**,`allTableFields()` returns the default object format, so the following two examples are equivalent
+**In the case where the associated object does not use [global filter](../advanced/filter)**,`allTableFields()` returns the default object format, so the following two examples are equivalent
 :::
 
 1. 
@@ -588,11 +588,11 @@ The printed result is as follows (the original output is compact, formatted here
 Like the default object format, many-to-one properties based on foreign key are set to the parent object with only the id property.
 
 :::caution
-If the associated object uses [global filter](./filter), these two ways are no longer equivalent.
+If the associated object uses [global filter](../advanced/filter), these two ways are no longer equivalent.
 
-- Querying simple table objects: [global filter](./filter) will not be applied, as long as the foreign key is not null, the association property will be set to the parent object with only id.
+- Querying simple table objects: [global filter](../advanced/filter) will not be applied, as long as the foreign key is not null, the association property will be set to the parent object with only id.
 
-- `allScalarFields()`: [global filter](./filter) will be applied, even if the foreign key is not null, the parent object may be set to null because the associated object does not meet the filtering rules.
+- `allScalarFields()`: [global filter](../advanced/filter) will be applied, even if the foreign key is not null, the parent object may be set to null because the associated object does not meet the filtering rules.
 :::
 
 ### Fetch associated object with only id.
@@ -1266,9 +1266,9 @@ Filters can not only filter associated objects, but also sort associated objects
     - is non-null
     Applying a filter results in an exception
 
-2.  When a field-level filter is used, the [external cache](./cache) of the field will be ignored.
+2.  When a field-level filter is used, the [external cache](../advanced/cache) of the field will be ignored.
 
-    If you want to use association cache, you can use [cache-friendly global filter](./filter/#filters-and-caching).
+    If you want to use association cache, you can use [cache-friendly global filter](../advanced/filter/#filters-and-caching).
 
 3.  There is a common mistake in actual development (take Java as an example)
 

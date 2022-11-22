@@ -1,64 +1,62 @@
 ---
 sidebar_position: 7
-title: 外部缓存
+title: External Cache
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-默认情况下，该框架只是一个非常轻量级且功能强大的SQL生成器，没有缓存。 尽管如此，用户仍可以将为其配置外部缓存。
+Work with any external cache. By default, the framework is just a very lightweight and powerful SQL generator without caching. Still, users can attach any external cache
 
-1. 对用户的缓存技术选型不做任何假设，开发人员可以选用任何缓存技术。框架只做缓存的管理协调，不做具体缓存实现。
+1. No assumptions are made about the user's cache technology selection, developers can choose any cache technology. The framework only manages and coordinates the cache, and does not do cache implementation.
 
-2. 与其他ORM不同，不仅支持对象缓存，还支持关联缓存。二者在幕后结合起来，可与对象获取器一起使用，查询深度和广度无限的对象树，尤其是在递归查询自关联属性时极其有效。
+2. Unlike other ORMs, it supports not only object caching, but also associative caching. The two are combined behind the scenes and can be used with object fetcher to query object trees of any depth and breadth, especially when recursively querying self-associative properties.
 
-对于高性能的复杂数据结构查询而言，以下两个工作会给开发人员造成较大工作量。
+For high-performance complex data structure queries, the following two tasks will cause a large workload for developers.
 
-1. 从不同的的缓存中查询不同数据碎片，然后手动把他们合并为一个整体后做为结果返回。
+1. Query different data fragments from different caches, and then manually merge them into a whole and return it.
 
-2. 保证缓存和数据库之间的一致性。
+2. Ensure consistency between cache and database.
 
-为了把开发人员从这两个繁重的任务中解脱出来，框架的缓存机制被设计得足够强大，且对开发人员透明。
+In order to relieve the developer from these two heavy tasks, the framework's caching mechanism is designed to be powerful enough and transparent to the developer.
 
-## 基本概念
+## Basic concept
 
-### 1. 对象缓存
+### 1. Object cache
 
-此缓存把id映射为实体对象，此对象为简单对象，并不包含关联（基于外键的只有id的父对象除外）。
+This cache maps ids to entity objects, which are simple objects without associations(Except for id-only parent objects based on foreign key).
 
 ![object-cache](@site/static/img/object-cache.png)
 
-### 2. 关联属性缓存
+### 2. Association property cache
 
-此缓存用于关联属性
-- 对于一对一或多对一关联，把当前对象id映射成关联对象的id
-- 对于一对多或多对多关联，把当前对象id映射成关联对象的id集合
+This cache is used for associative properties
+- For one-to-one or many-to-one associations, map the current object id to the id of the associated object
+- For one-to-many or many-to-many associations, map the current object id to the id list of the associated objects
 
 ![association-cache](@site/static/img/association-cache.png)
 
-:::note
-注意：如果当前关联是基于外键的多对一关联，且当前对象已经明确包含了外键字段，系统不会使用该缓存。
-:::
+### 3. Calculated property cache
 
-### 3. 计算属性缓存
+This cache is used for user-defined calculated properties. 
 
-此缓存用于用户自定义的计算字段，这种缓存会在[计算属性及其缓存](./calculated-prop)一文中详细讲解，本文不予关注。
+This cache will be explained in detail in the article [Calculated property and its cache](./calculated-prop), and this article will not pay attention to it.
 
-## 那些功能会使用缓存？
+## Which functions will use the cache?
 
-1. 对象抓取器：除根查询外，其余的关联以及关联对象都会使用缓存，这对递归抓取极为有效。
-2. GraphQL查询：除根查询外，其余的关联以及关联对象都会使用缓存。
-3. `sqlClient.entities`中的`findById`、`findByIds`以及`findMapByIds`方法。
+1. Object fetcher: Except for the root query, the rest of the associations and associated objects will use the cache, which is extremely effective for recursive fetching.
+2. GraphQL query: Except for the root query, the rest of the associations and associated objects will use the cache.
+3. `findById`, `findByIds` and `findMapByIds` in `sqlClient.entities`.
 
 :::info
-是否使用缓存，将导致对象抓取器和GraphQL查询这类高级查询生成截然不同的最终SQL。但它们的最终效果是等价的。
+Using a cache or not can cause advanced queries like `object fetch` and `GraphQL` to generate very different final SQL. But their final effect is equivalent.
 :::
 
-## 创建缓存
+## Create cache
 
-在为ORM配置缓存之前，需要先创建缓存对象。
+Before configuring the cache for the ORM, the cache object needs to be created first.
 
-jimmer-sql不对用户采用何种缓存技术做任何假设，用户可以使用任何缓存技术，只需适配为Cache接口即可。
+jimmer-sql does not make any assumptions about the caching technology that users use. Users can use any caching technology, as long as it is adapted to the `Cache` interface.
 
 ```java title="Cache.java"
 package org.babyfish.jimmer.sql.cache;
@@ -86,11 +84,11 @@ public interface Cache<K, V> {
 }
 ```
 
-**事实上，用户并不需要直接实现此接口，使用`ChainCacheBuilder`创建Cache实例是更推荐的模式。**
+**In fact, users do not need to implement this interface directly, using `ChainCacheBuilder` to create cache instances is a more recommended pattern.**
 
 ### ChainCacheBuilder
 
-实际项目中，缓存往往是多级的，`ChainCacheBuilder`用于帮助用户快速构建多级缓存。
+In practical projects, caches are often multi-level, and ChainCacheBuilder is used to help users quickly build multi-level caches.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -115,20 +113,21 @@ val cache = ChainCacheBuilder<Any, Any>()
 </TabItem>
 </Tabs>
 
-在这个例子中，我们构建了两级缓存。
+In this example, we build a two-level caches.
 
-- 第一级缓存是JVM内部的内存缓存，基于caffeine实现。
-- 第二级缓存是可共享的分布式内存缓存，基于redis实现。
+- The first-level cache is a memory cache inside the JVM, implemented based on caffeine.
 
-前文提到，jimmer-sql不对用户采用何种缓存技术做任何假设，上述代码中的`CaffeineBinder`和`RedisBinder`并不是框架提供的类型，而是用户实现的类型。
+- The second level cache is a sharable distributed memory cache based on redis.
 
-用户可以随意选择自己喜欢的缓存技术，并为它们编写`Binder`适配类，这些适配类型需要实现jimmer-sql提供的接口：`LoadingBinder`或`SimpleBinder`。
+As mentioned above, jimmer-sql does not make any assumptions about the cache technology used by the user. The `CaffeineBinder` and `RedisBinder` in the above code are not the types provided by the framework, but the types implemented by user.
+
+Users can choose their favorite caching technologies at will, and write `Binder` adaptation classes for them. These adaptation types need to implement the interface provided by jimmer-sql: `LoadingBinder` or `SimpleBinder`.
 
 #### 1. LoadingBinder
 
-某些缓存技术，比如Caffeine和Guava，能够自行判断被查询数据是否已经存在，如果不存在，则自动从数据库或下一级缓存中加载。
+Some caching technologies, such as `Caffeine` and `Guava`, can determine by themselves whether the queried data already exists, and if not, automatically load it from the database or the next level cache.
 
-对于这类缓存技术，其适配类应该实现`LoadingBinder`接口。
+For this type of caching technology, its adapter class should implement the interface `LoadingBinder`.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -140,7 +139,8 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
 
     private final Duration duration;
 
-    // Caffeine不支持空值缓存，使用`Ref<V>`包装
+    // Caffeine does not support null value, 
+    // use `Ref<V>` as a wrapper
     private LoadingCache<K, Ref<V>> loadingCache;
 
     public CaffeineBinder(int maximumSize, Duration duration) {
@@ -150,10 +150,11 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
 
     @Override
     public void initialize(
-        // `chain`告诉Caffeine如何从数据库或下一级缓存加载不存在数据
+        // `chain` tells caffine how to load the non-existing 
+        // data from database or next level cache.
         CacheChain<K, V> chain
     ) {
-        // 创建caffeine缓存
+        // Create caffeine cache
         loadingCache = Caffeine
                 .newBuilder()
                 .maximumSize(maximumSize)
@@ -163,7 +164,7 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
 
                         @Override
                         public Ref<V> load(K key) {
-                            // 从数据库或下一级缓存加载数据
+                            // Load from database or next level cache
                             Map<K, V> map = chain.loadAll(Collections.singleton(key));
                             V value = map.get(key);
                             if (value != null || map.containsKey(key)) {
@@ -177,7 +178,7 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
                         public Map<? extends K, ? extends Ref<V>> loadAll(
                             Set<? extends K> keys
                         ) {
-                            // 从数据库或下一级缓存加载数据
+                            // Load from database or next level cache
                             Map<K, V> map = chain.loadAll((Collection<K>) keys);
                             return map
                                     .entrySet()
@@ -205,10 +206,9 @@ public class CaffeineBinder<K, V> implements LoadingBinder<K, V> {
 
     @Override
     public void deleteAll(@NotNull Collection<K> keys, Object reason) {
-        // 如果想用户想
-        // 1. 从所有级的子缓存中
-        // 2. 或者，从caffine子缓存中
-        // 删除某些键
+        // If user want delete keys from 
+        // 1. all sub caches in the cache chain
+        // 2. or caffeine sub cache.
         if (reason == null || reason.equals("caffeine")) {
             loadingCache.invalidateAll(keys);
         }
@@ -225,14 +225,16 @@ class CaffeineBinder<K: Any, V: Any>(
     private val duration: Duration
 ) : LoadingBinder<K, V> {
     
-    // Caffeine不支持空值缓存，使用`Ref<V>`包装
+    // Caffeine does not support null value, 
+    // use `Ref<V>` as a wrapper
     private lateinit var loadingCache: LoadingCache<K, Ref<V>>
     
     override fun initialize(
-        // `chain`告诉Caffeine如何从数据库或下一级缓存加载不存在数据
+        // `chain` tells caffine how to load the non-existing 
+        // data from database or next level cache.
         chain: CacheChain<K, V>
     ) {
-        // 创建caffeine缓存
+        // Create caffeine cache
         loadingCache = Caffeine
             .newBuilder()
             .maximumSize(maximumSize.toLong())
@@ -240,7 +242,7 @@ class CaffeineBinder<K: Any, V: Any>(
             .build(
                 object : CacheLoader<K, Ref<V>> {
                     override fun load(key: K): Ref<V>? {
-                        // 从数据库或下一级缓存加载数据
+                        // Load from database or next level cache
                         val map = chain.loadAll(setOf(key))
                         val value = map[key]
                         return if (value != null || map.containsKey(key)) {
@@ -251,7 +253,7 @@ class CaffeineBinder<K: Any, V: Any>(
                     }
 
                     override fun loadAll(keys: Set<K>): Map<out K, Ref<V>> =
-                        // 从数据库或下一级缓存加载数据
+                        // Load from database or next level cache
                         chain.loadAll((keys as Collection<K>)).mapValues {
                             Ref.of(it.value)
                         }
@@ -265,10 +267,9 @@ class CaffeineBinder<K: Any, V: Any>(
         }
 
     override fun deleteAll(keys: Collection<K>, reason: Any?) {
-        // 如果想用户想
-        // 1. 从所有级的子缓存中
-        // 2. 或者，从caffine子缓存中
-        // 删除某些键
+        // If user want delete keys from 
+        // 1. all sub caches in the cache chain
+        // 2. or caffeine sub cache.
         if (reason === null || reason == "caffeine") {
             loadingCache.invalidateAll(keys)
         }
@@ -281,9 +282,9 @@ class CaffeineBinder<K: Any, V: Any>(
 
 #### 2. SimpleBinder
 
-某些缓存技术，比如redis，只支持get/set操作，需要开发人员判断被查询数据是否已经存在，如果不存在，由开发人员从数据库或下一级缓存中加载。
+Some caching technologies, such as `Redis`, only support get/set operations, requiring developers to determine whether the queried data already exists, and if not, the developers load it from the database or the next-level cache.
 
-对于这类缓存技术，其适配类应该实现`SimpleBinder`接口。
+For this type of caching technology, the adapter class should implement the interface `SimpleBinder`.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -301,10 +302,11 @@ public class RedisBinder<K, V> implements SimpleBinder<K, V> {
 
     private final int randomPercent;
 
-    // 对缓存值, 不要使用spring-redis的RedisSerializer, 
-    // 而要使用`org.babyfish.jimmer.sql.cache.ValueSerializer`.
+    // For cached values, don't use spring-redis's RedisSerializer, 
+    // use `org.babyfish.jimmer.sql.cache.ValueSerializer`.
     // 
-    // 其内部实现有一定的复杂性，用户不能轻易实现.
+    // Its internal work has a certain complexity, 
+    // and it is not easy to be implemented by user.
     private final ValueSerializer<V> valueSerializer;
 
     public RedisBinder(
@@ -356,10 +358,10 @@ public class RedisBinder<K, V> implements SimpleBinder<K, V> {
         }
         this.operations = operations;
         if (type != null) {
-            // 类型的前缀，例如: 'Book-'
+            // Prefix for object, for example: 'Book-'
             this.keyPrefix = type.getJavaClass().getSimpleName() + '-';
         } else {
-            // 属性的前缀，例如: 'Book.authors-'
+            // Prefix for property, for example: 'Book.authors-'
             this.keyPrefix = 
                 prop.getDeclaringType().getJavaClass().getSimpleName() + 
                 '.' + 
@@ -375,7 +377,7 @@ public class RedisBinder<K, V> implements SimpleBinder<K, V> {
         }
     }
 
-    // 如果从redis读取数据
+    // How to read value from redis
     @Override
     public Map<K, V> getAll(Collection<K> keys) {
         List<byte[]> values = operations
@@ -388,7 +390,7 @@ public class RedisBinder<K, V> implements SimpleBinder<K, V> {
         return valueSerializer.deserialize(keys, values);
     }
 
-    // 如何向redis写入数据
+    // How to set value into redis
     @SuppressWarnings("unchecked")
     @Override
     public void setAll(Map<K, V> map) {
@@ -425,10 +427,9 @@ public class RedisBinder<K, V> implements SimpleBinder<K, V> {
 
     @Override
     public void deleteAll(Collection<K> keys, Object reason) {
-        // 如果想用户想
-        // 1. 从所有级的子缓存中
-        // 2. 或者，从redis子缓存中
-        // 删除某些键
+        // If user want delete keys from 
+        // 1. all sub caches in the cache chain
+        // 2. or redis sub cache.
         if (reason == null || reason.equals("redis")) {
             Collection<String> redisKeys = 
                 keys
@@ -462,10 +463,11 @@ class RedisBinder<K, V> private constructor(
 
     private val randomPercent: Int
 
-    // 对缓存值, 不要使用spring-redis的RedisSerializer, 
-    // 而要使用`org.babyfish.jimmer.sql.cache.ValueSerializer`.
+    // For cached values, don't use spring-redis's RedisSerializer, 
+    // use `org.babyfish.jimmer.sql.cache.ValueSerializer`.
     // 
-    // 其内部实现有一定的复杂性，用户不能轻易实现.
+    // Its internal work has a certain complexity, 
+    // and it is not easy to be implemented by user.
     private var valueSerializer: ValueSerializer<V>
 
     init {
@@ -477,10 +479,10 @@ class RedisBinder<K, V> private constructor(
         }
         this.operations = operations
         keyPrefix = if (type != null) {
-            // 类型的前缀，例如: 'Book-'
+            // Prefix for object, for example: 'Book-'
             "${type.javaClass.simpleName}-"
         } else {
-            // 属性的前缀，例如: 'Book.authors-'
+            // Prefix for property, for example: 'Book.authors-'
             "${prop!!.declaringType.javaClass.simpleName}.${prop.name}-"
         }
         this.duration = duration
@@ -504,7 +506,7 @@ class RedisBinder<K, V> private constructor(
         randomPercent: Int = 30
     ) : this(operations, null, prop, duration, randomPercent)
 
-    // 如果从redis读取数据
+    // How to read value from redis
     override fun getAll(keys: Collection<K>): Map<K, V> {
         val values = operations.opsForValue().multiGet(
             keys.map { "$keyPrefix$it" }
@@ -512,7 +514,7 @@ class RedisBinder<K, V> private constructor(
         return valueSerializer.deserialize(keys, values!!)
     }
 
-    // 如何向redis写入数据
+    // How to set value into redis
     @Suppress("UNCHECKED_CAST")
     override fun setAll(map: Map<K, V>) {
         val convertedMap = valueSerializer.serialize(map) { "$keyPrefix$it" }
@@ -542,10 +544,9 @@ class RedisBinder<K, V> private constructor(
     }
 
     override fun deleteAll(keys: Collection<K>, reason: Any?) {
-        // 如果想用户想
-        // 1. 从所有级的子缓存中
-        // 2. 或者，从redis子缓存中
-        // 删除某些键
+        // If user want delete keys from 
+        // 1. all sub caches in the cache chain
+        // 2. or redis sub cache.
         if (reason === null || reason == "redis") {
             val redisKeys: Collection<String> = keys.map { "$keyPrefix$it" }
             LOGGER.info("delete from redis: {}", redisKeys)
@@ -562,11 +563,11 @@ class RedisBinder<K, V> private constructor(
 </TabItem>
 </Tabs>
 
-## 配置缓存
+## Configure cache
 
-### 构建RedisTemplate
+### Build RedisTemplate
 
-在这个例子中，我们的二级缓存使用了redis，所以要先创建`RedisTemplate`
+In this example, our second level cache uses redis, so we need to create a `RedisTemplate` first
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -574,15 +575,15 @@ class RedisBinder<K, V> private constructor(
 ```java
 @Bean
 public RedisTemplate<String, byte[]> rawDataRedisTemplate(
-    // 注入spring data redis的连接池
+    // Inject connection factory of spring data redis
     RedisConnectionFactory connectionFactory
 ) {
     RedisTemplate<String, byte[]> template = new RedisTemplate<>();
     template.setConnectionFactory(connectionFactory);
     template.setKeySerializer(StringRedisSerializer.UTF_8);
 
-    // 为spring redis指定假的序列化器。因为 
-    // `org.babyfish.jimmer.sql.example.cache.ValueSerializer`接管了所有工作.
+    // Specify a dummy serializer for spring redis because 
+    // `org.babyfish.jimmer.sql.example.cache.ValueSerializer` took over the job.
     template.setValueSerializer(
             new RedisSerializer<byte[]>() {
                 @Override
@@ -605,15 +606,15 @@ public RedisTemplate<String, byte[]> rawDataRedisTemplate(
 ```kotlin
 @Bean
 fun rawDataRedisTemplate(
-    // 注入spring data redis的连接池
+    // Inject connection factory of spring data redis
     connectionFactory: RedisConnectionFactory
 ): RedisTemplate<String, ByteArray> =
     RedisTemplate<String, ByteArray>().apply {
         setConnectionFactory(connectionFactory)
         keySerializer = StringRedisSerializer.UTF_8
 
-        // 为spring redis指定假的序列化器。因为 
-        // `org.babyfish.jimmer.sql.example.cache.ValueSerializer`接管了所有工作.
+        // Specify a dummy serializer for spring redis because
+        // `org.babyfish.jimmer.sql.example.cache.ValueSerializer` took over the job.
         valueSerializer =
             object : RedisSerializer<ByteArray?> {
                 override fun serialize(t: ByteArray?): ByteArray? = t
@@ -625,11 +626,11 @@ fun rawDataRedisTemplate(
 </TabItem>
 </Tabs>
 
-有两种方法为jimmer-sql配置缓存，显式配置和隐式配置。
+There are two ways to configure cache for jimmer-sql, explicit configuration and implicit configuration.
 
-### 显式配置
+### Explicit configuration
 
-#### 1. 配置对象缓存
+#### 1. Configure object cache
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -704,7 +705,7 @@ fun sqlClient(
 </TabItem>
 </Tabs>
 
-#### 2. 配置引用关联缓存
+#### 2. Configure reference association cache
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -779,7 +780,7 @@ fun sqlClient(
 </TabItem>
 </Tabs>
 
-#### 3. 配置集合关联缓存
+#### 3. Configure list association cache
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -854,17 +855,17 @@ fun sqlClient(
 </TabItem>
 </Tabs>
 
-#### 4. 配置计算属性缓存
+#### 4. Configure calculated cache
 
-此缓存用于用户自定义的计算字段，这种缓存会在[计算属性及其缓存](./calculated-prop)一文中详细讲解，本文不予关注。
+This cache will be explained in detail in the article [Calculated property and its cache](./calculated-prop), and this article will not pay attention to it.
 
-### 隐式配置（推荐方式）
+### Implicit configuration (recommended)
 
-通过前文的描述，我们可以为任何类型指定对象缓存，也可以为任何属性指定关联缓存。
+From the previous description, we can specify an object cache for any type, and an association cache for any property.
 
-然而，实际项目中，实体类型和关联属性可能会非常多，逐个配置会显得非常冗长。隐式配置可以很好地应对这种情况。
+However, in actual projects, there may be many entity types and association properties, and configuring them one by one will be very tedious. Implicit configuration can handle this situation well.
 
-隐式配置需要借助CacheFactory接口
+Implicit configuration requires the help of the interface `CacheFactory`
 
 ```java
 public interface CacheFactory {
@@ -899,7 +900,7 @@ public interface CacheFactory {
 }
 ```
 
-使用方法如下
+The usage is as follows
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -915,7 +916,8 @@ public JSqlClient sqlClient(
             // highlight-next-line
             setCacheFactory(
                 
-                // 利用此数组，遍历所有类型、关联属性、计算属性
+                // Use this array to iterate types, 
+                // association properties, and calculated properties.
                 new Class[] {
                     BookStore.class,
                     Book.class,
@@ -923,10 +925,10 @@ public JSqlClient sqlClient(
                     TreeNode.class
                 }
 
-                // 对于每一个类型或属性，创建可选的缓存
+                // For each type and property, create optional cache.
                 return new CacheFactory() {
 
-                    // 对类型创建对象缓存，包括
+                    // Create object cache for types, including:
                     // `BookStore`
                     // `Book`
                     // `Author`
@@ -950,7 +952,8 @@ public JSqlClient sqlClient(
                                 .build();
                     }
 
-                    // 为一对一或多对一属性创建关联缓存，包括:
+                    // Create reference association cache for 
+                    // one-to-one/many-to-one properties, including:
                     // `Book.store`
                     // `TreeNode.parent`
                     @Override
@@ -972,7 +975,8 @@ public JSqlClient sqlClient(
                                 .build();
                     }
 
-                    // 为一对多或多对多属性创建关联缓存，包括:
+                    // Create list association cache for 
+                    // one-to-many/many-to-many properties, including:
                     // `BookStore.books`
                     // `Book.authors`
                     // `Author.books`
@@ -996,8 +1000,10 @@ public JSqlClient sqlClient(
                                 .build();
                     }
 
-                    // `createResolverCache` 未被覆盖，总是返回null,
-                    // 计算属性的缓存并非本文要讨论的内容.
+                    // `createResolverCache` is not overridden,
+                    // it always returns null, because
+                    // calculated property cache will not be 
+                    // discussed in this article.
                 }
             );
         })
@@ -1019,7 +1025,8 @@ fun sqlClient(
             // highlight-next-line
             setCacheFactory(
 
-                // 利用此数组，遍历所有类型、关联属性、计算属性
+                // Use this array to iterate types, 
+                // association properties, and calculated properties.
                 arrayOf(
                     BookStore.class,
                     Book.class,
@@ -1027,10 +1034,10 @@ fun sqlClient(
                     TreeNode.class
                 ),
 
-                // 对于每一个类型或属性，创建可选的缓存
+                // For each type and property, create optional cache.
                 object : CacheFactory {
 
-                    // 对类型创建对象缓存，包括
+                    // Create object cache for types, including:
                     // `BookStore`
                     // `Book`
                     // `Author`
@@ -1052,7 +1059,8 @@ fun sqlClient(
                             )
                             .build()
 
-                    // 为一对一或多对一属性创建关联缓存，包括:
+                    // Create reference association cache for 
+                    // one-to-one/many-to-one properties, including:
                     // `Book.store`
                     // `TreeNode.parent`
                     override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
@@ -1072,7 +1080,8 @@ fun sqlClient(
                             )
                             .build()
 
-                    // // 为一对多或多对多属性创建关联缓存，包括:
+                    // Create list association cache for 
+                    // one-to-many/many-to-many properties, including:
                     // `BookStore.books`
                     // `Book.authors`
                     // `Author.books`
@@ -1094,8 +1103,10 @@ fun sqlClient(
                             )
                             .build()
 
-                    // `createResolverCache` 未被覆盖，总是返回null,
-                    // 计算属性的缓存并非本文要讨论的内容.
+                    // `createResolverCache` is not overridden,
+                    // it always returns null, because
+                    // calculated property cache will not be 
+                    // discussed in this article.
                 }
             )
         }
@@ -1106,42 +1117,43 @@ fun sqlClient(
 </TabItem>
 </Tabs>
 
-### 显式配置对隐式配置的覆盖
+### Explicit configuration overrides implicit configuration
 
-虽然隐式配置可以一次性为所有类型和所有属性配置缓存，是推荐的方式，但是显式配置也有其价值。
+While implicit configuration, which configures the cache for all types and all properties at once, is the recommended way, explicit configuration also has value.
 
-如果对某一个类型或属性在显式配置和隐式配置中都存在缓存配置，则显式配置优先。
+If there are cache configurations in both explicit and implicit configurations for a type or property, the explicit configuration takes precedence.
+While implicit configuration, which configures the cache for all types and all properties at once, is the recommended way, explicit configuration also has value.
 
-## 数据一致性
+If there are cache configurations in both explicit and implicit configurations for a type or property, the explicit configuration takes precedence.
 
-框架提供一种自动保证数据库和缓存之间的一致性的方案。
+## Data consistency
 
-### 启用触发器
+The framework provides a solution to automatically guarantee consistency between databases and caches.
 
-要保证一致性，必须使用[触发器](../mutation/trigger)。
+### Enable trigger
 
-对于缓存一致性维护，推荐启用[BinLog触发器](../mutation/trigger#启用binlog触发器)
+To guarantee data consistency, [Trigger](../advanced/trigger) must be used. 
+
+For cache consistency maintenance, it is recommended to enable [BinLog trigger](../advanced/trigger#enable-binlog-trigger)
 
 :::tip
-一旦确保[触发器](../mutation/trigger)生效，可以自动拥有了缓存一致性。
+Once you make sure that [trigger](../advanced/trigger) is enabled, data consistency can be guaranteed automatically.
 :::
 
-### 体验数据一致性
+### Experience data consistency
 
-截止目前为止，我们所介绍的所有功能都是查询相关的，暂未讨论修改相关的功能。
+So far, all the functions we have introduced are query-related, and modification-related functions have not been discussed yet.
 
-为了简化讨论，假设启用的触发器是[BinLog触发器](../mutation/trigger#启用binlog触发器)。后续的讨论就可以绕过应用使用任何SQL工具修改数据库。
+To simplify the discussion, assume that the enabled trigger is [BinLog trigger](../advanced/trigger#enable-binlog-trigger). Subsequent discussions can bypass the application to directly modify the database using any SQL tool.
 
-上面的代码中，二级缓存适配器`RedisBinder`内部具有日志打印行为，可以利用此日志快速验证数据一致性。
+#### 1. Modify foreign key
 
-#### 1. 修改外键
-
-利用任何SQL工具执行
+Use any SQL tool to execute
 ```sql
 update book set store_id = 2 where id = 4
 ```
 
-假设修改之前的外键为1，日志打印结果如下：
+Assuming that the foreign key before modification is 1, the log print result is as follows:
 
 ```
 delete from redis: [Book-4]
@@ -1150,15 +1162,15 @@ delete from redis: [BookStore.books-2]
 delete from redis: [Book.store-4]
 ```
 
-这表明
-- id为4的`Book`的对象缓存被删除
-- id为1的`BookStore`的一对多关联`BookStore.books`的关联缓存被删除
-- id为2的`BookStore`的一对多关联`BookStore.books`的关联缓存被删除
-- id为4的`Book`的多对一关联`Book.store`的关联缓存被删除
+This indicates
+- Object cache for `Book` with id 4 is deleted
+- The association cache for the one-to-many association `BookStore.books` of `BookStore` with id 1 is deleted
+- The association cache for the one-to-many association `BookStore.books` of `BookStore` with id 2 is deleted
+- The association cache for the many-to-one association `Book.store` of `Book` with id 4 is deleted
 
-#### 2. 修改多对多关联中间表
+#### 2. Modify many-to-many association middle table
 
-利用任何SQL工具执行
+Use any SQL tool to execute
 ```sql
 insert into book_author_mapping(
     book_id, author_id
@@ -1167,12 +1179,12 @@ insert into book_author_mapping(
 )
 ```
 
-日志打印结果如下：
+the log print result is as follows:
 ```
 delete from redis: [Book.authors-1]
 delete from redis: [Author.books-4]
 ```
 
-这表明
-- id为1的`Book`的多对多关联`Book.authors`的关联缓存被删除
-- id为4的`Author`的多对多关联`Author.books`的关联缓存被删除
+This indicates
+- The association cache for the many-to-many association `Book.authors` of `Book` with id 1 is deleted
+- The association cache for the many-to-many association `Author.books` of `Author` with id 4 is deleted

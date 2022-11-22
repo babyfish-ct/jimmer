@@ -1,5 +1,5 @@
 ---
-sidebar_position: 8
+sidebar_position: 3
 title: 修改
 ---
 
@@ -23,4 +23,3 @@ jimmer-sql提供了两种修改方式
 - [Delete指令](./delete-command)
 - [修改中间表](./association)
 - [Draft拦截器](./interceptor)
-- [触发器](./trigger)

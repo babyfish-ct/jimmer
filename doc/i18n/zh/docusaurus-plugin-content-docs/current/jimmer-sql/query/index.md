@@ -1,5 +1,5 @@
 ---
-sidebar_position: 7
+sidebar_position: 2
 title: 查询
 ---
 
@@ -9,6 +9,3 @@ title: 查询
 - [对象抓取器](./fetcher)
 - [简单查询](./find)
 - [查询中间表](./association)
-- [外部缓存](./cache)
-- [计算属性及其缓存](./calculated-prop.mdx)
-- [全局过滤器](./filter)

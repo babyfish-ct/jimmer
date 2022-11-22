@@ -125,14 +125,14 @@ Since the `BookStore` object has a one-to-many association `BookStore.books`, if
 
 The one-to-many association `BookStore.books` is not based on the middle table, but based on the foreign key. How will jimmer-sql discard these `Book` objects?
 
-Unlike JPA, jimmer-sql does not allow direct use of `@OneToOne` and `@OneToMany` for association mapping, `@OneToOne` and `@OneToMany` must use the `mappedBy` attribute. See [@OneToMany](../mapping#onetomany) for more information.
-Unlike JPA, jimmer-sql does not allow direct use of `@OneToOne` and `@OneToMany` for association mapping, `@OneToOne` and `@OneToMany` must use the `mappedBy` attribute. See [@OneToMany](../mapping#onetomany) for more information.
+Unlike JPA, jimmer-sql does not allow direct use of `@OneToOne` and `@OneToMany` for association mapping, `@OneToOne` and `@OneToMany` must use the `mappedBy` attribute. See [@OneToMany](../basic/mapping#onetomany) for more information.
+Unlike JPA, jimmer-sql does not allow direct use of `@OneToOne` and `@OneToMany` for association mapping, `@OneToOne` and `@OneToMany` must use the `mappedBy` attribute. See [@OneToMany](../basic/mapping#onetomany) for more information.
 
 This means, through the one-to-many association `BookStore.books`, jimmer-sql can definitely find the corresponding many-to-one association `Book.store`.
 
-Next, jimmer-sql will look at the annotation [@OnDissociate](../mapping#dissociate) on the many-to-one association property `Book.store`.
+Next, jimmer-sql will look at the annotation [@OnDissociate](../basic/mapping#dissociate) on the many-to-one association property `Book.store`.
 
-1. If the foreign key of `Book.store` is configured as `SET_NULL` by the annotated [@OnDissociate](../mapping#dissociate), then execute the following SQL
+1. If the foreign key of `Book.store` is configured as `SET_NULL` by the annotated [@OnDissociate](../basic/mapping#dissociate), then execute the following SQL
 
     ```sql
     update BOOK set STORE_ID = null where STORE_ID in(?)
@@ -148,13 +148,13 @@ Next, jimmer-sql will look at the annotation [@OnDissociate](../mapping#dissocia
 
     > If the query returns no data, ignore the next steps.
 
-    - If the foreign key of `Book.store` is configured as `DELETE` by the annotated [@OnDissociate](../mapping#dissociate), Use the new delete command to delete these discarded objects, which is actually the automatic recursive execution capability of the delete command.
+    - If the foreign key of `Book.store` is configured as `DELETE` by the annotated [@OnDissociate](../basic/mapping#dissociate), Use the new delete command to delete these discarded objects, which is actually the automatic recursive execution capability of the delete command.
 
     - Otherwise, throw an exception.
 
-All of the situations discussed above require the developer to use the annotation [@OnDissociate](../mapping#dissociate) on the `Book.store` property.
+All of the situations discussed above require the developer to use the annotation [@OnDissociate](../basic/mapping#dissociate) on the `Book.store` property.
 
-However, you can also dynamically specify the `dissociateAction` configuration for the delete command insteading of using the [@OnDissociate](../mapping#dissociate) annotation.
+However, you can also dynamically specify the `dissociateAction` configuration for the delete command insteading of using the [@OnDissociate](../basic/mapping#dissociate) annotation.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -192,12 +192,12 @@ val result = sqlClient
 </TabItem>
 </Tabs>
 
-Here, calling `setDissociateAction` of delete command has the same effect as statically using the annotation [@OnDissociate](../mapping#dissociate).
+Here, calling `setDissociateAction` of delete command has the same effect as statically using the annotation [@OnDissociate](../basic/mapping#dissociate).
 
 :::info
 1. If the last parameter of the `setDissociateAction` method is `DissociateAction.SET_NULL`, the association property must be nullable, otherwise an exception will be thrown.
 
-2. If the delete rule is not only dynamically configured for the save command, but also statically configured in the entity interface through the annotation [@OnDissociate](../mapping#dissociate), the dynamic configuration takes precedence.
+2. If the delete rule is not only dynamically configured for the save command, but also statically configured in the entity interface through the annotation [@OnDissociate](../basic/mapping#dissociate), the dynamic configuration takes precedence.
 :::
 
 
