@@ -369,7 +369,7 @@ select(
 
 Readers may think that the value of queries based on middle table is to allow developers to write more performant queries.
 
-But that's not the case. Due to the existence of the two optimization features [phantom join](../table-join#phantom-join) and [half join](../table-join#half-join), application can get ideal performance whether the query is based on an middle table or not. Whether or not to use a query based on an middle table is entirely up to the user's own preferences.
+But that's not the case. Due to the existence of the two optimization features [phantom join](../basic/table-join#phantom-join) and [half join](../basic/table-join#half-join), application can get ideal performance whether the query is based on an middle table or not. Whether or not to use a query based on an middle table is entirely up to the user's own preferences.
 
 ### 1. Implement a function based on middle table subquery
 
@@ -440,7 +440,7 @@ val books = sqlClient
 
 - `association.target()` at `α` is a real table join, which will generate a JOIN clause to the `AUTHOR` table in SQL.
 
-- `association.source()` at `β` is a [phantom join](../table-join#phantom-join), JOIN clause will not be generated in SQL.
+- `association.source()` at `β` is a [phantom join](../basic/table-join#phantom-join), JOIN clause will not be generated in SQL.
 
 The generated SQL is as follows: 
 
@@ -519,7 +519,7 @@ val books = sqlClient
 
 - `createSubQuery` in java or `subQuery` in kotlin is used to create a ordinary subquery without using middle table. achieve the exact same functionality.
 
-- `author.books()` at `α` is a [half join](../table-join#half-join), so only need JOIN from `AUTHOR` table to middle table `BOOK_AUTHOR_MAPPING` is generated, without further JOIN to the `BOOK table`.
+- `author.books()` at `α` is a [half join](../basic/table-join#half-join), so only need JOIN from `AUTHOR` table to middle table `BOOK_AUTHOR_MAPPING` is generated, without further JOIN to the `BOOK table`.
 
 The generated SQL is as follows: 
 

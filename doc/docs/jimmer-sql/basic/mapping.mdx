@@ -1,14 +1,14 @@
 ---
 sidebar_position: 2
-title: 映射
+title: Mapping
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 注解
+## Annotation
 
-jimmer-sql用JPA的注解的部分子集进行实体和数据库之间的映射，到目前为止。支持的注解有
+Jimmer-sql uses these annotations
 
 - org.babyfish.jimmer.Entity
 - org.babyfish.jimmer.Table
@@ -28,21 +28,23 @@ jimmer-sql用JPA的注解的部分子集进行实体和数据库之间的映射�
 
 ## Entity
 
-`Entity`注解用于修饰不可变接口，表示一个ORM实体。
+The annotation `Entity` is used to decorate an immutable interface, representing an ORM entity.
 
 :::note
-1. 一旦使用了`@Entity`, 就隐含了该接口是不可变接口，无需再使用`@org.babyfish.jimmer.Immutable`了。
+1. Once `@Entity` is used, it is implied that the interface is immutable, no need to use `@org.babyfish.jimmer.Immutable`.
 
-2. 然而，`@Immutable`可以指定各属性可空性的默认值，这是一个很重要的功能，所以，`@Entity`和`@Immutable`可以混合使用。
+2. In java, `@Immutable` can specify the default nullability of the properties, so `@Entity` and `@Immutable` can be mixed. 
+
+3. In kotlin, you should never use both `@Entity` and `@Immutable`, because kotlin can declare the nullity of properites clearly. 
 :::
 
-## javax.persistence.Table
+## Table
 
-默认情况下，可以不使用`@Table`注解，由接口名推导表名。
+By default, the table name can be deduced from the interface name without using the `@Table` annotation.
 
-默认表名全部使用大写字母，原名称每处从小写字母切换为大写字母的地方，都会自动添加下划线。比如，接口名`BookStore`会自动推导出表名`BOOK_STORE`。
+The default table name uses all uppercase letters. Every place where the original name is switched from lowercase letter to uppercase letter will automatically add an underscore. For example, the interface name `BookStore` will automatically deduce the table name `BOOK_STORE`.
 
-如果默认表名无满足你的要求，请使用`@Tabale`指定你的表名。
+If the default table name does not meet your requirements, please use `@Tabale` to specify your table name.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -69,27 +71,17 @@ interface BookStore {
 </TabItem>
 </Tabs>
 
-## SequenceGenerator
-
-该注解在jimmer-sql中很少使用，即便使用了，也需要注意一下事项。
-
-:::caution
-1. jimmer-sql仅解析其`name`和`sequenceName`属性，而不会解析其它属性，尤其是`initialValue`和`allocationSize`。
-
-2. 如果想采用分库技术，并保证不同数据库中同一张表的id唯一性，更推荐采用雪花id。
-:::
-
 ## Transient
 
-表示某个属性不需要持久化。
+Indicates that a property does not need to be persisted.
 
 :::tip
-一旦`@Transient`注解被指定了参数，就变成了计算属性，请查看[这里](./query/calculated-prop)以了解更多。
+Once the parameter is specified for the annotation `@Transient`, it becomes **calculated property**, please view [here](../advanced/calculated-prop) to know more.
 :::
 
 ## Id
 
-声明某个属性是id属性，如下
+Declare a property as an id property, like this
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -120,29 +112,32 @@ interface Book {
 </TabItem>
 </Tabs>
 
-:::note
-Id字段必须非空
 
-- 对Java而言，不能是8种基本类型的装箱类型
-- 对kotlin而言，不能使用可空类型
+
+:::note
+Id property must be non-null
+- For java, it cannot be box type of 8 primtivie types
+- For kotlin, it cannot be nullable type.
 :::
 
-默认情况下，id列的列名就是由Java属性名推导。默认列名全部使用大写字母，原名称每处从小写字母切换为大写字母的地方，都会自动添加下划线。这里对应的数据库列名就是ID。
+By default, the column name of the id column is derived from the Java property name.
+
+By default all scalar column names use uppercase letters, and an underscore is automatically added wherever the original name is switched from lowercase letter to uppercase letter. The corresponding database column name here is ID.
 
 ## GeneratedValue
 
 ### generatorType
 
-此注解有一个名为"generatorType"的属性，当它被执行时，必须是`IdGenerator`类型。
+The annotation has an attribute named "generatorType", it must be an type of `IdGenerator` if it is specified.
 
-`IdGenerator`告诉jimmer-sql如何对没有id属性的对象进行insert，其定义如下
+`IdGenerator` tells jimmer-sql how to insert objects without an id, which is defined as follows
 
 ```java title="IdGenerator"
 package org.babyfish.jimmer.sql.meta;
 public interface IdGenerator {}
 ```
 
-除`IdentityGenerator`和`SequenceGenerrator`外，`IdGenerator`接口有一个典型的实现，UserIdGenerator。即，由用户编写代码决定id如何自动生成。
+Except `IdentityGenerator` and `SequenceGenerator`, `IdGenerator` interface has a typical implementation: `UserIdGenerator`. That means let user to write code that determines how the id is automatically generated.
 
 ```java title="UserIdGenerator.java"
 package org.babyfish.jimmer.sql.meta;
@@ -153,7 +148,7 @@ public interface UserIdGenerator extends IdGenerator {
 }
 ```
 
-特别地，当id是UUID类型，jimmer-sql提供了一个叫做`org.babyfish.jimmer.sql.meta.UUIDIdGenerator`的类，用于随机生成UUID
+In particular, when the id is of type UUID, jimmer-sql provides a class called `org.babyfish.jimmer.sql.meta.UUIDIdGenerator` for generating UUIDs randomly
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -184,7 +179,7 @@ interface Book {
 </TabItem>
 </Tabs>
 
-如果要使用雪花id，需要用户自己实现`IdGenerator`接口，使用如下
+If you want to use snowflake id, you need to implement the interface `UserIdGenerator` by yourself, like this
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -214,9 +209,40 @@ class SnowflakeIdGenerator : UserIdGenerator {
 </TabItem>
 </Tabs>
 
+Finally, you can use it like this
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Id
+    @GeneratedValue(generateType = SnowflakeIdGenerator.class)
+    long id();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @Id
+    @GeneratedValue(generateType = SnowflakeIdGenerator.class)
+    val id: Long
+}
+```
+
+</TabItem>
+</Tabs>
+
 ### 2. IDENTITY
 
-使用数据库的自动编号
+Use identity id/auto incremenet id of database
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -247,7 +273,7 @@ interface Book {
 </TabItem>
 </Tabs>
 
-或
+or
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -280,7 +306,7 @@ interface Book {
 
 ### 3. SEQUENCE
 
-使用数据库的序列。
+Use sequence of database.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -354,11 +380,11 @@ interface Book {
 </TabItem>
 </Tabs>
 
-如果`sequenceName`没有被指定, 默认值为`表名 + "_ID_SEQ"`
+If the `sequenceName` is not specified, the default value is `table name + "_ID_SEQ"`
 
 ## Version
 
-指定实体的乐观锁版本属性
+Specifies the optimistic locking version property of the entity
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -392,17 +418,17 @@ interface Book {
 </Tabs>
 
 :::note
-注意：
+Note:
 
-version字段必须为int类型，java的`java.lang.Integer`和kotlin的`Int?`是非法类型。
+The version field must be non-null int type, `java.lang.Integer` of java or `Int?` of kotlin are invalid.
 :::
 
 ## ManyToOne
 
-有两种方法可以实现多对一关联，基于外键和基于中间表。
+There are two ways to implement many-to-one associations, based on foreign key and based on middle table.
 
-### 1. 基于外键
-    
+### 1. Based on foreign key
+
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
@@ -433,13 +459,13 @@ interface Book {
 </TabItem>
 </Tabs>
 
-这里并没有配合使用`@JoinColumn`明确指定外键列名，就采用默认列名。
+Here, the foreign key column name is not explicitly specified by `@JoinColumn`, and the default column name is used.
 
-默认列名全部采用大写字母，Java属性名每处从小写字母切换为大写字母的地方，都会自动添加下划线，最后再追加后缀"_ID"。
+The default column name uses all uppercase letters, every place where the Java property name is switched from lowercase letter to uppercase letter will automatically add an underscore, and finally append the suffix "_ID".
 
-此处，多对一属性`store`，会自动推导出外键列名STORE_ID。
+Here, the many-to-one attribute `store` will automatically deduce the foreign key column name `STORE_ID`.
 
-也可以配合`@JoinColum`使用
+It can also be used with `@JoinColum` with the explicit column name.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -473,7 +499,7 @@ interface Book {
 </TabItem>
 </Tabs>
 
-### 2. 基于中间表
+### 2. Base on middle table
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -509,12 +535,13 @@ interface Book {
 </TabItem>
 </Tabs>
 
-这里，并没有为`@JoinTable`指定任何属性，默认属性如下
-- `name`: BOOK_STORE_MAPPING"。
-- `joinColumns`: BOOK_ID。
-- `inverseJoinColumns`: STORE_ID。
+Here, no annotation properties are specified for `@JoinTable`, the default properties are as follows
 
-你也可以显式地指定它们
+- `name`: BOOK_STORE_MAPPING.
+- `joinColumnName`: BOOK_ID.
+- `inverseJoinColumnName`: STORE_ID.
+
+You can also specify them explicitly
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -559,18 +586,18 @@ interface Book {
 </Tabs>
 
 :::caution
-基于中间表的多对一关联必须是可空的
+The many-to-one association based on the middle table must be nullable. 
 :::
 
 ## OneToOne
 
-有三种方法可以实现一对一关联:
+There are three ways to achieve a one-to-one association:
 
-- 主动方：基于外键
-- 主动方：基于中间表
-- 从动方
+- As master side: based on foreign key
+- As master side: based on middle table
+- As slave side
 
-### 1. 主动方：基于外键
+### 1. Base one foreign key
     
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -602,13 +629,13 @@ interface Address {
 </TabItem>
 </Tabs>
 
-这里并没有配合使用`@JoinColumn`明确指定外键列名，就采用默认列名。
+Here, the foreign key column name is not explicitly specified by `@JoinColumn`, and the default column name is used.
 
-默认列名全部采用大写字母，Java属性名每处从小写字母切换为大写字母的地方，都会自动添加下划线，最后再追加后缀"_ID"。
+The default column name uses all uppercase letters, every place where the Java property name is switched from lowercase letter to uppercase letter will automatically add an underscore, and finally append the suffix "_ID".
 
-此处，多对一属性`customer`，会自动推导出外键列名CUSTOMER_ID。
+Here, the many-to-one attribute `customer` will automatically deduce the foreign key column name `CUSTOMER_ID`.
 
-也可以配合`@JoinColum`使用
+It can also be used with `@JoinColum` with the explicit column name.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -642,7 +669,7 @@ interface Address {
 </TabItem>
 </Tabs>
 
-### 2. 基于中间表
+### 2. Based on middle table
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -678,12 +705,13 @@ interface Address {
 </TabItem>
 </Tabs>
 
-这里，并没有为`@JoinTable`指定任何属性，默认属性如下
-- `name`: ADDRESS_CUSTOMER_MAPPING"。
-- `joinColumns`: ADDRESS_ID。
-- `inverseJoinColumns`: CUSTOMER_ID。
+Here, no annotation properties are specified for `@JoinTable`, the default properties are as follows
 
-你也可以显式地指定它们
+- `name`: ADDRESS_CUSTOMER_MAPPING.
+- `joinColumnName`: ADDRESS_ID.
+- `inverseJoinColumnName`: CUSTOMER_ID.
+
+You can also specify them explicitly
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -728,10 +756,10 @@ interface Address {
 </Tabs>
 
 :::caution
-基于中间表的一对一关联必须是可空的
+The one-to-one association based on the middle table must be nullable. 
 :::
 
-### 从动方
+### As slave side
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -741,7 +769,7 @@ interface Address {
 public interface Customer {
 
     @Null
-    // `Address.customer`的镜像
+    // The mirror of `Address.customer`
     // highlight-next-line
     @OneToOne(mappedBy = "customer")
     Address address();
@@ -758,7 +786,7 @@ public interface Customer {
 interface Customer {
 
     @Null
-    // `Address.customer`的镜像
+    // The mirror of `Address.customer`
     // highlight-next-line
     @OneToOne(mappedBy = "customer")
     val address: Address?
@@ -771,12 +799,12 @@ interface Customer {
 </Tabs>
 
 :::caution
-作为从动方的一对一关联必须是可空的
+The slave side of one-to-one association must be nullable. 
 :::
 
 ## OneToMany
 
-一对多关联只能作为多对一关联镜像。也就是说，一对多关联必然意味着双向关联。
+one-to-many association must be mirror of many-to-one association. That is, a one-to-many association necessarily implies a bidirectional association.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -785,7 +813,7 @@ interface Customer {
 @Entity
 public interface BookStore {
 
-    // `Book.store`的镜像
+    // The mirror of `Book.store`
     // highlight-next-line
     @OneToMany(mappedBy = "store")
     List<Book> books();
@@ -800,7 +828,7 @@ public interface BookStore {
 @Entity
 interface BookStore {
 
-    // `Book.store`的镜像
+    // The mirror of `Book.store`
     // highlight-next-line
     @OneToMany(mappedBy = "store")
     val books: List<Book>
@@ -812,18 +840,18 @@ interface BookStore {
 </Tabs>
 
 :::caution
-集合属性总被视为非null。
+Collection properties are always treated as non-null.
 :::
 
 ## ManyToMany
 
 :::caution
-集合属性总被视为非null。
+Collection properties are always treated as non-null.
 :::
 
-多对多关联既然可以作为主动方，也可以为作为从动方。
+many-to-many associations can be used as the master side, and can also be used as the slave side.
 
-### 1. 作为主动方
+### 1. Used as master side
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -858,13 +886,13 @@ interface Book {
 </TabItem>
 </Tabs>
 
-这里，并没有为`@JoinTable`指定任何属性，默认属性如下
+Here, no annotation properties are specified for `@JoinTable`, the default properties are as follows
 
 - `name`: BOOK_AUTHOR_MAPPING
 - `joinColumnName`: BOOK_ID
 - `inverseJoinColumnName`: AUTHOR_ID
 
-你也可以显式指定
+You can also specify them explicitly
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -907,7 +935,7 @@ interface Book {
 </TabItem>
 </Tabs>
 
-### 2. 作为从动方
+### 2. Used as the slave side
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -916,6 +944,7 @@ interface Book {
 @Entity title="Author.java"
 public interface Author {
 
+    // The mirror of `Book.authors`
     @ManyToMany(mappedBy = "authors")
     List<Book> books();
 
@@ -930,6 +959,7 @@ public interface Author {
 @Entity title="Author.kt"
 public interface Author {
 
+    // The mirror of `Book.authors`
     @ManyToMany(mappedBy = "authors")
     val books: List<Book>
 
@@ -942,12 +972,12 @@ public interface Author {
 
 ## Key
 
-`@Key`和`@Id`类似，却又不同。
+`@Key` and `@Id` are similar but different.
 
-- `@Id`用于指定表的技术性主键，可用在标量属性上。
-- `@Key`用于指定表的业务性主键，可以用在标量属性或基于外键的多对一关联上。
+- `@Id` is used to specify the technical primary key of the table, can be used on scalar property.
+- `@Key` is used to specify the business primary key of the table, can be used on scalar property or many-to-one assocaition based on foreign key.
 
-比如:
+For example:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -992,24 +1022,24 @@ interface Book {
 </TabItem>
 </Tabs>
 
-- 从技术层面讲，Book具备一个主键，叫做id。
+- From a technical point of view, Book has a primary key `id`.
 
-    技术性主键，往往存储一些和无业务意义的唯一性数据，比如自动编号，序列值，UUID，雪花id。但它足够简单，可以最大程度低简化表之间的连接，优化连接性能。
+    The technical primary key often stores some unique data that does not make business sense, such as automatic numbering, serial value, UUID, and snowflake id. But it's simple enough so it can simplify table joins and optimize their performance.
 
-- 从业务层面讲，`name`和`edition`联合起来，唯一确定一本书籍。
+- From a business point of view, `name` and `edition` combine to uniquely identify a book.
 
-    业务性主键：存储和和无业务意义的唯一性数据，而且往往多列联合联用。但它相对复杂，并不直接参与表之间的连接操作。
+    Business primary key stores unique and business-meaningful data, and is often used in conjunction with multiple columns. But it is relatively complex and does not directly participate in the table joins.
 
 :::note
 
-1. 在讲解使用[Save指令](./mutation/save-command)保存数据的文档中，我们会详细讨论业务主键的重要性。
+1. In the document explaining the use of [Save command](../mutation/save-command) to save data, we discuss the importance of business primary keys in detail
 
-2. 除了像这个例子一样静态地使用`@Key`注解来指定业务主键外，也可以在代码中动态指定业务主键，请查看[Save指令](./mutation/save-command)以了解更多。
+2. In addition to statically using the `@Key` annotation to specify the business primary key like this example, you can also dynamically specify the business primary key in the code, please see [Save command](../mutation/save-command) for more information.
 :::
 
 ## OnDissociate
 
-只能用在基于外键映射的多对一关联上，比如
+It can only be used in many-to-one association based on foreign key, such as
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -1043,15 +1073,15 @@ interface Book {
 </TabItem>
 </Tabs>
 
-当
+When
 
-- 父对象被删除时
-- 或父抛弃某些子对象时（基于save command指令的对象树覆盖行为）
+- Then the parent object is deleted
+- or the parent discards some child objects (object tree overlay behavior based on save command)
 
-子对象会被脱钩。
+child objects will be dissociated.
 
-DissociateAction具有3个选项，对应数据库的外键行为：
+DissociateAction has 3 options, corresponding to the foreign key behavior of the database:
 
-- NONE: 当前外键不支持脱钩行为，阻止其父对象被删除。
-- SET_NULL: 自动清空外键。对于父对象的删除操作而言，看起来很像`on delete set null`。
-- DELETE: 自动删除子对象。对于父对象的删除操作而言，看起来很像`on delete cascade`。
+- NONE: The current foreign key does not support dissociate action, preventing whole operation by exception.
+- SET_NULL: The foreign key will be automatically cleared. For parent's delete operation, it looks like `on delete set null`.
+- DELETE: The child object will be automatically deleted. For parent's delete operatoion, it looks like `on delete cascade`.

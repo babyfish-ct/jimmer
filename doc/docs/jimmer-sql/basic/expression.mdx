@@ -629,7 +629,7 @@ where (tb_1_.NAME, tb_1_.EDITION) in (
 :::note
 In addition to being used with collections, in can also be used with subqueries.
 
-This part of the content will be introduced in detail in the related documents of [subquery](./query/sub-query), and this article will not repeat the introduction.
+This part of the content will be introduced in detail in the related documents of [subquery](../query/sub-query), and this article will not repeat the introduction.
 :::
 
 ## And, Or, Not
@@ -780,7 +780,7 @@ where(
 It is not always necessary to call the `not()` function. Many times there are shortcuts available, such as
 1. `.eq(value).not()` can be abbreviated as `.ne(value)`
 2. `.isNull().not()` can be abbreviated as `.isNotNull(value)`
-3. `.exists()` can be abbreviated as `.notExists()` *(exists will be introduced in [sub-query](./query/sub-query), but will not be introduced in this article)*
+3. `.exists()` can be abbreviated as `.notExists()` *(exists will be introduced in [sub-query](../query/sub-query), but will not be introduced in this article)*
 
 Even if the developer explicitly uses `not()`, the `not` expression does not necessarily appear in the final SQL, such as
 

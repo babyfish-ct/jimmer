@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-title: 前言
+title: 革命性
 ---
 
 import Tabs from '@theme/Tabs';
@@ -122,7 +122,7 @@ Jimmer的保存功能有点类似web领域的react和vue.
 
 左上图为数据库中现有数据结构。
 
-右上图为用户期望的数据结构。为了标识每个对象的身份以实现，每个对象要么指定[id](./jimmer-sql/mapping#id)，要么指定[业务key](./jimmer-sql/mapping#key)和[id增长策略](./jimmer-sql/mapping#generatedvalue)。
+右上图为用户期望的数据结构。为了标识每个对象的身份以实现，每个对象要么指定[id](./jimmer-sql/basic/mapping#id)，要么指定[业务key](./jimmer-sql/basic/mapping#key)和[id增长策略](./jimmer-sql/basic/mapping#generatedvalue)。
 
 图片下方为Jimmer执行的操作，用了四种颜色进行标注。
 
@@ -151,7 +151,7 @@ Jimmer的保存功能有点类似web领域的react和vue.
 :::tip
 - 和其他所有数据持久化方案不同，Jimmer无需事先决定每个关联是否级联保存，是否级联保存完全依赖用户指定的数据结构的形状。
 - 保持指令是Jimmer最有特色的一种数据库修改能力，其它常规修改方案也支持，这里不做讨论。
-- 虽然保持指令是黑盒化的高级API，但是开发人员人员可以精细拦截其中细节动作（图中具有颜色的变化部分），因为Jimmer支持强大的[触发器](./jimmer-sql/mutation/trigger)机制
+- 虽然保持指令是黑盒化的高级API，但是开发人员人员可以精细拦截其中细节动作（图中具有颜色的变化部分），因为Jimmer支持强大的[触发器](./jimmer-sql/advanced/trigger)机制
 :::
 
 ## 四、缓存任意复杂的数据结构（含一致性维护）
@@ -216,7 +216,7 @@ Jimmer实体支持非持久化(`@Transient`)属性，这种属性在数据库中
 
 ### 4. 多视角缓存
 
-Jimmer提供了[全局过滤器](jimmer-sql/query/filter)，可以在所有查询中对某些实体类进行隐式的条件过滤。
+Jimmer提供了[全局过滤器](jimmer-sql/advanced/filter)，可以在所有查询中对某些实体类进行隐式的条件过滤。
 
 该功能可以很方便地实现基于行的数据授权，会导致不同的操作者看到不同的数据。
 

@@ -56,7 +56,7 @@ Jimmer支持触发器，用户可以监听数据库的变化。
 
     因此，Transaction触发器适合在当前事务中追加更多的修改行为，不会破坏原子性。
     
-    尤其适合和[save-command](./save-command)一起使用。save-command保存任意复杂的数据结构，是一个非常黑盒化的高级API；而Transaction触发器可以为save-command附加某些的细节监听和相关冗余数据联动行为。
+    尤其适合和[save-command](../mutation/save-command)一起使用。save-command保存任意复杂的数据结构，是一个非常黑盒化的高级API；而Transaction触发器可以为save-command附加某些的细节监听和相关冗余数据联动行为。
 
 ## 设置触发器类型
 

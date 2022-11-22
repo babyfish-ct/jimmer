@@ -1,5 +1,5 @@
 ---
-sidebar_position: 8
+sidebar_position: 3
 title: Mutation
 ---
 
@@ -19,8 +19,7 @@ jimmer-sql provides two ways to modify the database
 
 - [Update statement](./update-statement)
 - [Delete statement](./delete-statement)
-- [&#128161; Save command](./save-command)
+- [Save command](./save-command)
 - [Delete command](./delete-command)
 - [Mutate middle table](./association)
 - [Draft interceptor](./interceptor)
-- [Trigger](./trigger)

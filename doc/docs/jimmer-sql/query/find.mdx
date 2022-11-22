@@ -111,7 +111,7 @@ Jimmer's `sqlClient.entities` provides the following 6 methods for querying obje
 |findMapByIds|Object Fetcher|Collection of ids|Ordered Map consisting of ids and objects|A Map with keys as ids and objects as values, the format of the value is specified by the object fetcher, this map does not change the order of the incoming id collection; since some data may not match, the length of the returned map may be smaller than the length of the incoming id collection|
 
 :::tip
-These APIs that query data by id will use [External cache](./cache)
+These APIs that query data by id will use [External cache](../advanced/cache)
 :::
 
 Next, take `findMapByIds` as an example

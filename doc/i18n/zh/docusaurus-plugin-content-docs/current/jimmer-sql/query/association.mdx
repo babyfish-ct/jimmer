@@ -349,7 +349,7 @@ select(
 
 读者可能会认为，基于中间表查询的查询存在的价值，是为了让开发人员写出性能更高的查询。
 
-但其实不是这样的。由于[幻连接](../table-join#幻连接)和[半连接](../table-join#半连接)这两个优化手段的存在，无论是否使用基于中间表的查询，都能达到很好的性能。是否选择使用基于中间表的查询，完全看用户自己喜好。
+但其实不是这样的。由于[幻连接](../basic/table-join#幻连接)和[半连接](../basic/table-join#半连接)这两个优化手段的存在，无论是否使用基于中间表的查询，都能达到很好的性能。是否选择使用基于中间表的查询，完全看用户自己喜好。
 
 ### 1. 基于中间表子查询实现一个功能
 
@@ -419,7 +419,7 @@ val books = sqlClient
 其中
 - `createAssociationSubQuery`用于创建一个基于中间表的子查询。该查询用户寻找所有包含`firstName`为"Alex"的作者的书籍。
 - `α`处`association.target()`是真正的表连接，会生成SQL JOIN连接`AUTHOR`表进行条件判断。
-- `β`处`association.source()`是由于[幻连接](../table-join#幻连接)，并不会生成SQL join。
+- `β`处`association.source()`是由于[幻连接](../basic/table-join#幻连接)，并不会生成SQL join。
 
 最终生成的SQL如下: 
 
@@ -497,7 +497,7 @@ val books = sqlClient
 </Tabs>
 
 - `createSubQuery`用于创建一个普通的子查询，不使用中间表。实现完全相同的功能。
-- `α`处`author.books()`是[半连接](../table-join#半连接)，所以仅仅生成从表`AUTHOR`到中间表`BOOK_AUTHOR_MAPPING`的SQL JOIN，而不会进一步SQL JOIN到`BOOK表`。
+- `α`处`author.books()`是[半连接](../basic/table-join#半连接)，所以仅仅生成从表`AUTHOR`到中间表`BOOK_AUTHOR_MAPPING`的SQL JOIN，而不会进一步SQL JOIN到`BOOK表`。
 
 最终生成的SQL如下: 
 
