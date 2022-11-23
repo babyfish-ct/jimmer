@@ -8,6 +8,14 @@ import TabItem from '@theme/TabItem';
 
 Draft拦截器和[Save指令](./save-command)配合使用，在对象被保存之前调整数据。
 
+## 本文讨论范围
+
+Jimmer支持[触发器](../advanced/trigger)，其中分为BinLog触发器和Transaction触发器。
+
+如果使用Transaction触发器，将会导致Jimmer修改操作生成更多更完整的查询语句以模拟触发器。
+
+本文所讨论了若干场景，对每种场景都会讨论生成的SQL，都是以未使用Transaction触发器作为前提下的。
+
 ## 定义被拦截数据格式
 
 假如大部分实体表都具备created_time、modified_time、created_by和modified_by四个字段，可以提供如下超类

@@ -6,6 +6,14 @@ title: Delete Command
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+## The scope of this article
+
+Jimmer supports [trigger](../advanced/trigger), which is divided into binlog trigger and transaction trigger.
+
+Using transaction triggers will cause jimmer's modification operations to generate more and more complete queries to simulate triggers.
+
+Several scenarios have been discussed in this article, and the generated SQL will be discussed for each scenario, all on the premise that transaction triggers are not used.
+
 ## Basic usage
 
 The delete command is a relatively simple concept.

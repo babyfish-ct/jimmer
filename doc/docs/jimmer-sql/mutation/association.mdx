@@ -14,6 +14,14 @@ It is true that the save command has many functions, including the modifying mid
 
 jimmer-sql allows developers to directly insert and delete data for middle tables in the simplest and most efficient way.
 
+## The scope of this article
+
+Jimmer supports [trigger](../advanced/trigger), which is divided into binlog trigger and transaction trigger.
+
+Using transaction triggers will cause jimmer's modification operations to generate more and more complete queries to simulate triggers.
+
+Several scenarios have been discussed in this article, and the generated SQL will be discussed for each scenario, all on the premise that transaction triggers are not used.
+
 ## Insert assciations
 
 <Tabs groupId="language">
