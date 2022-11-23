@@ -8,6 +8,14 @@ import TabItem from '@theme/TabItem';
 
 The Draft interceptor works with the [Save command](./save-command) to adjust the data before the object is saved.
 
+## The scope of this article
+
+Jimmer supports [trigger](../advanced/trigger), which is divided into binlog trigger and transaction trigger.
+
+Using transaction triggers will cause jimmer's modification operations to generate more and more complete queries to simulate triggers.
+
+Several scenarios have been discussed in this article, and the generated SQL will be discussed for each scenario, all on the premise that transaction triggers are not used.
+
 ## Define the intercepted data format
 
 If most entity tables have `created_time`, `modified_time`, `created_by` and `modified_by` fields, developer can provide the following superclass.

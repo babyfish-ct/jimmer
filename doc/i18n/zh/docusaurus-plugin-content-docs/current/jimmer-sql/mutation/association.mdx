@@ -14,6 +14,14 @@ import TabItem from '@theme/TabItem';
 
 jimmer-sql允许开发人员通过最简单也最高效的方式，直接对中间表的数据进行插入和删除。
 
+## 本文讨论范围
+
+Jimmer支持[触发器](../advanced/trigger)，其中分为BinLog触发器和Transaction触发器。
+
+如果使用Transaction触发器，将会导致Jimmer修改操作生成更多更完整的查询语句以模拟触发器。
+
+本文所讨论了若干场景，对每种场景都会讨论生成的SQL，都是以未使用Transaction触发器作为前提下的。
+
 ## 插入关联
 
 <Tabs groupId="language">
