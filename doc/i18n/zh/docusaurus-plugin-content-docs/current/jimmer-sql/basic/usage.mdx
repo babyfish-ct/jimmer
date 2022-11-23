@@ -16,8 +16,8 @@ jimmer-sql内容相对较多，后续文章会逐步讲解。本文对其部分�
 ```groovy title="build.gradle"
 depdencies {
     
-    implementation 'org.babyfish.jimmer:jimmer-sql:0.5.2'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.5.2'
+    implementation 'org.babyfish.jimmer:jimmer-sql:0.5.3'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.5.3'
 
     runtimeOnly 'com.h2database:h2:2.1.212'
 }
@@ -31,7 +31,7 @@ depdencies {
     <dependency>
         <groupId>org.babyfish.jimmer</groupId>
         <artifactId>jimmer-sql</artifactId>
-        <version>0.5.2</version>
+        <version>0.5.3</version>
     </dependency>
     <dependency>
         <groupId>com.h2database</groupId>
@@ -52,7 +52,7 @@ depdencies {
                     <path>
                         <groupId>org.babyfish.jimmer</groupId>
                         <artifactId>jimmer-apt</artifactId>
-                        <version>0.5.2</version>
+                        <version>0.5.3</version>
                     </path>
                 </annotationProcessorPaths>
             </configuration>
@@ -74,10 +74,10 @@ plugins {
 depdencies {
     
     // 第二步: 添加jimmer-sql-kotlin
-    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.5.2")
+    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.5.3")
 
     // 第三步: 应用ksp插件
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.5.2")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.5.3")
 
     runtimeOnly("com.h2database:h2:2.1.212")
 
@@ -103,7 +103,7 @@ kotlin {
     <dependency>
         <groupId>org.babyfish.jimmer</groupId>
         <artifactId>jimmer-sql-kotlin</artifactId>
-        <version>0.5.2</version>
+        <version>0.5.3</version>
     </dependency>
     <dependency>
         <groupId>com.h2database</groupId>
@@ -152,7 +152,7 @@ kotlin {
                 <dependency>
                     <groupId>org.babyfish.jimmer</groupId>
                     <artifactId>jimmer-ksp</artifactId>
-                    <version>0.5.2</version>
+                    <version>0.5.3</version>
                 </dependency>
             </dependencies>
         </plugin>
