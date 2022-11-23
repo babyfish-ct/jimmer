@@ -6,14 +6,6 @@ title: Save指令
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 本文讨论范围
-
-Jimmer支持[触发器](../advanced/trigger)，其中分为BinLog触发器和Transaction触发器。
-
-如果使用Transaction触发器，将会导致Jimmer修改操作生成更多更完整的查询语句以模拟触发器。
-
-本文所讨论了若干场景，对每种场景都会讨论生成的SQL，都是以未使用Transaction触发器作为前提下的。
-
 :::tip
 如果说GraphQL是一个强大的动态树输出手段，那么save指令就是一个动态树输入手段。
 :::
@@ -34,6 +26,14 @@ jimmer-sql使用了另外一种截然不同的方式，利用jimmer-core不可�
 以上这些情况，都可以被jimmer-core不可变对象的动态性轻松地表达。
 
 所以，jimmer-sql不需对实体类型元数据进行静态的级联保存配置，所有信息都通过被保存对象本身动态地表达。
+
+## 本文讨论范围
+
+Jimmer支持[触发器](../advanced/trigger)，其中分为BinLog触发器和Transaction触发器。
+
+如果使用Transaction触发器，将会导致Jimmer修改操作生成更多更完整的查询语句以模拟触发器。
+
+本文所讨论了若干场景，对每种场景都会讨论生成的SQL，都是以未使用Transaction触发器作为前提下的。
 
 ## 保存模式
 
