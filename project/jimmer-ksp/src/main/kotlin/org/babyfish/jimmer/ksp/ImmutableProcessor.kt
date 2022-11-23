@@ -103,13 +103,6 @@ class ImmutableProcessor(
                                 "cannot be private or protected'"
                         )
                     }
-                    val functions = classDeclaration.getDeclaredFunctions().toList()
-                    if (functions.isNotEmpty()) {
-                        throw GeneratorException(
-                            "The immutable interface '${classDeclaration.fullName}' " +
-                                "cannot have functions: $functions"
-                        )
-                    }
                     modelMap.computeIfAbsent(file) { mutableListOf() } +=
                         classDeclaration
                 }

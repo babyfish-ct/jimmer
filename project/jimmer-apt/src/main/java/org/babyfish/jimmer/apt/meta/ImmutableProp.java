@@ -157,14 +157,14 @@ public class ImmutableProp {
             );
         }
 
-        isTransient = executableElement.getAnnotation(Transient.class) != null;
-
+        Transient trans = executableElement.getAnnotation(Transient.class);
+        isTransient = trans != null;
         isAssociation = typeUtils.isImmutable(elementType);
 
         if (declaringElement.getAnnotation(Entity.class) != null &&
                 (isAssociation || isList) &&
                 !typeUtils.isEntity(elementType) &&
-                executableElement.getAnnotation(Transient.class) == null
+                trans == null
         ) {
             throw new MetaException(
                     "Illegal property \"" +

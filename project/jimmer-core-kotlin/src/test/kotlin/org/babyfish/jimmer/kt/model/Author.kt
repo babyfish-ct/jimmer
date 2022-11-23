@@ -16,6 +16,9 @@ interface Author {
     @get:Size(min = 1, max = 50)
     val lastName: String
 
+    val fullName: String
+        get() = "$firstName $lastName"
+
     val gender: Gender
 
     @get:Email
