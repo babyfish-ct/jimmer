@@ -129,6 +129,10 @@ public class OrmBenchmark {
 
     @Benchmark
     public void runJpaByHibernate() {
+        /*
+         * All frameworks open/close session/connection for each benchmark test.
+         * Use spring transaction aware connection pool to guarantee performance
+         */
         EntityManager em = hibernateEntityManagerFactory.createEntityManager();
         try {
             em.createQuery("from JpaData").getResultList();
@@ -139,6 +143,10 @@ public class OrmBenchmark {
 
     @Benchmark
     public void runJpaByEclipseLink() {
+        /*
+         * All frameworks open/close session/connection for each benchmark test.
+         * Use spring transaction aware connection pool to guarantee performance
+         */
         EntityManager em = eclipseLinkEntityManagerFactory.createEntityManager();
         try {
             em.createQuery("select data from JpaData data").getResultList();
