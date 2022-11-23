@@ -20,6 +20,10 @@ public interface Author {
     @Key
     String lastName();
 
+    default String fullName() {
+        return firstName() + lastName();
+    }
+
     Gender gender();
 
     @ManyToMany(mappedBy = "authors")

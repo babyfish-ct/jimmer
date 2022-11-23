@@ -14,7 +14,7 @@ import org.babyfish.jimmer.sql.*
 import kotlin.reflect.KClass
 
 class ImmutableProp(
-    val ctx: Context,
+    private val ctx: Context,
     val declaringType: ImmutableType,
     val id: Int,
     private val propDeclaration: KSPropertyDeclaration

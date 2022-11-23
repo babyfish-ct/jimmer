@@ -8,10 +8,7 @@ import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.MappedSuperclass;
 import org.babyfish.jimmer.sql.Version;
 
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import java.util.*;
@@ -143,14 +140,27 @@ public class ImmutableType {
 
         int propIdSequence = superType != null ? superType.getProps().size() : 0;
         Map<String, ImmutableProp> map = new LinkedHashMap<>();
-        for (ExecutableElement executableElement : ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
-            if (executableElement.getAnnotation(Id.class) != null) {
+        List<ExecutableElement> executableElements = ElementFilter.methodsIn(typeElement.getEnclosedElements());
+        for (ExecutableElement executableElement : executableElements) {
+            if (executableElement.isDefault()) {
+                for (AnnotationMirror am : executableElement.getAnnotationMirrors()) {
+                    if (((TypeElement)am.getAnnotationType().asElement()).getQualifiedName().toString().startsWith("org.babyfish.jimmer.")) {
+                        throw new MetaException(
+                                "Illegal method \"" + executableElement + "\", it " +
+                                        "is default method so that it cannot be decorated by any jimmer annotations"
+                        );
+                    }
+                }
+            }
+        }
+        for (ExecutableElement executableElement : executableElements) {
+            if (!executableElement.isDefault() && executableElement.getAnnotation(Id.class) != null) {
                 ImmutableProp prop = new ImmutableProp(typeUtils, executableElement, ++propIdSequence);
                 map.put(prop.getName(), prop);
             }
         }
-        for (ExecutableElement executableElement : ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
-            if (executableElement.getAnnotation(Id.class) == null) {
+        for (ExecutableElement executableElement : executableElements) {
+            if (!executableElement.isDefault() && executableElement.getAnnotation(Id.class) == null) {
                 ImmutableProp prop = new ImmutableProp(typeUtils, executableElement, ++propIdSequence);
                 map.put(prop.getName(), prop);
             }

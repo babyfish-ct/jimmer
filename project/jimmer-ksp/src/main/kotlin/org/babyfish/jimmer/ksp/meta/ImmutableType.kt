@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.ksp.meta
 
+import com.google.devtools.ksp.getDeclaredFunctions
 import com.google.devtools.ksp.getDeclaredProperties
+import com.google.devtools.ksp.isAbstract
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
@@ -15,7 +17,7 @@ import org.babyfish.jimmer.sql.MappedSuperclass
 
 class ImmutableType(
     ctx: Context,
-    val classDeclaration: KSClassDeclaration
+    private val classDeclaration: KSClassDeclaration
 ) {
     val fullName: String = classDeclaration.fullName
 
@@ -72,16 +74,39 @@ class ImmutableType(
     init {
         val superProps = superType?.properties
         val reorderedPropDeclarations = mutableListOf<KSPropertyDeclaration>()
+        for (function in classDeclaration.getDeclaredFunctions()) {
+            if (function.isAbstract) {
+                throw MetaException("Illegal function '${function}', only non-abstract function is acceptable")
+            }
+            for (anno in function.annotations) {
+                if (anno.fullName.startsWith("org.babyfish.jimmer.")) {
+                    throw MetaException(
+                        "Non-abstract function '${function}' cannot be decorated by any jimmer annotations"
+                    )
+                }
+            }
+        }
         for (i in 0..1) {
             classDeclaration
                 .getDeclaredProperties()
                 .forEach { propDeclaration ->
-                    val isId = propDeclaration.annotations(Id::class).isNotEmpty()
-                    superProps?.get(propDeclaration.name)?.let {
-                        throw MetaException("'${propDeclaration}' overrides '$it', this is not allowed")
-                    }
-                    if (isId == (i == 0)) {
-                        reorderedPropDeclarations += propDeclaration
+                    if (propDeclaration.isAbstract()) {
+                        val isId = propDeclaration.annotations(Id::class).isNotEmpty()
+                        superProps?.get(propDeclaration.name)?.let {
+                            throw MetaException("'${propDeclaration}' overrides '$it', this is not allowed")
+                        }
+                        if (isId == (i == 0)) {
+                            reorderedPropDeclarations += propDeclaration
+                        }
+                    } else {
+                        for (anno in propDeclaration.annotations) {
+                            if (anno.fullName.startsWith("org.babyfish.jimmer.")) {
+                                throw MetaException(
+                                    "'${propDeclaration}' is not abstract so that " +
+                                        "it cannot be decorated by any jimmer annotations"
+                                )
+                            }
+                        }
                     }
                 }
         }
