@@ -6,14 +6,6 @@ title: Save command
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## The scope of this article
-
-Jimmer supports [trigger](../advanced/trigger), which is divided into binlog trigger and transaction trigger.
-
-Using transaction triggers will cause jimmer's modification operations to generate more and more complete queries to simulate triggers.
-
-Several scenarios have been discussed in this article, and the generated SQL will be discussed for each scenario, all on the premise that transaction triggers are not used.
-
 :::tip
 If GraphQL is a powerful dynamic tree output solution, then the save command is a dynamic tree input solution.
 :::
@@ -34,6 +26,14 @@ jimmer-sql uses a completely different approach, using the dynamic nature of jim
 All of the above situations can be easily expressed by the dynamic immutable objects.
 
 Therefore, jimmer-sql does not need any static cascade saving configuration of entity type metadata, and all information is dynamically expressed through the object tree itself.
+
+## The scope of this article
+
+Jimmer supports [trigger](../advanced/trigger), which is divided into binlog trigger and transaction trigger.
+
+Using transaction triggers will cause jimmer's modification operations to generate more and more complete queries to simulate triggers.
+
+Several scenarios have been discussed in this article, and the generated SQL will be discussed for each scenario, all on the premise that transaction triggers are not used.
 
 ## Save mode
 
