@@ -3,7 +3,7 @@ plugins {
 }
 
 group 'org.babyfish.jimmer.example.core'
-version '0.5.0'
+version '0.5.2'
 
 repositories {
     mavenCentral()
@@ -11,8 +11,8 @@ repositories {
 
 dependencies {
 
-    implementation 'org.babyfish.jimmer:jimmer-core:0.5.0'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.5.0'
+    implementation 'org.babyfish.jimmer:jimmer-core:0.5.2'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.5.2'
 
     implementation 'javax.validation:validation-api:2.0.1.Final'
 }
