@@ -7,7 +7,13 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
 @Target(ElementType.METHOD)
-@Repeatable(JoinColumns.class)
-public @interface JoinColumn {
-    String name();
+@Repeatable(ColumnOverrides.class)
+public @interface ColumnOverride {
+
+    /**
+     * @return Property name chain with the separator "."
+     */
+    String prop();
+
+    String columnName();
 }

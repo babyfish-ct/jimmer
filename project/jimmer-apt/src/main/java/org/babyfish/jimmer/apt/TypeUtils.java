@@ -2,6 +2,7 @@ package org.babyfish.jimmer.apt;
 
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;
 
@@ -64,7 +65,8 @@ public class TypeUtils {
         return element != null && (
                 element.getAnnotation(Immutable.class) != null ||
                         element.getAnnotation(Entity.class) != null ||
-                        element.getAnnotation(MappedSuperclass.class) != null
+                        element.getAnnotation(MappedSuperclass.class) != null ||
+                        element.getAnnotation(Embeddable.class) != null
         );
     }
 
@@ -76,6 +78,11 @@ public class TypeUtils {
     public boolean isEntity(TypeMirror type) {
         Element element = types.asElement(type);
         return element != null && element.getAnnotation(Entity.class) != null;
+    }
+
+    public boolean isEmbeddable(TypeMirror type) {
+        Element element = types.asElement(type);
+        return element != null && element.getAnnotation(Embeddable.class) != null;
     }
 
     public boolean isCollection(TypeMirror type) {
