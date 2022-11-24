@@ -160,6 +160,15 @@ public class ImmutableProp {
         Transient trans = executableElement.getAnnotation(Transient.class);
         isTransient = trans != null;
         isAssociation = typeUtils.isImmutable(elementType);
+        if (isList && typeUtils.isEmbeddable(elementType)) {
+            throw new MetaException(
+                    "Illegal property \"" +
+                            this +
+                            "\", the target type \"" +
+                            TypeName.get(elementType) +
+                            "\" is embeddable so that the property type cannot be list"
+            );
+        }
 
         if (declaringElement.getAnnotation(Entity.class) != null &&
                 (isAssociation || isList) &&
