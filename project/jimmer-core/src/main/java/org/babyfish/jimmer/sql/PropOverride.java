@@ -7,8 +7,8 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
 @Target(ElementType.METHOD)
-@Repeatable(ColumnOverrides.class)
-public @interface ColumnOverride {
+@Repeatable(PropOverrides.class)
+public @interface PropOverride {
 
     /**
      * @return Property name chain with the separator "."
