@@ -713,16 +713,13 @@ Finally, with the help of `RedisHashBinder`, we can configure association caches
 public JSqlClient sqlClient(
     RedisTemplate<stirng, byte[]> redisTemplate,
     ObjectMapper objectMapper,
-    ...其他参数...
+    ...Other parameters...
 ) {
     return JSqlBuilder
         .newBuilder()
         // Before setting Cache, EntityManager must be set first
         .setEntityManager(
-            new setEntityManager(
-                App.class.getClassLoader(),
-                "yourpackage.model" // The package where the entity is located
-            )
+            JimmerModule.ENTITY_MANAGER // Auto generated constant 
         )
         .setCaches(it -> {
             it.setCacheFactory(
@@ -812,10 +809,7 @@ fun sqlClient(
     newKSqlClient {
         // Before setting Cache, EntityManager must be set first
         setEntityManager(
-            new setEntityManager(
-                App.class.getClassLoader(),
-                "yourpackage.model" //The package where the entity is located
-            )
+            ENTITY_MANAGER // Auto generated constant
         )
         setCacheFactory {
             setCacheFactory(
