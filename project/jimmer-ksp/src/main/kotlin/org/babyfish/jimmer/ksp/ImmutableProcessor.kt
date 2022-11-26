@@ -7,7 +7,7 @@ import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.*
 import org.babyfish.jimmer.ksp.generator.DraftGenerator
-import org.babyfish.jimmer.ksp.generator.EntityManagersGenerator
+import org.babyfish.jimmer.ksp.generator.JimmerModuleGenerator
 import org.babyfish.jimmer.ksp.generator.FetcherGenerator
 import org.babyfish.jimmer.ksp.generator.PropsGenerator
 import org.babyfish.jimmer.ksp.meta.Context
@@ -71,7 +71,7 @@ class ImmutableProcessor(
                 }
             }
         }
-        EntityManagersGenerator(
+        JimmerModuleGenerator(
             environment.codeGenerator,
             packageCollector.toString(),
             packageCollector.declarations

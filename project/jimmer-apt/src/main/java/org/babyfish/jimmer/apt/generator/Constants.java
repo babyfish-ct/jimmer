@@ -192,6 +192,9 @@ class Constants {
     public static final String DRAFT_FIELD_EMAIL_PATTERN =
             "__EMAIL_PATTERN__";
 
+    public static final String JimmerModule =
+            "JimmerModule";
+
     public static String regexpPatternFieldName(ImmutableProp prop, int index) {
         return "__" + Strings.upper(prop.getName()) + "_PATTER" + (index == 0 ? "" : "_" + index);
     }
