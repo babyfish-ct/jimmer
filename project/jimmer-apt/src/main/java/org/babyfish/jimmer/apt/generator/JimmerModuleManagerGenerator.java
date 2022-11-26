@@ -9,7 +9,7 @@ import javax.lang.model.element.TypeElement;
 import java.io.IOException;
 import java.util.List;
 
-public class EntityManagersGenerator {
+public class JimmerModuleManagerGenerator {
 
     private final String packageName;
 
@@ -17,7 +17,7 @@ public class EntityManagersGenerator {
 
     private final Filer filer;
 
-    public EntityManagersGenerator(String packageName, List<TypeElement> elements, Filer filer) {
+    public JimmerModuleManagerGenerator(String packageName, List<TypeElement> elements, Filer filer) {
         this.packageName = packageName;
         this.elements = elements;
         this.filer = filer;
@@ -42,7 +42,7 @@ public class EntityManagersGenerator {
 
     private TypeSpec typeSpec() {
         return TypeSpec
-                .classBuilder("EntityManagers")
+                .classBuilder(Constants.JimmerModule)
                 .addModifiers(Modifier.PUBLIC)
                 .addField(constantSpec())
                 .addMethod(
@@ -69,7 +69,7 @@ public class EntityManagersGenerator {
         }
         CodeBlock block = builder.unindent().add(")").build();
         return FieldSpec
-                .builder(Constants.ENTITY_MANAGER_CLASS_NAME, "$")
+                .builder(Constants.ENTITY_MANAGER_CLASS_NAME, "ENTITY_MANAGER")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
                 .initializer(block)
                 .build();

@@ -7,7 +7,7 @@ import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
 import java.io.OutputStreamWriter
 
-class EntityManagersGenerator(
+class JimmerModuleGenerator(
     private val codeGenerator: CodeGenerator,
     private val packageName: String,
     private val declarations: List<KSDeclaration>
@@ -20,12 +20,12 @@ class EntityManagersGenerator(
         codeGenerator.createNewFile(
             Dependencies(false, *allFiles.toTypedArray()),
             packageName,
-            "EntityManagers"
+            JIMMER_MODULE
         ).use {
             val fileSpec = FileSpec
                 .builder(
                     packageName,
-                    "EntityManagers"
+                    JIMMER_MODULE
                 ).apply {
                     indent("    ")
                     addProperty(

@@ -12,7 +12,6 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @SupportedAnnotationTypes({
         "org.babyfish.jimmer.Immutable",
@@ -124,7 +123,7 @@ public class ImmutableProcessor extends AbstractProcessor {
                 }
             }
         }
-        new EntityManagersGenerator(
+        new JimmerModuleManagerGenerator(
                 packageCollector.toString(),
                 packageCollector.getTypeElements(),
                 filer
