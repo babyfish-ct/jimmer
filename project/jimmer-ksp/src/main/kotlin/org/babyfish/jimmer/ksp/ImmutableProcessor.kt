@@ -1,22 +1,22 @@
 package org.babyfish.jimmer.ksp
 
-import com.google.devtools.ksp.getDeclaredFunctions
 import com.google.devtools.ksp.isPrivate
 import com.google.devtools.ksp.isProtected
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
-import com.google.devtools.ksp.symbol.ClassKind
-import com.google.devtools.ksp.symbol.KSAnnotated
-import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.symbol.KSFile
+import com.google.devtools.ksp.symbol.*
 import org.babyfish.jimmer.ksp.generator.DraftGenerator
+import org.babyfish.jimmer.ksp.generator.EntityManagersGenerator
 import org.babyfish.jimmer.ksp.generator.FetcherGenerator
 import org.babyfish.jimmer.ksp.generator.PropsGenerator
 import org.babyfish.jimmer.ksp.meta.Context
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.MappedSuperclass
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.regex.Pattern
+import kotlin.math.min
 
 class ImmutableProcessor(
     private val environment: SymbolProcessorEnvironment
@@ -44,8 +44,9 @@ class ImmutableProcessor(
         }
         val ctx = Context(resolver)
         val classDeclarationMultiMap = findModelMap(ctx)
+        val packageCollector = PackageCollector()
+        val allFiles = resolver.getAllFiles().toList()
         for ((file, classDeclarations) in classDeclarationMultiMap) {
-            val allFiles = resolver.getAllFiles().toList()
             DraftGenerator(environment.codeGenerator, ctx, file, classDeclarations)
                 .generate(allFiles)
             val sqlClassDeclarations = classDeclarations.filter {
@@ -66,9 +67,15 @@ class ImmutableProcessor(
                 if (sqlClassDeclaration.annotation(Entity::class) !== null) {
                     FetcherGenerator(environment.codeGenerator, ctx, file, sqlClassDeclaration)
                         .generate(allFiles)
+                    packageCollector.accept(sqlClassDeclaration)
                 }
             }
         }
+        EntityManagersGenerator(
+            environment.codeGenerator,
+            packageCollector.toString(),
+            packageCollector.declarations
+        ).generate(allFiles)
         return classDeclarationMultiMap.values.flatten()
     }
 
@@ -109,5 +116,55 @@ class ImmutableProcessor(
             }
         }
         return modelMap
+    }
+
+    private class PackageCollector {
+
+        private var paths: MutableList<String>? = null
+
+        private var str: String? = null
+
+        private val _declarations: MutableList<KSClassDeclaration> = ArrayList()
+
+        fun accept(declaration: KSClassDeclaration) {
+            _declarations.add(declaration)
+            if (paths != null && paths!!.isEmpty()) {
+                return
+            }
+            str = null
+            var newPaths = DOT_PATTERN.split(declaration.packageName.asString()).toMutableList()
+            if (paths == null) {
+                paths = newPaths
+            } else {
+                val len = min(paths!!.size, newPaths.size)
+                var index = 0
+                while (index < len) {
+                    if (paths!![index] != newPaths[index]) {
+                        break
+                    }
+                    index++
+                }
+                if (index < paths!!.size) {
+                    paths!!.subList(index, paths!!.size - index).clear()
+                }
+            }
+        }
+
+        val declarations: List<KSClassDeclaration>
+            get() = _declarations
+
+        override fun toString(): String {
+            var s = str
+            if (s == null) {
+                val ps = paths
+                s = if (ps == null || ps.isEmpty()) "" else java.lang.String.join(".", ps)
+                str = s
+            }
+            return s!!
+        }
+
+        companion object {
+            private val DOT_PATTERN = Pattern.compile("\\.")
+        }
     }
 }

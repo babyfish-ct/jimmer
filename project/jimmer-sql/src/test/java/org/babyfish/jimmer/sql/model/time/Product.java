@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.Id;
 import java.time.LocalDateTime;
 
 @Entity
-interface Product {
+public interface Product {
 
     @Id
     long id();
