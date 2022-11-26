@@ -171,6 +171,12 @@ class Constants {
                     "RecursiveListFieldConfig"
             );
 
+    public static final ClassName ENTITY_MANAGER_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.runtime",
+                    "EntityManager"
+            );
+
     public static final String DRAFT_FIELD_CTX =
             "__ctx";
 

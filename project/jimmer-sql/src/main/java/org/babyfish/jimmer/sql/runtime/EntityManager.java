@@ -4,27 +4,18 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.meta.impl.RedirectedProp;
-import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.reflections.Reflections;
-import org.reflections.util.ConfigurationBuilder;
-import org.reflections.util.FilterBuilder;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class EntityManager {
 
     private final Map<ImmutableType, ImmutableTypeInfo> map;
 
     private final Map<String, ImmutableType> tableNameTypeMap;
-
-    public EntityManager(ClassLoader classLoader, String... packageNames) {
-        this(scan(classLoader, packageNames));
-    }
 
     public EntityManager(Class<?> ... classes) {
         this(Arrays.asList(classes));
@@ -33,6 +24,9 @@ public class EntityManager {
     public EntityManager(Collection<Class<?>> classes) {
         if (classes.isEmpty()) {
             throw new IllegalArgumentException("classes cannot be empty");
+        }
+        if (!(classes instanceof Set<?>)) {
+            classes = new LinkedHashSet<>(classes);
         }
         Map<ImmutableType, ImmutableTypeInfo> map = new LinkedHashMap<>();
         for (Class<?> clazz : classes) {
@@ -99,33 +93,20 @@ public class EntityManager {
         this.tableNameTypeMap = createTableNameTypeMap();
     }
 
-    private static Collection<Class<?>> scan(
-            ClassLoader classLoader,
-            String... packageNames
-    ) {
-        FilterBuilder filterBuilder = new FilterBuilder();
-        for (String packageName : packageNames) {
-            filterBuilder.includePackage(packageName);
+    public static EntityManager combine(EntityManager ... entityManagers) {
+        if (entityManagers.length == 0) {
+            throw new IllegalArgumentException("No entity managers");
         }
-        Reflections reflections = new Reflections(
-                new ConfigurationBuilder()
-                        .forPackages(packageNames)
-                        .filterInputsBy(filterBuilder)
-                        .setClassLoaders(new ClassLoader[] {classLoader})
-        );
-        List<Class<?>> entityTypes = reflections
-                .getTypesAnnotatedWith(Entity.class)
-                .stream()
-                .filter(it -> it.isInterface() && it.isAnnotationPresent(Entity.class))
-                .collect(Collectors.toList());
-        if (entityTypes.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "No entity class is found in the package \"" +
-                            Arrays.toString(packageNames) +
-                            "\" by the specified class loader"
-            );
+        if (entityManagers.length == 1) {
+            return entityManagers[0];
         }
-        return entityTypes;
+        Set<Class<?>> classes = new LinkedHashSet<>();
+        for (EntityManager entityManager : entityManagers) {
+            for (ImmutableType type : entityManager.getAllTypes()) {
+                classes.add(type.getJavaClass());
+            }
+        }
+        return new EntityManager(classes);
     }
 
     public Set<ImmutableType> getAllTypes() {
