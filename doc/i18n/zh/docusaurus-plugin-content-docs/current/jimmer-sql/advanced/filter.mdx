@@ -717,10 +717,7 @@ public JSqlClient sqlClient(
     return JSqlBuilder
         .newBuilder()
         .setEntityManager( // 设置Cache前，需先设置EntityManager
-            new setEntityManager(
-                App.class.getClassLoader(),
-                "yourpackage.model" //实体所在包
-            )
+            JimmerModule.ENTITY_MANAGER // 自动生成的常量
         )
         .setCaches(it -> {
             it.setCacheFactory(
@@ -809,10 +806,7 @@ fun sqlClient(
 ): KSqlClient =
     newKSqlClient {
         setEntityManager( // 设置Cache前，需先设置EntityManager
-            new setEntityManager(
-                App.class.getClassLoader(),
-                "yourpackage.model" //实体所在包
-            )
+            ENTITY_MANAGER // 自动生成的常量
         )
         setCacheFactory {
             setCacheFactory(
