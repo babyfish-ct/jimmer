@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.example.kt.graphql.cfg
 
-import org.babyfish.jimmer.example.kt.graphql.App
-import org.babyfish.jimmer.example.kt.graphql.entities.Book
+import org.babyfish.jimmer.example.kt.graphql.entities.ENTITY_MANAGER
 import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.cache.CacheFactory
 import org.babyfish.jimmer.sql.dialect.H2Dialect
@@ -9,7 +8,6 @@ import org.babyfish.jimmer.sql.dialect.MySqlDialect
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.newKSqlClient
-import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.babyfish.jimmer.sql.runtime.Executor
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -51,12 +49,7 @@ class SqlClientConfig {
 
             setDialect(if (isH2) H2Dialect() else MySqlDialect())
 
-            setEntityManager(
-                EntityManager(
-                    App::class.java.classLoader,
-                    Book::class.java.`package`.name
-                )
-            )
+            setEntityManager(ENTITY_MANAGER)
             addDraftInterceptors(interceptors)
 
             addFilters(filters)

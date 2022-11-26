@@ -5,8 +5,7 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
-import org.babyfish.jimmer.sql.example.graphql.App;
-import org.babyfish.jimmer.sql.example.graphql.entities.Book;
+import org.babyfish.jimmer.sql.example.graphql.entities.JimmerModule;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,12 +61,7 @@ public class SqlClientConfig {
                 .setExecutor(Executor.log())
                 .addDraftInterceptors(interceptors)
                 .addFilters(filters)
-                .setEntityManager(
-                        new EntityManager(
-                                App.class.getClassLoader(),
-                                Book.class.getPackage().getName()
-                        )
-                )
+                .setEntityManager(JimmerModule.ENTITY_MANAGER)
                 .setCaches(it -> {
                     if (cacheFactory != null) {
                         it.setCacheFactory(cacheFactory);
