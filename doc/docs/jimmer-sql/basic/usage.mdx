@@ -16,8 +16,8 @@ jimmer-sql has relatively more content, and subsequent articles will explain it 
 ```groovy title="build.gradle"
 depdencies {
     
-    implementation 'org.babyfish.jimmer:jimmer-sql:0.5.3'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.5.3'
+    implementation 'org.babyfish.jimmer:jimmer-sql:0.5.4'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.5.4'
 
     runtimeOnly 'com.h2database:h2:2.1.212'
 }
@@ -31,7 +31,7 @@ depdencies {
     <dependency>
         <groupId>org.babyfish.jimmer</groupId>
         <artifactId>jimmer-sql</artifactId>
-        <version>0.5.3</version>
+        <version>0.5.4</version>
     </dependency>
     <dependency>
         <groupId>com.h2database</groupId>
@@ -52,7 +52,7 @@ depdencies {
                     <path>
                         <groupId>org.babyfish.jimmer</groupId>
                         <artifactId>jimmer-apt</artifactId>
-                        <version>0.5.3</version>
+                        <version>0.5.4</version>
                     </path>
                 </annotationProcessorPaths>
             </configuration>
@@ -74,10 +74,10 @@ plugins {
 depdencies {
     
     // Step2: Add jimmer-sql-kotlin
-    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.5.3")
+    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.5.4")
 
     // Step3: Apply ksp plugin
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.5.3")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.5.4")
 
     runtimeOnly("com.h2database:h2:2.1.212")
 
@@ -101,7 +101,7 @@ kotlin {
 <dependency>
     <groupId>org.babyfish.jimmer</groupId>
     <artifactId>jimmer-sql-kotlin</artifactId>
-    <version>0.5.3</version>
+    <version>0.5.4</version>
 </dependency>
 <dependency>
     <groupId>com.h2database</groupId>
@@ -149,7 +149,7 @@ kotlin {
                 <dependency>
                     <groupId>org.babyfish.jimmer</groupId>
                     <artifactId>jimmer-ksp</artifactId>
-                    <version>0.5.3</version>
+                    <version>0.5.4</version>
                 </dependency>
             </dependencies>
         </plugin>

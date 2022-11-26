@@ -78,7 +78,7 @@ javax.sql.DataSource dataSource = ...;
 JSqlClient sqlClient = JSqlClient
     .newBuilder()
     .setEntityManager(
-        new EntityManager(classLoader, packageName)
+        JimmerModule.ENTITY_MANAGER // 自动生成的常量
     )
     // highlight-next-line
     .setTriggerType(TriggerType.BOTH)
@@ -93,7 +93,7 @@ javax.sql.DataSource dataSource = ...;
 
 var sqlClient = newKSqlClient {
     setEntityManager(
-        EntityManager(classLoader, packageName)
+        ENTITY_MANAGER // 自动生成的常量
     )
     // highlight-next-line
     setTriggerType(TriggerType.BOTH)
