@@ -11,16 +11,16 @@ import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.FETCHER_DSL
 import org.babyfish.jimmer.ksp.generator.parseValidationMessages
+import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.Id
 import org.babyfish.jimmer.sql.MappedSuperclass
+import kotlin.reflect.KClass
 
 class ImmutableType(
     ctx: Context,
     private val classDeclaration: KSClassDeclaration
 ) {
-    val fullName: String = classDeclaration.fullName
-
     val simpleName: String = classDeclaration.simpleName.asString()
 
     val className: ClassName = classDeclaration.className()
@@ -39,12 +39,25 @@ class ImmutableType(
             }
         }
 
+    val sqlAnnotationType: KClass<out Annotation>? = run {
+        var annotationType: KClass<out Annotation>? = null
+        for (sqlAnnotationType in SQL_ANNOTATION_TYPES) {
+            classDeclaration.annotation(sqlAnnotationType)?.let {
+                if (annotationType != null) {
+                    throw MetaException(
+                        "Illegal type \"$this\", it cannot be decorated by both " +
+                            "@${annotationType!!.qualifiedName} and ${sqlAnnotationType.qualifiedName}"
+                    )
+                }
+                annotationType = sqlAnnotationType
+            }
+        }
+        annotationType
+    }
+
     val isEntity: Boolean = classDeclaration.annotation(Entity::class) !== null
 
-    val isMappedSuperClass: Boolean = classDeclaration.annotation(MappedSuperclass::class) != null
-
-    val isSqlType: Boolean
-        get() = isEntity || isMappedSuperClass
+    val isMappedSuperclass: Boolean = classDeclaration.annotation(MappedSuperclass::class) != null
 
     val superType: ImmutableType ?=
         classDeclaration
@@ -183,4 +196,11 @@ class ImmutableType(
 
     override fun toString(): String =
         classDeclaration.fullName
+
+    companion object {
+
+        @JvmStatic
+        private val SQL_ANNOTATION_TYPES =
+            setOf(Entity::class, MappedSuperclass::class, Embeddable::class)
+    }
 }

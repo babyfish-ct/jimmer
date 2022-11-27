@@ -2,6 +2,7 @@ package org.babyfish.jimmer.apt;
 
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.apt.meta.MetaException;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;
@@ -18,6 +19,10 @@ import java.util.Map;
 import java.util.Set;
 
 public class TypeUtils {
+
+    @SuppressWarnings("unchecked")
+    private final static Class<? extends Annotation>[] SQL_TYPE_ANNOTATION_TYPES =
+            (Class<? extends Annotation>[]) new Class[] { Entity.class, MappedSuperclass.class, Embeddable.class };
 
     private final Types types;
 
@@ -54,35 +59,60 @@ public class TypeUtils {
                 );
     }
 
-    public boolean isImmutable(TypeElement typeElement) {
-        return typeElement.getAnnotation(Immutable.class) != null ||
-                typeElement.getAnnotation(Entity.class) != null ||
-                typeElement.getAnnotation(MappedSuperclass.class) != null;
+    public Class<? extends Annotation> getImmutableAnnotationType(TypeElement typeElement) {
+        if (typeElement == null) {
+            return null;
+        }
+        Annotation annotation = typeElement.getAnnotation(Immutable.class);
+        Annotation sqlAnnotation = null;
+        for (Class<? extends Annotation> sqlAnnotationType : SQL_TYPE_ANNOTATION_TYPES) {
+            Annotation newSqlAnnotation = typeElement.getAnnotation(sqlAnnotationType);
+            if (newSqlAnnotation != null) {
+                if (sqlAnnotation != null) {
+                    throw new MetaException(
+                            "Illegal type \"" +
+                                    typeElement.getQualifiedName().toString() +
+                                    "\", it can not be decorated by both @" +
+                                    sqlAnnotation.annotationType().getName() +
+                                    " and @" +
+                                    newSqlAnnotation.annotationType().getName()
+                    );
+                }
+                sqlAnnotation = newSqlAnnotation;
+            }
+        }
+        if (sqlAnnotation != null) {
+            return sqlAnnotation.annotationType();
+        }
+        if (annotation != null) {
+            return annotation.annotationType();
+        }
+        return null;
+    }
+
+    public Class<? extends Annotation> getImmutableAnnotationType(TypeMirror typeMirror) {
+        Element element = types.asElement(typeMirror);
+        return getImmutableAnnotationType((TypeElement) element);
+    }
+
+    public boolean isImmutable(TypeElement type) {
+        return getImmutableAnnotationType(type) != null;
     }
 
     public boolean isImmutable(TypeMirror type) {
-        Element element = types.asElement(type);
-        return element != null && (
-                element.getAnnotation(Immutable.class) != null ||
-                        element.getAnnotation(Entity.class) != null ||
-                        element.getAnnotation(MappedSuperclass.class) != null ||
-                        element.getAnnotation(Embeddable.class) != null
-        );
-    }
-
-    public boolean isMappedSuperclass(TypeMirror type) {
-        Element element = types.asElement(type);
-        return element != null && element.getAnnotation(MappedSuperclass.class) != null;
+        return getImmutableAnnotationType(type) != null;
     }
 
     public boolean isEntity(TypeMirror type) {
-        Element element = types.asElement(type);
-        return element != null && element.getAnnotation(Entity.class) != null;
+        return getImmutableAnnotationType(type) == Entity.class;
+    }
+
+    public boolean isMappedSuperclass(TypeMirror type) {
+        return getImmutableAnnotationType(type) == MappedSuperclass.class;
     }
 
     public boolean isEmbeddable(TypeMirror type) {
-        Element element = types.asElement(type);
-        return element != null && element.getAnnotation(Embeddable.class) != null;
+        return getImmutableAnnotationType(type) == Embeddable.class;
     }
 
     public boolean isCollection(TypeMirror type) {
