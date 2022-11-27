@@ -123,7 +123,7 @@ public class ImmutableProcessor extends AbstractProcessor {
                 }
             }
         }
-        new JimmerModuleManagerGenerator(
+        new JimmerModuleGenerator(
                 packageCollector.toString(),
                 packageCollector.getTypeElements(),
                 filer

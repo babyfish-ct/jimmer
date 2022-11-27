@@ -4,6 +4,8 @@ import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 
 import org.babyfish.jimmer.sql.*;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -30,6 +32,7 @@ public interface Author {
     List<Book> books();
 
     @ManyToOne
+    @Nullable
     @JoinTable(
             name = "AUTHOR_COUNTRY_MAPPING",
             joinColumnName = "AUTHOR_ID",

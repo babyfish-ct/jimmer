@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.model.inheritance;
 
 import org.babyfish.jimmer.sql.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -16,5 +17,6 @@ public interface AdministratorBase extends NamedEntity {
     List<Role> getRoles();
 
     @OneToOne(mappedBy = "administrator")
+    @Nullable
     AdministratorMetadata getMetadata();
 }

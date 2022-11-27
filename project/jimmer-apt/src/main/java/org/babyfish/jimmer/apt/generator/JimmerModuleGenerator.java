@@ -9,7 +9,7 @@ import javax.lang.model.element.TypeElement;
 import java.io.IOException;
 import java.util.List;
 
-public class JimmerModuleManagerGenerator {
+public class JimmerModuleGenerator {
 
     private final String packageName;
 
@@ -17,7 +17,7 @@ public class JimmerModuleManagerGenerator {
 
     private final Filer filer;
 
-    public JimmerModuleManagerGenerator(String packageName, List<TypeElement> elements, Filer filer) {
+    public JimmerModuleGenerator(String packageName, List<TypeElement> elements, Filer filer) {
         this.packageName = packageName;
         this.elements = elements;
         this.filer = filer;

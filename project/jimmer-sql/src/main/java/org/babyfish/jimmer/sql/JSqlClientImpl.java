@@ -573,7 +573,10 @@ class JSqlClientImpl implements JSqlClient {
         }
 
         private Class<?> getOrmAnnotationType(Class<?> type) {
-            if (type != null && type != Object.class) {
+            if (type == null) {
+                return null;
+            }
+            if (type != Object.class) {
                 if (type.isAnnotationPresent(Entity.class)) {
                     return Entity.class;
                 }

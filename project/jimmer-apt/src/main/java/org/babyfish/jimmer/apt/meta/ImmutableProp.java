@@ -5,16 +5,13 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.TypeUtils;
+import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.sql.*;
-import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Null;
 import java.lang.annotation.Annotation;
 import java.util.*;
 
@@ -183,7 +180,35 @@ public class ImmutableProp {
             );
         }
 
-        initializeAssociationAnnotation();
+        PropDescriptor.Builder builder = PropDescriptor.newBuilder(
+                declaringElement.getQualifiedName().toString(),
+                typeUtils.getImmutableAnnotationType(declaringElement),
+                this.toString(),
+                typeUtils.getImmutableAnnotationType(elementType),
+                isList,
+                null,
+                declaringElement.getAnnotation(Immutable.class),
+                MetaException::new
+        );
+        for (AnnotationMirror annotationMirror : executableElement.getAnnotationMirrors()) {
+            String annotationTypeName = ((TypeElement) annotationMirror.getAnnotationType().asElement())
+                    .getQualifiedName()
+                    .toString();
+            builder.add(annotationTypeName);
+            if (PropDescriptor.MAPPED_BY_PROVIDER_NAMES.contains(annotationTypeName)) {
+                for (ExecutableElement key : annotationMirror.getElementValues().keySet()) {
+                    if (key.getSimpleName().contentEquals("mappedBy")) {
+                        builder.hasMappedBy();
+                        break;
+                    }
+                }
+            }
+        }
+        PropDescriptor descriptor = builder.build();
+        if (descriptor.getType().isAssociation()) {
+            associationAnnotation = executableElement.getAnnotation(descriptor.getType().getAnnotationType());
+        }
+        isNullable = descriptor.isNullable();
 
         elementTypeName = TypeName.get(elementType);
         if (isList) {
@@ -212,7 +237,6 @@ public class ImmutableProp {
             draftTypeName = draftElementTypeName;
         }
 
-        this.isNullable = determineNullable();
         this.validationMessageMap = ValidationMessages.parseMessageMap(executableElement);
     }
 
@@ -330,377 +354,7 @@ public class ImmutableProp {
         return declaringElement.getQualifiedName().toString() + '.' + name;
     }
 
-    private void initializeAssociationAnnotation() {
-        Transient trans = getAnnotation(Transient.class);
-
-        JoinColumn joinColumn = getAnnotation(JoinColumn.class);
-        JoinTable joinTable = getAnnotation(JoinTable.class);
-        Column column = getAnnotation(Column.class);
-        Annotation[] storageAnnotations = Arrays.stream(
-                new Annotation[] {
-                        joinColumn,
-                        joinTable,
-                        column
-                }
-        ).filter(Objects::nonNull).toArray(Annotation[]::new);
-
-        Id id = getAnnotation(Id.class);
-        Version version = getAnnotation(Version.class);
-        Key key = getAnnotation(Key.class);
-        Annotation[] scalarAnnotations = Arrays.stream(
-                new Annotation[] { id, version }
-        ).filter(Objects::nonNull).toArray(Annotation[]::new);
-
-        OneToOne oneToOne = getAnnotation(OneToOne.class);
-        OneToMany oneToMany = getAnnotation(OneToMany.class);
-        ManyToOne manyToOne = getAnnotation(ManyToOne.class);
-        ManyToMany manyToMany = getAnnotation(ManyToMany.class);
-        OnDissociate onDissociate = getAnnotation(OnDissociate.class);
-        Annotation[] associationAnnotations = Arrays.stream(
-                new Annotation[] { oneToOne, oneToMany, manyToOne, manyToMany }
-        ).filter(Objects::nonNull).toArray(Annotation[]::new);
-
-        Annotation firstSqlAnnotation = storageAnnotations.length != 0 ? storageAnnotations[0] : null;
-        if (firstSqlAnnotation == null) {
-            firstSqlAnnotation = scalarAnnotations.length != 0 ? scalarAnnotations[0] : null;
-            if (firstSqlAnnotation == null && associationAnnotations.length != 0) {
-                firstSqlAnnotation = associationAnnotations[0];
-            }
-        }
-
-        if (trans != null) {
-            if (firstSqlAnnotation != null) {
-                throw new MetaException(
-                        "Illegal property \"" +
-                                this +
-                                "\", it is decorated by both @" +
-                                Transient.class.getName() +
-                                " and @" +
-                                firstSqlAnnotation.annotationType().getName()
-                );
-            }
-            return;
-        }
-
-        if (declaringElement.getAnnotation(Entity.class) == null &&
-                declaringElement.getAnnotation(MappedSuperclass.class) == null) {
-            if (firstSqlAnnotation != null) {
-                throw new MetaException(
-                        "Illegal property \"" +
-                                this +
-                                "\", it cannot be decorated by @" +
-                                firstSqlAnnotation.annotationType().getName() +
-                                "because the current type is not entity"
-                );
-            }
-        } else {
-            if (isAssociation) {
-                if (associationAnnotations.length == 0) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", association property must be decorated by one of these annotations: " +
-                                    "@OneToOne, @OneToMany, @ManyToOne or @ManyToMany"
-                    );
-                }
-                if (associationAnnotations.length > 1) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", it cannot be decorated by both @" +
-                                    associationAnnotations[0].annotationType().getName() +
-                                    "and @" +
-                                    associationAnnotations[1].annotationType().getName()
-                    );
-                }
-                associationAnnotation = associationAnnotations[0];
-                if (isList && (associationAnnotation instanceof OneToOne ||
-                        associationAnnotation instanceof ManyToOne)) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", list property cannot be decorated by both @" +
-                                    associationAnnotation.annotationType().getName()
-                    );
-                }
-                if (!isList && (associationAnnotation instanceof OneToMany ||
-                        associationAnnotation instanceof ManyToMany)) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", reference property cannot be decorated by both @" +
-                                    associationAnnotation.annotationType().getName()
-                    );
-                }
-                if (oneToMany != null && oneToMany.mappedBy().equals("")) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", The \"mappedBy\" of one-to-many property must be specified"
-                    );
-                }
-                boolean isMappedBy =
-                        oneToOne != null && !oneToOne.mappedBy().isEmpty() ||
-                                oneToMany != null ||
-                                manyToMany != null && !manyToMany.mappedBy().isEmpty();
-                if (isMappedBy && storageAnnotations.length != 0) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", the property with \"mappedBy\" cannot be decorated by @" +
-                                    storageAnnotations[0].annotationType().getName()
-                    );
-                }
-                if (column != null) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", association property cannot be decorated by @" +
-                                    column.annotationType().getName()
-                    );
-                }
-                if (joinColumn != null && joinTable != null) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", it is decorated by both @JoinColumn and @JoinTable"
-                    );
-                }
-                if (scalarAnnotations.length != 0) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", association property cannot be decorated by @" +
-                                    scalarAnnotations[0].annotationType().getName()
-                    );
-                }
-            } else {
-                if (associationAnnotations.length != 0) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", scalar property cannot be decorated by @" +
-                                    associationAnnotations[0].annotationType().getName()
-                    );
-                }
-                if (joinColumn != null) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", scalar property cannot be decorated by @" +
-                                    JoinColumn.class.getName()
-                    );
-                }
-                if (joinTable != null) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", scalar property cannot be decorated by @" +
-                                    JoinTable.class.getName()
-                    );
-                }
-                if (scalarAnnotations.length > 1) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", it is decorated by both @" +
-                                    storageAnnotations[0].annotationType().getName() +
-                                    " @" +
-                                    storageAnnotations[1].annotationType().getName()
-                    );
-                }
-                if (scalarAnnotations.length != 0 && isNullable) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", nullable property cannot be decorated by @" +
-                                    scalarAnnotations[0].annotationType().getName()
-                    );
-                }
-                if (version != null && returnType.getKind() != TypeKind.INT) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", it is decorated by @" +
-                                    Version.class.getName() +
-                                    " but its type is not int"
-                    );
-                }
-            }
-            if (key != null) {
-                if (scalarAnnotations.length != 0) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", it decorated by both \"@" +
-                                    Key.class.getName() +
-                                    "\" and \"@" +
-                                    scalarAnnotations[0].annotationType().getName() +
-                                    "\""
-                    );
-                }
-                if (associationAnnotation != null) {
-                    if (associationAnnotation.annotationType() != ManyToOne.class) {
-                        throw new MetaException(
-                                "Illegal property \"" +
-                                        this +
-                                        "\", association property decorated by both \"@" +
-                                        Key.class.getName() +
-                                        "\" must be many-to-one association"
-                        );
-                    }
-                    if (joinTable != null) {
-                        throw new MetaException(
-                                "Illegal property \"" +
-                                        this +
-                                        "\", many-to-one property decorated by \"@" +
-                                        Key.class.getName() +
-                                        "\" must base on foreign key"
-                        );
-                    }
-                }
-            }
-            if (onDissociate != null) {
-                if (oneToOne != null && !oneToOne.mappedBy().isEmpty()) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", the property with \"mappedBy\" cannot be decorated by \"@" +
-                                    OnDissociate.class.getName()
-                    );
-                }
-                if (oneToOne == null && manyToOne == null) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", the property decorated by \"@" +
-                                    OnDissociate.class.getName() +
-                                    "\" must be many-to-one or one-to-one property"
-                    );
-                }
-            }
-        }
-    }
-
-    private boolean determineNullable() {
-
-        Annotation notNullAnnotation = Arrays.stream(getAnnotations(NotNull.class))
-                .findFirst()
-                .orElse(null);
-        if (notNullAnnotation == null) {
-            notNullAnnotation = getAnnotation(NonNull.class);
-        }
-        if (notNullAnnotation == null) {
-            notNullAnnotation = getAnnotation(org.jetbrains.annotations.NotNull.class);
-        }
-        if (notNullAnnotation == null) {
-            notNullAnnotation = getAnnotation(Id.class);
-        }
-
-        Annotation nullAnnotation = Arrays.stream(getAnnotations(Null.class))
-                .findFirst()
-                .orElse(null);
-        if (nullAnnotation == null) {
-            nullAnnotation = getAnnotation(Nullable.class);
-        }
-        if (nullAnnotation == null) {
-            nullAnnotation = getAnnotation(org.jetbrains.annotations.Nullable.class);
-        }
-
-        if (notNullAnnotation != null && nullAnnotation != null) {
-            throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", its nullity is conflict because it is decorated by both " +
-                            notNullAnnotation +
-                            " and " +
-                            nullAnnotation
-            );
-        }
-
-        ImplicitNullable implicitNullable = getImplicitNullable();
-
-        if (notNullAnnotation != null) {
-            if (implicitNullable != null && implicitNullable.nullable) {
-                throw new MetaException(
-                        "Illegal property \"" +
-                                this +
-                                "\", it is decorated by " +
-                                notNullAnnotation +
-                                ", but it is considered as nullable because " +
-                                implicitNullable.reason
-                );
-            }
-            return false;
-        }
-        if (nullAnnotation != null) {
-            if (implicitNullable != null && !implicitNullable.nullable) {
-                throw new MetaException(
-                        "Illegal property \"" +
-                                this +
-                                "\", it is decorated by " +
-                                nullAnnotation +
-                                ", but it is considered as non-null because " +
-                                implicitNullable.reason
-                );
-            }
-            return true;
-        }
-        if (implicitNullable != null) {
-            return implicitNullable.nullable;
-        }
-
-        Immutable immutable = declaringElement.getAnnotation(Immutable.class);
-        return immutable != null && (immutable.value() == Immutable.Nullity.NULLABLE);
-    }
-
-    private ImplicitNullable getImplicitNullable() {
-        if (isList) {
-            return new ImplicitNullable(false, "it is list");
-        } else if (isAssociation) {
-            if (getAnnotation(JoinTable.class) != null) {
-                return new ImplicitNullable(
-                        true,
-                        "it's a many-to-one association base on middle table"
-                );
-            }
-            if (getAnnotation(OneToOne.class) != null) {
-                return new ImplicitNullable(
-                        true,
-                        "it's a one-to-one association"
-                );
-            }
-        }
-        if (typeName.isPrimitive()) {
-            return new ImplicitNullable(false, "its type is primitive");
-        }
-        if (typeName.isBoxedPrimitive()) {
-            return new ImplicitNullable(true, "its type is box type");
-        }
-        return null;
-    }
-
     public Map<ClassName, String> getValidationMessageMap() {
         return validationMessageMap;
-    }
-
-    private static class ImplicitNullable {
-
-        final boolean nullable;
-
-        final String reason;
-
-        ImplicitNullable(boolean nullable, String reason) {
-            this.nullable = nullable;
-            this.reason = reason;
-        }
-
-        @Override
-        public String toString() {
-            return "ImplicitNullable{" +
-                    "nullable=" + nullable +
-                    ", reason='" + reason + '\'' +
-                    '}';
-        }
     }
 }

@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.model.embedded;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.PropOverride;
 
-@Embeddable
+//@Embeddable
 public interface React {
 
     @PropOverride(prop = "x", columnName = "LEFT")
