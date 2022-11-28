@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.util.StaticCache;
+import org.babyfish.jimmer.impl.util.StaticCache;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

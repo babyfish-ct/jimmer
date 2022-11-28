@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.runtime;
 
 import org.babyfish.jimmer.Draft;
-import org.babyfish.jimmer.util.Classes;
+import org.babyfish.jimmer.impl.util.Classes;
 
 import java.util.*;
 import java.util.function.Consumer;

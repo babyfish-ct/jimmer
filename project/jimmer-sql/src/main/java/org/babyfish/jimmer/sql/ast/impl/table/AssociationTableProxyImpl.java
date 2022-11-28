@@ -9,7 +9,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.util.StaticCache;
+import org.babyfish.jimmer.impl.util.StaticCache;
 
 public class AssociationTableProxyImpl<SE, ST extends Table<SE>, TE, TT extends Table<TE>>
         extends AbstractTypedTable<Association<SE, TE>> implements

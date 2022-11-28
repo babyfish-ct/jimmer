@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.util;
+package org.babyfish.jimmer.impl.util;
 
 public class Classes {
 
