@@ -13,6 +13,7 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.meta.Column;
+import org.jetbrains.annotations.Nullable;
 
 public class ImmutableObjects {
 
@@ -189,12 +190,14 @@ public class ImmutableObjects {
         throw new IllegalArgumentException("The first argument is immutable object created by jimmer");
     }
 
-    public static <T> T makeIdOnly(Class<T> type, Object id) {
+    @Nullable
+    public static <T> T makeIdOnly(Class<T> type, @Nullable Object id) {
         return makeIdOnly(ImmutableType.get(type), id);
     }
 
+    @Nullable
     @SuppressWarnings("unchecked")
-    public static <T> T makeIdOnly(ImmutableType type, Object id) {
+    public static <T> T makeIdOnly(ImmutableType type, @Nullable Object id) {
         ImmutableProp idProp = type.getIdProp();
         if (idProp == null) {
             throw new IllegalArgumentException("No id property in \"" + type + "\"");

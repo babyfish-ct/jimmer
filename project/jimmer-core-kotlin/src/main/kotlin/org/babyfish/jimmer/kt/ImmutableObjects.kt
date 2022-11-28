@@ -15,11 +15,17 @@ fun <T: Any> isLoaded(obj: T, prop: KProperty1<T, *>): Boolean =
 fun <T: Any, X> get(obj: T, prop: KProperty1<T, X>): X =
     ImmutableObjects.get(obj, prop.toImmutableProp()) as X
 
-inline fun <reified T: Any> makeIdOnly(id: Any): T =
+inline fun <reified T: Any> makeNullableIdOnly(id: Any?): T? =
     ImmutableObjects.makeIdOnly(ImmutableType.get(T::class.java), id)
 
-fun <T: Any> makeIdOnly(type: KClass<T>, id: Any): T =
+fun <T: Any> makeNullableIdOnly(type: KClass<T>, id: Any?): T? =
     ImmutableObjects.makeIdOnly(ImmutableType.get(type.java), id)
+
+inline fun <reified T: Any> makeIdOnly(id: Any): T =
+    ImmutableObjects.makeIdOnly(ImmutableType.get(T::class.java), id) ?: error("Internal bug")
+
+fun <T: Any> makeIdOnly(type: KClass<T>, id: Any): T =
+    ImmutableObjects.makeIdOnly(ImmutableType.get(type.java), id) ?: error("Internal bug")
 
 fun KProperty1<*, *>.toImmutableProp(): ImmutableProp {
     val immutableType = ImmutableType.get(
