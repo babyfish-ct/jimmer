@@ -10,7 +10,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -40,7 +39,7 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
             Predicate<Static> cond,
             ImmutableProp prop,
             String staticPropName,
-            Function<Object, Object> valueConverter
+            ImmutableConverter.ValueConverter valueConverter
     ) {
         validateProp(prop);
         mapImpl(cond, prop, staticPropName, valueConverter, false);
@@ -53,7 +52,7 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
             Predicate<Static> cond,
             ImmutableProp prop,
             String staticPropName,
-            Function<Object, Object> elementConverter
+            ImmutableConverter.ValueConverter elementConverter
     ) {
         validateProp(prop);
         if (!prop.isReferenceList(TargetLevel.OBJECT) && !prop.isScalarList()) {
@@ -65,7 +64,14 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
         }
         return mapIf(cond, prop, staticPropName, value ->
                 ((List<Object>)value).stream()
-                        .map(it -> it != null ? elementConverter.apply(it) : null)
+                        .map(it -> {
+                            if (elementConverter == null) {
+                                return it;
+                            }
+                            return it == null ?
+                                    elementConverter.defaultValue() :
+                                    elementConverter.convert(it);
+                        })
                         .collect(Collectors.toList())
         );
     }
@@ -128,7 +134,7 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
             Predicate<Static> cond,
             ImmutableProp prop,
             String staticPropName,
-            Function<Object, Object> valueConverter,
+            ImmutableConverter.ValueConverter valueConverter,
             boolean autoMapping
     ) {
         List<String> methodNames = new ArrayList<>();

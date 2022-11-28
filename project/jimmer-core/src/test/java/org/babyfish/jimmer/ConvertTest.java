@@ -104,6 +104,28 @@ public class ConvertTest {
     }
 
     @Test
+    public void testDefaultValue() {
+        Book book = ImmutableConverter
+                .newBuilder(Book.class, Partial.class)
+                .map(BookProps.NAME, new ImmutableConverter.ValueConverter() {
+                    @Override
+                    public Object convert(Object value) {
+                        return value;
+                    }
+                    @Override
+                    public Object defaultValue() {
+                        return "<NO-NAME>";
+                    }
+                })
+                .build()
+                .convert(new Partial(null));
+        Assertions.assertEquals(
+                "{\"name\":\"<NO-NAME>\"}",
+                book.toString()
+        );
+    }
+
+    @Test
     public void testEmptyConverter() {
         ImmutableConverter<Book, BookInput> converter =
                 ImmutableConverter

@@ -8,6 +8,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -18,7 +19,6 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static> {
@@ -44,10 +44,11 @@ class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static>
     }
 
     @SuppressWarnings("unchecked")
+    @NotNull
     @Override
     public T convert(Static staticObj) {
         if (staticObj == null) {
-            return null;
+            throw new IllegalArgumentException("staticObj cannot be null");
         }
         if (!(staticType.isAssignableFrom(staticObj.getClass()))) {
             throw new IllegalArgumentException(
@@ -59,8 +60,10 @@ class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static>
                 Predicate<Object> cond = (Predicate<Object>) mapping.cond;
                 if (cond == null || cond.test(staticObj)) {
                     Object value = mapping.methodHandle.invoke(staticObj);
-                    if (value != null && mapping.valueConverter != null) {
-                        value = mapping.valueConverter.apply(value);
+                    if (mapping.valueConverter != null) {
+                        value = value == null ?
+                                mapping.valueConverter.defaultValue() :
+                                mapping.valueConverter.convert(value);
                     }
                     ((DraftSpi) draft).__set(mapping.propId, value);
                 }
@@ -79,13 +82,13 @@ class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static>
 
         final MethodHandle methodHandle;
 
-        final Function<Object, Object> valueConverter;
+        final ValueConverter valueConverter;
 
         private Mapping(
                 Predicate<?> cond,
                 ImmutableProp prop,
                 MethodHandle methodHandle,
-                Function<Object, Object> valueConverter
+                ValueConverter valueConverter
         ) {
             this.cond = cond;
             this.propId = prop.getId();
@@ -97,7 +100,7 @@ class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static>
                 Predicate<?> cond,
                 ImmutableProp prop,
                 Method method,
-                Function<Object, Object> valueConverter,
+                ValueConverter valueConverter,
                 boolean autoMapping
         ) {
             Class<?> propType;

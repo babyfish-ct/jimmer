@@ -3,16 +3,14 @@ package org.babyfish.jimmer;
 import org.babyfish.jimmer.impl.converter.ImmutableConverterBuilderImpl;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 public interface ImmutableConverter<T, Static> {
 
-    @Nullable
-    T convert(@Nullable Static staticObj);
+    @NotNull T convert(Static staticObj);
 
     /**
      * Only for java, kotlin developers should use `newImmutableConverter`
@@ -47,15 +45,15 @@ public interface ImmutableConverter<T, Static> {
         }
 
         default Builder<T, Static> map(
-                TypedProp<T, Static> prop,
-                Function<Object, Object> valueConverter
+                TypedProp<T, ?> prop,
+                ValueConverter valueConverter
         ) {
             return mapIf(null, prop.unwrap(), prop.unwrap().getName(), valueConverter);
         }
 
         default Builder<T, Static> map(
                 ImmutableProp prop,
-                Function<Object, Object> valueConverter
+                ValueConverter valueConverter
         ) {
             return mapIf(null, prop, prop.getName(), valueConverter);
         }
@@ -63,7 +61,7 @@ public interface ImmutableConverter<T, Static> {
         default Builder<T, Static> map(
                 TypedProp<T, ?> prop,
                 String staticPropName,
-                Function<Object, Object> valueConverter
+                ValueConverter valueConverter
         ) {
             return mapIf(null, prop.unwrap(), staticPropName, valueConverter);
         }
@@ -71,21 +69,21 @@ public interface ImmutableConverter<T, Static> {
         default Builder<T, Static> map(
                 ImmutableProp prop,
                 String staticPropName,
-                Function<Object, Object> valueConverter
+                ValueConverter valueConverter
         ) {
             return mapIf(null, prop, staticPropName, valueConverter);
         }
 
         default Builder<T, Static> mapList(
                 TypedProp.Multiple<T, ?> prop,
-                Function<Object, Object> elementConverter
+                ValueConverter elementConverter
         ) {
             return mapListIf(null, prop.unwrap(), prop.unwrap().getName(), elementConverter);
         }
 
         default Builder<T, Static> mapList(
                 ImmutableProp prop,
-                Function<Object, Object> elementConverter
+                ValueConverter elementConverter
         ) {
             return mapListIf(null, prop, prop.getName(), elementConverter);
         }
@@ -93,7 +91,7 @@ public interface ImmutableConverter<T, Static> {
         default Builder<T, Static> mapList(
                 TypedProp.Multiple<T, ?> prop,
                 String staticPropName,
-                Function<Object, Object> elementConverter
+                ValueConverter elementConverter
         ) {
             return mapListIf(null, prop.unwrap(), staticPropName, elementConverter);
         }
@@ -101,7 +99,7 @@ public interface ImmutableConverter<T, Static> {
         default Builder<T, Static> mapList(
                 ImmutableProp prop,
                 String staticPropName,
-                Function<Object, Object> elementConverter
+                ValueConverter elementConverter
         ) {
             return mapListIf(null, prop, staticPropName, elementConverter);
         }
@@ -124,8 +122,8 @@ public interface ImmutableConverter<T, Static> {
 
         default Builder<T, Static> mapIf(
                 Predicate<Static> cond,
-                TypedProp<T, Static> prop,
-                Function<Object, Object> valueConverter
+                TypedProp<T, ?> prop,
+                ValueConverter valueConverter
         ) {
             return mapIf(cond, prop.unwrap(), prop.unwrap().getName(), valueConverter);
         }
@@ -133,7 +131,7 @@ public interface ImmutableConverter<T, Static> {
         default Builder<T, Static> mapIf(
                 Predicate<Static> cond,
                 ImmutableProp prop,
-                Function<Object, Object> valueConverter
+                ValueConverter valueConverter
         ) {
             return mapIf(cond, prop, prop.getName(), valueConverter);
         }
@@ -142,7 +140,7 @@ public interface ImmutableConverter<T, Static> {
                 Predicate<Static> cond,
                 TypedProp<T, ?> prop,
                 String staticPropName,
-                Function<Object, Object> valueConverter
+                ValueConverter valueConverter
         ) {
             return mapIf(cond, prop.unwrap(), staticPropName, valueConverter);
         }
@@ -151,13 +149,13 @@ public interface ImmutableConverter<T, Static> {
                 Predicate<Static> cond,
                 ImmutableProp prop,
                 String staticPropName,
-                Function<Object, Object> valueConverter
+                ValueConverter valueConverter
         );
 
         default Builder<T, Static> mapListIf(
                 Predicate<Static> cond,
                 TypedProp.Multiple<T, ?> prop,
-                Function<Object, Object> elementConverter
+                ValueConverter elementConverter
         ) {
             return mapListIf(cond, prop.unwrap(), prop.unwrap().getName(), elementConverter);
         }
@@ -165,7 +163,7 @@ public interface ImmutableConverter<T, Static> {
         default Builder<T, Static> mapListIf(
                 Predicate<Static> cond,
                 ImmutableProp prop,
-                Function<Object, Object> elementConverter
+                ValueConverter elementConverter
         ) {
             return mapListIf(cond, prop, prop.getName(), elementConverter);
         }
@@ -174,7 +172,7 @@ public interface ImmutableConverter<T, Static> {
                 Predicate<Static> cond,
                 TypedProp.Multiple<T, ?> prop,
                 String staticPropName,
-                Function<Object, Object> elementConverter
+                ValueConverter elementConverter
         ) {
             return mapListIf(cond, prop.unwrap(), staticPropName, elementConverter);
         }
@@ -183,7 +181,7 @@ public interface ImmutableConverter<T, Static> {
                 Predicate<Static> cond,
                 ImmutableProp prop,
                 String staticPropName,
-                Function<Object, Object> elementConverter
+                ValueConverter elementConverter
         );
 
         default Builder<T, Static> unmap(TypedProp<T, ?> prop) {
@@ -201,5 +199,15 @@ public interface ImmutableConverter<T, Static> {
         Builder<T, Static> setDraftModifier(BiConsumer<Draft, Static> modifier);
 
         ImmutableConverter<T, Static> build();
+    }
+    
+    @FunctionalInterface
+    interface ValueConverter {
+        
+        Object convert(Object value);
+        
+        default Object defaultValue() {
+            return null;
+        }
     }
 }
