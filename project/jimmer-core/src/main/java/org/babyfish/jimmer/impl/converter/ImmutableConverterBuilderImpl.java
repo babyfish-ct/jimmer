@@ -9,8 +9,7 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.Predicate;
+import java.util.function.*;
 import java.util.stream.Collectors;
 
 public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConverter.Builder<T, Static> {
@@ -25,7 +24,7 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
 
     private BiConsumer<Draft, Static> draftModifier;
 
-    private Map<ImmutableProp, ImmutableConverterImpl.Mapping> mappingMap = new HashMap<>();
+    private Map<ImmutableProp, ImmutableConverterImpl.Field> mappingMap = new HashMap<>();
 
     private int autoMapOtherScalars;
 
@@ -35,24 +34,21 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
     }
 
     @Override
-    public ImmutableConverter.Builder<T, Static> mapIf(
-            Predicate<Static> cond,
+    public ImmutableConverter.Builder<T, Static> map(
             ImmutableProp prop,
             String staticPropName,
-            ImmutableConverter.ValueConverter valueConverter
+            Consumer<ImmutableConverter.Mapping<Static, ?, ?>> block
     ) {
         validateProp(prop);
-        mapImpl(cond, prop, staticPropName, valueConverter, false);
+        mapImpl(prop, staticPropName, block, false, false);
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public ImmutableConverter.Builder<T, Static> mapListIf(
-            Predicate<Static> cond,
+    public ImmutableConverter.Builder<T, Static> mapList(
             ImmutableProp prop,
             String staticPropName,
-            ImmutableConverter.ValueConverter elementConverter
+            Consumer<ImmutableConverter.ListMapping<Static, ?, ?>> block
     ) {
         validateProp(prop);
         if (!prop.isReferenceList(TargetLevel.OBJECT) && !prop.isScalarList()) {
@@ -62,18 +58,8 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
                             "\" is not list property"
             );
         }
-        return mapIf(cond, prop, staticPropName, value ->
-                ((List<Object>)value).stream()
-                        .map(it -> {
-                            if (elementConverter == null) {
-                                return it;
-                            }
-                            return it == null ?
-                                    elementConverter.defaultValue() :
-                                    elementConverter.convert(it);
-                        })
-                        .collect(Collectors.toList())
-        );
+        mapImpl(prop, staticPropName, block, true, false);
+        return this;
     }
 
     @Override
@@ -102,7 +88,13 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
         if (autoMapOtherScalars != 0) {
             for (ImmutableProp prop : immutableType.getProps().values()) {
                 if (!prop.isAssociation(TargetLevel.OBJECT) && !mappingMap.containsKey(prop)) {
-                    mapImpl(null, prop, prop.getName(), null, true);
+                    mapImpl(
+                            prop,
+                            prop.getName(),
+                            null,
+                            prop.isScalarList() || prop.isReferenceList(TargetLevel.OBJECT),
+                            true
+                    );
                 }
             }
         }
@@ -130,11 +122,12 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
         );
     }
 
+    @SuppressWarnings("unchecked")
     private void mapImpl(
-            Predicate<Static> cond,
             ImmutableProp prop,
             String staticPropName,
-            ImmutableConverter.ValueConverter valueConverter,
+            Consumer<?> mappingBuilderConsumer,
+            boolean treatAsList,
             boolean autoMapping
     ) {
         List<String> methodNames = new ArrayList<>();
@@ -168,15 +161,175 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
                             methodNames.stream().map(it -> it + "()").collect(Collectors.joining(", "))
             );
         }
-        mappingMap.put(
-                prop,
-                ImmutableConverterImpl.Mapping.create(
-                        cond,
-                        prop,
-                        method,
-                        valueConverter,
-                        autoMapping
-                )
-        );
+        FieldBuilder builder = treatAsList ?
+                new ListMappingImpl<>(prop, method, autoMapping) :
+                new MappingImpl<>(prop, method, autoMapping);
+        if (mappingBuilderConsumer != null) {
+            ((Consumer<FieldBuilder>) mappingBuilderConsumer).accept(builder);
+        }
+        mappingMap.put(prop, builder.build());
+    }
+    
+    private interface FieldBuilder {
+        ImmutableConverterImpl.Field build();
+    }
+
+    private static class MappingImpl<Static, X, Y> implements ImmutableConverter.Mapping<Static, X, Y>, FieldBuilder {
+
+        private final ImmutableProp prop;
+
+        private final Method method;
+
+        private final boolean autoMapping;
+
+        private Predicate<?> cond;
+        
+        protected Function<?, ?> valueConverter;
+
+        private Supplier<?> defaultValueSupplier;
+
+        private MappingImpl(ImmutableProp prop, Method method, boolean autoMapping) {
+            this.prop = prop;
+            this.method = method;
+            this.autoMapping = autoMapping;
+        }
+
+        @Override
+        public ImmutableConverter.Mapping<Static, X, Y> useIf(Predicate<Static> cond) {
+            this.cond = cond;
+            return this;
+        }
+
+        @Override
+        public ImmutableConverter.Mapping<Static, X, Y> valueConverter(Function<X, Y> valueConverter) {
+            this.valueConverter = valueConverter;
+            return this;
+        }
+
+        @Override
+        public ImmutableConverter.Mapping<Static, X, Y> immutableValueConverter(ImmutableConverter<Y, X> valueConverter) {
+            valueConverter(value -> valueConverter.convert((X)value));
+            return this;
+        }
+
+        @Override
+        public ImmutableConverter.Mapping<Static, X, Y> defaultValue(Y defaultValue) {
+            this.defaultValueSupplier = () -> defaultValue;
+            return this;
+        }
+
+        @Override
+        public ImmutableConverter.Mapping<Static, X, Y> defaultValue(Supplier<Y> defaultValueSupplier) {
+            this.defaultValueSupplier = defaultValueSupplier;
+            return this;
+        }
+
+        @Override
+        public ImmutableConverterImpl.Field build() {
+            return ImmutableConverterImpl.Field.create(
+                    cond,
+                    prop,
+                    method,
+                    valueConverter,
+                    defaultValueSupplier,
+                    autoMapping
+            );
+        }
+    }
+
+    private static class ListMappingImpl<Static, X, Y> implements ImmutableConverter.ListMapping<Static, X, Y>, FieldBuilder {
+
+        private final ImmutableProp prop;
+
+        private final Method method;
+
+        private final boolean autoMapping;
+
+        private Predicate<?> cond;
+
+        protected Function<?, ?> elementConverter;
+
+        private Supplier<?> defaultElementSupplier;
+
+        private ListMappingImpl(ImmutableProp prop, Method method, boolean autoMapping) {
+            this.prop = prop;
+            this.method = method;
+            this.autoMapping = autoMapping;
+        }
+
+        @Override
+        public ImmutableConverter.ListMapping<Static, X, Y> useIf(Predicate<Static> cond) {
+            this.cond = cond;
+            return this;
+        }
+
+        @Override
+        public ImmutableConverter.ListMapping<Static, X, Y> elementConverter(Function<X, Y> elementConverter) {
+            this.elementConverter = new ListConverter<>(elementConverter);
+            return this;
+        }
+
+        @Override
+        public ImmutableConverter.ListMapping<Static, X, Y> immutableValueConverter(ImmutableConverter<Y, X> elementConverter) {
+            elementConverter(value -> elementConverter.convert((X)value));
+            return this;
+        }
+
+        @Override
+        public ImmutableConverter.ListMapping<Static, X, Y> defaultElement(Y defaultElement) {
+            this.defaultElementSupplier = () -> defaultElement;
+            return this;
+        }
+
+        @Override
+        public ImmutableConverter.ListMapping<Static, X, Y> defaultElement(Supplier<Y> defaultElementSupplier) {
+            this.defaultElementSupplier = defaultElementSupplier;
+            return this;
+        }
+
+        @Override
+        public ImmutableConverterImpl.Field build() {
+            return ImmutableConverterImpl.Field.create(
+                    cond,
+                    prop,
+                    method,
+                    elementConverter,
+                    defaultElementSupplier,
+                    autoMapping
+            );
+        }
+
+        private class ListConverter<X, Y> implements Function<List<X>, List<Y>> {
+
+            private final Function<X, Y> elementConverter;
+
+            private ListConverter(Function<X, Y> elementConverter) {
+                this.elementConverter = elementConverter;
+            }
+
+            @SuppressWarnings("unchecked")
+            @Override
+            public List<Y> apply(List<X> list) {
+                List<Y> newList = new ArrayList<>(list.size());
+                for (X x : list) {
+                    Y y;
+                    if (x == null) {
+                        if (defaultElementSupplier == null) {
+                            y = null;
+                        } else {
+                            y = (Y) defaultElementSupplier.get();
+                        }
+                    } else {
+                        if (elementConverter == null) {
+                            y = (Y)x;
+                        } else {
+                            y = elementConverter.apply(x);
+                        }
+                    }
+                    newList.add(y);
+                }
+                return newList;
+            }
+        }
     }
 }

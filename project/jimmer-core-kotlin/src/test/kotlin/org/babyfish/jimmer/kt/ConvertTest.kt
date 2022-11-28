@@ -39,7 +39,9 @@ class ConvertTest {
     @Test
     fun testCondConverter() {
         val book = newImmutableConverter(Book::class, Partial::class) {
-            mapIf({it.name != null}, Book::name)
+            map(Book::name) {
+                useIf { it.name != null }
+            }
         }.convert(Partial(null))
         expect("{}") {
             book.toString()
@@ -78,15 +80,19 @@ class ConvertTest {
     fun testWithValueConverter() {
         newImmutableConverter(Book::class, BookInput::class) {
             map(Book::store, BookInput::storeName) {
-                new(BookStore::class).by {
-                    name = it
+                valueConverter {
+                    new(BookStore::class).by {
+                        name = it
+                    }
                 }
             }
             mapList(Book::authors, BookInput::authorNames) {
-                new(Author::class).by {
-                    val index = it.indexOf('-')
-                    firstName = it.substring(0, index)
-                    lastName = it.substring(index + 1)
+                elementConverter {
+                    new(Author::class).by {
+                        val index = it.indexOf('-')
+                        firstName = it.substring(0, index)
+                        lastName = it.substring(index + 1)
+                    }
                 }
             }
             autoMapOtherScalars()

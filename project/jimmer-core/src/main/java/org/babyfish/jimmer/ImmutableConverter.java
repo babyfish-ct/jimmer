@@ -5,8 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.BiConsumer;
-import java.util.function.Predicate;
+import java.util.function.*;
 
 public interface ImmutableConverter<T, Static> {
 
@@ -28,160 +27,88 @@ public interface ImmutableConverter<T, Static> {
      */
     interface Builder<T, Static> {
 
-        default Builder<T, Static> map(TypedProp<T, ?> prop) {
-            return mapIf(null, prop.unwrap(), prop.unwrap().getName(), null);
-        }
-
-        default Builder<T, Static> map(ImmutableProp prop) {
-            return mapIf(null, prop, prop.getName(), null);
-        }
-
-        default Builder<T, Static> map(TypedProp<T, ?> prop, String staticPropName) {
-            return mapIf(null, prop.unwrap(), staticPropName, null);
-        }
-
-        default Builder<T, Static> map(ImmutableProp prop, String staticPropName) {
-            return mapIf(null, prop, staticPropName, null);
+        default Builder<T, Static> map(TypedProp<?, ?> prop) {
+            return map(prop.unwrap(), prop.unwrap().getName(), null);
         }
 
         default Builder<T, Static> map(
-                TypedProp<T, ?> prop,
-                ValueConverter valueConverter
+                TypedProp<?, ?> prop,
+                String staticPropName
         ) {
-            return mapIf(null, prop.unwrap(), prop.unwrap().getName(), valueConverter);
+            return map(prop.unwrap(), staticPropName, null);
         }
 
-        default Builder<T, Static> map(
-                ImmutableProp prop,
-                ValueConverter valueConverter
+        @SuppressWarnings("unchecked")
+        default <Y> Builder<T, Static> map(
+                TypedProp<T, Y> prop,
+                Consumer<Mapping<Static, ?, Y>> block
         ) {
-            return mapIf(null, prop, prop.getName(), valueConverter);
+            return map(
+                    prop.unwrap(),
+                    prop.unwrap().getName(),
+                    (Consumer<Mapping<Static, ?, ?>>)(Consumer<?>)block
+            );
         }
 
-        default Builder<T, Static> map(
-                TypedProp<T, ?> prop,
+        @SuppressWarnings("unchecked")
+        default <Y> Builder<T, Static> map(
+                TypedProp<T, Y> prop,
                 String staticPropName,
-                ValueConverter valueConverter
+                Consumer<Mapping<Static, ?, Y>> block
         ) {
-            return mapIf(null, prop.unwrap(), staticPropName, valueConverter);
+            return map(
+                    prop.unwrap(),
+                    staticPropName,
+                    (Consumer<Mapping<Static, ?, ?>>)(Consumer<?>)block
+            );
         }
 
-        default Builder<T, Static> map(
-                ImmutableProp prop,
-                String staticPropName,
-                ValueConverter valueConverter
-        ) {
-            return mapIf(null, prop, staticPropName, valueConverter);
-        }
-
-        default Builder<T, Static> mapList(
-                TypedProp.Multiple<T, ?> prop,
-                ValueConverter elementConverter
-        ) {
-            return mapListIf(null, prop.unwrap(), prop.unwrap().getName(), elementConverter);
-        }
-
-        default Builder<T, Static> mapList(
-                ImmutableProp prop,
-                ValueConverter elementConverter
-        ) {
-            return mapListIf(null, prop, prop.getName(), elementConverter);
-        }
-
-        default Builder<T, Static> mapList(
-                TypedProp.Multiple<T, ?> prop,
-                String staticPropName,
-                ValueConverter elementConverter
-        ) {
-            return mapListIf(null, prop.unwrap(), staticPropName, elementConverter);
-        }
-
-        default Builder<T, Static> mapList(
-                ImmutableProp prop,
-                String staticPropName,
-                ValueConverter elementConverter
-        ) {
-            return mapListIf(null, prop, staticPropName, elementConverter);
-        }
-
-        default Builder<T, Static> mapIf(Predicate<Static> cond, TypedProp<T, ?> prop) {
-            return mapIf(cond, prop.unwrap(), prop.unwrap().getName(), null);
-        }
-
-        default Builder<T, Static> mapIf(Predicate<Static> cond, ImmutableProp prop) {
-            return mapIf(cond, prop, prop.getName(), null);
-        }
-
-        default Builder<T, Static> mapIf(Predicate<Static> cond, TypedProp<T, ?> prop, String staticPropName) {
-            return mapIf(cond, prop.unwrap(), staticPropName, null);
-        }
-
-        default Builder<T, Static> mapIf(Predicate<Static> cond, ImmutableProp prop, String staticPropName) {
-            return mapIf(cond, prop, staticPropName, null);
-        }
-
-        default Builder<T, Static> mapIf(
-                Predicate<Static> cond,
-                TypedProp<T, ?> prop,
-                ValueConverter valueConverter
-        ) {
-            return mapIf(cond, prop.unwrap(), prop.unwrap().getName(), valueConverter);
-        }
-
-        default Builder<T, Static> mapIf(
-                Predicate<Static> cond,
-                ImmutableProp prop,
-                ValueConverter valueConverter
-        ) {
-            return mapIf(cond, prop, prop.getName(), valueConverter);
-        }
-
-        default Builder<T, Static> mapIf(
-                Predicate<Static> cond,
-                TypedProp<T, ?> prop,
-                String staticPropName,
-                ValueConverter valueConverter
-        ) {
-            return mapIf(cond, prop.unwrap(), staticPropName, valueConverter);
-        }
-
-        Builder<T, Static> mapIf(
-                Predicate<Static> cond,
-                ImmutableProp prop,
-                String staticPropName,
-                ValueConverter valueConverter
+        Builder<T, Static> map(
+                ImmutableProp prop, 
+                String staticPropName, 
+                Consumer<Mapping<Static, ?, ?>> block
         );
 
-        default Builder<T, Static> mapListIf(
-                Predicate<Static> cond,
-                TypedProp.Multiple<T, ?> prop,
-                ValueConverter elementConverter
-        ) {
-            return mapListIf(cond, prop.unwrap(), prop.unwrap().getName(), elementConverter);
+        default Builder<T, Static> mapList(TypedProp.Multiple<?, ?> prop) {
+            return mapList(prop.unwrap(), prop.unwrap().getName(), null);
         }
 
-        default Builder<T, Static> mapListIf(
-                Predicate<Static> cond,
+        default Builder<T, Static> mapList(
+                TypedProp.Multiple<?, ?> prop,
+                String staticPropName
+        ) {
+            return mapList(prop.unwrap(), staticPropName, null);
+        }
+
+        @SuppressWarnings("unchecked")
+        default <Y> Builder<T, Static> mapList(
+                TypedProp.Multiple<T, Y> prop,
+                Consumer<ListMapping<Static, ?, Y>> block
+        ) {
+            return mapList(
+                    prop.unwrap(),
+                    prop.unwrap().getName(),
+                    (Consumer<ListMapping<Static, ?, ?>>)(Consumer<?>)block
+            );
+        }
+
+        @SuppressWarnings("unchecked")
+        default <Y> Builder<T, Static> mapList(
+                TypedProp.Multiple<T, Y> prop,
+                String staticPropName, 
+                Consumer<ListMapping<Static, ?, Y>> block
+        ) {
+            return mapList(
+                    prop.unwrap(),
+                    staticPropName,
+                    (Consumer<ListMapping<Static, ?, ?>>)(Consumer<?>)block
+            );
+        }
+
+        Builder<T, Static> mapList(
                 ImmutableProp prop,
-                ValueConverter elementConverter
-        ) {
-            return mapListIf(cond, prop, prop.getName(), elementConverter);
-        }
-
-        default Builder<T, Static> mapListIf(
-                Predicate<Static> cond,
-                TypedProp.Multiple<T, ?> prop,
                 String staticPropName,
-                ValueConverter elementConverter
-        ) {
-            return mapListIf(cond, prop.unwrap(), staticPropName, elementConverter);
-        }
-
-        Builder<T, Static> mapListIf(
-                Predicate<Static> cond,
-                ImmutableProp prop,
-                String staticPropName,
-                ValueConverter elementConverter
+                Consumer<ListMapping<Static, ?, ?>> block
         );
 
         default Builder<T, Static> unmap(TypedProp<T, ?> prop) {
@@ -200,14 +127,30 @@ public interface ImmutableConverter<T, Static> {
 
         ImmutableConverter<T, Static> build();
     }
-    
-    @FunctionalInterface
-    interface ValueConverter {
-        
-        Object convert(Object value);
-        
-        default Object defaultValue() {
-            return null;
-        }
+
+    interface Mapping<Static, X, Y> {
+
+        Mapping<Static, X, Y> useIf(Predicate<Static> cond);
+
+        Mapping<Static, X, Y> valueConverter(Function<X, Y> valueConverter);
+
+        Mapping<Static, X, Y> immutableValueConverter(ImmutableConverter<Y, X> valueConverter);
+
+        Mapping<Static, X, Y> defaultValue(Y defaultValue);
+
+        Mapping<Static, X, Y> defaultValue(Supplier<Y> defaultValueSupplier);
+    }
+
+    interface ListMapping<Static, X, Y> {
+
+        ListMapping<Static, X, Y> useIf(Predicate<Static> cond);
+
+        ListMapping<Static, X, Y> elementConverter(Function<X, Y> elementConverter);
+
+        ListMapping<Static, X, Y> immutableValueConverter(ImmutableConverter<Y, X> elementConverter);
+
+        ListMapping<Static, X, Y> defaultElement(Y defaultElement);
+
+        ListMapping<Static, X, Y> defaultElement(Supplier<Y> defaultValueSupplier);
     }
 }
