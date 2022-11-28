@@ -3,24 +3,31 @@ package org.babyfish.jimmer;
 import org.babyfish.jimmer.impl.converter.ImmutableConverterBuilderImpl;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-/**
- * Only for java, kotlin developers should use `KImmutableConverter`
- * @param <T>
- * @param <Static>
- */
 public interface ImmutableConverter<T, Static> {
 
-    T convert(Static staticObj);
+    @Nullable
+    T convert(@Nullable Static staticObj);
 
+    /**
+     * Only for java, kotlin developers should use `newImmutableConverter`
+     * @param <T>
+     * @param <Static>
+     */
     static <T, Static> Builder<T, Static> newBuilder(Class<T> immutableType, Class<Static> staticType) {
         return new ImmutableConverterBuilderImpl<>(immutableType, staticType);
     }
 
+    /**
+     * Only for java, kotlin developers should use `newImmutableConverter`
+     * @param <T>
+     * @param <Static>
+     */
     interface Builder<T, Static> {
 
         default Builder<T, Static> map(TypedProp<T, ?> prop) {
@@ -101,7 +108,11 @@ public interface ImmutableConverter<T, Static> {
 
         Builder<T, Static> unmap(ImmutableProp ... props);
 
-        Builder<T, Static> autoMapOtherScalars();
+        default Builder<T, Static> autoMapOtherScalars() {
+            return autoMapOtherScalars(false);
+        }
+
+        Builder<T, Static> autoMapOtherScalars(boolean partial);
 
         Builder<T, Static> setDraftModifier(BiConsumer<Draft, Static> modifier);
 
