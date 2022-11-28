@@ -1,13 +1,33 @@
-package org.babyfish.jimmer.sql.example.graphql.input;
+package org.babyfish.jimmer.sql.example.graphql.entities.input;
 
-import org.babyfish.jimmer.sql.example.graphql.entities.Book;
-import org.babyfish.jimmer.sql.example.graphql.entities.BookDraft;
+import org.babyfish.jimmer.ImmutableConverter;
+import org.babyfish.jimmer.ImmutableObjects;
+import org.babyfish.jimmer.sql.example.graphql.entities.*;
 import org.springframework.lang.Nullable;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 public class BookInput {
+
+    private static final ImmutableConverter<Book, BookInput> BOOK_CONVERTER =
+            ImmutableConverter
+                    .newBuilder(Book.class, BookInput.class)
+                    .map(BookProps.ID, mapping -> {
+                        mapping.useIf(input -> input.id != null);
+                    })
+                    .map(BookProps.STORE, mapping -> {
+                        mapping.valueConverter(value ->
+                                ImmutableObjects.makeIdOnly(BookStore.class, value)
+                        );
+                    })
+                    .mapList(BookProps.AUTHORS, mapping -> {
+                        mapping.elementConverter(element ->
+                                ImmutableObjects.makeIdOnly(Author.class, element)
+                        );
+                    })
+                    .autoMapOtherScalars() // name, edition, price
+                    .build();
 
     @Nullable
     private final Long id;
@@ -39,21 +59,33 @@ public class BookInput {
         this.authorIds = authorIds;
     }
 
+    @Nullable
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getEdition() {
+        return edition;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    @Nullable
+    public Long getStoreId() {
+        return storeId;
+    }
+
+    public List<Long> getAuthorIds() {
+        return authorIds;
+    }
+
     public Book toBook() {
-        return BookDraft.$.produce(book -> {
-            if (id != null) {
-                book.setId(id);
-            }
-            if (storeId != null) {
-                book.setStore(store -> store.setId(storeId));
-            }
-            book
-                    .setName(name)
-                    .setEdition(edition)
-                    .setPrice(price);
-            for (Long authorId : authorIds) {
-                book.addIntoAuthors(author -> author.setId(authorId));
-            }
-        });
+        return BOOK_CONVERTER.convert(this);
     }
 }
