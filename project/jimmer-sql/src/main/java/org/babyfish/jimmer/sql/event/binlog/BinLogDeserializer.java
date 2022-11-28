@@ -11,14 +11,10 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.Temporal;
 import java.util.Date;
 import java.util.Iterator;
@@ -26,16 +22,16 @@ import java.util.Map;
 
 class BinLogDeserializer extends StdDeserializer<Object> {
 
-    private final Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap;
+    private final JSqlClient sqlClient;
 
     private final ImmutableType immutableType;
 
     public BinLogDeserializer(
-            Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
+            JSqlClient sqlClient,
             ImmutableType immutableType
     ) {
         super(immutableType.getJavaClass());
-        this.scalarProviderMap = scalarProviderMap;
+        this.sqlClient = sqlClient;
         this.immutableType = immutableType;
     }
 
@@ -78,7 +74,7 @@ class BinLogDeserializer extends StdDeserializer<Object> {
                 } else {
                     ScalarProvider<Object, Object> provider =
                             (ScalarProvider<Object, Object>)
-                                    scalarProviderMap.get(prop.getElementClass());
+                                    sqlClient.getScalarProvider(prop.getElementClass());
                     Class<?> jsonDataType = provider != null ? provider.getSqlType() : prop.getElementClass();
                     if (Temporal.class.isAssignableFrom(jsonDataType) ||
                             Date.class.isAssignableFrom(jsonDataType)) {

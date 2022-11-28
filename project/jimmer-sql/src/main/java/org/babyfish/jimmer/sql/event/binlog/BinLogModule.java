@@ -1,21 +1,19 @@
 package org.babyfish.jimmer.sql.event.binlog;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import org.babyfish.jimmer.sql.runtime.ScalarProvider;
-
-import java.util.Map;
+import org.babyfish.jimmer.sql.JSqlClient;
 
 class BinLogModule extends SimpleModule {
 
-    private final Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap;
+    private final JSqlClient sqlClient;
 
-    BinLogModule(Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap) {
-        this.scalarProviderMap = scalarProviderMap;
+    BinLogModule(JSqlClient sqlClient) {
+        this.sqlClient = sqlClient;
     }
 
     @Override
     public void setupModule(SetupContext ctx) {
         super.setupModule(ctx);
-        ctx.addDeserializers(new BinLogDeserializers(scalarProviderMap));
+        ctx.addDeserializers(new BinLogDeserializers(sqlClient));
     }
 }
