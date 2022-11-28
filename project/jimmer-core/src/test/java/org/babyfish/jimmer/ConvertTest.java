@@ -91,6 +91,19 @@ public class ConvertTest {
     }
 
     @Test
+    public void testCondConverter() {
+        Book book = ImmutableConverter
+                .newBuilder(Book.class, Partial.class)
+                .mapIf(input -> input.getName() != null, BookProps.NAME)
+                .build()
+                .convert(new Partial(null));
+        Assertions.assertEquals(
+                "{}",
+                book.toString()
+        );
+    }
+
+    @Test
     public void testEmptyConverter() {
         ImmutableConverter<Book, BookInput> converter =
                 ImmutableConverter

@@ -11,6 +11,7 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConverter.Builder<T, Static> {
@@ -35,19 +36,25 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
     }
 
     @Override
-    public ImmutableConverter.Builder<T, Static> map(
+    public ImmutableConverter.Builder<T, Static> mapIf(
+            Predicate<Static> cond,
             ImmutableProp prop,
             String staticPropName,
             Function<Object, Object> valueConverter
     ) {
         validateProp(prop);
-        mapImpl(prop, staticPropName, valueConverter, false);
+        mapImpl(cond, prop, staticPropName, valueConverter, false);
         return this;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public ImmutableConverter.Builder<T, Static> mapList(ImmutableProp prop, String staticPropName, Function<Object, Object> elementConverter) {
+    public ImmutableConverter.Builder<T, Static> mapListIf(
+            Predicate<Static> cond,
+            ImmutableProp prop,
+            String staticPropName,
+            Function<Object, Object> elementConverter
+    ) {
         validateProp(prop);
         if (!prop.isReferenceList(TargetLevel.OBJECT) && !prop.isScalarList()) {
             throw new IllegalArgumentException(
@@ -56,7 +63,7 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
                             "\" is not list property"
             );
         }
-        return map(prop, staticPropName, value ->
+        return mapIf(cond, prop, staticPropName, value ->
                 ((List<Object>)value).stream()
                         .map(it -> it != null ? elementConverter.apply(it) : null)
                         .collect(Collectors.toList())
@@ -89,7 +96,7 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
         if (autoMapOtherScalars != 0) {
             for (ImmutableProp prop : immutableType.getProps().values()) {
                 if (!prop.isAssociation(TargetLevel.OBJECT) && !mappingMap.containsKey(prop)) {
-                    mapImpl(prop, prop.getName(), null, true);
+                    mapImpl(null, prop, prop.getName(), null, true);
                 }
             }
         }
@@ -118,6 +125,7 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
     }
 
     private void mapImpl(
+            Predicate<Static> cond,
             ImmutableProp prop,
             String staticPropName,
             Function<Object, Object> valueConverter,
@@ -154,6 +162,15 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
                             methodNames.stream().map(it -> it + "()").collect(Collectors.joining(", "))
             );
         }
-        mappingMap.put(prop, ImmutableConverterImpl.Mapping.create(prop, method, valueConverter, autoMapping));
+        mappingMap.put(
+                prop,
+                ImmutableConverterImpl.Mapping.create(
+                        cond,
+                        prop,
+                        method,
+                        valueConverter,
+                        autoMapping
+                )
+        );
     }
 }
