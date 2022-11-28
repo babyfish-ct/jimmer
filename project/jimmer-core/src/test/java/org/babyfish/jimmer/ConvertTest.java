@@ -94,7 +94,9 @@ public class ConvertTest {
     public void testCondConverter() {
         Book book = ImmutableConverter
                 .newBuilder(Book.class, Partial.class)
-                .mapIf(input -> input.getName() != null, BookProps.NAME)
+                .map(BookProps.NAME, mapping ->
+                    mapping.useIf(input -> input.name != null)
+                )
                 .build()
                 .convert(new Partial(null));
         Assertions.assertEquals(
@@ -107,16 +109,9 @@ public class ConvertTest {
     public void testDefaultValue() {
         Book book = ImmutableConverter
                 .newBuilder(Book.class, Partial.class)
-                .map(BookProps.NAME, new ImmutableConverter.ValueConverter() {
-                    @Override
-                    public Object convert(Object value) {
-                        return value;
-                    }
-                    @Override
-                    public Object defaultValue() {
-                        return "<NO-NAME>";
-                    }
-                })
+                .map(BookProps.NAME, mapping ->
+                        mapping.defaultValue("<NO-NAME>")
+                )
                 .build()
                 .convert(new Partial(null));
         Assertions.assertEquals(
@@ -155,11 +150,15 @@ public class ConvertTest {
         ImmutableConverter<Book, BookInput> converter =
                 ImmutableConverter
                         .newBuilder(Book.class, BookInput.class)
-                        .map(BookProps.STORE, "storeName", value ->
-                                BookStoreDraft.$.produce(it -> it.setName((String) value))
+                        .map(BookProps.STORE, "storeName", mapping ->
+                                mapping.valueConverter(value ->
+                                        BookStoreDraft.$.produce(it -> it.setName((String)value))
+                                )
                         )
-                        .mapList(BookProps.AUTHORS, "authorNames", value ->
-                                AuthorDraft.$.produce(it -> it.setName((String)value))
+                        .mapList(BookProps.AUTHORS, "authorNames", mapping ->
+                                mapping.elementConverter(value ->
+                                        AuthorDraft.$.produce(it -> it.setName((String)value))
+                                )
                         )
                         .autoMapOtherScalars()
                         .build();

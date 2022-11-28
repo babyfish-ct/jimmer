@@ -19,7 +19,9 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static> {
 
@@ -27,19 +29,19 @@ class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static>
 
     private final Class<Static> staticType;
 
-    private final Collection<Mapping> mappings;
+    private final Collection<Field> fields;
 
     private final BiConsumer<Draft, Static> draftModifier;
 
     ImmutableConverterImpl(
             ImmutableType immutableType,
             Class<Static> staticType,
-            Collection<Mapping> mappings,
+            Collection<Field> fields,
             BiConsumer<Draft, Static> draftModifier
     ) {
         this.immutableType = immutableType;
         this.staticType = staticType;
-        this.mappings = mappings;
+        this.fields = fields;
         this.draftModifier = draftModifier;
     }
 
@@ -56,16 +58,22 @@ class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static>
             );
         }
         return (T) Internal.produce(immutableType, null, draft -> {
-            for (Mapping mapping : mappings) {
-                Predicate<Object> cond = (Predicate<Object>) mapping.cond;
+            for (Field field : fields) {
+                Predicate<Object> cond = (Predicate<Object>) field.cond;
                 if (cond == null || cond.test(staticObj)) {
-                    Object value = mapping.methodHandle.invoke(staticObj);
-                    if (mapping.valueConverter != null) {
-                        value = value == null ?
-                                mapping.valueConverter.defaultValue() :
-                                mapping.valueConverter.convert(value);
+                    Object value = field.methodHandle.invoke(staticObj);
+                    if (value == null) {
+                        Supplier<?> defaultValueSupplier = field.defaultValueSupplier;
+                        if (defaultValueSupplier != null) {
+                            value = ((Supplier<Object>) defaultValueSupplier).get();
+                        }
+                    } else {
+                        Function<?, ?> valueConverter = field.valueConverter;
+                        if (valueConverter != null) {
+                            value = ((Function<Object, Object>) valueConverter).apply(value);
+                        }
                     }
-                    ((DraftSpi) draft).__set(mapping.propId, value);
+                    ((DraftSpi) draft).__set(field.propId, value);
                 }
             }
             if (draftModifier != null) {
@@ -74,7 +82,7 @@ class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static>
         });
     }
 
-    static class Mapping {
+    static class Field {
 
         final Predicate<?> cond;
 
@@ -82,25 +90,30 @@ class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static>
 
         final MethodHandle methodHandle;
 
-        final ValueConverter valueConverter;
+        final Function<?, ?> valueConverter;
 
-        private Mapping(
+        final Supplier<?> defaultValueSupplier;
+
+        private Field(
                 Predicate<?> cond,
                 ImmutableProp prop,
                 MethodHandle methodHandle,
-                ValueConverter valueConverter
+                Function<?, ?> valueConverter,
+                Supplier<?> defaultValueSupplier
         ) {
             this.cond = cond;
             this.propId = prop.getId();
             this.methodHandle = methodHandle;
             this.valueConverter = valueConverter;
+            this.defaultValueSupplier = defaultValueSupplier;
         }
 
-        public static Mapping create(
+        public static Field create(
                 Predicate<?> cond,
                 ImmutableProp prop,
                 Method method,
-                ValueConverter valueConverter,
+                Function<?, ?> valueConverter,
+                Supplier<?> defaultValueSupplier,
                 boolean autoMapping
         ) {
             Class<?> propType;
@@ -169,7 +182,7 @@ class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static>
             } catch (NoSuchMethodException | IllegalAccessException ex) {
                 throw new AssertionError("Internal bug: " + ex.getMessage(), ex);
             }
-            return new Mapping(cond, prop, handle, valueConverter);
+            return new Field(cond, prop, handle, valueConverter, defaultValueSupplier);
         }
     }
 }

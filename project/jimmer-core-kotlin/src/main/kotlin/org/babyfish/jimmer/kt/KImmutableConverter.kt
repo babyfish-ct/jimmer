@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.kt
 
-import org.babyfish.jimmer.Draft
 import org.babyfish.jimmer.ImmutableConverter
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -21,82 +20,54 @@ class KImmutableConverterDsl<T: Any, Static: Any> internal constructor(
     private val builder: ImmutableConverter.Builder<T, Static>
 ) {
     fun map(prop: KProperty1<T, *>) {
-        builder.map(prop.toImmutableProp(), prop.name)
+        builder.map(prop.toImmutableProp(), prop.name, null)
     }
 
-    fun <X> map(
-        prop: KProperty1<T, X?>,
-        staticProp: KProperty1<Static, X?>
-    ) {
-        builder.map(prop.toImmutableProp(), staticProp.name)
+    fun map(prop: KProperty1<T, *>, staticProp: KProperty1<Static, *>) {
+        builder.map(prop.toImmutableProp(), staticProp.name, null)
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <X: Any, Y: Any> map(
-        prop: KProperty1<T, Y?>,
-        staticProp: KProperty1<Static, X?>,
-        defaultValueProvider: (() -> Y)? = null,
-        valueConverter: (X) -> Y
-    ) {
-        builder.map(prop.toImmutableProp(), staticProp.name, object : ImmutableConverter.ValueConverter {
-            override fun convert(value: Any): Any =
-                valueConverter(value as X)
-            override fun defaultValue(): Any? =
-                defaultValueProvider?.invoke()
-        })
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    fun <X: Any, Y> mapList(
-        prop: KProperty1<T, List<Y>>,
-        staticProp: KProperty1<Static, List<X>>,
-        elementConverter: (X) -> Y
-    ) {
-        builder.mapList(prop.toImmutableProp(), staticProp.name) {
-            elementConverter(it as X)
+    fun <Y> map(prop: KProperty1<T, Y?>, block: Mapping<Static, *, Y>.() -> Unit) {
+        builder.map(prop.toImmutableProp(), prop.name) {
+            block(Mapping(it as ImmutableConverter.Mapping<Static, *, Y>))
         }
     }
 
-    fun <X> mapIf(
-        cond: (Static) -> Boolean,
-        prop: KProperty1<T, X?>,
-        staticProp: KProperty1<Static, X?>
-    ) {
-        builder.mapIf(cond, prop.toImmutableProp(), staticProp.name)
-    }
-
-    fun <X> mapIf(
-        cond: (Static) -> Boolean,
-        prop: KProperty1<T, X?>
-    ) {
-        builder.mapIf(cond, prop.toImmutableProp(), prop.name)
-    }
-
     @Suppress("UNCHECKED_CAST")
-    fun <X: Any, Y: Any> mapIf(
-        cond: (Static) -> Boolean,
+    fun <X, Y> map(
         prop: KProperty1<T, Y?>,
         staticProp: KProperty1<Static, X?>,
-        defaultValueProvider: (() -> Y)? = null,
-        valueConverter: (X) -> Y
+        block: Mapping<Static, X, Y>.() -> Unit
     ) {
-        builder.mapIf(cond, prop.toImmutableProp(), staticProp.name, object : ImmutableConverter.ValueConverter {
-            override fun convert(value: Any): Any =
-                valueConverter(value as X)
-            override fun defaultValue(): Any? =
-                defaultValueProvider?.invoke()
-        })
+        builder.map(prop.toImmutableProp(), staticProp.name) {
+            block(Mapping(it as ImmutableConverter.Mapping<Static, X, Y>))
+        }
+    }
+
+    fun mapList(prop: KProperty1<T, List<*>>) {
+        builder.mapList(prop.toImmutableProp(), prop.name, null)
+    }
+
+    fun mapList(prop: KProperty1<T, List<*>>, staticProp: KProperty1<Static, List<*>>) {
+        builder.mapList(prop.toImmutableProp(), staticProp.name, null)
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <X: Any, Y> mapListIf(
-        cond: (Static) -> Boolean,
+    fun <Y> mapList(prop: KProperty1<T, List<Y>>, block: ListMapping<Static, *, Y>.() -> Unit) {
+        builder.mapList(prop.toImmutableProp(), prop.name) {
+            block(ListMapping(it as ImmutableConverter.ListMapping<Static, *, Y>))
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun <X, Y> mapList(
         prop: KProperty1<T, List<Y>>,
         staticProp: KProperty1<Static, List<X>>,
-        elementConverter: (X) -> Y
+        block: ListMapping<Static, X, Y>.() -> Unit
     ) {
-        builder.mapListIf(cond, prop.toImmutableProp(), staticProp.name) {
-            elementConverter(it as X)
+        builder.mapList(prop.toImmutableProp(), staticProp.name) {
+            block(ListMapping(it as ImmutableConverter.ListMapping<Static, X, Y>))
         }
     }
 
@@ -112,6 +83,54 @@ class KImmutableConverterDsl<T: Any, Static: Any> internal constructor(
     fun <D> setDraftModifier(block: D.(Static) -> Unit) {
         builder.setDraftModifier { draft, staticObj ->
             (draft as D).block(staticObj)
+        }
+    }
+
+    class Mapping<Static, X, Y>(
+        private val javaMapping: ImmutableConverter.Mapping<Static, X, Y>
+    ) {
+        fun useIf(cond: (Static) -> Boolean) {
+            javaMapping.useIf(cond)
+        }
+
+        fun valueConverter(converter: (X) -> Y) {
+            javaMapping.valueConverter(converter)
+        }
+
+        fun immutableValueConverter(converter: ImmutableConverter<Y, X>) {
+            javaMapping.immutableValueConverter(converter)
+        }
+
+        fun defaultValue(defaultValue: Y) {
+            javaMapping.defaultValue(defaultValue)
+        }
+
+        fun defaultValue(defaultValueSupplier: () -> Y) {
+            javaMapping.defaultValue(defaultValueSupplier)
+        }
+    }
+
+    class ListMapping<Static, X, Y>(
+        private val javaMapping: ImmutableConverter.ListMapping<Static, X, Y>
+    ) {
+        fun useIf(cond: (Static) -> Boolean) {
+            javaMapping.useIf(cond)
+        }
+
+        fun elementConverter(converter: (X) -> Y) {
+            javaMapping.elementConverter(converter)
+        }
+
+        fun immutableValueConverter(converter: ImmutableConverter<Y, X>) {
+            javaMapping.immutableValueConverter(converter)
+        }
+
+        fun defaultElement(defaultValue: Y) {
+            javaMapping.defaultElement(defaultValue)
+        }
+
+        fun defaultElement(defaultValueSupplier: () -> Y) {
+            javaMapping.defaultElement(defaultValueSupplier)
         }
     }
 }
