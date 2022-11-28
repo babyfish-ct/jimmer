@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.graphql.input;
+package org.babyfish.jimmer.sql.example.graphql.entities.input;
 
 import org.babyfish.jimmer.sql.example.graphql.entities.Author;
 import org.babyfish.jimmer.sql.example.graphql.entities.AuthorDraft;
