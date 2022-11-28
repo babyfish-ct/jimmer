@@ -23,7 +23,7 @@ import org.babyfish.jimmer.sql.filter.*;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.babyfish.jimmer.util.StaticCache;
+import org.babyfish.jimmer.impl.util.StaticCache;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

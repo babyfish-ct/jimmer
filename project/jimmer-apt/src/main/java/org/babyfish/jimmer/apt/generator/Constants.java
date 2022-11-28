@@ -8,7 +8,7 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinType;
-import org.babyfish.jimmer.validation.Validator;
+import org.babyfish.jimmer.impl.validation.Validator;
 
 import java.util.function.Consumer;
 

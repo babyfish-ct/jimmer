@@ -8,7 +8,7 @@ import org.babyfish.jimmer.meta.ImmutablePropCategory
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.*
 import org.babyfish.jimmer.sql.*
-import org.babyfish.jimmer.validation.Validator
+import org.babyfish.jimmer.impl.validation.Validator
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.util.regex.Pattern

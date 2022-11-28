@@ -2,9 +2,8 @@ package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.meta.ModelException;
-import org.babyfish.jimmer.sql.runtime.EnumProviderBuilder;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
-import org.babyfish.jimmer.util.StaticCache;
+import org.babyfish.jimmer.impl.util.StaticCache;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;

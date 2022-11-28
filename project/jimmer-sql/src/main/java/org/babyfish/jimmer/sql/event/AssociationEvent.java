@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.event;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.util.Classes;
+import org.babyfish.jimmer.impl.util.Classes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
