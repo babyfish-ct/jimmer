@@ -124,7 +124,7 @@ class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static>
                 propType = prop.getElementClass();
             }
             if (valueConverter == null) {
-                if (propType != method.getReturnType()) {
+                if (!Classes.matches(propType, method.getReturnType())) {
                     throw new IllegalArgumentException(
                             "Cannot " +
                                     (autoMapping ? " automatically " : "") +

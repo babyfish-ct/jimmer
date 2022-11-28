@@ -156,7 +156,7 @@ class ConvertTest {
     
     data class BookInput(
         val name: String,
-        val price: BigDecimal,
+        val price: BigDecimal?,
         val edition: Int,
         val storeName: String?,
         val authorNames: List<String>
