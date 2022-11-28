@@ -3,12 +3,11 @@ package org.babyfish.jimmer.sql;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.util.StaticCache;
+import org.babyfish.jimmer.impl.util.StaticCache;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Type;
 import java.util.*;
-import java.util.stream.Collectors;
 
 class DraftInterceptorManager {
 

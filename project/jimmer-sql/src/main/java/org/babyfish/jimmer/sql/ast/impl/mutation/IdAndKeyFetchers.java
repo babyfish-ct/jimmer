@@ -5,7 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
-import org.babyfish.jimmer.util.StaticCache;
+import org.babyfish.jimmer.impl.util.StaticCache;
 
 public class IdAndKeyFetchers {
 

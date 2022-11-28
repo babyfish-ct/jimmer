@@ -11,7 +11,7 @@ import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.Storage;
-import org.babyfish.jimmer.util.StaticCache;
+import org.babyfish.jimmer.impl.util.StaticCache;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

@@ -10,7 +10,6 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
@@ -18,28 +17,24 @@ import java.util.Map;
 
 public class BinLogParser {
 
-    private final ObjectMapper mapper;
+    private ObjectMapper mapper;
 
-    public BinLogParser(
-            Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap
-    ) {
-        this(scalarProviderMap, null);
+    public BinLogParser initialize(JSqlClient sqlClient) {
+        return initialize(sqlClient, null);
     }
 
-    public BinLogParser(
-            Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
-            ObjectMapper mapper
-    ) {
-        if (scalarProviderMap == null) {
-            throw new IllegalArgumentException("scalarProviderMap cannot be null");
+    public BinLogParser initialize(JSqlClient sqlClient, ObjectMapper mapper) {
+        if (sqlClient == null) {
+            throw new IllegalArgumentException("`sqlClient` cannot be null");
         }
         ObjectMapper clonedMapper = mapper != null ?
                 new ObjectMapper(mapper) {} :
                 new ObjectMapper();
         clonedMapper
-                .registerModule(new BinLogModule(scalarProviderMap))
+                .registerModule(new BinLogModule(sqlClient))
                 .registerModule(new JavaTimeModule());
         this.mapper = clonedMapper;
+        return this;
     }
 
     public <T> T parseEntity(@NotNull Class<T> type, String json) {
