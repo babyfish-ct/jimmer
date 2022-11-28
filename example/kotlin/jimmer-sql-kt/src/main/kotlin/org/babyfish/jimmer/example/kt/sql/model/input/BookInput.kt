@@ -20,16 +20,19 @@ data class BookInput(
         BOOK_CONVERTER.convert(this)
 
     companion object {
+
         @JvmStatic
         private val BOOK_CONVERTER = newImmutableConverter(Book::class, BookInput::class) {
-            mapIf({it.id != null}, Book::id)
-            autoMapOtherScalars()
+            map(Book::id) {
+                useIf { it.id !== null }
+            }
             map(Book::store, BookInput::storeId) {
-                makeIdOnly(it)
+                valueConverter(::makeIdOnly)
             }
             mapList(Book::authors, BookInput::authorIds) {
-                makeIdOnly(it)
+                elementConverter(::makeIdOnly)
             }
+            autoMapOtherScalars()
         }
     }
 }

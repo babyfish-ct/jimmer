@@ -3,7 +3,7 @@ package org.babyfish.jimmer.example.kt.graphql.controller
 import org.babyfish.jimmer.example.kt.graphql.dal.BookStoreRepository
 import org.babyfish.jimmer.example.kt.graphql.entities.Book
 import org.babyfish.jimmer.example.kt.graphql.entities.BookStore
-import org.babyfish.jimmer.example.kt.graphql.input.BookStoreInput
+import org.babyfish.jimmer.example.kt.graphql.entities.input.BookStoreInput
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.BatchMapping

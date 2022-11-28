@@ -29,7 +29,7 @@ public class BookInput {
                             ImmutableObjects.makeIdOnly(Author.class, element)
                     );
                 })
-                .autoMapOtherScalars(true) // name, edition, price
+                .autoMapOtherScalars(true)
                 .build();
 
     @Nullable
@@ -60,32 +60,6 @@ public class BookInput {
         this.price = price;
         this.storeId = storeId;
         this.authorIds = authorIds;
-    }
-
-    @Nullable
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public int getEdition() {
-        return edition;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    @Nullable
-    public Long getStoreId() {
-        return storeId;
-    }
-
-    public List<Long> getAuthorIds() {
-        return authorIds;
     }
 
     public Book toBook() {
