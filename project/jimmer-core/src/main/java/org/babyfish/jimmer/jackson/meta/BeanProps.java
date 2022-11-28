@@ -3,7 +3,7 @@ package org.babyfish.jimmer.jackson.meta;
 import com.fasterxml.jackson.databind.introspect.TypeResolutionContext;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.util.StaticCache;
+import org.babyfish.jimmer.impl.util.StaticCache;
 
 import java.util.Objects;
 

@@ -1,35 +1,23 @@
 package org.babyfish.jimmer.sql.binlog;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.Role;
-import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.util.Collections;
-import java.util.Map;
-import java.util.UUID;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 public class BinLogTest {
 
-    private Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap =
-            Collections.singletonMap(
-                    Gender.class,
-                    ScalarProvider.enumProviderByString(Gender.class, it -> {
-                        it.map(Gender.MALE, "M");
-                        it.map(Gender.FEMALE, "F");
-                    })
-            );
+    private JSqlClient sqlClient = JSqlClient.newBuilder().build();
 
     @Test
     public void testTreeNode() {
         String json = "{\"Node_Id\": 2, \"[Name]\": 3, \"`Parent_Id`\": 1}";
-        TreeNode treeNode = new BinLogParser(scalarProviderMap).parseEntity(TreeNode.class, json);
+        TreeNode treeNode = new BinLogParser().initialize(sqlClient).parseEntity(TreeNode.class, json);
         Assertions.assertEquals(
                 "{\"id\":2,\"name\":\"3\",\"parent\":{\"id\":1}}",
                 treeNode.toString()
@@ -41,7 +29,7 @@ public class BinLogTest {
         String json = "{\"id\": \"" +
                 alexId +
                 "\", \"[First_name]\": \"Alex\", \"[last_Name]\": \"Banks\", \"`GenDER`\": \"M\"}";
-        Author author = new BinLogParser(scalarProviderMap).parseEntity(Author.class, json);
+        Author author = new BinLogParser().initialize(sqlClient).parseEntity(Author.class, json);
         Assertions.assertEquals(
                 "{\"id\":\"" +
                         alexId +
@@ -58,7 +46,7 @@ public class BinLogTest {
                 "\"created_time\": \"2022-10-03 00:00:00\"," +
                 "\"modified_time\": \"2022-10-03 00:10:00\"" +
                 "}";
-        Role role = new BinLogParser(scalarProviderMap).parseEntity(Role.class, json);
+        Role role = new BinLogParser().initialize(sqlClient).parseEntity(Role.class, json);
         Assertions.assertEquals(
                 "{\"name\":\"Role\",\"id\":1}",
                 role.toString()
@@ -72,7 +60,7 @@ public class BinLogTest {
                 "\", \"`Author_Id`\": \"" +
                 danId +
                 "\"}";
-        Tuple2<Long, Long> idPair = new BinLogParser(scalarProviderMap)
+        Tuple2<Long, Long> idPair = new BinLogParser().initialize(sqlClient)
                 .parseIdPair(
                         BookProps.AUTHORS,
                         json
@@ -94,7 +82,7 @@ public class BinLogTest {
                 "\", \"`Author_Id`\": \"" +
                 danId +
                 "\"}";
-        Tuple2<Long, Long> idPair = new BinLogParser(scalarProviderMap)
+        Tuple2<Long, Long> idPair = new BinLogParser().initialize(sqlClient)
                 .parseIdPair(
                         AuthorProps.BOOKS,
                         json

@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.validation;
+package org.babyfish.jimmer.impl.validation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;

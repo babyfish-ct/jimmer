@@ -696,11 +696,12 @@ class JSqlClientImpl implements JSqlClient {
         public JSqlClient build() {
             createTriggersIfNecessary();
             FilterManager filterManager = new FilterManager(filters, disabledFilters);
+            BinLogParser binLogParser = new BinLogParser();
             BinLog binLog;
             if (entityManager != null) {
                 binLog = new BinLog(
                         entityManager,
-                        new BinLogParser(scalarProviderMap, binLogObjectMapper),
+                        binLogParser,
                         triggers
                 );
             } else {
@@ -726,6 +727,7 @@ class JSqlClientImpl implements JSqlClient {
                     new DraftInterceptorManager(interceptors)
             );
             filterManager.initialize(sqlClient);
+            binLogParser.initialize(sqlClient, binLogObjectMapper);
             return sqlClient;
         }
 

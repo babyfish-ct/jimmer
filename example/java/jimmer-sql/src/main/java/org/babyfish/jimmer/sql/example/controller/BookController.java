@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.example.model.*;
+import org.babyfish.jimmer.sql.example.model.input.BookInput;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -145,7 +146,13 @@ public class BookController {
     }
 
     @Transactional
-    @PutMapping("book")
+    @PutMapping("/book")
+    public Book saveBook(@RequestBody BookInput input) {
+        return sqlClient.getEntities().save(input.toBook()).getModifiedEntity();
+    }
+
+    @Transactional
+    @PutMapping("/book/dynamic")
     public Book saveBook(@RequestBody Book book) {
         return sqlClient.getEntities().save(book).getModifiedEntity();
     }
