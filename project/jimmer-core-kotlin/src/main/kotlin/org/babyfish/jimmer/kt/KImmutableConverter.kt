@@ -32,9 +32,13 @@ class KImmutableConverterDsl<T: Any, Static: Any> internal constructor(
     private val builder: ImmutableConverter.Builder<T, Static>
 ) {
 
+    fun map(prop: KProperty1<T, *>) {
+        builder.map(prop.toImmutableProp(), prop.name)
+    }
+
     fun <X> map(
         prop: KProperty1<T, X?>,
-        staticProp: KProperty1<T, X?>
+        staticProp: KProperty1<Static, X?>
     ) {
         builder.map(prop.toImmutableProp(), staticProp.name)
     }
@@ -57,6 +61,45 @@ class KImmutableConverterDsl<T: Any, Static: Any> internal constructor(
         elementConverter: (X) -> Y
     ) {
         builder.mapList(prop.toImmutableProp(), staticProp.name) {
+            elementConverter(it as X)
+        }
+    }
+
+    fun <X> mapIf(
+        cond: (Static) -> Boolean,
+        prop: KProperty1<T, X?>,
+        staticProp: KProperty1<Static, X?>
+    ) {
+        builder.mapIf(cond, prop.toImmutableProp(), staticProp.name)
+    }
+
+    fun <X> mapIf(
+        cond: (Static) -> Boolean,
+        prop: KProperty1<T, X?>
+    ) {
+        builder.mapIf(cond, prop.toImmutableProp(), prop.name)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun <X, Y> mapIf(
+        cond: (Static) -> Boolean,
+        prop: KProperty1<T, Y?>,
+        staticProp: KProperty1<Static, X>,
+        valueConverter: (X) -> Y
+    ) {
+        builder.mapIf(cond, prop.toImmutableProp(), staticProp.name) {
+            valueConverter(it as X)
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun <X, Y> mapListIf(
+        cond: (Static) -> Boolean,
+        prop: KProperty1<T, List<Y>>,
+        staticProp: KProperty1<Static, List<X>>,
+        elementConverter: (X) -> Y
+    ) {
+        builder.mapListIf(cond, prop.toImmutableProp(), staticProp.name) {
             elementConverter(it as X)
         }
     }

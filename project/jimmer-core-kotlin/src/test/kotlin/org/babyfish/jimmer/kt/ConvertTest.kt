@@ -37,6 +37,16 @@ class ConvertTest {
     }
 
     @Test
+    fun testCondConverter() {
+        val book = newImmutableConverter(Book::class, Partial::class) {
+            mapIf({it.name != null}, Book::name)
+        }.convert(Partial(null))
+        expect("{}") {
+            book.toString()
+        }
+    }
+
+    @Test
     fun testEmptyConverter() {
         newImmutableConverter(Book::class, BookInput::class) {}
             .toNonNull()
@@ -153,7 +163,7 @@ class ConvertTest {
     )
 
     data class Partial(
-        val name: String
+        val name: String?
     )
     
     companion object {

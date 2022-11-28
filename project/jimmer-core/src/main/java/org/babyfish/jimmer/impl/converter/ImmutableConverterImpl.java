@@ -19,8 +19,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
-public class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static> {
+class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static> {
 
     private final ImmutableType immutableType;
 
@@ -55,11 +56,14 @@ public class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, 
         }
         return (T) Internal.produce(immutableType, null, draft -> {
             for (Mapping mapping : mappings) {
-                Object value = mapping.methodHandle.invoke(staticObj);
-                if (value != null && mapping.valueConverter != null) {
-                    value = mapping.valueConverter.apply(value);
+                Predicate<Object> cond = (Predicate<Object>) mapping.cond;
+                if (cond == null || cond.test(staticObj)) {
+                    Object value = mapping.methodHandle.invoke(staticObj);
+                    if (value != null && mapping.valueConverter != null) {
+                        value = mapping.valueConverter.apply(value);
+                    }
+                    ((DraftSpi) draft).__set(mapping.propId, value);
                 }
-                ((DraftSpi)draft).__set(mapping.propId, value);
             }
             if (draftModifier != null) {
                 draftModifier.accept((Draft)draft, staticObj);
@@ -67,7 +71,9 @@ public class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, 
         });
     }
 
-    public static class Mapping {
+    static class Mapping {
+
+        final Predicate<?> cond;
 
         final int propId;
 
@@ -75,21 +81,20 @@ public class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, 
 
         final Function<Object, Object> valueConverter;
 
-        private Mapping(ImmutableProp prop, MethodHandle methodHandle, Function<Object, Object> valueConverter) {
+        private Mapping(
+                Predicate<?> cond,
+                ImmutableProp prop,
+                MethodHandle methodHandle,
+                Function<Object, Object> valueConverter
+        ) {
+            this.cond = cond;
             this.propId = prop.getId();
             this.methodHandle = methodHandle;
             this.valueConverter = valueConverter;
         }
 
         public static Mapping create(
-                ImmutableProp prop,
-                Method method,
-                Function<Object, Object> valueConverter
-        ) {
-            return create(prop, method, valueConverter, false);
-        }
-
-        public static Mapping create(
+                Predicate<?> cond,
                 ImmutableProp prop,
                 Method method,
                 Function<Object, Object> valueConverter,
@@ -161,7 +166,7 @@ public class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, 
             } catch (NoSuchMethodException | IllegalAccessException ex) {
                 throw new AssertionError("Internal bug: " + ex.getMessage(), ex);
             }
-            return new Mapping(prop, handle, valueConverter);
+            return new Mapping(cond, prop, handle, valueConverter);
         }
     }
 }
