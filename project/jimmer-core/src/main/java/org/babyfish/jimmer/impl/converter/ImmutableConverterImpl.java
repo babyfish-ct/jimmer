@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -112,6 +113,7 @@ class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static>
                 Predicate<?> cond,
                 ImmutableProp prop,
                 Method method,
+                java.lang.reflect.Field field,
                 Function<?, ?> valueConverter,
                 Supplier<?> defaultValueSupplier,
                 boolean autoMapping
@@ -124,7 +126,8 @@ class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static>
                 propType = prop.getElementClass();
             }
             if (valueConverter == null) {
-                if (!Classes.matches(propType, method.getReturnType())) {
+                Class<?> staticPropType = method != null ? method.getReturnType() : field.getType();
+                if (!Classes.matches(propType, staticPropType)) {
                     throw new IllegalArgumentException(
                             "Cannot " +
                                     (autoMapping ? " automatically " : "") +
@@ -135,12 +138,12 @@ class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static>
                                     "\" without value converter, the return type of jimmer property is \"" +
                                     propType.getName() +
                                     "\" but the return type of the method of static type is \"" +
-                                    method.getReturnType().getName() +
+                                    staticPropType.getName() +
                                     "\""
                     );
                 }
                 if (isList) {
-                    Type type = method.getGenericReturnType();
+                    Type type = method != null ? method.getGenericReturnType() : field.getGenericType();
                     if (!(type instanceof ParameterizedType)) {
                         throw new IllegalArgumentException(
                                 "Cannot " +
@@ -174,12 +177,10 @@ class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static>
             }
             MethodHandle handle;
             try {
-                handle = MethodHandles.lookup().findVirtual(
-                        method.getDeclaringClass(),
-                        method.getName(),
-                        MethodType.methodType(method.getReturnType())
-                );
-            } catch (NoSuchMethodException | IllegalAccessException ex) {
+                handle = method != null ?
+                        MethodHandles.lookup().unreflect(method) :
+                        MethodHandles.lookup().unreflectGetter(field);
+            } catch (IllegalAccessException ex) {
                 throw new AssertionError("Internal bug: " + ex.getMessage(), ex);
             }
             return new Field(cond, prop, handle, valueConverter, defaultValueSupplier);

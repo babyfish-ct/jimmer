@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -138,15 +139,38 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
         methodNames.add("get" + suffix);
         methodNames.add(staticPropName);
         Method method = null;
+        Field field = null;
         for (String methodName : methodNames) {
-            try {
-                method = staticType.getMethod(methodName);
-                break;
-            } catch (NoSuchMethodException ex) {
-                // Do nothing
+            for (Class<?> type = staticType; type != null; type = type.getSuperclass()) {
+                try {
+                    method = staticType.getDeclaredMethod(methodName);
+                    if (Modifier.isStatic(method.getModifiers())) {
+                        method = null;
+                    } else {
+                        method.setAccessible(true);
+                        break;
+                    }
+                } catch (NoSuchMethodException ex) {
+                    // Do nothing
+                }
             }
         }
-        if (method == null || Modifier.isStatic(method.getModifiers())) {
+        if (method == null) {
+            for (Class<?> type = staticType; type != null; type = type.getSuperclass()) {
+                try {
+                    field = staticType.getDeclaredField(staticPropName);
+                    if (Modifier.isStatic(field.getModifiers())) {
+                        field = null;
+                    } else {
+                        field.setAccessible(true);
+                        break;
+                    }
+                } catch (NoSuchFieldException ex) {
+                    // Do nothing
+                }
+            }
+        }
+        if (method == null && field == null) {
             if (autoMapping && autoMapOtherScalars == PARTIAL_AUTO_MAPPING) {
                 return;
             }
@@ -155,15 +179,18 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
                             "Cannot automatically map the property \"" + prop + "\"" :
                             "Illegal static property name: \"" + staticPropName + '"'
                     ) +
-                            ", the following non-static methods cannot be found in static type \"" +
+                            ", the static type \"" +
                             staticType.getName() +
-                            "\": " +
-                            methodNames.stream().map(it -> it + "()").collect(Collectors.joining(", "))
+                            "\" has neither methods " +
+                            methodNames.stream().map(it -> '"' + it + "()\"").collect(Collectors.joining(", ")) +
+                            " nor field \"" +
+                            staticPropName +
+                            "\""
             );
         }
         FieldBuilder builder = treatAsList ?
-                new ListMappingImpl<>(prop, method, autoMapping) :
-                new MappingImpl<>(prop, method, autoMapping);
+                new ListMappingImpl<>(prop, method, field, autoMapping) :
+                new MappingImpl<>(prop, method, field, autoMapping);
         if (mappingBuilderConsumer != null) {
             ((Consumer<FieldBuilder>) mappingBuilderConsumer).accept(builder);
         }
@@ -180,6 +207,8 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
 
         private final Method method;
 
+        private final Field field;
+
         private final boolean autoMapping;
 
         private Predicate<?> cond;
@@ -188,9 +217,10 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
 
         private Supplier<?> defaultValueSupplier;
 
-        private MappingImpl(ImmutableProp prop, Method method, boolean autoMapping) {
+        private MappingImpl(ImmutableProp prop, Method method, Field field, boolean autoMapping) {
             this.prop = prop;
             this.method = method;
+            this.field = field;
             this.autoMapping = autoMapping;
         }
 
@@ -230,6 +260,7 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
                     cond,
                     prop,
                     method,
+                    field,
                     valueConverter,
                     defaultValueSupplier,
                     autoMapping
@@ -243,6 +274,8 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
 
         private final Method method;
 
+        private final Field field;
+
         private final boolean autoMapping;
 
         private Predicate<?> cond;
@@ -251,9 +284,10 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
 
         private Supplier<?> defaultElementSupplier;
 
-        private ListMappingImpl(ImmutableProp prop, Method method, boolean autoMapping) {
+        private ListMappingImpl(ImmutableProp prop, Method method, Field field, boolean autoMapping) {
             this.prop = prop;
             this.method = method;
+            this.field = field;
             this.autoMapping = autoMapping;
         }
 
@@ -293,6 +327,7 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
                     cond,
                     prop,
                     method,
+                    field,
                     elementConverter,
                     defaultElementSupplier,
                     autoMapping

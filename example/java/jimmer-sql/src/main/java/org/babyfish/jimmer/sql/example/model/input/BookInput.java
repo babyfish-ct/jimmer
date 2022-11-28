@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.example.model.Author;
 import org.babyfish.jimmer.sql.example.model.Book;
 import org.babyfish.jimmer.sql.example.model.BookProps;
 import org.babyfish.jimmer.sql.example.model.BookStore;
+import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -18,31 +19,50 @@ public class BookInput {
                 .map(BookProps.ID, mapping -> {
                     mapping.useIf(input -> input.id != null);
                 })
-                .map(BookProps.STORE, mapping -> {
+                .map(BookProps.STORE, "storeId", mapping -> {
                     mapping.valueConverter(value ->
                             ImmutableObjects.makeIdOnly(BookStore.class, value)
                     );
                 })
-                .mapList(BookProps.AUTHORS, mapping -> {
+                .mapList(BookProps.AUTHORS, "authorIds", mapping -> {
                     mapping.elementConverter(element ->
                             ImmutableObjects.makeIdOnly(Author.class, element)
                     );
                 })
-                .autoMapOtherScalars() // name, edition, price
+                .autoMapOtherScalars(true) // name, edition, price
                 .build();
 
-    private Long id;
+    @Nullable
+    private final Long id;
 
-    private String name;
+    private final String name;
 
-    private int edition;
+    private final int edition;
 
-    private BigDecimal price;
+    private final BigDecimal price;
 
-    private Long storeId;
+    @Nullable
+    private final Long storeId;
 
-    private List<Long> authorIds;
+    private final List<Long> authorIds;
 
+    public BookInput(
+            @Nullable Long id,
+            String name,
+            int edition,
+            BigDecimal price,
+            @Nullable Long storeId,
+            List<Long> authorIds
+    ) {
+        this.id = id;
+        this.name = name;
+        this.edition = edition;
+        this.price = price;
+        this.storeId = storeId;
+        this.authorIds = authorIds;
+    }
+
+    @Nullable
     public Long getId() {
         return id;
     }
@@ -59,6 +79,7 @@ public class BookInput {
         return price;
     }
 
+    @Nullable
     public Long getStoreId() {
         return storeId;
     }

@@ -20,8 +20,8 @@ public class ConvertTest {
         });
         Assertions.assertEquals(
                 "Illegal static property name: \"store\", " +
-                        "the following non-static methods cannot be found in static type " +
-                        "\"org.babyfish.jimmer.ConvertTest$BookInput\": getStore(), store()",
+                        "the static type \"org.babyfish.jimmer.ConvertTest$BookInput\" " +
+                        "has neither methods \"getStore()\", \"store()\" nor field \"store\"",
                 ex.getMessage()
         );
     }
@@ -71,8 +71,8 @@ public class ConvertTest {
         Assertions.assertEquals(
                 "Cannot automatically map the property " +
                         "\"org.babyfish.jimmer.model.Book.price\", " +
-                        "the following non-static methods cannot be found in static type " +
-                        "\"org.babyfish.jimmer.ConvertTest$Partial\": getPrice(), price()",
+                        "the static type \"org.babyfish.jimmer.ConvertTest$Partial\" " +
+                        "has neither methods \"getPrice()\", \"price()\" nor field \"price\"",
                 ex.getMessage()
         );
     }
@@ -206,44 +206,50 @@ public class ConvertTest {
 
     public static class BookInput {
 
-        private String name;
+        private final String name;
 
-        private Integer price;
+        private final Integer price;
 
-        private String storeName;
+        private final String storeName;
 
-        private List<String> authorNames;
+        private final List<String> authorNames;
+
+        public BookInput(
+                String name,
+                Integer price,
+                String storeName,
+                List<String> authorNames
+        ) {
+            this.name = name;
+            this.price = price;
+            this.storeName = storeName;
+            this.authorNames = authorNames;
+        }
 
         public String getName() {
             return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
         }
 
         public Integer getPrice() {
             return price;
         }
 
-        public void setPrice(Integer price) {
-            this.price = price;
-        }
-
         public String getStoreName() {
             return storeName;
-        }
-
-        public void setStoreName(String storeName) {
-            this.storeName = storeName;
         }
 
         public List<String> getAuthorNames() {
             return authorNames;
         }
 
-        public void setAuthorNames(List<String> authorNames) {
-            this.authorNames = authorNames;
+        @Override
+        public String toString() {
+            return "BookInput{" +
+                    "name='" + name + '\'' +
+                    ", price=" + price +
+                    ", storeName='" + storeName + '\'' +
+                    ", authorNames=" + authorNames +
+                    '}';
         }
     }
 
@@ -254,18 +260,14 @@ public class ConvertTest {
         public Partial(String name) {
             this.name = name;
         }
-
-        public String getName() {
-            return name;
-        }
     }
 
     static {
-        BookInput input = new BookInput();
-        input.setName("SQL in Action");
-        input.setPrice(49);
-        input.setStoreName("MANNING");
-        input.setAuthorNames(Arrays.asList("Scott", "Linda"));
-        INPUT = input;
+        INPUT = new BookInput(
+                "SQL in Action",
+                49,
+                "MANNING",
+                Arrays.asList("Scott", "Linda")
+        );
     }
 }
