@@ -18,8 +18,8 @@ class ConvertTest {
             expect(
                 "Cannot automatically map the property " +
                     "\"org.babyfish.jimmer.kt.model.Book.edition\", " +
-                    "the following non-static methods cannot be found in static type " +
-                    "\"org.babyfish.jimmer.kt.ConvertTest\$Partial\": getEdition(), edition()"
+                    "the static type \"org.babyfish.jimmer.kt.ConvertTest\$Partial\" " +
+                    "has neither methods \"getEdition()\", \"edition()\" nor field \"edition\""
             ) {
                 it.message
             }
