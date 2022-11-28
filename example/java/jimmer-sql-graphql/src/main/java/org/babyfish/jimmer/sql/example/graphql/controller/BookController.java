@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.example.graphql.dal.BookRepository;
 import org.babyfish.jimmer.sql.example.graphql.entities.*;
-import org.babyfish.jimmer.sql.example.graphql.input.BookInput;
+import org.babyfish.jimmer.sql.example.graphql.entities.input.BookInput;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.BatchMapping;
 import org.springframework.graphql.data.method.annotation.MutationMapping;

@@ -16,17 +16,17 @@ public class BookInput {
                     .map(BookProps.ID, mapping -> {
                         mapping.useIf(input -> input.id != null);
                     })
-                    .map(BookProps.STORE, mapping -> {
+                    .map(BookProps.STORE, "storeId", mapping -> {
                         mapping.valueConverter(value ->
                                 ImmutableObjects.makeIdOnly(BookStore.class, value)
                         );
                     })
-                    .mapList(BookProps.AUTHORS, mapping -> {
+                    .mapList(BookProps.AUTHORS, "authorIds", mapping -> {
                         mapping.elementConverter(element ->
                                 ImmutableObjects.makeIdOnly(Author.class, element)
                         );
                     })
-                    .autoMapOtherScalars() // name, edition, price
+                    .autoMapOtherScalars(true)
                     .build();
 
     @Nullable
@@ -59,33 +59,19 @@ public class BookInput {
         this.authorIds = authorIds;
     }
 
-    @Nullable
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public int getEdition() {
-        return edition;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    @Nullable
-    public Long getStoreId() {
-        return storeId;
-    }
-
-    public List<Long> getAuthorIds() {
-        return authorIds;
-    }
-
     public Book toBook() {
         return BOOK_CONVERTER.convert(this);
+    }
+
+    @Override
+    public String toString() {
+        return "BookInput{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", edition=" + edition +
+                ", price=" + price +
+                ", storeId=" + storeId +
+                ", authorIds=" + authorIds +
+                '}';
     }
 }
