@@ -189,6 +189,10 @@ public class ImmutableObjects {
         throw new IllegalArgumentException("The first argument is immutable object created by jimmer");
     }
 
+    public static <T> T makeIdOnly(Class<T> type, Object id) {
+        return makeIdOnly(ImmutableType.get(type), id);
+    }
+
     @SuppressWarnings("unchecked")
     public static <T> T makeIdOnly(ImmutableType type, Object id) {
         ImmutableProp idProp = type.getIdProp();

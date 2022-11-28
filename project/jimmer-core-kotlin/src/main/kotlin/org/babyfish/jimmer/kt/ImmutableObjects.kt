@@ -8,12 +8,18 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.jvm.javaMethod
 
-fun <T> isLoaded(obj: T, prop: KProperty1<T, *>): Boolean =
+fun <T: Any> isLoaded(obj: T, prop: KProperty1<T, *>): Boolean =
     ImmutableObjects.isLoaded(obj, prop.toImmutableProp())
 
-@SuppressWarnings("unchecked")
-fun <T, X> get(obj: T, prop: KProperty1<T, X>): X =
+@Suppress("UNCHECKED_CAST")
+fun <T: Any, X> get(obj: T, prop: KProperty1<T, X>): X =
     ImmutableObjects.get(obj, prop.toImmutableProp()) as X
+
+inline fun <reified T: Any> makeIdOnly(id: Any): T =
+    ImmutableObjects.makeIdOnly(ImmutableType.get(T::class.java), id)
+
+fun <T: Any> makeIdOnly(type: KClass<T>, id: Any): T =
+    ImmutableObjects.makeIdOnly(ImmutableType.get(type.java), id)
 
 fun KProperty1<*, *>.toImmutableProp(): ImmutableProp {
     val immutableType = ImmutableType.get(
