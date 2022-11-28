@@ -6,16 +6,14 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.deser.Deserializers;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.runtime.ScalarProvider;
-
-import java.util.Map;
+import org.babyfish.jimmer.sql.JSqlClient;
 
 class BinLogDeserializers extends Deserializers.Base {
 
-    private final Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap;
+    private final JSqlClient sqlClient;
 
-    BinLogDeserializers(Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap) {
-        this.scalarProviderMap = scalarProviderMap;
+    BinLogDeserializers(JSqlClient sqlClient) {
+        this.sqlClient = sqlClient;
     }
 
     @Override
@@ -26,7 +24,7 @@ class BinLogDeserializers extends Deserializers.Base {
     ) {
         ImmutableType immutableType = ImmutableType.tryGet(type.getRawClass());
         if (immutableType != null) {
-            return new BinLogDeserializer(scalarProviderMap, immutableType);
+            return new BinLogDeserializer(sqlClient, immutableType);
         }
         return null;
     }
