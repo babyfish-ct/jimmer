@@ -49,7 +49,6 @@ class ConvertTest {
     @Test
     fun testEmptyConverter() {
         newImmutableConverter(Book::class, BookInput::class) {}
-            .toNonNull()
             .convert(INPUT)
             .let {
                 expect(
@@ -65,7 +64,6 @@ class ConvertTest {
         newImmutableConverter(Book::class, BookInput::class) {
             autoMapOtherScalars()
         }
-            .toNonNull()
             .convert(INPUT)
             .let {
                 expect(
@@ -80,10 +78,8 @@ class ConvertTest {
     fun testWithValueConverter() {
         newImmutableConverter(Book::class, BookInput::class) {
             map(Book::store, BookInput::storeName) {
-                it?.let { name ->
-                    new(BookStore::class).by {
-                        this.name = name
-                    }
+                new(BookStore::class).by {
+                    name = it
                 }
             }
             mapList(Book::authors, BookInput::authorNames) {
@@ -95,7 +91,6 @@ class ConvertTest {
             }
             autoMapOtherScalars()
         }
-            .toNonNull()
             .convert(INPUT)
             .let {
                 expect(
@@ -134,7 +129,6 @@ class ConvertTest {
             }
             autoMapOtherScalars()
         }
-            .toNonNull()
             .convert(INPUT)
             .let {
                 expect(

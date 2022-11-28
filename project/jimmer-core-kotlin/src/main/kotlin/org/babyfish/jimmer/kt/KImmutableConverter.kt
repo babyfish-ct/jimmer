@@ -17,21 +17,9 @@ fun <T: Any, Static: Any> newImmutableConverter(
         }
         .build()
 
-interface KNonNullImmutableConverter<T: Any, Static: Any> {
-    fun convert(staticObj: Static): T
-}
-
-fun <T: Any, Static: Any> ImmutableConverter<T, Static>.toNonNull() =
-    object: KNonNullImmutableConverter<T, Static> {
-        override fun convert(staticObj: Static): T =
-            this@toNonNull.convert(staticObj)
-                ?: throw IllegalArgumentException("staticObj cannot be null")
-    }
-
 class KImmutableConverterDsl<T: Any, Static: Any> internal constructor(
     private val builder: ImmutableConverter.Builder<T, Static>
 ) {
-
     fun map(prop: KProperty1<T, *>) {
         builder.map(prop.toImmutableProp(), prop.name)
     }
@@ -44,18 +32,22 @@ class KImmutableConverterDsl<T: Any, Static: Any> internal constructor(
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <X, Y> map(
+    fun <X: Any, Y: Any> map(
         prop: KProperty1<T, Y?>,
-        staticProp: KProperty1<Static, X>,
+        staticProp: KProperty1<Static, X?>,
+        defaultValueProvider: (() -> Y)? = null,
         valueConverter: (X) -> Y
     ) {
-        builder.map(prop.toImmutableProp(), staticProp.name) {
-            valueConverter(it as X)
-        }
+        builder.map(prop.toImmutableProp(), staticProp.name, object : ImmutableConverter.ValueConverter {
+            override fun convert(value: Any): Any =
+                valueConverter(value as X)
+            override fun defaultValue(): Any? =
+                defaultValueProvider?.invoke()
+        })
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <X, Y> mapList(
+    fun <X: Any, Y> mapList(
         prop: KProperty1<T, List<Y>>,
         staticProp: KProperty1<Static, List<X>>,
         elementConverter: (X) -> Y
@@ -81,19 +73,23 @@ class KImmutableConverterDsl<T: Any, Static: Any> internal constructor(
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <X, Y> mapIf(
+    fun <X: Any, Y: Any> mapIf(
         cond: (Static) -> Boolean,
         prop: KProperty1<T, Y?>,
-        staticProp: KProperty1<Static, X>,
+        staticProp: KProperty1<Static, X?>,
+        defaultValueProvider: (() -> Y)? = null,
         valueConverter: (X) -> Y
     ) {
-        builder.mapIf(cond, prop.toImmutableProp(), staticProp.name) {
-            valueConverter(it as X)
-        }
+        builder.mapIf(cond, prop.toImmutableProp(), staticProp.name, object : ImmutableConverter.ValueConverter {
+            override fun convert(value: Any): Any =
+                valueConverter(value as X)
+            override fun defaultValue(): Any? =
+                defaultValueProvider?.invoke()
+        })
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <X, Y> mapListIf(
+    fun <X: Any, Y> mapListIf(
         cond: (Static) -> Boolean,
         prop: KProperty1<T, List<Y>>,
         staticProp: KProperty1<Static, List<X>>,
