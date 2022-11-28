@@ -1,11 +1,9 @@
 package org.babyfish.jimmer;
 
-import org.babyfish.jimmer.input.BookInput;
 import org.babyfish.jimmer.model.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 
@@ -22,8 +20,8 @@ public class ConvertTest {
         });
         Assertions.assertEquals(
                 "Illegal static property name: \"store\", " +
-                        "the following methods cannot be found in static type " +
-                        "\"org.babyfish.jimmer.input.BookInput\": getStore(), store()",
+                        "the following non-static methods cannot be found in static type " +
+                        "\"org.babyfish.jimmer.ConvertTest$BookInput\": getStore(), store()",
                 ex.getMessage()
         );
     }
@@ -37,7 +35,7 @@ public class ConvertTest {
         });
         Assertions.assertEquals(
                 "Cannot map \"org.babyfish.jimmer.model.Book.store\" to " +
-                        "\"public java.lang.String org.babyfish.jimmer.input.BookInput.getStoreName()\" " +
+                        "\"public java.lang.String org.babyfish.jimmer.ConvertTest$BookInput.getStoreName()\" " +
                         "without value converter, the return type of jimmer property is " +
                         "\"org.babyfish.jimmer.model.BookStore\" but the return type of the method " +
                         "of static type is \"java.lang.String\"",
@@ -54,11 +52,41 @@ public class ConvertTest {
         });
         Assertions.assertEquals(
                 "Cannot map \"org.babyfish.jimmer.model.Book.authors\" to " +
-                        "\"public java.util.List org.babyfish.jimmer.input.BookInput.getAuthorNames()\" " +
+                        "\"public java.util.List org.babyfish.jimmer.ConvertTest$BookInput.getAuthorNames()\" " +
                         "without value converter, the list element type of jimmer property is " +
                         "\"org.babyfish.jimmer.model.Author\" but the list element of return type of " +
                         "the method of static type is \"class java.lang.String\"",
                 ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testFullConverter() {
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            ImmutableConverter
+                    .newBuilder(Book.class, Partial.class)
+                    .autoMapOtherScalars()
+                    .build();
+        });
+        Assertions.assertEquals(
+                "Cannot automatically map the property " +
+                        "\"org.babyfish.jimmer.model.Book.price\", " +
+                        "the following non-static methods cannot be found in static type " +
+                        "\"org.babyfish.jimmer.ConvertTest$Partial\": getPrice(), price()",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testPartialConverter() {
+        Book book = ImmutableConverter
+                .newBuilder(Book.class, Partial.class)
+                .autoMapOtherScalars(true)
+                .build()
+                .convert(new Partial("SQL in Action"));
+        Assertions.assertEquals(
+                "{\"name\":\"SQL in Action\"}",
+                book.toString()
         );
     }
 
@@ -122,6 +150,8 @@ public class ConvertTest {
                                 bookDraft.setStore(store ->
                                         store.setName(input.getStoreName())
                                 );
+                            } else {
+                                bookDraft.setStore((BookStore) null);
                             }
                             for (String authorName : input.getAuthorNames()) {
                                 bookDraft.addIntoAuthors(
@@ -138,6 +168,62 @@ public class ConvertTest {
                         "\"authors\":[{\"name\":\"Scott\"},{\"name\":\"Linda\"}]}",
                 converter.convert(INPUT).toString()
         );
+    }
+
+    public static class BookInput {
+
+        private String name;
+
+        private int price;
+
+        private String storeName;
+
+        private List<String> authorNames;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public int getPrice() {
+            return price;
+        }
+
+        public void setPrice(int price) {
+            this.price = price;
+        }
+
+        public String getStoreName() {
+            return storeName;
+        }
+
+        public void setStoreName(String storeName) {
+            this.storeName = storeName;
+        }
+
+        public List<String> getAuthorNames() {
+            return authorNames;
+        }
+
+        public void setAuthorNames(List<String> authorNames) {
+            this.authorNames = authorNames;
+        }
+    }
+
+    public static class Partial {
+
+        private final String name;
+
+        public Partial(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
     }
 
     static {

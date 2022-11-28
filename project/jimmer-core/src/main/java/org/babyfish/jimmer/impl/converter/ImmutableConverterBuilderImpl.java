@@ -7,12 +7,17 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConverter.Builder<T, Static> {
+
+    private static final int FULL_AUTO_MAPPING = 1;
+
+    private static final int PARTIAL_AUTO_MAPPING = 2;
 
     private final ImmutableType immutableType;
 
@@ -22,7 +27,7 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
 
     private Map<ImmutableProp, ImmutableConverterImpl.Mapping> mappingMap = new HashMap<>();
 
-    private boolean autoMapOtherScalars;
+    private int autoMapOtherScalars;
 
     public ImmutableConverterBuilderImpl(Class<T> immutableType, Class<Static> staticType) {
         this.immutableType = ImmutableType.get(immutableType);
@@ -68,8 +73,8 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
     }
 
     @Override
-    public ImmutableConverter.Builder<T, Static> autoMapOtherScalars() {
-        autoMapOtherScalars = true;
+    public ImmutableConverter.Builder<T, Static> autoMapOtherScalars(boolean partial) {
+        autoMapOtherScalars = partial ? PARTIAL_AUTO_MAPPING : FULL_AUTO_MAPPING;
         return this;
     }
 
@@ -81,7 +86,7 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
 
     @Override
     public ImmutableConverter<T, Static> build() {
-        if (autoMapOtherScalars) {
+        if (autoMapOtherScalars != 0) {
             for (ImmutableProp prop : immutableType.getProps().values()) {
                 if (!prop.isAssociation(TargetLevel.OBJECT) && !mappingMap.containsKey(prop)) {
                     mapImpl(prop, prop.getName(), null, true);
@@ -134,13 +139,16 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
                 // Do nothing
             }
         }
-        if (method == null) {
+        if (method == null || Modifier.isStatic(method.getModifiers())) {
+            if (autoMapping && autoMapOtherScalars == PARTIAL_AUTO_MAPPING) {
+                return;
+            }
             throw new IllegalArgumentException(
                     (autoMapping ?
                             "Cannot automatically map the property \"" + prop + "\"" :
                             "Illegal static property name: \"" + staticPropName + '"'
                     ) +
-                            ", the following methods cannot be found in static type \"" +
+                            ", the following non-static methods cannot be found in static type \"" +
                             staticType.getName() +
                             "\": " +
                             methodNames.stream().map(it -> it + "()").collect(Collectors.joining(", "))
