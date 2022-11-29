@@ -3,6 +3,7 @@ package org.babyfish.jimmer.ksp.meta
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
@@ -72,9 +73,11 @@ class ImmutableProp(
                 declaringType.toString(),
                 declaringType.sqlAnnotationType?.java,
                 this.toString(),
+                targetDeclaration.fullName,
                 targetDeclaration.annotation(Entity::class)?.let { Entity::class.java }
                     ?: targetDeclaration.annotation(MappedSuperclass::class)?.let { MappedSuperclass::class.java }
-                    ?: targetDeclaration.annotation(Embeddable::class)?.let { Embeddable::class.java },
+                    ?: targetDeclaration.annotation(Embeddable::class)?.let { Embeddable::class.java }
+                    ?: targetDeclaration.annotation(Immutable::class)?.let { Immutable::class.java },
                 isList,
                 resolvedType.isMarkedNullable,
                 null
@@ -105,17 +108,8 @@ class ImmutableProp(
                 ctx.typeAnnotationOf(targetDeclaration)
             }
             ?.let {
-                if (declaringType.isEntity && it.fullName != Entity::class.qualifiedName && !isTransient) {
-                    throw MetaException(
-                        "Illegal property \"" +
-                            this +
-                            "\", association property of entity interface " +
-                            "must reference to entity type or decorated by @Transient"
-                    )
-                }
                 true
-            }
-            ?: false
+            } ?: false
 
     fun targetTypeName(
         draft: Boolean = false,

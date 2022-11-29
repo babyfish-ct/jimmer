@@ -285,9 +285,9 @@ public class DraftImplGenerator {
                     UNMODIFIED,
                     prop.getGetterName(),
                     prop.getElementTypeName(),
-                    prop.isAssociation()
+                    prop.isAssociation(false)
             );
-        } else if (prop.isAssociation()) {
+        } else if (prop.isAssociation(false)) {
             builder.addCode(
                     "return $L.$L($L.$L());",
                     DRAFT_FIELD_CTX,
@@ -302,7 +302,7 @@ public class DraftImplGenerator {
     }
 
     private void addCreator(ImmutableProp prop) {
-        if (!prop.isAssociation() && !prop.isList()) {
+        if (!prop.isAssociation(false) && !prop.isList()) {
             return;
         }
         MethodSpec.Builder builder = MethodSpec
@@ -339,7 +339,7 @@ public class DraftImplGenerator {
                     UNMODIFIED,
                     prop.getGetterName(),
                     prop.getElementType(),
-                    prop.isAssociation()
+                    prop.isAssociation(false)
             );
         } else {
             builder.addCode(
@@ -384,7 +384,7 @@ public class DraftImplGenerator {
     }
 
     private void addUtilMethod(ImmutableProp prop, boolean withBase) {
-        if (!prop.isAssociation()) {
+        if (!prop.isAssociation(false)) {
             return;
         }
         String methodName = prop.isList() ? prop.getAdderByName() : prop.getSetterName();
@@ -556,10 +556,10 @@ public class DraftImplGenerator {
                 .addStatement("Implementor base = $L", DRAFT_FIELD_BASE)
                 .addStatement("Impl modified = $L", DRAFT_FIELD_MODIFIED);
 
-        if (type.getProps().values().stream().anyMatch(it -> it.isAssociation() || it.isList())) {
+        if (type.getProps().values().stream().anyMatch(it -> it.isAssociation(false) || it.isList())) {
             builder.beginControlFlow("if (modified == null)");
             for (ImmutableProp prop : type.getProps().values()) {
-                if (prop.isAssociation() || prop.isList()) {
+                if (prop.isAssociation(false) || prop.isList()) {
                     builder.beginControlFlow("if (base.__isLoaded($L))", prop.getId());
                     builder.addStatement(
                             "$T oldValue = base.$L()",
@@ -600,7 +600,7 @@ public class DraftImplGenerator {
                             "resolveList",
                             prop.getName()
                     );
-                } else if (prop.isAssociation()) {
+                } else if (prop.isAssociation(false)) {
                     builder.addStatement(
                             "modified.$L = $L.$L(modified.$L)",
                             prop.getName(),

@@ -8,7 +8,7 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
-import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.Converters;
@@ -99,7 +99,7 @@ class ChildTableOperator {
                 .sql("update ")
                 .sql(parentProp.getDeclaringType().getTableName())
                 .sql(" set ")
-                .sql(parentProp.<Column>getStorage().getName())
+                .sql(parentProp.<SingleColumn>getStorage().getName())
                 .sql(" = ");
         if (parentId == null) {
             builder.sql("null");
@@ -107,7 +107,7 @@ class ChildTableOperator {
             builder.variable(parentId);
         }
         builder.sql(" where ")
-                .sql(parentProp.getDeclaringType().getIdProp().<Column>getStorage().getName())
+                .sql(parentProp.getDeclaringType().getIdProp().<SingleColumn>getStorage().getName())
                 .sql(" in(");
         String separator = "";
         for (Object childId : childIds) {
@@ -189,7 +189,7 @@ class ChildTableOperator {
                 .sql("update ")
                 .sql(parentProp.getDeclaringType().getTableName())
                 .sql(" set ")
-                .sql(parentProp.<Column>getStorage().getName())
+                .sql(parentProp.<SingleColumn>getStorage().getName())
                 .sql(" = null");
         addDetachConditions(builder, parentId, retainedChildIds);
 
@@ -209,7 +209,7 @@ class ChildTableOperator {
         ImmutableProp idProp = parentProp.getDeclaringType().getIdProp();
         builder
                 .sql("select ")
-                .sql(idProp.<Column>getStorage().getName())
+                .sql(idProp.<SingleColumn>getStorage().getName())
                 .sql(" from ")
                 .sql(parentProp.getDeclaringType().getTableName());
         addDetachConditions(builder, Collections.singleton(parentId), retainedChildIds);
@@ -248,7 +248,7 @@ class ChildTableOperator {
     ) {
         builder
                 .sql(" where ")
-                .sql(parentProp.<Column>getStorage().getName());
+                .sql(parentProp.<SingleColumn>getStorage().getName());
         if (parentIds.size() > 0) {
             builder.sql(" = ").variable(parentIds.iterator().next());
         } else {
@@ -267,7 +267,7 @@ class ChildTableOperator {
         if (!retainedChildIds.isEmpty()) {
             builder
                     .sql(" and ")
-                    .sql(parentProp.getDeclaringType().getIdProp().<Column>getStorage().getName())
+                    .sql(parentProp.getDeclaringType().getIdProp().<SingleColumn>getStorage().getName())
                     .sql(" not in(");
             boolean addComma = false;
             for (Object retainedChildId : retainedChildIds) {

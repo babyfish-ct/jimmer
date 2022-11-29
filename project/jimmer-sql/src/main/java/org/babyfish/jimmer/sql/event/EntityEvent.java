@@ -6,7 +6,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -132,7 +132,7 @@ public class EntityEvent<E> {
     @Nullable
     public <T> Ref<T> getUnchangedFieldRef(int propId) {
         ImmutableProp prop = getImmutableType().getProp(propId);
-        if (!(prop.getStorage() instanceof Column)) {
+        if (!(prop.getStorage() instanceof SingleColumn)) {
             throw new IllegalArgumentException(
                     "Cannot get the unchanged the value of \"" +
                             prop +
@@ -180,7 +180,7 @@ public class EntityEvent<E> {
     @Nullable
     public <T> ChangedRef<T> getChangedFieldRef(int propId) {
         ImmutableProp prop = getImmutableType().getProp(propId);
-        if (!(prop.getStorage() instanceof Column)) {
+        if (!(prop.getStorage() instanceof SingleColumn)) {
             throw new IllegalArgumentException(
                     "Cannot get the unchanged the value of \"" +
                             prop +

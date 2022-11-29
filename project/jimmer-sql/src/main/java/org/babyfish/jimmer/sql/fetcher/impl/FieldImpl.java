@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
-import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 
 import java.util.StringJoiner;
 
@@ -122,7 +122,7 @@ class FieldImpl implements Field {
     }
 
     private boolean determineIsSimpleField() {
-        if (prop.getStorage() instanceof Column) {
+        if (prop.getStorage() instanceof SingleColumn) {
             return childFetcher == null || childFetcher.getFieldMap().size() == 1;
         }
         return false;

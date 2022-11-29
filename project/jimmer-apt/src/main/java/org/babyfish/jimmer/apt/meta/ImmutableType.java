@@ -265,7 +265,7 @@ public class ImmutableType {
                     idProp = idProps.get(0);
                 }
             }
-            if (idProp != null && idProp.isAssociation()) {
+            if (idProp != null && idProp.isAssociation(true)) {
                 throw new MetaException(
                         "Illegal property \"" +
                                 idProp +
@@ -274,7 +274,7 @@ public class ImmutableType {
             }
             if (versionProp == null && !versionProps.isEmpty()) {
                 versionProp = versionProps.get(0);
-                if (versionProp.isAssociation()) {
+                if (versionProp.isAssociation(false)) {
                     throw new MetaException(
                             "Illegal property \"" +
                                     versionProps +

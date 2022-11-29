@@ -5,6 +5,7 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.JoinType;
 
 import javax.annotation.processing.Filer;
@@ -82,7 +83,7 @@ public class PropsGenerator {
             ImmutableType superType = type.getSuperType();
             if (type.isEntity() && superType != null && superType.isMappedSuperClass()) {
                 for (ImmutableProp prop : superType.getProps().values()) {
-                    if (prop.isAssociation() || prop.isTransient()) {
+                    if (prop.isAssociation(false) || prop.isTransient()) {
                         addStaticProp(prop, true);
                     }
                 }
@@ -105,17 +106,17 @@ public class PropsGenerator {
         ClassName rawClassName;
         String action;
         if (prop.isList()) {
-            rawClassName = prop.isAssociation() ?
+            rawClassName = prop.isAssociation(false) ?
                     Constants.REFERENCE_LIST_CLASS_NAME :
                     Constants.SCALAR_LIST_CLASS_NAME;
-            action = prop.isAssociation() ?
+            action = prop.isAssociation(false) ?
                     "referenceList" :
                     "scalarList";
         } else {
-            rawClassName = prop.isAssociation() ?
+            rawClassName = prop.isAssociation(false) ?
                     Constants.REFERENCE_CLASS_NAME :
                     Constants.SCALAR_CLASS_NAME;
-            action = prop.isAssociation() ?
+            action = prop.isAssociation(false) ?
                     "reference" :
                     "scalar";
         }
@@ -181,11 +182,11 @@ public class PropsGenerator {
         if (prop.isTransient()) {
             return null;
         }
-        if (withJoinType && !prop.isAssociation()) {
+        if (withJoinType && !prop.isAssociation(true)) {
             return null;
         }
         TypeName returnType;
-        if (prop.isAssociation()) {
+        if (prop.isAssociation(true)) {
             if (isTableEx) {
                 returnType = typeUtils
                         .getImmutableType(prop.getElementType())
@@ -235,7 +236,7 @@ public class PropsGenerator {
             builder.addParameter(Constants.JOIN_TYPE_CLASS_NAME, "joinType");
         }
         if (withImplementation) {
-            if (prop.isAssociation()) {
+            if (prop.isAssociation(true)) {
                 builder.addStatement("__beforeJoin()");
                 if (withJoinType) {
                     builder

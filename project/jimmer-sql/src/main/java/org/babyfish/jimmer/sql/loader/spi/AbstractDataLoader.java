@@ -27,13 +27,12 @@ import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
-import org.babyfish.jimmer.sql.fetcher.FieldFilterArgs;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FieldFilterArgsImpl;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
-import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
@@ -187,7 +186,7 @@ public abstract class AbstractDataLoader {
         if (resolver != null) {
             return loadTransients(sources);
         }
-        if (prop.getStorage() instanceof Column) {
+        if (prop.getStorage() instanceof SingleColumn) {
             return (Map<ImmutableSpi, Object>)(Map<?, ?>) loadParents(sources);
         }
         if (prop.isReferenceList(TargetLevel.ENTITY)) {

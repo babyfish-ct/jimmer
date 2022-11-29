@@ -12,7 +12,7 @@ import org.babyfish.jimmer.sql.ast.StringExpression;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +37,7 @@ public class ExampleImpl<E> implements Example<E> {
         this.spi = (ImmutableSpi) obj;
         for (ImmutableProp prop : spi.__type().getProps().values()) {
             if (spi.__isLoaded(prop.getId())) {
-                if (!(prop.getStorage() instanceof Column)) {
+                if (!(prop.getStorage() instanceof SingleColumn)) {
                     throw new IllegalArgumentException(
                             "The prop \"" +
                                     prop +

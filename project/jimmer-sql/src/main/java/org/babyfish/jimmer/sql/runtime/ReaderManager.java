@@ -9,7 +9,8 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.impl.util.StaticCache;
 
@@ -20,10 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.*;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class ReaderManager {
 
@@ -57,8 +55,11 @@ public class ReaderManager {
     @SuppressWarnings("unchecked")
     private Reader<?> createPropReader(ImmutableProp prop) {
         Storage storage = prop.getStorage();
-        if (!(storage instanceof Column)) {
+        if (!(storage instanceof ColumnDefinition)) {
             return null;
+        }
+        if (prop.isEmbedded()) {
+            return new EmbeddedReader(prop.getTargetType(), this);
         }
         if (prop.isReference(TargetLevel.ENTITY)) {
             return new ReferenceReader(prop, this);
@@ -369,6 +370,37 @@ public class ReaderManager {
             Object source = sourceReader.read(rs, col);
             Object target = targetReader.read(rs, col);
             return new Association<>(source, target);
+        }
+    }
+
+    private static class EmbeddedReader implements Reader<Object> {
+
+        private final ImmutableType targetType;
+
+        private Map<ImmutableProp, Reader<?>> readerMap;
+
+        private EmbeddedReader(ImmutableType targetType, ReaderManager readerManager) {
+            this.targetType = targetType;
+            Map<ImmutableProp, Reader<?>> map = new LinkedHashMap<>();
+            for (ImmutableProp childProp : targetType.getProps().values()) {
+                if (childProp.isEmbedded()) {
+                    map.put(childProp, new EmbeddedReader(childProp.getTargetType(), readerManager));
+                } else {
+                    map.put(childProp, readerManager.scalarReader(childProp.getElementClass()));
+                }
+            }
+            this.readerMap = map;
+        }
+
+        @Override
+        public Object read(ResultSet rs, Col col) throws SQLException {
+            return Internal.produce(targetType, null, draft -> {
+                DraftSpi spi = (DraftSpi) draft;
+                for (Map.Entry<ImmutableProp, Reader<?>> e : readerMap.entrySet()) {
+                    Object value = e.getValue().read(rs, col);
+                    spi.__set(e.getKey().getId(), value);
+                }
+            });
         }
     }
 

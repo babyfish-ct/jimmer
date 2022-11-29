@@ -102,7 +102,7 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
         return new ImmutableConverterImpl<>(
                 immutableType,
                 staticType,
-                new ArrayList<>(mappingMap.values()),
+                mappingMap.values().stream().filter(Objects::nonNull).collect(Collectors.toList()),
                 draftModifier
         );
     }

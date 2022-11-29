@@ -53,6 +53,8 @@ public class ImmutableProp {
 
     private final boolean isAssociation;
 
+    private final boolean isEntityAssociation;
+
     private final boolean isNullable;
 
     private Annotation associationAnnotation;
@@ -157,6 +159,7 @@ public class ImmutableProp {
         Transient trans = executableElement.getAnnotation(Transient.class);
         isTransient = trans != null;
         isAssociation = typeUtils.isImmutable(elementType);
+        isEntityAssociation = typeUtils.isEntity(elementType);
         if (isList && typeUtils.isEmbeddable(elementType)) {
             throw new MetaException(
                     "Illegal property \"" +
@@ -167,23 +170,11 @@ public class ImmutableProp {
             );
         }
 
-        if (declaringElement.getAnnotation(Entity.class) != null &&
-                (isAssociation || isList) &&
-                !typeUtils.isEntity(elementType) &&
-                trans == null
-        ) {
-            throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", association property of entity interface " +
-                            "must reference to entity type or decorated by @Transient"
-            );
-        }
-
         PropDescriptor.Builder builder = PropDescriptor.newBuilder(
                 declaringElement.getQualifiedName().toString(),
                 typeUtils.getImmutableAnnotationType(declaringElement),
                 this.toString(),
+                ClassName.get(elementType).toString(),
                 typeUtils.getImmutableAnnotationType(elementType),
                 isList,
                 null,
@@ -302,8 +293,8 @@ public class ImmutableProp {
         return isList;
     }
 
-    public boolean isAssociation() {
-        return isAssociation;
+    public boolean isAssociation(boolean entityLevel) {
+        return entityLevel ? isEntityAssociation : isAssociation;
     }
 
     public boolean isNullable() {

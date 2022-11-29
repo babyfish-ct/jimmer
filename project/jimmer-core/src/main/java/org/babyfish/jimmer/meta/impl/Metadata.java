@@ -6,6 +6,7 @@ import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftContext;
+import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;
 import org.babyfish.jimmer.impl.util.StaticCache;
@@ -146,7 +147,8 @@ public class Metadata {
         boolean matched = Arrays.stream(javaClass.getAnnotations()).anyMatch(
                 it -> it.annotationType() == Immutable.class ||
                         it.annotationType() == Entity.class ||
-                        it.annotationType() == MappedSuperclass.class
+                        it.annotationType() == MappedSuperclass.class ||
+                        it.annotationType() == Embeddable.class
         );
         if (matched) {
             return javaClass;

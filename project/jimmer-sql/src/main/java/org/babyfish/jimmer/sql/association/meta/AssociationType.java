@@ -7,7 +7,7 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.association.Association;
-import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.impl.util.StaticCache;
@@ -119,6 +119,11 @@ public class AssociationType implements ImmutableType {
     }
 
     @Override
+    public boolean isEmbeddable() {
+        return false;
+    }
+
+    @Override
     public Annotation getImmutableAnnotation() { return null; }
 
     @Override
@@ -166,7 +171,7 @@ public class AssociationType implements ImmutableType {
         String scName = DatabaseIdentifiers.standardIdentifier(columnName);
         if (scName.equals(
                 DatabaseIdentifiers.standardIdentifier(
-                        sourceProp.<Column>getStorage().getName()
+                        sourceProp.<SingleColumn>getStorage().getName()
                 )
             )
         ) {
@@ -174,7 +179,7 @@ public class AssociationType implements ImmutableType {
         }
         if (scName.equals(
                 DatabaseIdentifiers.standardIdentifier(
-                        targetProp.<Column>getStorage().getName()
+                        targetProp.<SingleColumn>getStorage().getName()
                 )
             )
         ) {

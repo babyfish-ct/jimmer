@@ -129,9 +129,7 @@ public class TypeUtils {
     }
 
     public ImmutableType getImmutableType(TypeElement typeElement) {
-        if (typeElement.getAnnotation(Immutable.class) != null ||
-                typeElement.getAnnotation(Entity.class) != null ||
-                typeElement.getAnnotation(MappedSuperclass.class) != null) {
+        if (getImmutableAnnotationType(typeElement) != null) {
             ImmutableType type = immutableTypeMap.get(typeElement);
             if (type == null) {
                 type = new ImmutableType(this, typeElement);

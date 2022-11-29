@@ -13,7 +13,9 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.MultipleColumns;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
@@ -411,10 +413,10 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         builder,
                         joinType,
                         parent.alias,
-                        joinProp.<Column>getStorage().getName(),
+                        joinProp.<SingleColumn>getStorage().getName(),
                         immutableType.getTableName(),
                         alias,
-                        immutableType.getIdProp().<Column>getStorage().getName(),
+                        immutableType.getIdProp().<SingleColumn>getStorage().getName(),
                         mode
                 );
             }
@@ -433,7 +435,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                     builder,
                     joinType,
                     parent.alias,
-                    ((Column)parent.immutableType.getIdProp().getStorage()).getName(),
+                    ((SingleColumn)parent.immutableType.getIdProp().getStorage()).getName(),
                     middleTable.getTableName(),
                     middleTableAlias,
                     middleTable.getJoinColumnName(),
@@ -450,7 +452,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         middleTable.getTargetJoinColumnName(),
                         immutableType.getTableName(),
                         alias,
-                        ((Column)immutableType.getIdProp().getStorage()).getName(),
+                        ((SingleColumn)immutableType.getIdProp().getStorage()).getName(),
                         RenderMode.NORMAL
                 );
             }
@@ -459,10 +461,10 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                     builder,
                     joinType,
                     parent.alias,
-                    ((Column)joinProp.getStorage()).getName(),
+                    ((SingleColumn)joinProp.getStorage()).getName(),
                     immutableType.getTableName(),
                     alias,
-                    ((Column)immutableType.getIdProp().getStorage()).getName(),
+                    ((SingleColumn)immutableType.getIdProp().getStorage()).getName(),
                     mode
             );
         }
@@ -482,7 +484,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                     sqlBuilder,
                     joinType,
                     parent.alias,
-                    ((Column)parent.immutableType.getIdProp().getStorage()).getName(),
+                    ((SingleColumn)parent.immutableType.getIdProp().getStorage()).getName(),
                     middleTable.getTableName(),
                     middleTableAlias,
                     middleTable.getTargetJoinColumnName(),
@@ -499,7 +501,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         middleTable.getJoinColumnName(),
                         immutableType.getTableName(),
                         alias,
-                        ((Column)immutableType.getIdProp().getStorage()).getName(),
+                        ((SingleColumn)immutableType.getIdProp().getStorage()).getName(),
                         RenderMode.NORMAL
                 );
             }
@@ -508,10 +510,10 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                     sqlBuilder,
                     joinType,
                     parent.alias,
-                    ((Column)parent.immutableType.getIdProp().getStorage()).getName(),
+                    ((SingleColumn)parent.immutableType.getIdProp().getStorage()).getName(),
                     immutableType.getTableName(),
                     alias,
-                    ((Column)joinProp.getStorage()).getName(),
+                    ((SingleColumn)joinProp.getStorage()).getName(),
                     mode
             );
         }
@@ -583,11 +585,24 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                 builder
                         .sql(parent.alias)
                         .sql(".")
-                        .sql(((Column)joinProp.getStorage()).getName());
+                        .sql(((SingleColumn)joinProp.getStorage()).getName());
                 return;
             }
         }
-        builder.sql(alias).sql(".").sql(((Column)prop.getStorage()).getName());
+        ColumnDefinition definition = prop.getStorage();
+        if (definition instanceof SingleColumn) {
+            builder.sql(alias).sql(".").sql(((SingleColumn) definition).getName());
+        } else {
+            boolean addComma = false;
+            for (String columnName : definition) {
+                if (addComma) {
+                    builder.sql(", ");
+                } else {
+                    addComma = true;
+                }
+                builder.sql(alias).sql(".").sql(columnName);
+            }
+        }
     }
 
     @Override

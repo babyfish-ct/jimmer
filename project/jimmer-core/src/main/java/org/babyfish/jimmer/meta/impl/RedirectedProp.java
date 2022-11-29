@@ -122,8 +122,13 @@ public class RedirectedProp implements ImmutableProp {
     }
 
     @Override
-    public boolean isScalar() {
-        return raw.isScalar();
+    public boolean isEmbedded() {
+        return raw.isEmbedded();
+    }
+
+    @Override
+    public boolean isScalar(TargetLevel level) {
+        return raw.isScalar(level);
     }
 
     @Override

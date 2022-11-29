@@ -5,7 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -112,7 +112,7 @@ public class TriggersImpl implements Triggers {
         }
         ImmutableType type = event.getImmutableType();
         for (ImmutableProp prop : type.getProps().values()) {
-            if (prop.getStorage() instanceof Column && prop.isAssociation(TargetLevel.ENTITY)) {
+            if (prop.getStorage() instanceof SingleColumn && prop.isAssociation(TargetLevel.ENTITY)) {
                 ChangedRef<Object> changedRef = event.getChangedFieldRef(prop);
                 if (changedRef != null) {
                     ChangedRef<Object> fkRef = changedRef.toIdRef();

@@ -46,6 +46,8 @@ public interface ImmutableType {
 
     boolean isMappedSuperclass();
 
+    boolean isEmbeddable();
+
     Annotation getImmutableAnnotation();
 
     boolean isAssignableFrom(ImmutableType type);

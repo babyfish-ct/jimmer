@@ -8,7 +8,7 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.*;
-import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -23,6 +23,8 @@ class ImmutableTypeImpl implements ImmutableType {
     private final boolean isEntity;
 
     private final boolean isMappedSupperClass;
+
+    private final boolean isEmbeddable;
 
     private final Annotation immutableAnnotation;
 
@@ -65,6 +67,7 @@ class ImmutableTypeImpl implements ImmutableType {
 
         this.isEntity = javaClass.isAnnotationPresent(Entity.class);
         this.isMappedSupperClass = javaClass.isAnnotationPresent(MappedSuperclass.class);
+        this.isEmbeddable = javaClass.isAnnotationPresent(Embeddable.class);
 
         Entity entity = javaClass.getAnnotation(Entity.class);
         MappedSuperclass mappedSuperclass = javaClass.getAnnotation(MappedSuperclass.class);
@@ -117,6 +120,11 @@ class ImmutableTypeImpl implements ImmutableType {
     @Override
     public boolean isMappedSuperclass() {
         return isMappedSupperClass;
+    }
+
+    @Override
+    public boolean isEmbeddable() {
+        return isEmbeddable;
     }
 
     @Override
@@ -244,8 +252,8 @@ class ImmutableTypeImpl implements ImmutableType {
         if (cps == null) {
             cps = new LinkedHashMap<>();
             for (ImmutableProp prop : getProps().values()) {
-                if (prop.getStorage() instanceof Column) {
-                    String scName = DatabaseIdentifiers.standardIdentifier(prop.<Column>getStorage().getName());
+                if (prop.getStorage() instanceof SingleColumn) {
+                    String scName = DatabaseIdentifiers.standardIdentifier(prop.<SingleColumn>getStorage().getName());
                     ImmutableProp conflictProp = cps.put(scName, prop);
                     if (conflictProp != null) {
                         throw new ModelException(
@@ -272,7 +280,7 @@ class ImmutableTypeImpl implements ImmutableType {
             selectableProps = new LinkedHashMap<>();
             selectableProps.put(getIdProp().getName(), getIdProp());
             for (ImmutableProp prop : getProps().values()) {
-                if (!prop.isId() && prop.getStorage() instanceof Column) {
+                if (!prop.isId() && prop.getStorage() instanceof ColumnDefinition) {
                     selectableProps.put(prop.getName(), prop);
                 }
             }
@@ -287,7 +295,7 @@ class ImmutableTypeImpl implements ImmutableType {
         if (selectableReferenceProps == null) {
             selectableReferenceProps = new LinkedHashMap<>();
             for (ImmutableProp prop : getProps().values()) {
-                if (prop.isReference(TargetLevel.ENTITY) && prop.getStorage() instanceof Column) {
+                if (prop.isReference(TargetLevel.ENTITY) && prop.getStorage() instanceof ColumnDefinition) {
                     selectableReferenceProps.put(prop.getName(), prop);
                 }
             }

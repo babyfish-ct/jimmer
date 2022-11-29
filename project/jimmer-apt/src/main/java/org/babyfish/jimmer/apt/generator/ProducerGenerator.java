@@ -108,10 +108,10 @@ public class ProducerGenerator {
         for (ImmutableProp prop : type.getDeclaredProps().values()) {
             ImmutablePropCategory category;
             if (prop.isList()) {
-                category = prop.isAssociation() ?
+                category = prop.isAssociation(false) ?
                         ImmutablePropCategory.REFERENCE_LIST :
                         ImmutablePropCategory.SCALAR_LIST;
-            } else if (prop.isAssociation()) {
+            } else if (prop.isAssociation(false)) {
                 category = ImmutablePropCategory.REFERENCE;
             } else {
                 category = ImmutablePropCategory.SCALAR;
@@ -129,14 +129,14 @@ public class ProducerGenerator {
                         prop.getId(),
                         prop.getName()
                 );
-            } else if (prop.getAnnotation(Key.class) != null && !prop.isAssociation()) {
+            } else if (prop.getAnnotation(Key.class) != null && !prop.isAssociation(false)) {
                 builder.add(
                         ".key($L, $S, $T.class)\n",
                         prop.getId(),
                         prop.getName(),
                         prop.getElementTypeName()
                 );
-            } else if (prop.getAnnotation(Key.class) != null && prop.isAssociation()) {
+            } else if (prop.getAnnotation(Key.class) != null && prop.isAssociation(false)) {
                 builder.add(
                         ".keyReference($L, $S, $T.class, $L)\n",
                         prop.getId(),
