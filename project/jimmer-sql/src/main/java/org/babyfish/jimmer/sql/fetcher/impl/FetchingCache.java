@@ -6,7 +6,7 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
-import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,7 +20,7 @@ public class FetchingCache {
 
     public Object createKey(Field field, ImmutableSpi owner) {
         ImmutableProp prop = field.getProp();
-        if (prop.getStorage() instanceof Column) {
+        if (prop.getStorage() instanceof SingleColumn) {
             Object fk = Ids.idOf((ImmutableSpi) owner.__get(prop.getId()));
             DraftContext ctx = owner instanceof DraftSpi ?
                     ((DraftSpi) owner).__draftContext() :

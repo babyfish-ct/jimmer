@@ -8,7 +8,7 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
 import org.babyfish.jimmer.sql.event.TriggerType;
-import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.Converters;
 
 import java.sql.Connection;
@@ -159,7 +159,7 @@ public class DeleteCommandImpl implements DeleteCommand {
                 throw new IllegalStateException("The configuration is frozen");
             }
 
-            if (!prop.isReference(TargetLevel.ENTITY) || !(prop.getStorage() instanceof Column)) {
+            if (!prop.isReference(TargetLevel.ENTITY) || !(prop.getStorage() instanceof SingleColumn)) {
                 throw new IllegalArgumentException("'" + prop + "' must be an entity reference property bases on foreign key");
             }
             if (dissociateAction == DissociateAction.SET_NULL && !prop.isNullable()) {

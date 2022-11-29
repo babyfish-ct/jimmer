@@ -11,7 +11,7 @@ import org.babyfish.jimmer.sql.ast.LikeMode
 import org.babyfish.jimmer.sql.ast.StringExpression
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.table.Table
-import org.babyfish.jimmer.sql.meta.Column
+import org.babyfish.jimmer.sql.meta.SingleColumn
 import org.babyfish.jimmer.sql.meta.Storage
 import kotlin.reflect.KProperty1
 
@@ -20,7 +20,7 @@ fun <E: Any> example(obj: E, block: (KExample.Dsl<E>.() -> Unit)? = null): KExam
         throw IllegalArgumentException("obj is not immutable object")
     }
     for (prop in obj.__type().props.values) {
-        if (obj.__isLoaded(prop.id) && prop.getStorage<Storage>() !is Column) {
+        if (obj.__isLoaded(prop.id) && prop.getStorage<Storage>() !is SingleColumn) {
             throw IllegalArgumentException(
                 "The property \"$prop\" of example cannot be loaded because it is not based on simple column"
             )

@@ -23,7 +23,9 @@ public interface ImmutableProp {
     @NotNull
     Class<?> getElementClass();
 
-    boolean isScalar();
+    boolean isEmbedded();
+
+    boolean isScalar(TargetLevel level);
 
     boolean isScalarList();
 

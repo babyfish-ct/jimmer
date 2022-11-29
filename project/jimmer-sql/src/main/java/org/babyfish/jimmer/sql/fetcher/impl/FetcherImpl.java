@@ -7,7 +7,7 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.*;
-import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -292,7 +292,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
 
     private static FetcherImpl<?> standardChildFetcher(FieldConfigImpl<?, Table<?>> loaderImpl) {
         FetcherImpl<?> childFetcher = loaderImpl.getChildFetcher();
-        if (!(loaderImpl.getProp().getStorage() instanceof Column)) {
+        if (!(loaderImpl.getProp().getStorage() instanceof SingleColumn)) {
             return childFetcher;
         }
         RecursionStrategy<?> strategy = loaderImpl.getRecursionStrategy();

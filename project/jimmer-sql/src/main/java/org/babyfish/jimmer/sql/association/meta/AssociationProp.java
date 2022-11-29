@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.association.meta;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.association.Association;
-import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,6 +36,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public boolean isEmbedded() {
+        return false;
+    }
+
+    @Override
     public boolean isAssociation(TargetLevel level) {
         return true;
     }
@@ -46,7 +51,7 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
-    public boolean isScalar() {
+    public boolean isScalar(TargetLevel level) {
         return false;
     }
 
@@ -114,11 +119,11 @@ public abstract class AssociationProp implements ImmutableProp {
 
         private static final Method GETTER;
 
-        private final Column column;
+        private final SingleColumn column;
 
         Source(AssociationType declaringType) {
             super(declaringType);
-            column = new Column(declaringType.getMiddleTable().getJoinColumnName());
+            column = new SingleColumn(declaringType.getMiddleTable().getJoinColumnName());
         }
 
         @Override
@@ -154,7 +159,7 @@ public abstract class AssociationProp implements ImmutableProp {
         @SuppressWarnings("unchecked")
         @Override
         public <S extends Storage> S getStorage() {
-            return (S)column;
+            return (S) column;
         }
 
         static {
@@ -170,11 +175,11 @@ public abstract class AssociationProp implements ImmutableProp {
 
         private static final Method GETTER;
 
-        private final Column column;
+        private final SingleColumn column;
 
         Target(AssociationType declaringType) {
             super(declaringType);
-            column = new Column(declaringType.getMiddleTable().getTargetJoinColumnName());
+            column = new SingleColumn(declaringType.getMiddleTable().getTargetJoinColumnName());
         }
 
         @Override
@@ -210,7 +215,7 @@ public abstract class AssociationProp implements ImmutableProp {
         @SuppressWarnings("unchecked")
         @Override
         public <S extends Storage> S getStorage() {
-            return (S)column;
+            return (S) column;
         }
 
         static {

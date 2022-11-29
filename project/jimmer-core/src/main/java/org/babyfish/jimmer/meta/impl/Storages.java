@@ -3,7 +3,7 @@ package org.babyfish.jimmer.meta.impl;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.meta.Storage;
 
@@ -23,12 +23,15 @@ public class Storages {
             return null;
         }
         if (annotation == null) {
+            if (prop.isEmbedded()) {
+                return new EmbeddedTree(prop).toColumnFamily();
+            }
             org.babyfish.jimmer.sql.Column column = prop.getAnnotation(org.babyfish.jimmer.sql.Column.class);
             String columnName = column != null ? column.name() : "";
             if (columnName.isEmpty()) {
                 columnName = DatabaseIdentifiers.databaseIdentifier(prop.getName());
             }
-            return new Column(columnName);
+            return new SingleColumn(columnName);
         }
         Storage storage = middleTable(prop, false);
         if (storage == null) {
@@ -88,7 +91,7 @@ public class Storages {
         return new MiddleTable(tableName, joinColumnName, targetJoinColumn);
     }
 
-    private static Column joinColumn(ImmutableProp prop, boolean force) {
+    private static SingleColumn joinColumn(ImmutableProp prop, boolean force) {
         JoinColumn joinColumn = prop.getAnnotation(JoinColumn.class);
         if (joinColumn == null && !force) {
             return null;
@@ -97,6 +100,7 @@ public class Storages {
         if (columnName.isEmpty()) {
             columnName = DatabaseIdentifiers.databaseIdentifier(prop.getName()) + "_ID";
         }
-        return new Column(columnName);
+        return new SingleColumn(columnName);
     }
 }
+

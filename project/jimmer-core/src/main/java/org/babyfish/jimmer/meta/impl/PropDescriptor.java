@@ -47,6 +47,7 @@ public class PropDescriptor {
             String typeText,
             Class<? extends Annotation> typeAnnotationType,
             String propText,
+            String elementText,
             Class<? extends Annotation> elementAnnotationType,
             boolean isList,
             Boolean kotlinNullable,
@@ -57,6 +58,7 @@ public class PropDescriptor {
                 typeText,
                 typeAnnotationType,
                 propText,
+                elementText,
                 elementAnnotationType,
                 isList,
                 kotlinNullable,
@@ -124,10 +126,10 @@ public class PropDescriptor {
 
         private static final String SPRINGFRAMEWORK_NON_NULL = "org.springframework.lang.NonNull";
 
-        private static final Set<Class<? extends Annotation>> COLUMN_ANNOTATION_DECLARING_TYPES =
+        private static final Set<Class<? extends Annotation>> VALUE_ANNOTATION_TYPES =
                 setOf(Entity.class, MappedSuperclass.class, Embeddable.class);
 
-        private static final Set<Class<? extends Annotation>> SQL_ANNOTATION_DECLARING_TYPES =
+        private static final Set<Class<? extends Annotation>> REF_ANNOTATION_TYPES =
                 setOf(Entity.class, MappedSuperclass.class);
 
         private static final Set<Class<? extends Annotation>> ASSOCIATION_STORAGE_ANNOTATION_TYPES =
@@ -138,6 +140,8 @@ public class PropDescriptor {
         private final Class<? extends Annotation> typeAnnotationType;
 
         private final String propText;
+
+        private final String elementText;
 
         private final Class<? extends Annotation> elementAnnotationType;
 
@@ -163,19 +167,21 @@ public class PropDescriptor {
                 String typeText,
                 Class<? extends Annotation> typeAnnotationType,
                 String propText,
+                String elementText,
                 Class<? extends Annotation> elementAnnotationType,
                 boolean isList,
                 Boolean kotlinNullable,
-                boolean determineNullable,
+                boolean defaultNullable,
                 Function<String, RuntimeException> exceptionCreator
         ) {
             this.typeText = typeText;
             this.typeAnnotationType = typeAnnotationType;
             this.propText = propText;
+            this.elementText = elementText;
             this.elementAnnotationType = elementAnnotationType;
             this.isList = isList;
             this.kotlinNullable = kotlinNullable;
-            this.defaultNullable = determineNullable;
+            this.defaultNullable = defaultNullable;
             this.exceptionCreator = exceptionCreator;
         }
 
@@ -197,9 +203,11 @@ public class PropDescriptor {
         private void addAsSqlAnnotation(Class<? extends Annotation> annotationType) {
             if (SQL_ANNOTATION_TYPES.contains(annotationType)) {
                 Set<Class<? extends Annotation>> declaringTypes =
-                        annotationType == Column.class ?
-                                COLUMN_ANNOTATION_DECLARING_TYPES :
-                                SQL_ANNOTATION_DECLARING_TYPES;
+                        annotationType == Column.class ||
+                                annotationType == PropOverrides.class ||
+                                annotationType == PropOverride.class ?
+                                VALUE_ANNOTATION_TYPES :
+                                REF_ANNOTATION_TYPES;
                 if (!declaringTypes.contains(typeAnnotationType)) {
                     throw exceptionCreator.apply(
                             "Illegal property \"" +
@@ -325,6 +333,7 @@ public class PropDescriptor {
                 }
             }
             validateList(type);
+            validateReturnType(type);
             boolean isNullable = determineNullable(type);
             if (hasMappedBy) {
                 for (Class<?> annotationType : annotationTypes) {
@@ -383,6 +392,32 @@ public class PropDescriptor {
             }
         }
 
+        private void validateReturnType(Type type) {
+            if (type.isAssociation() && elementAnnotationType != Entity.class) {
+                throw exceptionCreator.apply(
+                        "The property \"" +
+                                propText +
+                                "\" is illegal, it is association property so that its target type \"" +
+                                elementText +
+                                "\" must be decorated by @" +
+                                Entity.class.getName()
+                );
+            }
+            if (type != Type.TRANSIENT &&
+                    !type.isAssociation() &&
+                    elementAnnotationType != null &&
+                    elementAnnotationType != Embeddable.class) {
+                throw exceptionCreator.apply(
+                        "The property \"" +
+                                propText +
+                                "\" is illegal, it is not association property, its target type \"" +
+                                elementText +
+                                "\" is immutable type, immutable type is not enough, please use @" +
+                                Entity.class.getName()
+                );
+            }
+        }
+
         private void addNullityAnnotation(String annotationTypeName, boolean nullable) {
             if (kotlinNullable != null) {
                 throw exceptionCreator.apply(
@@ -418,14 +453,16 @@ public class PropDescriptor {
             switch (type) {
                 case ID:
                 case VERSION:
+                case EMBEDDED:
                 case ONE_TO_MANY:
                 case MANY_TO_MANY:
                     if (specifiedNullable) {
                         throw exceptionCreator.apply(
                                 "Illegal property \"" +
                                         propText +
-                                        "\", it cannot be nullable because it is decorated by @" +
-                                        type.getAnnotationType().getName()
+                                        "\", it cannot be nullable because it is " +
+                                        type +
+                                        " property"
                         );
                     }
                     break;

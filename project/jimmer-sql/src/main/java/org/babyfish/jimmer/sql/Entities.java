@@ -46,19 +46,45 @@ public interface Entities {
 
     <E> List<E> findByExample(Example<E> example, Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... sortedProps);
 
-    <E> SimpleSaveResult<E> save(E entity);
+    default <E> SimpleSaveResult<E> save(E entity) {
+        return saveCommand(entity).execute();
+    }
+
+    default <E> SimpleSaveResult<E> save(E entity, boolean autoAttachingAll) {
+        if (!autoAttachingAll) {
+            return saveCommand(entity).execute();
+        }
+        return saveCommand(entity)
+                .configure(AbstractEntitySaveCommand.Cfg::setAutoAttachingAll)
+                .execute();
+    }
     
     <E> SimpleEntitySaveCommand<E> saveCommand(E entity);
 
-    <E> BatchSaveResult<E> batchSave(Collection<E> entities);
+    default <E> BatchSaveResult<E> batchSave(Collection<E> entities) {
+        return batchSaveCommand(entities).execute();
+    }
+
+    default <E> BatchSaveResult<E> batchSave(Collection<E> entities, boolean autoAttachingAll) {
+        if (!autoAttachingAll) {
+            return batchSaveCommand(entities).execute();
+        }
+        return batchSaveCommand(entities)
+                .configure(AbstractEntitySaveCommand.Cfg::setAutoAttachingAll)
+                .execute();
+    }
 
     <E> BatchEntitySaveCommand<E> batchSaveCommand(Collection<E> entities);
 
-    DeleteResult delete(Class<?> entityType, Object id);
+    default DeleteResult delete(Class<?> entityType, Object id) {
+        return deleteCommand(entityType, id).execute();
+    }
 
     DeleteCommand deleteCommand(Class<?> entityType, Object id);
 
-    DeleteResult batchDelete(Class<?> entityType, Collection<?> ids);
+    default DeleteResult batchDelete(Class<?> entityType, Collection<?> ids) {
+        return batchDeleteCommand(entityType, ids).execute();
+    }
 
     DeleteCommand batchDeleteCommand(Class<?> entityType, Collection<?> ids);
 }

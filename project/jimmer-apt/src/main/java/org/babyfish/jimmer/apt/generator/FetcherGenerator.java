@@ -75,7 +75,7 @@ public class FetcherGenerator {
                 if (prop.getAnnotation(Id.class) == null) {
                     addProp(prop);
                     addPropByBoolean(prop);
-                    if (prop.isAssociation()) {
+                    if (prop.isAssociation(true)) {
                         addAssociationProp(prop);
                         if (!prop.isTransient()) {
                             addAssociationPropByFieldConfig(prop);

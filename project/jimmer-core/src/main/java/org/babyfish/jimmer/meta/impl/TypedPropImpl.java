@@ -27,7 +27,7 @@ public class TypedPropImpl<S, T> implements TypedProp<S, T> {
 
         public Scalar(ImmutableProp prop) {
             super(prop);
-            if (!prop.isScalar()) {
+            if (!prop.isScalar(TargetLevel.OBJECT)) {
                 throw new IllegalArgumentException(
                         "\"" +
                                 prop +

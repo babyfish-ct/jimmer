@@ -11,4 +11,6 @@ public @interface JoinTable {
     String name() default "";
     String joinColumnName() default "";
     String inverseJoinColumnName() default "";
+    JoinColumn[] joinColumns() default {};
+    JoinColumn[] inverseColumns() default {};
 }

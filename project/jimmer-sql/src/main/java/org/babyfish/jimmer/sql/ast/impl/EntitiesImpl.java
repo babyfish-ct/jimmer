@@ -375,11 +375,6 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> SimpleSaveResult<E> save(E entity) {
-        return saveCommand(entity).execute();
-    }
-
-    @Override
     public <E> SimpleEntitySaveCommand<E> saveCommand(E entity) {
         if (entity instanceof Collection<?>) {
             throw new IllegalArgumentException("entity cannot be collection, do you want to call 'batchSaveCommand'?");
@@ -388,18 +383,8 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> BatchSaveResult<E> batchSave(Collection<E> entities) {
-        return batchSaveCommand(entities).execute();
-    }
-
-    @Override
     public <E> BatchEntitySaveCommand<E> batchSaveCommand(Collection<E> entities) {
         return new BatchEntitySaveCommandImpl<>(sqlClient, con, entities);
-    }
-
-    @Override
-    public DeleteResult delete(Class<?> entityType, Object id) {
-        return deleteCommand(entityType, id).execute();
     }
 
     @Override
@@ -411,11 +396,6 @@ public class EntitiesImpl implements Entities {
             throw new IllegalArgumentException("id cannot be collection, do you want to call 'batchDeleteCommand'?");
         }
         return batchDeleteCommand(entityType, Collections.singleton(id));
-    }
-
-    @Override
-    public DeleteResult batchDelete(Class<?> entityType, Collection<?> ids) {
-        return batchDeleteCommand(entityType, ids).execute();
     }
 
     @Override

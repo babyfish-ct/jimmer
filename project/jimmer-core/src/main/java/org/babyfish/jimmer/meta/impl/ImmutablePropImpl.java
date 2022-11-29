@@ -162,8 +162,18 @@ class ImmutablePropImpl implements ImmutableProp {
     }
 
     @Override
-    public boolean isScalar() {
-        return this.category == ImmutablePropCategory.SCALAR;
+    public boolean isEmbedded() {
+        ImmutableType targetType = getTargetType();
+        return targetType != null && targetType.isEmbeddable();
+    }
+
+    @Override
+    public boolean isScalar(TargetLevel level) {
+        if (level == TargetLevel.OBJECT) {
+            return category == ImmutablePropCategory.SCALAR;
+        }
+        ImmutableType targetType = getTargetType();
+        return targetType == null || !targetType.isEntity() && !targetType.isMappedSuperclass();
     }
 
     @Override
@@ -174,19 +184,19 @@ class ImmutablePropImpl implements ImmutableProp {
     @Override
     public boolean isAssociation(TargetLevel level) {
         return this.category.isAssociation() &&
-                (level == TargetLevel.OBJECT || !isTransient);
+                (level == TargetLevel.OBJECT || !isTransient && getTargetType().isEntity());
     }
 
     @Override
     public boolean isReference(TargetLevel level) {
         return this.category == ImmutablePropCategory.REFERENCE &&
-                (level == TargetLevel.OBJECT || !isTransient);
+                (level == TargetLevel.OBJECT || !isTransient && getTargetType().isEntity());
     }
 
     @Override
     public boolean isReferenceList(TargetLevel level) {
         return this.category == ImmutablePropCategory.REFERENCE_LIST &&
-                (level == TargetLevel.OBJECT || !isTransient);
+                (level == TargetLevel.OBJECT || !isTransient && getTargetType().isEntity());
     }
 
     @Override
@@ -223,7 +233,7 @@ class ImmutablePropImpl implements ImmutableProp {
                     .filter(it -> it.annotationType() == annotationType)
                     .toArray();
         }
-        if (propArr == null && propArr.length == 0) {
+        if (propArr == null || propArr.length == 0) {
             return getterArr;
         }
         A[] mergedArr = (A[])new Object[propArr.length + getterArr.length];
@@ -335,7 +345,7 @@ class ImmutablePropImpl implements ImmutableProp {
                                         "\""
                         );
                     }
-                    if (!prop.isScalar()) {
+                    if (!prop.isScalar(TargetLevel.ENTITY)) {
                         throw new ModelException(
                                 "Illegal property \"" +
                                         this +

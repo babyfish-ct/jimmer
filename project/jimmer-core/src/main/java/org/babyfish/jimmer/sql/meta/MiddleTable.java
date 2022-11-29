@@ -2,11 +2,11 @@ package org.babyfish.jimmer.sql.meta;
 
 public class MiddleTable implements Storage {
 
-    private String tableName;
+    private final String tableName;
 
-    private String joinColumnName;
+    private final String joinColumnName;
 
-    private String targetJoinColumnName;
+    private final String targetJoinColumnName;
 
     private MiddleTable inverse;
 

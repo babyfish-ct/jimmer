@@ -5,7 +5,7 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.meta.Column;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,7 +35,7 @@ public class PropExpressionImpl<T>
         if (prop.isAssociation(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException("prop '" + prop + "' cannot be association property");
         }
-        if (!(prop.getStorage() instanceof Column)) {
+        if (!(prop.getStorage() instanceof SingleColumn)) {
             throw new IllegalArgumentException("prop is not selectable");
         }
         this.table = table;

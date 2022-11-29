@@ -100,10 +100,10 @@ public class DraftGenerator {
             ImmutableProp prop,
             boolean autoCreate
     ) {
-        if (!autoCreate && (!prop.isAssociation() || prop.isList())) {
+        if (!autoCreate && (!prop.isAssociation(false) || prop.isList())) {
             return;
         }
-        if (autoCreate && !prop.isAssociation() && !prop.isList()) {
+        if (autoCreate && !prop.isAssociation(false) && !prop.isList()) {
             return;
         }
         MethodSpec.Builder builder = MethodSpec.methodBuilder(prop.getGetterName());
@@ -129,7 +129,7 @@ public class DraftGenerator {
     }
 
     private void addUtilMethod(ImmutableProp prop, boolean withBase) {
-        if (!prop.isAssociation()) {
+        if (!prop.isAssociation(false)) {
             return;
         }
         MethodSpec.Builder builder = MethodSpec

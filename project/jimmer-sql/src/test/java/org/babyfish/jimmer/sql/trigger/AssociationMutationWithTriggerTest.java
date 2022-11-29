@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.trigger;
 
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.model.AuthorProps;
 import org.babyfish.jimmer.sql.model.BookProps;
 import org.junit.jupiter.api.Test;

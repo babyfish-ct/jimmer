@@ -10,6 +10,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -29,9 +30,14 @@ public class ImmutableProcessor extends AbstractProcessor {
 
     private String[] excludes = null;
 
+    private Messager messager;
+
+    private boolean processed;
+
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
+        messager = processingEnv.getMessager();
         String includes = processingEnv.getOptions().get("jimmer.source.includes");
         String excludes = processingEnv.getOptions().get("jimmer.source.excludes");
         if (includes != null && !includes.isEmpty()) {
@@ -52,6 +58,11 @@ public class ImmutableProcessor extends AbstractProcessor {
             Set<? extends TypeElement> annotations,
             RoundEnvironment roundEnv
     ) {
+        if (!processed) {
+            processed = true;
+        } else {
+            return true;
+        }
         PackageCollector packageCollector = new PackageCollector();
         for (Element element : roundEnv.getRootElements()) {
             if (element instanceof TypeElement) {
@@ -100,7 +111,9 @@ public class ImmutableProcessor extends AbstractProcessor {
                             immutableType,
                             filer
                     ).generate();
+                    messager.printMessage(Diagnostic.Kind.NOTE, "Immutable: " + immutableType.getQualifiedName());
                     if (immutableType.isEntity()) {
+                        messager.printMessage(Diagnostic.Kind.NOTE, "Entity: " + immutableType.getQualifiedName());
                         packageCollector.accept(typeElement);
                         new TableGenerator(
                                 typeUtils,
@@ -123,6 +136,7 @@ public class ImmutableProcessor extends AbstractProcessor {
                 }
             }
         }
+        messager.printMessage(Diagnostic.Kind.NOTE, "JimmerModule");
         new JimmerModuleGenerator(
                 packageCollector.toString(),
                 packageCollector.getTypeElements(),
