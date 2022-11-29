@@ -32,7 +32,7 @@ data class BookInput(
             mapList(Book::authors, BookInput::authorIds) {
                 elementConverter(::makeIdOnly)
             }
-            autoMapOtherScalars()
+            autoMapOtherScalars(true)
         }
     }
 }
