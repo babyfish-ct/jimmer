@@ -137,5 +137,7 @@ class BookController(
     @Transactional
     @PutMapping("/book")
     fun saveBook(@RequestBody book: Book): Book =
-        sqlClient.entities.save(book).modifiedEntity
+        sqlClient.entities.save(book) {
+            setAutoAttachingAll()
+        }.modifiedEntity
 }
