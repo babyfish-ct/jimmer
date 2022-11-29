@@ -154,6 +154,11 @@ public class BookController {
     @Transactional
     @PutMapping("/book/dynamic")
     public Book saveBook(@RequestBody Book book) {
-        return sqlClient.getEntities().save(book).getModifiedEntity();
+        return sqlClient
+                .getEntities()
+                .saveCommand(book)
+                .configure(cfg -> cfg.setAutoAttachingAll())
+                .execute()
+                .getModifiedEntity();
     }
 }
