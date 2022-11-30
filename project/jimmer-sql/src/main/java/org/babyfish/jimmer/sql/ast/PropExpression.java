@@ -39,4 +39,24 @@ public interface PropExpression<T> extends Expression<T> {
         @Override
         CoalesceBuilder.Cmp<T> coalesceBuilder();
     }
+
+    interface Embedded<T> extends PropExpression<T> {
+
+        <XE extends Expression<?>> XE get(String prop);
+
+        @Override
+        default Expression<T> coalesce(T defaultValue) {
+            throw new UnsupportedOperationException("Embedded property does not support coalesce");
+        }
+
+        @Override
+        default Expression<T> coalesce(Expression<T> defaultExpr) {
+            throw new UnsupportedOperationException("Embedded property does not support coalesce");
+        }
+
+        @Override
+        default CoalesceBuilder<T> coalesceBuilder() {
+            throw new UnsupportedOperationException("Embedded property does not support coalesce");
+        }
+    }
 }

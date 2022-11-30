@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.model.embedded.Rect;
 import org.babyfish.jimmer.sql.model.embedded.TransformTable;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +38,19 @@ public class EmbeddedTest extends AbstractQueryTest {
                                     "--->}" +
                                     "]"
                     );
+                }
+        );
+    }
+
+    @Test
+    public void testFindBySourceLeftAndTop() {
+        TransformTable transform = TransformTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(transform)
+                        .select(transform),
+                ctx -> {
+                    ctx.sql("");
                 }
         );
     }
