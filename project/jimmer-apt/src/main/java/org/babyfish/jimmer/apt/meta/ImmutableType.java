@@ -63,6 +63,8 @@ public class ImmutableType {
 
     private final ClassName propsClassName;
 
+    private final ClassName propExpressionClassName;
+
     private final Map<ClassName, String> validationMessageMap;
 
     public ImmutableType(
@@ -294,6 +296,7 @@ public class ImmutableType {
         tableExClassName = toClassName(name -> name + "TableEx");
         fetcherClassName = toClassName(name -> name + "Fetcher");
         propsClassName = toClassName(name -> name + "Props");
+        propExpressionClassName = toClassName(name -> name + "PropExpression");
 
         validationMessageMap = ValidationMessages.parseMessageMap(typeElement);
     }
@@ -415,10 +418,6 @@ public class ImmutableType {
         return tableClassName;
     }
 
-    public ClassName getNewTableClassName() {
-        return toClassName(name -> name + "s");
-    }
-
     public ClassName getTableExClassName() {
         return tableExClassName;
     }
@@ -429,6 +428,10 @@ public class ImmutableType {
 
     public ClassName getPropsClassName() {
         return propsClassName;
+    }
+
+    public ClassName getPropExpressionClassName() {
+        return propExpressionClassName;
     }
 
     private ClassName toClassName(
