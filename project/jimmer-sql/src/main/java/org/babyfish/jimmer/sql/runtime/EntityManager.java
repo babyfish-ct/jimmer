@@ -131,7 +131,7 @@ public class EntityManager {
 
     @Nullable
     public ImmutableType getTypeByTableName(String tableName) {
-        String standardTableName = DatabaseIdentifiers.standardIdentifier(tableName);
+        String standardTableName = DatabaseIdentifiers.comparableIdentifier(tableName);
         return tableNameTypeMap.get(standardTableName);
     }
 
@@ -177,7 +177,7 @@ public class EntityManager {
             if (!type.isEntity()) {
                 continue;
             }
-            String tableName = DatabaseIdentifiers.standardIdentifier(type.getTableName());
+            String tableName = DatabaseIdentifiers.comparableIdentifier(type.getTableName());
             ImmutableType oldType = tableNameTypeMap.put(tableName, type);
             if (oldType != null) {
                 throw new IllegalArgumentException(
@@ -194,7 +194,7 @@ public class EntityManager {
             for (ImmutableProp prop : entityProps(type)) {
                 if (prop.getStorage() instanceof MiddleTable) {
                     AssociationType associationType = AssociationType.of(RedirectedProp.source(prop, type));
-                    String associationTableName = DatabaseIdentifiers.standardIdentifier(associationType.getTableName());
+                    String associationTableName = DatabaseIdentifiers.comparableIdentifier(associationType.getTableName());
                     ImmutableType oldAssociationType = tableNameTypeMap.put(associationTableName, associationType);
                     if (oldAssociationType != null && !oldAssociationType.equals(associationType)) {
                         throw new IllegalArgumentException(

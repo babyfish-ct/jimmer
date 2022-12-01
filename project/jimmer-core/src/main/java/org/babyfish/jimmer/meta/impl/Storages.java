@@ -12,7 +12,7 @@ import java.lang.annotation.Annotation;
 public class Storages {
 
     static Storage of(ImmutableProp prop) {
-        if (prop.isTransient()) {
+        if (prop.isTransient() || prop.getDeclaringType().isEmbeddable()) {
             return null;
         }
         Annotation annotation = prop.getAssociationAnnotation();
@@ -24,7 +24,7 @@ public class Storages {
         }
         if (annotation == null) {
             if (prop.isEmbedded()) {
-                return new EmbeddedTree(prop).toColumnFamily();
+                return new EmbeddedTree(prop).toEmbeddedColumns();
             }
             org.babyfish.jimmer.sql.Column column = prop.getAnnotation(org.babyfish.jimmer.sql.Column.class);
             String columnName = column != null ? column.name() : "";

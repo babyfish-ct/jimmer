@@ -3,10 +3,7 @@ package org.babyfish.jimmer.apt.meta;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.meta.ModelException;
-import org.babyfish.jimmer.sql.Entity;
-import org.babyfish.jimmer.sql.Id;
-import org.babyfish.jimmer.sql.MappedSuperclass;
-import org.babyfish.jimmer.sql.Version;
+import org.babyfish.jimmer.sql.*;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
@@ -17,11 +14,15 @@ import java.util.stream.Collectors;
 
 public class ImmutableType {
 
+    public final static String PROP_EXPRESSION_SUFFIX = "PropExpression";
+
     private final TypeElement typeElement;
 
     private final boolean isEntity;
 
     private final boolean isMappedSuperClass;
+
+    private final boolean isEmbeddable;
 
     private final String packageName;
 
@@ -72,15 +73,10 @@ public class ImmutableType {
             TypeElement typeElement
     ) {
         this.typeElement = typeElement;
-        isEntity = typeElement.getAnnotation(Entity.class) != null;
-        isMappedSuperClass = typeElement.getAnnotation(MappedSuperclass.class) != null;
-        if (isEntity && isMappedSuperClass) {
-            throw new MetaException(
-                    "Illegal type \"" +
-                            typeElement.getQualifiedName() +
-                            "\", it cannot be decorated by both @Entity and @isMappedSuperClass"
-            );
-        }
+        Class<?> annotationType = typeUtils.getImmutableAnnotationType(typeElement);
+        isEntity = annotationType == Entity.class;
+        isMappedSuperClass = annotationType == MappedSuperclass.class;
+        isEmbeddable = annotationType == Embeddable.class;
 
         packageName = ((PackageElement)typeElement.getEnclosingElement()).getQualifiedName().toString();
         name = typeElement.getSimpleName().toString();
@@ -296,7 +292,7 @@ public class ImmutableType {
         tableExClassName = toClassName(name -> name + "TableEx");
         fetcherClassName = toClassName(name -> name + "Fetcher");
         propsClassName = toClassName(name -> name + "Props");
-        propExpressionClassName = toClassName(name -> name + "PropExpression");
+        propExpressionClassName = toClassName(name -> name + PROP_EXPRESSION_SUFFIX);
 
         validationMessageMap = ValidationMessages.parseMessageMap(typeElement);
     }
@@ -311,6 +307,10 @@ public class ImmutableType {
 
     public boolean isMappedSuperClass() {
         return isMappedSuperClass;
+    }
+
+    public boolean isEmbeddable() {
+        return isEmbeddable;
     }
 
     public String getPackageName() {

@@ -116,7 +116,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                 .getSelectableProps();
         for (ImmutableProp prop : selectableProps.values()) {
             builder.sql(separator);
-            table.renderSelection(prop, builder);
+            table.renderSelection(prop, builder, null);
             separator = ", ";
         }
     }

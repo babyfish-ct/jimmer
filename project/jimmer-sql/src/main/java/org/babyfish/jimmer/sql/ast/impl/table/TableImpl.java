@@ -16,7 +16,7 @@ import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
-import org.babyfish.jimmer.sql.meta.MultipleColumns;
+import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -631,7 +631,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     }
 
     @Override
-    public void renderSelection(ImmutableProp prop, SqlBuilder builder) {
+    public void renderSelection(ImmutableProp prop, SqlBuilder builder, EmbeddedColumns.Partial optionalPartial) {
         if (prop.isId() && joinProp != null) {
             MiddleTable middleTable;
             if (joinProp.getStorage() instanceof MiddleTable) {
@@ -650,14 +650,24 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                 return;
             }
             if (!isInverse) {
-                builder
-                        .sql(parent.alias)
-                        .sql(".")
-                        .sql(((SingleColumn)joinProp.getStorage()).getName());
+                ColumnDefinition definition = joinProp.getStorage();
+                if (definition instanceof SingleColumn) {
+                    builder.sql(parent.alias).sql(".").sql(((SingleColumn)definition).getName());
+                } else {
+                    boolean addComma = false;
+                    for (String columnName : definition) {
+                        if (addComma) {
+                            builder.sql(", ");
+                        } else {
+                            addComma = true;
+                        }
+                        builder.sql(parent.alias).sql(".").sql(columnName);
+                    }
+                }
                 return;
             }
         }
-        ColumnDefinition definition = prop.getStorage();
+        ColumnDefinition definition = optionalPartial != null ? optionalPartial : prop.getStorage();
         if (definition instanceof SingleColumn) {
             builder.sql(alias).sql(".").sql(((SingleColumn) definition).getName());
         } else {

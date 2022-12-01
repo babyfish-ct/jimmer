@@ -233,7 +233,7 @@ class ImmutableTypeImpl implements ImmutableType {
 
     @Override
     public ImmutableProp getPropByColumnName(String columnName) {
-        String scName = DatabaseIdentifiers.standardIdentifier(columnName);
+        String scName = DatabaseIdentifiers.comparableIdentifier(columnName);
         ImmutableProp prop = getColumnProps().get(scName);
         if (prop == null) {
             throw new IllegalArgumentException(
@@ -253,7 +253,7 @@ class ImmutableTypeImpl implements ImmutableType {
             cps = new LinkedHashMap<>();
             for (ImmutableProp prop : getProps().values()) {
                 if (prop.getStorage() instanceof SingleColumn) {
-                    String scName = DatabaseIdentifiers.standardIdentifier(prop.<SingleColumn>getStorage().getName());
+                    String scName = DatabaseIdentifiers.comparableIdentifier(prop.<SingleColumn>getStorage().getName());
                     ImmutableProp conflictProp = cps.put(scName, prop);
                     if (conflictProp != null) {
                         throw new ModelException(

@@ -4,7 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.PropOverride;
 import org.babyfish.jimmer.sql.PropOverrides;
-import org.babyfish.jimmer.sql.meta.MultipleColumns;
+import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -150,37 +150,16 @@ class EmbeddedTree {
         }
     }
 
-    public MultipleColumns toColumnFamily() {
+    public EmbeddedColumns toEmbeddedColumns() {
         CollectContext ctx = new CollectContext(prop);
         collect(ctx);
-        return new MultipleColumns(ctx.columnMap.values());
+        return ctx.toEmbeddedColumns();
     }
 
     private void collect(CollectContext ctx) {
-        if (prop.isEmbedded()) {
-            for (EmbeddedTree childTree : childMap.values()) {
-                childTree.collect(ctx);
-            }
-        } else {
-            String columnName = usedCtx != null ?
-                    usedCtx.annotation.columnName() :
-                    DatabaseIdentifiers.databaseIdentifier(prop.getName());
-            ctx.columnMap.put(path, columnName);
-            String conflictPath = ctx.pathMap.put(columnName, path);
-            if (conflictPath != null) {
-                throw new ModelException(
-                        "The property \"" +
-                                ctx.prop +
-                                "\" is illegal, its an embedded property but " +
-                                "both the path `" +
-                                conflictPath +
-                                "` and `" +
-                                path +
-                                "` has been mapped to an same column \"" +
-                                columnName +
-                                "\""
-                );
-            }
+        ctx.accept(this);
+        for (EmbeddedTree childTree : childMap.values()) {
+            childTree.collect(ctx);
         }
     }
 
@@ -201,14 +180,45 @@ class EmbeddedTree {
 
     private static class CollectContext {
 
-        final ImmutableProp prop;
+        private final ImmutableProp prop;
 
-        final Map<String, String> columnMap = new LinkedHashMap<>();
+        private final Map<String, String> identifierPathMap = new LinkedHashMap<>();
 
-        final Map<String, String> pathMap = new LinkedHashMap<>();
+        private final Map<String, List<String>> columnMap = new LinkedHashMap<>();
 
         private CollectContext(ImmutableProp prop) {
             this.prop = prop;
+        }
+
+        public void accept(EmbeddedTree tree) {
+            if (tree.childMap.isEmpty()) {
+                String columnName = tree.usedCtx != null ?
+                        tree.usedCtx.annotation.columnName() :
+                        DatabaseIdentifiers.databaseIdentifier(tree.prop.getName());
+                String comparableIdentifier = DatabaseIdentifiers.comparableIdentifier(columnName);
+                String conflictPath = identifierPathMap.put(comparableIdentifier, tree.path);
+                if (conflictPath != null) {
+                    throw new ModelException(
+                            "The property \"" +
+                                    prop +
+                                    "\" is illegal, its an embedded property but " +
+                                    "both the path `" +
+                                    conflictPath +
+                                    "` and `" +
+                                    tree.path +
+                                    "` has been mapped to an same column \"" +
+                                    columnName +
+                                    "\""
+                    );
+                }
+                for (EmbeddedTree t = tree; t != null; t = t.parent) {
+                    columnMap.computeIfAbsent(t.path, it -> new ArrayList<>()).add(columnName);
+                }
+            }
+        }
+
+        public EmbeddedColumns toEmbeddedColumns() {
+            return new EmbeddedColumns(columnMap);
         }
     }
 }

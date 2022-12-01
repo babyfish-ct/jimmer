@@ -179,6 +179,17 @@ public class PropsGenerator {
             boolean withJoinType,
             boolean withImplementation
     ) {
+        return property(typeUtils, isTableEx, prop, withJoinType, withImplementation, false);
+    }
+
+    static MethodSpec property(
+            TypeUtils typeUtils,
+            boolean isTableEx,
+            ImmutableProp prop,
+            boolean withJoinType,
+            boolean withImplementation,
+            boolean ignoreOverride
+    ) {
         if (prop.isTransient()) {
             return null;
         }
@@ -196,6 +207,12 @@ public class PropsGenerator {
                         .getImmutableType(prop.getElementType())
                         .getTableClassName();
             }
+        } else if (prop.isAssociation(false)) {
+            ClassName className = (ClassName)prop.getTypeName();
+            returnType = ClassName.get(
+                    className.packageName(),
+                    className.simpleName() + ImmutableType.PROP_EXPRESSION_SUFFIX
+            );
         } else {
             if (prop.getTypeName().isPrimitive() && !prop.getTypeName().equals(TypeName.BOOLEAN)) {
                 returnType = ParameterizedTypeName.get(
@@ -226,7 +243,7 @@ public class PropsGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .returns(returnType);
         if (withImplementation) {
-            if (!isTableEx) {
+            if (!isTableEx && !ignoreOverride) {
                 builder.addAnnotation(Override.class);
             }
         } else {
@@ -251,6 +268,8 @@ public class PropsGenerator {
                             .endControlFlow()
                             .addStatement("return new $T(joinOperation($S))", returnType, prop.getName());
                 }
+            } else if (prop.isAssociation(false)) {
+                builder.addStatement("return new $T(get($S))", returnType, prop.getName());
             } else {
                 builder.addStatement("return get($S)", prop.getName());
             }
