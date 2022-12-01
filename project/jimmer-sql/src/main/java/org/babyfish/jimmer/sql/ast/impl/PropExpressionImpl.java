@@ -19,6 +19,8 @@ public class PropExpressionImpl<T>
 
     protected final ImmutableProp prop;
 
+    protected final ImmutableProp deepestProp;
+
     protected final EmbeddedImpl<?> base;
 
     protected final String path;
@@ -66,6 +68,7 @@ public class PropExpressionImpl<T>
         }
         this.table = table;
         this.prop = prop;
+        this.deepestProp = prop;
         this.base = null;
         this.path = null;
     }
@@ -75,7 +78,8 @@ public class PropExpressionImpl<T>
             throw new IllegalArgumentException("prop '" + prop + "' cannot be association property");
         }
         this.table = base.table;
-        this.prop = prop;
+        this.prop = base.getProp();
+        this.deepestProp = prop;
         this.base = base;
         this.path = base.path == null ? prop.getName() : base.path + "." + prop.getName();
     }
@@ -88,6 +92,13 @@ public class PropExpressionImpl<T>
         return prop;
     }
 
+    public EmbeddedColumns.Partial getPartial() {
+        if (base != null || prop.isEmbedded()) {
+            return ((EmbeddedColumns)prop.getStorage()).partial(path);
+        }
+        return null;
+    }
+
     @Override
     public void accept(@NotNull AstVisitor visitor) {
         visitor.visitTableReference(TableProxies.resolve(table, visitor.getAstContext()), prop);
@@ -96,8 +107,8 @@ public class PropExpressionImpl<T>
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
         TableImplementor<?> tableImplementor = TableProxies.resolve(table, builder.getAstContext());
-        if (base != null || prop.isEmbedded()) {
-            EmbeddedColumns.Partial partial = getEmbeddedColumns().partial(path);
+        EmbeddedColumns.Partial partial = getPartial();
+        if (partial != null) {
             if (partial.size() == 1) {
                 tableImplementor.renderSelection(prop, builder, partial);
             } else {
@@ -110,10 +121,6 @@ public class PropExpressionImpl<T>
         }
     }
 
-    EmbeddedColumns getEmbeddedColumns() {
-        return base != null ? base.getEmbeddedColumns() : prop.getStorage();
-    }
-
     @Override
     public int precedence() {
         return 0;
@@ -122,7 +129,7 @@ public class PropExpressionImpl<T>
     @SuppressWarnings("unchecked")
     @Override
     public Class<T> getType() {
-        return (Class<T>) prop.getElementClass();
+        return (Class<T>) deepestProp.getElementClass();
     }
 
     private static class StrImpl
@@ -229,7 +236,7 @@ public class PropExpressionImpl<T>
         @SuppressWarnings("unchecked")
         @Override
         public <XE extends Expression<?>> XE get(String prop) {
-            ImmutableProp deeperProp = this.prop.getTargetType().getProp(prop);
+            ImmutableProp deeperProp = this.deepestProp.getTargetType().getProp(prop);
             return (XE)PropExpressionImpl.of(this, deeperProp);
         }
 
