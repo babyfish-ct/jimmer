@@ -101,6 +101,8 @@ public class TableGenerator {
             }
             addAsTableEx();
             addDisableJoin();
+            addWeakJoin(false);
+            addWeakJoin(true);
             return typeBuilder.build();
         } finally {
             typeBuilder = oldTypeBuilder;
@@ -214,6 +216,76 @@ public class TableGenerator {
                 .returns(selfClassName)
                 .addParameter(String.class, "reason")
                 .addStatement("return new $T(this, reason)", selfClassName);
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addWeakJoin(boolean withJoinType) {
+        if (!isTableEx) {
+            return;
+        }
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("weakJoin")
+                .addModifiers(Modifier.PUBLIC)
+                .addTypeVariable(
+                        TypeVariableName.get(
+                                "TT",
+                                ParameterizedTypeName.get(
+                                        TABLE_CLASS_NAME,
+                                        WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                                )
+                        )
+                )
+                .addTypeVariable(
+                        TypeVariableName.get(
+                                "WJ",
+                                ParameterizedTypeName.get(
+                                        Constants.WEAK_JOIN_CLASS_NAME,
+                                        type.getTableClassName(),
+                                        TypeVariableName.get("TT")
+                                )
+                        )
+                )
+                .returns(TypeVariableName.get("TT"))
+                .addParameter(
+                        ParameterSpec
+                                .builder(
+                                        ParameterizedTypeName.get(
+                                                CLASS_CLASS_NAME,
+                                                TypeVariableName.get("WJ")
+                                        ),
+                                        "weakJoinType"
+                                )
+                                .build()
+                );
+        if (withJoinType) {
+            builder.addParameter(
+                    ParameterSpec
+                            .builder(JOIN_TYPE_CLASS_NAME, "joinType")
+                            .build()
+            );
+            builder.addAnnotation(
+                    AnnotationSpec
+                            .builder(SuppressWarnings.class)
+                            .addMember("value", "\"unchecked\"")
+                            .build()
+            );
+        }
+        if (withJoinType) {
+            builder
+                    .addStatement("__beforeJoin()")
+                    .beginControlFlow("if (raw != null)")
+                    .addStatement(
+                            "return (TT)$T.wrap(raw.weakJoinImplementor(weakJoinType, joinType))",
+                            TABLE_PROXIES_CLASS_NAME
+                    )
+                    .endControlFlow()
+                    .addStatement(
+                            "return (TT)$T.fluent(joinOperation(weakJoinType, joinType))",
+                            TABLE_PROXIES_CLASS_NAME
+                    );
+        } else {
+            builder.addStatement("return weakJoin(weakJoinType, JoinType.INNER)");
+        }
         typeBuilder.addMethod(builder.build());
     }
 }

@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection
 import org.babyfish.jimmer.sql.kt.ast.table.KNullableTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KTableEx
+import org.babyfish.jimmer.sql.kt.ast.table.KWeakJoin
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -39,6 +40,11 @@ internal abstract class KTableExImpl<E: Any>(
     override fun <X : Any> inverseOuterJoinList(backProp: KProperty1<X, List<E>>): KNullableTableEx<X> =
         KNullableTableExImpl(
             javaTable.inverseJoin(backProp.toImmutableProp(), JoinType.LEFT)
+        )
+
+    override fun <X : Any> weakOuterJoin(weakJoinType: KClass<out KWeakJoin<E, X>>): KNullableTableEx<X> =
+        KNullableTableExImpl(
+            javaTable.weakJoinImplementor(weakJoinType.java, JoinType.LEFT)
         )
 
     override fun accept(visitor: AstVisitor) {

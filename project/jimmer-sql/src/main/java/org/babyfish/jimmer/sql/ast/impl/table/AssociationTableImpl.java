@@ -14,6 +14,6 @@ class AssociationTableImpl<SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE
             AbstractMutableStatementImpl statement,
             AssociationType associationType
     ) {
-        super(statement, associationType, null, false, null, JoinType.INNER);
+        super(statement, associationType, null, false, null, null, JoinType.INNER);
     }
 }
