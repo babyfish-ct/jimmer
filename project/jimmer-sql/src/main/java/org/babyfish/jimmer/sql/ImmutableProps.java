@@ -70,7 +70,11 @@ public class ImmutableProps {
             }
             return opposite;
         }
-        return joinedTableImpl.getJoinProp();
+        ImmutableProp joinProp = joinedTableImpl.getJoinProp();
+        if (joinProp == null) {
+            throw new IllegalArgumentException("The lambda does not returns table base on association property");
+        }
+        return joinProp;
     }
 
     private static class FakeStatement extends AbstractMutableStatementImpl {
