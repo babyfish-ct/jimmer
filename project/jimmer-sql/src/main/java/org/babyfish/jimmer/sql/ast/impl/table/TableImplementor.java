@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
+import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,6 +49,10 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, It
 
     <X> TableImplementor<X> inverseJoinImplementor(TypedProp.Association<?, ?> prop, JoinType joinType);
 
+    <X> TableImplementor<X> weakJoinImplementor(Class<? extends WeakJoin<?, ?>> weakJoinType, JoinType joinType);
+
+    <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType);
+
     static TableImplementor<?> create(
             AbstractMutableStatementImpl statement,
             ImmutableType immutableType
@@ -63,6 +68,7 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, It
                 immutableType,
                 null,
                 false,
+                null,
                 null,
                 JoinType.INNER
         );

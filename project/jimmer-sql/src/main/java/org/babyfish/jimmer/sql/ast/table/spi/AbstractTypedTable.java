@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
 import java.util.function.Function;
@@ -27,14 +28,14 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
     private final String joinDisabledReason;
 
-    private final Object identitfier;
+    private final Object identifier;
 
     protected AbstractTypedTable(ImmutableType type) {
         this.immutableType = type;
         this.raw = null;
         this.delayedOperation = null;
         this.joinDisabledReason = null;
-        this.identitfier = new Object();
+        this.identifier = new Object();
     }
 
     protected AbstractTypedTable(Class<E> entityType) {
@@ -42,7 +43,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = null;
         this.delayedOperation = null;
         this.joinDisabledReason = null;
-        this.identitfier = new Object();
+        this.identifier = new Object();
     }
 
     protected AbstractTypedTable(Class<E> entityType, DelayedOperation<E> delayedOperation) {
@@ -50,7 +51,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = null;
         this.delayedOperation = delayedOperation;
         this.joinDisabledReason = null;
-        this.identitfier = new Object();
+        this.identifier = new Object();
     }
 
     protected AbstractTypedTable(TableImplementor<E> raw) {
@@ -58,7 +59,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = raw;
         this.joinDisabledReason = null;
         this.delayedOperation = null;
-        this.identitfier = new Object();
+        this.identifier = new Object();
     }
 
     protected AbstractTypedTable(AbstractTypedTable<E> base, String joinDisabledReason) {
@@ -66,7 +67,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         this.raw = base.raw;
         this.delayedOperation = base.delayedOperation;
         this.joinDisabledReason = joinDisabledReason != null ? joinDisabledReason : base.joinDisabledReason;
-        this.identitfier = base.identitfier;
+        this.identifier = base.identifier;
     }
 
     @Override
@@ -337,12 +338,16 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         return new DelayJoin<>(this, immutableType.getProp(prop), joinType, treatedAs);
     }
 
+    protected <X> DelayedOperation<X> joinOperation(Class<? extends WeakJoin<?, ?>> weakJoinType, JoinType joinType) {
+        return new DelayJoin<>(this, weakJoinType, joinType);
+    }
+
     public static boolean __refEquals(Table<?> a, Table<?> b) {
         if (a == b) {
             return true;
         }
         if (a instanceof AbstractTypedTable<?> && b instanceof AbstractTypedTable<?>) {
-            return ((AbstractTypedTable<?>)a).identitfier == ((AbstractTypedTable<?>)b).identitfier;
+            return ((AbstractTypedTable<?>)a).identifier == ((AbstractTypedTable<?>)b).identifier;
         }
         return false;
     }
@@ -353,6 +358,8 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
         ImmutableProp prop();
 
+        WeakJoinHandle weakJoinHandle();
+
         ImmutableType targetType();
 
         TableImplementor<E> resolve(RootTableResolver ctx);
@@ -362,10 +369,11 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
         private final AbstractTypedTable<?> parent;
         private final ImmutableProp prop;
+        private final WeakJoinHandle weakJoinHandle;
         private final JoinType joinType;
         private final ImmutableType treatedAs;
 
-        private DelayJoin(
+        DelayJoin(
                 AbstractTypedTable<?> parent,
                 ImmutableProp prop,
                 JoinType joinType,
@@ -379,6 +387,19 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             } else {
                 this.prop = prop;
             }
+            this.weakJoinHandle = null;
+        }
+
+        private DelayJoin(
+                AbstractTypedTable<?> parent,
+                Class<? extends WeakJoin<?, ?>> weakJoinType,
+                JoinType joinType
+        ) {
+            this.parent = parent;
+            this.joinType = joinType;
+            this.treatedAs = null;
+            this.prop = null;
+            this.weakJoinHandle = WeakJoinHandle.of(weakJoinType);
         }
 
         @Override
@@ -392,13 +413,27 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         }
 
         @Override
+        public WeakJoinHandle weakJoinHandle() {
+            return weakJoinHandle;
+        }
+
+        @Override
         public ImmutableType targetType() {
-            return treatedAs != null ? treatedAs : prop.getTargetType();
+            if (treatedAs != null) {
+                return treatedAs;
+            }
+            if (prop != null) {
+                return prop.getTargetType();
+            }
+            return weakJoinHandle.getTargetType();
         }
 
         @Override
         public TableImplementor<E> resolve(RootTableResolver ctx) {
-            return parent.__resolve(ctx).joinImplementor(prop.getName(), joinType, treatedAs);
+            if (prop != null) {
+                return parent.__resolve(ctx).joinImplementor(prop.getName(), joinType, treatedAs);
+            }
+            return parent.__resolve(ctx).weakJoinImplementor(weakJoinHandle, joinType);
         }
 
         @Override
@@ -429,6 +464,11 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         @Override
         public ImmutableProp prop() {
             return prop;
+        }
+
+        @Override
+        public WeakJoinHandle weakJoinHandle() {
+            return null;
         }
 
         @Override

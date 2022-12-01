@@ -26,7 +26,7 @@ internal fun KNonNullExpression<Boolean>.toJavaPredicate(): Predicate =
         PredicateWrapper(this)
     }
 
-internal fun KNonNullExpression<Boolean>.toKtPredicate(): AbstractKPredicate =
+internal fun KNonNullExpression<Boolean>.toKtPredicateImpl(): AbstractKPredicate =
     if (this is AbstractKPredicate) {
         this
     } else {

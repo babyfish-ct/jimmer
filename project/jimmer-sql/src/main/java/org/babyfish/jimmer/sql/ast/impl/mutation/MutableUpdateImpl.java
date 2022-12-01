@@ -437,7 +437,7 @@ public class MutableUpdateImpl
                 parent = ((TableProxy<?>)targetTable).__parent();
                 prop = ((TableProxy<?>)targetTable).__prop();
             }
-            if (parent != null && exprImpl.getProp().isId()) {
+            if (parent != null && prop != null && exprImpl.getProp().isId()) {
                 return new Target(parent, prop, expr);
             } else {
                 return new Target(targetTable, exprImpl.getProp(), expr);
