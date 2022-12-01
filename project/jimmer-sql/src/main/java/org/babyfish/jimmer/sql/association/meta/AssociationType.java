@@ -168,9 +168,9 @@ public class AssociationType implements ImmutableType {
 
     @Override
     public ImmutableProp getPropByColumnName(String columnName) {
-        String scName = DatabaseIdentifiers.standardIdentifier(columnName);
+        String scName = DatabaseIdentifiers.comparableIdentifier(columnName);
         if (scName.equals(
-                DatabaseIdentifiers.standardIdentifier(
+                DatabaseIdentifiers.comparableIdentifier(
                         sourceProp.<SingleColumn>getStorage().getName()
                 )
             )
@@ -178,7 +178,7 @@ public class AssociationType implements ImmutableType {
             return sourceProp;
         }
         if (scName.equals(
-                DatabaseIdentifiers.standardIdentifier(
+                DatabaseIdentifiers.comparableIdentifier(
                         targetProp.<SingleColumn>getStorage().getName()
                 )
             )

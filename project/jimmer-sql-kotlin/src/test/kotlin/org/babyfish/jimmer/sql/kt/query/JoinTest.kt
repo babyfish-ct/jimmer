@@ -1,8 +1,5 @@
 package org.babyfish.jimmer.sql.kt.query
 
-import org.babyfish.jimmer.sql.ast.Predicate
-import org.babyfish.jimmer.sql.ast.table.Table
-import org.babyfish.jimmer.sql.ast.table.TableEx
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.ast.expression.sql

@@ -132,6 +132,12 @@ public class ImmutableProcessor extends AbstractProcessor {
                                 immutableType,
                                 filer
                         ).generate();
+                    } else if (immutableType.isEmbeddable()) {
+                        new PropExpressionGenerator(
+                                typeUtils,
+                                immutableType,
+                                filer
+                        ).generate();
                     }
                 }
             }

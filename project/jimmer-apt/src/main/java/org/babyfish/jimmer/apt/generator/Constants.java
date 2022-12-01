@@ -192,6 +192,19 @@ class Constants {
                     "TableProxies"
             );
 
+    public static final ClassName ABSTRACT_TYPED_EMBEDDED_PROP_EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.embedded",
+                    "AbstractTypedEmbeddedPropExpression"
+            );
+
+    public static final ClassName EMBEDDED_PROP_EXPRESSION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "PropExpression",
+                    "Embedded"
+            );
+
     public static final String DRAFT_FIELD_CTX =
             "__ctx";
 

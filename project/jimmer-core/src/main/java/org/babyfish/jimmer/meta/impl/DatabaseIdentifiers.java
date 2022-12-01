@@ -23,7 +23,7 @@ public class DatabaseIdentifiers {
         return builder.toString();
     }
 
-    public static String standardIdentifier(String identifier) {
+    public static String comparableIdentifier(String identifier) {
         boolean cut = false;
         if (identifier.startsWith("`") && identifier.endsWith("`") && identifier.length() > 2) {
             cut = true;

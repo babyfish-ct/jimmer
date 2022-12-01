@@ -1,9 +1,12 @@
 package org.babyfish.jimmer.apt.generator;
 
 import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.TypeUtils;
+import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 
 import javax.annotation.processing.Filer;
@@ -50,13 +53,50 @@ public class PropExpressionGenerator {
     private TypeSpec generateImpl() {
         TypeSpec.Builder builder = TypeSpec
                 .classBuilder(type.getPropExpressionClassName())
-                .addModifiers(Modifier.PUBLIC);
+                .addModifiers(Modifier.PUBLIC)
+                .superclass(
+                        ParameterizedTypeName.get(
+                                Constants.ABSTRACT_TYPED_EMBEDDED_PROP_EXPRESSION_CLASS_NAME,
+                                type.getClassName()
+                        )
+                );
         typeBuilder = builder;
         try {
-
+            addConstructor();
+            addProps();
         } finally {
             typeBuilder = null;
         }
         return builder.build();
+    }
+
+    private void addConstructor() {
+        MethodSpec.Builder builder = MethodSpec
+                .constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.EMBEDDED_PROP_EXPRESSION_CLASS_NAME,
+                                type.getClassName()
+                        ),
+                        "raw"
+                )
+                .addStatement("super(raw)");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addProps() {
+        for (ImmutableProp prop : type.getProps().values()) {
+            typeBuilder.addMethod(
+                    PropsGenerator.property(
+                            typeUtils,
+                            false,
+                            prop,
+                            false,
+                            true,
+                            true
+                    )
+            );
+        }
     }
 }

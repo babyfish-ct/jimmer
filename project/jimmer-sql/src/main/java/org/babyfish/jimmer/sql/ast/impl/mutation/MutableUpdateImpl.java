@@ -199,8 +199,6 @@ public class MutableUpdateImpl
             ImmutableSpi row = rowMap.get(changedRow.__get(idPropId));
             if (!row.__equals(changedRow, true)) {
                 trigger.modifyEntityTable(row, changedRow);
-            } else {
-                System.out.println(changedRow + " -> " + row);
             }
         }
         trigger.submit(getSqlClient(), con);

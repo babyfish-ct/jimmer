@@ -1,22 +1,15 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
-import org.babyfish.jimmer.sql.ast.query.Order;
-import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
-import org.babyfish.jimmer.sql.meta.SingleColumn;
+import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 public class PropExpressionImpl<T>
         extends AbstractExpression<T>
@@ -26,7 +19,31 @@ public class PropExpressionImpl<T>
 
     protected final ImmutableProp prop;
 
+    protected final EmbeddedImpl<?> base;
+
+    protected final String path;
+
+    public static PropExpressionImpl<?> of(EmbeddedImpl<?> base, ImmutableProp prop) {
+        if (prop.isEmbedded()) {
+            return new EmbeddedImpl<>(base, prop);
+        }
+        Class<?> elementClass = prop.getElementClass();
+        if (String.class.isAssignableFrom(elementClass)) {
+            return new StrImpl(base, prop);
+        }
+        if (elementClass.isPrimitive() || Number.class.isAssignableFrom(elementClass)) {
+            return new NumImpl<>(base, prop);
+        }
+        if (Comparable.class.isAssignableFrom(elementClass)) {
+            return new CmpImpl<>(base, prop);
+        }
+        return new PropExpressionImpl<>(base, prop);
+    }
+
     public static PropExpressionImpl<?> of(Table<?> table, ImmutableProp prop) {
+        if (prop.isEmbedded()) {
+            return new EmbeddedImpl<>(table, prop);
+        }
         Class<?> elementClass = prop.getElementClass();
         if (String.class.isAssignableFrom(elementClass)) {
             return new StrImpl(table, prop);
@@ -49,6 +66,18 @@ public class PropExpressionImpl<T>
         }
         this.table = table;
         this.prop = prop;
+        this.base = null;
+        this.path = null;
+    }
+
+    PropExpressionImpl(EmbeddedImpl<?> base, ImmutableProp prop) {
+        if (prop.isAssociation(TargetLevel.ENTITY)) {
+            throw new IllegalArgumentException("prop '" + prop + "' cannot be association property");
+        }
+        this.table = base.table;
+        this.prop = prop;
+        this.base = base;
+        this.path = base.path == null ? prop.getName() : base.path + "." + prop.getName();
     }
 
     public Table<?> getTable() {
@@ -66,7 +95,23 @@ public class PropExpressionImpl<T>
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        TableProxies.resolve(table, builder.getAstContext()).renderSelection(prop, builder);
+        TableImplementor<?> tableImplementor = TableProxies.resolve(table, builder.getAstContext());
+        if (base != null || prop.isEmbedded()) {
+            EmbeddedColumns.Partial partial = getEmbeddedColumns().partial(path);
+            if (partial.size() == 1) {
+                tableImplementor.renderSelection(prop, builder, partial);
+            } else {
+                builder.enterTuple();
+                tableImplementor.renderSelection(prop, builder, partial);
+                builder.leaveTuple();
+            }
+        } else {
+            tableImplementor.renderSelection(prop, builder, null);
+        }
+    }
+
+    EmbeddedColumns getEmbeddedColumns() {
+        return base != null ? base.getEmbeddedColumns() : prop.getStorage();
     }
 
     @Override
@@ -86,6 +131,10 @@ public class PropExpressionImpl<T>
 
         StrImpl(Table<?> table, ImmutableProp prop) {
             super(table, prop);
+        }
+
+        StrImpl(EmbeddedImpl<?> base, ImmutableProp prop) {
+            super(base, prop);
         }
 
         @Override
@@ -117,6 +166,10 @@ public class PropExpressionImpl<T>
             super(table, prop);
         }
 
+        NumImpl(EmbeddedImpl<?> base, ImmutableProp prop) {
+            super(base, prop);
+        }
+
         @Override
         public NumericExpression<N> coalesce(N defaultValue) {
             return NumericExpressionImplementor.super.coalesce(defaultValue);
@@ -141,6 +194,10 @@ public class PropExpressionImpl<T>
             super(table, prop);
         }
 
+        CmpImpl(EmbeddedImpl<?> base, ImmutableProp prop) {
+            super(base, prop);
+        }
+
         @Override
         public ComparableExpression<T> coalesce(T defaultValue) {
             return ComparableExpressionImplementor.super.coalesce(defaultValue);
@@ -161,30 +218,19 @@ public class PropExpressionImpl<T>
             extends PropExpressionImpl<T>
             implements PropExpression.Embedded<T> {
 
-        private final String path;
-
-        private final ImmutableType type;
-
         protected EmbeddedImpl(Table<?> table, ImmutableProp prop) {
             super(table, prop);
-            this.path = null;
-            this.type = prop.getTargetType();
         }
 
-        protected EmbeddedImpl(EmbeddedImpl<?> base, ImmutableProp deeperProp) {
-            super(base.table, base.prop);
-            if (base.path == null) {
-                this.path = deeperProp.getName();
-            } else {
-                this.path = base.path + '.' + deeperProp.getName();
-            }
-            this.type = deeperProp.getTargetType();
+        protected EmbeddedImpl(EmbeddedImpl<?> base, ImmutableProp prop) {
+            super(base, prop);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public <XE extends Expression<?>> XE get(String prop) {
-            ImmutableProp deeperProp = type.getProp(prop);
-            return null;
+            ImmutableProp deeperProp = this.prop.getTargetType().getProp(prop);
+            return (XE)PropExpressionImpl.of(this, deeperProp);
         }
 
         @Override

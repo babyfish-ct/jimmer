@@ -113,7 +113,6 @@ class ImmutablePropImpl implements ImmutableProp {
         isTransient = trans != null;
         hasTransientResolver = trans != null && trans.value() != void.class;
         if (associationType != null) {
-
             associationAnnotation = getAnnotation(associationType);
         }
 
