@@ -39,18 +39,18 @@ fun and(vararg predicates: KNonNullExpression<Boolean>): KNonNullExpression<Bool
     if (predicates.size == 1) {
         predicates[0]
     } else {
-        AndPredicate(predicates.map { it.toKtPredicate() })
+        AndPredicate(predicates.map { it.toKtPredicateImpl() })
     }
 
 fun or(vararg predicates: KNonNullExpression<Boolean>): KNonNullExpression<Boolean> =
     if (predicates.size == 1) {
         predicates[0]
     } else {
-        OrPredicate(predicates.map { it.toKtPredicate() })
+        OrPredicate(predicates.map { it.toKtPredicateImpl() })
     }
 
 fun KNonNullExpression<Boolean>.not(): KNonNullExpression<Boolean> =
-    toKtPredicate().not()
+    toKtPredicateImpl().not()
 
 
 

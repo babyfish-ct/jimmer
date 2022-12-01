@@ -11,11 +11,14 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullablePropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
+import org.babyfish.jimmer.sql.kt.ast.table.KTableEx
+import org.babyfish.jimmer.sql.kt.ast.table.KWeakJoin
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 internal class KNonNullTableExImpl<E: Any>(
-    javaTable: TableImplementor<E>
+    javaTable: TableImplementor<E>,
+    private val joinDisabledReason: String? = null
 ) : KTableExImpl<E>(javaTable), KNonNullTableEx<E> {
 
     @Suppress("UNCHECKED_CAST")
@@ -29,26 +32,59 @@ internal class KNonNullTableExImpl<E: Any>(
         } as EXP
 
     override fun <X : Any> join(prop: String): KNonNullTableEx<X> =
-        KNonNullTableExImpl(javaTable.join(prop))
+        if (joinDisabledReason != null) {
+            throw IllegalStateException("Table join is disabled because $joinDisabledReason")
+        } else {
+            KNonNullTableExImpl(javaTable.join(prop))
+        }
 
     override fun <X : Any> joinReference(prop: KProperty1<E, X?>): KNonNullTableEx<X> =
-        KNonNullTableExImpl(javaTable.join(prop.name))
+        if (joinDisabledReason != null) {
+            throw IllegalStateException("Table join is disabled because $joinDisabledReason")
+        } else {
+            KNonNullTableExImpl(javaTable.join(prop.name))
+        }
 
-    override fun <X : Any> joinList(prop: KProperty1<E, List<X>>): KNonNullTableEx<X>  =
-        KNonNullTableExImpl(javaTable.join(prop.name))
+    override fun <X : Any> joinList(prop: KProperty1<E, List<X>>): KNonNullTableEx<X> =
+        if (joinDisabledReason != null) {
+            throw IllegalStateException("Table join is disabled because $joinDisabledReason")
+        } else {
+            KNonNullTableExImpl(javaTable.join(prop.name))
+        }
 
     override fun <X: Any> inverseJoin(backProp: ImmutableProp): KNonNullTableEx<X> =
-        KNonNullTableExImpl(javaTable.inverseJoin(backProp, JoinType.INNER))
+        if (joinDisabledReason != null) {
+            throw IllegalStateException("Table join is disabled because $joinDisabledReason")
+        } else {
+            KNonNullTableExImpl(javaTable.inverseJoin(backProp, JoinType.INNER))
+        }
 
     override fun <X : Any> inverseJoinReference(backProp: KProperty1<X, E?>): KNonNullTableEx<X> =
-        KNonNullTableExImpl(
-            javaTable.inverseJoin(backProp.toImmutableProp(), JoinType.INNER)
-        )
+        if (joinDisabledReason != null) {
+            throw IllegalStateException("Table join is disabled because $joinDisabledReason")
+        } else {
+            KNonNullTableExImpl(
+                javaTable.inverseJoin(backProp.toImmutableProp(), JoinType.INNER)
+            )
+        }
 
     override fun <X : Any> inverseJoinList(backProp: KProperty1<X, List<E>>): KNonNullTableEx<X> =
-        KNonNullTableExImpl(
-            javaTable.inverseJoin(backProp.toImmutableProp(), JoinType.INNER)
-        )
+        if (joinDisabledReason != null) {
+            throw IllegalStateException("Table join is disabled because $joinDisabledReason")
+        } else {
+            KNonNullTableExImpl(
+                javaTable.inverseJoin(backProp.toImmutableProp(), JoinType.INNER)
+            )
+        }
+
+    override fun <X : Any> weakJoin(weakJoinType: KClass<out KWeakJoin<E, X>>): KNonNullTableEx<X> =
+        if (joinDisabledReason != null) {
+            throw IllegalStateException("Table join is disabled because $joinDisabledReason")
+        } else {
+            KNonNullTableExImpl(
+                javaTable.weakJoinImplementor(weakJoinType.java, JoinType.INNER)
+            )
+        }
 
     override fun fetch(fetcher: Fetcher<E>): Selection<E> =
         javaTable.fetch(fetcher)

@@ -177,6 +177,21 @@ class Constants {
                     "EntityManager"
             );
 
+    public static final ClassName CLASS_CLASS_NAME =
+            ClassName.get(Class.class);
+
+    public static final ClassName WEAK_JOIN_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.table",
+                    "WeakJoin"
+            );
+
+    public static final ClassName TABLE_PROXIES_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.impl.table",
+                    "TableProxies"
+            );
+
     public static final String DRAFT_FIELD_CTX =
             "__ctx";
 

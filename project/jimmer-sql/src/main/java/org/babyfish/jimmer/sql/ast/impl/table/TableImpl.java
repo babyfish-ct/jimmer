@@ -10,8 +10,10 @@ import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
+import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.meta.Column;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
@@ -31,6 +33,11 @@ import java.util.function.Function;
 
 class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> implements TableImplementor<E> {
 
+    private static final String WEAK_JOIN_ERROR_MESSAGE =
+            "Table join is forbidden in the implementation of \"" +
+                    WeakJoin.class.getName() +
+                    "\"";
+
     private final AbstractMutableStatementImpl statement;
 
     private final ImmutableType immutableType;
@@ -40,6 +47,8 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     private final boolean isInverse;
 
     private final ImmutableProp joinProp;
+
+    private final WeakJoinHandle weakJoinHandle;
 
     private JoinType joinType;
 
@@ -53,12 +62,19 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             TableImpl<?> parent,
             boolean isInverse,
             ImmutableProp joinProp,
+            WeakJoinHandle weakJoinHandle,
             JoinType joinType
     ) {
         if (parent != null && immutableType instanceof AssociationType) {
             throw new AssertionError("Internal bug: Bad constructor arguments for TableImpl");
         }
-        if ((parent == null) != (joinProp == null)) {
+        if ((parent == null) != (joinProp == null && weakJoinHandle == null)) {
+            throw new AssertionError("Internal bug: Bad constructor arguments for TableImpl");
+        }
+        if (parent != null && (joinProp == null) == (weakJoinHandle == null)) {
+            throw new AssertionError("Internal bug: Bad constructor arguments for TableImpl");
+        }
+        if (weakJoinHandle != null && isInverse) {
             throw new AssertionError("Internal bug: Bad constructor arguments for TableImpl");
         }
 
@@ -67,6 +83,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         this.parent = parent;
         this.isInverse = isInverse;
         this.joinProp = joinProp;
+        this.weakJoinHandle = weakJoinHandle;
         this.joinType = joinType;
 
         if (joinProp != null) {
@@ -285,7 +302,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         }
 
         // TODO:
-        //statement.validateMutable();
+        // statement.validateMutable();
 
         String joinName;
         if (!isInverse) {
@@ -326,6 +343,36 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                 this,
                 isInverse,
                 prop,
+                null,
+                joinType
+        );
+        putValue(joinName, newTable);
+        return newTable;
+    }
+
+    @Override
+    public <X> TableImplementor<X> weakJoinImplementor(Class<? extends WeakJoin<?, ?>> weakJoinType, JoinType joinType) {
+        return weakJoinImplementor(WeakJoinHandle.of(weakJoinType), joinType);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <X> TableImplementor<X> weakJoinImplementor(WeakJoinHandle handle, JoinType joinType) {
+        String joinName = "weak(" + handle.getWeakJoinType().getName() + ")";
+        TableImpl<X> existing = (TableImpl<X>) getValue(joinName);
+        if (existing != null) {
+            if (existing.joinType != joinType) {
+                existing.joinType = JoinType.INNER;
+            }
+            return existing;
+        };
+        TableImpl<X> newTable = new TableImpl<>(
+                statement,
+                handle.getTargetType(),
+                this,
+                isInverse,
+                null,
+                handle,
                 joinType
         );
         putValue(joinName, newTable);
@@ -392,7 +439,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     private void renderSelf(SqlBuilder sqlBuilder, RenderMode mode) {
         if (isInverse) {
             renderInverseJoin(sqlBuilder, mode);
-        } else if (joinProp != null) {
+        } else if (joinProp != null || weakJoinHandle != null) {
             renderJoin(sqlBuilder, mode);
         } else {
             sqlBuilder
@@ -403,7 +450,28 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void renderJoin(SqlBuilder builder, RenderMode mode) {
+
+        if (weakJoinHandle != null) {
+            if (builder.getAstContext().getTableUsedState(this) != TableUsedState.NONE) {
+                Predicate predicate = weakJoinHandle.createPredicate(parent, this);
+                builder
+                        .sql(" ")
+                        .sql(joinType.name().toLowerCase())
+                        .sql(" join ")
+                        .sql(immutableType.getTableName())
+                        .sql(" as ")
+                        .sql(alias)
+                        .sql(" on ");
+                if (predicate == null) {
+                    builder.sql("1 = 1");
+                } else {
+                    ((Ast)predicate).renderTo(builder);
+                }
+            }
+            return;
+        }
 
         if (joinProp instanceof AssociationProp) {
             if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED) {

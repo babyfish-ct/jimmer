@@ -57,25 +57,33 @@ public class TableProxies {
         return createConstructor(type, new Class[]{AbstractTypedTable.DelayedOperation.class});
     }
 
-    private static Constructor<?> createConstructor(ImmutableType type, Class<?>[] parameterTypes) {
-        Class<?> tableClass;
+    static Class<?> tableWrapperClass(Class<?> entityType) {
+        Class<?> wrapperClass;
         try {
-            tableClass = Class.forName(
-                    type.getJavaClass().getName() + "TableEx",
+            wrapperClass = Class.forName(
+                    entityType.getName() + "TableEx",
                     true,
-                    type.getJavaClass().getClassLoader()
+                    entityType.getClassLoader()
             );
         } catch (ClassNotFoundException ex) {
             return null;
         }
-        if (!AbstractTypedTable.class.isAssignableFrom(tableClass)) {
+        if (!AbstractTypedTable.class.isAssignableFrom(wrapperClass)) {
             throw new ModelException(
                     "\"" +
-                            tableClass +
+                            wrapperClass +
                             "\" is not derived type of \"" +
                             AbstractTypedTable.class.getName() +
                             "\""
             );
+        }
+        return wrapperClass;
+    }
+
+    private static Constructor<?> createConstructor(ImmutableType type, Class<?>[] parameterTypes) {
+        Class<?> tableClass = tableWrapperClass(type.getJavaClass());
+        if (tableClass == null) {
+            return null;
         }
         try {
             return tableClass.getConstructor(parameterTypes);
