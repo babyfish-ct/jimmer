@@ -39,7 +39,7 @@ public class EvaluatorTest {
 
         List<String> values = Evaluators.evaluate(
                 book,
-                new ArrayList<String>(),
+                new ArrayList<>(),
                 (base, ctx) -> {
                     base.add(
                             "`" +
@@ -57,18 +57,18 @@ public class EvaluatorTest {
                 Arrays.asList(
                         "`<root>.name` is loaded",
                         "`<root>.store` is loaded",
-                        "`<root>.store.store.name` is loaded",
-                        "`<root>.store.store.website` is loaded",
-                        "`<root>.store.store.books` is not loaded",
-                        "`<root>.store.store.avgPrice` is loaded",
+                        "`<root>.store.name` is loaded",
+                        "`<root>.store.website` is loaded",
+                        "`<root>.store.books` is not loaded",
+                        "`<root>.store.avgPrice` is loaded",
                         "`<root>.price` is loaded",
                         "`<root>.authors` is loaded",
-                        "`<root>.authors.authors[0].name` is loaded",
-                        "`<root>.authors.authors[0].books` is not loaded",
-                        "`<root>.authors.authors[0].email` is loaded",
-                        "`<root>.authors.authors[1].name` is loaded",
-                        "`<root>.authors.authors[1].books` is not loaded",
-                        "`<root>.authors.authors[1].email` is loaded"
+                        "`<root>.authors[0].name` is loaded",
+                        "`<root>.authors[0].books` is not loaded",
+                        "`<root>.authors[0].email` is loaded",
+                        "`<root>.authors[1].name` is loaded",
+                        "`<root>.authors[1].books` is not loaded",
+                        "`<root>.authors[1].email` is loaded"
                 ),
                 values
         );

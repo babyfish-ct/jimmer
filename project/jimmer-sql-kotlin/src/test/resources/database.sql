@@ -1,3 +1,4 @@
+drop table transform if exists;
 drop table permission if exists;
 drop table administrator_role_mapping if exists;
 drop table role if exists;
@@ -367,3 +368,25 @@ insert into permission(id, name, role_id, deleted, created_time, modified_time)
     (2000, 'p_2', 100, true, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
     (3000, 'p_3', 200, false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
     (4000, 'p_4', 200, true, '2022-10-03 00:00:00', '2022-10-03 00:10:00');
+
+
+
+
+create table transform(
+    id bigint not null,
+    `left` bigint not null,
+    top bigint not null,
+    `right` bigint not null,
+    bottom bigint not null,
+    target_left bigint not null,
+    target_top bigint not null,
+    target_right bigint not null,
+    target_bottom bigint not null
+);
+
+alter table transform
+    add constraint pk_transform
+        primary key(id);
+
+insert into transform(id, `left`, top, `right`, bottom, target_left, target_top, target_right, target_bottom)
+    values(1, 100, 120, 400, 320, 800, 600, 1400, 1000);

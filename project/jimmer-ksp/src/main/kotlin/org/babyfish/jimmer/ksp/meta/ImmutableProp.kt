@@ -99,7 +99,7 @@ class ImmutableProp(
         isNullable = descriptor.isNullable
     }
 
-    val isAssociation: Boolean =
+    private val isAssociation: Boolean =
         (targetDeclaration.classKind === ClassKind.INTERFACE)
             ?.takeIf {
                 it
@@ -110,6 +110,9 @@ class ImmutableProp(
             ?.let {
                 true
             } ?: false
+
+    fun isAssociation(entityLevel: Boolean): Boolean =
+        isAssociation && (!entityLevel || targetDeclaration.annotation(Entity::class) != null)
 
     fun targetTypeName(
         draft: Boolean = false,

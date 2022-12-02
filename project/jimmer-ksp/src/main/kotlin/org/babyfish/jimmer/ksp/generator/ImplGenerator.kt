@@ -178,7 +178,7 @@ class ImplGenerator(
                                     prop.loadedFieldName ?: "${prop.valueFieldName} !== null"
                                 )
                                 add("hash = 31 * hash + ")
-                                if (shallow && prop.isAssociation) {
+                                if (shallow && prop.isAssociation(false)) {
                                     add("%T.identityHashCode(%L)", SYSTEM_CLASS_NAME, prop.valueFieldName)
                                 } else {
                                     if (prop.isNullable) {
@@ -256,7 +256,7 @@ class ImplGenerator(
                                         "if (%L && this.%L %L otherImpl.%L)",
                                         localLoadedName,
                                         prop.valueFieldName,
-                                        if (shallow && prop.isAssociation) "!==" else "!=",
+                                        if (shallow && prop.isAssociation(false)) "!==" else "!=",
                                         prop.name
                                     )
                                     addStatement("return false")

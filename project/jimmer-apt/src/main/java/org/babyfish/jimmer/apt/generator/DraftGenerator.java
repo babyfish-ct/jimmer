@@ -3,7 +3,6 @@ package org.babyfish.jimmer.apt.generator;
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.apt.GeneratorException;
-import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.lang.OldChain;
@@ -16,20 +15,16 @@ import static org.babyfish.jimmer.apt.generator.Constants.DRAFT_CONSUMER_CLASS_N
 
 public class DraftGenerator {
 
-    private TypeUtils typeUtils;
+    private final ImmutableType type;
 
-    private ImmutableType type;
-
-    private Filer filer;
+    private final Filer filer;
 
     private TypeSpec.Builder typeBuilder;
 
     public DraftGenerator(
-            TypeUtils typeUtils,
             ImmutableType type,
             Filer filer
     ) {
-        this.typeUtils = typeUtils;
         this.type = type;
         this.filer = filer;
     }
@@ -78,7 +73,7 @@ public class DraftGenerator {
             addUtilMethod(prop, false);
             addUtilMethod(prop, true);
         }
-        new ProducerGenerator(typeUtils, type).generate(typeBuilder);
+        new ProducerGenerator(type).generate(typeBuilder);
     }
 
     private void add$() {

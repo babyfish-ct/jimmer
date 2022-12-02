@@ -7,8 +7,11 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.ksp.annotation
+import org.babyfish.jimmer.ksp.fullName
+import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.MappedSuperclass
+import kotlin.reflect.KClass
 
 class Context(
     val resolver: Resolver
@@ -39,15 +42,25 @@ class Context(
             }
 
     fun typeAnnotationOf(classDeclaration: KSClassDeclaration): KSAnnotation? {
-        val entity = classDeclaration.annotation(Entity::class)
-        val mappedSuperClass = classDeclaration.annotation(MappedSuperclass::class)
-        if (entity != null && mappedSuperClass != null) {
-            throw MetaException(
-                "${classDeclaration.qualifiedName!!.asString()} cannot be decorated by both @Entity and @MappedSuperClass"
-            )
+        var sqlAnnotation: KSAnnotation? = null
+        for (sqlAnnotationType in SQL_ANNOTATION_TYPES) {
+            val anno = classDeclaration.annotation(sqlAnnotationType) ?: continue
+            if (sqlAnnotation !== null) {
+                throw MetaException(
+                    "${classDeclaration.qualifiedName!!.asString()} cannot be decorated by both " +
+                        "@${sqlAnnotation.fullName} and ${anno.fullName}"
+                )
+            }
+            sqlAnnotation = anno
         }
-        return entity
-            ?: mappedSuperClass
-            ?: classDeclaration.annotation(Immutable::class)
+        return sqlAnnotation ?: classDeclaration.annotation(Immutable::class)
+    }
+
+    companion object {
+        private val SQL_ANNOTATION_TYPES = listOf(
+            Entity::class,
+            MappedSuperclass::class,
+            Embeddable::class
+        )
     }
 }

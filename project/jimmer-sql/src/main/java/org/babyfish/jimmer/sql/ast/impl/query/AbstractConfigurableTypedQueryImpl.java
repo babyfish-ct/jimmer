@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -102,7 +103,12 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                 );
                 renderAllProps(tableSelection, builder);
             } else {
-                Ast.from(selection, builder.getAstContext()).renderTo(builder);
+                Ast ast = Ast.from(selection, builder.getAstContext());
+                if (ast instanceof PropExpressionImplementor<?>) {
+                    ((PropExpressionImplementor<?>)ast).renderTo(builder, true);
+                } else {
+                    ast.renderTo(builder);
+                }
             }
             separator = ", ";
         }

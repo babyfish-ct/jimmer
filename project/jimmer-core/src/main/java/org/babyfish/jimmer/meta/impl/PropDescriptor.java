@@ -73,7 +73,6 @@ public class PropDescriptor {
         ID(Id.class, false),
         VERSION(Version.class, false),
         BASIC(null, false),
-        EMBEDDED(null, false),
         ONE_TO_ONE(OneToOne.class, true),
         MANY_TO_ONE(ManyToOne.class, true),
         ONE_TO_MANY(OneToMany.class, true),
@@ -287,11 +286,11 @@ public class PropDescriptor {
         }
 
         public PropDescriptor build() {
+
             if (annotationTypes == null) {
-                return elementAnnotationType == Embeddable.class ?
-                        new PropDescriptor(Type.EMBEDDED, Collections.emptySet(), determineNullable(Type.EMBEDDED)) :
-                        new PropDescriptor(Type.BASIC, Collections.emptySet(), determineNullable(Type.BASIC));
+                return new PropDescriptor(Type.BASIC, Collections.emptySet(), determineNullable(Type.BASIC));
             }
+
             if (annotationTypes.contains(JoinColumns.class) && annotationTypes.contains(JoinTable.class)) {
                 conflict(JoinColumns.class, JoinTable.class);
             }
@@ -301,14 +300,45 @@ public class PropDescriptor {
             if (annotationTypes.contains(Key.class) && annotationTypes.contains(JoinTable.class)) {
                 conflict(Key.class, JoinTable.class);
             }
+            if (annotationTypes.contains(PropOverrides.class) && annotationTypes.contains(Column.class)) {
+                conflict(PropOverrides.class, Column.class);
+            }
+            if (annotationTypes.contains(PropOverride.class) && annotationTypes.contains(Column.class)) {
+                conflict(PropOverride.class, Column.class);
+            }
+            if (elementAnnotationType == Embeddable.class && annotationTypes.contains(Column.class)) {
+                throw exceptionCreator.apply(
+                        "Illegal property \"" +
+                                propText +
+                                "\", embedded property cannot be decorated by @" +
+                                Column.class.getName()
+                );
+            }
+            if (elementAnnotationType != Embeddable.class && annotationTypes.contains(PropOverride.class)) {
+                throw exceptionCreator.apply(
+                        "Illegal property \"" +
+                                propText +
+                                "\", only embedded property cannot be decorated by @" +
+                                PropOverride.class.getName()
+                );
+            }
+            if (elementAnnotationType != Embeddable.class && annotationTypes.contains(PropOverrides.class)) {
+                throw exceptionCreator.apply(
+                        "Illegal property \"" +
+                                propText +
+                                "\", only embedded property cannot be decorated by @" +
+                                PropOverrides.class.getName()
+                );
+            }
+
             Type type;
             Map<Type, Set<Class<? extends Annotation>>> implicitMap = this.implicitMap;
             if (explicitType != null) {
                 type = TYPE_MAP.get(explicitType);
             } else if (implicitMap.size() == 1) {
                 type = implicitMap.keySet().iterator().next();
-            } else if (annotationTypes.size() == 1 && annotationTypes.iterator().next() == Key.class) {
-                type = elementAnnotationType == Embeddable.class ? Type.EMBEDDED : Type.BASIC;
+            } else if (implicitMap.containsKey(Type.BASIC)) {
+                type = Type.BASIC;
             } else {
                 throw exceptionCreator.apply(
                         "Illegal property \"" +
@@ -453,7 +483,6 @@ public class PropDescriptor {
             switch (type) {
                 case ID:
                 case VERSION:
-                case EMBEDDED:
                 case ONE_TO_MANY:
                 case MANY_TO_MANY:
                     if (specifiedNullable) {
@@ -480,6 +509,13 @@ public class PropDescriptor {
                         );
                     }
                     break;
+            }
+            if (elementAnnotationType == Embeddable.class && specifiedNullable) {
+                throw exceptionCreator.apply(
+                        "Illegal property \"" +
+                                propText +
+                                "\", it cannot be nullable because it is embedded property"
+                );
             }
             return specifiedNullable;
         }
@@ -512,10 +548,9 @@ public class PropDescriptor {
             typeMap.put(ManyToMany.class, Type.MANY_TO_MANY);
 
             families.put(Type.TRANSIENT, setOf());
-            families.put(Type.ID, setOf(Column.class));
+            families.put(Type.ID, setOf(Column.class, PropOverrides.class, PropOverride.class));
             families.put(Type.VERSION, setOf(Column.class));
-            families.put(Type.BASIC, setOf(Key.class, Column.class));
-            families.put(Type.EMBEDDED, setOf(Key.class, PropOverrides.class, PropOverride.class));
+            families.put(Type.BASIC, setOf(Key.class, Column.class, PropOverrides.class, PropOverride.class));
             families.put(Type.ONE_TO_ONE, setOf(Key.class, OnDissociate.class, JoinColumns.class, JoinColumn.class, JoinTable.class));
             families.put(Type.MANY_TO_ONE, setOf(Key.class, OnDissociate.class, JoinColumns.class, JoinColumn.class, JoinTable.class));
             families.put(Type.ONE_TO_MANY, setOf());

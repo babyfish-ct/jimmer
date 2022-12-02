@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -13,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class PropExpressionImpl<T>
         extends AbstractExpression<T>
-        implements PropExpression<T> {
+        implements PropExpressionImplementor<T> {
 
     protected final Table<?> table;
 
@@ -106,10 +107,15 @@ public class PropExpressionImpl<T>
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
+        renderTo(builder, false);
+    }
+
+    @Override
+    public void renderTo(@NotNull SqlBuilder builder, boolean ignoreEmbeddedTuple) {
         TableImplementor<?> tableImplementor = TableProxies.resolve(table, builder.getAstContext());
         EmbeddedColumns.Partial partial = getPartial();
         if (partial != null) {
-            if (partial.size() == 1) {
+            if (ignoreEmbeddedTuple || partial.size() == 1) {
                 tableImplementor.renderSelection(prop, builder, partial);
             } else {
                 builder.enterTuple();

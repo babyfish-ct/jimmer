@@ -102,7 +102,6 @@ public class ImmutableProcessor extends AbstractProcessor {
                     }
                     ImmutableType immutableType = typeUtils.getImmutableType(typeElement);
                     new DraftGenerator(
-                            typeUtils,
                             immutableType,
                             filer
                     ).generate();

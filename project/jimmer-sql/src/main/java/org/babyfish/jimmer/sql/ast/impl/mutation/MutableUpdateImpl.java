@@ -425,6 +425,13 @@ public class MutableUpdateImpl
 
         static Target of(PropExpression<?> expr) {
             PropExpressionImpl<?> exprImpl = (PropExpressionImpl<?>) expr;
+            if (exprImpl.getProp().isEmbedded()) {
+                throw new IllegalArgumentException(
+                        "The property \"" +
+                                exprImpl.getProp() +
+                                "\" is embedded, it cannot be used as the assignment target of update statement"
+                );
+            }
             Table<?> targetTable = exprImpl.getTable();
             Table<?> parent;
             ImmutableProp prop;

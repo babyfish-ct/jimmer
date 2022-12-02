@@ -68,11 +68,14 @@ public class ReaderManager {
     }
 
     private Reader<?> createTypeReader(ImmutableType immutableType) {
-        if (!immutableType.isEntity()) {
-            return null;
+        if (immutableType.isEmbeddable()) {
+            return new EmbeddedReader(immutableType, this);
         }
         if (immutableType instanceof AssociationType) {
             return new AssociationReader((AssociationType) immutableType, this);
+        }
+        if (!immutableType.isEntity()) {
+            return null;
         }
         Map<ImmutableProp, Reader<?>> nonIdReaderMap = new LinkedHashMap<>();
         Reader<?> idReader = null;

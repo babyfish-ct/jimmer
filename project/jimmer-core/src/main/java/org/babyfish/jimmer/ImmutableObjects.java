@@ -283,7 +283,6 @@ public class ImmutableObjects {
      * @param type Object type, can be interface type.
      * @return Deserialized object
      */
-    @SuppressWarnings("unchecked")
     public static <I> I fromString(Class<I> type, String json) throws JsonProcessingException {
         return MAPPER.readValue(json, type);
     }

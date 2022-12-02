@@ -1,16 +1,13 @@
 package org.babyfish.jimmer.sql.ast.embedded;
 
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.NumericExpression;
-import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 
 import java.util.Collection;
 
-public abstract class AbstractTypedEmbeddedPropExpression<T> {
+public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpression<T> {
 
     private final PropExpression.Embedded<T> raw;
 
@@ -88,5 +85,13 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> {
 
     public CoalesceBuilder<T> coalesceBuilder() {
         return raw.coalesceBuilder();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T unwrap(Selection<?> selection) {
+        if (selection instanceof AbstractTypedEmbeddedPropExpression<?>) {
+            return (T)((AbstractTypedEmbeddedPropExpression<?>)selection).raw;
+        }
+        return (T)selection;
     }
 }

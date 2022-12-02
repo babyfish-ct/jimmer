@@ -24,7 +24,6 @@ internal const val FETCHER = "Fetcher"
 internal const val FETCHER_DSL = "FetcherDsl"
 
 internal val CLONEABLE_CLASS_NAME = Cloneable::class.asClassName()
-internal val CLONE_NOT_SUPPORTED_EXCEPTION_CLASS_NAME = CloneNotSupportedException::class.asClassName()
 internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
 internal val INTERNAL_TYPE_CLASS_NAME = Internal::class.asClassName()
 internal val IMMUTABLE_PROP_CATEGORY_CLASS_NAME = ImmutablePropCategory::class.asClassName()
@@ -88,6 +87,14 @@ internal val K_NON_NULL_PROP_EXPRESSION = ClassName(
 internal val K_NULLABLE_PROP_EXPRESSION = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.expression",
     "KNullablePropExpression"
+)
+internal val K_NON_NULL_PROP_EXPRESSION_IMPLEMENTOR = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.expression.spi",
+    "KNonNullPropExpressionImplementor"
+)
+internal val K_NULLABLE_PROP_EXPRESSION_IMPLEMENTOR = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.expression.spi",
+    "KNullablePropExpressionImplementor"
 )
 internal val FETCHER_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.fetcher",

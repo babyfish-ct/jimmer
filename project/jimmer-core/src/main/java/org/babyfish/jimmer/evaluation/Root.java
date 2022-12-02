@@ -56,7 +56,7 @@ class Root<T> {
                                     propCtx,
                                     spi,
                                     prop,
-                                    -1,
+                                    0,
                                     isLoaded,
                                     value
                             ),
