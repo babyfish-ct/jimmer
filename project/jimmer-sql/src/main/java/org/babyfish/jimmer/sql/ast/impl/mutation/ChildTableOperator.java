@@ -249,7 +249,7 @@ class ChildTableOperator {
         builder
                 .sql(" where ")
                 .sql(parentProp.<SingleColumn>getStorage().getName());
-        if (parentIds.size() > 0) {
+        if (parentIds.size() == 1) {
             builder.sql(" = ").variable(parentIds.iterator().next());
         } else {
             builder.sql(" in(");
