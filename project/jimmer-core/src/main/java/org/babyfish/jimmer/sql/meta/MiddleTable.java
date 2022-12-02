@@ -4,20 +4,18 @@ public class MiddleTable implements Storage {
 
     private final String tableName;
 
-    private final String joinColumnName;
+    private final ColumnDefinition definition;
 
-    private final String targetJoinColumnName;
+    private final ColumnDefinition targetDefinition;
 
     private MiddleTable inverse;
 
     public MiddleTable(
             String tableName,
-            String joinColumnName,
-            String targetJoinColumnName
-    ) {
+            ColumnDefinition definition, ColumnDefinition targetDefinition) {
         this.tableName = tableName;
-        this.joinColumnName = joinColumnName;
-        this.targetJoinColumnName = targetJoinColumnName;
+        this.definition = definition;
+        this.targetDefinition = targetDefinition;
     }
 
     public String getTableName() {
@@ -25,17 +23,17 @@ public class MiddleTable implements Storage {
     }
 
     public String getJoinColumnName() {
-        return joinColumnName;
+        return definition.name(0);
     }
 
     public String getTargetJoinColumnName() {
-        return targetJoinColumnName;
+        return targetDefinition.name(0);
     }
 
     public MiddleTable getInverse() {
         MiddleTable iv = inverse;
         if (iv == null) {
-            iv = new MiddleTable(tableName, targetJoinColumnName, joinColumnName);
+            iv = new MiddleTable(tableName, targetDefinition, definition);
             inverse = iv;
         }
         return iv;

@@ -10,4 +10,5 @@ import java.lang.annotation.*;
 @Repeatable(JoinColumns.class)
 public @interface JoinColumn {
     String name();
+    String referencedColumnName() default "";
 }
