@@ -6,11 +6,9 @@ import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.*
-import org.babyfish.jimmer.ksp.generator.DraftGenerator
-import org.babyfish.jimmer.ksp.generator.JimmerModuleGenerator
-import org.babyfish.jimmer.ksp.generator.FetcherGenerator
-import org.babyfish.jimmer.ksp.generator.PropsGenerator
+import org.babyfish.jimmer.ksp.generator.*
 import org.babyfish.jimmer.ksp.meta.Context
+import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.MappedSuperclass
 import java.util.*
@@ -51,12 +49,14 @@ class ImmutableProcessor(
                 .generate(allFiles)
             val sqlClassDeclarations = classDeclarations.filter {
                 it.annotation(Entity::class) !== null ||
-                    it.annotation(MappedSuperclass::class) !== null
+                    it.annotation(MappedSuperclass::class) !== null ||
+                    it.annotation(Embeddable::class) != null
             }
             if (sqlClassDeclarations.size > 1) {
                 throw GeneratorException(
                     "The $file declares several types decorated by " +
-                        "@${Entity::class.qualifiedName} or @${MappedSuperclass::class.qualifiedName}: " +
+                        "@${Entity::class.qualifiedName}, @${MappedSuperclass::class.qualifiedName} " +
+                        "or ${Embeddable::class.qualifiedName}: " +
                         sqlClassDeclarations.joinToString { it.fullName }
                 )
             }

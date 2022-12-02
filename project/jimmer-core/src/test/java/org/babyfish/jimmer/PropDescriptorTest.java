@@ -219,7 +219,7 @@ public class PropDescriptorTest {
                 .add(PropOverrides.class)
                 .add(Key.class)
                 .build();
-        Assertions.assertEquals(PropDescriptor.Type.EMBEDDED, family.getType());
+        Assertions.assertEquals(PropDescriptor.Type.BASIC, family.getType());
         Assertions.assertTrue(family.isPresent(PropOverrides.class));
         Assertions.assertTrue(family.isPresent(Key.class));
     }

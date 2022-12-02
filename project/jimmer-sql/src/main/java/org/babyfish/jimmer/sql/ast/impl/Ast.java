@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
 import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -17,6 +18,6 @@ public interface Ast {
         if (selection instanceof Table<?>) {
             return TableProxies.resolve((Table<?>) selection, resolver);
         }
-        return (Ast) selection;
+        return AbstractTypedEmbeddedPropExpression.unwrap(selection);
     }
 }

@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -123,6 +124,8 @@ class Readers {
             }
             return new ObjectReader(type, idReader, nonIdReaderMap);
         }
-        return sqlClient.getReader(((ExpressionImplementor<?>)selection).getType());
+        return sqlClient.getReader(
+                AbstractTypedEmbeddedPropExpression.<ExpressionImplementor<?>>unwrap(selection).getType()
+        );
     }
 }

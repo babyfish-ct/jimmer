@@ -1,16 +1,26 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
+import org.babyfish.jimmer.sql.ast.PropExpression
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl
+import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullablePropExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.spi.KNullablePropExpressionImplementor
+import org.babyfish.jimmer.sql.kt.ast.expression.sql
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
+import kotlin.reflect.KProperty1
 
 internal class NullablePropExpressionImpl<T: Any>(
     internal val javaPropExpression: PropExpressionImpl<T>
-) : AbstractKExpression<T>(), KNullablePropExpression<T> {
+) : AbstractKExpression<T>(), KNullablePropExpressionImplementor<T>, PropExpressionImplementor<T> {
 
     override fun getType(): Class<T> =
         javaPropExpression.type
+
+    override fun <X : Any> get(prop: KProperty1<T, X>): KNullablePropExpression<X> =
+        (javaPropExpression as? PropExpression.Embedded<*>)?.let {
+            NullablePropExpressionImpl(it.get(prop.name))
+        } ?: error("The current property $javaPropExpression is not embedded property")
 
     override fun precedence(): Int =
         javaPropExpression.precedence()
@@ -21,5 +31,9 @@ internal class NullablePropExpressionImpl<T: Any>(
 
     override fun renderTo(builder: SqlBuilder) {
         javaPropExpression.renderTo(builder)
+    }
+
+    override fun renderTo(builder: SqlBuilder, ignoreEmbeddedTuple: Boolean) {
+        javaPropExpression.renderTo(builder, ignoreEmbeddedTuple)
     }
 }

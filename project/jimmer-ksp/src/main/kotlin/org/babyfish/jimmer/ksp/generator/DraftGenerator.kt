@@ -98,7 +98,7 @@ class DraftGenerator(
     }
 
     private fun TypeSpec.Builder.addFun(prop: ImmutableProp) {
-        if (prop.isAssociation || prop.isList) {
+        if (prop.isAssociation(false) || prop.isList) {
             addFunction(
                 FunSpec
                     .builder(prop.name)

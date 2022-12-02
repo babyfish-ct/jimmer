@@ -114,7 +114,7 @@ class FetcherDslGenerator(
     }
 
     private fun TypeSpec.Builder.addAssociationProp(prop: ImmutableProp, lambda: Boolean) {
-        if (!prop.isAssociation || !prop.targetType!!.isEntity) {
+        if (!prop.isAssociation(true) || !prop.targetType!!.isEntity) {
             return
         }
         val (cfgDslClassName, cfgTranName) =

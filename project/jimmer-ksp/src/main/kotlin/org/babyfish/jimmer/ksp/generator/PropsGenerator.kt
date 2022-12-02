@@ -6,9 +6,12 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import org.babyfish.jimmer.ksp.annotation
+import org.babyfish.jimmer.ksp.className
 import org.babyfish.jimmer.ksp.meta.Context
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.sql.Embeddable
 import java.io.OutputStreamWriter
 
 class PropsGenerator(
@@ -18,7 +21,7 @@ class PropsGenerator(
     private val modelClassDeclaration: KSClassDeclaration
 ) {
     fun generate(allFiles: List<KSFile>) {
-        val draftFileName =
+        val outputFileName =
             file.fileName.let {
                 var lastDotIndex = it.lastIndexOf('.')
                 if (lastDotIndex == -1) {
@@ -30,12 +33,12 @@ class PropsGenerator(
         codeGenerator.createNewFile(
             Dependencies(false, *allFiles.toTypedArray()),
             file.packageName.asString(),
-            draftFileName
+            outputFileName
         ).use {
             val fileSpec = FileSpec
                 .builder(
                     file.packageName.asString(),
-                    draftFileName
+                    outputFileName
                 ).apply {
                     indent("    ")
                     addAnnotation(
@@ -48,11 +51,18 @@ class PropsGenerator(
                             .build()
                     )
                     val type = ctx.typeOf(modelClassDeclaration)
-                    for (prop in type.properties.values) {
-                        addProp(type, prop, nonNullTable = true, outerJoin = false)
-                        addProp(type, prop, nonNullTable = false, outerJoin = false)
-                        addProp(type, prop, nonNullTable = true, outerJoin = true)
-                        addProp(type, prop, nonNullTable = false, outerJoin = true)
+                    if (modelClassDeclaration.annotation(Embeddable::class) != null) {
+                        for (prop in type.properties.values) {
+                            addEmbeddableProp(prop, false)
+                            addEmbeddableProp(prop, true)
+                        }
+                    } else {
+                        for (prop in type.properties.values) {
+                            addProp(type, prop, nonNullTable = true, outerJoin = false)
+                            addProp(type, prop, nonNullTable = false, outerJoin = false)
+                            addProp(type, prop, nonNullTable = true, outerJoin = true)
+                            addProp(type, prop, nonNullTable = false, outerJoin = true)
+                        }
                     }
                     if (type.isEntity) {
                         addFetchByFun(type, false)
@@ -74,15 +84,15 @@ class PropsGenerator(
         if (prop.isTransient) {
             return
         }
-        if (outerJoin && !prop.isAssociation) {
+        if (outerJoin && !prop.isAssociation(true)) {
             return
         }
-        if (nonNullTable && (prop.isAssociation || prop.isNullable)) {
+        if (nonNullTable && (prop.isAssociation(true) || prop.isNullable)) {
             return
         }
         val receiverClassName = when {
             prop.isList -> K_TABLE_EX_CLASS_NAME
-            prop.isAssociation || prop.isNullable -> K_PROPS_CLASS_NAME
+            prop.isAssociation(true) || prop.isNullable -> K_PROPS_CLASS_NAME
             nonNullTable -> K_NON_NULL_PROPS_CLASS_NAME
             else -> K_NULLABLE_PROPS_CLASS_NAME
         }.parameterizedBy(
@@ -92,12 +102,12 @@ class PropsGenerator(
         val propName = if (outerJoin) "${prop.name}?" else prop.name
         val innerFunName = when {
             outerJoin -> "outerJoin"
-            prop.isAssociation -> "join"
+            prop.isAssociation(true) -> "join"
             else -> "get"
         }
         val returnClassName =
             when {
-                prop.isAssociation ->
+                prop.isAssociation(true) ->
                     if (outerJoin) {
                         K_NULLABLE_TABLE_CLASS_NAME
                     } else {
@@ -121,6 +131,53 @@ class PropsGenerator(
                     FunSpec
                         .getterBuilder()
                         .addCode("return %L(%S)", innerFunName, prop.name)
+                        .build()
+                )
+                .build()
+        )
+    }
+
+    private fun FileSpec.Builder.addEmbeddableProp(prop: ImmutableProp, nullable: Boolean) {
+        val receiverTypeName = if (nullable) {
+            K_NULLABLE_PROP_EXPRESSION.parameterizedBy(
+                modelClassDeclaration.className()
+            )
+        } else {
+            K_NON_NULL_PROP_EXPRESSION.parameterizedBy(
+                modelClassDeclaration.className()
+            )
+        }
+        val implementorTypeName = if (nullable) {
+            K_NULLABLE_PROP_EXPRESSION_IMPLEMENTOR.parameterizedBy(
+                modelClassDeclaration.className()
+            )
+        } else {
+            K_NON_NULL_PROP_EXPRESSION_IMPLEMENTOR.parameterizedBy(
+                modelClassDeclaration.className()
+            )
+        }
+        val returnTypeName = if (nullable) {
+            K_NULLABLE_PROP_EXPRESSION.parameterizedBy(
+                prop.typeName()
+            )
+        } else {
+            K_NON_NULL_PROP_EXPRESSION.parameterizedBy(
+                prop.typeName()
+            )
+        }
+        addProperty(
+            PropertySpec
+                .builder(prop.name, returnTypeName)
+                .receiver(receiverTypeName)
+                .getter(
+                    FunSpec
+                        .getterBuilder()
+                        .addStatement(
+                            "return (this as %T).get(%T::%L)",
+                            implementorTypeName,
+                            modelClassDeclaration.className(),
+                            prop.name
+                        )
                         .build()
                 )
                 .build()

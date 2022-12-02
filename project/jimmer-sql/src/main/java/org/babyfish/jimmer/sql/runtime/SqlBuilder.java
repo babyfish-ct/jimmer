@@ -3,10 +3,7 @@ package org.babyfish.jimmer.sql.runtime;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 
 import java.util.*;
@@ -62,7 +59,7 @@ public class SqlBuilder {
                 throw new IllegalArgumentException("Immutable variable must be embeddeable");
             }
             enterTuple();
-            embeddedVariable(spi);
+            embeddedVariable(spi, null);
             leaveTuple();
         } else if (value instanceof Tuple2<?,?>) {
             Tuple2<?,?> tuple = (Tuple2<?,?>)value;
@@ -190,7 +187,7 @@ public class SqlBuilder {
         return this;
     }
 
-    private void embeddedVariable(ImmutableSpi spi) {
+    private void embeddedVariable(ImmutableSpi spi, EmbeddedPath parentPath) {
         boolean addComma = false;
         for (ImmutableProp prop : spi.__type().getProps().values()) {
             if (addComma) {
@@ -198,11 +195,19 @@ public class SqlBuilder {
             } else {
                 addComma = true;
             }
+            EmbeddedPath path = new EmbeddedPath(parentPath, prop);
+            if (!spi.__isLoaded(prop.getId())) {
+                throw new IllegalArgumentException(
+                        "Embedded object must loaded, the property path \"" +
+                                path +
+                                "\" is unloaded"
+                );
+            }
             Object value = spi.__get(prop.getId());
             if (value == null) {
                 nullVariable(prop);
             } else if (value instanceof ImmutableSpi) {
-                embeddedVariable((ImmutableSpi) value);
+                embeddedVariable((ImmutableSpi) value, path);
             } else {
                 singleVariable(value);
             }
@@ -307,6 +312,26 @@ public class SqlBuilder {
             throw new IllegalStateException(
                     "Internal bug: Current build has been terminated"
             );
+        }
+    }
+
+    private static class EmbeddedPath {
+
+        final EmbeddedPath parent;
+
+        final ImmutableProp prop;
+
+        EmbeddedPath(EmbeddedPath parent, ImmutableProp prop) {
+            this.parent = parent;
+            this.prop = prop;
+        }
+
+        @Override
+        public String toString() {
+            if (parent == null) {
+                return prop.getName();
+            }
+            return parent.toString() + '.' + prop.getName();
         }
     }
 }

@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.apt.generator;
 
 import com.squareup.javapoet.*;
-import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ImmutablePropCategory;
@@ -15,14 +14,11 @@ import static org.babyfish.jimmer.apt.generator.Constants.RUNTIME_TYPE_CLASS_NAM
 
 public class ProducerGenerator {
 
-    private TypeUtils typeUtils;
-
-    private ImmutableType type;
+    private final ImmutableType type;
 
     private TypeSpec.Builder typeBuilder;
 
-    ProducerGenerator(TypeUtils typeUtils, ImmutableType type) {
-        this.typeUtils = typeUtils;
+    ProducerGenerator(ImmutableType type) {
         this.type = type;
     }
 

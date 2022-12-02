@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.evaluation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutablePropCategory;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -105,9 +107,12 @@ class PathImpl implements Path {
         } else {
             builder.append(rootName);
         }
-        builder.append('.').append(prop.getName());
         if (index != -1) {
-            builder.append('[').append(index).append(']');
+            if (prop.getCategory() == ImmutablePropCategory.REFERENCE_LIST) {
+                builder.append('[').append(index).append(']');
+            }
+        } else {
+            builder.append('.').append(prop.getName());
         }
     }
 }

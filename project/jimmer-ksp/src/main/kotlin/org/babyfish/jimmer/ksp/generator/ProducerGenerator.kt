@@ -86,7 +86,7 @@ class ProducerGenerator(
                     prop.id,
                     prop.name
                 )
-            prop.isKey && prop.isAssociation ->
+            prop.isKey && prop.isAssociation(false) ->
                 add(
                     ".keyReference(%L, %S, %T::class.java, %L)\n",
                     prop.id,
@@ -94,7 +94,7 @@ class ProducerGenerator(
                     prop.targetTypeName(overrideNullable = false),
                     prop.isNullable
                 )
-            prop.isKey && !prop.isAssociation ->
+            prop.isKey && !prop.isAssociation(false) ->
                 add(
                     ".key(%L, %S, %T::class.java)\n",
                     prop.id,
@@ -123,9 +123,9 @@ class ProducerGenerator(
                     prop.name,
                     IMMUTABLE_PROP_CATEGORY_CLASS_NAME,
                     when {
-                        prop.isList && prop.isAssociation -> "REFERENCE_LIST"
-                        prop.isList && !prop.isAssociation -> "SCALAR_LIST"
-                        prop.isAssociation -> "REFERENCE"
+                        prop.isList && prop.isAssociation(false) -> "REFERENCE_LIST"
+                        prop.isList && !prop.isAssociation(false) -> "SCALAR_LIST"
+                        prop.isAssociation(false) -> "REFERENCE"
                         else -> "SCALAR"
                     },
                     prop.targetTypeName(overrideNullable = false),

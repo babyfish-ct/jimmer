@@ -160,7 +160,7 @@ class DraftImplGenerator(
                                     CURRENT_IMPLEMENTOR,
                                     prop.name,
                                     prop.targetTypeName(),
-                                    prop.isAssociation
+                                    prop.isAssociation(false)
                                 )
                             } else if (prop.isReference) {
                                 addCode("return __ctx.toDraftObject(%L.%L)", CURRENT_IMPLEMENTOR, prop.name)
@@ -208,7 +208,7 @@ class DraftImplGenerator(
     }
 
     private fun TypeSpec.Builder.addPropFun(prop: ImmutableProp) {
-        if (!prop.isAssociation && !prop.isList) {
+        if (!prop.isAssociation(false) && !prop.isList) {
             return
         }
         addFunction(
