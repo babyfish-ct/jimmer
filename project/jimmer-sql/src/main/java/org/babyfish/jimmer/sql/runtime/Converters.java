@@ -1,5 +1,8 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Time;
@@ -61,6 +64,9 @@ public class Converters {
         }
         if (value instanceof String && (expectedType == char.class || expectedType == Character.class)) {
             return ((String)value).charAt(0);
+        }
+        if (value instanceof ImmutableSpi && ((ImmutableSpi)value).__type() == ImmutableType.get(expectedType)) {
+            return value;
         }
         if (value instanceof Instant) {
             return tryConvertInstant((Instant) value, expectedType);

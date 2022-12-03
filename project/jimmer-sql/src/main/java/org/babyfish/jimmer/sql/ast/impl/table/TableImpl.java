@@ -635,7 +635,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     }
 
     @Override
-    public void renderSelection(ImmutableProp prop, SqlBuilder builder, Object optionalDefinition) {
+    public void renderSelection(ImmutableProp prop, SqlBuilder builder, ColumnDefinition optionalDefinition) {
         if (prop.isId() && joinProp != null) {
             MiddleTable middleTable;
             if (joinProp.getStorage() instanceof MiddleTable) {
@@ -645,25 +645,54 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             }
             boolean isInverse = this.isInverse;
             if (middleTable != null) {
-                if (isInverse) {
-                    builder.sql(middleTableAlias, middleTable.getColumnDefinition());
+                if (optionalDefinition == null) {
+                    if (isInverse) {
+                        builder.sql(middleTableAlias, middleTable.getColumnDefinition());
+                    } else {
+                        builder.sql(middleTableAlias, middleTable.getTargetColumnDefinition());
+                    }
                 } else {
-                    builder.sql(middleTableAlias, middleTable.getTargetColumnDefinition());
+                    ColumnDefinition fullDefinition = prop.getStorage();
+                    ColumnDefinition parentDefinition = isInverse ?
+                            middleTable.getColumnDefinition() :
+                            middleTable.getTargetColumnDefinition();
+                    boolean addComma = false;
+                    for (String columnName : optionalDefinition) {
+                        if (addComma) {
+                            builder.sql(", ");
+                        } else {
+                            addComma = true;
+                        }
+                        int index = fullDefinition.index(columnName);
+                        String parentColumnName = parentDefinition.name(index);
+                        builder.sql(middleTableAlias).sql(".").sql(parentColumnName);
+                    }
                 }
                 return;
             }
             if (!isInverse) {
-                ColumnDefinition definition = joinProp.getStorage();
-                builder.sql(parent.alias, definition);
+                if (optionalDefinition == null) {
+                    builder.sql(parent.alias, joinProp.getStorage());
+                } else {
+                    ColumnDefinition fullDefinition = prop.getStorage();
+                    ColumnDefinition parentDefinition = joinProp.getStorage();
+                    boolean addComma = false;
+                    for (String columnName : optionalDefinition) {
+                        if (addComma) {
+                            builder.sql(", ");
+                        } else {
+                            addComma = true;
+                        }
+                        int index = fullDefinition.index(columnName);
+                        String parentColumnName = parentDefinition.name(index);
+                        builder.sql(parent.alias).sql(".").sql(parentColumnName);
+                    }
+                }
                 return;
             }
         }
-        Object definition = optionalDefinition != null ? optionalDefinition : prop.getStorage();
-        if (definition instanceof String) {
-            builder.sql(alias).sql(".").sql((String) definition);
-        } else {
-            builder.sql(alias, (ColumnDefinition) definition);
-        }
+        ColumnDefinition definition = optionalDefinition != null ? optionalDefinition : prop.getStorage();
+        builder.sql(alias, definition);
     }
 
     @Override

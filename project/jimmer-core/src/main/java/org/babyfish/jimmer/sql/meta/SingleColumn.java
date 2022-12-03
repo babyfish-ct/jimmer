@@ -23,16 +23,16 @@ public class SingleColumn implements ColumnDefinition {
     }
 
     @Override
-    public boolean contains(String name) {
-        return this.name.equals(name);
-    }
-
-    @Override
     public String name(int index) {
         if (index != 0) {
             throw new ArrayIndexOutOfBoundsException();
         }
         return name;
+    }
+
+    @Override
+    public int index(String name) {
+        return this.name.equals(name) ? 0 : -1;
     }
 
     @NotNull

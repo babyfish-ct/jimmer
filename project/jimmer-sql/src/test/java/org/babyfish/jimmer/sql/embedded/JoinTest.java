@@ -91,6 +91,26 @@ public class JoinTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testPhantomJoinByPartialId() {
+        OrderItemTable orderItem = OrderItemTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(orderItem)
+                        .where(orderItem.order().id().x().in(Arrays.asList("001", "002")))
+                        .select(orderItem),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
+                                    "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
+                                    "from ORDER_ITEM as tb_1_ " +
+                                    "where tb_1_.FK_ORDER_X in (?, ?)"
+                    );
+                }
+        );
+    }
+
+    @Test
     public void testHalfJoin() {
         OrderItemTable orderItem = OrderItemTable.$;
         List<ProductId> productIds = Arrays.asList(
@@ -113,6 +133,30 @@ public class JoinTest extends AbstractQueryTest {
                                     "--->tb_1_.ORDER_ITEM_B = tb_2_.FK_ORDER_ITEM_B and " +
                                     "--->tb_1_.ORDER_ITEM_C = tb_2_.FK_ORDER_ITEM_C " +
                                     "where (tb_2_.FK_PRODUCT_ALPHA, tb_2_.FK_PRODUCT_BETA) in ((?, ?), (?, ?))"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testHalfJoinByPartialId() {
+        OrderItemTable orderItem = OrderItemTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(orderItem)
+                        .where(orderItem.asTableEx().products().id().alpha().in(Arrays.asList("00A", "00B")))
+                        .select(orderItem),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
+                                    "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
+                                    "from ORDER_ITEM as tb_1_ " +
+                                    "inner join ORDER_ITEM_PRODUCT_MAPPING as tb_2_ on " +
+                                    "--->tb_1_.ORDER_ITEM_A = tb_2_.FK_ORDER_ITEM_A and " +
+                                    "--->tb_1_.ORDER_ITEM_B = tb_2_.FK_ORDER_ITEM_B and " +
+                                    "--->tb_1_.ORDER_ITEM_C = tb_2_.FK_ORDER_ITEM_C " +
+                                    "where tb_2_.FK_PRODUCT_ALPHA in (?, ?)"
                     );
                 }
         );

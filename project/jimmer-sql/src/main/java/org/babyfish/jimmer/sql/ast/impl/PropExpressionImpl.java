@@ -119,10 +119,10 @@ public class PropExpressionImpl<T>
         EmbeddedColumns.Partial partial = getPartial();
         if (partial != null) {
             if (ignoreEmbeddedTuple || partial.size() == 1) {
-                tableImplementor.renderSelection(prop, builder, partial);
+                tableImplementor.renderSelection(prop, builder, path != null ? partial : null);
             } else {
                 builder.enterTuple();
-                tableImplementor.renderSelection(prop, builder, partial);
+                tableImplementor.renderSelection(prop, builder, path != null ? partial : null);
                 builder.leaveTuple();
             }
         } else {

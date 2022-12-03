@@ -4,6 +4,9 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.embedded.*;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class EmbeddedTest extends AbstractQueryTest {
 
     private static final String ROWS = "[" +
@@ -226,6 +229,112 @@ public class EmbeddedTest extends AbstractQueryTest {
                                     "--->--->\"_9\":1000" +
                                     "--->}" +
                                     "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void findByCompositeIds() {
+        List<OrderItemId> orderItemIds = Arrays.asList(
+                OrderItemIdDraft.$.produce(draft -> draft.setA(1).setB(1).setC(1)),
+                OrderItemIdDraft.$.produce(draft -> draft.setA(1).setB(1).setC(2))
+        );
+        anyAndExpect(
+                con -> getSqlClient()
+                        .getEntities()
+                        .forConnection(con)
+                        .findByIds(OrderItem.class, orderItemIds),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
+                                    "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
+                                    "from ORDER_ITEM as tb_1_ " +
+                                    "where (" +
+                                    "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C" +
+                                    ") in (" +
+                                    "--->(?, ?, ?), (?, ?, ?)" +
+                                    ")"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testNullCompositeId() {
+        OrderItemTable orderItem = OrderItemTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(orderItem)
+                        .where(orderItem.order().isNull())
+                        .select(orderItem),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
+                                    "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
+                                    "from ORDER_ITEM as tb_1_ " +
+                                    "where tb_1_.FK_ORDER_X is null and tb_1_.FK_ORDER_Y is null"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testNullSubId() {
+        OrderItemTable orderItem = OrderItemTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(orderItem)
+                        .where(orderItem.order().id().x().isNull())
+                        .select(orderItem),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
+                                    "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
+                                    "from ORDER_ITEM as tb_1_ " +
+                                    "where tb_1_.FK_ORDER_X is null"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testNonNullCompositeId() {
+        OrderItemTable orderItem = OrderItemTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(orderItem)
+                        .where(orderItem.order().isNotNull())
+                        .select(orderItem),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
+                                    "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
+                                    "from ORDER_ITEM as tb_1_ " +
+                                    "where tb_1_.FK_ORDER_X is not null and tb_1_.FK_ORDER_Y is not null"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testNonNullSubId() {
+        OrderItemTable orderItem = OrderItemTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(orderItem)
+                        .where(orderItem.order().id().x().isNotNull())
+                        .select(orderItem),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
+                                    "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
+                                    "from ORDER_ITEM as tb_1_ " +
+                                    "where tb_1_.FK_ORDER_X is not null"
                     );
                 }
         );

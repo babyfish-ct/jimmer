@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -44,7 +45,7 @@ class NullityPredicate extends AbstractPredicate {
                     } else {
                         addSeparator = true;
                     }
-                    tableImplementor.renderSelection(prop, builder, column);
+                    tableImplementor.renderSelection(prop, builder, new SingleColumn(column));
                     if (negative) {
                         builder.sql(" is not null");
                     } else {

@@ -8,7 +8,9 @@ public interface Executable<R> {
      * Executed on a JDBC connection determined by jimmer-sql.
      * @return Execution result
      */
-    R execute();
+    default R execute() {
+        return execute(null);
+    }
 
     /**
      * Execute on the specified JDBC connection.
