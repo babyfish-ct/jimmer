@@ -80,6 +80,8 @@ public interface ImmutableType {
 
     IdGenerator getIdGenerator();
 
+    int getSpan();
+
     interface Builder {
 
         Builder id(int id, String name, Class<?> elementType);

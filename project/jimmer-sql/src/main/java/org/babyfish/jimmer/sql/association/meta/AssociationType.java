@@ -205,6 +205,14 @@ public class AssociationType implements ImmutableType {
     }
 
     @Override
+    public int getSpan() {
+        ImmutableType sourceIdEmbeddedType = this.sourceProp.getTargetType().getIdProp().getTargetType();
+        ImmutableType targetIdEmbeddedType = this.targetProp.getTargetType().getIdProp().getTargetType();
+        return (sourceIdEmbeddedType != null ? sourceIdEmbeddedType.getSpan() : 1) +
+                (targetIdEmbeddedType != null ? targetIdEmbeddedType.getSpan() : 1);
+    }
+
+    @Override
     public BiFunction<DraftContext, Object, Draft> getDraftFactory() {
         throw new UnsupportedOperationException("draftFactory is not supported by AssociationType");
     }
