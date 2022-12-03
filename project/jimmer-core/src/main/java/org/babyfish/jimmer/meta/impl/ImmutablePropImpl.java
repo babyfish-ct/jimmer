@@ -209,7 +209,7 @@ class ImmutablePropImpl implements ImmutableProp {
             return category == ImmutablePropCategory.SCALAR;
         }
         ImmutableType targetType = getTargetType();
-        return targetType == null || !targetType.isEntity() && !targetType.isMappedSuperclass();
+        return targetType == null || !targetType.isEntity();
     }
 
     @Override

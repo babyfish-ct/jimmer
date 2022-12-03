@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
+import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
@@ -63,6 +64,17 @@ public class SqlBuilder {
         return this;
     }
 
+    public SqlBuilder sql(String tableAlias, ColumnDefinition definition, boolean asTuple) {
+        if (asTuple) {
+            enterTuple();
+            sql(tableAlias, definition);
+            leaveTuple();
+        } else {
+            sql(tableAlias, definition);
+        }
+        return this;
+    }
+
     public SqlBuilder sql(ColumnDefinition definition) {
         if (definition instanceof SingleColumn) {
             builder.append(((SingleColumn)definition).getName());
@@ -75,6 +87,41 @@ public class SqlBuilder {
                     addComma = true;
                 }
                 builder.append(columnName);
+            }
+        }
+        return this;
+    }
+
+    public SqlBuilder assignment(ImmutableProp prop, Object value) {
+        ColumnDefinition definition = prop.getStorage();
+        if (definition instanceof SingleColumn) {
+            builder.append(((SingleColumn)definition).getName()).append(" = ");
+            if (value != null) {
+                variable(value);
+            } else {
+                nullSingeVariable(prop.getElementClass());
+            }
+        } else {
+            ImmutableType type;
+            if (prop.isEmbedded()) {
+                type = prop.getTargetType();
+            } else {
+                type = prop.getTargetType().getIdProp().getTargetType();
+            }
+            List<Class<?>> subTypes = EmbeddableObjects.expandTypes(type);
+            Object[] subValues = EmbeddableObjects.expand(type, value);
+            int size = definition.size();
+            for (int i = 0; i < size; i++) {
+                if (i != 0) {
+                    builder.append(", ");
+                }
+                builder.append(definition.name(i)).append(" = ");
+                Object subValue = subValues[i];
+                if (subValue != null) {
+                    variable(subValue);
+                } else {
+                    nullSingeVariable(subTypes.get(i));
+                }
             }
         }
         return this;

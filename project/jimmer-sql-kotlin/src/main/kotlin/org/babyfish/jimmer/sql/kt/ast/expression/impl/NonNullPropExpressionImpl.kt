@@ -45,6 +45,6 @@ internal class NonNullPropExpressionImpl<T: Any>(
     override fun getProp(): ImmutableProp =
         javaPropExpression.prop
 
-    override fun getPartial(): EmbeddedColumns.Partial =
+    override fun getPartial(): EmbeddedColumns.Partial? =
         javaPropExpression.partial
 }

@@ -22,8 +22,8 @@ class FindDsl<E: Any> internal constructor() {
         if (!immutableProp.isScalar(TargetLevel.OBJECT)) {
             throw IllegalArgumentException("\"$immutableProp\" is not scalar property")
         }
-        if (immutableProp.getStorage<Storage>() !is SingleColumn) {
-            throw IllegalArgumentException("\"$immutableProp\" is not based on simple column")
+        if (immutableProp.getStorage<Storage>() == null) {
+            throw IllegalArgumentException("\"$immutableProp\" is not mapped by database columns")
         }
         orders += Order(immutableProp, OrderMode.ASC)
     }
@@ -33,8 +33,8 @@ class FindDsl<E: Any> internal constructor() {
         if (!immutableProp.isScalar(TargetLevel.OBJECT)) {
             throw IllegalArgumentException("\"$immutableProp\" is not scalar property")
         }
-        if (immutableProp.getStorage<Storage>() !is SingleColumn) {
-            throw IllegalArgumentException("\"$immutableProp\" is not based on simple column")
+        if (immutableProp.getStorage<Storage>() == null) {
+            throw IllegalArgumentException("\"$immutableProp\" is not mapped by database columns")
         }
         orders += Order(immutableProp, OrderMode.DESC)
     }

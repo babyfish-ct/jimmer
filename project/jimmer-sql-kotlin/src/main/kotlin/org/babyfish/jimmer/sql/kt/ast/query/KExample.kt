@@ -20,9 +20,9 @@ fun <E: Any> example(obj: E, block: (KExample.Dsl<E>.() -> Unit)? = null): KExam
         throw IllegalArgumentException("obj is not immutable object")
     }
     for (prop in obj.__type().props.values) {
-        if (obj.__isLoaded(prop.id) && prop.getStorage<Storage>() !is SingleColumn) {
+        if (obj.__isLoaded(prop.id) && prop.getStorage<Storage>() == null) {
             throw IllegalArgumentException(
-                "The property \"$prop\" of example cannot be loaded because it is not based on simple column"
+                "The property \"$prop\" of example cannot be loaded because it is not mapped by database columns"
             )
         }
     }
