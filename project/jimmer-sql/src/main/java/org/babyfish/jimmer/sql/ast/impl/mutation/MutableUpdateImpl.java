@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.event.TriggerType;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -77,8 +78,8 @@ public class MutableUpdateImpl
                     "Only the primary table can be deleted when transaction trigger is supported"
             );
         }
-        if (!(target.prop.getStorage() instanceof SingleColumn)) {
-            throw new IllegalArgumentException("The assigned prop expression must be mapped as column");
+        if (!(target.prop.getStorage() instanceof ColumnDefinition)) {
+            throw new IllegalArgumentException("The assigned prop expression must be mapped by database columns");
         }
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
         boolean joinedTableUpdatable = updateJoin != null && updateJoin.isJoinedTableUpdatable();
@@ -277,19 +278,20 @@ public class MutableUpdateImpl
                 } else {
                     addComma = true;
                 }
-                builder.sql(table.getAlias()).sql(".").sql(prop.<SingleColumn>getStorage().getName());
+                builder.sql(table.getAlias(), prop.getStorage());
             }
             if (ids != null) {
                 builder
                         .sql(" from ")
                         .sql(table.getImmutableType().getTableName())
                         .sql(" as ")
-                        .sql(table.getAlias());
-                builder
-                        .sql(" where ")
                         .sql(table.getAlias())
-                        .sql(".")
-                        .sql(table.getImmutableType().getIdProp().<SingleColumn>getStorage().getName())
+                        .sql(" where ")
+                        .sql(
+                                table.getAlias(),
+                                table.getImmutableType().getIdProp().getStorage(),
+                                table.getImmutableType().getIdProp().isEmbedded()
+                        )
                         .sql(" in(");
                 addComma = false;
                 for (Object id : ids) {
@@ -373,11 +375,8 @@ public class MutableUpdateImpl
         String separator = " where ";
         if (ids != null) {
             ImmutableProp idProp = table.getImmutableType().getIdProp();
-            builder
-                    .sql(separator)
-                    .sql(table.getAlias())
-                    .sql(".")
-                    .sql(idProp.<SingleColumn>getStorage().getName())
+            builder.sql(separator)
+                    .sql(table.getAlias(), idProp.getStorage(), idProp.isEmbedded())
                     .sql(" in(");
             boolean addComma = false;
             for (Object id : ids) {

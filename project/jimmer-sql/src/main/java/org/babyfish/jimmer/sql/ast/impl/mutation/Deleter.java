@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
@@ -157,15 +158,15 @@ public class Deleter {
     private void tryDeleteFromChildTable(ImmutableProp prop, Collection<?> ids) {
         ImmutableProp manyToOneProp = prop.getMappedBy();
         ImmutableType childType = manyToOneProp.getDeclaringType();
-        String fkColumnName = ((SingleColumn)manyToOneProp.getStorage()).getName();
+        ColumnDefinition definition = manyToOneProp.getStorage();
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         builder
                 .sql("select ")
-                .sql(childType.getIdProp().<SingleColumn>getStorage().getName())
+                .sql(childType.getIdProp().<ColumnDefinition>getStorage())
                 .sql(" from ")
                 .sql(childType.getTableName())
                 .sql(" where ")
-                .sql(fkColumnName)
+                .sql(definition)
                 .sql(" in(");
         String separator = "";
         for (Object id : ids) {
@@ -234,12 +235,12 @@ public class Deleter {
             return;
         }
 
-        String fkColumnName = ((SingleColumn)type.getIdProp().getStorage()).getName();
+        ColumnDefinition definition = type.getIdProp().getStorage();
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         builder.sql("delete from ");
         builder.sql(type.getTableName());
         builder.sql(" where ");
-        builder.sql(fkColumnName);
+        builder.sql(null, definition, type.getIdProp().isEmbedded());
         builder.sql(" in(");
         String separator = "";
         for (Object id : ids) {
