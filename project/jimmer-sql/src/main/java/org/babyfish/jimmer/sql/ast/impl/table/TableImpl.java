@@ -627,7 +627,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     }
 
     @Override
-    public void renderSelection(ImmutableProp prop, SqlBuilder builder, EmbeddedColumns.Partial optionalPartial) {
+    public void renderSelection(ImmutableProp prop, SqlBuilder builder, Object optionalDefinition) {
         if (prop.isId() && joinProp != null) {
             MiddleTable middleTable;
             if (joinProp.getStorage() instanceof MiddleTable) {
@@ -663,12 +663,14 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                 return;
             }
         }
-        ColumnDefinition definition = optionalPartial != null ? optionalPartial : prop.getStorage();
-        if (definition instanceof SingleColumn) {
+        Object definition = optionalDefinition != null ? optionalDefinition : prop.getStorage();
+        if (definition instanceof String) {
+            builder.sql(alias).sql(".").sql((String) definition);
+        } else if (definition instanceof SingleColumn) {
             builder.sql(alias).sql(".").sql(((SingleColumn) definition).getName());
         } else {
             boolean addComma = false;
-            for (String columnName : definition) {
+            for (String columnName : (ColumnDefinition)definition) {
                 if (addComma) {
                     builder.sql(", ");
                 } else {

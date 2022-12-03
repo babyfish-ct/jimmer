@@ -85,14 +85,17 @@ public class PropExpressionImpl<T>
         this.path = base.path == null ? prop.getName() : base.path + "." + prop.getName();
     }
 
+    @Override
     public Table<?> getTable() {
         return table;
     }
 
+    @Override
     public ImmutableProp getProp() {
         return prop;
     }
 
+    @Override
     public EmbeddedColumns.Partial getPartial() {
         if (base != null || prop.isEmbedded()) {
             return ((EmbeddedColumns)prop.getStorage()).partial(path);
