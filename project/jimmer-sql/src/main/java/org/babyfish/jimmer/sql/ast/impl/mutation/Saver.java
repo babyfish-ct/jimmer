@@ -4,7 +4,6 @@ import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -119,7 +118,7 @@ class Saver {
                     childTableOperator = new ChildTableOperator(
                             data.getSqlClient(),
                             con,
-                            RedirectedProp.source(mappedBy, prop.getTargetType()),
+                            mappedBy,
                             cache,
                             trigger
                     );

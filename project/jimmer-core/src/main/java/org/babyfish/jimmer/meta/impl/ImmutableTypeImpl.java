@@ -34,7 +34,7 @@ class ImmutableTypeImpl implements ImmutableType {
 
     private final BiFunction<DraftContext, Object, Draft> draftFactory;
 
-    private Map<String, ImmutableProp> declaredProps = new LinkedHashMap<>();
+    private Map<String, ImmutableProp> declaredProps;
 
     private Map<String, ImmutableProp> props;
 
@@ -183,7 +183,8 @@ class ImmutableTypeImpl implements ImmutableType {
             } else {
                 props = new LinkedHashMap<>(superType.getProps());
                 for (ImmutableProp declaredProp : declaredProps.values()) {
-                    if (props.put(declaredProp.getName(), declaredProp) != null) {
+                    ImmutableProp conflictProp = props.put(declaredProp.getName(), declaredProp);
+                    if (conflictProp != null && conflictProp != ((ImmutablePropImpl)declaredProp).getBase()) {
                         throw new ModelException(
                                 "The property \"" +
                                         declaredProp +
@@ -250,6 +251,9 @@ class ImmutableTypeImpl implements ImmutableType {
     private Map<String, ImmutableProp> getColumnProps() {
         Map<String, ImmutableProp> cps = columnProps;
         if (cps == null) {
+            if (!isEntity) {
+                validateEntity();
+            }
             cps = new LinkedHashMap<>();
             for (ImmutableProp prop : getProps().values()) {
                 if (prop.getStorage() instanceof SingleColumn) {
@@ -277,6 +281,7 @@ class ImmutableTypeImpl implements ImmutableType {
     public Map<String, ImmutableProp> getSelectableProps() {
         Map<String, ImmutableProp> selectableProps = this.selectableProps;
         if (selectableProps == null) {
+
             selectableProps = new LinkedHashMap<>();
             selectableProps.put(getIdProp().getName(), getIdProp());
             for (ImmutableProp prop : getProps().values()) {
@@ -293,6 +298,7 @@ class ImmutableTypeImpl implements ImmutableType {
     public Map<String, ImmutableProp> getSelectableReferenceProps() {
         Map<String, ImmutableProp> selectableReferenceProps = this.selectableReferenceProps;
         if (selectableReferenceProps == null) {
+            validateEntity();
             selectableReferenceProps = new LinkedHashMap<>();
             for (ImmutableProp prop : getProps().values()) {
                 if (prop.isReference(TargetLevel.ENTITY) && prop.getStorage() instanceof ColumnDefinition) {
@@ -302,6 +308,10 @@ class ImmutableTypeImpl implements ImmutableType {
             this.selectableReferenceProps = Collections.unmodifiableMap(selectableReferenceProps);
         }
         return selectableReferenceProps;
+    }
+
+    void setDeclaredProps(Map<String, ImmutableProp> map) {
+        this.declaredProps = Collections.unmodifiableMap(map);
     }
 
     void setIdProp(ImmutableProp idProp) {
@@ -431,11 +441,25 @@ class ImmutableTypeImpl implements ImmutableType {
         return javaClass.getName();
     }
 
-    private static final String SEQUENCE_PREFIX = "sequence:";
+    private void validateEntity() {
+        if (!isEntity) {
+            throw new IllegalStateException(
+                    "The current type \"" +
+                            this +
+                            "\" is not entity"
+            );
+        }
+    }
 
     public static class BuilderImpl implements Builder {
 
-        private ImmutableTypeImpl type;
+        private final KClass<?> kotlinType;
+
+        private final Class<?> javaClass;
+
+        private final ImmutableType superType;
+
+        private final BiFunction<DraftContext, Object, Draft> draftFactory;
 
         private String idPropName;
 
@@ -445,12 +469,17 @@ class ImmutableTypeImpl implements ImmutableType {
 
         private final Set<Integer> propIds;
 
+        private final Map<String, PropBuilder> propBuilderMap = new LinkedHashMap<>();
+
         BuilderImpl(
                 Class<?> javaClass,
                 ImmutableType superType,
                 BiFunction<DraftContext, Object, Draft> draftFactory
         ) {
-            this.type = new ImmutableTypeImpl(javaClass, superType, draftFactory);
+            this.kotlinType = null;
+            this.javaClass = javaClass;
+            this.superType = superType;
+            this.draftFactory = draftFactory;
             this.propIds = superType != null ?
                     superType.getProps().values().stream().map(ImmutableProp::getId).collect(Collectors.toSet()) :
                     new HashSet<>();
@@ -461,7 +490,10 @@ class ImmutableTypeImpl implements ImmutableType {
                 ImmutableType superType,
                 BiFunction<DraftContext, Object, Draft> draftFactory
         ) {
-            this.type = new ImmutableTypeImpl(kotlinType, superType, draftFactory);
+            this.kotlinType = kotlinType;
+            this.javaClass = ((ClassBasedDeclarationContainer)kotlinType).getJClass();
+            this.superType = superType;
+            this.draftFactory = draftFactory;
             this.propIds = superType != null ?
                     superType.getProps().values().stream().map(ImmutableProp::getId).collect(Collectors.toSet()) :
                     new HashSet<>();
@@ -469,9 +501,9 @@ class ImmutableTypeImpl implements ImmutableType {
 
         @Override
         public Builder id(int id, String name, Class<?> elementType) {
-            if (!type.javaClass.isAnnotationPresent(Entity.class)
-                && !type.javaClass.isAnnotationPresent(MappedSuperclass.class)) {
-                throw new IllegalStateException("Cannot set id for type that is not entity");
+            if (!javaClass.isAnnotationPresent(Entity.class)
+                && !javaClass.isAnnotationPresent(MappedSuperclass.class)) {
+                throw new IllegalStateException("Cannot set id for type that is not entity or mapped super type");
             }
             if (idPropName != null) {
                 throw new IllegalStateException("id property has been set");
@@ -482,9 +514,9 @@ class ImmutableTypeImpl implements ImmutableType {
 
         @Override
         public Builder key(int id, String name, Class<?> elementType) {
-            if (!type.javaClass.isAnnotationPresent(Entity.class) &&
-                !type.javaClass.isAnnotationPresent(MappedSuperclass.class)) {
-                throw new IllegalStateException("Cannot add key for type that is not entity");
+            if (!javaClass.isAnnotationPresent(Entity.class) &&
+                !javaClass.isAnnotationPresent(MappedSuperclass.class)) {
+                throw new IllegalStateException("Cannot add key for type that is not entity or mapped super class");
             }
             keyPropNames.add(name);
             return add(id, name, ImmutablePropCategory.SCALAR, elementType, false);
@@ -503,9 +535,9 @@ class ImmutableTypeImpl implements ImmutableType {
 
         @Override
         public Builder version(int id, String name) {
-            if (!type.javaClass.isAnnotationPresent(Entity.class) &&
-                !type.javaClass.isAnnotationPresent(MappedSuperclass.class)) {
-                throw new IllegalStateException("Cannot set version for type that is not entity");
+            if (!javaClass.isAnnotationPresent(Entity.class) &&
+                !javaClass.isAnnotationPresent(MappedSuperclass.class)) {
+                throw new IllegalStateException("Cannot set version for type that is not entity or mapped super class");
             }
             if (versionPropName != null) {
                 throw new IllegalStateException("version property has been set");
@@ -566,7 +598,12 @@ class ImmutableTypeImpl implements ImmutableType {
                 boolean nullable,
                 Class<? extends Annotation> associationType
         ) {
-            validate();
+            if (category.isAssociation() &&
+                    elementType.isAnnotationPresent(Entity.class) &&
+                    !javaClass.isAnnotationPresent(Entity.class) &&
+                    !javaClass.isAnnotationPresent(MappedSuperclass.class)) {
+                throw new IllegalStateException("Cannot set association for type that is not entity or mapped super class");
+            }
             if (!propIds.add(id)) {
                 throw new IllegalArgumentException(
                         "The property id \"" +
@@ -576,28 +613,27 @@ class ImmutableTypeImpl implements ImmutableType {
                                 "\" is already exists in current type or the super type"
                 );
             }
-            if (type.declaredProps.containsKey(name)) {
+            if (propBuilderMap.containsKey(name)) {
                 throw new IllegalArgumentException(
                         "The property \"" +
-                                type.javaClass.getName() +
+                                javaClass.getName() +
                                 "." +
                                 name +
-                                "\" is already exists"
+                                "\", it is already exists"
                 );
             }
-            if (type.superType != null && type.superType.getProps().containsKey(name)) {
+            if (superType != null && superType.getProps().containsKey(name)) {
                 throw new IllegalArgumentException(
                         "The property \"" +
-                                type.javaClass.getName() +
+                                javaClass.getName() +
                                 "." +
                                 name +
                                 "\" is already exists in super type"
                 );
             }
-            type.declaredProps.put(
+            propBuilderMap.put(
                     name,
-                    new ImmutablePropImpl(
-                            type,
+                    new PropBuilder(
                             id,
                             name,
                             category,
@@ -611,9 +647,22 @@ class ImmutableTypeImpl implements ImmutableType {
 
         @Override
         public ImmutableTypeImpl build() {
-            validate();
-            ImmutableTypeImpl type = this.type;
-            type.declaredProps = Collections.unmodifiableMap(type.declaredProps);
+
+            ImmutableTypeImpl type = kotlinType != null ?
+                    new ImmutableTypeImpl(kotlinType, superType, draftFactory) :
+                    new ImmutableTypeImpl(javaClass, superType, draftFactory);
+
+            Map<String, ImmutableProp> map = new LinkedHashMap<>();
+            if (superType != null && !superType.isEntity() && javaClass.isAnnotationPresent(Entity.class)) {
+                for (ImmutableProp prop : superType.getProps().values()) {
+                    map.put(prop.getName(), new ImmutablePropImpl(type, (ImmutablePropImpl) prop));
+                }
+            }
+            for (Map.Entry<String, PropBuilder> e : propBuilderMap.entrySet()) {
+                map.put(e.getKey(), e.getValue().build(type));
+            }
+            type.setDeclaredProps(map);
+
             if (idPropName != null) {
                 type.setIdProp(type.declaredProps.get(idPropName));
             } else if (type.superType != null) {
@@ -622,11 +671,13 @@ class ImmutableTypeImpl implements ImmutableType {
                     type.setIdProp(superIdProp);
                 }
             }
+
             if (versionPropName != null) {
                 type.setVersionProp(type.declaredProps.get(versionPropName));
             } else if (type.superType != null) {
                 type.setVersionProp(type.superType.getVersionProp());
             }
+
             Set<ImmutableProp> keyProps = type.superType != null ?
                     new LinkedHashSet<>(type.superType.getKeyProps()) :
                     new LinkedHashSet<>();
@@ -634,14 +685,45 @@ class ImmutableTypeImpl implements ImmutableType {
                 keyProps.add(type.declaredProps.get(keyPropName));
             }
             type.setKeyProps(keyProps);
-            this.type = null;
+
             return type;
         }
+    }
 
-        private void validate() {
-            if (type == null) {
-                throw new IllegalStateException("Current ImmutableType.Builder has been disposed");
-            }
+    private static class PropBuilder {
+        final int id;
+        final String name;
+        final ImmutablePropCategory category;
+        final Class<?> elementType;
+        final boolean nullable;
+        final Class<? extends Annotation> associationType;
+
+        private PropBuilder(
+                int id,
+                String name,
+                ImmutablePropCategory category,
+                Class<?> elementType,
+                boolean nullable,
+                Class<? extends Annotation> associationType
+        ) {
+            this.id = id;
+            this.name = name;
+            this.category = category;
+            this.elementType = elementType;
+            this.nullable = nullable;
+            this.associationType = associationType;
+        }
+
+        public ImmutableProp build(ImmutableTypeImpl declaringType) {
+            return new ImmutablePropImpl(
+                    declaringType,
+                    id,
+                    name,
+                    category,
+                    elementType,
+                    nullable,
+                    associationType
+            );
         }
     }
 }

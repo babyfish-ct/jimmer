@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.trigger;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.event.TriggerType;
@@ -46,7 +45,7 @@ public class AbstractTriggerTest extends AbstractMutationTest {
                 for (ImmutableProp prop : type.getProps().values()) {
                     if (prop.isAssociation(TargetLevel.ENTITY)) {
                         sqlClient.getTriggers(true).addAssociationListener(
-                                RedirectedProp.source(prop, type),
+                                prop,
                                 e -> events.add(e.toString())
                         );
                     }

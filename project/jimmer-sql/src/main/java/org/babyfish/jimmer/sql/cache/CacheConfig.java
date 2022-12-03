@@ -1,17 +1,13 @@
 package org.babyfish.jimmer.sql.cache;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
-import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -63,17 +59,16 @@ public class CacheConfig {
                 }
                 for (ImmutableProp prop : type.getProps().values()) {
                     if (prop.isAssociation(TargetLevel.ENTITY) || prop.hasTransientResolver()) {
-                        ImmutableProp redirectedProp = RedirectedProp.source(prop, type);
-                        if (!propCacheMap.containsKey(redirectedProp)) {
+                        if (!propCacheMap.containsKey(prop)) {
                             Cache<?, ?> propCache =
-                                    redirectedProp.hasTransientResolver() ?
-                                            cacheFactory.createResolverCache(redirectedProp) : (
-                                            redirectedProp.isReferenceList(TargetLevel.ENTITY) ?
-                                                    cacheFactory.createAssociatedIdListCache(redirectedProp) :
-                                                    cacheFactory.createAssociatedIdCache(redirectedProp)
+                                    prop.hasTransientResolver() ?
+                                            cacheFactory.createResolverCache(prop) : (
+                                            prop.isReferenceList(TargetLevel.ENTITY) ?
+                                                    cacheFactory.createAssociatedIdListCache(prop) :
+                                                    cacheFactory.createAssociatedIdCache(prop)
                                     );
                             if (propCache != null) {
-                                propCacheMap.put(redirectedProp, propCache);
+                                propCacheMap.put(prop, propCache);
                             }
                         }
                     }

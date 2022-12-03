@@ -52,12 +52,6 @@ class Constants {
     public static final ClassName JOIN_TYPE_CLASS_NAME =
             ClassName.get(JoinType.class);
 
-    public static final ClassName REDIRECTED_PROP_CLASS_NAME =
-            ClassName.get(
-                    "org.babyfish.jimmer.meta.impl",
-                    "RedirectedProp"
-            );
-
     public static final ClassName PROPS_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.table",

@@ -5,7 +5,6 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
@@ -429,7 +428,7 @@ class JSqlClientImpl implements JSqlClient {
             for (ImmutableType type : ((CachesImpl)caches).getObjectCacheMap().keySet()) {
                 for (ImmutableProp prop : type.getProps().values()) {
                     if (prop.hasTransientResolver()) {
-                        manager.get(RedirectedProp.source(prop, type));
+                        manager.get(prop);
                     }
                 }
             }
