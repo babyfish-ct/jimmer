@@ -10,5 +10,5 @@ public interface TableSelection {
 
     ImmutableType getImmutableType();
 
-    void renderSelection(ImmutableProp prop, SqlBuilder builder, Object optionalDefinition);
+    void renderSelection(ImmutableProp prop, SqlBuilder builder, ColumnDefinition optionalDefinition);
 }

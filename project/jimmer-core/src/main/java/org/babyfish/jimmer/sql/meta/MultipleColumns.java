@@ -20,19 +20,19 @@ public abstract class MultipleColumns implements ColumnDefinition {
     }
 
     @Override
-    public boolean contains(String name) {
-        String cmpName = DatabaseIdentifiers.comparableIdentifier(name);
-        for (String e : arr) {
-            if (e.equals(name)) {
-                return true;
-            }
-        }
-        return false;
+    public String name(int index) {
+        return arr[index];
     }
 
     @Override
-    public String name(int index) {
-        return arr[index];
+    public int index(String name) {
+        int len = arr.length;
+        for (int i = 0; i < len; i++) {
+            if (arr[i].equals(name)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     @NotNull

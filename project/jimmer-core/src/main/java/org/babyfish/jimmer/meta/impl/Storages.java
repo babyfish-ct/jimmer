@@ -271,7 +271,7 @@ public class Storages {
             if (ref.isEmpty()) {
                 throw new NoReference();
             }
-            if (!targetIdDefinition.contains(ref)) {
+            if (targetIdDefinition.index(ref) == -1) {
                 throw new ReferenceNothing(ref);
             }
             if (columnMap.put(ref, joinColumn.name) != null) {
