@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.association.meta;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.association.Association;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
@@ -119,11 +120,11 @@ public abstract class AssociationProp implements ImmutableProp {
 
         private static final Method GETTER;
 
-        private final SingleColumn column;
+        private final ColumnDefinition definition;
 
         Source(AssociationType declaringType) {
             super(declaringType);
-            column = new SingleColumn(declaringType.getMiddleTable().getJoinColumnName());
+            definition = declaringType.getMiddleTable().getColumnDefinition();
         }
 
         @Override
@@ -158,8 +159,8 @@ public abstract class AssociationProp implements ImmutableProp {
 
         @SuppressWarnings("unchecked")
         @Override
-        public <S extends Storage> S getStorage() {
-            return (S) column;
+        public ColumnDefinition getStorage() {
+            return definition;
         }
 
         static {
@@ -175,11 +176,11 @@ public abstract class AssociationProp implements ImmutableProp {
 
         private static final Method GETTER;
 
-        private final SingleColumn column;
+        private final ColumnDefinition definition;
 
         Target(AssociationType declaringType) {
             super(declaringType);
-            column = new SingleColumn(declaringType.getMiddleTable().getTargetJoinColumnName());
+            definition = declaringType.getMiddleTable().getTargetColumnDefinition();
         }
 
         @Override
@@ -214,8 +215,8 @@ public abstract class AssociationProp implements ImmutableProp {
 
         @SuppressWarnings("unchecked")
         @Override
-        public <S extends Storage> S getStorage() {
-            return (S) column;
+        public ColumnDefinition getStorage() {
+            return definition;
         }
 
         static {

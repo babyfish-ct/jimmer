@@ -6,6 +6,8 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.tuple.*;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 
 import java.util.*;
 import java.util.function.Function;
@@ -39,6 +41,43 @@ public class SqlBuilder {
 
     public AstContext getAstContext() {
         return ctx;
+    }
+
+    public SqlBuilder sql(String tableAlias, ColumnDefinition definition) {
+        if (tableAlias == null || tableAlias.isEmpty()) {
+            return sql(definition);
+        }
+        if (definition instanceof SingleColumn) {
+            builder.append(tableAlias).append('.').append(((SingleColumn)definition).getName());
+        } else {
+            boolean addComma = false;
+            for (String columnName : definition) {
+                if (addComma) {
+                    builder.append(", ");
+                } else {
+                    addComma = true;
+                }
+                builder.append(tableAlias).append('.').append(columnName);
+            }
+        }
+        return this;
+    }
+
+    public SqlBuilder sql(ColumnDefinition definition) {
+        if (definition instanceof SingleColumn) {
+            builder.append(((SingleColumn)definition).getName());
+        } else {
+            boolean addComma = false;
+            for (String columnName : definition) {
+                if (addComma) {
+                    builder.append(", ");
+                } else {
+                    addComma = true;
+                }
+                builder.append(columnName);
+            }
+        }
+        return this;
     }
 
     public SqlBuilder sql(String sql) {

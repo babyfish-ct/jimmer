@@ -8,7 +8,7 @@ import java.util.NoSuchElementException;
 
 public class SingleColumn implements ColumnDefinition {
 
-    private String name;
+    private final String name;
 
     public SingleColumn(String name) {
         this.name = name;

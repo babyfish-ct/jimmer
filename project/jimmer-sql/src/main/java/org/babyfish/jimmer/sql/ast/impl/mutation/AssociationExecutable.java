@@ -140,16 +140,16 @@ class AssociationExecutable implements Executable<Integer> {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
                 .sql("select ")
-                .sql(middleTable.getJoinColumnName())
+                .sql(middleTable.getColumnDefinition())
                 .sql(", ")
-                .sql(middleTable.getTargetJoinColumnName())
+                .sql(middleTable.getTargetColumnDefinition())
                 .sql(" from ")
                 .sql(associationType.getTableName())
                 .sql(" where ")
                 .enterTuple()
-                .sql(middleTable.getJoinColumnName())
+                .sql(middleTable.getColumnDefinition())
                 .sql(", ")
-                .sql(middleTable.getTargetJoinColumnName())
+                .sql(middleTable.getTargetColumnDefinition())
                 .leaveTuple()
                 .sql(" in(");
         String separator = "";
