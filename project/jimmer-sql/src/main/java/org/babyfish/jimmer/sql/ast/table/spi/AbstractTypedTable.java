@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.ast.table.spi;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -382,11 +381,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             this.parent = parent;
             this.joinType = joinType;
             this.treatedAs = treatedAs;
-            if (treatedAs != null) {
-                this.prop = RedirectedProp.target(prop, treatedAs);
-            } else {
-                this.prop = prop;
-            }
+            this.prop = prop;
             this.weakJoinHandle = null;
         }
 

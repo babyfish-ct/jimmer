@@ -240,8 +240,8 @@ public class Storages {
         if (joinColumns == null || joinColumns.length == 0) {
             return null;
         }
-        ColumnDefinition targetIdDefinition = targetType.getIdProp() == null ? null : targetType.getIdProp().getStorage();
-        if (targetIdDefinition != null && joinColumns.length != targetIdDefinition.size()) {
+        ColumnDefinition targetIdDefinition = targetType.getIdProp().getStorage();
+        if (joinColumns.length != targetIdDefinition.size()) {
             throw new IllegalJoinColumnCount(targetIdDefinition.size(), joinColumns.length);
         }
         if (joinColumns.length == 1) {
@@ -249,7 +249,7 @@ public class Storages {
                 return null;
             }
             String ref = joinColumns[0].referencedColumnName;
-            if (targetIdDefinition != null && !ref.isEmpty() && !ref.equals(targetIdDefinition.name(0))) {
+            if (!ref.isEmpty() && !ref.equals(targetIdDefinition.name(0))) {
                 throw new ReferenceNothing(ref);
             }
             return new SingleColumn(joinColumns[0].name);

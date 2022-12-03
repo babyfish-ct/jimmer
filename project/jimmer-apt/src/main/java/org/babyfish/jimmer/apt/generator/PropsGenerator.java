@@ -78,14 +78,12 @@ public class PropsGenerator {
         }
         try {
             for (ImmutableProp prop : type.getDeclaredProps().values()) {
-                addStaticProp(prop, false);
+                addStaticProp(prop);
             }
             ImmutableType superType = type.getSuperType();
             if (type.isEntity() && superType != null && superType.isMappedSuperClass()) {
                 for (ImmutableProp prop : superType.getProps().values()) {
-                    if (prop.isAssociation(false) || prop.isTransient()) {
-                        addStaticProp(prop, true);
-                    }
+                    addStaticProp(prop);
                 }
             }
             if (type.isEntity() || type.isMappedSuperClass()) {
@@ -102,7 +100,7 @@ public class PropsGenerator {
         }
     }
 
-    private void addStaticProp(ImmutableProp prop, boolean override) {
+    private void addStaticProp(ImmutableProp prop) {
         ClassName rawClassName;
         String action;
         if (prop.isList()) {
@@ -132,27 +130,15 @@ public class PropsGenerator {
                         Modifier.PUBLIC,
                         Modifier.STATIC,
                         Modifier.FINAL
+                )
+                .initializer(
+                        "\n    $T.$L($T.get($T.class).getProp($L))",
+                        Constants.TYPED_PROP_CLASS_NAME,
+                        action,
+                        Constants.RUNTIME_TYPE_CLASS_NAME,
+                        type.getClassName(),
+                        Integer.toString(prop.getId())
                 );
-        if (override) {
-            builder.initializer(
-                    "\n    $T.$L($T.source($T.$L.unwrap(), $T.class))",
-                    Constants.TYPED_PROP_CLASS_NAME,
-                    action,
-                    Constants.REDIRECTED_PROP_CLASS_NAME,
-                    type.getSuperType().getPropsClassName(),
-                    fieldName,
-                    type.getClassName()
-            );
-        } else {
-            builder.initializer(
-                    "\n    $T.$L($T.get($T.class).getProp($L))",
-                    Constants.TYPED_PROP_CLASS_NAME,
-                    action,
-                    Constants.RUNTIME_TYPE_CLASS_NAME,
-                    type.getClassName(),
-                    Integer.toString(prop.getId())
-            );
-        }
         typeBuilder.addField(builder.build());
     }
 

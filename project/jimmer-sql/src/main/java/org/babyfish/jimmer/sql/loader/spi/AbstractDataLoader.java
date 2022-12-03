@@ -5,7 +5,6 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.OrderedItem;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -127,7 +126,6 @@ public abstract class AbstractDataLoader {
                         "\"" + entityType + "\" is not entity"
                 );
             }
-            prop = RedirectedProp.source(prop, entityType);
         } else if (!prop.getDeclaringType().isEntity()) {
             throw new IllegalArgumentException(
                     "\"" + prop + "\" is not declared in entity"
@@ -580,9 +578,7 @@ public abstract class AbstractDataLoader {
             Object sourceId = sourceIds.iterator().next();
             List<R> results = Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOADER, true, (q, target) -> {
                 Expression<Object> sourceIdExpr = target
-                        .inverseJoin(
-                                RedirectedProp.source(prop, prop.getDeclaringType())
-                        )
+                        .inverseJoin(prop)
                         .get(sourceIdProp.getName());
                 q.where(sourceIdExpr.eq(sourceId));
                 if (!applyPropFilter(q, target, sourceIds) & !applyGlobalFilter(q, target) ) {
@@ -594,9 +590,7 @@ public abstract class AbstractDataLoader {
         }
         return Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOADER, true, (q, target) -> {
             Expression<Object> sourceIdExpr = target
-                    .inverseJoin(
-                            RedirectedProp.source(prop, prop.getDeclaringType())
-                    )
+                    .inverseJoin(prop)
                     .get(sourceIdProp.getName());
             q.where(sourceIdExpr.in(sourceIds));
             if (!applyPropFilter(q, target, sourceIds) & !applyGlobalFilter(q, target)) {

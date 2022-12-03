@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.event;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 
@@ -117,7 +116,7 @@ public class TriggersImpl implements Triggers {
                 if (changedRef != null) {
                     ChangedRef<Object> fkRef = changedRef.toIdRef();
                     throwable = fireForeignKeyChange(
-                            RedirectedProp.source(prop, type),
+                            prop,
                             event.getId(),
                             fkRef.getOldValue(),
                             fkRef.getNewValue(),
@@ -145,7 +144,7 @@ public class TriggersImpl implements Triggers {
             Object reason,
             Throwable throwable
     ) {
-        ImmutableProp inverseProp = RedirectedProp.source(prop.getOpposite(), prop.getTargetType());
+        ImmutableProp inverseProp = prop.getOpposite();
         List<AssociationListener> listeners = associationListenerMultiMap.get(prop);
         List<AssociationListener> inverseListeners = associationListenerMultiMap.get(inverseProp);
         if (listeners != null && !listeners.isEmpty()) {
@@ -200,7 +199,7 @@ public class TriggersImpl implements Triggers {
     }
 
     private void fireMiddleTableDeleteImpl(ImmutableProp prop, Object sourceId, Object targetId, Connection con, Object reason) {
-        ImmutableProp inverseProp = RedirectedProp.source(prop.getOpposite(), prop.getTargetType());
+        ImmutableProp inverseProp = prop.getOpposite();
         List<AssociationListener> listeners = associationListenerMultiMap.get(prop);
         List<AssociationListener> inverseListeners = associationListenerMultiMap.get(inverseProp);
         Throwable throwable = null;
@@ -247,7 +246,7 @@ public class TriggersImpl implements Triggers {
     }
 
     private void fireMiddleTableInsertImpl(ImmutableProp prop, Object sourceId, Object targetId, Connection con, Object reason) {
-        ImmutableProp inverseProp = RedirectedProp.source(prop.getOpposite(), prop.getTargetType());
+        ImmutableProp inverseProp = prop.getOpposite();
         List<AssociationListener> listeners = associationListenerMultiMap.get(prop);
         List<AssociationListener> inverseListeners = associationListenerMultiMap.get(inverseProp);
         Throwable throwable = null;

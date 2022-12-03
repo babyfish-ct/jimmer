@@ -4,7 +4,6 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.meta.impl.RedirectedProp;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
@@ -252,9 +251,6 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                             "\""
             );
         }
-        if (treatedAs != null) {
-            immutableProp = RedirectedProp.target(immutableProp, treatedAs);
-        }
         return (TableImplementor<X>) join0(false, immutableProp, joinType);
     }
 
@@ -319,7 +315,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             return join1(
                     joinName,
                     !isInverse,
-                    RedirectedProp.source(prop.getMappedBy(), prop.getTargetType()),
+                    prop.getMappedBy(),
                     joinType
             );
         }

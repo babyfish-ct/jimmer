@@ -141,7 +141,7 @@ public class CachesImpl implements Caches {
             ImmutableProp prop
     ) {
         if (!prop.getDeclaringType().isEntity()) {
-            throw new IllegalArgumentException("\"" + prop + "\" is not declared in ");
+            throw new IllegalArgumentException("\"" + prop + "\" is not declared in entity");
         }
         if (cache == null) {
             return null;

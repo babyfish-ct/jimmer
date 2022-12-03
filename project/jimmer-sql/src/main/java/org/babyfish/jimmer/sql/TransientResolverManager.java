@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.impl.util.StaticCache;
+import org.babyfish.jimmer.meta.TargetLevel;
 
 import java.lang.reflect.*;
 import java.util.Map;
