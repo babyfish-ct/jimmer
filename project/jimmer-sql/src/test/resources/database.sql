@@ -1,3 +1,7 @@
+drop table order_item_product_mapping if exists;
+drop table product if exists;
+drop table order_item if exists;
+drop table order_ if exists;
 drop table transform if exists;
 drop table permission if exists;
 drop table administrator_role_mapping if exists;
@@ -352,3 +356,66 @@ alter table transform
 
 insert into transform(id, `left`, top, `right`, bottom, target_left, target_top, target_right, target_bottom)
     values(1, 100, 120, 400, 320, 800, 600, 1400, 1000);
+
+
+
+
+
+create table order_(
+    order_x varchar(10) not null,
+    order_y varchar(10) not null,
+    name varchar(20) not null
+);
+alter table order_
+    add constraint pk_order
+        primary key(order_x, order_y);
+
+create table order_item(
+    order_item_a int not null,
+    order_item_b int not null,
+    order_item_c int not null,
+    name varchar(20) not null,
+    fk_order_x varchar(10),
+    fk_order_y varchar(10)
+);
+alter table order_item
+    add constraint pk_order_item
+        primary key(order_item_a, order_item_b, order_item_c);
+alter table order_item
+    add constraint fk_order_item
+        foreign key(fk_order_x, fk_order_y)
+            references order_(order_x, order_y);
+
+create table product(
+    product_alpha varchar(10) not null,
+    product_beta varchar(10) not null,
+    name varchar(20) not null
+);
+alter table product
+    add constraint pk_product
+        primary key(product_alpha, product_beta);
+
+create table order_item_product_mapping(
+    fk_order_item_a int not null,
+    fk_order_item_b int not null,
+    fk_order_item_c int not null,
+    fk_product_alpha varchar(10) not null,
+    fk_product_beta varchar(10) not null
+);
+alter table order_item_product_mapping
+    add constraint pk_order_item_product_mapping
+        primary key(
+            fk_order_item_a,
+            fk_order_item_b,
+            fk_order_item_c,
+            fk_product_alpha,
+            fk_product_beta
+        );
+alter table order_item_product_mapping
+    add constraint fk_order_item_product_mapping_source
+        foreign key(fk_order_item_a, fk_order_item_b, fk_order_item_c)
+            references order_item(order_item_a, order_item_b, order_item_c);
+alter table order_item_product_mapping
+    add constraint fk_order_item_product_mapping_target
+        foreign key(fk_product_alpha, fk_product_beta)
+            references product(product_alpha, product_beta);

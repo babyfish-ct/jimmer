@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.meta;
 
-import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
@@ -25,9 +24,7 @@ public class SingleColumn implements ColumnDefinition {
 
     @Override
     public boolean contains(String name) {
-        return DatabaseIdentifiers.comparableIdentifier(this.name).equals(
-                DatabaseIdentifiers.comparableIdentifier(name)
-        );
+        return this.name.equals(name);
     }
 
     @Override

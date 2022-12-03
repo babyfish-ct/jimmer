@@ -23,7 +23,7 @@ public abstract class MultipleColumns implements ColumnDefinition {
     public boolean contains(String name) {
         String cmpName = DatabaseIdentifiers.comparableIdentifier(name);
         for (String e : arr) {
-            if (DatabaseIdentifiers.comparableIdentifier(e).equals(cmpName)) {
+            if (e.equals(name)) {
                 return true;
             }
         }

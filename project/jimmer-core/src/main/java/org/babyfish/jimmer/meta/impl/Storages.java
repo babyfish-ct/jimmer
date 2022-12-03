@@ -6,7 +6,6 @@ import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.*;
 
-import javax.xml.stream.events.StartDocument;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -69,11 +68,11 @@ public class Storages {
                             prop +
                             "\", it has " +
                             ex.actual +
-                            " join columns, but the referenced property \"" +
+                            " join column(s), but the referenced property \"" +
                             prop.getTargetType().getIdProp() +
                             "\" has " +
                             ex.expect +
-                            " join columns"
+                            " join column(s)"
             );
         } catch (NoReference ex) {
             throw new ModelException(
@@ -89,6 +88,22 @@ public class Storages {
                             "\", the `referencedColumnName` \"" +
                             ex.ref +
                             "\" is illegal"
+            );
+        } catch (SourceConflict ex) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            prop +
+                            "\", conflict column name \"" +
+                            ex.name +
+                            "\" in several join columns"
+            );
+        } catch (TargetConflict ex) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            prop +
+                            "\", conflict referenced column name \"" +
+                            ex.ref +
+                            "\" in several join columns"
             );
         }
         if (definition != null) {
@@ -150,13 +165,13 @@ public class Storages {
                             prop +
                             "\", there are " +
                             ex.actual +
-                            "`" +
-                            (leftParsed ? "inverseColumns" : "joinColumns") +
+                            " `" +
+                            (leftParsed ? "inverseColumn(s)" : "joinColumn(s)") +
                             "`, but the id property \"" +
                             (leftParsed ? prop.getTargetType() : prop.getDeclaringType()).getIdProp() +
                             "\" has " +
                             ex.expect +
-                            "column(s)"
+                            " column(s)"
             );
         } catch (NoReference ex) {
             throw new ModelException(
@@ -164,7 +179,7 @@ public class Storages {
                             prop +
                             "\", the `referencedColumns` of `" +
                             (leftParsed ? "inverseColumns" : "joinColumns") +
-                            "`must be specified when multiple `" +
+                            "` must be specified when multiple `" +
                             (leftParsed ? "inverseColumns" : "joinColumns") +
                             "` are used"
             );
@@ -176,7 +191,25 @@ public class Storages {
                             ex.ref +
                             "\" of `" +
                             (leftParsed ? "inverseColumns" : "joinColumns") +
-                            "`is illegal"
+                            "` is illegal"
+            );
+        } catch (SourceConflict ex) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            prop +
+                            "\", conflict column name \"" +
+                            ex.name +
+                            "\" in several " +
+                            (leftParsed ? "inverseColumns" : "joinColumns")
+            );
+        } catch (TargetConflict ex) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            prop +
+                            "\", conflict referenced column name \"" +
+                            ex.ref +
+                            "\" in several " +
+                            (leftParsed ? "inverseColumns" : "joinColumns")
             );
         }
         String tableName = joinTable != null ? joinTable.name() : "";
@@ -204,41 +237,19 @@ public class Storages {
                             "_ID"
             );
         }
-        String conflictColumnName = null;
-        for (String name : definition) {
-            if (targetDefinition.contains(name)) {
-                conflictColumnName = name;
-                break;
-            }
-        }
-        if (conflictColumnName == null) {
-            for (String name : targetDefinition) {
-                if (definition.contains(name)) {
-                    conflictColumnName = name;
-                    break;
-                }
-            }
-        }
-        if (conflictColumnName != null) {
-            throw new ModelException(
-                    "Illegal property \"" +
-                            prop +
-                            "\", there is a conflict column \"" +
-                            conflictColumnName +
-                            "\" in the middle table \"" +
-                            tableName +
-                            "\""
-            );
-        }
         return new MiddleTable(tableName, definition, targetDefinition);
     }
 
     private static ColumnDefinition joinDefinition(
             JoinColumnObj[] joinColumns,
             ImmutableType targetType
-    ) throws IllegalJoinColumnCount, NoReference, ReferenceNothing {
+    ) throws IllegalJoinColumnCount, NoReference, ReferenceNothing, TargetConflict, SourceConflict {
         if (joinColumns == null || joinColumns.length == 0) {
-            return null;
+            ColumnDefinition definition = targetType.getIdProp().getStorage();
+            if (definition.size() == 1) {
+                return null;
+            }
+            throw new IllegalJoinColumnCount(definition.size(), 0);
         }
         ColumnDefinition targetIdDefinition = targetType.getIdProp().getStorage();
         if (joinColumns.length != targetIdDefinition.size()) {
@@ -263,11 +274,20 @@ public class Storages {
             if (!targetIdDefinition.contains(ref)) {
                 throw new ReferenceNothing(ref);
             }
-            columnMap.put(ref, joinColumn.name);
+            if (columnMap.put(ref, joinColumn.name) != null) {
+                throw new TargetConflict(ref);
+            }
         }
         Map<String, String> referencedColumnMap = new LinkedHashMap<>();
         for (String targetColumnName : targetIdDefinition) {
-            referencedColumnMap.put(columnMap.get(targetColumnName), targetColumnName);
+            String name = columnMap.get(targetColumnName);
+            if (name == null) {
+                System.out.println(targetColumnName);
+                System.out.println(columnMap);
+            }
+            if (referencedColumnMap.put(name, targetColumnName) != null) {
+                throw new SourceConflict(name);
+            }
         }
         return new MultipleJoinColumns(referencedColumnMap);
     }
@@ -337,6 +357,24 @@ public class Storages {
 
         private ReferenceNothing(String ref) {
             this.ref = ref;
+        }
+    }
+
+    private static class TargetConflict extends Exception {
+
+        final String ref;
+
+        private TargetConflict(String ref) {
+            this.ref = ref;
+        }
+    }
+
+    private static class SourceConflict extends Exception {
+
+        final String name;
+
+        private SourceConflict(String name) {
+            this.name = name;
         }
     }
 }

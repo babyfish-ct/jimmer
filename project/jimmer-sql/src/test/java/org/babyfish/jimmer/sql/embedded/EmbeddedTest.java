@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.query;
+package org.babyfish.jimmer.sql.embedded;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.embedded.*;
