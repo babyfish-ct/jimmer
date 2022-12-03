@@ -22,12 +22,12 @@ public class MiddleTable implements Storage {
         return tableName;
     }
 
-    public String getJoinColumnName() {
-        return definition.name(0);
+    public ColumnDefinition getColumnDefinition() {
+        return definition;
     }
 
-    public String getTargetJoinColumnName() {
-        return targetDefinition.name(0);
+    public ColumnDefinition getTargetColumnDefinition() {
+        return targetDefinition;
     }
 
     public MiddleTable getInverse() {
