@@ -430,6 +430,18 @@ class ImmutableTypeImpl implements ImmutableType {
                             " but that annotation does not have any attributes"
             );
         }
+        if ((strategy == GenerationType.IDENTITY || strategy == GenerationType.SEQUENCE)) {
+            Class<?> returnType = idProp.getElementClass();
+            if (!returnType.isPrimitive() && !Number.class.isAssignableFrom(returnType)) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                idProp +
+                                "\", it's id generation strategy is \"" +
+                                strategy +
+                                "\", but that the type of id is not numeric"
+                );
+            }
+        }
 
         if (strategy == GenerationType.USER) {
             IdGenerator idGenerator = null;
