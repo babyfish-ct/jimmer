@@ -1,11 +1,12 @@
 package org.babyfish.jimmer.sql.ast.tuple
 
+import org.babyfish.jimmer.sql.ast.impl.TupleImplementor
 import java.util.function.Function
 
 data class Tuple2<T1, T2>(
     val _1: T1,
     val _2: T2
-) {
+) : TupleImplementor {
 
     companion object {
 

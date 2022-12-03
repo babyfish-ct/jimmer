@@ -18,6 +18,13 @@ import java.util.stream.Collectors;
 
 class ImmutableTypeImpl implements ImmutableType {
 
+    @SuppressWarnings("unchecked")
+    private static final Class<? extends Annotation>[] SQL_ANNOTATION_TYPES = new Class[] {
+            Entity.class,
+            MappedSuperclass.class,
+            Embeddable.class
+    };
+
     private final Class<?> javaClass;
 
     private final boolean isEntity;
@@ -56,34 +63,72 @@ class ImmutableTypeImpl implements ImmutableType {
 
     private String tableName;
 
+    private int span;
+
     ImmutableTypeImpl(
             Class<?> javaClass,
             ImmutableType superType,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
+        Annotation sqlAnnotation = null;
+        for (Class<? extends Annotation> sqlAnnotationType : SQL_ANNOTATION_TYPES) {
+            Annotation anno = javaClass.getAnnotation(sqlAnnotationType);
+            if (anno != null) {
+                if (sqlAnnotation != null) {
+                    throw new ModelException(
+                            "Illegal type \"" +
+                                    javaClass.getName() +
+                                    "\", it cannot be decorated by both @" +
+                                    sqlAnnotation.annotationType().getName() +
+                                    " and @" +
+                                    anno.annotationType().getName()
+                    );
+                }
+                sqlAnnotation = anno;
+            }
+        }
+        if (sqlAnnotation != null) {
+            immutableAnnotation = sqlAnnotation;
+        } else {
+            immutableAnnotation = javaClass.getAnnotation(Immutable.class);
+            if (immutableAnnotation == null) {
+                throw new ModelException(
+                        "Illegal type \"" +
+                                javaClass.getName() +
+                                "\", it is not immutable type"
+                );
+            }
+        }
+
         this.javaClass = javaClass;
         this.superType = superType;
         this.draftFactory = draftFactory;
 
-        this.isEntity = javaClass.isAnnotationPresent(Entity.class);
-        this.isMappedSupperClass = javaClass.isAnnotationPresent(MappedSuperclass.class);
-        this.isEmbeddable = javaClass.isAnnotationPresent(Embeddable.class);
+        isEntity = immutableAnnotation instanceof Entity;
+        isMappedSupperClass = immutableAnnotation instanceof MappedSuperclass;
+        isEmbeddable = immutableAnnotation instanceof Embeddable;
 
-        Entity entity = javaClass.getAnnotation(Entity.class);
-        MappedSuperclass mappedSuperclass = javaClass.getAnnotation(MappedSuperclass.class);
-        if (entity != null && mappedSuperclass != null) {
-            throw new ModelException(
-                    "Illegal type \"" +
-                            javaClass.getName() +
-                            "\", it cannot be decorated by both @Entity and @MappedSuperclass"
-            );
-        }
-        if (entity != null) {
-            immutableAnnotation = entity;
-        } else if (mappedSuperclass != null) {
-            immutableAnnotation = mappedSuperclass;
-        } else {
-            immutableAnnotation = javaClass.getAnnotation(Immutable.class);
+        if (superType != null) {
+            if (!superType.isMappedSuperclass()) {
+                throw new ModelException(
+                        "Illegal immutable type \"" +
+                                this +
+                                "\", the super type \"" +
+                                superType +
+                                "\" is not decorated by @" +
+                                MappedSuperclass.class.getName()
+                );
+            }
+            if (!isEntity && !isMappedSupperClass) {
+                throw new ModelException(
+                        "Illegal immutable type \"" +
+                                this +
+                                "\", it has super type because it is decorated by neither @" +
+                                Entity.class.getName() +
+                                " nor @" +
+                                MappedSuperclass.class.getName()
+                );
+            }
         }
 
         Table table = javaClass.getAnnotation(Table.class);
@@ -281,7 +326,6 @@ class ImmutableTypeImpl implements ImmutableType {
     public Map<String, ImmutableProp> getSelectableProps() {
         Map<String, ImmutableProp> selectableProps = this.selectableProps;
         if (selectableProps == null) {
-
             selectableProps = new LinkedHashMap<>();
             selectableProps.put(getIdProp().getName(), getIdProp());
             for (ImmutableProp prop : getProps().values()) {
@@ -308,6 +352,38 @@ class ImmutableTypeImpl implements ImmutableType {
             this.selectableReferenceProps = Collections.unmodifiableMap(selectableReferenceProps);
         }
         return selectableReferenceProps;
+    }
+
+    public int getSpan() {
+        int span = this.span;
+        if (span == -1) {
+            span = 0;
+            if (isEntity) {
+                for (ImmutableProp prop : getProps().values()) {
+                    Storage storage = prop.getStorage();
+                    if (storage instanceof ColumnDefinition) {
+                        span += ((ColumnDefinition) storage).size();
+                    }
+                }
+            } else if (isEmbeddable) {
+                for (ImmutableProp prop : getProps().values()) {
+                    ImmutableType targetType = prop.getTargetType();
+                    if (targetType != null) {
+                        span += targetType.getSpan();
+                    } else {
+                        span++;
+                    }
+                }
+            } else {
+                throw new IllegalStateException(
+                        "Cannot access `span` of \"" +
+                                this +
+                                "\", it is only supported by entity and embeddable type"
+                );
+            }
+            this.span = span;
+        }
+        return span;
     }
 
     void setDeclaredProps(Map<String, ImmutableProp> map) {
