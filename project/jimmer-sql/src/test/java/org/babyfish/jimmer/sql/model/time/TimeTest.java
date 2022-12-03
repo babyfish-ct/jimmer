@@ -10,7 +10,7 @@ public class TimeTest {
     public void test() throws NoSuchMethodException {
         Assertions.assertSame(
                 PropExpression.Cmp.class,
-                ProductTable.class.getMethod("createdTime").getReturnType()
+                LogProps.class.getMethod("createdTime").getReturnType()
         );
     }
 }

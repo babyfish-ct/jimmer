@@ -91,6 +91,10 @@ public class ReaderManager {
 
     @SuppressWarnings("unchecked")
     private Reader<?> scalarReader(Class<?> type) {
+        ImmutableType immutableType = ImmutableType.tryGet(type);
+        if (immutableType != null && immutableType.isEmbeddable()) {
+            return new EmbeddedReader(immutableType, this);
+        }
         Reader<?> reader = BASE_READER_MAP.get(type);
         if (reader == null) {
             ScalarProvider<?, ?> scalarProvider = sqlClient.getScalarProvider(type);
@@ -382,7 +386,7 @@ public class ReaderManager {
 
         private Map<ImmutableProp, Reader<?>> readerMap;
 
-        private EmbeddedReader(ImmutableType targetType, ReaderManager readerManager) {
+        EmbeddedReader(ImmutableType targetType, ReaderManager readerManager) {
             this.targetType = targetType;
             Map<ImmutableProp, Reader<?>> map = new LinkedHashMap<>();
             for (ImmutableProp childProp : targetType.getProps().values()) {

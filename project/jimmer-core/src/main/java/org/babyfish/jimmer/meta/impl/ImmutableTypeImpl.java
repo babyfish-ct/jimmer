@@ -63,8 +63,6 @@ class ImmutableTypeImpl implements ImmutableType {
 
     private String tableName;
 
-    private int span;
-
     ImmutableTypeImpl(
             Class<?> javaClass,
             ImmutableType superType,
@@ -354,38 +352,6 @@ class ImmutableTypeImpl implements ImmutableType {
         return selectableReferenceProps;
     }
 
-    public int getSpan() {
-        int span = this.span;
-        if (span == -1) {
-            span = 0;
-            if (isEntity) {
-                for (ImmutableProp prop : getProps().values()) {
-                    Storage storage = prop.getStorage();
-                    if (storage instanceof ColumnDefinition) {
-                        span += ((ColumnDefinition) storage).size();
-                    }
-                }
-            } else if (isEmbeddable) {
-                for (ImmutableProp prop : getProps().values()) {
-                    ImmutableType targetType = prop.getTargetType();
-                    if (targetType != null) {
-                        span += targetType.getSpan();
-                    } else {
-                        span++;
-                    }
-                }
-            } else {
-                throw new IllegalStateException(
-                        "Cannot access `span` of \"" +
-                                this +
-                                "\", it is only supported by entity and embeddable type"
-                );
-            }
-            this.span = span;
-        }
-        return span;
-    }
-
     void setDeclaredProps(Map<String, ImmutableProp> map) {
         this.declaredProps = Collections.unmodifiableMap(map);
     }
@@ -585,7 +551,13 @@ class ImmutableTypeImpl implements ImmutableType {
                 throw new IllegalStateException("id property has been set");
             }
             idPropName = name;
-            return add(id, name, ImmutablePropCategory.SCALAR, elementType, false);
+            return add(
+                    id,
+                    name,
+                    category(elementType),
+                    elementType,
+                    false
+            );
         }
 
         @Override
@@ -595,7 +567,7 @@ class ImmutableTypeImpl implements ImmutableType {
                 throw new IllegalStateException("Cannot add key for type that is not entity or mapped super class");
             }
             keyPropNames.add(name);
-            return add(id, name, ImmutablePropCategory.SCALAR, elementType, false);
+            return add(id, name, category(elementType), elementType, false);
         }
 
         @Override
@@ -719,6 +691,12 @@ class ImmutableTypeImpl implements ImmutableType {
                     )
             );
             return this;
+        }
+
+        private static ImmutablePropCategory category(Class<?> elementType) {
+            return elementType.isAnnotationPresent(Embeddable.class) ?
+                    ImmutablePropCategory.REFERENCE :
+                    ImmutablePropCategory.SCALAR;
         }
 
         @Override
