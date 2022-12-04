@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.model.embedded;
 
 import org.babyfish.jimmer.sql.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -18,6 +19,7 @@ public interface OrderItem {
     @ManyToOne
     @JoinColumn(name = "FK_ORDER_X", referencedColumnName = "ORDER_X")
     @JoinColumn(name = "FK_ORDER_Y", referencedColumnName = "ORDER_Y")
+    @Nullable
     Order order();
 
     @ManyToMany

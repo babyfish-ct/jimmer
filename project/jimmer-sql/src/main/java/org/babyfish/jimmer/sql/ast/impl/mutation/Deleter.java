@@ -240,7 +240,7 @@ public class Deleter {
         builder.sql("delete from ");
         builder.sql(type.getTableName());
         builder.sql(" where ");
-        builder.sql(null, definition, type.getIdProp().isEmbedded());
+        builder.sql(null, definition, true);
         builder.sql(" in(");
         String separator = "";
         for (Object id : ids) {

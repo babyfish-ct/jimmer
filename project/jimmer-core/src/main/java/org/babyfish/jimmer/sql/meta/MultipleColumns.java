@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.meta;
 
-import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
@@ -10,8 +9,19 @@ public abstract class MultipleColumns implements ColumnDefinition {
 
     private final String[] arr;
 
-    public MultipleColumns(String[] arr) {
+    private final boolean embedded;
+
+    public MultipleColumns(String[] arr, boolean embedded) {
+        if (arr.length > 1 && !embedded) {
+            throw new IllegalArgumentException("`embedded` must be true where there are several join columns");
+        }
         this.arr = arr;
+        this.embedded = embedded;
+    }
+
+    @Override
+    public boolean isEmbedded() {
+        return embedded;
     }
 
     @Override

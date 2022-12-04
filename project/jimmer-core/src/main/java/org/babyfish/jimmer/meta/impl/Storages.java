@@ -61,7 +61,11 @@ public class Storages {
                 JoinColumnObj.array(joinColumn);
         ColumnDefinition definition;
         try {
-            definition= joinDefinition(columns, prop.getTargetType());
+            definition= joinDefinition(
+                    columns,
+                    prop.getTargetType(),
+                    prop.getTargetType().getIdProp().isEmbedded()
+            );
         } catch (IllegalJoinColumnCount ex) {
             throw new ModelException(
                     "Illegal property \"" +
@@ -156,9 +160,17 @@ public class Storages {
         ColumnDefinition targetDefinition;
         boolean leftParsed = false;
         try {
-            definition = joinDefinition(joinColumns, prop.getDeclaringType());
+            definition = joinDefinition(
+                    joinColumns,
+                    prop.getDeclaringType(),
+                    prop.getDeclaringType().getIdProp().isEmbedded()
+            );
             leftParsed = true;
-            targetDefinition = joinDefinition(referencedColumns, prop.getTargetType());
+            targetDefinition = joinDefinition(
+                    referencedColumns,
+                    prop.getTargetType(),
+                    prop.getTargetType().getIdProp().isEmbedded()
+            );
         } catch (IllegalJoinColumnCount ex) {
             throw new ModelException(
                     "Illegal property \"" +
@@ -242,7 +254,8 @@ public class Storages {
 
     private static ColumnDefinition joinDefinition(
             JoinColumnObj[] joinColumns,
-            ImmutableType targetType
+            ImmutableType targetType,
+            boolean isEmbedded
     ) throws IllegalJoinColumnCount, NoReference, ReferenceNothing, TargetConflict, SourceConflict {
         if (joinColumns == null || joinColumns.length == 0) {
             ColumnDefinition definition = targetType.getIdProp().getStorage();
@@ -289,7 +302,7 @@ public class Storages {
                 throw new SourceConflict(name);
             }
         }
-        return new MultipleJoinColumns(referencedColumnMap);
+        return new MultipleJoinColumns(referencedColumnMap, isEmbedded);
     }
 
     private static class JoinColumnObj {

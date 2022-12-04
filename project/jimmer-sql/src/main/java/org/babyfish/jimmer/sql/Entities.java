@@ -51,30 +51,36 @@ public interface Entities {
     }
 
     default <E> SimpleSaveResult<E> save(E entity, boolean autoAttachingAll) {
-        if (!autoAttachingAll) {
-            return saveCommand(entity).execute();
-        }
-        return saveCommand(entity)
-                .configure(AbstractEntitySaveCommand.Cfg::setAutoAttachingAll)
-                .execute();
+        return saveCommand(entity, autoAttachingAll).execute();
     }
     
     <E> SimpleEntitySaveCommand<E> saveCommand(E entity);
+
+    default <E> SimpleEntitySaveCommand<E> saveCommand(E entity, boolean autoAttachAll) {
+        SimpleEntitySaveCommand<E> command = saveCommand(entity);
+        if (!autoAttachAll) {
+            return command;
+        }
+        return command.configure(AbstractEntitySaveCommand.Cfg::setAutoAttachingAll);
+    }
 
     default <E> BatchSaveResult<E> batchSave(Collection<E> entities) {
         return batchSaveCommand(entities).execute();
     }
 
     default <E> BatchSaveResult<E> batchSave(Collection<E> entities, boolean autoAttachingAll) {
-        if (!autoAttachingAll) {
-            return batchSaveCommand(entities).execute();
-        }
-        return batchSaveCommand(entities)
-                .configure(AbstractEntitySaveCommand.Cfg::setAutoAttachingAll)
-                .execute();
+        return batchSaveCommand(entities, autoAttachingAll).execute();
     }
 
     <E> BatchEntitySaveCommand<E> batchSaveCommand(Collection<E> entities);
+
+    default <E> BatchEntitySaveCommand<E> batchSaveCommand(Collection<E> entities, boolean autoAttachAll) {
+        BatchEntitySaveCommand<E> command = batchSaveCommand(entities);
+        if (!autoAttachAll) {
+            return command;
+        }
+        return command.configure(AbstractEntitySaveCommand.Cfg::setAutoAttachingAll);
+    }
 
     default DeleteResult delete(Class<?> entityType, Object id) {
         return deleteCommand(entityType, id).execute();

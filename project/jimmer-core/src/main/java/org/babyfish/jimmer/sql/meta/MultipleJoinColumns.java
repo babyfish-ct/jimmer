@@ -8,8 +8,8 @@ public class MultipleJoinColumns extends MultipleColumns {
 
     private final String[] referencedColumnNames;
 
-    public MultipleJoinColumns(Map<String, String> referencedColumnMap) {
-        super(referencedColumnMap.keySet().toArray(EMPTY_ARR));
+    public MultipleJoinColumns(Map<String, String> referencedColumnMap, boolean isEmbedded) {
+        super(referencedColumnMap.keySet().toArray(EMPTY_ARR), isEmbedded);
         this.referencedColumnNames = referencedColumnMap.values().toArray(new String[0]);
     }
 

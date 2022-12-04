@@ -13,10 +13,7 @@ import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.runtime.Converters;
-import org.babyfish.jimmer.sql.runtime.ExecutionException;
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -31,10 +28,17 @@ class ChildTableOperator {
 
     private final ImmutableProp parentProp;
 
+    private final ColumnDefinition fkDefinition;
+
+    private final ColumnDefinition pkDefinition;
+
+    private final Reader<Object> pkReader;
+
     private final MutationCache cache;
 
     private final MutationTrigger trigger;
 
+    @SuppressWarnings("unchecked")
     public ChildTableOperator(
             JSqlClient sqlClient,
             Connection con,
@@ -45,6 +49,9 @@ class ChildTableOperator {
         this.sqlClient = sqlClient;
         this.con = con;
         this.parentProp = parentProp;
+        this.fkDefinition = parentProp.getStorage();
+        this.pkDefinition = parentProp.getDeclaringType().getIdProp().getStorage();
+        this.pkReader = (Reader<Object>) sqlClient.getReader(parentProp.getDeclaringType().getIdProp());
         if (trigger != null) {
             this.cache = cache;
             this.trigger = trigger;
@@ -132,7 +139,7 @@ class ChildTableOperator {
             }
         }
         builder.sql(" where ")
-                .sql(parentProp.getDeclaringType().getIdProp().<ColumnDefinition>getStorage())
+                .sql(null, pkDefinition, true)
                 .sql(" in(");
         String separator = "";
         for (Object childId : childIds) {
@@ -263,11 +270,10 @@ class ChildTableOperator {
                     List<Object> list = new ArrayList<>();
                     try (ResultSet rs = stmt.executeQuery()) {
                         while (rs.next()) {
-                            Object value = rs.getObject(1);
-                            Object id = Converters.tryConvert(value, idProp.getElementClass());
+                            Object id = pkReader.read(rs, new Reader.Col());
                             if (id == null) {
                                 throw new ExecutionException(
-                                        "Cannot convert " + value + " to the type of " + idProp
+                                        "Cannot convert " + id + " to the type of " + idProp
                                 );
                             }
                             list.add(id);
@@ -285,7 +291,7 @@ class ChildTableOperator {
     ) {
         builder
                 .sql(" where ")
-                .sql(parentProp.<ColumnDefinition>getStorage());
+                .sql(null, fkDefinition, true);
         if (parentIds.size() == 1) {
             builder.sql(" = ").variable(parentIds.iterator().next());
         } else {
@@ -304,7 +310,7 @@ class ChildTableOperator {
         if (!retainedChildIds.isEmpty()) {
             builder
                     .sql(" and ")
-                    .sql(parentProp.getDeclaringType().getIdProp().<ColumnDefinition>getStorage())
+                    .sql(null, pkDefinition, true)
                     .sql(" not in(");
             boolean addComma = false;
             for (Object retainedChildId : retainedChildIds) {

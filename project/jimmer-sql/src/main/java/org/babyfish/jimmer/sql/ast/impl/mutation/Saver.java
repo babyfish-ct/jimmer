@@ -368,7 +368,7 @@ class Saver {
                 builder.sql(" ").sql(overrideIdentityIdSql);
             }
         }
-        builder.sql(" values(");
+        builder.sql(" values").enterTuple();
         separator = "";
         int size = values.size();
         for (int i = 0; i < size; i++) {
@@ -381,7 +381,7 @@ class Saver {
                 builder.nullVariable(props.get(i));
             }
         }
-        builder.sql(")");
+        builder.leaveTuple();
 
         Tuple2<String, List<Object>> sqlResult = builder.build();
         boolean generateKeys = id == null;
@@ -491,7 +491,7 @@ class Saver {
         builder.sql(" where ");
 
         builder.
-                sql(type.getIdProp().<ColumnDefinition>getStorage())
+                sql(null, type.getIdProp().getStorage(), true)
                 .sql(" = ")
                 .variable(draftSpi.__get(type.getIdProp().getId()));
         if (version != null) {

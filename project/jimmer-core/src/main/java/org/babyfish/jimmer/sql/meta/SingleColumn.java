@@ -18,6 +18,11 @@ public class SingleColumn implements ColumnDefinition {
     }
 
     @Override
+    public boolean isEmbedded() {
+        return false;
+    }
+
+    @Override
     public int size() {
         return 1;
     }

@@ -184,7 +184,7 @@ class EmbeddedTree {
 
         private final Map<String, String> identifierPathMap = new LinkedHashMap<>();
 
-        private final Map<String, List<String>> columnMap = new LinkedHashMap<>();
+        private final Map<String, EmbeddedColumns.Path> pathMap = new LinkedHashMap<>();
 
         private CollectContext(ImmutableProp prop) {
             this.prop = prop;
@@ -212,13 +212,14 @@ class EmbeddedTree {
                     );
                 }
                 for (EmbeddedTree t = tree; t != null; t = t.parent) {
-                    columnMap.computeIfAbsent(t.path, it -> new ArrayList<>()).add(columnName);
+                    boolean isTerminal = tree == t;
+                    pathMap.computeIfAbsent(t.path, it -> new EmbeddedColumns.Path(isTerminal)).columnNames.add(columnName);
                 }
             }
         }
 
         public EmbeddedColumns toEmbeddedColumns() {
-            return new EmbeddedColumns(columnMap);
+            return new EmbeddedColumns(pathMap);
         }
     }
 }

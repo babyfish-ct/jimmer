@@ -287,11 +287,7 @@ public class MutableUpdateImpl
                         .sql(" as ")
                         .sql(table.getAlias())
                         .sql(" where ")
-                        .sql(
-                                table.getAlias(),
-                                table.getImmutableType().getIdProp().getStorage(),
-                                table.getImmutableType().getIdProp().isEmbedded()
-                        )
+                        .sql(table.getAlias(), table.getImmutableType().getIdProp().getStorage(), true)
                         .sql(" in(");
                 addComma = false;
                 for (Object id : ids) {
@@ -376,7 +372,7 @@ public class MutableUpdateImpl
         if (ids != null) {
             ImmutableProp idProp = table.getImmutableType().getIdProp();
             builder.sql(separator)
-                    .sql(table.getAlias(), idProp.getStorage(), idProp.isEmbedded())
+                    .sql(table.getAlias(), idProp.getStorage(), true)
                     .sql(" in(");
             boolean addComma = false;
             for (Object id : ids) {
