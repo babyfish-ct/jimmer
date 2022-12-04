@@ -329,10 +329,7 @@ public class MutableUpdateImpl
 
     private void renderTarget(SqlBuilder builder, Target target, boolean withPrefix) {
         TableImplementor<?> impl = TableProxies.resolve(target.table, builder.getAstContext());
-        if (withPrefix) {
-            builder.sql(impl.getAlias()).sql(".");
-        }
-        impl.renderSelection(target.prop, builder, target.expr.getPartial());
+        impl.renderSelection(target.prop, builder, target.expr.getPartial(), withPrefix);
     }
 
     private void renderTables(SqlBuilder builder) {

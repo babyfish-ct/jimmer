@@ -34,7 +34,8 @@ public class StatementTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "update TRANSFORM tb_1_ set tb_1_.TARGET_BOTTOM = tb_1_.TARGET_BOTTOM + ? " +
+                                "update TRANSFORM tb_1_ " +
+                                        "set TARGET_BOTTOM = tb_1_.TARGET_BOTTOM + ? " +
                                         "where tb_1_.ID = ?"
                         );
                         it.variables(100L, 1L);
@@ -56,7 +57,7 @@ public class StatementTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update ORDER_ITEM tb_1_ " +
-                                        "set tb_1_.NAME = upper(tb_1_.NAME) " +
+                                        "set NAME = upper(tb_1_.NAME) " +
                                         "where (" +
                                         "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C" +
                                         ") = (" +

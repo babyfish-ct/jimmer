@@ -35,10 +35,12 @@ class MutationTrigger {
                     EntityChangedData data = (EntityChangedData) changedData;
                     data.newEntity = ctx.resolveObject(data.newEntity);
                 }
-//                if (changedData instanceof AssociationChangedData) {
-//                    AssociationChangedData data = (AssociationChangedData) changedData;
-//
-//                }
+                if (changedData instanceof AssociationChangedData) {
+                    AssociationChangedData data = (AssociationChangedData) changedData;
+                    data.sourceId = ctx.resolveObject(data.sourceId);
+                    data.detachedTargetId = ctx.resolveObject(data.detachedTargetId);
+                    data.attachedTargetId = ctx.resolveObject(data.attachedTargetId);
+                }
             }
         }
     }
