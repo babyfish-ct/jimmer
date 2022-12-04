@@ -72,30 +72,36 @@ public class BatchEntitySaveCommandImpl<E>
         }
         SaverCache cache = new SaverCache(data);
         Map<AffectedTable, Integer> affectedRowCountMap = new LinkedHashMap<>();
-        List<SimpleSaveResult<E>>[] oldResultListRef = new List[1];
+        int size = entities.size();
+        List<SimpleSaveResult<E>> oldSimpleResults = new ArrayList<>(size);
+        Saver saver = new Saver(data, con, cache, false, affectedRowCountMap);
         List<Object> modifiedEntities = Internal.produceList(
                 ((ImmutableSpi) entities.iterator().next()).__type(),
                 entities,
                 list -> {
-                    oldResultListRef[0] =
-                            entities
-                                    .stream()
-                                    .map(
-                                            it -> new Saver(data, con, cache, affectedRowCountMap)
-                                                    .save(it)
-                                    )
-                                    .collect(Collectors.toList());
+                    for (Object o : list) {
+                        oldSimpleResults.add(saver.save((E)o));
+                    }
                 }
         );
-        int size = oldResultListRef[0].size();
-        List<SimpleSaveResult<E>> results = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            SimpleSaveResult<E> result = oldResultListRef[0].get(i);
-            results.add(result.copy((E)modifiedEntities.get(i)));
+        saver.submitTrigger();
+        List<SimpleSaveResult<E>> newSimpleResults = new ArrayList<>(size);
+        int index = 0;
+        for (E entity : entities) {
+            SimpleSaveResult<E> oldResult = oldSimpleResults.get(index);
+            newSimpleResults.add(
+                    new SimpleSaveResult<>(
+                            oldResult.getAffectedRowCountMap(),
+                            entity,
+                            (E)modifiedEntities.get(index)
+                    )
+            );
+            index++;
         }
+
         return new BatchSaveResult<>(
                 affectedRowCountMap,
-                results
+                newSimpleResults
         );
     }
 

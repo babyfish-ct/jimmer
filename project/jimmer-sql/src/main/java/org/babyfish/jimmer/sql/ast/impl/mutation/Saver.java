@@ -41,26 +41,32 @@ class Saver {
 
     private final MutationTrigger trigger;
 
+    private final boolean triggerSubmitImmediately;
+
     private final Map<AffectedTable, Integer> affectedRowCountMap;
 
     private final String path;
+
+    private boolean triggerSubmitted;
 
     Saver(
             AbstractEntitySaveCommandImpl.Data data,
             Connection con
     ) {
-        this(data, con, new SaverCache(data), new LinkedHashMap<>());
+        this(data, con, new SaverCache(data), true, new LinkedHashMap<>());
     }
 
     Saver(
             AbstractEntitySaveCommandImpl.Data data,
             Connection con,
             SaverCache cache,
+            boolean triggerSubmitImmediately,
             Map<AffectedTable, Integer> affectedRowCountMap) {
         this.data = data;
         this.con = con;
         this.cache = cache;
         this.trigger = data.getTriggers() != null ? new MutationTrigger() : null;
+        this.triggerSubmitImmediately = triggerSubmitImmediately && this.trigger != null;
         this.affectedRowCountMap = affectedRowCountMap;
         this.path = "<root>";
     }
@@ -70,6 +76,7 @@ class Saver {
         this.con = base.con;
         this.cache = base.cache;
         this.trigger = base.trigger;
+        this.triggerSubmitImmediately = this.trigger != null;
         this.affectedRowCountMap = base.affectedRowCountMap;
         this.path = base.path + '.' + subPath;
     }
@@ -85,10 +92,17 @@ class Saver {
                 },
                 trigger == null ? null : trigger::prepareSubmit
         );
-        if (trigger != null) {
-            trigger.submit(data.getSqlClient(), con);
+        if (triggerSubmitImmediately) {
+            submitTrigger();
         }
         return new SimpleSaveResult<>(affectedRowCountMap, entity, newEntity);
+    }
+
+    public void submitTrigger() {
+        if (trigger != null && !triggerSubmitted) {
+            trigger.submit(data.getSqlClient(), con);
+            triggerSubmitted = true;
+        }
     }
 
     private void saveImpl(DraftSpi draftSpi) {
