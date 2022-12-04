@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.mutation;
 
-import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
@@ -1112,7 +1111,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "{\"name\":\"A\",\"edition\":1,\"price\":48,\"store\":{\"id\":\"6057bec2-df8d-48f1-b31e-fdd36861cccb\",\"name\":\"TURING\",\"version\":0}}"
                         );
                         it.modified(
-                                "{\"name\":\"A\",\"edition\":1,\"price\":48,\"store\":{\"id\":\"6057bec2-df8d-48f1-b31e-fdd36861cccb\",\"name\":\"TURING\",\"version\":0}}"
+                                "{\"id\":\"e1d34561-17df-4c08-9959-1c6cb33cdafb\",\"name\":\"A\",\"edition\":1,\"price\":48,\"store\":{\"id\":\"6057bec2-df8d-48f1-b31e-fdd36861cccb\",\"name\":\"TURING\",\"version\":0}}"
                         );
                     });
                     ctx.entity(it -> {
@@ -1120,7 +1119,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 "{\"name\":\"B\",\"edition\":1,\"price\":49,\"store\":{\"id\":\"6057bec2-df8d-48f1-b31e-fdd36861cccb\",\"name\":\"TURING\",\"version\":0}}"
                         );
                         it.modified(
-                                "{\"name\":\"B\",\"edition\":1,\"price\":49,\"store\":{\"id\":\"6057bec2-df8d-48f1-b31e-fdd36861cccb\",\"name\":\"TURING\",\"version\":0}}"
+                                "{\"id\":\"3d1d7676-5258-41c0-8e21-02110af07e90\",\"name\":\"B\",\"edition\":1,\"price\":49,\"store\":{\"id\":\"6057bec2-df8d-48f1-b31e-fdd36861cccb\",\"name\":\"TURING\",\"version\":0}}"
                         );
                     });
                 }

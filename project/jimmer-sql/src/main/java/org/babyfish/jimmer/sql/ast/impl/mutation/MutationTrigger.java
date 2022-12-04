@@ -1,9 +1,10 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.DraftContext;
-import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.event.Triggers;
 
@@ -13,59 +14,63 @@ import java.util.List;
 
 class MutationTrigger {
 
-    private final List<ChangedObject> changedObjects = new ArrayList<>();
+    private final List<ChangedData> changedList = new ArrayList<>();
 
     public void modifyEntityTable(Object oldEntity, Object newEntity) {
-        changedObjects.add(new ChangedEntity(oldEntity, newEntity));
+        changedList.add(new EntityChangedData(oldEntity, newEntity));
     }
 
     public void insertMiddleTable(ImmutableProp prop, Object sourceId, Object targetId) {
-        changedObjects.add(new ChangedMiddleData(prop, sourceId, null, targetId));
+        changedList.add(new AssociationChangedData(prop, sourceId, null, targetId));
     }
 
     public void deleteMiddleTable(ImmutableProp prop, Object sourceId, Object targetId) {
-        changedObjects.add(new ChangedMiddleData(prop, sourceId, targetId, null));
+        changedList.add(new AssociationChangedData(prop, sourceId, targetId, null));
     }
 
     public void prepareSubmit(DraftContext ctx) {
-        if (!changedObjects.isEmpty()) {
-            for (ChangedObject changedObject : changedObjects) {
-                if (changedObject instanceof ChangedEntity) {
-                    ChangedEntity entity = (ChangedEntity) changedObject;
-                    entity.newEntity = ctx.resolveObject(entity.newEntity);
+        if (!changedList.isEmpty()) {
+            for (ChangedData changedData : this.changedList) {
+                if (changedData instanceof EntityChangedData) {
+                    EntityChangedData data = (EntityChangedData) changedData;
+                    data.newEntity = ctx.resolveObject(data.newEntity);
                 }
+//                if (changedData instanceof AssociationChangedData) {
+//                    AssociationChangedData data = (AssociationChangedData) changedData;
+//
+//                }
             }
         }
     }
 
     public void submit(JSqlClient sqlClient, Connection con) {
-        if (!changedObjects.isEmpty()) {
+        if (!changedList.isEmpty()) {
             Triggers triggers = sqlClient.getTriggers(true);
-            for (ChangedObject changedObject : changedObjects) {
-                if (changedObject instanceof ChangedEntity) {
-                    ChangedEntity entity = (ChangedEntity) changedObject;
-                    triggers.fireEntityTableChange(entity.oldEntity, ImmutableObjects.toLonely(entity.newEntity), con);
+            for (ChangedData changedData : this.changedList) {
+                if (changedData instanceof EntityChangedData) {
+                    EntityChangedData data = (EntityChangedData) changedData;
+                    triggers.fireEntityTableChange(data.oldEntity, ImmutableObjects.toLonely(data.newEntity), con);
                 } else {
-                    ChangedMiddleData association = (ChangedMiddleData) changedObject;
-                    if (association.detachedTargetId == null) {
-                        triggers.fireMiddleTableInsert(association.prop, association.sourceId, association.attachedTargetId, con);
+                    AssociationChangedData data = (AssociationChangedData) changedData;
+                    if (data.detachedTargetId == null) {
+                        triggers.fireMiddleTableInsert(data.prop, data.sourceId, data.attachedTargetId, con);
                     } else {
-                        triggers.fireMiddleTableDelete(association.prop, association.sourceId, association.detachedTargetId, con);
+                        triggers.fireMiddleTableDelete(data.prop, data.sourceId, data.detachedTargetId, con);
                     }
                 }
             }
         }
     }
 
-    private interface ChangedObject {}
+    private interface ChangedData {}
 
-    private static class ChangedEntity implements ChangedObject {
+    private static class EntityChangedData implements ChangedData {
 
         final Object oldEntity;
 
         Object newEntity;
 
-        private ChangedEntity(Object oldEntity, Object newEntity) {
+        private EntityChangedData(Object oldEntity, Object newEntity) {
             this.oldEntity = oldEntity;
             this.newEntity = newEntity;
         }
@@ -79,17 +84,17 @@ class MutationTrigger {
         }
     }
 
-    private static class ChangedMiddleData implements ChangedObject {
+    private static class AssociationChangedData implements ChangedData {
 
         final ImmutableProp prop;
 
-        final Object sourceId;
+        Object sourceId;
 
-        final Object detachedTargetId;
+        Object detachedTargetId;
 
-        final Object attachedTargetId;
+        Object attachedTargetId;
 
-        private ChangedMiddleData(ImmutableProp prop, Object sourceId, Object detachedTargetId, Object attachedTargetId) {
+        private AssociationChangedData(ImmutableProp prop, Object sourceId, Object detachedTargetId, Object attachedTargetId) {
             this.prop = prop;
             this.sourceId = sourceId;
             this.detachedTargetId = detachedTargetId;
