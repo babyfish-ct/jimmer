@@ -419,3 +419,30 @@ alter table order_item_product_mapping
     add constraint fk_order_item_product_mapping_target
         foreign key(fk_product_alpha, fk_product_beta)
             references product(product_alpha, product_beta);
+
+
+
+insert into order_(order_x, order_y, name) values
+    ('001', '001', 'order_1'),
+    ('001', '002', 'order_2');
+
+insert into order_item(order_item_a, order_item_b, order_item_c, name, fk_order_x, fk_order_y) values
+    (1, 1, 1, 'order-item-1-1', '001', '001'),
+    (1, 1, 2, 'order-item-1-2', '001', '001'),
+    (1, 2, 1, 'order-item-2-1', '001', '002'),
+    (2, 1, 1, 'order-item-2-2', '001', '002');
+
+insert into product(product_alpha, product_beta, name) values
+    ('00A', '00A', 'Car'),
+    ('00A', '00B', 'Boat'),
+    ('00B', '00A', 'Bike');
+
+insert into order_item_product_mapping(fk_order_item_a, fk_order_item_b, fk_order_item_c, fk_product_alpha, fk_product_beta) values
+    (1, 1, 1, '00A', '00A'),
+    (1, 1, 1, '00B', '00A'),
+    (1, 1, 2, '00A', '00B'),
+    (1, 1, 2, '00A', '00A'),
+    (1, 2, 1, '00B', '00A'),
+    (1, 2, 1, '00A', '00B'),
+    (2, 1, 1, '00A', '00B'),
+    (2, 1, 1, '00B', '00A');

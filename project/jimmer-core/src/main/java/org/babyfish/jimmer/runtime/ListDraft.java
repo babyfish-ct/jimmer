@@ -74,7 +74,7 @@ public class ListDraft<E> implements List<E>, Draft {
         Object[] arr = new Object[size()];
         int index = 0;
         for (E e : this) {
-            arr[index++] = output(e);
+            arr[index++] = e;
         }
         return arr;
     }
@@ -86,9 +86,24 @@ public class ListDraft<E> implements List<E>, Draft {
         T[] arr = a.length >= size ? a : (T[])new Object[size];
         int index = 0;
         for (E e : this) {
-            arr[index++] = (T)output(e);
+            arr[index++] = (T)e;
         }
         return arr;
+    }
+
+    @Override
+    public int hashCode() {
+        return (modified != null ? modified : base).hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return (modified != null ? modified : base).equals(o);
+    }
+
+    @Override
+    public String toString() {
+        return (modified != null ? modified : base).toString();
     }
 
     @Override
@@ -541,7 +556,7 @@ public class ListDraft<E> implements List<E>, Draft {
             Object[] arr = new Object[size()];
             int index = 0;
             for (E e : this) {
-                arr[index++] = output(e);
+                arr[index++] = e;
             }
             return arr;
         }
@@ -557,9 +572,64 @@ public class ListDraft<E> implements List<E>, Draft {
             T[] arr = a.length >= size ? a : (T[])new Object[size];
             int index = 0;
             for (E e : this) {
-                arr[index++] = (T)output(e);
+                arr[index++] = (T)e;
             }
             return arr;
+        }
+
+        @Override
+        public int hashCode() {
+            ListDraft<E> parent = ListDraft.this;
+            if (modCount != parent.modCount) {
+                throw new ConcurrentModificationException();
+            }
+            int hashCode = 1;
+            for (E e : this) {
+                hashCode = 31 * hashCode + (e == null ? 0 : e.hashCode());
+            }
+            return hashCode;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof List<?>)) {
+                return false;
+            }
+            List<?> other = (List<?>) o;
+            int size = size();
+            if (size != other.size()) {
+                return false;
+            }
+            if (size == 0) {
+                return true;
+            }
+            Iterator<E> itr = iterator();
+            Iterator<?> otherItr = other.iterator();
+            while (itr.hasNext()) {
+                if (!Objects.equals(itr.next(), otherItr.next())) {
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            Iterator<E> itr = iterator();
+            if (!itr.hasNext()) {
+                return "[]";
+            }
+
+            StringBuilder builder = new StringBuilder();
+            builder.append('[');
+            while (true) {
+                E e = itr.next();
+                builder.append(e); // No reference cycle here
+                if (!itr.hasNext()) {
+                    return builder.append(']').toString();
+                }
+                builder.append(',').append(' ');
+            }
         }
 
         @Override

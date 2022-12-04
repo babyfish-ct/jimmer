@@ -144,16 +144,10 @@ internal val ENTITY_MANAGER_CLASS_NAME =
         "EntityManager"
     )
 
-internal val ID_FULL_NAME = Id::class.qualifiedName
-internal val VERSION_FULL_NAME = Version::class.qualifiedName
 internal const val KEY_FULL_NAME = "org.babyfish.jimmer.sql.Key"
-internal val ONE_TO_ONE_FULL_NAME = OneToOne::class.qualifiedName
-internal val MANY_TO_ONE_FULL_NAME = ManyToOne::class.qualifiedName
-internal val ONE_TO_MANY_FULL_NAME = OneToMany::class.qualifiedName
-internal val MANY_TO_MANY_FULL_NAME = ManyToMany::class.qualifiedName
 internal const val JIMMER_MODULE = "JimmerModule"
 
-internal const val CURRENT_IMPLEMENTOR = "(__modified ?: __base)"
-internal const val CURRENT_IMPL = "(__modified ?: __base.clone()).also { __modified = it }"
+internal const val UNMODIFIED = "(__modified ?: __base)"
+internal const val MODIFIED = "(__modified ?: __base.clone()).also { __modified = it }"
 
 internal const val EMAIL_PATTERN = "^[^@]+@[^@]+\$"
