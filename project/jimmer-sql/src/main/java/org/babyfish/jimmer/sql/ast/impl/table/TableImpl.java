@@ -635,7 +635,12 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     }
 
     @Override
-    public void renderSelection(ImmutableProp prop, SqlBuilder builder, ColumnDefinition optionalDefinition) {
+    public void renderSelection(
+            ImmutableProp prop,
+            SqlBuilder builder,
+            ColumnDefinition optionalDefinition,
+            boolean withPrefix
+    ) {
         if (prop.isId() && joinProp != null) {
             MiddleTable middleTable;
             if (joinProp.getStorage() instanceof MiddleTable) {
@@ -647,9 +652,9 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             if (middleTable != null) {
                 if (optionalDefinition == null) {
                     if (isInverse) {
-                        builder.sql(middleTableAlias, middleTable.getColumnDefinition());
+                        builder.sql(withPrefix ? middleTableAlias : null, middleTable.getColumnDefinition());
                     } else {
-                        builder.sql(middleTableAlias, middleTable.getTargetColumnDefinition());
+                        builder.sql(withPrefix ? middleTableAlias : null, middleTable.getTargetColumnDefinition());
                     }
                 } else {
                     ColumnDefinition fullDefinition = prop.getStorage();
@@ -665,14 +670,17 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         }
                         int index = fullDefinition.index(columnName);
                         String parentColumnName = parentDefinition.name(index);
-                        builder.sql(middleTableAlias).sql(".").sql(parentColumnName);
+                        if (withPrefix) {
+                            builder.sql(middleTableAlias).sql(".");
+                        }
+                        builder.sql(parentColumnName);
                     }
                 }
                 return;
             }
             if (!isInverse) {
                 if (optionalDefinition == null) {
-                    builder.sql(parent.alias, joinProp.getStorage());
+                    builder.sql(withPrefix ? parent.alias : null, joinProp.getStorage());
                 } else {
                     ColumnDefinition fullDefinition = prop.getStorage();
                     ColumnDefinition parentDefinition = joinProp.getStorage();
@@ -685,14 +693,17 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         }
                         int index = fullDefinition.index(columnName);
                         String parentColumnName = parentDefinition.name(index);
-                        builder.sql(parent.alias).sql(".").sql(parentColumnName);
+                        if (withPrefix) {
+                            builder.sql(parent.alias).sql(".");
+                        }
+                        builder.sql(parentColumnName);
                     }
                 }
                 return;
             }
         }
         ColumnDefinition definition = optionalDefinition != null ? optionalDefinition : prop.getStorage();
-        builder.sql(alias, definition);
+        builder.sql(withPrefix ? alias : null, definition);
     }
 
     @Override

@@ -70,8 +70,10 @@ public class DraftContext {
         Draft draft;
         if (obj instanceof Draft) {
             draft = (Draft)obj;
-        } else {
+        } else if (obj instanceof ImmutableSpi) {
             draft = objDraftMap.get(obj);
+        } else {
+            draft = null;
         }
         if (draft == null) {
             return obj;
