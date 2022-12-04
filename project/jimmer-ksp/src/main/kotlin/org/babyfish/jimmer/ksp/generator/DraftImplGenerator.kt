@@ -97,7 +97,7 @@ class DraftImplGenerator(
                 .addParameter("prop", if (argType == Int::class) INT else STRING)
                 .returns(BOOLEAN)
                 .addModifiers(KModifier.OVERRIDE)
-                .addCode("return %L.__isLoaded(prop)", CURRENT_IMPLEMENTOR)
+                .addCode("return %L.__isLoaded(prop)", UNMODIFIED)
                 .build()
         )
     }
@@ -108,7 +108,7 @@ class DraftImplGenerator(
                 .builder("hashCode")
                 .returns(INT)
                 .addModifiers(KModifier.OVERRIDE)
-                .addCode("return %T.identityHashCode(this)", SYSTEM_CLASS_NAME)
+                .addStatement("return %L.hashCode()", UNMODIFIED)
                 .build()
         )
         addFunction(
@@ -117,7 +117,7 @@ class DraftImplGenerator(
                 .addParameter("shallow", BOOLEAN)
                 .returns(INT)
                 .addModifiers(KModifier.OVERRIDE)
-                .addCode("return %T.identityHashCode(this)", SYSTEM_CLASS_NAME)
+                .addStatement("return %L.__hashCode(shallow)", UNMODIFIED)
                 .build()
         )
     }
@@ -129,7 +129,7 @@ class DraftImplGenerator(
                 .addParameter("other", ANY.copy(nullable = true))
                 .returns(BOOLEAN)
                 .addModifiers(KModifier.OVERRIDE)
-                .addCode("return this === other")
+                .addStatement("return %L.equals(other)", UNMODIFIED)
                 .build()
         )
         addFunction(
@@ -139,7 +139,7 @@ class DraftImplGenerator(
                 .addParameter("shallow", BOOLEAN)
                 .returns(BOOLEAN)
                 .addModifiers(KModifier.OVERRIDE)
-                .addCode("return this === other")
+                .addStatement("return %L.__equals(other, shallow)", UNMODIFIED)
                 .build()
         )
     }
@@ -157,15 +157,15 @@ class DraftImplGenerator(
                             if (prop.isList || prop.isScalarList) {
                                 addCode(
                                     "return __ctx.toDraftList(%L.%L, %T::class.java, %L)",
-                                    CURRENT_IMPLEMENTOR,
+                                    UNMODIFIED,
                                     prop.name,
                                     prop.targetTypeName(),
                                     prop.isAssociation(false)
                                 )
                             } else if (prop.isReference) {
-                                addCode("return __ctx.toDraftObject(%L.%L)", CURRENT_IMPLEMENTOR, prop.name)
+                                addCode("return __ctx.toDraftObject(%L.%L)", UNMODIFIED, prop.name)
                             } else {
-                                addCode("return %L.%L", CURRENT_IMPLEMENTOR, prop.name)
+                                addCode("return %L.%L", UNMODIFIED, prop.name)
                             }
                         }
                         .build()
@@ -179,7 +179,7 @@ class DraftImplGenerator(
                                 .builder()
                                 .apply {
                                     ValidationGenerator(prop, this).generate()
-                                    addStatement("val __modified = %L", CURRENT_IMPL)
+                                    addStatement("val __modified = %L", MODIFIED)
                                     if (prop.isList || prop.isScalarList) {
                                         addStatement(
                                             "__modified.%L = %T.of(__modified.%L, %L)",
@@ -280,7 +280,7 @@ class DraftImplGenerator(
                                 }
                                 add(" ->\n")
                                 indent()
-                                add("%L\n.", CURRENT_IMPL)
+                                add("%L\n.", MODIFIED)
                                 prop
                                     .loadedFieldName
                                     ?.let {

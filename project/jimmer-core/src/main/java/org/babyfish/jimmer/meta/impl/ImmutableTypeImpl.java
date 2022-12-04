@@ -2,6 +2,7 @@ package org.babyfish.jimmer.meta.impl;
 
 import kotlin.jvm.internal.ClassBasedDeclarationContainer;
 import kotlin.reflect.KClass;
+import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.meta.*;
@@ -12,6 +13,7 @@ import org.babyfish.jimmer.sql.meta.SingleColumn;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -430,6 +432,7 @@ class ImmutableTypeImpl implements ImmutableType {
                             " but that annotation does not have any attributes"
             );
         }
+
         if ((strategy == GenerationType.IDENTITY || strategy == GenerationType.SEQUENCE)) {
             Class<?> returnType = idProp.getElementClass();
             if (!returnType.isPrimitive() && !Number.class.isAssignableFrom(returnType)) {
@@ -439,6 +442,40 @@ class ImmutableTypeImpl implements ImmutableType {
                                 "\", it's id generation strategy is \"" +
                                 strategy +
                                 "\", but that the type of id is not numeric"
+                );
+            }
+        } else if (strategy == GenerationType.USER) {
+            Class<?> returnType = idProp.getElementClass();
+            Map<?, Type> typeArguments = TypeUtils.getTypeArguments(generatorType, UserIdGenerator.class);
+            Class<?> parsedType = null;
+            if (!typeArguments.isEmpty()) {
+                Type type = typeArguments.values().iterator().next();
+                if (type instanceof Class<?>) {
+                    parsedType = (Class<?>) type;
+                }
+            }
+            if (parsedType == null) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                idProp +
+                                "\", the generator type is \"" +
+                                generatorType.getName() +
+                                "\" does support type argument for \"" +
+                                UserIdGenerator.class +
+                                "\""
+                );
+            }
+            if (parsedType != returnType) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                idProp +
+                                "\", the generator type is \"" +
+                                generatorType.getName() +
+                                "\" generates id whose type is \"" +
+                                parsedType.getName() +
+                                "\" but the property returns \"" +
+                                returnType.getName() +
+                                "\""
                 );
             }
         }

@@ -7,9 +7,7 @@ import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
-import org.babyfish.jimmer.ksp.generator.ID_FULL_NAME
 import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
-import org.babyfish.jimmer.ksp.generator.VERSION_FULL_NAME
 import org.babyfish.jimmer.meta.ModelException
 import org.babyfish.jimmer.meta.impl.PropDescriptor
 import org.babyfish.jimmer.sql.*

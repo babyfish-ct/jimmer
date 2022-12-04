@@ -228,32 +228,32 @@ class ImplGenerator(
                     CodeBlock
                         .builder()
                         .apply {
-                            beginControlFlow("if (other === null || this::class != other::class)")
+                            addStatement("val __other = other as? %T", type.draftClassName(PRODUCER, IMPLEMENTOR))
+                            beginControlFlow("if (__other === null)")
                             addStatement("return false")
                             endControlFlow()
-                            addStatement("val otherImpl = other as %T", type.draftClassName(PRODUCER, IMPL))
                             for (prop in type.properties.values) {
                                 val localLoadedName = "__${prop.name}Loaded"
                                 val objLoadedName = prop.loadedFieldName ?: "${prop.valueFieldName} !== null"
                                 addStatement("val %L = this.%L", localLoadedName, objLoadedName)
                                 beginControlFlow(
-                                    "if (%L != (otherImpl.%L))",
+                                    "if (%L != (__other.__isLoaded(%L)))",
                                     localLoadedName,
-                                    prop.loadedFieldName ?: "${prop.valueFieldName} !== null"
+                                    prop.id
                                 )
                                 addStatement("return false")
                                 endControlFlow()
                                 if (prop.isId && !shallow) {
                                     beginControlFlow("if (%L)", localLoadedName)
                                     addStatement(
-                                        "return this.%L == otherImpl.%L",
+                                        "return this.%L == __other.%L",
                                         prop.valueFieldName,
                                         prop.name
                                     )
                                     endControlFlow()
                                 } else {
                                     beginControlFlow(
-                                        "if (%L && this.%L %L otherImpl.%L)",
+                                        "if (%L && this.%L %L __other.%L)",
                                         localLoadedName,
                                         prop.valueFieldName,
                                         if (shallow && prop.isAssociation(false)) "!==" else "!=",

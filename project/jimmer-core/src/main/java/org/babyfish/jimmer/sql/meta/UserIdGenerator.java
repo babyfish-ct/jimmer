@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.meta;
 
-public interface UserIdGenerator extends IdGenerator {
+public interface UserIdGenerator<T> extends IdGenerator {
 
-    Object generate(Class<?> entityType);
+    T generate(Class<?> entityType);
 }

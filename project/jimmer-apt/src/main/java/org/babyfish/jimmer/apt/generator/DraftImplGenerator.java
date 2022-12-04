@@ -213,7 +213,7 @@ public class DraftImplGenerator {
                         .addAnnotation(Override.class)
                         .addParameter(int.class, "prop")
                         .returns(boolean.class)
-                        .addCode("return $L.__isLoaded(prop);", UNMODIFIED)
+                        .addStatement("return $L.__isLoaded(prop)", UNMODIFIED)
                         .build()
         );
         typeBuilder.addMethod(
@@ -223,7 +223,7 @@ public class DraftImplGenerator {
                         .addAnnotation(Override.class)
                         .addParameter(String.class, "prop")
                         .returns(boolean.class)
-                        .addCode("return $L.__isLoaded(prop);", UNMODIFIED)
+                        .addStatement("return $L.__isLoaded(prop)", UNMODIFIED)
                         .build()
         );
         typeBuilder.addMethod(
@@ -232,7 +232,7 @@ public class DraftImplGenerator {
                         .addModifiers(Modifier.PUBLIC)
                         .addAnnotation(Override.class)
                         .returns(int.class)
-                        .addCode("return $T.identityHashCode(this);", System.class)
+                        .addStatement("return $L.hashCode()", UNMODIFIED)
                         .build()
         );
         typeBuilder.addMethod(
@@ -242,7 +242,7 @@ public class DraftImplGenerator {
                         .addAnnotation(Override.class)
                         .addParameter(boolean.class, "shallow")
                         .returns(int.class)
-                        .addCode("return $T.identityHashCode(this);", System.class)
+                        .addStatement("return $L.__hashCode(shallow)", UNMODIFIED)
                         .build()
         );
         typeBuilder.addMethod(
@@ -252,7 +252,7 @@ public class DraftImplGenerator {
                         .addAnnotation(Override.class)
                         .addParameter(Object.class, "obj")
                         .returns(boolean.class)
-                        .addCode("return this == obj;")
+                        .addStatement("return $L.equals(obj)", UNMODIFIED)
                         .build()
         );
         typeBuilder.addMethod(
@@ -263,7 +263,7 @@ public class DraftImplGenerator {
                         .addParameter(Object.class, "obj")
                         .addParameter(boolean.class, "shallow")
                         .returns(boolean.class)
-                        .addCode("return this == obj;")
+                        .addStatement("return $L.__equals(obj, shallow)", UNMODIFIED)
                         .build()
         );
     }

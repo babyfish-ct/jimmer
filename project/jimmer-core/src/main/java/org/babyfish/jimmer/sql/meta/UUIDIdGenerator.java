@@ -2,10 +2,10 @@ package org.babyfish.jimmer.sql.meta;
 
 import java.util.UUID;
 
-public class UUIDIdGenerator implements UserIdGenerator {
+public class UUIDIdGenerator implements UserIdGenerator<UUID> {
 
     @Override
-    public Object generate(Class<?> entityType) {
+    public UUID generate(Class<?> entityType) {
         return UUID.randomUUID();
     }
 }

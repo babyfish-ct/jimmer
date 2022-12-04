@@ -10,7 +10,6 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
-import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.impl.util.StaticCache;
 

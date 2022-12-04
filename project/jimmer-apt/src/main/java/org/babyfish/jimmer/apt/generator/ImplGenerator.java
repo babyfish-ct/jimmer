@@ -201,10 +201,10 @@ public class ImplGenerator {
             builder.addAnnotation(Override.class);
         }
         builder
-                .beginControlFlow("if (obj == null || getClass() != obj.getClass())")
+                .beginControlFlow("if (obj == null || !(obj instanceof $T))", type.getImplementorClassName())
                 .addStatement("return false")
                 .endControlFlow()
-                .addStatement("Implementor other = (Implementor)obj");
+                .addStatement("$T other = ($T)obj", type.getImplementorClassName(), type.getImplementorClassName());
         for (ImmutableProp prop : type.getProps().values()) {
             if (prop.isLoadedStateRequired()) {
                 builder.addStatement("boolean __$LLoaded = $L", prop.getName(), prop.getLoadedStateName());
