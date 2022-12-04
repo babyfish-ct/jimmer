@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.Reader;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.sql.Connection;
@@ -155,18 +156,20 @@ public class Deleter {
         addPostHandleInput(immutableType, ids);
     }
 
+    @SuppressWarnings("unchecked")
     private void tryDeleteFromChildTable(ImmutableProp prop, Collection<?> ids) {
         ImmutableProp manyToOneProp = prop.getMappedBy();
         ImmutableType childType = manyToOneProp.getDeclaringType();
         ColumnDefinition definition = manyToOneProp.getStorage();
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
+        Reader<Object> reader = (Reader<Object>) data.getSqlClient().getReader(childType.getIdProp());
         builder
                 .sql("select ")
                 .sql(childType.getIdProp().<ColumnDefinition>getStorage())
                 .sql(" from ")
                 .sql(childType.getTableName())
                 .sql(" where ")
-                .sql(definition)
+                .sql(null, definition, true)
                 .sql(" in(");
         String separator = "";
         for (Object id : ids) {
@@ -189,7 +192,7 @@ public class Deleter {
                             List<Object> values = new ArrayList<>();
                             try (ResultSet rs = stmt.executeQuery()) {
                                 while (rs.next()) {
-                                    values.add(rs.getObject(1));
+                                    values.add(reader.read(rs, new Reader.Col()));
                                 }
                             }
                             return values;

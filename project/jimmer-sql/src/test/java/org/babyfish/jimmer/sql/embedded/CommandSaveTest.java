@@ -1,11 +1,12 @@
 package org.babyfish.jimmer.sql.embedded;
 
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.model.embedded.*;
 import org.junit.jupiter.api.Test;
 
-public class SaveTest extends AbstractMutationTest {
+public class CommandSaveTest extends AbstractMutationTest {
 
     @Test
     public void testSaveOneToManyWitCascadeSetNull() {
@@ -456,6 +457,94 @@ public class SaveTest extends AbstractMutationTest {
                         it.variables("00A", "00A", 1, 2, 1);
                     });
                     ctx.entity(it -> {});
+                }
+        );
+    }
+
+    @Test
+    public void deleteOrderWithCascadeSetNull() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .deleteCommand(
+                                Order.class,
+                                OrderIdDraft.$.produce(id -> id.setX("001").setY("001"))
+                        )
+                        .configure(it ->
+                                it.setDissociateAction(OrderItemProps.ORDER, DissociateAction.SET_NULL)
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update ORDER_ITEM " +
+                                        "set FK_ORDER_X = null, FK_ORDER_Y = null " +
+                                        "where (FK_ORDER_X, FK_ORDER_Y) = (?, ?)"
+                        );
+                        it.variables("001", "001");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ORDER_ " +
+                                        "where (ORDER_X, ORDER_Y) in((?, ?))"
+                        );
+                        it.variables("001", "001");
+                    });
+                    ctx.rowCount(AffectedTable.of(OrderItem.class), 2);
+                    ctx.rowCount(AffectedTable.of(Order.class), 1);
+                }
+        );
+    }
+
+    @Test
+    public void deleteOrderWithCascadeDelete() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .deleteCommand(
+                                Order.class,
+                                OrderIdDraft.$.produce(id -> id.setX("001").setY("001"))
+                        )
+                        .configure(it ->
+                                it.setDissociateAction(
+                                        OrderItemProps.ORDER,
+                                        DissociateAction.DELETE
+                                )
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C " +
+                                        "from ORDER_ITEM " +
+                                        "where (FK_ORDER_X, FK_ORDER_Y) in((?, ?))"
+                        );
+                        it.variables("001", "001");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ORDER_ITEM_PRODUCT_MAPPING " +
+                                        "where (" +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
+                                        ") in(" +
+                                        "--->(?, ?, ?), (?, ?, ?)" +
+                                        ")"
+                        );
+                        it.variables(1, 1, 1, 1, 1, 2);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ORDER_ITEM " +
+                                        "where (" +
+                                        "--->ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C" +
+                                        ") in(" +
+                                        "--->(?, ?, ?), (?, ?, ?)" +
+                                        ")"
+                        );
+                        it.variables(1, 1, 1, 1, 1, 2);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from ORDER_ where (ORDER_X, ORDER_Y) in((?, ?))");
+                        it.variables("001", "001");
+                    });
                 }
         );
     }
