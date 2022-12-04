@@ -44,11 +44,6 @@ public class EmbeddedColumns extends MultipleColumns {
         public String path() {
             return path;
         }
-
-        @Override
-        public boolean isEmbedded() {
-            return true;
-        }
     }
 
     public static class Path {

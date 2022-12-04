@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.model.embedded.*;
 import org.junit.jupiter.api.Test;
 
-public class CommandSaveTest extends AbstractMutationTest {
+public class CommandTest extends AbstractMutationTest {
 
     @Test
     public void testSaveOneToManyWitCascadeSetNull() {
