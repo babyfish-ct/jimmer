@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.runtime.DbNull;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.UUID;
 
 public class SaveTest extends AbstractMutationTest {
@@ -699,6 +700,82 @@ public class SaveTest extends AbstractMutationTest {
                                         "\"<root>\""
                         );
                         it.type(OptimisticLockException.class);
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testBatchSaveAndGetId() {
+        setAutoIds(TreeNode.class, 100L, 101L, 102L);
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .batchSaveCommand(
+                                Arrays.asList(
+                                        TreeNodeDraft.$.produce(node -> {
+                                            node.setName("batch-node-1").setParent((TreeNode) null);
+                                        }),
+                                        TreeNodeDraft.$.produce(node -> {
+                                            node.setName("batch-node-2").setParent((TreeNode) null);
+                                        }),
+                                        TreeNodeDraft.$.produce(node -> {
+                                            node.setName("batch-node-3").setParent((TreeNode) null);
+                                        })
+                                )
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                        "from TREE_NODE as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null " +
+                                        "for update");
+                        it.variables("batch-node-1");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
+                        it.variables(100L, "batch-node-1", new DbNull(long.class));
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                        "from TREE_NODE as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null " +
+                                        "for update");
+                        it.variables("batch-node-2");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
+                        it.variables(101L, "batch-node-2", new DbNull(long.class));
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                        "from TREE_NODE as tb_1_ " +
+                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null " +
+                                        "for update");
+                        it.variables("batch-node-3");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into TREE_NODE(NODE_ID, NAME, PARENT_ID) values(?, ?, ?)");
+                        it.variables(102L, "batch-node-3", new DbNull(long.class));
+                    });
+                    ctx.entity(it -> {
+                        it.original("{\"name\":\"batch-node-1\",\"parent\":null}");
+                        it.modified(
+                                "{\"id\":100,\"name\":\"batch-node-1\",\"parent\":null}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{\"id\":101,\"name\":\"batch-node-2\",\"parent\":null}"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.modified(
+                                "{\"id\":102,\"name\":\"batch-node-3\",\"parent\":null}"
+                        );
                     });
                 }
         );

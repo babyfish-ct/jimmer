@@ -18,17 +18,6 @@ public class SimpleSaveResult<E> extends AbstractMutationResult {
         this.modifiedEntity = modifiedEntity;
     }
 
-    public SimpleSaveResult<E> copy(E modifiedEntity) {
-        if (this.modifiedEntity == modifiedEntity) {
-            return this;
-        }
-        return new SimpleSaveResult<>(
-                affectedRowCountMap,
-                originalEntity,
-                modifiedEntity
-        );
-    }
-
     public E getOriginalEntity() {
         return originalEntity;
     }
