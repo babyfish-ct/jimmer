@@ -141,6 +141,14 @@ public class PropExpressionImpl<T>
         return (Class<T>) deepestProp.getElementClass();
     }
 
+    @Override
+    public String toString() {
+        if (path == null) {
+            return prop.toString();
+        }
+        return prop.toString() + '.' + path;
+    }
+
     private static class StrImpl
             extends PropExpressionImpl<String>
             implements PropExpression.Str, StringExpressionImplementor {

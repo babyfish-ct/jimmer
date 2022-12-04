@@ -30,6 +30,16 @@ interface StringExpressionImplementor extends StringExpression, ComparableExpres
         return LikePredicate.of(this, pattern, true, likeMode);
     }
 
+    @Override
+    default StringExpression upper() {
+        return new UpperExpression(this);
+    }
+
+    @Override
+    default StringExpression lower() {
+        return new LowerExpression(this);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     default StringExpression concat(String... others) {

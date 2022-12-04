@@ -1,13 +1,19 @@
 package org.babyfish.jimmer.sql.ast.embedded;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
+import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
+import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 
-public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpression<T> {
+public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpressionImplementor<T> {
 
     private final PropExpression.Embedded<T> raw;
 
@@ -85,6 +91,31 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
 
     public CoalesceBuilder<T> coalesceBuilder() {
         return raw.coalesceBuilder();
+    }
+
+    @Override
+    public Table<?> getTable() {
+        return ((PropExpressionImplementor<?>)raw).getTable();
+    }
+
+    @Override
+    public ImmutableProp getProp() {
+        return ((PropExpressionImplementor<?>)raw).getProp();
+    }
+
+    @Override
+    public EmbeddedColumns.Partial getPartial() {
+        return ((PropExpressionImplementor<?>)raw).getPartial();
+    }
+
+    @Override
+    public void renderTo(@NotNull SqlBuilder builder, boolean ignoreEmbeddedTuple) {
+        ((PropExpressionImplementor<?>)raw).renderTo(builder, ignoreEmbeddedTuple);
+    }
+
+    @Override
+    public String toString() {
+        return raw.toString();
     }
 
     @SuppressWarnings("unchecked")

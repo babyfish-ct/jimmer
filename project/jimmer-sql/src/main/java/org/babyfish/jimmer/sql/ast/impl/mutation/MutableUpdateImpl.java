@@ -6,9 +6,11 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -326,11 +328,11 @@ public class MutableUpdateImpl
     }
 
     private void renderTarget(SqlBuilder builder, Target target, boolean withPrefix) {
+        TableImplementor<?> impl = TableProxies.resolve(target.table, builder.getAstContext());
         if (withPrefix) {
-            TableImplementor<?> impl = TableProxies.resolve(target.table, builder.getAstContext());
             builder.sql(impl.getAlias()).sql(".");
         }
-        builder.sql(((SingleColumn) target.prop.getStorage()).getName());
+        impl.renderSelection(target.prop, builder, target.expr.getPartial());
     }
 
     private void renderTables(SqlBuilder builder) {
@@ -410,24 +412,25 @@ public class MutableUpdateImpl
 
         ImmutableProp prop;
 
-        PropExpression<?> expr;
+        PropExpressionImplementor<?> expr;
 
         private Target(Table<?> table, ImmutableProp prop, PropExpression<?> expr) {
             this.table = table;
             this.prop = prop;
-            this.expr = expr;
+            this.expr = (PropExpressionImplementor)expr;
         }
 
         static Target of(PropExpression<?> expr) {
-            PropExpressionImpl<?> exprImpl = (PropExpressionImpl<?>) expr;
-            if (exprImpl.getProp().isEmbedded()) {
+            PropExpressionImplementor<?> implementor = (PropExpressionImplementor<?>) expr;
+            EmbeddedColumns.Partial partial = implementor.getPartial();
+            if (partial != null && partial.isEmbedded()) {
                 throw new IllegalArgumentException(
                         "The property \"" +
-                                exprImpl.getProp() +
+                                implementor +
                                 "\" is embedded, it cannot be used as the assignment target of update statement"
                 );
             }
-            Table<?> targetTable = exprImpl.getTable();
+            Table<?> targetTable = implementor.getTable();
             Table<?> parent;
             ImmutableProp prop;
             if (targetTable instanceof TableImplementor<?>) {
@@ -437,10 +440,10 @@ public class MutableUpdateImpl
                 parent = ((TableProxy<?>)targetTable).__parent();
                 prop = ((TableProxy<?>)targetTable).__prop();
             }
-            if (parent != null && prop != null && exprImpl.getProp().isId()) {
+            if (parent != null && prop != null && implementor.getProp().isId()) {
                 return new Target(parent, prop, expr);
             } else {
-                return new Target(targetTable, exprImpl.getProp(), expr);
+                return new Target(targetTable, implementor.getProp(), expr);
             }
         }
 

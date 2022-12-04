@@ -16,6 +16,10 @@ public interface StringExpression extends ComparableExpression<String> {
 
     Predicate ilike(String pattern, LikeMode likeMode);
 
+    StringExpression upper();
+
+    StringExpression lower();
+
     StringExpression concat(String ... others);
 
     StringExpression concat(Expression<String> ... others);

@@ -13,9 +13,9 @@ import org.jetbrains.annotations.NotNull;
 
 class NullityPredicate extends AbstractPredicate {
 
-    private Expression<?> expression;
+    private final Expression<?> expression;
 
-    private boolean negative;
+    private final boolean negative;
 
     public NullityPredicate(Expression<?> expression, boolean negative) {
         this.expression = expression;
