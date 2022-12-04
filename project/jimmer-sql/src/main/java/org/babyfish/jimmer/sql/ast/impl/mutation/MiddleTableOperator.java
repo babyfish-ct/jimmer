@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -79,7 +80,7 @@ class MiddleTableOperator {
                 .sql(" from ")
                 .sql(middleTable.getTableName())
                 .sql(" where ")
-                .sql(middleTable.getColumnDefinition())
+                .sql(null, middleTable.getColumnDefinition(), true)
                 .sql(" = ")
                 .variable(id);
         Tuple2<String, List<Object>> sqlResult = builder.build();
@@ -148,7 +149,7 @@ class MiddleTableOperator {
                 .sql(" from ")
                 .sql(middleTable.getTableName())
                 .sql(" where ")
-                .sql(middleTable.getColumnDefinition())
+                .sql(null, middleTable.getColumnDefinition(), true)
                 .sql(" in(");
         boolean addComma = false;
         for (Object sourceId : sourceIds) {
@@ -206,11 +207,11 @@ class MiddleTableOperator {
             builder.sql(separator);
             separator = ", ";
             builder
-                    .sql("(")
+                    .enterTuple()
                     .variable(reader.sourceId())
                     .sql(", ")
                     .variable(reader.targetId())
-                    .sql(")");
+                    .leaveTuple();
         }
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
@@ -307,7 +308,7 @@ class MiddleTableOperator {
         builder.sql("delete from ");
         builder.sql(middleTable.getTableName());
         builder.sql(" where ");
-        builder.sql(middleTable.getColumnDefinition());
+        builder.sql(null, middleTable.getColumnDefinition(), true);
         builder.sql(" in(");
         String separator = "";
         for (Object id : sourceIds) {

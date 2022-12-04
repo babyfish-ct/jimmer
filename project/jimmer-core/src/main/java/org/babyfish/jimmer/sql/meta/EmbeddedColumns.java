@@ -8,13 +8,13 @@ public class EmbeddedColumns extends MultipleColumns {
 
     private final Map<String, Partial> columnMap;
 
-    public EmbeddedColumns(Map<String, List<String>> columnMap) {
-        super(columnMap.get("").toArray(EMPTY_ARR));
+    public EmbeddedColumns(Map<String, Path> columnMap) {
+        super(columnMap.get("").columnNames.toArray(EMPTY_ARR), true);
         Map<String, Partial> map = new HashMap<>();
-        for (Map.Entry<String, List<String>> e : columnMap.entrySet()) {
+        for (Map.Entry<String, Path> e : columnMap.entrySet()) {
             String key = e.getKey();
-            List<String> value = e.getValue();
-            map.put(key, new Partial(key, value));
+            Path path = e.getValue();
+            map.put(key, new Partial(key, path.columnNames, path.isTerminal));
         }
         this.columnMap = map;
     }
@@ -36,13 +36,34 @@ public class EmbeddedColumns extends MultipleColumns {
 
         private final String path;
 
-        Partial(String path, List<String> columns) {
-            super(columns.toArray(EMPTY_ARR));
+        Partial(String path, List<String> columns, boolean isTerminal) {
+            super(columns.toArray(EMPTY_ARR), !isTerminal);
             this.path = path;
         }
 
         public String path() {
             return path;
+        }
+
+        @Override
+        public boolean isEmbedded() {
+            return true;
+        }
+    }
+
+    public static class Path {
+
+        public final boolean isTerminal;
+
+        public final List<String> columnNames = new ArrayList<>();
+
+        public Path(boolean isTerminal) {
+            this.isTerminal = isTerminal;
+        }
+
+        @Override
+        public String toString() {
+            return (isTerminal ? "column" : "embedded") + columnNames;
         }
     }
 }

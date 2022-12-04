@@ -64,8 +64,8 @@ public class SqlBuilder {
         return this;
     }
 
-    public SqlBuilder sql(String tableAlias, ColumnDefinition definition, boolean asTuple) {
-        if (asTuple) {
+    public SqlBuilder sql(String tableAlias, ColumnDefinition definition, boolean applyEmbeddedScope) {
+        if (applyEmbeddedScope && definition.isEmbedded()) {
             enterTuple();
             sql(tableAlias, definition);
             leaveTuple();
