@@ -41,7 +41,7 @@ class AssociationMutationTest : AbstractMutationTest() {
                 sql(
                     """select BOOK_ID, AUTHOR_ID 
                         |from BOOK_AUTHOR_MAPPING 
-                        |where (BOOK_ID, AUTHOR_ID) in((?, ?), (?, ?), (?, ?))""".trimMargin()
+                        |where (BOOK_ID, AUTHOR_ID) in ((?, ?), (?, ?), (?, ?))""".trimMargin()
                 )
                 variables(4L, 5L, 5L, 5L, 6L, 5L)
             }

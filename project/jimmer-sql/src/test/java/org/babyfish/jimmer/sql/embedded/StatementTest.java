@@ -69,4 +69,70 @@ public class StatementTest extends AbstractMutationTest {
                 }
         );
     }
+
+    @Test
+    public void testDelete() {
+        OrderTable order = OrderTable.$;
+        executeAndExpectRowCount(
+                getSqlClient()
+                        .createDelete(order)
+                        .where(order.id().eq(OrderIdDraft.$.produce(id -> id.setX("001").setY("001")))),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ORDER_ as tb_1_ " +
+                                        "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) = (?, ?)"
+                        );
+                        it.variables("001", "001");
+                    });
+                    ctx.rowCount(1);
+                }
+        );
+    }
+
+    @Test
+    public void testDeleteWithJoin() {
+        OrderItemTable orderItem = OrderItemTable.$;
+        executeAndExpectRowCount(
+                getSqlClient()
+                        .createDelete(orderItem)
+                        .where(orderItem.order().name().eq("order-1")),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select distinct tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C " +
+                                        "from ORDER_ITEM as tb_1_ " +
+                                        "inner join ORDER_ as tb_2_ on " +
+                                        "--->tb_1_.FK_ORDER_X = tb_2_.ORDER_X and " +
+                                        "--->tb_1_.FK_ORDER_Y = tb_2_.ORDER_Y " +
+                                        "where tb_2_.NAME = ?"
+                        );
+                        it.variables("order-1");
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ORDER_ITEM_PRODUCT_MAPPING " +
+                                        "where (" +
+                                        "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
+                                        ") in (" +
+                                        "--->(?, ?, ?), (?, ?, ?)" +
+                                        ")"
+                        );
+                        it.variables(1, 1, 1, 1, 1, 2);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "delete from ORDER_ITEM " +
+                                        "where (" +
+                                        "--->ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C" +
+                                        ") in (" +
+                                        "--->(?, ?, ?), (?, ?, ?)" +
+                                        ")"
+                        );
+                        it.variables(1, 1, 1, 1, 1, 2);
+                    });
+                    ctx.rowCount(6);
+                }
+        );
+    }
 }

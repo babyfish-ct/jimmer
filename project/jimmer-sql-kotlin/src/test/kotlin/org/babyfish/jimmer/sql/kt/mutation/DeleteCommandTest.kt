@@ -23,7 +23,7 @@ class DeleteCommandTest : AbstractMutationTest() {
             }
             statement {
                 sql(
-                    """delete from BOOK_STORE where ID in(?)"""
+                    """delete from BOOK_STORE where ID in (?)"""
                 )
                 variables(2L)
             }

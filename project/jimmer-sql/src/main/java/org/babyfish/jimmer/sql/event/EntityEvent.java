@@ -1,12 +1,12 @@
 package org.babyfish.jimmer.sql.event;
-;
+
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.meta.SingleColumn;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -132,12 +132,12 @@ public class EntityEvent<E> {
     @Nullable
     public <T> Ref<T> getUnchangedFieldRef(int propId) {
         ImmutableProp prop = getImmutableType().getProp(propId);
-        if (!(prop.getStorage() instanceof SingleColumn)) {
+        if (!(prop.getStorage() instanceof ColumnDefinition)) {
             throw new IllegalArgumentException(
                     "Cannot get the unchanged the value of \"" +
                             prop +
                             "\" " +
-                            "because it is not a property mapped by column"
+                            "because it is not a property mapped by database columns"
             );
         }
         ImmutableSpi oe = (ImmutableSpi) oldEntity;
@@ -180,12 +180,12 @@ public class EntityEvent<E> {
     @Nullable
     public <T> ChangedRef<T> getChangedFieldRef(int propId) {
         ImmutableProp prop = getImmutableType().getProp(propId);
-        if (!(prop.getStorage() instanceof SingleColumn)) {
+        if (!(prop.getStorage() instanceof ColumnDefinition)) {
             throw new IllegalArgumentException(
                     "Cannot get the unchanged the value of \"" +
                             prop +
                             "\" " +
-                            "because it is not a property mapped by column"
+                            "because it is not a property mapped by database columns"
             );
         }
         ImmutableSpi oe = (ImmutableSpi) oldEntity;

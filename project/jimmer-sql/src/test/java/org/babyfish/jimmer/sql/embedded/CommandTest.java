@@ -92,7 +92,7 @@ public class CommandTest extends AbstractMutationTest {
                                         "where (FK_ORDER_X, FK_ORDER_Y) = (?, ?) and " +
                                         "(" +
                                         "--->ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C" +
-                                        ") not in(" +
+                                        ") not in (" +
                                         "--->(?, ?, ?), (?, ?, ?)" +
                                         ")"
                         );
@@ -187,7 +187,7 @@ public class CommandTest extends AbstractMutationTest {
                         it.sql(
                                 "select ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C from ORDER_ITEM " +
                                         "where (FK_ORDER_X, FK_ORDER_Y) = (?, ?) and " +
-                                        "(ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C) not in((?, ?, ?), (?, ?, ?)) " +
+                                        "(ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C) not in ((?, ?, ?), (?, ?, ?)) " +
                                         "for update"
                         );
                         it.variables("001", "001", 1, 1, 1, 1, 1, 3);
@@ -195,14 +195,14 @@ public class CommandTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from ORDER_ITEM_PRODUCT_MAPPING " +
-                                        "where (FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C) in((?, ?, ?))"
+                                        "where (FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C) in ((?, ?, ?))"
                         );
                         it.variables(1, 1, 2);
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from ORDER_ITEM " +
-                                        "where (ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C) in((?, ?, ?))"
+                                        "where (ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C) in ((?, ?, ?))"
                         );
                         it.variables(1, 1, 2);
                     });
@@ -485,7 +485,7 @@ public class CommandTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from ORDER_ " +
-                                        "where (ORDER_X, ORDER_Y) in((?, ?))"
+                                        "where (ORDER_X, ORDER_Y) in ((?, ?))"
                         );
                         it.variables("001", "001");
                     });
@@ -515,7 +515,7 @@ public class CommandTest extends AbstractMutationTest {
                         it.sql(
                                 "select ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C " +
                                         "from ORDER_ITEM " +
-                                        "where (FK_ORDER_X, FK_ORDER_Y) in((?, ?))"
+                                        "where (FK_ORDER_X, FK_ORDER_Y) in ((?, ?))"
                         );
                         it.variables("001", "001");
                     });
@@ -524,7 +524,7 @@ public class CommandTest extends AbstractMutationTest {
                                 "delete from ORDER_ITEM_PRODUCT_MAPPING " +
                                         "where (" +
                                         "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
-                                        ") in(" +
+                                        ") in (" +
                                         "--->(?, ?, ?), (?, ?, ?)" +
                                         ")"
                         );
@@ -535,14 +535,14 @@ public class CommandTest extends AbstractMutationTest {
                                 "delete from ORDER_ITEM " +
                                         "where (" +
                                         "--->ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C" +
-                                        ") in(" +
+                                        ") in (" +
                                         "--->(?, ?, ?), (?, ?, ?)" +
                                         ")"
                         );
                         it.variables(1, 1, 1, 1, 1, 2);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from ORDER_ where (ORDER_X, ORDER_Y) in((?, ?))");
+                        it.sql("delete from ORDER_ where (ORDER_X, ORDER_Y) in ((?, ?))");
                         it.variables("001", "001");
                     });
                 }

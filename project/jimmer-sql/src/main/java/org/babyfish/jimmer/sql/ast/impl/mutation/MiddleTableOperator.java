@@ -112,7 +112,7 @@ class MiddleTableOperator {
                 .sql(", ")
                 .sql(middleTable.getTargetColumnDefinition())
                 .leaveTuple()
-                .sql(" in(");
+                .sql(" in (");
         while (reader.read()) {
             builder
                     .enterTuple()
@@ -150,7 +150,7 @@ class MiddleTableOperator {
                 .sql(middleTable.getTableName())
                 .sql(" where ")
                 .sql(null, middleTable.getColumnDefinition(), true)
-                .sql(" in(");
+                .sql(" in (");
         boolean addComma = false;
         for (Object sourceId : sourceIds) {
             if (addComma) {
@@ -309,7 +309,7 @@ class MiddleTableOperator {
         builder.sql(middleTable.getTableName());
         builder.sql(" where ");
         builder.sql(null, middleTable.getColumnDefinition(), true);
-        builder.sql(" in(");
+        builder.sql(" in (");
         String separator = "";
         for (Object id : sourceIds) {
             builder.sql(separator);

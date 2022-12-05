@@ -317,7 +317,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.variables(new BigDecimal(42), oreillyId, graphQLInActionId3);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = null where STORE_ID = ? and ID not in(?, ?)");
+                        it.sql("update BOOK set STORE_ID = null where STORE_ID = ? and ID not in (?, ?)");
                         it.variables(oreillyId, learningGraphQLId3, graphQLInActionId3);
                     });
                     ctx.entity(it -> {
@@ -904,7 +904,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select ID " +
                                         "from ADMINISTRATOR_METADATA " +
-                                        "where ADMINISTRATOR_ID = ? and ID not in(?) " +
+                                        "where ADMINISTRATOR_ID = ? and ID not in (?) " +
                                         "for update"
                         );
                         it.variables(4L, 40L);

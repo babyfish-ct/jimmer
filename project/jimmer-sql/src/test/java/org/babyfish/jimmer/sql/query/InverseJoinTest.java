@@ -122,8 +122,8 @@ public class InverseJoinTest extends AbstractQueryTest {
                                     .eq("Alex").or(
                                             store
                                                     .asTableEx()
-                                                    .<BookTable>join("books", JoinType.LEFT)
-                                                    .<AuthorTable>join("authors", JoinType.LEFT)
+                                                    .<BookTable>join ("books", JoinType.LEFT)
+                                                    .<AuthorTable>join ("authors", JoinType.LEFT)
                                                     .firstName()
                                                     .eq("Tim")
                                     )
@@ -155,8 +155,8 @@ public class InverseJoinTest extends AbstractQueryTest {
                                     .firstName()
                                     .eq("Alex").or(
                                             store
-                                                    .<BookTable>join("books", JoinType.RIGHT)
-                                                    .<AuthorTable>join("authors", JoinType.RIGHT)
+                                                    .<BookTable>join ("books", JoinType.RIGHT)
+                                                    .<AuthorTable>join ("authors", JoinType.RIGHT)
                                                     .firstName()
                                                     .eq("Tim")
                                     )

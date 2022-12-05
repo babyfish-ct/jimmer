@@ -508,7 +508,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         it.unorderedVariables(learningGraphQLId1, learningGraphQLId2);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID in(?, ?)");
+                        it.sql("update BOOK set STORE_ID = ? where ID in (?, ?)");
                         it.unorderedVariables(newId, learningGraphQLId1, learningGraphQLId2);
                     });
                     ctx.entity(it -> {
@@ -673,7 +673,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         it.unorderedVariables(learningGraphQLId1, learningGraphQLId2, learningGraphQLId3, graphQLInActionId1);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID in(?)");
+                        it.sql("update BOOK set STORE_ID = ? where ID in (?)");
                         it.variables(oreillyId, graphQLInActionId1);
                     });
                     ctx.statement(it -> {
@@ -692,7 +692,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         });
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = null where ID in(?, ?, ?, ?, ?, ?)");
+                        it.sql("update BOOK set STORE_ID = null where ID in (?, ?, ?, ?, ?, ?)");
                         it.unorderedVariables(
                                 programmingTypeScriptId1,
                                 programmingTypeScriptId2,

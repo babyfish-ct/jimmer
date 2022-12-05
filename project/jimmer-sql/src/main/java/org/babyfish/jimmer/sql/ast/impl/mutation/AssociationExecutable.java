@@ -151,7 +151,7 @@ class AssociationExecutable implements Executable<Integer> {
                 .sql(", ")
                 .sql(middleTable.getTargetColumnDefinition())
                 .leaveTuple()
-                .sql(" in(");
+                .sql(" in (");
         String separator = "";
         for (Tuple2<Object, Object> idTuple : idTuples) {
             builder

@@ -215,11 +215,11 @@ public class FluentDMLTest extends AbstractMutationTest {
                         it.variables("MANNING");
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID in(?, ?, ?)");
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID in (?, ?, ?)");
                         it.unorderedVariables(graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK where ID in(?, ?, ?)");
+                        it.sql("delete from BOOK where ID in (?, ?, ?)");
                         it.unorderedVariables(graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
                     });
                     ctx.rowCount(6);
