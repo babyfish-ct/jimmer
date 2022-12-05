@@ -11,7 +11,6 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
-import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -290,7 +289,7 @@ public class MutableUpdateImpl
                         .sql(table.getAlias())
                         .sql(" where ")
                         .sql(table.getAlias(), table.getImmutableType().getIdProp().getStorage(), true)
-                        .sql(" in(");
+                        .sql(" in (");
                 addComma = false;
                 for (Object id : ids) {
                     if (addComma) {
@@ -372,7 +371,7 @@ public class MutableUpdateImpl
             ImmutableProp idProp = table.getImmutableType().getIdProp();
             builder.sql(separator)
                     .sql(table.getAlias(), idProp.getStorage(), true)
-                    .sql(" in(");
+                    .sql(" in (");
             boolean addComma = false;
             for (Object id : ids) {
                 if (addComma) {
@@ -396,10 +395,12 @@ public class MutableUpdateImpl
                 child.renderJoinAsFrom(builder, TableImplementor.RenderMode.WHERE_ONLY);
             }
         }
-        Predicate predicate = getPredicate();
-        if (predicate != null) {
-            builder.sql(separator);
-            ((Ast)predicate).renderTo(builder);
+        if (ids == null) {
+            Predicate predicate = getPredicate();
+            if (predicate != null) {
+                builder.sql(separator);
+                ((Ast) predicate).renderTo(builder);
+            }
         }
     }
 

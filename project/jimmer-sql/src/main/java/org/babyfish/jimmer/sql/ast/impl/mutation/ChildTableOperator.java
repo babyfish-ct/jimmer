@@ -140,7 +140,7 @@ class ChildTableOperator {
         }
         builder.sql(" where ")
                 .sql(null, pkDefinition, true)
-                .sql(" in(");
+                .sql(" in (");
         String separator = "";
         for (Object childId : childIds) {
             builder.sql(separator);
@@ -295,7 +295,7 @@ class ChildTableOperator {
         if (parentIds.size() == 1) {
             builder.sql(" = ").variable(parentIds.iterator().next());
         } else {
-            builder.sql(" in(");
+            builder.sql(" in (");
             boolean addComma = false;
             for (Object parentId : parentIds) {
                 if (addComma) {
@@ -311,7 +311,7 @@ class ChildTableOperator {
             builder
                     .sql(" and ")
                     .sql(null, pkDefinition, true)
-                    .sql(" not in(");
+                    .sql(" not in (");
             boolean addComma = false;
             for (Object retainedChildId : retainedChildIds) {
                 if (addComma) {

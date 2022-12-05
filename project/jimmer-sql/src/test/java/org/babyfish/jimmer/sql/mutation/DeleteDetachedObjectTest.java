@@ -42,22 +42,22 @@ public class DeleteDetachedObjectTest extends AbstractMutationTest {
                         it.variables(oreillyId, 0);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID in(?, ?, ?)");
+                        it.sql("update BOOK set STORE_ID = ? where ID in (?, ?, ?)");
                         it.variables(oreillyId, learningGraphQLId1, learningGraphQLId2, learningGraphQLId3);
                     });
                     ctx.statement(it -> {
-                        it.sql("select ID from BOOK where STORE_ID = ? and ID not in(?, ?, ?) for update");
+                        it.sql("select ID from BOOK where STORE_ID = ? and ID not in (?, ?, ?) for update");
                         it.variables(oreillyId, learningGraphQLId1, learningGraphQLId2, learningGraphQLId3);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID in(?, ?, ?, ?, ?, ?)");
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where BOOK_ID in (?, ?, ?, ?, ?, ?)");
                         it.unorderedVariables(
                                 effectiveTypeScriptId1, effectiveTypeScriptId2, effectiveTypeScriptId3,
                                 programmingTypeScriptId1, programmingTypeScriptId2, programmingTypeScriptId3
                         );
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK where ID in(?, ?, ?, ?, ?, ?)");
+                        it.sql("delete from BOOK where ID in (?, ?, ?, ?, ?, ?)");
                         it.unorderedVariables(
                                 effectiveTypeScriptId1, effectiveTypeScriptId2, effectiveTypeScriptId3,
                                 programmingTypeScriptId1, programmingTypeScriptId2, programmingTypeScriptId3

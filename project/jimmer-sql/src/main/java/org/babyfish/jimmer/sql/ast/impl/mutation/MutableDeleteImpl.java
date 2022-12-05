@@ -51,7 +51,6 @@ public class MutableDeleteImpl
         );
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T extends Table<?>> T getTable() {
         return deleteQuery.getTable();

@@ -473,7 +473,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.variables(oreillyId, learningGraphQLId3, graphQLInActionId3);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = null where ID in(?, ?, ?, ?, ?, ?, ?, ?)");
+                        it.sql("update BOOK set STORE_ID = null where ID in (?, ?, ?, ?, ?, ?, ?, ?)");
                         it.unorderedVariables(
                                 learningGraphQLId1,
                                 learningGraphQLId2,
@@ -1781,7 +1781,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select ID " +
                                         "from ADMINISTRATOR_METADATA " +
-                                        "where ADMINISTRATOR_ID = ? and ID not in(?) " +
+                                        "where ADMINISTRATOR_ID = ? and ID not in (?) " +
                                         "for update"
                         );
                         it.variables(4L, 40L);

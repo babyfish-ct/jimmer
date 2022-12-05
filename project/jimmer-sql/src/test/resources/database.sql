@@ -384,7 +384,8 @@ alter table order_item
 alter table order_item
     add constraint fk_order_item
         foreign key(fk_order_x, fk_order_y)
-            references order_(order_x, order_y);
+            references order_(order_x, order_y)
+                on delete cascade;
 
 create table product(
     product_alpha varchar(10) not null,
@@ -414,17 +415,19 @@ alter table order_item_product_mapping
 alter table order_item_product_mapping
     add constraint fk_order_item_product_mapping_source
         foreign key(fk_order_item_a, fk_order_item_b, fk_order_item_c)
-            references order_item(order_item_a, order_item_b, order_item_c);
+            references order_item(order_item_a, order_item_b, order_item_c)
+                on delete cascade;
 alter table order_item_product_mapping
     add constraint fk_order_item_product_mapping_target
         foreign key(fk_product_alpha, fk_product_beta)
-            references product(product_alpha, product_beta);
+            references product(product_alpha, product_beta)
+                on delete cascade;
 
 
 
 insert into order_(order_x, order_y, name) values
-    ('001', '001', 'order_1'),
-    ('001', '002', 'order_2');
+    ('001', '001', 'order-1'),
+    ('001', '002', 'order-2');
 
 insert into order_item(order_item_a, order_item_b, order_item_c, name, fk_order_x, fk_order_y) values
     (1, 1, 1, 'order-item-1-1', '001', '001'),

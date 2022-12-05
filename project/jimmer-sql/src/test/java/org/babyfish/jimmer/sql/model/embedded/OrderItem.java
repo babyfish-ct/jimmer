@@ -19,6 +19,7 @@ public interface OrderItem {
     @ManyToOne
     @JoinColumn(name = "FK_ORDER_X", referencedColumnName = "ORDER_X")
     @JoinColumn(name = "FK_ORDER_Y", referencedColumnName = "ORDER_Y")
+    @OnDissociate(DissociateAction.DELETE)
     @Nullable
     Order order();
 

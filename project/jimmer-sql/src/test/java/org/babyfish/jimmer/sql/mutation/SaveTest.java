@@ -334,7 +334,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.variables(newId, "TURING", 0);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID in(?, ?)");
+                        it.sql("update BOOK set STORE_ID = ? where ID in (?, ?)");
                         it.variables(newId, learningGraphQLId1, learningGraphQLId2);
                     });
                     ctx.entity(it -> {
@@ -394,11 +394,11 @@ public class SaveTest extends AbstractMutationTest {
                         it.variables(oreillyId, 0);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID in(?, ?, ?)");
+                        it.sql("update BOOK set STORE_ID = ? where ID in (?, ?, ?)");
                         it.variables(oreillyId, learningGraphQLId1, learningGraphQLId2, learningGraphQLId3);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = null where STORE_ID = ? and ID not in(?, ?, ?)");
+                        it.sql("update BOOK set STORE_ID = null where STORE_ID = ? and ID not in (?, ?, ?)");
                         it.variables(oreillyId, learningGraphQLId1, learningGraphQLId2, learningGraphQLId3);
                     });
                     ctx.entity(it -> {

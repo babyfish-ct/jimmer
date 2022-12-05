@@ -6,7 +6,6 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
-import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
@@ -170,7 +169,7 @@ public class Deleter {
                 .sql(childType.getTableName())
                 .sql(" where ")
                 .sql(null, definition, true)
-                .sql(" in(");
+                .sql(" in (");
         String separator = "";
         for (Object id : ids) {
             builder.sql(separator);
@@ -244,7 +243,7 @@ public class Deleter {
         builder.sql(type.getTableName());
         builder.sql(" where ");
         builder.sql(null, definition, true);
-        builder.sql(" in(");
+        builder.sql(" in (");
         String separator = "";
         for (Object id : ids) {
             builder.sql(separator);

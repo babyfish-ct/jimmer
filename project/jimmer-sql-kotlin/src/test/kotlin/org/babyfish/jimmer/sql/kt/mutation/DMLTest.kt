@@ -70,14 +70,14 @@ class DMLTest : AbstractMutationTest() {
             }
             statement {
                 sql(
-                    """delete from BOOK_AUTHOR_MAPPING where BOOK_ID in(?, ?, ?)"""
+                    """delete from BOOK_AUTHOR_MAPPING where BOOK_ID in (?, ?, ?)"""
                 )
                 variables(4L, 5L, 6L)
             }
             statement {
                 sql(
                     """delete from BOOK 
-                        |where ID in(?, ?, ?)""".trimMargin()
+                        |where ID in (?, ?, ?)""".trimMargin()
                 )
                 variables(4L, 5L, 6L)
             }

@@ -22,7 +22,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID from BOOK where STORE_ID in(?)");
+                        it.sql("select ID from BOOK where STORE_ID in (?)");
                         it.variables(manningId);
                     });
                     ctx.throwable(it -> {
@@ -61,7 +61,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                         it.variables(manningId);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = null where ID in(?, ?, ?)");
+                        it.sql("update BOOK set STORE_ID = null where ID in (?, ?, ?)");
                         it.variables(graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
                     });
                     ctx.statement(it -> {
@@ -74,7 +74,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                         it.variables(manningId);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK_STORE where ID in(?)");
+                        it.sql("delete from BOOK_STORE where ID in (?)");
                         it.variables(manningId);
                     });
                     ctx
@@ -210,11 +210,11 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 }),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID from BOOK where STORE_ID in(?)");
+                        it.sql("select ID from BOOK where STORE_ID in (?)");
                         it.variables(manningId);
                     });
                     ctx.statement(it -> {
-                        it.sql("select BOOK_ID, AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID in(?, ?, ?)");
+                        it.sql("select BOOK_ID, AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID in (?, ?, ?)");
                         it.variables(graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
                     });
                     ctx.statement(it -> {
@@ -238,7 +238,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                         it.unorderedVariables(graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK where ID in(?, ?, ?)");
+                        it.sql("delete from BOOK where ID in (?, ?, ?)");
                         it.unorderedVariables(graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
                     });
                     ctx.statement(it -> {
@@ -251,7 +251,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                         it.variables(manningId);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK_STORE where ID in(?)");
+                        it.sql("delete from BOOK_STORE where ID in (?)");
                         it.variables(manningId);
                     });
                     ctx.totalRowCount(7);
@@ -411,7 +411,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select BOOK_ID, AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID in(?, ?, ?)");
+                        it.sql("select BOOK_ID, AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID in (?, ?, ?)");
                         it.variables(learningGraphQLId1, learningGraphQLId2, nonExistingId);
                     });
                     ctx.statement(it -> {
@@ -431,7 +431,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                         it.variables(learningGraphQLId1, learningGraphQLId2, nonExistingId);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK where ID in(?, ?)");
+                        it.sql("delete from BOOK where ID in (?, ?)");
                         it.unorderedVariables(learningGraphQLId1, learningGraphQLId2);
                     });
                     ctx.totalRowCount(6);
@@ -562,7 +562,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select AUTHOR_ID, BOOK_ID from BOOK_AUTHOR_MAPPING where AUTHOR_ID in(?)");
+                        it.sql("select AUTHOR_ID, BOOK_ID from BOOK_AUTHOR_MAPPING where AUTHOR_ID in (?)");
                         it.variables(alexId);
                     });
                     ctx.statement(it -> {
@@ -570,7 +570,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                         it.variables(alexId, learningGraphQLId1, alexId, learningGraphQLId2, alexId, learningGraphQLId3);
                     });
                     ctx.statement(it -> {
-                        it.sql("select AUTHOR_ID, COUNTRY_CODE from AUTHOR_COUNTRY_MAPPING where AUTHOR_ID in(?)");
+                        it.sql("select AUTHOR_ID, COUNTRY_CODE from AUTHOR_COUNTRY_MAPPING where AUTHOR_ID in (?)");
                         it.variables(alexId);
                     });
                     ctx.statement(it -> {
@@ -587,7 +587,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                         it.variables(alexId);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from AUTHOR where ID in(?)");
+                        it.sql("delete from AUTHOR where ID in (?)");
                         it.variables(alexId);
                     });
                     ctx.totalRowCount(5);
@@ -675,19 +675,19 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in(?)");
+                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in (?)");
                     });
                     ctx.statement(it -> {
-                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in(?, ?)");
+                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in (?, ?)");
                     });
                     ctx.statement(it -> {
-                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in(?, ?, ?, ?)");
+                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in (?, ?, ?, ?)");
                     });
                     ctx.statement(it -> {
-                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in(?, ?, ?, ?, ?, ?, ?, ?)");
+                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?)");
                     });
                     ctx.statement(it -> {
-                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in(?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -697,7 +697,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                                         "for update");
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from TREE_NODE where NODE_ID in(?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                        it.sql("delete from TREE_NODE where NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -707,7 +707,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                                         "for update");
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from TREE_NODE where NODE_ID in(?, ?, ?, ?, ?, ?, ?, ?)");
+                        it.sql("delete from TREE_NODE where NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?)");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -717,7 +717,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                                         "for update");
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from TREE_NODE where NODE_ID in(?, ?, ?, ?)");
+                        it.sql("delete from TREE_NODE where NODE_ID in (?, ?, ?, ?)");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -727,7 +727,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                                         "for update");
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from TREE_NODE where NODE_ID in(?, ?)");
+                        it.sql("delete from TREE_NODE where NODE_ID in (?, ?)");
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -737,7 +737,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                                         "for update");
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from TREE_NODE where NODE_ID in(?)");
+                        it.sql("delete from TREE_NODE where NODE_ID in (?)");
                     });
                     ctx.totalRowCount(24);
                 }
@@ -1340,7 +1340,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select BOOK_ID, AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID in(?)");
+                        it.sql("select BOOK_ID, AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID in (?)");
                         it.variables(illegalId);
                     });
                     ctx.statement(it -> {

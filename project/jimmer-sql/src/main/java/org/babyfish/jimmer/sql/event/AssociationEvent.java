@@ -50,25 +50,44 @@ public class AssociationEvent {
                     "Both `detachedTargetId` and `attachedTargetId` is null, this is not allowed"
             );
         }
-        Class<?> expectedTargetIdClass = prop.getTargetType().getIdProp().getElementClass();
-        if (detachedTargetId != null && !Classes.matches(expectedTargetIdClass, detachedTargetId.getClass())) {
+        ImmutableProp targetIdProp = prop.getTargetType().getIdProp();
+
+        boolean validDetachedTargetId;
+        if (detachedTargetId == null) {
+            validDetachedTargetId = true;
+        } else if (targetIdProp.isEmbedded()) {
+            validDetachedTargetId = targetIdProp.getTargetType().getJavaClass().isAssignableFrom(detachedTargetId.getClass());
+        } else {
+            validDetachedTargetId = Classes.matches(targetIdProp.getElementClass(), detachedTargetId.getClass());
+        }
+        if (!validDetachedTargetId) {
             throw new IllegalArgumentException(
                     "The type of detachedTargetId \"" +
                             sourceId +
-                            "\" does not match \"" +
+                            "\" does not match the type of \"" +
                             prop.getTargetType().getIdProp() +
                             "\""
             );
         }
-        if (attachedTargetId != null && !Classes.matches(expectedTargetIdClass, attachedTargetId.getClass())) {
+
+        boolean validAttachedTargetId;
+        if (attachedTargetId == null) {
+            validAttachedTargetId = true;
+        } else if (targetIdProp.isEmbedded()) {
+            validAttachedTargetId = targetIdProp.getTargetType().getJavaClass().isAssignableFrom(attachedTargetId.getClass());
+        } else {
+            validAttachedTargetId = Classes.matches(targetIdProp.getElementClass(), attachedTargetId.getClass());
+        }
+        if (!validAttachedTargetId) {
             throw new IllegalArgumentException(
                     "The type of attachedTargetId \"" +
                             sourceId +
-                            "\" does not match \"" +
+                            "\" does not match the type of \"" +
                             prop.getTargetType().getIdProp() +
                             "\""
             );
         }
+
         this.prop = prop;
         this.sourceId = sourceId;
         this.detachedTargetId = detachedTargetId;
@@ -84,12 +103,21 @@ public class AssociationEvent {
         if (!prop.isAssociation(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException("prop must be association");
         }
-        if (sourceId == null || !Classes.matches(prop.getDeclaringType().getIdProp().getElementClass(), sourceId.getClass())) {
+        ImmutableProp idProp = prop.getDeclaringType().getIdProp();
+        boolean validId = false;
+        if (sourceId != null) {
+            if (idProp.isEmbedded()) {
+                validId = idProp.getTargetType().getJavaClass().isAssignableFrom(sourceId.getClass());
+            } else if (Classes.matches(idProp.getElementClass(), sourceId.getClass())) {
+                validId = true;
+            }
+        }
+        if (!validId) {
             throw new IllegalArgumentException(
                     "The type of sourceId \"" +
                             sourceId +
-                            "\" does not match \"" +
-                            prop.getDeclaringType().getIdProp() +
+                            "\" does not match the type of \"" +
+                            idProp +
                             "\""
             );
         }

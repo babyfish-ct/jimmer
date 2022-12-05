@@ -8,7 +8,6 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
-import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +32,7 @@ public class FetcherSelectionImpl<E> implements FetcherSelection<E>, Ast {
     public void accept(@NotNull AstVisitor visitor) {
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
-            if (prop.getStorage() instanceof SingleColumn) {
+            if (prop.getStorage() instanceof ColumnDefinition) {
                 visitor.visitTableReference(TableProxies.resolve(table, visitor.getAstContext()), prop);
             }
         }
