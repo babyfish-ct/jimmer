@@ -249,4 +249,72 @@ public class FetcherTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void fetchWithNullReference() {
+        OrderItemTable orderItem = OrderItemTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(orderItem)
+                        .select(
+                                orderItem.fetch(
+                                        OrderItemFetcher.$
+                                                .allScalarFields()
+                                                .order(
+                                                        OrderFetcher.$.allScalarFields()
+                                                )
+                                )
+                        ),
+                ctx ->{
+                    ctx.sql(
+                            "select " +
+                                    "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
+                                    "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
+                                    "from ORDER_ITEM as tb_1_"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_1_.ORDER_X, tb_1_.ORDER_Y, tb_1_.NAME " +
+                                    "from ORDER_ as tb_1_ " +
+                                    "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) in ((?, ?), (?, ?))"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":{\"a\":1,\"b\":1,\"c\":1}," +
+                                    "--->--->\"name\":\"order-item-1-1\"," +
+                                    "--->--->\"order\":{" +
+                                    "--->--->--->\"id\":{\"x\":\"001\",\"y\":\"001\"}," +
+                                    "--->--->--->\"name\":\"order-1\"" +
+                                    "--->--->}" +
+                                    "--->},{" +
+                                    "--->--->\"id\":{\"a\":1,\"b\":1,\"c\":2}," +
+                                    "--->--->\"name\":\"order-item-1-2\"," +
+                                    "--->--->\"order\":{" +
+                                    "--->--->--->\"id\":{\"x\":\"001\",\"y\":\"001\"}," +
+                                    "--->--->--->\"name\":\"order-1\"" +
+                                    "--->--->}" +
+                                    "--->},{" +
+                                    "--->--->\"id\":{\"a\":1,\"b\":2,\"c\":1}," +
+                                    "--->--->\"name\":\"order-item-2-1\"," +
+                                    "--->--->\"order\":{" +
+                                    "--->--->--->\"id\":{\"x\":\"001\",\"y\":\"002\"}," +
+                                    "--->--->--->\"name\":\"order-2\"" +
+                                    "--->--->}" +
+                                    "--->},{" +
+                                    "--->--->\"id\":{\"a\":2,\"b\":1,\"c\":1}," +
+                                    "--->--->\"name\":\"order-item-2-2\"," +
+                                    "--->--->\"order\":{" +
+                                    "--->--->--->\"id\":{\"x\":\"001\",\"y\":\"002\"}," +
+                                    "--->--->--->\"name\":\"order-2\"" +
+                                    "--->--->}" +
+                                    "--->},{" +
+                                    "--->--->\"id\":{\"a\":9,\"b\":9,\"c\":9}," +
+                                    "--->--->\"name\":\"order-item-X-X\"," +
+                                    "--->--->\"order\":null" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
+    }
 }

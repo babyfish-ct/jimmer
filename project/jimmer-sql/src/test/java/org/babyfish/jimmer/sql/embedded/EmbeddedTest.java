@@ -45,6 +45,38 @@ public class EmbeddedTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testFindNullById() {
+        TransformTable transform = TransformTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(transform)
+                        .where(transform.id().eq(2L))
+                        .select(transform),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, " +
+                                    "tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
+                                    "tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
+                                    "from TRANSFORM as tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    ).variables(2L);
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":2," +
+                                    "--->--->\"source\":{" +
+                                    "--->--->--->\"leftTop\":{\"x\":150,\"y\":170}," +
+                                    "--->--->--->\"rightBottom\":{\"x\":450,\"y\":370}" +
+                                    "--->--->}," +
+                                    "--->--->\"target\":null" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
     public void testFindBySourceLeftTopX() {
         TransformTable transform = TransformTable.$;
         executeAndExpect(

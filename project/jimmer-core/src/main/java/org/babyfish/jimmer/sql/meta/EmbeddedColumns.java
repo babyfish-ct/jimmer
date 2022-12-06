@@ -6,30 +6,34 @@ public class EmbeddedColumns extends MultipleColumns {
 
     private static final String[] EMPTY_ARR = new String[0];
 
-    private final Map<String, Partial> columnMap;
+    private final Map<String, Partial> partialMap;
 
-    public EmbeddedColumns(Map<String, Path> columnMap) {
-        super(columnMap.get("").columnNames.toArray(EMPTY_ARR), true);
+    public EmbeddedColumns(Map<String, PathData> pathDataMap) {
+        super(pathDataMap.get("").columnNames.toArray(EMPTY_ARR), true);
         Map<String, Partial> map = new HashMap<>();
-        for (Map.Entry<String, Path> e : columnMap.entrySet()) {
+        for (Map.Entry<String, PathData> e : pathDataMap.entrySet()) {
             String key = e.getKey();
-            Path path = e.getValue();
-            map.put(key, new Partial(key, path.columnNames, path.isTerminal));
+            PathData pathData = e.getValue();
+            map.put(key, new Partial(key, pathData.columnNames, pathData.isTerminal));
         }
-        this.columnMap = map;
+        this.partialMap = map;
     }
 
     public Partial partial(String path) {
         if (path == null) {
             path = "";
         }
-        Partial partial = columnMap.get(path);
+        Partial partial = partialMap.get(path);
         if (partial == null) {
             throw new IllegalArgumentException(
                     "Illegal embedded path \"" + path + "\""
             );
         }
         return partial;
+    }
+
+    public Map<String, Partial> getPartialMap() {
+        return Collections.unmodifiableMap(partialMap);
     }
 
     public static class Partial extends MultipleColumns {
@@ -46,13 +50,13 @@ public class EmbeddedColumns extends MultipleColumns {
         }
     }
 
-    public static class Path {
+    public static class PathData {
 
         public final boolean isTerminal;
 
         public final List<String> columnNames = new ArrayList<>();
 
-        public Path(boolean isTerminal) {
+        public PathData(boolean isTerminal) {
             this.isTerminal = isTerminal;
         }
 

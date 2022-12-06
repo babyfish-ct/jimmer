@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.meta;
 
 import kotlin.reflect.KClass;
-import kotlin.reflect.KProperty1;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.impl.Metadata;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
@@ -10,7 +9,6 @@ import org.babyfish.jimmer.runtime.DraftContext;
 import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 public interface ImmutableType {
 
@@ -72,7 +70,7 @@ public interface ImmutableType {
 
     ImmutableProp getProp(int id);
 
-    ImmutableProp getPropByColumnName(String columnName);
+    List<ImmutableProp> getPropChainByColumnName(String columnName);
 
     Map<String, ImmutableProp> getSelectableProps();
 

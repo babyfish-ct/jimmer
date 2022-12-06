@@ -9,6 +9,7 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.impl.util.StaticCache;
@@ -400,13 +401,17 @@ public class ReaderManager {
 
         @Override
         public Object read(ResultSet rs, Col col) throws SQLException {
-            return Internal.produce(targetType, null, draft -> {
+            Object embeddable = Internal.produce(targetType, null, draft -> {
                 DraftSpi spi = (DraftSpi) draft;
                 for (Map.Entry<ImmutableProp, Reader<?>> e : readerMap.entrySet()) {
+                    ImmutableProp prop = e.getKey();
                     Object value = e.getValue().read(rs, col);
-                    spi.__set(e.getKey().getId(), value);
+                    if (value != null || prop.isNullable()) {
+                        spi.__set(prop.getId(), value);
+                    }
                 }
             });
+            return EmbeddableObjects.isCompleted(embeddable) ? embeddable : null;
         }
     }
 

@@ -344,19 +344,22 @@ create table transform(
     top bigint not null,
     `right` bigint not null,
     bottom bigint not null,
-    target_left bigint not null,
-    target_top bigint not null,
-    target_right bigint not null,
-    target_bottom bigint not null
+    target_left bigint,
+    target_top bigint,
+    target_right bigint,
+    target_bottom bigint
 );
 
 alter table transform
     add constraint pk_transform
         primary key(id);
 
-insert into transform(id, `left`, top, `right`, bottom, target_left, target_top, target_right, target_bottom)
-    values(1, 100, 120, 400, 320, 800, 600, 1400, 1000);
-
+insert into transform(
+    id, `left`, top, `right`, bottom,
+    target_left, target_top, target_right, target_bottom
+) values
+    (1, 100, 120, 400, 320, 800, 600, 1400, 1000),
+    (2, 150, 170, 450, 370, null, null, null, null);
 
 
 
@@ -433,7 +436,8 @@ insert into order_item(order_item_a, order_item_b, order_item_c, name, fk_order_
     (1, 1, 1, 'order-item-1-1', '001', '001'),
     (1, 1, 2, 'order-item-1-2', '001', '001'),
     (1, 2, 1, 'order-item-2-1', '001', '002'),
-    (2, 1, 1, 'order-item-2-2', '001', '002');
+    (2, 1, 1, 'order-item-2-2', '001', '002'),
+    (9, 9, 9, 'order-item-X-X', null, null);
 
 insert into product(product_alpha, product_beta, name) values
     ('00A', '00A', 'Car'),
