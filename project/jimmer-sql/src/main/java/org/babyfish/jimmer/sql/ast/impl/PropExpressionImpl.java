@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.*;
@@ -27,7 +28,7 @@ public class PropExpressionImpl<T>
     protected final String path;
 
     public static PropExpressionImpl<?> of(EmbeddedImpl<?> base, ImmutableProp prop) {
-        if (prop.isEmbedded()) {
+        if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
             return new EmbeddedImpl<>(base, prop);
         }
         Class<?> elementClass = prop.getElementClass();
@@ -44,7 +45,7 @@ public class PropExpressionImpl<T>
     }
 
     public static PropExpressionImpl<?> of(Table<?> table, ImmutableProp prop) {
-        if (prop.isEmbedded()) {
+        if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
             return new EmbeddedImpl<>(table, prop);
         }
         Class<?> elementClass = prop.getElementClass();
@@ -97,7 +98,7 @@ public class PropExpressionImpl<T>
 
     @Override
     public EmbeddedColumns.Partial getPartial() {
-        if (base != null || prop.isEmbedded()) {
+        if (base != null || prop.isEmbedded(EmbeddedLevel.SCALAR)) {
             return ((EmbeddedColumns)prop.getStorage()).partial(path);
         }
         return null;

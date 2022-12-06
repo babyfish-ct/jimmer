@@ -198,9 +198,15 @@ class ImmutablePropImpl implements ImmutableProp {
     }
 
     @Override
-    public boolean isEmbedded() {
+    public boolean isEmbedded(EmbeddedLevel level) {
         ImmutableType targetType = getTargetType();
-        return targetType != null && targetType.isEmbeddable();
+        if (level.hasReference() &&
+                isReference(TargetLevel.ENTITY) &&
+                targetType.getIdProp().isEmbedded(EmbeddedLevel.SCALAR)
+        ) {
+            return true;
+        }
+        return level.hasScalar() && targetType != null && targetType.isEmbeddable();
     }
 
     @Override

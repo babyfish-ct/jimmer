@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.meta;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -13,7 +14,10 @@ public abstract class MultipleColumns implements ColumnDefinition {
 
     public MultipleColumns(String[] arr, boolean embedded) {
         if (arr.length > 1 && !embedded) {
-            throw new IllegalArgumentException("`embedded` must be true where there are several join columns");
+            throw new IllegalArgumentException(
+                    "`embedded` must be true where there are several join columns: " +
+                            Arrays.toString(arr)
+            );
         }
         this.arr = arr;
         this.embedded = embedded;

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.meta.impl;
 
+import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.PropOverride;
@@ -63,7 +64,7 @@ class EmbeddedTree {
             }
             depth = parent.depth + 1;
         }
-        if (prop.isEmbedded()) {
+        if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
             Map<String, EmbeddedTree> map = new LinkedHashMap<>();
             for (ImmutableProp childProp : prop.getTargetType().getProps().values()) {
                 map.put(childProp.getName(), new EmbeddedTree(this, childProp));
@@ -115,8 +116,8 @@ class EmbeddedTree {
                             "\""
             );
         }
-        boolean tooShort = rest == null && childTree.prop.isEmbedded();
-        boolean tooLong = rest != null && !childTree.prop.isEmbedded();
+        boolean tooShort = rest == null && childTree.prop.isEmbedded(EmbeddedLevel.SCALAR);
+        boolean tooLong = rest != null && !childTree.prop.isEmbedded(EmbeddedLevel.SCALAR);
         if (tooLong || tooShort) {
             throw new ModelException(
                     "Illegal property \"" +

@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.ModelException;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
@@ -58,7 +55,7 @@ public class ReaderManager {
         if (!(storage instanceof ColumnDefinition)) {
             return null;
         }
-        if (prop.isEmbedded()) {
+        if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
             return new EmbeddedReader(prop.getTargetType(), this);
         }
         if (prop.isReference(TargetLevel.ENTITY)) {
@@ -390,7 +387,7 @@ public class ReaderManager {
             this.targetType = targetType;
             Map<ImmutableProp, Reader<?>> map = new LinkedHashMap<>();
             for (ImmutableProp childProp : targetType.getProps().values()) {
-                if (childProp.isEmbedded()) {
+                if (childProp.isEmbedded(EmbeddedLevel.SCALAR)) {
                     map.put(childProp, new EmbeddedReader(childProp.getTargetType(), readerManager));
                 } else {
                     map.put(childProp, readerManager.scalarReader(childProp.getElementClass()));

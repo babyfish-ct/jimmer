@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.meta.impl;
 
+import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
@@ -26,7 +27,7 @@ public class Storages {
             return null;
         }
         if (annotation == null) {
-            if (prop.isEmbedded()) {
+            if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
                 return new EmbeddedTree(prop).toEmbeddedColumns();
             }
             org.babyfish.jimmer.sql.Column column = prop.getAnnotation(org.babyfish.jimmer.sql.Column.class);
@@ -64,7 +65,7 @@ public class Storages {
             definition= joinDefinition(
                     columns,
                     prop.getTargetType(),
-                    prop.getTargetType().getIdProp().isEmbedded()
+                    prop.isEmbedded(EmbeddedLevel.REFERENCE)
             );
         } catch (IllegalJoinColumnCount ex) {
             throw new ModelException(
@@ -163,13 +164,13 @@ public class Storages {
             definition = joinDefinition(
                     joinColumns,
                     prop.getDeclaringType(),
-                    prop.getDeclaringType().getIdProp().isEmbedded()
+                    prop.getDeclaringType().getIdProp().isEmbedded(EmbeddedLevel.SCALAR)
             );
             leftParsed = true;
             targetDefinition = joinDefinition(
                     referencedColumns,
                     prop.getTargetType(),
-                    prop.getTargetType().getIdProp().isEmbedded()
+                    prop.getTargetType().getIdProp().isEmbedded(EmbeddedLevel.SCALAR)
             );
         } catch (IllegalJoinColumnCount ex) {
             throw new ModelException(
@@ -294,10 +295,6 @@ public class Storages {
         Map<String, String> referencedColumnMap = new LinkedHashMap<>();
         for (String targetColumnName : targetIdDefinition) {
             String name = columnMap.get(targetColumnName);
-            if (name == null) {
-                System.out.println(targetColumnName);
-                System.out.println(columnMap);
-            }
             if (referencedColumnMap.put(name, targetColumnName) != null) {
                 throw new SourceConflict(name);
             }
