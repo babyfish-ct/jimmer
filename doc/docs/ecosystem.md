@@ -11,5 +11,6 @@ Enthusiastic people have contributed related tools. So far, the projects include
 |---|---|---|
 |Intellij plugin|Java&Kotlin|https://github.com/ClearPlume/jimmer-generator|
 |Maven plugin|Java|https://github.com/TokgoRonin/code-generator-jimmer|
+|Intellij插件|Java&Kotlin|https://github.com/huyaro/CodeGenX|
 
 Everyone is welcome to actively contribute related tools, and submit PR for me to include them in the list

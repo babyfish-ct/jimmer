@@ -11,5 +11,6 @@ Jimmer只专注于ORM本身，未提供辅助工具，比如，根据数据库�
 |---|---|---|
 |Intellij插件|Java&Kotlin|https://github.com/ClearPlume/jimmer-generator|
 |Maven插件|Java|https://github.com/TokgoRonin/code-generator-jimmer|
+|Intellij插件|Java&Kotlin|https://github.com/huyaro/CodeGenX|
 
 欢迎大家踊跃贡献相关工具，并提PR让我将之收录到列表中
