@@ -81,6 +81,23 @@ public class BinLogTest {
     }
 
     @Test
+    public void testInverseAssociation() {
+        String json = "{" +
+                "\"[fk_ORDER_item_A]\": 3, \"`fk_order_item_b`\": 2, \"FK_ORDER_ITEM_c\": 1, " +
+                "\"FK_product_ALPHA\": \"00X\", \"FK_product_BETA\": \"00Y\"" +
+                "}";
+        Tuple2<Long, Long> idPair = new BinLogParser().initialize(sqlClient)
+                .parseIdPair(
+                        ProductProps.ORDER_ITEMS,
+                        json
+                );
+        Assertions.assertEquals(
+                "Tuple2(_1={\"alpha\":\"00X\",\"beta\":\"00Y\"}, _2={\"a\":3,\"b\":2,\"c\":1})",
+                idPair.toString()
+        );
+    }
+
+    @Test
     public void testNonNullForeignKey() {
         String json = "{" +
                 "\"[order_item_a]\": 10, \"[order_item_b]\": 11, \"[order_item_c]\": 12, " +
@@ -113,23 +130,6 @@ public class BinLogTest {
                         "--->\"order\":null" +
                         "}",
                 orderItem.toString()
-        );
-    }
-
-    @Test
-    public void testInverseAssociation() {
-        String json = "{" +
-                "\"[fk_ORDER_item_A]\": 3, \"`fk_order_item_b`\": 2, \"FK_ORDER_ITEM_c\": 1, " +
-                "\"FK_product_ALPHA\": \"00X\", \"FK_product_BETA\": \"00Y\"" +
-                "}";
-        Tuple2<Long, Long> idPair = new BinLogParser().initialize(sqlClient)
-                .parseIdPair(
-                        ProductProps.ORDER_ITEMS,
-                        json
-                );
-        Assertions.assertEquals(
-                "Tuple2(_1={\"alpha\":\"00X\",\"beta\":\"00Y\"}, _2={\"a\":3,\"b\":2,\"c\":1})",
-                idPair.toString()
         );
     }
 
