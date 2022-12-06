@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.util;
 
 import org.babyfish.jimmer.impl.util.StaticCache;
+import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -38,7 +39,7 @@ public class EmbeddableObjects {
     private static int expandImpl(ImmutableSpi spi, Object[] values, int index) {
         for (ImmutableProp prop : spi.__type().getProps().values()) {
             Object value = spi.__get(prop.getId());
-            if (prop.isEmbedded()) {
+            if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
                 index = expandImpl((ImmutableSpi) value, values, index);
             } else {
                 values[index++] = value;
@@ -62,7 +63,7 @@ public class EmbeddableObjects {
 
     private static void collectFlatTypes(ImmutableType type, List<Class<?>> flatTypes) {
         for (ImmutableProp prop : type.getProps().values()) {
-            if (prop.isEmbedded()) {
+            if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
                 collectFlatTypes(prop.getTargetType(), flatTypes);
             } else {
                 flatTypes.add(prop.getElementClass());
@@ -78,16 +79,27 @@ public class EmbeddableObjects {
     }
 
     private static boolean isCompleted(ImmutableSpi spi) {
-        for (ImmutableProp prop : spi.__type().getProps().values()) {
-            int propId = prop.getId();
-            if (!spi.__isLoaded(propId)) {
+        ImmutableType type = spi.__type();
+        if (type.isEntity()) {
+            return isCompleted(spi, type.getIdProp());
+        }
+        for (ImmutableProp prop : type.getProps().values()) {
+            if (!isCompleted(spi, prop)) {
                 return false;
             }
-            if (prop.isEmbedded()) {
-                ImmutableSpi childSpi = (ImmutableSpi) spi.__get(propId);
-                if (childSpi != null && !isCompleted(childSpi)) {
-                    return false;
-                }
+        }
+        return true;
+    }
+
+    private static boolean isCompleted(ImmutableSpi spi, ImmutableProp prop) {
+        int propId = prop.getId();
+        if (!spi.__isLoaded(propId)) {
+            return false;
+        }
+        if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
+            ImmutableSpi childSpi = (ImmutableSpi) spi.__get(propId);
+            if (childSpi != null && !isCompleted(childSpi)) {
+                return false;
             }
         }
         return true;

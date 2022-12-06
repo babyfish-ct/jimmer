@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -103,7 +104,7 @@ public class SqlBuilder {
             }
         } else {
             ImmutableType type;
-            if (prop.isEmbedded()) {
+            if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
                 type = prop.getTargetType();
             } else {
                 type = prop.getTargetType().getIdProp().getTargetType();
@@ -353,7 +354,7 @@ public class SqlBuilder {
     private void nullImmutableVariable(ImmutableType type) {
         if (type.isEntity()) {
             ImmutableProp idProp = type.getIdProp();
-            if (idProp.isEmbedded()) {
+            if (idProp.isEmbedded(EmbeddedLevel.SCALAR)) {
                 nullEmbeddedVariable(idProp.getTargetType());
             } else {
                 nullSingeVariable(idProp.getElementClass());

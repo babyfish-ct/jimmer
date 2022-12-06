@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.event;
 
+import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.impl.util.Classes;
@@ -55,7 +56,7 @@ public class AssociationEvent {
         boolean validDetachedTargetId;
         if (detachedTargetId == null) {
             validDetachedTargetId = true;
-        } else if (targetIdProp.isEmbedded()) {
+        } else if (targetIdProp.isEmbedded(EmbeddedLevel.SCALAR)) {
             validDetachedTargetId = targetIdProp.getTargetType().getJavaClass().isAssignableFrom(detachedTargetId.getClass());
         } else {
             validDetachedTargetId = Classes.matches(targetIdProp.getElementClass(), detachedTargetId.getClass());
@@ -73,7 +74,7 @@ public class AssociationEvent {
         boolean validAttachedTargetId;
         if (attachedTargetId == null) {
             validAttachedTargetId = true;
-        } else if (targetIdProp.isEmbedded()) {
+        } else if (targetIdProp.isEmbedded(EmbeddedLevel.SCALAR)) {
             validAttachedTargetId = targetIdProp.getTargetType().getJavaClass().isAssignableFrom(attachedTargetId.getClass());
         } else {
             validAttachedTargetId = Classes.matches(targetIdProp.getElementClass(), attachedTargetId.getClass());
@@ -106,7 +107,7 @@ public class AssociationEvent {
         ImmutableProp idProp = prop.getDeclaringType().getIdProp();
         boolean validId = false;
         if (sourceId != null) {
-            if (idProp.isEmbedded()) {
+            if (idProp.isEmbedded(EmbeddedLevel.SCALAR)) {
                 validId = idProp.getTargetType().getJavaClass().isAssignableFrom(sourceId.getClass());
             } else if (Classes.matches(idProp.getElementClass(), sourceId.getClass())) {
                 validId = true;

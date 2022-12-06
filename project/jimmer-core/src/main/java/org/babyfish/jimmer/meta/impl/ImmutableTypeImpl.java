@@ -9,14 +9,12 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.*;
-import org.babyfish.jimmer.sql.meta.SingleColumn;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 class ImmutableTypeImpl implements ImmutableType {
@@ -27,8 +25,6 @@ class ImmutableTypeImpl implements ImmutableType {
             MappedSuperclass.class,
             Embeddable.class
     };
-
-    private static final Pattern DOT_PATTERN = Pattern.compile("\\.");
 
     private final Class<?> javaClass;
 
@@ -301,35 +297,8 @@ class ImmutableTypeImpl implements ImmutableType {
         if (map == null) {
             validateEntity();
             map = new LinkedHashMap<>();
-            for (ImmutableProp rootProp : getProps().values()) {
-                if (rootProp.isEmbedded()) {
-                    for (Map.Entry<String, EmbeddedColumns.Partial> e :
-                            rootProp.<EmbeddedColumns>getStorage().getPartialMap().entrySet()) {
-                        EmbeddedColumns.Partial partial = e.getValue();
-                        if (!partial.isEmbedded()) {
-                            ImmutableProp prop = rootProp;
-                            String cmpName = DatabaseIdentifiers.comparableIdentifier(partial.name(0));
-                            String path = e.getKey();
-                            List<ImmutableProp> chain = new ArrayList<>();
-                            chain.add(prop);
-                            ImmutableType targetType = prop.getTargetType();
-                            if (path != null) {
-                                for (String part : DOT_PATTERN.split(path)) {
-                                    if (targetType == null) {
-                                        System.out.println("fuck");
-                                    }
-                                    prop = targetType.getProp(part);
-                                    targetType = prop.getTargetType();
-                                    chain.add(prop);
-                                }
-                            }
-                            map.put(cmpName, Collections.unmodifiableList(chain));
-                        }
-                    }
-                } else if (rootProp.getStorage() instanceof SingleColumn) {
-                    String cmpName = DatabaseIdentifiers.comparableIdentifier(rootProp.<SingleColumn>getStorage().getName());
-                    map.put(cmpName, Collections.singletonList(rootProp));
-                }
+            for (ImmutableProp prop : getProps().values()) {
+                PropChains.addInto(prop, map);
             }
             chainMap = map;
         }
@@ -373,7 +342,7 @@ class ImmutableTypeImpl implements ImmutableType {
     }
 
     void setIdProp(ImmutableProp idProp) {
-        if (idProp.isEmbedded()) {
+        if (idProp.isEmbedded(EmbeddedLevel.SCALAR)) {
             validateEmbeddedIdType(idProp.getTargetType(), null);
         }
         this.idProp = idProp;
@@ -571,7 +540,7 @@ class ImmutableTypeImpl implements ImmutableType {
                                 "\" cannot be nullable"
                 );
             }
-            if (prop.isEmbedded()) {
+            if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
                 validateEmbeddedIdType(prop.getTargetType(), prefix + prop.getName());
             }
         }

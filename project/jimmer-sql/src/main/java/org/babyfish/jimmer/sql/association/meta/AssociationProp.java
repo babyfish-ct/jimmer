@@ -35,8 +35,8 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
-    public boolean isEmbedded() {
-        return false;
+    public boolean isEmbedded(EmbeddedLevel level) {
+        return level.hasReference() && getTargetType().getIdProp().isEmbedded(EmbeddedLevel.SCALAR);
     }
 
     @Override
