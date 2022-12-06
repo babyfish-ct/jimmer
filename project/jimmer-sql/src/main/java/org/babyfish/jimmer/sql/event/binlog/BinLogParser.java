@@ -77,7 +77,7 @@ public class BinLogParser {
         Object targetId = null;
         while (itr.hasNext()) {
             Map.Entry<String, JsonNode> e = itr.next();
-            ImmutableProp targetProp = associationType.getPropByColumnName(e.getKey());
+            ImmutableProp targetProp = associationType.getPropChainByColumnName(e.getKey()).get(0);
             JsonNode childNode = e.getValue();
             Class<?> targetIdType = targetProp.getTargetType().getIdProp().getElementClass();
             Object value;

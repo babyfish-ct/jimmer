@@ -510,13 +510,6 @@ public class PropDescriptor {
                     }
                     break;
             }
-            if (elementAnnotationType == Embeddable.class && specifiedNullable) {
-                throw exceptionCreator.apply(
-                        "Illegal property \"" +
-                                propText +
-                                "\", it cannot be nullable because it is embedded property"
-                );
-            }
             return specifiedNullable;
         }
 

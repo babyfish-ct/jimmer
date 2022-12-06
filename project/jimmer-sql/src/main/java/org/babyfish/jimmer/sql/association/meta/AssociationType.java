@@ -167,7 +167,7 @@ public class AssociationType implements ImmutableType {
     }
 
     @Override
-    public ImmutableProp getPropByColumnName(String columnName) {
+    public List<ImmutableProp> getPropChainByColumnName(String columnName) {
         String scName = DatabaseIdentifiers.comparableIdentifier(columnName);
         if (scName.equals(
                 DatabaseIdentifiers.comparableIdentifier(
@@ -175,7 +175,7 @@ public class AssociationType implements ImmutableType {
                 )
             )
         ) {
-            return sourceProp;
+            return Collections.singletonList(sourceProp);
         }
         if (scName.equals(
                 DatabaseIdentifiers.comparableIdentifier(
@@ -183,7 +183,7 @@ public class AssociationType implements ImmutableType {
                 )
             )
         ) {
-            return targetProp;
+            return Collections.singletonList(targetProp);
         }
         throw new IllegalArgumentException(
                 "There is no property whose column name is \"" +

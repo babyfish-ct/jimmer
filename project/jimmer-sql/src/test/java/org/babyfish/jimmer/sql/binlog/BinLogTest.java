@@ -12,7 +12,7 @@ import static org.babyfish.jimmer.sql.common.Constants.*;
 
 public class BinLogTest {
 
-    private JSqlClient sqlClient = JSqlClient.newBuilder().build();
+    private final JSqlClient sqlClient = JSqlClient.newBuilder().build();
 
     @Test
     public void testTreeNode() {

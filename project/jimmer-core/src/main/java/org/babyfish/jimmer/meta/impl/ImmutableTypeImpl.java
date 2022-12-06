@@ -16,6 +16,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 class ImmutableTypeImpl implements ImmutableType {
@@ -26,6 +27,8 @@ class ImmutableTypeImpl implements ImmutableType {
             MappedSuperclass.class,
             Embeddable.class
     };
+
+    private static final Pattern DOT_PATTERN = Pattern.compile("\\.");
 
     private final Class<?> javaClass;
 
@@ -49,7 +52,7 @@ class ImmutableTypeImpl implements ImmutableType {
 
     private ImmutableProp[] propArr;
 
-    private Map<String, ImmutableProp> columnProps;
+    private Map<String, List<ImmutableProp>> chainMap;
 
     private Map<String, ImmutableProp> selectableProps;
 
@@ -278,48 +281,59 @@ class ImmutableTypeImpl implements ImmutableType {
     }
 
     @Override
-    public ImmutableProp getPropByColumnName(String columnName) {
-        String scName = DatabaseIdentifiers.comparableIdentifier(columnName);
-        ImmutableProp prop = getColumnProps().get(scName);
-        if (prop == null) {
+    public List<ImmutableProp> getPropChainByColumnName(String columnName) {
+        String cmpName = DatabaseIdentifiers.comparableIdentifier(columnName);
+        List<ImmutableProp> chain = getChainMap().get(cmpName);
+        if (chain == null) {
             throw new IllegalArgumentException(
-                    "There is no property whose column name is \"" +
+                    "There is no property chain whose column name is \"" +
                             columnName +
                             "\" in type \"" +
                             this +
                             "\""
             );
         }
-        return prop;
+        return chain;
     }
 
-    private Map<String, ImmutableProp> getColumnProps() {
-        Map<String, ImmutableProp> cps = columnProps;
-        if (cps == null) {
-            if (!isEntity) {
-                validateEntity();
-            }
-            cps = new LinkedHashMap<>();
-            for (ImmutableProp prop : getProps().values()) {
-                if (prop.getStorage() instanceof SingleColumn) {
-                    String scName = DatabaseIdentifiers.comparableIdentifier(prop.<SingleColumn>getStorage().getName());
-                    ImmutableProp conflictProp = cps.put(scName, prop);
-                    if (conflictProp != null) {
-                        throw new ModelException(
-                                "Conflict column name \"" +
-                                        scName +
-                                        "\" of \"" +
-                                        conflictProp +
-                                        "\" and \"" +
-                                        prop +
-                                        "\""
-                        );
+    private Map<String, List<ImmutableProp>> getChainMap() {
+        Map<String, List<ImmutableProp>> map = chainMap;
+        if (map == null) {
+            validateEntity();
+            map = new LinkedHashMap<>();
+            for (ImmutableProp rootProp : getProps().values()) {
+                if (rootProp.isEmbedded()) {
+                    for (Map.Entry<String, EmbeddedColumns.Partial> e :
+                            rootProp.<EmbeddedColumns>getStorage().getPartialMap().entrySet()) {
+                        EmbeddedColumns.Partial partial = e.getValue();
+                        if (!partial.isEmbedded()) {
+                            ImmutableProp prop = rootProp;
+                            String cmpName = DatabaseIdentifiers.comparableIdentifier(partial.name(0));
+                            String path = e.getKey();
+                            List<ImmutableProp> chain = new ArrayList<>();
+                            chain.add(prop);
+                            ImmutableType targetType = prop.getTargetType();
+                            if (path != null) {
+                                for (String part : DOT_PATTERN.split(path)) {
+                                    if (targetType == null) {
+                                        System.out.println("fuck");
+                                    }
+                                    prop = targetType.getProp(part);
+                                    targetType = prop.getTargetType();
+                                    chain.add(prop);
+                                }
+                            }
+                            map.put(cmpName, Collections.unmodifiableList(chain));
+                        }
                     }
+                } else if (rootProp.getStorage() instanceof SingleColumn) {
+                    String cmpName = DatabaseIdentifiers.comparableIdentifier(rootProp.<SingleColumn>getStorage().getName());
+                    map.put(cmpName, Collections.singletonList(rootProp));
                 }
             }
-            columnProps = cps;
+            chainMap = map;
         }
-        return cps;
+        return map;
     }
 
     @Override
@@ -359,6 +373,9 @@ class ImmutableTypeImpl implements ImmutableType {
     }
 
     void setIdProp(ImmutableProp idProp) {
+        if (idProp.isEmbedded()) {
+            validateEmbeddedIdType(idProp.getTargetType(), null);
+        }
         this.idProp = idProp;
         GeneratedValue generatedValue = idProp.getAnnotation(GeneratedValue.class);
         if (generatedValue == null) {
@@ -539,6 +556,24 @@ class ImmutableTypeImpl implements ImmutableType {
                             this +
                             "\" is not entity"
             );
+        }
+    }
+
+    private void validateEmbeddedIdType(ImmutableType type, String path) {
+        String prefix = path != null ? path + '.' : "";
+        for (ImmutableProp prop : type.getProps().values()) {
+            if (prop.isNullable()) {
+                throw new ModelException(
+                        "Illegal id property \"" +
+                                this +
+                                "\", the embedded property \"" +
+                                prefix + prop.getName() +
+                                "\" cannot be nullable"
+                );
+            }
+            if (prop.isEmbedded()) {
+                validateEmbeddedIdType(prop.getTargetType(), prefix + prop.getName());
+            }
         }
     }
 

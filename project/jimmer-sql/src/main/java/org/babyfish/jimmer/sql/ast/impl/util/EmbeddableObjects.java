@@ -69,4 +69,27 @@ public class EmbeddableObjects {
             }
         }
     }
+
+    public static boolean isCompleted(Object embedded) {
+        if (!(embedded instanceof ImmutableSpi)) {
+            throw new IllegalArgumentException("The argument must be embeddable type");
+        }
+        return isCompleted((ImmutableSpi) embedded);
+    }
+
+    private static boolean isCompleted(ImmutableSpi spi) {
+        for (ImmutableProp prop : spi.__type().getProps().values()) {
+            int propId = prop.getId();
+            if (!spi.__isLoaded(propId)) {
+                return false;
+            }
+            if (prop.isEmbedded()) {
+                ImmutableSpi childSpi = (ImmutableSpi) spi.__get(propId);
+                if (childSpi != null && !isCompleted(childSpi)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 }
