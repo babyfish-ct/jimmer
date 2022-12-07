@@ -60,6 +60,7 @@ Jimmer supports the feature called [object Fetcher](./jimmer-sql/query/fetcher),
 Please watch the video below.
 
 |Language|Video|
+|---|---|
 |Java|![java-fetcher](../orphan/doc/static/img/java-fetcher.mp4)|
 |Kotlin|![kotlin-fetcher](../orphan/doc/static/img/java-fetcher.mp4)|
 
