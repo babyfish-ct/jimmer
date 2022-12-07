@@ -62,14 +62,14 @@ Please watch the video below.
 <details>
     <summary>Java vedio</summary>
     <video width="100%" controls>
-        <source src="https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/java-fecher.mp4" type="video/mp4"/>
+        <source src="https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/java-fetcher.mp4" type="video/mp4"/>
         <div style={{padding: '1rem', fontSize: '2rem', color: 'red'}}>Your browser does not support the video tag.</div>
     </video>
 </details>
 <details>
     <summary>Kotlin vedio</summary>
     <video width="100%" controls>
-        <source src="https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/kotlin-fecher.mp4" type="video/mp4"/>
+        <source src="https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/kotlin-fetcher.mp4" type="video/mp4"/>
         <div style={{padding: '1rem', fontSize: '2rem', color: 'red'}}>Your browser does not support the video tag.</div>
     </video>
 </details>
