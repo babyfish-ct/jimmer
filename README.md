@@ -16,7 +16,7 @@ The ability of holistic manipulation of arbitrarily complex data structures is t
  
 ## 1. Express arbitrarily complex data structures
 
-![shape](orphan/doc/static/img/shape.png)
+![shape](/orphan/doc/static/img/shape.png)
  
 This diagram demonstrates a global model and three local business perspectives of a specific relational database.
  
@@ -36,13 +36,11 @@ By the word `dynamic`, we mean that any property of an entity object, whether it
 
 In addition, Jimmer ensures that the data structure described by dynamic entities does not contain circular references and is a directed tree with an aggregated root, so that it can be transferred directly via the HTTP protocol.
  
-:::tip 
-Dynamic entities could express arbitrarily complex data structures and be transferred directly via HTTP. Therefore, developers should:
-
-**Use a unified entity model to express the business data format, rather than defining DTOs for different data formats required by different business scenarios.**
- 
-This is important, it avoids redundant data definitions that make the system lose compactness; and it’s the core of the Jimmer on which other revolutionary features are based.
-:::
+> Dynamic entities could express arbitrarily complex data structures and be transferred directly via HTTP. Therefore, developers should:
+> 
+> **Use a unified entity model to express the business data format, rather than defining DTOs for different data formats required by different business scenarios.**
+>  
+> This is important, it avoids redundant data definitions that make the system lose compactness; and it’s the core of the Jimmer on which other revolutionary features are based.
 
 ## 2. Query arbitrarily complex data structures
  
