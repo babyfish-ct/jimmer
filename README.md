@@ -59,9 +59,7 @@ Jimmer provides two methods for querying arbitrarily complex data structures
 Jimmer supports the feature called [object Fetcher](./jimmer-sql/query/fetcher), which gives developers the ability to query arbitrarily complex data structures from the database.
 Please watch the video below.
 
-<video width="100%" controls>
-    <source src="https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/graphql-fetcher.mp4" type="video/mp4"/>
-</video>
+<video src="https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/java-fetcher.mp4"></video>
 
 > The object fetcher also has a powerful capability not shown in the video, recursive fetching self-associative properties. 
 
@@ -73,10 +71,7 @@ Check out [Recursive Fetching for Self-Association](./jimmer-sql/query/fetcher#r
 [GraphQL](https://graphql.org/) is a protocol for querying arbitrarily complex data on the client side, but it has the disadvantage of slightly higher development costs on the server side.
 
 SpringBoot supports [Spring GraphQL](https://spring.io/projects/spring-graphql) from 2.7.0. Jimmer provides specific support for this, and significantly reduces the development cost of Spring GraphQL-based projects.
-
-<video width="100%" controls>
-    <source src="https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/graphql-fetcher.mp4" type="video/mp4"/>
-</video>
+<video src="https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/graphql-fetcher.mp4"></video>
 
 :::tip
 Note, by the limitation of the current GraphQL protocol, this method does not have the same recursive querying capability for self-associative properties as the object fetcher’s.
