@@ -61,8 +61,8 @@ Please watch the video below.
 
 |Language|Video|
 |---|---|
-|Java|![java-fetcher](https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/java-fetcher.mp4)|
-|Kotlin|![kotlin-fetcher](../orphan/doc/static/img/java-fetcher.mp4?raw=true)|
+|Java|https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/java-fetcher.mp4|
+|Kotlin|../orphan/doc/static/img/java-fetcher.mp4?raw=true|
 
 :::tip
 The object fetcher also has a powerful capability not shown in the video, recursive fetching self-associative properties. 
