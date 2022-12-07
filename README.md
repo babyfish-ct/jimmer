@@ -71,7 +71,8 @@ Check out [Recursive Fetching for Self-Association](./jimmer-sql/query/fetcher#r
 [GraphQL](https://graphql.org/) is a protocol for querying arbitrarily complex data on the client side, but it has the disadvantage of slightly higher development costs on the server side.
 
 SpringBoot supports [Spring GraphQL](https://spring.io/projects/spring-graphql) from 2.7.0. Jimmer provides specific support for this, and significantly reduces the development cost of Spring GraphQL-based projects.
-<video src="https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/graphql-fetcher.mp4"></video>
+
+[![graphql-video]()](https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/graphql-fetcher.mp4)
 
 :::tip
 Note, by the limitation of the current GraphQL protocol, this method does not have the same recursive querying capability for self-associative properties as the object fetcher’s.
