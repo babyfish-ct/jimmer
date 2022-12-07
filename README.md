@@ -59,20 +59,9 @@ Jimmer provides two methods for querying arbitrarily complex data structures
 Jimmer supports the feature called [object Fetcher](./jimmer-sql/query/fetcher), which gives developers the ability to query arbitrarily complex data structures from the database.
 Please watch the video below.
 
-<details>
-    <summary>Java vedio</summary>
-    <video width="100%" controls>
-        <source src="https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/java-fetcher.mp4" type="video/mp4"/>
-        <div style={{padding: '1rem', fontSize: '2rem', color: 'red'}}>Your browser does not support the video tag.</div>
-    </video>
-</details>
-<details>
-    <summary>Kotlin vedio</summary>
-    <video width="100%" controls>
-        <source src="https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/kotlin-fetcher.mp4" type="video/mp4"/>
-        <div style={{padding: '1rem', fontSize: '2rem', color: 'red'}}>Your browser does not support the video tag.</div>
-    </video>
-</details>
+|Language|Video|
+|Java|![java-fetcher](../orphan/doc/static/img/java-fetcher.mp4)|
+|Kotlin|![kotlin-fetcher](../orphan/doc/static/img/java-fetcher.mp4)|
 
 :::tip
 The object fetcher also has a powerful capability not shown in the video, recursive fetching self-associative properties. 
