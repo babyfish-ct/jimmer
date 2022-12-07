@@ -1,309 +1,92 @@
 
 [![logo](logo.png)](https://babyfish-ct.github.io/jimmer/)
 
-# A revolutionary ORM framework with built-in powerful cache management for Java and Kotlin.
- 
-Unlike simple CRUD-focused or traditional ORM solutions, Jimmer's core value is to maintain arbitrarily complex data associations in an extremely lightweight manner. No matter how complex the relationships between tables are, Jimmer could do sophisticated one-time processing from the bottom, freeing developers from dealing with tedious details at the business layer. The more complex the data structure, the greater the benefits of Jimmer.
- 
-Jimmer has several capabilities that clearly distinguish it from traditional solutions. The key point is that developers are no longer stuck with fragmented entity objects and their relationships but operate on arbitrarily complex data structures easily.
- 
-The ability of holistic manipulation of arbitrarily complex data structures is the core novelty of Jimmer. We’ll cover four topics in this article.
- 
-1. Express arbitrarily complex data structures
-2. Query arbitrarily complex data structures
-3. Save arbitrarily complex data structures
-4. Cache arbitrarily complex data structures
- 
-## 1. Express arbitrarily complex data structures
+A revolutionary ORM framework for both java and kotlin.
 
-![shape](../orphan/doc/static/img/shape.png)
- 
-This diagram demonstrates a global model and three local business perspectives of a specific relational database.
- 
-Each business perspective observes a local area of the global model.
- 
-- The shape of this area can vary widely, and you can freely decide whether it contains certain entities, associations or even attributes.
- 
-> The attributes mentioned here include not only the database mapping attributes already shown in the figure above, but also business attributes that are not related to the database structure.
+- Immutable data model
+- ORM based on immutable data model
+- The ORM also provides a specialized API to speed up the development of Spring GraphQL
 
-- The shape of the area requires **no prior design** and could be defined at **any time** with zero cost, so it is infinitely flexible, changing with requirements naturally.
- 
-Being a Java and Kotlin-oriented solution, Jimmer's entities are strongly typed intuitively and dynamic surprisingly.
- 
-By the word `dynamic`, we mean that any property of an entity object, whether it is a scalar property, an associative property, or a business property unrelated to the data model, can be unspecified. In this way, dynamic entities can describe arbitrarily complex data structures.
- 
-> Not specifying a property of an object, and setting a property of an object to null, are totally different in Jimmer.
+It allows developers to arbitrarily outline an area in the relational diagram of the database and decide which entities, relationships and even fields should be included in the area.
 
-In addition, Jimmer ensures that the data structure described by dynamic entities does not contain circular references and is a directed tree with an aggregated root, so that it can be transferred directly via the HTTP protocol.
- 
-> Dynamic entities could express arbitrarily complex data structures and be transferred directly via HTTP. Therefore, developers should:
+then consider this area as a whole
+1. Query
+2. Save
+3. Cache(And automatically ensure data consistency)
+
+## 1，Video links
+
+<table>
+   <tr>
+      <td>English</td>
+      <td>https://www.youtube.com/watch?v=Rt5zNv0YR2E</td>
+   </tr>
+   <tr>
+      <td rowspan="3">Chinese</td>
+      <td>Global introduction: https://www.bilibili.com/video/BV1kd4y1A7K3</td>
+   </tr>
+   <tr>
+      <td>Table Join Topic: https://www.bilibili.com/video/BV19t4y177PX</td>
+   </tr>
+   <tr>
+      <td>Global filters and parameterized cache: https://www.bilibili.com/video/BV1Mt4y1u7fz/</td>
+   </tr>
+<table>
+
+## 2. Bechmark
+
+- The abscissa represents the count of data objects queried from the database.
+- The ordinate represents the operation count per second.
+
+<kbd>
+   <a href="https://babyfish-ct.github.io/jimmer/docs/benchmark/">
+       <img src="https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/benchmark-snapshot.jpg"/>
+   </a>
+</kbd>
+
 > 
-> **Use a unified entity model to express the business data format, rather than defining DTOs for different data formats required by different business scenarios.**
->  
-> This is important, it avoids redundant data definitions that make the system lose compactness; and it’s the core of the Jimmer on which other revolutionary features are based.
+> - If you want to view full benchmark report, click [here](https://babyfish-ct.github.io/jimmer-doc/docs/benchmark) please.
+> 
+> - If you want to run the benchmark, run the project under the sub directory [benchmark](./benchmark) please.
 
-## 2. Query arbitrarily complex data structures
- 
-Jimmer provides two methods for querying arbitrarily complex data structures
- 
--   Specify the shape of the queried data structure on the server side
+## 3. Documentation
 
-    Details: [Object Fetcher](./jimmer-sql/query/fetcher)
+The project provides complete documentation.
 
--   Specifying the shape of the queried data structure on the client side
+Please view [**documentation**](https://babyfish-ct.github.io/jimmer/)*(Both english & chinese)* to know everything.
 
-    Details: [Spring GraphQL Support](./spring-graphql)
- 
-### 2.1. Specify the shape of the queried data structure on the server side
- 
-Jimmer supports the feature called [object Fetcher](./jimmer-sql/query/fetcher), which gives developers the ability to query arbitrarily complex data structures from the database.
-Please watch the video below.
+## 4. Examples:
 
-<video src="https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/java-fetcher.mp4"></video>
+This framework provides three examples
 
-> The object fetcher also has a powerful capability not shown in the video, recursive fetching self-associative properties. 
+1. Java Examples
+   - [example/java/jimmer-core](example/java/jimmer-core): How to use immutable objects
+   - [example/java/jimmer-sql](example/java/jimmer-sql): How to use ORM framework
+   - [example/java/jimmer-sql-graphql](example/java/jimmer-sql-graphql): How to quickly develop [Spring GraphQL](https://spring.io/projects/spring-graphql) services based on jimmer.
 
-Check out [Recursive Fetching for Self-Association](./jimmer-sql/query/fetcher#recursively-query-self-associated-properties) for details.
-:::
 
-### 2.2. Specify the shape of the queried data structure on the client side
- 
-[GraphQL](https://graphql.org/) is a protocol for querying arbitrarily complex data on the client side, but it has the disadvantage of slightly higher development costs on the server side.
+2. Kotlin Examples
+   - [example/kotlin/jimmer-core-kt](example/kotlin/jimmer-core-kt): How to use immutable objects
+   - [example/kotlin/jimmer-sql-kt](example/kotlin/jimmer-sql-kt): How to use ORM framework
+   - [example/kotlin/jimmer-sql-graphql-kt](example/kotlin/jimmer-sql-graphql-kt): How to quickly develop [Spring GraphQL](https://spring.io/projects/spring-graphql) services based on jimmer.
 
-SpringBoot supports [Spring GraphQL](https://spring.io/projects/spring-graphql) from 2.7.0. Jimmer provides specific support for this, and significantly reduces the development cost of Spring GraphQL-based projects.
+## 5. Discuss
 
-[![graphql-video]()](https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/graphql-fetcher.mp4)
+|Language|Entry point|
+|---|---|
+|English|https://discord.com/channels/1016206034827743283/|
+|Chinese|<img src="https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/public-wechat.jpg" height=300/>|
 
-:::tip
-Note, by the limitation of the current GraphQL protocol, this method does not have the same recursive querying capability for self-associative properties as the object fetcher’s.
- 
-If your business scenario requires both recursive query capabilities for self-associative attributes and transferring the decision on the shape of the queried data structure to the client, you can easily customize a GraphQL-like text protocol, the client submits text in a specific format according to the custom protocol and the server converts it to an object fetcher query.
-:::
+## 6. Ecosystem
 
-## 3. Save arbitrarily complex data structures
- 
-Developers can use the dynamicity of Jimmer entities to build arbitrarily complex data structures which could be stored by Jimmer.
-Jimmer will compare the current data structure in the database with the data structure the user expects to save, and then modify the inconsistent parts, make it consistent with the user expectation finally.
- 
-:::note 
-Jimmer's save feature is similar to `react` and `vue` in the web domain.
-:::
+Jimmer only focuses on the ORM itself, and does not provide auxiliary tools, such as producing entity interface definitions based on database structures.
 
-As shown in the picture
+Enthusiastic people have contributed related tools. So far, the projects included are:
 
-![save](@site/static/img/save.png)
- 
-The top left figure shows the current data structure in the database.
-The top right figure shows the data structure expected by the user. Each object is identified either by an id or a business key and a id growth strategy.
- 
-The bottom of the picture shows the operations performed by Jimmer, labeled with four colors.
+|Project type|Supported languages|Project link|
+|---|---|---|
+|Intellij plugin|Java&Kotlin|https://github.com/ClearPlume/jimmer-generator|
+|Maven plugin|Java|https://github.com/TokgoRonin/code-generator-jimmer|
+|Intellij plugin|Java&Kotlin|https://github.com/huyaro/CodeGenX|
 
--   <div style={{color: 'red'}}>Red part:</div>
- 
-    If an object exists in the current data structure of the database and does not exist in the user’s expectation to save, the object and its associations will be deleted.
- 
-    > The user can control the action of the Jimmer and choose to block the operation*(default behavior)*, disconnect the relationship only, or delete the object.
- 
--   <div style={{color: 'green'}}>Green section:</div>
- 
-    If an object does not exist in the current data structure of the database and exists in the user’s expectation to save, this object and its associations will be created.
- 
-    > The user can control the action and choose to block*(default behavior)* or allow the operation.
- 
--   <div style={{color: 'blue'}}>Blue section:</div>
- 
-    If the associations of an object with other objects in the current data structure of the database are different from the user’s expectation to save, the associations are automatically adjusted.
- 
--   <div style={{color: 'orange'}}>Orange part:</div>
- 
-    If an object in the data structure that the user expects to save has modifiable properties and the corresponding one exists in the current data structure of the database, these properties would be modified.
- 
-    > Since the Jimmer entity is dynamic, modifying some of the properties but not all is allowed since any property can be missing.
- 
-:::tip
--   Unlike all other data persistence solutions, Jimmer does not require a prior decision on whether each association should be saved in cascade; that depends entirely on the shape of the data structure specified by the user.
- 
--   The save command is one of Jimmer's most distinguishing database modification capabilities, and we of course also support other traditional modification methods.
- 
--   Although the save command is a sort of black-boxed high-level API, developers still have fine-grained control over details (the part of the diagram with changing colors), because Jimmer supports a powerful trigger mechanism.
-
-    > Checkout [trigger](./jimmer-sql/advanced/trigger) for detials.
-
-:::
-
-## 4. Cache arbitrarily complex data structures (with maintenance for consistency)
- 
-As mentioned above, Jimmer can query arbitrarily complex data structures, Jimmer supports caching arbitrarily complex data structures accordingly to get higher performance for your application.
- 
-From the perspective of use, caching is completely transparent to developers. Developers query data and get the cache worked automatically without extra code. We will discuss at the implementation level.
- 
-At the implementation level, there are two types of cache in Jimmer, object cache and attribute cache. Attribute cache can be further divided into associative attribute cache and computed attribute cache.
- 
-The combination of object cache and the associative cache forms the caching for arbitrarily complex data structures from the user’s perspective.
- 
-The caching mechanism of Jimmer has the following features:
- 
-- No restrictions on which caching technology to use.
- 
-- Transparent to the developers, whether to use caching does not result in business code changes.
- 
-- Supports multi-level caching, for example, the first level is the JVM's internal caffine, and the second level uses Redis shared by the cluster.
- 
-- The caching is optional, the whole framework can work without cache. Even with caching enabled, users could still control fine-granularly whether object cache should be used for each entity type, and whether attribute cache should be used for each associative or computed attribute.
- 
-- Great data consistency support.
- 
-### 4.1. Simple object cache
- 
-Simple object cache, responsible for mapping object ids to simple objects.
- 
-> Simple objects do not have any associative properties except for simple foreign keys.
-
-![object-cache](@site/static/img/object-cache.jpeg)
- 
-### 4.2. Associative attribute cache
- 
-The associative attribute cache is a unique feature of Jimmer, providing **maps** for data to support fast querying of associative attributes.
-
-![association-cache](@site/static/img/association-cache.png)
-
-:::note
-In the GraphQL working mode, for associations based on foreign keys*(`Book.store-1`、`Book.store-2`和`Book.store-3` in the figure)* rather than these expressed by intermediate table many-to-one relations, associative attribute cache should be used only if the foreign key of the current object is missing. or the parent object can be obtained by a simple parameterized query in the simple object cache with the foreign key and there is no need to use the associative attribute cache.
- 
-The rest of the associative attribute cache for collection types is important in all scenarios, whether for one-to-many or many-to-many attributes.
-:::
-
-:::tip 
-One of the drawbacks of relational databases is that any data associations require queries. A more straightforward cache of map greatly mitigates this problem.
-:::
-
-### 4.3. Computed attribute cache
- 
-Jimmer entities support non-persistent (@Transient) attributes independent of the database structure, which have no corresponding fields in the database and are used to express developer-defined business attributes.
- 
-There are two types of non-persistent attributes
- 
-- Manual mode: Jimmer would do nothing with this type of attributes, and whether the entity object has it or not depends entirely on the user's business code.
- 
-- Automatic mode: if the object fetcher or GraphQL queries this kind of attributes, Jimmer will call the computation solver configured in the current property annotation to compute and set the property automatically.
- 
-Non-persistent attribute in automatic mode is also called computed attribute and could optionally use computed cache.
-
-![calculated-cache](@site/static/img/calculated-cache.png)
-
-### 4.4. Multi-view cache
- 
-Jimmer provides [global filters](jimmer-sql/advanced/filter) that allow implicit conditional filtering on certain entity classes in all queries.
- 
-This feature makes it easy to implement row-based data authorization that would result in different operators seeing different data.
- 
-Therefore, we want different operators to see different cached data, that is the multi-view cache.
-
-![multi-view-cache](@site/static/img/multi-view-cache.png)
- 
-This figure shows multi-view cache with multi-tenancy as an example. Different operators see different associative cached and computed cached data.
- 
-:::caution
-Multi-view cache consumes much more space and should be used only for important associative or computed attributes. Developers are free to decide whether an associative or computed attribute should use normal cache only or multi-view cache.
-:::
-
-### 4.5. Cache Consistency
- 
-Jimmer provides out-of-the-box cache data consistency guarantees. All developers have to do is simply enable [Jimmer's trigger feature](./jimmer-sql/advanced/trigger) to make it perceive and response database changes.
- 
-- The cache consistency is fully automated for applications with only object cache and associative cache, no extra works need to do.
-- Very simple manual assistance is required for applications with computed cache or multi-view cache
- 
-Example
- 
-1.  The corresponding associative cache and computed cache would be cleared automatically when a foreign key modified.
-
-    <details>
-    <summary>View gif animation</summary>
-
-    ![modify_fk](@site/static/img/modify_fk.gif)
-
-    > In this animation, the white area above is the SQL tool, and the black area below is the Intellij log.
-    >
-    > The associative attribute `BookStore.books` is affected, which further affects the computed attribute `BookStore.avgPrice`.
-
-    </details>
-
-2.  The corresponding associative cache would be cleared automatically when intermediate tables modified.
- 
-    <details>
-    <summary>View gif animation</summary>
-
-    ![insert_middle_table](@site/static/img/insert_middle_table.gif)
-
-    > In this animation, the white area above is the SQL tool, and the black area below is the Intellij log.
-
-    </details>
- 
-3.  The corresponding computed cache would be cleared automatically when the dependent fields modified.
- 
-    <details>
-    <summary>View gif animation</summary>
-
-    ![modify_price](@site/static/img/modify_price.gif)
-
-    > In this animation, the white area above is the SQL tool, and the black area below is the Intellij log.
-
-    </details>
- 
-4.  The corresponding associative and computed cache would be cleared automatically when the fields that the filter depends on modified.
-
-    <details>
-    <summary>View gif animation</summary>
-
-    ![modify_tenant](@site/static/img/modify_tenant.gif)
-
-    > In this animation, the white area above is the SQL tool, and the black area below is the Intellij log.
-    >
-    > In this example, the global filter operates on the Book object, all associative attributes BookStore.books and Author.books pointing to it are affected. The computed attribute BookStore.avgPrice is further affected since the associative attribute BookStore.books changes.
-
-    </details>
-
-## 5. Other features
- 
-### 5.1. Strongly typed DSL
- 
-Errors are found at compile-time as much as possible; strongly typed DSL can be also mixed with Native SQL.
- 
-### 5.2. Ultra-simple multi-table JOIN
- 
-Jimmer strongly typed DSL provides more useful features than native SQL for multi-table JOIN.
-
-Building paths of any length with chained expressions by the help of intellisence based on object properties is multi-level JOIN.
-
-Conflicting table JOINs in the different paths could be merged automatically, and redundant JOINs would be optimized out automatically.
-
-> In fact, it’s the original motivation for Jimmer.
-
-Link: [Table Joins](./jimmer-sql/basic/table-join)
- 
-### 5.3. Ultra-simple paging
- 
-Query for row counting required by paging would be generated and optimized automatically based on data object query.
-
-Link: [Pagination query](./jimmer-sql/query/pagination)
- 
-### 5.4. Trigger
- 
-Jimmer provides two kinds of triggers to notify data changes before and after a transaction commit respectively. Each could perceive the data changes, including object changes and association changes.
-
-Link: [Trigger](./jimmer-sql/advanced/trigger)
-
-### 5.5 Ultimate performance
- 
-Link: [Benchmark](./benchmark).
- 
-## 6. Future work
- 
--   Do not restrict the microservice governance framework, allow entity objects to support remote associations across microservice boundaries.
- 
--   While SQL grouping and aggregation can be used to implement computed attributes, these sorts of statistical operations are not the area the relational OLTP databases are best at, we may support mapping computed attributes to column-based OLAP databases like Clickhouse in future.
- 
-> The available features are slightly beyond the scope of ORM, but we still interpret Jimmer as ORM currently.
->  
-> We will interpret Jimmer in a new way when it goes far beyond ORM after these features implemented, and the future is coming now.
+Everyone is welcome to actively contribute related tools, and submit PR for me to include them in the list
