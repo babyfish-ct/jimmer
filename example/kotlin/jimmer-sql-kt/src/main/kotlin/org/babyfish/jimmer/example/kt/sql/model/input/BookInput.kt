@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.example.kt.sql.model.input
 
-import org.babyfish.jimmer.ImmutableConverter
-import org.babyfish.jimmer.example.kt.sql.model.Author
 import org.babyfish.jimmer.example.kt.sql.model.Book
-import org.babyfish.jimmer.example.kt.sql.model.BookStore
 import org.babyfish.jimmer.kt.makeIdOnly
 import org.babyfish.jimmer.kt.newImmutableConverter
 import java.math.BigDecimal
