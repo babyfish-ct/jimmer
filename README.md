@@ -61,7 +61,7 @@ Please watch the video below.
 
 |Language|Video|
 |---|---|
-|Java|https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/java-fetcher.mp4|
+|Java|[![java-fetcher-viedo](https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/java-fetcher.mp4)](https://raw.githubusercontent.com/babyfish-ct/jimmer/orphan/doc/static/img/java-fetcher.mp4)|
 |Kotlin|../orphan/doc/static/img/java-fetcher.mp4?raw=true|
 
 :::tip
