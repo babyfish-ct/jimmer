@@ -16,7 +16,7 @@ The ability of holistic manipulation of arbitrarily complex data structures is t
  
 ## 1. Express arbitrarily complex data structures
 
-![shape](/orphan/doc/static/img/shape.png)
+![shape](../orphan/doc/static/img/shape.png)
  
 This diagram demonstrates a global model and three local business perspectives of a specific relational database.
  
