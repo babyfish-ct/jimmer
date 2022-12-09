@@ -3,18 +3,14 @@
 
 A revolutionary ORM framework for both java and kotlin.
 
-- Immutable data model
-- ORM based on immutable data model
-- The ORM also provides a specialized API to speed up the development of Spring GraphQL
 
-It allows developers to arbitrarily outline an area in the relational diagram of the database and decide which entities, relationships and even fields should be included in the area.
+## 1. Documentation
 
-then consider this area as a whole
-1. Query
-2. Save
-3. Cache(And automatically ensure data consistency)
+The project provides complete documentation.
 
-## 1，Video links
+Please view [**documentation**](https://babyfish-ct.github.io/jimmer/)*(Both english & chinese)* to know everything.
+
+## 2. Video links
 
 <table>
    <tr>
@@ -33,7 +29,7 @@ then consider this area as a whole
    </tr>
 <table>
 
-## 2. Bechmark
+## 3. Bechmark
 
 - The abscissa represents the count of data objects queried from the database.
 - The ordinate represents the operation count per second.
@@ -48,12 +44,6 @@ then consider this area as a whole
 > - If you want to view full benchmark report, click [here](https://babyfish-ct.github.io/jimmer-doc/docs/benchmark) please.
 > 
 > - If you want to run the benchmark, run the project under the sub directory [benchmark](./benchmark) please.
-
-## 3. Documentation
-
-The project provides complete documentation.
-
-Please view [**documentation**](https://babyfish-ct.github.io/jimmer/)*(Both english & chinese)* to know everything.
 
 ## 4. Examples:
 
