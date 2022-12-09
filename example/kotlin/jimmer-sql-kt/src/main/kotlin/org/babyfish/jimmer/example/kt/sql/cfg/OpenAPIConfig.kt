@@ -13,8 +13,8 @@ import org.springframework.context.annotation.Configuration
 class OpenAPIConfig {
 
     @Bean
-    fun openAPI(): OpenAPI? {
-        return OpenAPI()
+    fun openAPI(): OpenAPI =
+        OpenAPI()
             .info(Info().title("demo:jimmer-sql-kt").version("0.4.10"))
             .components(
                 Components()
@@ -27,5 +27,4 @@ class OpenAPIConfig {
                     )
             )
             .addSecurityItem(SecurityRequirement().addList("tenantHeader"))
-    }
 }

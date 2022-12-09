@@ -4,7 +4,5 @@ spring:
     url: jdbc:h2:mem:jimmer-sql-kt;database_to_upper=true
 
 springdoc:
-  api-docs:
-    path: /api-docs
   swagger-ui:
     path: /ui
