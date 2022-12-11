@@ -108,7 +108,7 @@ class ImmutableTypeImpl implements ImmutableType {
         isEmbeddable = immutableAnnotation instanceof Embeddable;
 
         if (superType != null) {
-            if (!superType.isMappedSuperclass()) {
+            if ((isEntity || isMappedSupperClass) && !superType.isMappedSuperclass()) {
                 throw new ModelException(
                         "Illegal immutable type \"" +
                                 this +
@@ -118,7 +118,7 @@ class ImmutableTypeImpl implements ImmutableType {
                                 MappedSuperclass.class.getName()
                 );
             }
-            if (!isEntity && !isMappedSupperClass) {
+            if ((superType.isEntity() || superType.isMappedSuperclass()) && !isEntity && !isMappedSupperClass) {
                 throw new ModelException(
                         "Illegal immutable type \"" +
                                 this +
