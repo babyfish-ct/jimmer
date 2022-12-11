@@ -359,6 +359,7 @@ public class EntitiesImpl implements Entities {
                         "The sorted field \"" +
                                 sortedProp +
                                 "\" does not belong to the type \"" +
+                                type +
                                 "\""
                 );
             }
