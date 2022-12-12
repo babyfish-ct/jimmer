@@ -100,7 +100,7 @@ public class SqlBuilder {
             if (value != null) {
                 variable(value);
             } else {
-                nullSingeVariable(prop.getElementClass());
+                nullVariable(prop.getElementClass());
             }
         } else {
             ImmutableType type;

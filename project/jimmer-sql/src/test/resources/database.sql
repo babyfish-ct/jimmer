@@ -246,7 +246,7 @@ create table administrator_metadata(
     name varchar(50) not null,
     email varchar(50) not null,
     website varchar(50) not null,
-    administrator_id bigint not null,
+    administrator_id bigint,
     deleted boolean not null,
     created_time timestamp not null,
     modified_time timestamp not null

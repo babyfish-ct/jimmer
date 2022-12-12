@@ -8,6 +8,9 @@ import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.inheritance.Administrator;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataDraft;
 import org.babyfish.jimmer.sql.runtime.DbNull;
 import org.junit.jupiter.api.Test;
 
@@ -776,6 +779,41 @@ public class SaveTest extends AbstractMutationTest {
                         it.modified(
                                 "{\"id\":102,\"name\":\"batch-node-3\",\"parent\":null}"
                         );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testSaveNullParent() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                AdministratorMetadataDraft.$.produce(metadata -> {
+                                    metadata.setName("am_4");
+                                    metadata.setAdministrator((Administrator) null);
+                                })
+                        ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from ADMINISTRATOR_METADATA as tb_1_ " +
+                                        "where tb_1_.NAME = ? for update"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update ADMINISTRATOR_METADATA " +
+                                        "set ADMINISTRATOR_ID = ? " +
+                                        "where ID = ?"
+                        );
+                    });
+                    ctx.rowCount(AffectedTable.of(AdministratorMetadata.class), 1);
+                    ctx.entity(it -> {
+                        it.original("{\"name\":\"am_4\",\"administrator\":null}");
+                        it.modified("{\"name\":\"am_4\",\"administrator\":null,\"id\":40}");
                     });
                 }
         );
