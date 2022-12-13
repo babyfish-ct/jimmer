@@ -4,6 +4,7 @@ import kotlin.reflect.KClass;
 import kotlin.reflect.KProperty1;
 import kotlin.reflect.full.KClasses;
 import org.babyfish.jimmer.meta.*;
+import org.babyfish.jimmer.meta.spi.EntityPropImplementor;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
@@ -12,7 +13,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.*;
 
-class ImmutablePropImpl implements ImmutableProp {
+class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     private final ImmutableTypeImpl declaringType;
 
@@ -244,6 +245,11 @@ class ImmutablePropImpl implements ImmutableProp {
     @Override
     public boolean isNullable() {
         return nullable;
+    }
+
+    @Override
+    public Method getJavaGetter() {
+        return javaGetter;
     }
 
     @Override
