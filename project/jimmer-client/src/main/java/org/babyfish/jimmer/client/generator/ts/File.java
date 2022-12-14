@@ -6,7 +6,13 @@ public class File {
 
     private final String name;
 
+    private final boolean isObject;
+
     File(String dir, String name) {
+        this(dir, name, false);
+    }
+
+    File(String dir, String name, boolean isObject) {
         if (dir.startsWith("/")) {
             dir = dir.substring(1);
         }
@@ -15,6 +21,7 @@ public class File {
         }
         this.dir = dir;
         this.name = name;
+        this.isObject = isObject;
     }
 
     public String getDir() {
@@ -23,6 +30,10 @@ public class File {
 
     public String getName() {
         return name;
+    }
+
+    public boolean isObject() {
+        return isObject;
     }
 
     @Override

@@ -2,7 +2,7 @@ package org.babyfish.jimmer.client.generator.ts;
 
 public class DynamicWriter extends CodeWriter {
 
-    public static final File FILE = new File("", "Dynamic.ts");
+    public static final File FILE = new File("", "Dynamic");
 
     protected DynamicWriter(Context ctx) {
         super(ctx, FILE);

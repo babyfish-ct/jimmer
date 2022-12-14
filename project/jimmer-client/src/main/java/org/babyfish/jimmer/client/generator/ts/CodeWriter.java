@@ -75,6 +75,39 @@ public abstract class CodeWriter {
         return this;
     }
 
+    public void importFile(File file) {
+        if (file != null && !file.getDir().equals(this.file.getDir())) {
+            String[] currentPaths = SLASH_PATTERN.split(this.file.getDir());
+            String[] paths = SLASH_PATTERN.split(file.getDir());
+            int sameCount = 0;
+            int len = Math.min(currentPaths.length, paths.length);
+            while (sameCount < len) {
+                if (!currentPaths[sameCount].equals(paths[sameCount])) {
+                    break;
+                }
+                sameCount++;
+            }
+            StringBuilder builder = new StringBuilder();
+            if (sameCount < currentPaths.length) {
+                for (int i = currentPaths.length - sameCount; i > 0; --i) {
+                    builder.append("..");
+                    if (i != 1) {
+                        builder.append('/');
+                    }
+                }
+            } else {
+                builder.append("./");
+            }
+            for (int i = sameCount; i < paths.length; i++) {
+                builder.append('/').append(paths[i]);
+            }
+            String path = builder.toString();
+            importMap
+                    .computeIfAbsent(path, it -> new LinkedHashSet<>())
+                    .add(file.getName());
+        }
+    }
+
     public CodeWriter type(Type type) {
         if (type instanceof UnresolvedTypeVariable) {
             code(((UnresolvedTypeVariable)type).getName());
@@ -99,40 +132,12 @@ public abstract class CodeWriter {
             code(">");
         } else {
             File file = ctx.file(type);
-            if (file != null && !file.getDir().equals(this.file.getDir())) {
-                String[] currentPaths = SLASH_PATTERN.split(this.file.getDir());
-                String[] paths = SLASH_PATTERN.split(file.getDir());
-                int sameCount = 0;
-                int len = Math.min(currentPaths.length, paths.length);
-                while (sameCount < len) {
-                    if (!currentPaths[sameCount].equals(paths[sameCount])) {
-                        break;
-                    }
-                    sameCount++;
-                }
-                StringBuilder builder = new StringBuilder();
-                if (sameCount < currentPaths.length) {
-                    for (int i = currentPaths.length - sameCount; i > 0; --i) {
-                        builder.append("..");
-                        if (i != 1) {
-                            builder.append('/');
-                        }
-                    }
-                } else {
-                    builder.append("./");
-                }
-                for (int i = sameCount; i < paths.length; i++) {
-                    builder.append('/').append(paths[i]);
-                }
-                String path = builder.toString();
-                importMap
-                        .computeIfAbsent(path, it -> new LinkedHashSet<>())
-                        .add(file.getName());
-            }
             if (file != null) {
+                importFile(file);
                 if (type instanceof ImmutableObjectType &&
                         rawImmutableAsDynamic() &&
                         ((ImmutableObjectType)type).getCategory() == ImmutableObjectType.Category.RAW) {
+                    importFile(DynamicWriter.FILE);
                     code("Dynamic<").code(file.getName()).code('>');
                 } else {
                     code(file.getName());
@@ -233,7 +238,7 @@ public abstract class CodeWriter {
         write();
         if (!importMap.isEmpty()) {
             for (Map.Entry<String, Set<String>> e : importMap.entrySet()) {
-                writer.write("import { ");
+                writer.write("import type { ");
                 boolean addComma = false;
                 for (String name : e.getValue()) {
                     if (addComma) {

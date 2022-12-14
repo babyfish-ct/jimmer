@@ -33,6 +33,10 @@ public class MetadataTest {
                         if (putMapping != null) {
                             return new Tuple2<>(putMapping.value(), Operation.HttpMethod.PUT);
                         }
+                        DeleteMapping deleteMapping = javaMethod.getAnnotation(DeleteMapping.class);
+                        if (deleteMapping != null) {
+                            return new Tuple2<>(deleteMapping.value(), Operation.HttpMethod.DELETE);
+                        }
                         return null;
                     }
             )

@@ -50,6 +50,7 @@ public class TypeDefinitionWriter extends CodeWriter {
                         .codeIf(property.getType() instanceof NullableType, "?")
                         .code(": ");
                 type(NullableType.unwrap(property.getType()));
+                code(';');
             }
         });
     }
