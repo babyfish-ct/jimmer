@@ -9,9 +9,9 @@ public class DynamicWriter extends CodeWriter {
     }
 
     @Override
-    protected void write() {
+    public void write() {
         code("export type Dynamic<T> = ");
-        scope(ScopeType.OBJECT, "", false, () -> {
+        scope(ScopeType.BLANK, "", false, () -> {
             code("{[K in keyof T]?: Dynamic<T[K]>}");
         });
         code(";\n");

@@ -136,6 +136,18 @@ class OperationImpl implements Operation {
             }
         }
         operation.parameters = Collections.unmodifiableList(list);
+        Set<String> names = new HashSet<>();
+        for (Parameter parameter : list) {
+            if (!names.add(parameter.getName())) {
+                throw new IllegalDocMetaException(
+                        "Illegal method \"" +
+                                rawMethod +
+                                "\", duplicated parameter name \"" +
+                                parameter.getName() +
+                                "\"(web parameter name, not java parameter name)"
+                );
+            }
+        }
         return operation;
     }
 

@@ -4,6 +4,10 @@ import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.model.*;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.jetbrains.annotations.Nullable;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 public interface BookService {
 
@@ -20,6 +24,15 @@ public interface BookService {
                             .store(BookStoreFetcher.$.name())
             );
 
+    @GetMapping("/books")
+    List<@FetchBy("BOOK_FETCHER") Book> findBooks(
+            @RequestParam("name") String name,
+            @RequestParam("storeName") @Nullable String storeName,
+            @RequestParam("authorName") @Nullable String authorName,
+            @RequestParam(value = "minPrice", required = false) BigDecimal minPrice,
+            @RequestParam(value = "maxPrice", required = false) BigDecimal maxPrice
+    );
+
     @GetMapping("/tuples")
     Page<
             Tuple2<
@@ -27,9 +40,9 @@ public interface BookService {
                     ? extends @FetchBy("AUTHOR_FETCHER") Author
             >
     > findTuples(
-            @RequestParam String name,
-            @RequestParam int pageIndex,
-            @RequestParam int pageSize
+            @RequestParam("name") @Nullable String name,
+            @RequestParam("pageIndex") int pageIndex,
+            @RequestParam("pageSize") int pageSize
     );
 
     @PutMapping("/book")

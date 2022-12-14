@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class ServiceWriter extends CodeWriter {
 
@@ -22,24 +23,22 @@ public class ServiceWriter extends CodeWriter {
 
     @Override
     protected void write() {
-        importFile(new File("", "Executor"));
-        code("export class ")
-                .code(getFile().getName())
-                .scope(ScopeType.ARGUMENTS, "", true, () -> {
-                    code("private executor: Executor");
-                })
-                .code(' ');
+
+        importFile(ExecutorWriter.FILE);
+
+        code("export class ").code(getFile().getName()).code(' ');
         scope(ScopeType.OBJECT, "", true, () -> {
+
+            code("\nconstructor(private executor: Executor) {}\n");
+
             for (Operation operation : service.getOperations()) {
-                separator();
-                code('\n');
                 write(operation);
             }
         });
     }
 
     private void write(Operation operation) {
-        code("async ").code(getContext().operationName(operation))
+        code("\nasync ").code(getContext().operationName(operation))
                 .scope(ScopeType.ARGUMENTS, "", false, () -> {
                     if (!operation.getParameters().isEmpty()) {
                         code("options: ");
@@ -61,7 +60,8 @@ public class ServiceWriter extends CodeWriter {
                 .code("> ")
                 .scope(ScopeType.OBJECT, "", true, () -> {
                     impl(operation);
-                });
+                })
+                .code('\n');
     }
 
     private void write(Parameter parameter) {
@@ -91,14 +91,53 @@ public class ServiceWriter extends CodeWriter {
             }
         }
 
-        char separator = operation.getUri().indexOf('?') != -1 ? '&' : '?';
-        for (Parameter parameter : operation.getParameters()) {
-            if (parameter.getRequestParam() != null) {
-                code("uri += '").code(separator).code("';\n");
-                code("uri += encodeURIComponent(options." + parameter.getName() + ");\n");
+        List<Parameter> urlParameters = operation
+                .getParameters()
+                .stream()
+                .filter(it -> it.getRequestParam() != null)
+                .collect(Collectors.toList());
+        if (!urlParameters.isEmpty()) {
+            boolean hasParamStart = operation.getUri().indexOf('?') != -1;
+            boolean dynamicSeparator = !hasParamStart &&
+                    urlParameters.get(0).getType() instanceof NullableType &&
+                    urlParameters.size() > 1;
+            String sp;
+            if (dynamicSeparator) {
+                code("let separator = '?';\n");
+                sp = "separator";
+            } else {
+                sp = hasParamStart ? "'&'" : "'?'";
+            }
+            for (Parameter parameter : operation.getParameters()) {
+                if (parameter.getRequestParam() != null) {
+                    final String finalSp = sp;
+                    final boolean finalDynamic = dynamicSeparator;
+                    Runnable addUrlParameter = () -> {
+                        code("uri += ").code(finalSp).code(";\n");
+                        code("uri += '").code(parameter.getRequestParam()).code("';\n");
+                        code("uri += '=';\n");
+                        code("uri += encodeURIComponent(options." + parameter.getName() + ");\n");
+                        if (finalDynamic && parameter.getType() instanceof NullableType) {
+                            code("separator = '&';\n");
+                        }
+                    };
+                    if (parameter.getType() instanceof NullableType) {
+                        code("if (options.")
+                                .code(parameter.getName()).code(" !== undefined && options.")
+                                .code(parameter.getName()).code(" !== null) ");
+                        scope(ScopeType.OBJECT, "", true, addUrlParameter);
+                        code('\n');
+                    } else {
+                        addUrlParameter.run();
+                        dynamicSeparator = false;
+                    }
+                    if (!dynamicSeparator) {
+                        sp = "'&'";
+                    }
+                }
             }
         }
-        code("return (await executor({uri, method: '")
+        code("return (await this.executor({uri, method: '")
                 .code(operation.getHttpMethod().name())
                 .code("'");
         for (Parameter parameter : operation.getParameters()) {
@@ -111,7 +150,7 @@ public class ServiceWriter extends CodeWriter {
 
     private static String pathVariableParameter(Operation operation, String pathVariable) {
         for (Parameter parameter : operation.getParameters()) {
-            if (pathVariable.equals(parameter.getPathVariable())) {
+            if (pathVariable.equals(parameter.getName())) {
                 return parameter.getName();
             }
         }
