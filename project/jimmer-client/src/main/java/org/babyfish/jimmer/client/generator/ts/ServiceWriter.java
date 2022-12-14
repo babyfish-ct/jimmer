@@ -106,16 +106,19 @@ public class ServiceWriter extends CodeWriter {
                 code("let separator = '?';\n");
                 sp = "separator";
             } else {
-                sp = hasParamStart ? "'&'" : "'?'";
+                sp = hasParamStart ? "&" : "?";
             }
             for (Parameter parameter : operation.getParameters()) {
                 if (parameter.getRequestParam() != null) {
                     final String finalSp = sp;
                     final boolean finalDynamic = dynamicSeparator;
                     Runnable addUrlParameter = () -> {
-                        code("uri += ").code(finalSp).code(";\n");
-                        code("uri += '").code(parameter.getRequestParam()).code("';\n");
-                        code("uri += '=';\n");
+                        if (finalDynamic) {
+                            code("uri += ").code(finalSp).code(";\n");
+                            code("uri += '").code(parameter.getRequestParam()).code("=';\n");
+                        } else {
+                            code("uri += '").code(finalSp).code(parameter.getRequestParam()).code("=';\n");
+                        }
                         code("uri += encodeURIComponent(options." + parameter.getName() + ");\n");
                         if (finalDynamic && parameter.getType() instanceof NullableType) {
                             code("separator = '&';\n");
@@ -132,7 +135,7 @@ public class ServiceWriter extends CodeWriter {
                         dynamicSeparator = false;
                     }
                     if (!dynamicSeparator) {
-                        sp = "'&'";
+                        sp = "&";
                     }
                 }
             }
