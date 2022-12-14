@@ -3,7 +3,13 @@ package org.babyfish.jimmer.client.meta;
 import org.babyfish.jimmer.client.generator.ts.Context;
 import org.babyfish.jimmer.client.generator.ts.File;
 import org.babyfish.jimmer.client.generator.ts.ServiceWriter;
+import org.babyfish.jimmer.client.generator.ts.TypeDefinitionWriter;
+import org.babyfish.jimmer.client.model.Book;
+import org.babyfish.jimmer.client.model.BookInput;
+import org.babyfish.jimmer.client.model.Gender;
+import org.babyfish.jimmer.client.model.Page;
 import org.babyfish.jimmer.client.service.*;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
@@ -121,8 +127,77 @@ public class MetadataTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Context ctx = new Context(metadata, out, "    ");
         Service service = metadata.getServices().get(BookService.class);
-        File file = ctx.getServiceFileMap().get(service);
-        new ServiceWriter(ctx, service, file).write();
+        new ServiceWriter(ctx, service).flush();
+        String code = out.toString();
+        System.out.println(code);
+    }
+
+    @Test
+    public void testFetchedBook() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Context ctx = new Context(metadata, out, "    ");
+        ImmutableObjectType bookType = metadata.getFetchedImmutableObjectTypes().get(BookService.BOOK_FETCHER);
+        new TypeDefinitionWriter(ctx, bookType).flush();
+        String code = out.toString();
+        System.out.println(code);
+    }
+
+    @Test
+    public void testFetchedAuthor() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Context ctx = new Context(metadata, out, "    ");
+        ImmutableObjectType authorType = metadata.getFetchedImmutableObjectTypes().get(BookService.AUTHOR_FETCHER);
+        new TypeDefinitionWriter(ctx, authorType).flush();
+        String code = out.toString();
+        System.out.println(code);
+    }
+
+    @Test
+    public void testRawBook() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Context ctx = new Context(metadata, out, "    ");
+        ImmutableObjectType bookType = metadata.getRawImmutableObjectTypes().get(ImmutableType.get(Book.class));
+        new TypeDefinitionWriter(ctx, bookType).flush();
+        String code = out.toString();
+        System.out.println(code);
+    }
+
+    @Test
+    public void testBookInput() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Context ctx = new Context(metadata, out, "    ");
+        StaticObjectType bookInputType = metadata.getStaticTypes().get(new StaticObjectType.Key(BookInput.class, null));
+        new TypeDefinitionWriter(ctx, bookInputType).flush();
+        String code = out.toString();
+        System.out.println(code);
+    }
+
+    @Test
+    public void testPage() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Context ctx = new Context(metadata, out, "    ");
+        StaticObjectType pageType = metadata.getGenericTypes().get(Page.class);
+        new TypeDefinitionWriter(ctx, pageType).flush();
+        String code = out.toString();
+        System.out.println(code);
+    }
+
+    @Test
+    public void testTuple2() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Context ctx = new Context(metadata, out, "    ");
+        StaticObjectType tupleType = metadata.getGenericTypes().get(Tuple2.class);
+        new TypeDefinitionWriter(ctx, tupleType).flush();
+        String code = out.toString();
+        System.out.println(code);
+    }
+
+    @Test
+    public void testGender() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Context ctx = new Context(metadata, out, "    ");
+        EnumType genderType = metadata.getEnumTypes().get(Gender.class);
+        new TypeDefinitionWriter(ctx, genderType).flush();
         String code = out.toString();
         System.out.println(code);
     }

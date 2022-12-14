@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 class Context {
 
@@ -18,11 +19,15 @@ class Context {
 
     private final Metadata.ParameterParser parameterParser;
 
+    private final Map<Class<?>, JetBrainsNullity> jetBrainsNullityMap;
+
     private final Location location;
 
-    final Map<java.lang.reflect.Type, ObjectType> staticObjectTypeMap;
+    final Map<StaticObjectType.Key, StaticObjectType> staticObjectTypeMap;
 
     final Map<Class<?>, EnumType> enumTypeMap;
+
+    final Map<Fetcher<?>, ImmutableObjectType> fetchedImmutableObjectTypeMap;
 
     final Map<ImmutableType, ImmutableObjectType> rawImmutableObjectTypeMap;
 
@@ -32,6 +37,8 @@ class Context {
 
     private final Map<TypeVariable<?>, AnnotatedType> typeVariableMap;
 
+    private final boolean ignoreTypeVariableResolving;
+
     Context(
             Metadata.OperationParser operationParser,
             Metadata.ParameterParser parameterParser
@@ -39,35 +46,43 @@ class Context {
         this.base = null;
         this.operationParser = operationParser;
         this.parameterParser = parameterParser;
+        this.jetBrainsNullityMap = new HashMap<>();
         this.location = null;
         this.staticObjectTypeMap = new LinkedHashMap<>();
         this.enumTypeMap = new LinkedHashMap<>();
         this.rawImmutableObjectTypeMap = new LinkedHashMap<>();
         this.viewImmutableObjectTypeMap = new LinkedHashMap<>();
+        this.fetchedImmutableObjectTypeMap = new LinkedHashMap<>();
         this.fetcherMap = new HashMap<>();
         this.typeVariableMap = Collections.emptyMap();
+        this.ignoreTypeVariableResolving = false;
     }
 
     private Context(Context base, Location location) {
         this.base = base;
         this.operationParser = base.operationParser;
         this.parameterParser = base.parameterParser;
+        this.jetBrainsNullityMap = base.jetBrainsNullityMap;
         this.location = location;
         this.staticObjectTypeMap = base.staticObjectTypeMap;
         this.enumTypeMap = base.enumTypeMap;
+        this.fetchedImmutableObjectTypeMap = base.fetchedImmutableObjectTypeMap;
         this.rawImmutableObjectTypeMap = base.rawImmutableObjectTypeMap;
         this.viewImmutableObjectTypeMap = base.viewImmutableObjectTypeMap;
         this.fetcherMap = base.fetcherMap;
         this.typeVariableMap = Collections.emptyMap();
+        this.ignoreTypeVariableResolving = base.ignoreTypeVariableResolving;
     }
 
     private Context(Context base, AnnotatedParameterizedType parameterizedType) {
         this.base = base;
         this.operationParser = base.operationParser;
         this.parameterParser = base.parameterParser;
+        this.jetBrainsNullityMap = base.jetBrainsNullityMap;
         this.location = base.location;
         this.staticObjectTypeMap = base.staticObjectTypeMap;
         this.enumTypeMap = base.enumTypeMap;
+        this.fetchedImmutableObjectTypeMap = base.fetchedImmutableObjectTypeMap;
         this.rawImmutableObjectTypeMap = base.rawImmutableObjectTypeMap;
         this.viewImmutableObjectTypeMap = base.viewImmutableObjectTypeMap;
         this.fetcherMap = base.fetcherMap;
@@ -78,10 +93,31 @@ class Context {
             map.put(typeVariables[i], actualTypes[i]);
         }
         this.typeVariableMap = map;
+        this.ignoreTypeVariableResolving = base.ignoreTypeVariableResolving;
+    }
+
+    private Context(Context base, boolean ignoreTypeVariableResolving) {
+        this.base = base;
+        this.operationParser = base.operationParser;
+        this.parameterParser = base.parameterParser;
+        this.jetBrainsNullityMap = base.jetBrainsNullityMap;
+        this.location = base.location;
+        this.staticObjectTypeMap = base.staticObjectTypeMap;
+        this.enumTypeMap = base.enumTypeMap;
+        this.fetchedImmutableObjectTypeMap = base.fetchedImmutableObjectTypeMap;
+        this.rawImmutableObjectTypeMap = base.rawImmutableObjectTypeMap;
+        this.viewImmutableObjectTypeMap = base.viewImmutableObjectTypeMap;
+        this.fetcherMap = base.fetcherMap;
+        this.typeVariableMap = base.typeVariableMap;
+        this.ignoreTypeVariableResolving = ignoreTypeVariableResolving;
     }
 
     public Context locate(Location location) {
         return new Context(this, location);
+    }
+
+    public Location getLocation() {
+        return location;
     }
 
     public Metadata.OperationParser getOperationParser() {
@@ -90,6 +126,10 @@ class Context {
 
     public Metadata.ParameterParser getParameterParser() {
         return parameterParser;
+    }
+
+    public JetBrainsNullity getJetBrainsNullity(Class<?> type) {
+        return jetBrainsNullityMap.computeIfAbsent(type, JetBrainsNullity::new);
     }
 
     public Type parseType(AnnotatedType annotatedType) {
@@ -137,7 +177,16 @@ class Context {
                                 ", collection and map must be parameterized type"
                 );
             }
-            return objectType((Class<?>) javaType);
+            if (!ignoreTypeVariableResolving && ((Class<?>) javaType).getTypeParameters().length != 0) {
+                throw new IllegalDocMetaException(
+                        "Illegal type \"" +
+                                annotatedType +
+                                "\" declared in " +
+                                location +
+                                ", generic type must be parameterized type"
+                );
+            }
+            return objectType((Class<?>) javaType, null);
         }
         if (annotatedType instanceof AnnotatedWildcardType) {
             return parseType(((AnnotatedWildcardType)annotatedType).getAnnotatedUpperBounds()[0]);
@@ -146,6 +195,9 @@ class Context {
             return new ArrayTypeImpl(parseType(((AnnotatedArrayType) annotatedType).getAnnotatedGenericComponentType()));
         }
         if (annotatedType instanceof AnnotatedTypeVariable) {
+            if (ignoreTypeVariableResolving) {
+                return new UnresolvedTypeVariableImpl(((TypeVariable<?>)annotatedType.getType()).getName());
+            }
             return parseType(resolve((AnnotatedTypeVariable) annotatedType));
         }
         if (annotatedType instanceof AnnotatedParameterizedType) {
@@ -171,9 +223,30 @@ class Context {
                         parseType(annotatedParameterizedType.getAnnotatedActualTypeArguments()[1])
                 );
             }
-            return new Context(this, annotatedParameterizedType).objectType(rawClass);
+            return new Context(this, annotatedParameterizedType).objectType(
+                    rawClass,
+                    Arrays.stream(annotatedParameterizedType.getAnnotatedActualTypeArguments())
+                            .map(this::parseType)
+                            .collect(Collectors.toList())
+            );
         }
         throw new AssertionError("Internal bug: unexpected annotated type " + annotatedType);
+    }
+
+    public Map<Class<?>, StaticObjectType> getGenericTypes() {
+        Set<Class<?>> classes =
+                staticObjectTypeMap
+                        .values()
+                        .stream()
+                        .filter(it -> !it.getTypeArguments().isEmpty())
+                        .map(StaticObjectType::getJavaType)
+                        .collect(Collectors.toSet());
+        Map<Class<?>, StaticObjectType> map = new HashMap<>((classes.size() * 4 + 2) / 3);
+        Context tmpContext = new Context(this, true);
+        for (Class<?> clazz : classes) {
+            map.put(clazz, tmpContext.objectType(clazz, null));
+        }
+        return map;
     }
 
     private AnnotatedType resolve(AnnotatedTypeVariable typeVariable) {
@@ -192,51 +265,24 @@ class Context {
         if (base != null) {
             return base.resolve0(typeVariable);
         }
-        throw new IllegalDocMetaException(
-                "Illegal type variable \"" +
-                        typeVariable +
-                        "\" declared in " +
-                        location +
-                        " cannot be resolved"
-        );
+        return null;
     }
 
     private ImmutableObjectType objectType(ImmutableType type, FetchBy fetchBy) {
         if (fetchBy != null) {
             Fetcher<?> fetcher = fetcherOf(fetchBy);
-            if (type != fetcher.getImmutableType()) {
-                throw new IllegalDocMetaException(
-                        "Illegal " +
-                                location +
-                                ", @" +
-                                FetchBy.class.getName() +
-                                " specifies a fetcher whose type is \"" +
-                                fetcher.getImmutableType() +
-                                "\", but the decorated type is \"" +
-                                type +
-                                "\""
-                );
-            }
-            return ImmutableObjectTypeImpl.fetch(this, fetcher);
+            return ImmutableObjectTypeImpl.fetch(this, type, false, fetcher);
         }
         if (location.isQueryResult()) {
-            ImmutableObjectType immutableObjectType = viewImmutableObjectTypeMap.get(type);
-            if (immutableObjectType == null) {
-                immutableObjectType = ImmutableObjectTypeImpl.view(this, type);
-            }
-            return immutableObjectType;
+            return ImmutableObjectTypeImpl.view(this, type);
         }
-        ImmutableObjectType immutableObjectType = rawImmutableObjectTypeMap.get(type);
-        if (immutableObjectType == null) {
-            immutableObjectType = ImmutableObjectTypeImpl.raw(this, type);
-        }
-        return immutableObjectType;
+        return ImmutableObjectTypeImpl.raw(this, type);
     }
 
-    private ObjectType objectType(Class<?> type) {
-        ObjectType staticType = staticObjectTypeMap.get(type);
+    private StaticObjectType objectType(Class<?> type, List<Type> typeArguments) {
+        StaticObjectType staticType = staticObjectTypeMap.get(type);
         if (staticType == null) {
-            staticType = StaticObjectTypeImpl.create(this, type);
+            staticType = StaticObjectTypeImpl.create(this, type, typeArguments);
         }
         return staticType;
     }
@@ -288,12 +334,32 @@ class Context {
         return fetcher;
     }
 
+    ImmutableObjectType getImmutableObjectType(ImmutableObjectType.Category category, ImmutableType type, Fetcher<?> fetcher) {
+        switch (category) {
+            case FETCH:
+                return fetchedImmutableObjectTypeMap.get(fetcher);
+            case VIEW:
+                return viewImmutableObjectTypeMap.get(type);
+            case RAW:
+                return rawImmutableObjectTypeMap.get(type);
+            default:
+                return null;
+        }
+    }
+
+    StaticObjectType getStaticObjectType(Class<?> rawType, List<Type> typeArguments) {
+        return staticObjectTypeMap.get(new StaticObjectType.Key(rawType, typeArguments));
+    }
+
     void addStaticObjectType(StaticObjectTypeImpl impl) {
-        staticObjectTypeMap.put(impl.getJavaType(), impl);
+        staticObjectTypeMap.put(new StaticObjectType.Key(impl.getJavaType(), impl.getTypeArguments()), impl);
     }
 
     void addImmutableObjectType(ImmutableObjectTypeImpl impl) {
         switch (impl.getCategory()) {
+            case FETCH:
+                fetchedImmutableObjectTypeMap.put(impl.getFetcher(), impl);
+                break;
             case VIEW:
                 viewImmutableObjectTypeMap.put(impl.getImmutableType(), impl);
                 break;

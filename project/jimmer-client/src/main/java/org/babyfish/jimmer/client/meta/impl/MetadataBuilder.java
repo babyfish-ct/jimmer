@@ -51,8 +51,10 @@ public class MetadataBuilder implements Metadata.Builder {
         }
         return new MetadataImpl(
                 serviceMap,
+                ctx.getGenericTypes(),
                 ctx.staticObjectTypeMap,
                 ctx.enumTypeMap,
+                ctx.fetchedImmutableObjectTypeMap,
                 ctx.viewImmutableObjectTypeMap,
                 ctx.rawImmutableObjectTypeMap
         );

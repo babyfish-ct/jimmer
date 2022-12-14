@@ -20,7 +20,7 @@ class ServiceImpl implements Service {
     }
 
     @Override
-    public Class<?> getRawType() {
+    public Class<?> getJavaType() {
         return rawType;
     }
 

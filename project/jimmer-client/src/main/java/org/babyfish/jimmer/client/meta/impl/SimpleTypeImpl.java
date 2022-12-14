@@ -15,20 +15,20 @@ class SimpleTypeImpl implements SimpleType {
 
     private static final Map<Class<?>, SimpleType> SIMPLE_TYPE_MAP;
 
-    private final Class<?> rawType;
+    private final Class<?> javaType;
 
     @Nullable
     public static SimpleType get(Class<?> rawType) {
         return SIMPLE_TYPE_MAP.get(rawType);
     }
 
-    private SimpleTypeImpl(Class<?> rawType) {
-        this.rawType = rawType;
+    private SimpleTypeImpl(Class<?> javaType) {
+        this.javaType = javaType;
     }
 
     @Override
-    public Class<?> getRawType() {
-        return null;
+    public Class<?> getJavaType() {
+        return javaType;
     }
 
     @Override
@@ -40,7 +40,7 @@ class SimpleTypeImpl implements SimpleType {
 
     @Override
     public String toString() {
-        return rawType.getSimpleName();
+        return javaType.getSimpleName();
     }
 
     static {
