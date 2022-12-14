@@ -47,6 +47,7 @@ class Utils {
                     }
                     break;
                 }
+                index++;
             }
         }
         return type;

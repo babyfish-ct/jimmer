@@ -1,9 +1,14 @@
 package org.babyfish.jimmer.client.meta.impl;
 
 import org.babyfish.jimmer.client.meta.*;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.regex.Pattern;
+
 class ParameterImpl implements Parameter {
+
+    private static final Pattern UNNAMED_PATTERN = Pattern.compile("arg\\d+");
 
     private final Operation declaringOperation;
 
@@ -16,6 +21,8 @@ class ParameterImpl implements Parameter {
     private final String pathVariable;
 
     private final Type type;
+
+    private String name;
 
     ParameterImpl(
             Operation declaringOperation,
@@ -39,7 +46,30 @@ class ParameterImpl implements Parameter {
 
     @Override
     public String getName() {
-        return rawParameter.getName();
+        String name = this.name;
+        if (name == null) {
+            if (this.requestParam != null) {
+                name = this.requestParam;
+            } else if (this.pathVariable != null) {
+                name = this.pathVariable;
+            } else {
+                name = rawParameter.getName();
+                if (UNNAMED_PATTERN.matcher(name).matches()) {
+                    boolean bodyIsConflict = false;
+                    for (Parameter otherParameter : declaringOperation.getParameters()) {
+                        if (otherParameter != this && otherParameter.getName().equals("body")) {
+                            bodyIsConflict = true;
+                            break;
+                        }
+                    }
+                    if (!bodyIsConflict) {
+                        name = "body";
+                    }
+                }
+            }
+            this.name = name;
+        }
+        return name;
     }
 
     @Override
@@ -86,8 +116,9 @@ class ParameterImpl implements Parameter {
             int index
     ) {
         Metadata.ParameterParser parameterParser = ctx.getParameterParser();
-        String requestParam = parameterParser.requestParamName(rawParameter);
 
+        Tuple2<String, Boolean> tuple = parameterParser.requestParamName(rawParameter);
+        String requestParam = tuple != null ? tuple.get_1() : null;
         if (requestParam != null) {
             if (requestParam.isEmpty()) {
                 requestParam = rawParameter.getName();
@@ -95,6 +126,10 @@ class ParameterImpl implements Parameter {
             Type type = ctx
                     .locate(new ParameterLocation(declaringOperation, index, rawParameter.getName()))
                     .parseType(rawParameter.getAnnotatedType());
+            type = Utils.wrap(ctx, type, rawParameter);
+            if (tuple.get_2()) {
+                type = NullableTypeImpl.of(type);
+            }
             return new ParameterImpl(declaringOperation, rawParameter, index, requestParam, null, type);
         }
 
@@ -106,6 +141,7 @@ class ParameterImpl implements Parameter {
             Type type = ctx
                     .locate(new ParameterLocation(declaringOperation, index, rawParameter.getName()))
                     .parseType(rawParameter.getAnnotatedType());
+            type = Utils.wrap(ctx, type, rawParameter);
             return new ParameterImpl(declaringOperation, rawParameter, index, null, pathVariable, type);
         }
 
@@ -113,6 +149,7 @@ class ParameterImpl implements Parameter {
             Type type = ctx
                     .locate(new ParameterLocation(declaringOperation, index, rawParameter.getName()))
                     .parseType(rawParameter.getAnnotatedType());
+            type = Utils.wrap(ctx, type, rawParameter);
             return new ParameterImpl(declaringOperation, rawParameter, index, null, null, type);
         }
 

@@ -8,7 +8,12 @@ import java.util.function.Function;
 
 public class Context {
 
+    private static final Comparator<Service> SERVICE_COMPARATOR =
+            (a, b) -> a.getJavaType().getName().compareTo(b.getJavaType().getName());
+
     private final OutputStream out;
+
+    private final File moduleFile;
 
     private final String indent;
 
@@ -18,12 +23,13 @@ public class Context {
 
     private final Namespace<Type> typeNamespace;
 
-    private final Map<Service, File> serviceFileMap;
+    private final NavigableMap<Service, File> serviceFileMap;
 
     private final Map<Type, File> typeFileMap;
 
-    public Context(Metadata metadata, OutputStream out, String indent) {
+    public Context(Metadata metadata, OutputStream out, String moduleName, String indent) {
         this.out = out;
+        this.moduleFile = new File("", moduleName);
         this.indent = indent;
         this.genericTypeMap = metadata.getGenericTypes();
         VisitorImpl impl = new VisitorImpl();
@@ -35,12 +41,18 @@ public class Context {
         }
         operationNameMap = impl.operationNamespace.getNameMap();
         typeNamespace = impl.typeNamespace;
-        serviceFileMap = impl.serviceFileManager.getFileMap();
+        NavigableMap<Service, File> map = new TreeMap<>(SERVICE_COMPARATOR);
+        map.putAll(impl.serviceFileManager.getFileMap());
+        serviceFileMap = Collections.unmodifiableNavigableMap(map);
         typeFileMap = impl.typeFileManager.getFileMap();
     }
 
     public OutputStream getOutputStream() {
         return out;
+    }
+
+    public File getModuleFile() {
+        return moduleFile;
     }
 
     public String getIndent() {
@@ -52,7 +64,7 @@ public class Context {
     }
 
     public File file(Type type) {
-        return typeFileMap.get(type);
+        return typeFileMap.get(rawType(type));
     }
 
     public String operationName(Operation operation) {
@@ -60,21 +72,25 @@ public class Context {
     }
 
     public String typeName(Type type) {
-        if (type instanceof StaticObjectType) {
-            StaticObjectType staticObjectType = (StaticObjectType) type;
-            if (!staticObjectType.getTypeArguments().isEmpty()) {
-                type = genericTypeMap.get(staticObjectType.getJavaType());
-            }
-        }
-        return typeNamespace.get(type);
+        return typeNamespace.get(rawType(type));
     }
 
     public Map<Service, File> getServiceFileMap() {
         return serviceFileMap;
     }
 
-    public Map<Type, File> getTypeFileMap() {
-        return typeFileMap;
+    public Iterable<Map.Entry<Type, File>> getTypeFilePairs() {
+        return () -> typeFileMap.entrySet().iterator();
+    }
+
+    private Type rawType(Type type) {
+        if (type instanceof StaticObjectType) {
+            StaticObjectType staticObjectType = (StaticObjectType) type;
+            if (!staticObjectType.getTypeArguments().isEmpty()) {
+                return genericTypeMap.get(staticObjectType.getJavaType());
+            }
+        }
+        return type;
     }
 
     private static class VisitorImpl implements Visitor {
@@ -242,8 +258,6 @@ public class Context {
     private static class FileManager<N extends Node> {
 
         private final Map<N, File> fileMap = new IdentityHashMap<>();
-
-        private final Map<String, Integer> nameCountMap = new HashMap<>();
 
         private final Function<N, String> dirSupplier;
 

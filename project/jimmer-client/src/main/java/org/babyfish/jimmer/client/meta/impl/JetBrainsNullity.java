@@ -30,11 +30,7 @@ class JetBrainsNullity {
 
                         @Override
                         public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-                            return (access & Opcodes.ACC_STATIC) == 0 &&
-                                    descriptor.startsWith("()") &&
-                                    !descriptor.endsWith(")V") ?
-                                    new MethodVisitorImpl(name) :
-                                    null;
+                            return (access & Opcodes.ACC_STATIC) == 0 ? new MethodVisitorImpl(name) : null;
                         }
                     },
                     ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG

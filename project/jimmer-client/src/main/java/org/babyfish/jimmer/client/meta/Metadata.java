@@ -77,7 +77,7 @@ public interface Metadata {
     interface ParameterParser {
 
         @Nullable
-        String requestParamName(Parameter javaParameter);
+        Tuple2<String, Boolean> requestParamName(Parameter javaParameter);
 
         @Nullable
         String pathVariableName(Parameter javaParameter);

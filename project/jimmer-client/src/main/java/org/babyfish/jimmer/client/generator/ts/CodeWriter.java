@@ -4,6 +4,7 @@ import org.babyfish.jimmer.client.meta.*;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.*;
@@ -14,6 +15,8 @@ public abstract class CodeWriter {
 
     static final Map<Class<?>, String> SIMPLE_TYPE_NAMES;
 
+    private static final String[] EMPTY_ARR = new String[0];
+
     private static final Pattern SLASH_PATTERN = Pattern.compile("/");
 
     private final Context ctx;
@@ -23,6 +26,8 @@ public abstract class CodeWriter {
     private final StringBuilder codeBuilder = new StringBuilder();
 
     private final Map<String, Set<String>> importMap = new HashMap<>();
+
+    private final Map<String, Set<String>> importDataMap = new HashMap<>();
 
     private int indent;
 
@@ -61,7 +66,6 @@ public abstract class CodeWriter {
         if (ts.isEmpty()) {
             return this;
         }
-        prepareAdd();
         int size = ts.length();
         for (int i = 0; i < size; i++) {
             doAdd(ts.charAt(i));
@@ -70,15 +74,25 @@ public abstract class CodeWriter {
     }
 
     public CodeWriter code(char c) {
-        prepareAdd();
         doAdd(c);
         return this;
     }
 
-    public void importFile(File file) {
-        if (file != null && !file.getDir().equals(this.file.getDir())) {
-            String[] currentPaths = SLASH_PATTERN.split(this.file.getDir());
-            String[] paths = SLASH_PATTERN.split(file.getDir());
+    public CodeWriter importFile(File file) {
+        return importFile(file, false);
+    }
+
+    public CodeWriter importFile(File file, boolean treatAsData) {
+
+        if (file != null && !file.equals(this.file)) {
+            String[] currentPaths =
+                    this.file.getDir().isEmpty() ?
+                            EMPTY_ARR :
+                            SLASH_PATTERN.split(this.file.getDir());
+            String[] paths =
+                    file.getDir().isEmpty() ?
+                            EMPTY_ARR :
+                            SLASH_PATTERN.split(file.getDir());
             int sameCount = 0;
             int len = Math.min(currentPaths.length, paths.length);
             while (sameCount < len) {
@@ -96,16 +110,20 @@ public abstract class CodeWriter {
                     }
                 }
             } else {
-                builder.append("./");
+                builder.append(".");
+            }
+            if (sameCount == paths.length) {
+                builder.append('/');
             }
             for (int i = sameCount; i < paths.length; i++) {
                 builder.append('/').append(paths[i]);
             }
             String path = builder.toString();
-            importMap
+            (treatAsData ? importDataMap : importMap)
                     .computeIfAbsent(path, it -> new LinkedHashSet<>())
                     .add(file.getName());
         }
+        return this;
     }
 
     public CodeWriter type(Type type) {
@@ -141,17 +159,17 @@ public abstract class CodeWriter {
                     code("Dynamic<").code(file.getName()).code('>');
                 } else {
                     code(file.getName());
-                }
-            } else if (type instanceof StaticObjectType) {
-                code(ctx.typeName(type));
-                List<Type> typeArguments = ((StaticObjectType) type).getTypeArguments();
-                if (!typeArguments.isEmpty()) {
-                    scope(ScopeType.GENERIC, ", ", false, () -> {
-                        for (Type typeArgument : typeArguments) {
-                            separator();
-                            type(typeArgument);
+                    if (type instanceof StaticObjectType) {
+                        List<Type> typeArguments = ((StaticObjectType) type).getTypeArguments();
+                        if (!typeArguments.isEmpty()) {
+                            scope(ScopeType.GENERIC, ", ", false, () -> {
+                                for (Type typeArgument : typeArguments) {
+                                    separator();
+                                    type(typeArgument);
+                                }
+                            });
                         }
-                    });
+                    }
                 }
             } else if (type instanceof ImmutableObjectType) {
                 ImmutableObjectType immutableObjectType = (ImmutableObjectType) type;
@@ -184,7 +202,7 @@ public abstract class CodeWriter {
         return this;
     }
 
-    private void prepareAdd() {
+    private void doAdd(char c) {
         if (!lineDirty) {
             for (int i = indent; i > 0; --i) {
                 codeBuilder.append(ctx.getIndent());
@@ -194,9 +212,6 @@ public abstract class CodeWriter {
         if (scope != null) {
             scope.dirty();
         }
-    }
-
-    private void doAdd(char c) {
         codeBuilder.append(c);
         if (c == '\n') {
             lineDirty = false;
@@ -232,13 +247,19 @@ public abstract class CodeWriter {
 
     public void flush() throws IOException {
         OutputStreamWriter writer = new OutputStreamWriter(ctx.getOutputStream());
-        writer.write("// ----");
-        writer.write(getFile().toString());
-        writer.write("----\n");
         write();
+
+        applyImportMap(importMap, false, writer);
+        applyImportMap(importDataMap, true, writer);
+
+        writer.write(codeBuilder.toString());
+        writer.flush();
+    }
+
+    private static void applyImportMap(Map<String, Set<String>> importMap, boolean treatAsData, Writer writer) throws IOException {
         if (!importMap.isEmpty()) {
             for (Map.Entry<String, Set<String>> e : importMap.entrySet()) {
-                writer.write("import type { ");
+                writer.write(treatAsData ? "import { " : "import type { ");
                 boolean addComma = false;
                 for (String name : e.getValue()) {
                     if (addComma) {
@@ -254,8 +275,6 @@ public abstract class CodeWriter {
             }
             writer.write('\n');
         }
-        writer.write(codeBuilder.toString());
-        writer.flush();
     }
 
     protected boolean rawImmutableAsDynamic() {

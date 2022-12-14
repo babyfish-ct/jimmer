@@ -152,23 +152,24 @@ class Context {
             );
         }
         if (javaType instanceof Class<?>) {
+            Class<?> javaClass = (Class<?>) javaType;
             if (immutableType != null) {
                 return objectType(immutableType, fetchBy);
             }
-            if (((Class<?>)javaType).isEnum()) {
-                EnumType enumType = enumTypeMap.get((Class<?>) javaType);
+            if (javaClass.isEnum()) {
+                EnumType enumType = enumTypeMap.get(javaClass);
                 if (enumType == null) {
-                    enumType = new EnumTypeImpl((Class<?>) javaType);
-                    enumTypeMap.put((Class<?>) javaType, enumType);
+                    enumType = new EnumTypeImpl(javaClass);
+                    enumTypeMap.put(javaClass, enumType);
                 }
                 return enumType;
             }
-            SimpleType simpleType = SimpleTypeImpl.get((Class<?>) javaType);
+            SimpleType simpleType = SimpleTypeImpl.get(javaClass);
             if (simpleType != null) {
                 return simpleType;
             }
-            if (Iterable.class.isAssignableFrom((Class<?>) javaType) ||
-                    Map.class.isAssignableFrom((Class<?>) javaType)) {
+            if (Iterable.class.isAssignableFrom(javaClass) ||
+                    Map.class.isAssignableFrom(javaClass)) {
                 throw new IllegalDocMetaException(
                         "Illegal type \"" +
                                 annotatedType +
@@ -177,7 +178,7 @@ class Context {
                                 ", collection and map must be parameterized type"
                 );
             }
-            if (!ignoreTypeVariableResolving && ((Class<?>) javaType).getTypeParameters().length != 0) {
+            if (!ignoreTypeVariableResolving && javaClass.getTypeParameters().length != 0) {
                 throw new IllegalDocMetaException(
                         "Illegal type \"" +
                                 annotatedType +
@@ -186,7 +187,7 @@ class Context {
                                 ", generic type must be parameterized type"
                 );
             }
-            return objectType((Class<?>) javaType, null);
+            return objectType(javaClass, null);
         }
         if (annotatedType instanceof AnnotatedWildcardType) {
             return parseType(((AnnotatedWildcardType)annotatedType).getAnnotatedUpperBounds()[0]);
