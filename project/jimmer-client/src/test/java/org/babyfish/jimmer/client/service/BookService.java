@@ -33,5 +33,5 @@ public interface BookService {
     );
 
     @PutMapping("/book")
-    Book saveBooks(BookInput input);
+    Book saveBooks(@RequestBody BookInput input);
 }

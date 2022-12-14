@@ -107,7 +107,7 @@ class OperationImpl implements Operation {
         }
         Context subContext = ctx.locate(new OperationLocation(rawMethod, httpMethod));
         Type type = subContext.parseType(rawMethod.getAnnotatedReturnType());
-        type = Utils.wrap(type, rawMethod);
+        type = Utils.wrap(ctx, type, rawMethod);
         OperationImpl operation = new OperationImpl(declaringService, rawMethod, http.get_1(), httpMethod, type);
         int index = 0;
         Map<String, Parameter> map = new LinkedHashMap<>();

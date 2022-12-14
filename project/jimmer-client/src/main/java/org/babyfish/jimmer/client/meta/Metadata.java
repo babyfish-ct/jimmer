@@ -3,6 +3,7 @@ package org.babyfish.jimmer.client.meta;
 import org.babyfish.jimmer.client.meta.impl.MetadataBuilder;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
@@ -15,9 +16,13 @@ public interface Metadata {
 
     Map<Class<?>, Service> getServices();
 
-    Map<Type, ObjectType> getStaticTypes();
+    Map<Class<?>, StaticObjectType> getGenericTypes();
+
+    Map<StaticObjectType.Key, StaticObjectType> getStaticTypes();
 
     Map<Class<?>, EnumType> getEnumTypes();
+
+    Map<Fetcher<?>, ImmutableObjectType> getFetchedImmutableObjectTypes();
 
     Map<ImmutableType, ImmutableObjectType> getViewImmutableObjectTypes();
 

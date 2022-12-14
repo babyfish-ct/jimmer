@@ -14,7 +14,7 @@ class NullableTypeImpl implements NullableType {
 
     @Override
     public Type getTargetType() {
-        return null;
+        return targetType;
     }
 
     static NullableType of(Type type) {

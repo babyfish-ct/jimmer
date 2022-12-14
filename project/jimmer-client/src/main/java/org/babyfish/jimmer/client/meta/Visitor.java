@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.client.meta;
 
+import org.babyfish.jimmer.client.meta.impl.UnresolvedTypeVariableImpl;
+
 public interface Visitor {
 
     default void visitingService(Service service) {}
@@ -31,4 +33,6 @@ public interface Visitor {
     default void visitEnumType(EnumType enumType) {}
 
     default void visitSimpleType(SimpleType simpleType) {}
+
+    default void visitUnresolvedTypeVariable(UnresolvedTypeVariableImpl unresolvedTypeVariable) {}
 }

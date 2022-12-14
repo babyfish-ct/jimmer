@@ -4,7 +4,7 @@ import java.util.List;
 
 public interface Service extends Node {
 
-    Class<?> getRawType();
+    Class<?> getJavaType();
 
     List<Operation> getOperations();
 }

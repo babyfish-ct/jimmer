@@ -131,7 +131,7 @@ class ParameterImpl implements Parameter {
         if (ctx.getParameterParser().isOptional(rawParameter)) {
             return NullableTypeImpl.of(type);
         }
-        return Utils.wrap(type, rawParameter);
+        return Utils.wrap(ctx, type, rawParameter);
     }
 
     private static class ParameterLocation implements Location {
@@ -155,7 +155,7 @@ class ParameterImpl implements Parameter {
 
         @Override
         public Class<?> getDeclaringType() {
-            return declaringOperation.getDeclaringService().getRawType();
+            return declaringOperation.getDeclaringService().getJavaType();
         }
 
         @Override

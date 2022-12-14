@@ -10,9 +10,9 @@ import java.time.*;
 import java.util.*;
 import java.util.regex.Pattern;
 
-class CodeWriter {
+public abstract class CodeWriter {
 
-    private static final Map<Class<?>, String> SIMPLE_TYPE_NAMES;
+    static final Map<Class<?>, String> SIMPLE_TYPE_NAMES;
 
     private static final Pattern SLASH_PATTERN = Pattern.compile("/");
 
@@ -30,9 +30,17 @@ class CodeWriter {
 
     private Scope scope;
 
-    CodeWriter(Context ctx, File file) {
+    protected CodeWriter(Context ctx, File file) {
         this.ctx = ctx;
         this.file = file;
+    }
+
+    public Context getContext() {
+        return ctx;
+    }
+
+    public File getFile() {
+        return file;
     }
 
     public CodeWriter codeIf(boolean cond, String ts) {
@@ -68,9 +76,10 @@ class CodeWriter {
     }
 
     public CodeWriter type(Type type) {
-
-        if (type instanceof SimpleType) {
-            String name = SIMPLE_TYPE_NAMES.get(type);
+        if (type instanceof UnresolvedTypeVariable) {
+            code(((UnresolvedTypeVariable)type).getName());
+        } else if (type instanceof SimpleType) {
+            String name = SIMPLE_TYPE_NAMES.get(((SimpleType)type).getJavaType());
             if (name == null) {
                 name = "any";
             }
@@ -90,7 +99,7 @@ class CodeWriter {
             code(">");
         } else {
             File file = ctx.file(type);
-            if (!file.getDir().equals(this.file.getDir())) {
+            if (file != null && !file.getDir().equals(this.file.getDir())) {
                 String[] currentPaths = SLASH_PATTERN.split(this.file.getDir());
                 String[] paths = SLASH_PATTERN.split(file.getDir());
                 int sameCount = 0;
@@ -120,9 +129,37 @@ class CodeWriter {
                         .computeIfAbsent(path, it -> new LinkedHashSet<>())
                         .add(file.getName());
             }
-            code(file.getName());
-            if (type instanceof StaticObjectType) {
-
+            if (file != null) {
+                if (type instanceof ImmutableObjectType &&
+                        rawImmutableAsDynamic() &&
+                        ((ImmutableObjectType)type).getCategory() == ImmutableObjectType.Category.RAW) {
+                    code("Dynamic<").code(file.getName()).code('>');
+                } else {
+                    code(file.getName());
+                }
+            } else if (type instanceof StaticObjectType) {
+                code(ctx.typeName(type));
+                List<Type> typeArguments = ((StaticObjectType) type).getTypeArguments();
+                if (!typeArguments.isEmpty()) {
+                    scope(ScopeType.GENERIC, ", ", false, () -> {
+                        for (Type typeArgument : typeArguments) {
+                            separator();
+                            type(typeArgument);
+                        }
+                    });
+                }
+            } else if (type instanceof ImmutableObjectType) {
+                ImmutableObjectType immutableObjectType = (ImmutableObjectType) type;
+                scope(ScopeType.OBJECT, ", ", immutableObjectType.getProperties().size() > 1, () -> {
+                    for (Property property : immutableObjectType.getProperties().values()) {
+                        separator();
+                        code("readonly ")
+                                .code(property.getName())
+                                .codeIf(property.getType() instanceof NullableType, "?")
+                                .code(": ");
+                        type(NullableType.unwrap(property.getType()));
+                    }
+                });
             }
         }
         return this;
@@ -186,8 +223,14 @@ class CodeWriter {
         return this;
     }
 
+    protected abstract void write();
+
     public void flush() throws IOException {
         OutputStreamWriter writer = new OutputStreamWriter(ctx.getOutputStream());
+        writer.write("// ----");
+        writer.write(getFile().toString());
+        writer.write("----\n");
+        write();
         if (!importMap.isEmpty()) {
             for (Map.Entry<String, Set<String>> e : importMap.entrySet()) {
                 writer.write("import { ");
@@ -208,6 +251,10 @@ class CodeWriter {
         }
         writer.write(codeBuilder.toString());
         writer.flush();
+    }
+
+    protected boolean rawImmutableAsDynamic() {
+        return false;
     }
 
     enum ScopeType {

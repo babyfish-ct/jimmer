@@ -4,12 +4,16 @@ import org.babyfish.jimmer.meta.ImmutableType;
 
 public interface ImmutableObjectType extends ObjectType {
 
-    @Override
-    Class<?> getJavaType();
+    boolean isAnonymous();
 
     ImmutableType getImmutableType();
 
     Category getCategory();
+
+    @Override
+    default boolean hasDefinition() {
+        return !isAnonymous();
+    }
 
     enum Category {
         FETCH,

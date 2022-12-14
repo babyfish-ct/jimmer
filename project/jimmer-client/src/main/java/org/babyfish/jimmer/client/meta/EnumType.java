@@ -7,4 +7,9 @@ public interface EnumType extends Type {
     Class<?> getJavaType();
 
     List<String> getItems();
+
+    @Override
+    default boolean hasDefinition() {
+        return true;
+    }
 }

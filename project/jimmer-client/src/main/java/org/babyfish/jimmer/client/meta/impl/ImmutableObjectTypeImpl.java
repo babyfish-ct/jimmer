@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.client.meta.impl;
 
+import org.babyfish.jimmer.client.FetchBy;
+import org.babyfish.jimmer.client.IllegalDocMetaException;
 import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -16,18 +18,33 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
 
     private final ImmutableType immutableType;
 
+    private final boolean anonymous;
+
     private final Category category;
+
+    private final Fetcher<?> fetcher;
 
     private Map<String, Property> props;
 
-    public ImmutableObjectTypeImpl(ImmutableType immutableType, Category category) {
+    private ImmutableObjectTypeImpl(ImmutableType immutableType, boolean anonymous, Fetcher<?> fetcher) {
         this.immutableType = immutableType;
-        this.category = category;
+        this.anonymous = anonymous;
+        this.category = Category.FETCH;
+        this.fetcher = fetcher;
     }
 
-    public ImmutableObjectTypeImpl(ImmutableType immutableType, Category category, Map<String, Property> props) {
+    private ImmutableObjectTypeImpl(ImmutableType immutableType, Category category) {
         this.immutableType = immutableType;
+        this.anonymous = false;
         this.category = category;
+        this.fetcher = null;
+    }
+
+    private ImmutableObjectTypeImpl(ImmutableType immutableType, boolean anonymous, Category category, Map<String, Property> props) {
+        this.immutableType = immutableType;
+        this.anonymous = anonymous;
+        this.category = category;
+        this.fetcher = null;
         this.props = props;
     }
 
@@ -39,6 +56,11 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
     @Override
     public boolean isEntity() {
         return immutableType.isEntity();
+    }
+
+    @Override
+    public boolean isAnonymous() {
+        return anonymous;
     }
 
     @Override
@@ -54,6 +76,13 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
     @Override
     public Category getCategory() {
         return category;
+    }
+
+    Fetcher<?> getFetcher() {
+        if (fetcher == null) {
+            throw new AssertionError("Internal bug: No fetcher");
+        }
+        return fetcher;
     }
 
     @Override
@@ -89,12 +118,40 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
         return builder.toString();
     }
 
-    static ImmutableObjectType fetch(Context ctx, Fetcher<?> fetcher) {
+    static ImmutableObjectType fetch(Context ctx, ImmutableType immutableType, boolean anonymous, Fetcher<?> fetcher) {
+
+        ImmutableObjectTypeImpl impl;
+        if (!anonymous) {
+            impl = (ImmutableObjectTypeImpl) ctx.getImmutableObjectType(Category.FETCH, immutableType, fetcher);
+            if (impl != null) {
+                return impl;
+            }
+        }
+
+        if (immutableType != fetcher.getImmutableType()) {
+            throw new IllegalDocMetaException(
+                    "Illegal " +
+                            ctx.getLocation() +
+                            ", @" +
+                            FetchBy.class.getName() +
+                            " specifies a fetcher whose type is \"" +
+                            fetcher.getImmutableType() +
+                            "\", but the decorated type is \"" +
+                            immutableType +
+                            "\""
+            );
+        }
+
+        impl = new ImmutableObjectTypeImpl(fetcher.getImmutableType(), anonymous, fetcher);
+        if (!anonymous) {
+            ctx.addImmutableObjectType(impl);
+        }
+
         Map<String, Property> props = new LinkedHashMap<>();
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
             if (prop.isAssociation(TargetLevel.ENTITY)) {
-                Type type = fetch(ctx, field.getChildFetcher());
+                Type type = fetch(ctx, prop.getTargetType(), true, field.getChildFetcher());
                 if (prop.isNullable()) {
                     type = NullableTypeImpl.of(type);
                 }
@@ -106,18 +163,20 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
                 props.put(prop.getName(), property(ctx, prop));
             }
         }
-        return new ImmutableObjectTypeImpl(
-                fetcher.getImmutableType(),
-                Category.FETCH,
-                Collections.unmodifiableMap(props)
-        );
+        impl.props = Collections.unmodifiableMap(props);
+        return impl;
     }
 
     static ImmutableObjectType view(
             Context ctx,
             ImmutableType immutableType
     ) {
-        ImmutableObjectTypeImpl impl = new ImmutableObjectTypeImpl(immutableType, Category.VIEW);
+        ImmutableObjectTypeImpl impl = (ImmutableObjectTypeImpl) ctx.getImmutableObjectType(Category.VIEW, immutableType, null);
+        if (impl != null) {
+            return impl;
+        }
+
+        impl = new ImmutableObjectTypeImpl(immutableType, Category.VIEW);
         ctx.addImmutableObjectType(impl);
 
         Map<String, Property> props = new LinkedHashMap<>();
@@ -145,7 +204,12 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
             Context ctx,
             ImmutableType immutableType
     ) {
-        ImmutableObjectTypeImpl impl = new ImmutableObjectTypeImpl(immutableType, Category.RAW);
+        ImmutableObjectTypeImpl impl = (ImmutableObjectTypeImpl) ctx.getImmutableObjectType(Category.RAW, immutableType, null);
+        if (impl != null) {
+            return impl;
+        }
+
+        impl = new ImmutableObjectTypeImpl(immutableType, Category.RAW);
         ctx.addImmutableObjectType(impl);
 
         Map<String, Property> props = new LinkedHashMap<>();
@@ -163,6 +227,7 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
         props.put(idProp.getName(), new PropertyImpl(idProp.getName(), type));
         return new ImmutableObjectTypeImpl(
                 immutableType,
+                true,
                 Category.FETCH,
                 Collections.unmodifiableMap(props)
         );

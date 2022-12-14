@@ -38,7 +38,7 @@ public class TypeScriptGenerator implements Generator {
     private void generate0(Context ctx, ZipOutputStream zipOut) throws IOException {
         for (Map.Entry<Service, File> e : ctx.getServiceFileMap().entrySet()) {
             zipOut.putNextEntry(new ZipEntry(e.getValue().toString()));
-            new ServiceWriter(ctx, e.getKey(), e.getValue()).write();
+            new ServiceWriter(ctx, e.getKey()).write();
             zipOut.closeEntry();
         }
         for (Map.Entry<Type, File> e : ctx.getTypeFileMap().entrySet()) {
