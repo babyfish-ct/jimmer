@@ -6,9 +6,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 class OperationImpl implements Operation {
 
@@ -22,7 +20,7 @@ class OperationImpl implements Operation {
 
     private final Type type;
 
-    Map<String, Parameter> parameters;
+    List<Parameter> parameters;
 
     OperationImpl(
             Service declaringService,
@@ -49,6 +47,11 @@ class OperationImpl implements Operation {
     }
 
     @Override
+    public String getUri() {
+        return uri;
+    }
+
+    @Override
     public HttpMethod getHttpMethod() {
         return httpMethod;
     }
@@ -59,7 +62,7 @@ class OperationImpl implements Operation {
     }
 
     @Override
-    public Map<String, Parameter> getParameters() {
+    public List<Parameter> getParameters() {
         return parameters;
     }
 
@@ -71,7 +74,7 @@ class OperationImpl implements Operation {
     @Override
     public void accept(Visitor visitor) {
         visitor.visitingOperation(this);
-        for (Parameter parameter : parameters.values()) {
+        for (Parameter parameter : parameters) {
             parameter.accept(visitor);
         }
         type.accept(visitor);
@@ -83,7 +86,7 @@ class OperationImpl implements Operation {
         StringBuilder builder = new StringBuilder();
         builder.append(getName()).append('(');
         boolean addComma = false;
-        for (Parameter parameter : parameters.values()) {
+        for (Parameter parameter : parameters) {
             if (addComma) {
                 builder.append(", ");
             } else {
@@ -110,7 +113,7 @@ class OperationImpl implements Operation {
         type = Utils.wrap(ctx, type, rawMethod);
         OperationImpl operation = new OperationImpl(declaringService, rawMethod, http.get_1(), httpMethod, type);
         int index = 0;
-        Map<String, Parameter> map = new LinkedHashMap<>();
+        List<Parameter> list = new ArrayList<>();
         for (java.lang.reflect.Parameter rawParameter : rawMethod.getParameters()) {
             Parameter parameter = ParameterImpl.create(
                     ctx,
@@ -119,11 +122,11 @@ class OperationImpl implements Operation {
                     index++
             );
             if (parameter != null) {
-                map.put(parameter.getName(), parameter);
+                list.add(parameter);
             }
         }
-        if (map.size() > 1) {
-            long requestBodyCount = map.values().stream().filter(Parameter::isRequestBody).count();
+        if (list.size() > 1) {
+            long requestBodyCount = list.stream().filter(Parameter::isRequestBody).count();
             if (requestBodyCount > 1) {
                 throw new IllegalDocMetaException(
                         "Illegal method \"" +
@@ -132,7 +135,7 @@ class OperationImpl implements Operation {
                 );
             }
         }
-        operation.parameters = Collections.unmodifiableMap(map);
+        operation.parameters = Collections.unmodifiableList(list);
         return operation;
     }
 

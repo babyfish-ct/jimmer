@@ -34,4 +34,7 @@ public interface BookService {
 
     @PutMapping("/book")
     Book saveBooks(@RequestBody BookInput input);
+
+    @DeleteMapping("/book/{id}")
+    int deleteBook(@PathVariable("id") long id);
 }

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.client.meta;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
 
 public interface Operation extends Node {
@@ -9,11 +10,13 @@ public interface Operation extends Node {
 
     String getName();
 
+    String getUri();
+
     HttpMethod getHttpMethod();
 
     Method getRawMethod();
 
-    Map<String, Parameter> getParameters();
+    List<Parameter> getParameters();
 
     Type getType();
 
