@@ -9,7 +9,7 @@ public class TypeDefinitionWriter extends CodeWriter {
     private final Type type;
 
     public TypeDefinitionWriter(Context ctx, Type type) {
-        super(ctx, ctx.file(type));
+        super(ctx, ctx.getFile(type));
         if (!type.hasDefinition()) {
             throw new IllegalArgumentException("The type does not have definition");
         }

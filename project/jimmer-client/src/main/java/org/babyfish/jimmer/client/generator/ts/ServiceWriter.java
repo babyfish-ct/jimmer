@@ -17,7 +17,7 @@ public class ServiceWriter extends CodeWriter {
     private final Service service;
 
     public ServiceWriter(Context ctx, Service service) {
-        super(ctx, ctx.file(service));
+        super(ctx, ctx.getFile(service));
         this.service = service;
     }
 
@@ -42,7 +42,7 @@ public class ServiceWriter extends CodeWriter {
     private void write(Operation operation) {
         code('\n');
         document(operation.getDocument());
-        code("async ").code(getContext().operationName(operation))
+        code("async ").code(getContext().getOperationName(operation))
                 .scope(ScopeType.ARGUMENTS, "", false, () -> {
                     if (!operation.getParameters().isEmpty()) {
                         code("options: ");

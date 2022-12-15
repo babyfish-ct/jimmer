@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.client.generator.ts;
 
-import org.babyfish.jimmer.client.IllegalDocMetaException;
 import org.babyfish.jimmer.client.meta.*;
+import org.babyfish.jimmer.client.meta.impl.ImmutableObjectTypeImpl;
 
 import java.io.OutputStream;
 import java.util.*;
@@ -10,13 +10,15 @@ import java.util.function.Function;
 public class Context {
 
     private static final Comparator<Service> SERVICE_COMPARATOR =
-            (a, b) -> a.getJavaType().getName().compareTo(b.getJavaType().getName());
+            Comparator.comparing(a -> a.getJavaType().getName());
 
     private final OutputStream out;
 
     private final File moduleFile;
 
     private final String indent;
+
+    private final Map<Class<?>, List<ImmutableObjectType>> dtoMap;
 
     private final Map<Class<?>, StaticObjectType> genericTypeMap;
 
@@ -27,6 +29,10 @@ public class Context {
     private final NavigableMap<Service, File> serviceFileMap;
 
     private final Map<Type, File> typeFileMap;
+
+    private final Namespace<Class<?>> fetchByOwnerNamespace;
+
+    private final Namespace<Class<?>> dtoPrefixNamespace;
 
     public Context(Metadata metadata, OutputStream out, String moduleName, int indent) {
         this.out = out;
@@ -40,6 +46,7 @@ public class Context {
         }
         this.indent = builder.toString();
         this.genericTypeMap = metadata.getGenericTypes();
+
         VisitorImpl impl = new VisitorImpl();
         for (Service service : metadata.getServices().values()) {
             service.accept(impl);
@@ -47,12 +54,36 @@ public class Context {
         for (StaticObjectType genericType : metadata.getGenericTypes().values()) {
             genericType.accept(impl);
         }
+
         operationNameMap = impl.operationNamespace.getNameMap();
+
+        Map<Class<?>, List<ImmutableObjectType>> dtoMap = new HashMap<>();
+        for (ImmutableObjectType immutableObjectType : metadata.getFetchedImmutableObjectTypes().values()) {
+            dtoMap
+                    .computeIfAbsent(immutableObjectType.getJavaType(), it -> new ArrayList<>())
+                    .add(immutableObjectType);
+        }
+        for (ImmutableObjectType immutableObjectType : metadata.getViewImmutableObjectTypes().values()) {
+            dtoMap
+                    .computeIfAbsent(immutableObjectType.getJavaType(), it -> new ArrayList<>())
+                    .add(immutableObjectType);
+        }
+        for (Map.Entry<Class<?>, List<ImmutableObjectType>> e : dtoMap.entrySet()) {
+            e.setValue(Collections.unmodifiableList(e.getValue()));
+        }
+        this.dtoMap = Collections.unmodifiableMap(dtoMap);
+
         typeNamespace = impl.typeNamespace;
+
         NavigableMap<Service, File> map = new TreeMap<>(SERVICE_COMPARATOR);
         map.putAll(impl.serviceFileManager.getFileMap());
         serviceFileMap = Collections.unmodifiableNavigableMap(map);
+
         typeFileMap = impl.typeFileManager.getFileMap();
+
+        fetchByOwnerNamespace = impl.fetchByOwnerNamespace;
+
+        dtoPrefixNamespace = new Namespace<>(clazz -> clazz.getSimpleName() + "Dto");
     }
 
     public OutputStream getOutputStream() {
@@ -67,20 +98,16 @@ public class Context {
         return indent;
     }
 
-    public File file(Service service) {
+    public File getFile(Service service) {
         return serviceFileMap.get(service);
     }
 
-    public File file(Type type) {
+    public File getFile(Type type) {
         return typeFileMap.get(rawType(type));
     }
 
-    public String operationName(Operation operation) {
+    public String getOperationName(Operation operation) {
         return operationNameMap.get(operation);
-    }
-
-    public String typeName(Type type) {
-        return typeNamespace.get(rawType(type));
     }
 
     public Map<Service, File> getServiceFileMap() {
@@ -89,6 +116,25 @@ public class Context {
 
     public Iterable<Map.Entry<Type, File>> getTypeFilePairs() {
         return () -> typeFileMap.entrySet().iterator();
+    }
+
+    public Map<Class<?>, List<ImmutableObjectType>> getDtoMap() {
+        return dtoMap;
+    }
+
+    public String getDtoPrefix(Class<?> rawType) {
+        return dtoPrefixNamespace.get(rawType);
+    }
+
+    public String getDtoSuffix(ImmutableObjectType type) {
+        FetchByInfo fetchByInfo = type.getFetchByInfo();
+        if (fetchByInfo != null) {
+            return fetchByOwnerNamespace.get(fetchByInfo.getOwnerType()) + "/" + fetchByInfo.getConstant();
+        }
+        if (type.getCategory() == ImmutableObjectType.Category.VIEW) {
+            return "DEFAULT";
+        }
+        return null;
     }
 
     private Type rawType(Type type) {
@@ -122,22 +168,9 @@ public class Context {
                         return CodeWriter.SIMPLE_TYPE_NAMES.get(((SimpleType)type).getJavaType());
                     }
                     if (type instanceof ImmutableObjectType) {
-                        ImmutableObjectType immutableObjectType = (ImmutableObjectType) type;
-                        switch (immutableObjectType.getCategory()) {
-                            case FETCH:
-                                return serviceName + '_' +
-                                        operationName + '_' +
-                                        immutableObjectType.getJavaType().getSimpleName();
-                            case VIEW:
-                                return immutableObjectType.getJavaType().getSimpleName() + "_View";
-                            case RAW:
-                                return immutableObjectType.getJavaType().getSimpleName();
-                        }
+                        return ((ImmutableObjectType)type).getJavaType().getSimpleName();
                     } else if (type instanceof StaticObjectType) {
                         Class<?> javaType = ((StaticObjectType)type).getJavaType();
-                        if (!((StaticObjectType)type).getTypeArguments().isEmpty()) {
-                            throw new AssertionError("Can name of parameterized type");
-                        }
                         return javaType.getSimpleName();
                     } else if (type instanceof EnumType) {
                         return ((EnumType)type).getJavaType().getSimpleName();
@@ -147,7 +180,7 @@ public class Context {
         );
 
         final FileManager<Service> serviceFileManager = new FileManager<>(
-                service -> "service",
+                service -> "services",
                 serviceNamespace
         );
 
@@ -157,29 +190,27 @@ public class Context {
                         return null;
                     }
                     if (type instanceof ImmutableObjectType) {
-                        ImmutableObjectType immutableObjectType = (ImmutableObjectType) type;
-                        switch (immutableObjectType.getCategory()) {
-                            case FETCH:
-                                return "model/immutable/fetch";
-                            case VIEW:
-                                return "model/immutable/view";
-                            case RAW:
-                                return "model/immutable";
-                        }
+                        return "model/entities";
                     } else if (type instanceof StaticObjectType) {
                         Class<?> javaType = ((StaticObjectType)type).getJavaType();
                         return "model/static";
                     } else if (type instanceof EnumType) {
-                        return "model/enum";
+                        return "model/enums";
                     }
                     return null;
                 },
                 typeNamespace
         );
 
+        final Namespace<Class<?>> fetchByOwnerNamespace = new Namespace<>(Class::getSimpleName);
+
+        private final Map<Class<?>, List<ImmutableObjectType>> dtoMap = new HashMap<>();
+
         @Override
         public void visitingService(Service service) {
             serviceName = serviceFileManager.add(service).getName();
+            // Keep some fetcher owner names are same with service names
+            fetchByOwnerNamespace.get(service.getClass());
         }
 
         @Override
@@ -204,7 +235,11 @@ public class Context {
 
         @Override
         public void visitImmutableObjectType(ImmutableObjectType immutableObjectType) {
-            typeFileManager.add(immutableObjectType);
+            if (typeFileManager.add(immutableObjectType) == null) {
+                dtoMap
+                        .computeIfAbsent(immutableObjectType.getJavaType(), it -> new ArrayList<>())
+                        .add(immutableObjectType);
+            }
         }
 
         @Override
@@ -218,27 +253,27 @@ public class Context {
         }
     }
 
-    private static class Namespace<N extends Node> {
+    private static class Namespace<T> {
 
-        private final Map<N, String> nameMap = new IdentityHashMap<>();
+        private final Map<T, String> nameMap = new IdentityHashMap<>();
 
         private final Map<String, Integer> nameCountMap = new HashMap<>();
 
-        private final Function<N, String> initializer;
+        private final Function<T, String> initializer;
 
         private final Function<String, String> terminator;
 
-        Namespace(Function<N, String> initializer) {
+        Namespace(Function<T, String> initializer) {
             this.initializer = initializer;
             this.terminator = null;
         }
 
-        Namespace(Function<N, String> initializer, Function<String, String> terminator) {
+        Namespace(Function<T, String> initializer, Function<String, String> terminator) {
             this.initializer = initializer;
             this.terminator = terminator;
         }
 
-        public String get(N node) {
+        public String get(T node) {
             String name = nameMap.get(node);
             if (name == null) {
                 name = initializer.apply(node);
@@ -258,7 +293,7 @@ public class Context {
             return name;
         }
 
-        public Map<N, String> getNameMap() {
+        public Map<T, String> getNameMap() {
             return Collections.unmodifiableMap(nameMap);
         }
     }
