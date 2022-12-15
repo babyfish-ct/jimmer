@@ -18,19 +18,19 @@ public class TypeScriptGenerator implements Generator {
 
     private final String moduleName;
 
-    private final String indent;
+    private final int indent;
 
     public TypeScriptGenerator() {
         this.moduleName = "Api";
-        this.indent = "    ";
+        this.indent = 4;
     }
 
     public TypeScriptGenerator(String moduleName) {
         this.moduleName = moduleName;
-        this.indent = "    ";
+        this.indent = 4;
     }
 
-    public TypeScriptGenerator(String moduleName, String indent) {
+    public TypeScriptGenerator(String moduleName, int indent) {
         this.moduleName = moduleName;
         this.indent = indent;
     }

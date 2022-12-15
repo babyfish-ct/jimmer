@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.model;
 
+import org.babyfish.jimmer.client.Doc;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.ManyToMany;
@@ -21,10 +22,12 @@ public interface Book {
 
     BigDecimal price();
 
+    @Doc("The bookstore to which the current book belongs, null is allowd")
     @ManyToOne
     @Nullable
     BookStore store();
 
+    @Doc("All authors involved in writing the work")
     @ManyToMany
     public List<Author> authors();
 }

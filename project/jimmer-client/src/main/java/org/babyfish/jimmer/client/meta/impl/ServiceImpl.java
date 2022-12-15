@@ -1,8 +1,10 @@
 package org.babyfish.jimmer.client.meta.impl;
 
+import org.babyfish.jimmer.client.meta.Document;
 import org.babyfish.jimmer.client.meta.Operation;
 import org.babyfish.jimmer.client.meta.Service;
 import org.babyfish.jimmer.client.meta.Visitor;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -13,10 +15,13 @@ class ServiceImpl implements Service {
 
     private final Class<?> rawType;
 
+    private final Document document;
+
     List<Operation> operations;
 
     ServiceImpl(Class<?> rawType) {
         this.rawType = rawType;
+        this.document = DocumentImpl.of(rawType);
     }
 
     @Override
@@ -27,6 +32,12 @@ class ServiceImpl implements Service {
     @Override
     public List<Operation> getOperations() {
         return operations;
+    }
+
+    @Nullable
+    @Override
+    public Document getDocument() {
+        return document;
     }
 
     @Override

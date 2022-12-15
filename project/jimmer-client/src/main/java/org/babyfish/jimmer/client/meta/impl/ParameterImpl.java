@@ -22,6 +22,8 @@ class ParameterImpl implements Parameter {
 
     private final Type type;
 
+    private final Document document;
+
     private String name;
 
     ParameterImpl(
@@ -30,13 +32,15 @@ class ParameterImpl implements Parameter {
             int originalIndex,
             String requestParam,
             String pathVariable,
-            Type type) {
+            Type type
+    ) {
         this.declaringOperation = declaringOperation;
         this.rawParameter = rawParameter;
         this.originalIndex = originalIndex;
         this.requestParam = requestParam;
         this.pathVariable = pathVariable;
         this.type = type;
+        this.document = DocumentImpl.of(rawParameter);
     }
 
     @Override
@@ -95,6 +99,12 @@ class ParameterImpl implements Parameter {
     @Override
     public boolean isRequestBody() {
         return requestParam == null && pathVariable == null;
+    }
+
+    @Nullable
+    @Override
+    public Document getDocument() {
+        return document;
     }
 
     @Override

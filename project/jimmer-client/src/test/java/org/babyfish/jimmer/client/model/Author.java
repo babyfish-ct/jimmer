@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.model;
 
+import org.babyfish.jimmer.client.Doc;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.ManyToMany;
@@ -18,6 +19,7 @@ public interface Author {
 
     Gender gender();
 
+    @Doc("All the books i have written")
     @ManyToMany(mappedBy = "authors")
     List<Book> books();
 }

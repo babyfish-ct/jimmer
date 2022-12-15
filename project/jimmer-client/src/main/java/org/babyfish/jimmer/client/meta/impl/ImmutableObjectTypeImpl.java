@@ -9,6 +9,7 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.spi.EntityPropImplementor;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -24,6 +25,8 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
 
     private final Fetcher<?> fetcher;
 
+    private final Document document;
+
     private Map<String, Property> props;
 
     private ImmutableObjectTypeImpl(ImmutableType immutableType, boolean anonymous, Fetcher<?> fetcher) {
@@ -31,6 +34,7 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
         this.anonymous = anonymous;
         this.category = Category.FETCH;
         this.fetcher = fetcher;
+        this.document = DocumentImpl.of(immutableType.getJavaClass());
     }
 
     private ImmutableObjectTypeImpl(ImmutableType immutableType, Category category) {
@@ -38,6 +42,7 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
         this.anonymous = false;
         this.category = category;
         this.fetcher = null;
+        this.document = DocumentImpl.of(immutableType.getJavaClass());
     }
 
     private ImmutableObjectTypeImpl(ImmutableType immutableType, boolean anonymous, Category category, Map<String, Property> props) {
@@ -46,6 +51,7 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
         this.category = category;
         this.fetcher = null;
         this.props = props;
+        this.document = DocumentImpl.of(immutableType.getJavaClass());
     }
 
     @Override
@@ -76,6 +82,12 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
     @Override
     public Category getCategory() {
         return category;
+    }
+
+    @Nullable
+    @Override
+    public Document getDocument() {
+        return document;
     }
 
     Fetcher<?> getFetcher() {
@@ -158,7 +170,7 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
                 if (prop.isReferenceList(TargetLevel.ENTITY)) {
                     type = new ArrayTypeImpl(type);
                 }
-                props.put(prop.getName(), new PropertyImpl(prop.getName(), type));
+                props.put(prop.getName(), new PropertyImpl(prop.getName(), type, DocumentImpl.of(prop)));
             } else {
                 props.put(prop.getName(), property(ctx, prop));
             }
@@ -190,7 +202,7 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
                     if (prop.isReferenceList(TargetLevel.ENTITY)) {
                         type = new ArrayTypeImpl(type);
                     }
-                    props.put(prop.getName(), new PropertyImpl(prop.getName(), type));
+                    props.put(prop.getName(), new PropertyImpl(prop.getName(), type, DocumentImpl.of(prop)));
                 } else {
                     props.put(prop.getName(), property(ctx, prop));
                 }
@@ -224,7 +236,7 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
         Map<String, Property> props = new LinkedHashMap<>();
         ImmutableProp idProp = immutableType.getIdProp();
         Type type = ctx.parseType(((EntityPropImplementor)idProp).getJavaGetter().getAnnotatedReturnType());
-        props.put(idProp.getName(), new PropertyImpl(idProp.getName(), type));
+        props.put(idProp.getName(), new PropertyImpl(idProp.getName(), type, DocumentImpl.of(idProp)));
         return new ImmutableObjectTypeImpl(
                 immutableType,
                 true,
@@ -238,6 +250,6 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
         if (prop.isNullable()) {
             type = NullableTypeImpl.of(type);
         }
-        return new PropertyImpl(prop.getName(), type);
+        return new PropertyImpl(prop.getName(), type, DocumentImpl.of(prop));
     }
 }

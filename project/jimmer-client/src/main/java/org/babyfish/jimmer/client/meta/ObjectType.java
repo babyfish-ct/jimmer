@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.client.meta;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Map;
 
 public interface ObjectType extends Type {
@@ -9,4 +11,7 @@ public interface ObjectType extends Type {
     boolean isEntity();
 
     Map<String, Property> getProperties();
+
+    @Nullable
+    Document getDocument();
 }

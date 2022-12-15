@@ -20,6 +20,8 @@ class OperationImpl implements Operation {
 
     private final Type type;
 
+    private final Document document;
+
     List<Parameter> parameters;
 
     OperationImpl(
@@ -34,6 +36,7 @@ class OperationImpl implements Operation {
         this.uri = uri;
         this.httpMethod = method;
         this.type = type;
+        this.document = DocumentImpl.of(rawMethod);
     }
 
     @Override
@@ -69,6 +72,12 @@ class OperationImpl implements Operation {
     @Override
     public Type getType() {
         return type;
+    }
+
+    @Nullable
+    @Override
+    public Document getDocument() {
+        return document;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.model;
 
+import org.babyfish.jimmer.client.Doc;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.OneToMany;
@@ -14,6 +15,7 @@ public interface BookStore {
 
     String name();
 
+    @Doc("All books available in this bookstore")
     @OneToMany(mappedBy = "store")
     List<Book> books();
 }
