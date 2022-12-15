@@ -15,13 +15,12 @@ public class ConvertTest {
     public void testIllegalPropName() {
         IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> {
             ImmutableConverter
-                    .newBuilder(Book.class, BookInput.class)
+                    .forMethods(Book.class, BookInput.class)
                     .map(BookProps.STORE);
         });
         Assertions.assertEquals(
-                "Illegal static property name: \"store\", " +
-                        "the static type \"org.babyfish.jimmer.ConvertTest$BookInput\" " +
-                        "has neither methods \"getStore()\", \"store()\" nor field \"store\"",
+                "Illegal static property name \"store\", " +
+                        "available choices are [authorNames, name, price, storeName]",
                 ex.getMessage()
         );
     }
@@ -30,7 +29,7 @@ public class ConvertTest {
     public void testIllegalType() {
         IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> {
             ImmutableConverter
-                    .newBuilder(Book.class, BookInput.class)
+                    .forMethods(Book.class, BookInput.class)
                     .map(BookProps.STORE, "storeName");
         });
         Assertions.assertEquals(
@@ -47,7 +46,7 @@ public class ConvertTest {
     public void testIllegalGenericType() {
         IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> {
             ImmutableConverter
-                    .newBuilder(Book.class, BookInput.class)
+                    .forMethods(Book.class, BookInput.class)
                     .map(BookProps.AUTHORS, "authorNames");
         });
         Assertions.assertEquals(
@@ -61,27 +60,9 @@ public class ConvertTest {
     }
 
     @Test
-    public void testFullConverter() {
-        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            ImmutableConverter
-                    .newBuilder(Book.class, Partial.class)
-                    .autoMapOtherScalars()
-                    .build();
-        });
-        Assertions.assertEquals(
-                "Cannot automatically map the property " +
-                        "\"org.babyfish.jimmer.model.Book.price\", " +
-                        "the static type \"org.babyfish.jimmer.ConvertTest$Partial\" " +
-                        "has neither methods \"getPrice()\", \"price()\" nor field \"price\"",
-                ex.getMessage()
-        );
-    }
-
-    @Test
     public void testPartialConverter() {
         Book book = ImmutableConverter
-                .newBuilder(Book.class, Partial.class)
-                .autoMapOtherScalars(true)
+                .forFields(Book.class, Partial.class)
                 .build()
                 .convert(new Partial("SQL in Action"));
         Assertions.assertEquals(
@@ -93,7 +74,7 @@ public class ConvertTest {
     @Test
     public void testCondConverter() {
         Book book = ImmutableConverter
-                .newBuilder(Book.class, Partial.class)
+                .forFields(Book.class, Partial.class)
                 .map(BookProps.NAME, mapping ->
                     mapping.useIf(input -> input.name != null)
                 )
@@ -108,7 +89,7 @@ public class ConvertTest {
     @Test
     public void testDefaultValue() {
         Book book = ImmutableConverter
-                .newBuilder(Book.class, Partial.class)
+                .forFields(Book.class, Partial.class)
                 .map(BookProps.NAME, mapping ->
                         mapping.defaultValue("<NO-NAME>")
                 )
@@ -121,23 +102,11 @@ public class ConvertTest {
     }
 
     @Test
-    public void testEmptyConverter() {
-        ImmutableConverter<Book, BookInput> converter =
-                ImmutableConverter
-                        .newBuilder(Book.class, BookInput.class)
-                        .build();
-        Assertions.assertEquals(
-                "{}",
-                converter.convert(INPUT).toString()
-        );
-    }
-
-    @Test
     public void testDefaultConverter() {
         ImmutableConverter<Book, BookInput> converter =
                 ImmutableConverter
-                        .newBuilder(Book.class, BookInput.class)
-                        .autoMapOtherScalars()
+                        .forMethods(Book.class, BookInput.class)
+                        .unmapStaticProps("storeName", "authorNames")
                         .build();
         Assertions.assertEquals(
                 "{\"name\":\"SQL in Action\",\"price\":49}",
@@ -149,7 +118,7 @@ public class ConvertTest {
     public void testValueConverter() {
         ImmutableConverter<Book, BookInput> converter =
                 ImmutableConverter
-                        .newBuilder(Book.class, BookInput.class)
+                        .forMethods(Book.class, BookInput.class)
                         .map(BookProps.STORE, "storeName", mapping ->
                                 mapping.valueConverter(value ->
                                         BookStoreDraft.$.produce(it -> it.setName((String)value))
@@ -160,7 +129,6 @@ public class ConvertTest {
                                         AuthorDraft.$.produce(it -> it.setName((String)value))
                                 )
                         )
-                        .autoMapOtherScalars()
                         .build();
         Assertions.assertEquals(
                 "{" +
@@ -176,8 +144,7 @@ public class ConvertTest {
     public void testDraftModifier() {
         ImmutableConverter<Book, BookInput> converter =
                 ImmutableConverter
-                        .newBuilder(Book.class, BookInput.class)
-                        .autoMapOtherScalars()
+                        .forMethods(Book.class, BookInput.class)
                         .setDraftModifier((draft, input) -> {
                             BookDraft bookDraft = (BookDraft) draft;
                             if (input.getStoreName() != null) {
@@ -193,6 +160,7 @@ public class ConvertTest {
                                 );
                             }
                         })
+                        .unmapStaticProps("storeName", "authorNames")
                         .build();
         Assertions.assertEquals(
                 "{" +

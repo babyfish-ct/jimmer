@@ -5,6 +5,8 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.function.*;
 
 public interface ImmutableConverter<T, Static> {
@@ -16,8 +18,12 @@ public interface ImmutableConverter<T, Static> {
      * @param <T>
      * @param <Static>
      */
-    static <T, Static> Builder<T, Static> newBuilder(Class<T> immutableType, Class<Static> staticType) {
-        return new ImmutableConverterBuilderImpl<>(immutableType, staticType);
+    static <T, Static> Builder<T, Static> forMethods(Class<T> immutableType, Class<Static> staticType) {
+        return new ImmutableConverterBuilderImpl<>(immutableType, staticType, false);
+    }
+
+    static <T, Static> Builder<T, Static> forFields(Class<T> immutableType, Class<Static> staticType) {
+        return new ImmutableConverterBuilderImpl<>(immutableType, staticType, true);
     }
 
     /**
@@ -111,17 +117,11 @@ public interface ImmutableConverter<T, Static> {
                 Consumer<ListMapping<Static, ?, ?>> block
         );
 
-        default Builder<T, Static> unmap(TypedProp<T, ?> prop) {
-            return unmap(prop.unwrap());
+        default Builder<T, Static> unmapStaticProps(String ... staticPropNames) {
+            return unmapStaticProps(Arrays.asList(staticPropNames));
         }
 
-        Builder<T, Static> unmap(ImmutableProp ... props);
-
-        default Builder<T, Static> autoMapOtherScalars() {
-            return autoMapOtherScalars(false);
-        }
-
-        Builder<T, Static> autoMapOtherScalars(boolean partial);
+        Builder<T, Static> unmapStaticProps(Collection<String> staticPropNames);
 
         Builder<T, Static> setDraftModifier(BiConsumer<Draft, Static> modifier);
 
