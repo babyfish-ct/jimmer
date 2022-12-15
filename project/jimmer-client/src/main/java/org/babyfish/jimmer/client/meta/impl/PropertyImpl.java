@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.client.meta.impl;
 
+import org.babyfish.jimmer.client.meta.Document;
 import org.babyfish.jimmer.client.meta.Property;
 import org.babyfish.jimmer.client.meta.Type;
+import org.jetbrains.annotations.Nullable;
 
 class PropertyImpl implements Property {
 
@@ -9,9 +11,12 @@ class PropertyImpl implements Property {
 
     private final Type type;
 
-    PropertyImpl(String name, Type type) {
+    private final Document document;
+
+    PropertyImpl(String name, Type type, Document document) {
         this.name = name;
         this.type = type;
+        this.document = document;
     }
 
     @Override
@@ -22,5 +27,11 @@ class PropertyImpl implements Property {
     @Override
     public Type getType() {
         return type;
+    }
+
+    @Nullable
+    @Override
+    public Document getDocument() {
+        return document;
     }
 }

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.client.meta.impl;
 import org.babyfish.jimmer.client.ExportFields;
 import org.babyfish.jimmer.client.IllegalDocMetaException;
 import org.babyfish.jimmer.client.meta.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -20,11 +21,14 @@ public class StaticObjectTypeImpl implements StaticObjectType {
 
     private Map<String, Property> props;
 
+    private final Document document;
+
     StaticObjectTypeImpl(Class<?> javaType, List<Type> typeArguments) {
         this.javaType = javaType;
         this.typeArguments = typeArguments != null ?
                 Collections.unmodifiableList(typeArguments) :
                 Collections.emptyList();
+        this.document = DocumentImpl.of(javaType);
     }
 
     @Override
@@ -45,6 +49,12 @@ public class StaticObjectTypeImpl implements StaticObjectType {
     @Override
     public Map<String, Property> getProperties() {
         return props;
+    }
+
+    @Nullable
+    @Override
+    public Document getDocument() {
+        return document;
     }
 
     @Override
@@ -82,7 +92,7 @@ public class StaticObjectTypeImpl implements StaticObjectType {
                     if (!Modifier.isStatic(field.getModifiers())) {
                         Type type = ctx.parseType(field.getAnnotatedType());
                         type = Utils.wrap(ctx, type, field);
-                        props.putIfAbsent(field.getName(), new PropertyImpl(field.getName(), type));
+                        props.putIfAbsent(field.getName(), new PropertyImpl(field.getName(), type, DocumentImpl.of(field)));
                     }
                 }
                 javaType = javaType.getSuperclass();
@@ -116,7 +126,7 @@ public class StaticObjectTypeImpl implements StaticObjectType {
                     name = Character.toLowerCase(name.charAt(0)) + name.substring(1);
                     Type type = ctx.parseType(method.getAnnotatedReturnType());
                     type = Utils.wrap(ctx, type, method);
-                    props.put(name, new PropertyImpl(name, type));
+                    props.put(name, new PropertyImpl(name, type, DocumentImpl.of(method)));
                 }
                 javaType = javaType.getSuperclass();
             }

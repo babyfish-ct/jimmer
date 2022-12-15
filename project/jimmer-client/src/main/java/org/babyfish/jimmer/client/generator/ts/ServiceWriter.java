@@ -26,6 +26,8 @@ public class ServiceWriter extends CodeWriter {
 
         importFile(ExecutorWriter.FILE);
 
+        document(service.getDocument());
+
         code("export class ").code(getFile().getName()).code(' ');
         scope(ScopeType.OBJECT, "", true, () -> {
 
@@ -38,7 +40,9 @@ public class ServiceWriter extends CodeWriter {
     }
 
     private void write(Operation operation) {
-        code("\nasync ").code(getContext().operationName(operation))
+        code('\n');
+        document(operation.getDocument());
+        code("async ").code(getContext().operationName(operation))
                 .scope(ScopeType.ARGUMENTS, "", false, () -> {
                     if (!operation.getParameters().isEmpty()) {
                         code("options: ");
@@ -49,6 +53,10 @@ public class ServiceWriter extends CodeWriter {
                                 () -> {
                                     for (Parameter parameter : operation.getParameters()) {
                                         separator();
+                                        if (parameter.getDocument() != null) {
+                                            code('\n');
+                                            document(parameter.getDocument());
+                                        }
                                         write(parameter);
                                     }
                                 }

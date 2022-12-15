@@ -19,6 +19,7 @@ public class TypeDefinitionWriter extends CodeWriter {
     @Override
     protected void write() {
         if (type instanceof ObjectType) {
+            document(((ObjectType)type).getDocument());
             writeObjectType();
         } else {
             writeEnumType();
@@ -45,6 +46,7 @@ public class TypeDefinitionWriter extends CodeWriter {
             for (Property property : objectType.getProperties().values()) {
                 separator();
                 code('\n');
+                document(property.getDocument());
                 code("readonly ")
                         .code(property.getName())
                         .codeIf(property.getType() instanceof NullableType, "?")

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.generator.ts;
 
+import org.babyfish.jimmer.client.IllegalDocMetaException;
 import org.babyfish.jimmer.client.meta.*;
 
 import java.io.OutputStream;
@@ -27,10 +28,17 @@ public class Context {
 
     private final Map<Type, File> typeFileMap;
 
-    public Context(Metadata metadata, OutputStream out, String moduleName, String indent) {
+    public Context(Metadata metadata, OutputStream out, String moduleName, int indent) {
         this.out = out;
         this.moduleFile = new File("", moduleName);
-        this.indent = indent;
+        if (indent < 2) {
+            throw new IllegalArgumentException("indent cannot be less than 2");
+        }
+        StringBuilder builder = new StringBuilder();
+        for (int i = indent; i > 0; --i) {
+            builder.append(' ');
+        }
+        this.indent = builder.toString();
         this.genericTypeMap = metadata.getGenericTypes();
         VisitorImpl impl = new VisitorImpl();
         for (Service service : metadata.getServices().values()) {

@@ -176,6 +176,10 @@ public abstract class CodeWriter {
                 scope(ScopeType.OBJECT, ", ", immutableObjectType.getProperties().size() > 1, () -> {
                     for (Property property : immutableObjectType.getProperties().values()) {
                         separator();
+                        if (property.getDocument() != null) {
+                            code('\n');
+                            document(property.getDocument());
+                        }
                         code("readonly ")
                                 .code(property.getName())
                                 .codeIf(property.getType() instanceof NullableType, "?")
@@ -199,6 +203,32 @@ public abstract class CodeWriter {
                 code('\n');
             }
         }
+        return this;
+    }
+
+    public CodeWriter document(Document document) {
+        if (document == null) {
+            return null;
+        }
+        boolean visitedFirstLine = false;
+        code("/**\n");
+        for (Document.Item item : document.getItems()) {
+            code(" * ");
+            if (item.getDepth() != 0) {
+                for (int i = item.getDepth(); i > 1; --i) {
+                    code(ctx.getIndent());
+                }
+                code('-').code(ctx.getIndent().substring(1));
+            } else {
+                if (visitedFirstLine) {
+                    code("\n * ");
+                }
+            }
+            code(item.getText());
+            code('\n');
+            visitedFirstLine = true;
+        }
+        code(" */\n");
         return this;
     }
 

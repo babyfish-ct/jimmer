@@ -118,6 +118,6 @@ public class TypeScriptTest {
     }
     
     private static Context createContext(OutputStream out) {
-        return new Context(Constants.METADATA, out, "Api", "    ");
+        return new Context(Constants.METADATA, out, "Api", 4);
     }
 }

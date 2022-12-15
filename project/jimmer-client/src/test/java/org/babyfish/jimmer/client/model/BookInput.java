@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.model;
 
+import org.babyfish.jimmer.client.Doc;
 import org.babyfish.jimmer.client.ExportFields;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,6 +16,7 @@ public class BookInput {
 
     private final BigDecimal price;
 
+    @Doc("Null is allowed")
     @Nullable
     private final Long storeId;
 
