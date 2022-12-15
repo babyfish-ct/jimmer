@@ -72,10 +72,3 @@ fun <T, Static> ImmutableConverter.Builder<T, Static>.unmapStaticProps(
 ): ImmutableConverter.Builder<T, Static> =
     unmapStaticProps(staticProps.map { it.name })
 
-@Suppress("UNCHECKED_CAST")
-fun <T, Static, D> ImmutableConverter.Builder<T, Static>.setDraftModifier(
-    block: D.(Static) -> Unit
-): ImmutableConverter.Builder<T, Static> =
-    setDraftModifier { draft, staticObj ->
-        (draft as D).block(staticObj)
-    }
