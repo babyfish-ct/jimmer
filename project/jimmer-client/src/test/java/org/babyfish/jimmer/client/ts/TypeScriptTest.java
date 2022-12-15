@@ -38,26 +38,6 @@ public class TypeScriptTest {
     }
 
     @Test
-    public void testFetchedBook() throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Context ctx = createContext(out);
-        ImmutableObjectType bookType = Constants.METADATA.getFetchedImmutableObjectTypes().get(BookService.BOOK_FETCHER);
-        new TypeDefinitionWriter(ctx, bookType).flush();
-        String code = out.toString();
-        System.out.println(code);
-    }
-
-    @Test
-    public void testFetchedAuthor() throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Context ctx = createContext(out);
-        ImmutableObjectType authorType = Constants.METADATA.getFetchedImmutableObjectTypes().get(BookService.AUTHOR_FETCHER);
-        new TypeDefinitionWriter(ctx, authorType).flush();
-        String code = out.toString();
-        System.out.println(code);
-    }
-
-    @Test
     public void testRawBook() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Context ctx = createContext(out);

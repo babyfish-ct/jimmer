@@ -1,9 +1,10 @@
 package org.babyfish.jimmer.client.generator.ts;
 
+import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.client.generator.Generator;
 import org.babyfish.jimmer.client.generator.GeneratorException;
+import org.babyfish.jimmer.client.meta.ImmutableObjectType;
 import org.babyfish.jimmer.client.meta.Metadata;
-import org.babyfish.jimmer.client.meta.Node;
 import org.babyfish.jimmer.client.meta.Service;
 import org.babyfish.jimmer.client.meta.Type;
 
@@ -75,6 +76,14 @@ public class TypeScriptGenerator implements Generator {
             indexMap.computeIfAbsent(file.getDir(), Index::new).addTypeFile(file);
             zipOut.putNextEntry(new ZipEntry(file.toString()));
             new TypeDefinitionWriter(ctx, type).flush();
+            zipOut.closeEntry();
+        }
+        for (Map.Entry<Class<?>, List<ImmutableObjectType>> e : ctx.getDtoMap().entrySet()) {
+            Class<?> rawType = e.getKey();
+            DtoWriter dtoWriter = new DtoWriter(ctx, rawType, e.getValue());
+            indexMap.computeIfAbsent(dtoWriter.getFile().getDir(), Index::new).addTypeFile(dtoWriter.getFile());
+            zipOut.putNextEntry(new ZipEntry(dtoWriter.getFile().toString()));
+            dtoWriter.flush();
             zipOut.closeEntry();
         }
 

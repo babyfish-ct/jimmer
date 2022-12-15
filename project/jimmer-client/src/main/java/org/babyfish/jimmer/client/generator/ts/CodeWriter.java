@@ -149,7 +149,7 @@ public abstract class CodeWriter {
             type(((MapType)type).getValueType());
             code(">");
         } else {
-            File file = ctx.file(type);
+            File file = ctx.getFile(type);
             if (file != null) {
                 importFile(file);
                 if (type instanceof ImmutableObjectType &&
@@ -173,20 +173,28 @@ public abstract class CodeWriter {
                 }
             } else if (type instanceof ImmutableObjectType) {
                 ImmutableObjectType immutableObjectType = (ImmutableObjectType) type;
-                scope(ScopeType.OBJECT, ", ", immutableObjectType.getProperties().size() > 1, () -> {
-                    for (Property property : immutableObjectType.getProperties().values()) {
-                        separator();
-                        if (property.getDocument() != null) {
-                            code('\n');
-                            document(property.getDocument());
+                if (immutableObjectType.getFetchByInfo() != null) {
+                    importFile(DtoWriter.dtoFile(ctx, immutableObjectType.getJavaType()));
+                    code(ctx.getDtoPrefix(immutableObjectType.getJavaType()))
+                            .code("['")
+                            .code(ctx.getDtoSuffix(immutableObjectType))
+                            .code("']");
+                } else {
+                    scope(ScopeType.OBJECT, ", ", immutableObjectType.getProperties().size() > 1, () -> {
+                        for (Property property : immutableObjectType.getProperties().values()) {
+                            separator();
+                            if (property.getDocument() != null) {
+                                code('\n');
+                                document(property.getDocument());
+                            }
+                            code("readonly ")
+                                    .code(property.getName())
+                                    .codeIf(property.getType() instanceof NullableType, "?")
+                                    .code(": ");
+                            type(NullableType.unwrap(property.getType()));
                         }
-                        code("readonly ")
-                                .code(property.getName())
-                                .codeIf(property.getType() instanceof NullableType, "?")
-                                .code(": ");
-                        type(NullableType.unwrap(property.getType()));
-                    }
-                });
+                    });
+                }
             }
         }
         return this;

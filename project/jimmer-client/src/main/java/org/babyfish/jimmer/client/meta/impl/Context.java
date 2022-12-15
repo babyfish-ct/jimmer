@@ -271,8 +271,14 @@ class Context {
 
     private ImmutableObjectType objectType(ImmutableType type, FetchBy fetchBy) {
         if (fetchBy != null) {
-            Fetcher<?> fetcher = fetcherOf(fetchBy);
-            return ImmutableObjectTypeImpl.fetch(this, type, false, fetcher);
+            FetchByInfo info = new FetchByInfo(
+                    fetchBy.ownerType() != void.class ?
+                            fetchBy.ownerType() :
+                            location.getDeclaringType(),
+                    fetchBy.value()
+            );
+            Fetcher<?> fetcher = fetcherOf(info);
+            return ImmutableObjectTypeImpl.fetch(this, type, fetcher, info);
         }
         if (location.isQueryResult()) {
             return ImmutableObjectTypeImpl.view(this, type);
@@ -288,18 +294,12 @@ class Context {
         return staticType;
     }
 
-    private Fetcher<?> fetcherOf(FetchBy fetchBy) {
-        FetchByInfo info = new FetchByInfo(
-                fetchBy.ownerType() != void.class ?
-                        fetchBy.ownerType() :
-                        location.getDeclaringType(),
-                fetchBy.value()
-        );
+    private Fetcher<?> fetcherOf(FetchByInfo info) {
         Fetcher<?> fetcher = fetcherMap.get(info);
         if (fetcher == null && !fetcherMap.containsKey(info)) {
             Field field;
             try {
-                field = info.ownerType.getDeclaredField(info.constant);
+                field = info.getOwnerType().getDeclaredField(info.getConstant());
             } catch (NoSuchFieldException ex) {
                 throw new IllegalDocMetaException(
                         "Illegal annotation @" +
@@ -307,9 +307,9 @@ class Context {
                                 " in " +
                                 location +
                                 ", there is not field \"" +
-                                info.constant +
+                                info.getConstant() +
                                 "\" in the type \"" +
-                                info.ownerType.getName() +
+                                info.getOwnerType().getName() +
                                 "\""
                 );
             }
@@ -370,36 +370,4 @@ class Context {
         }
     }
 
-    private static class FetchByInfo {
-
-        private final Class<?> ownerType;
-
-        private final String constant;
-
-        FetchByInfo(Class<?> ownerType, String constant) {
-            this.ownerType = ownerType;
-            this.constant = constant;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            FetchByInfo that = (FetchByInfo) o;
-            return ownerType.equals(that.ownerType) && constant.equals(that.constant);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(ownerType, constant);
-        }
-
-        @Override
-        public String toString() {
-            return "FetchByInfo{" +
-                    "ownerType=" + ownerType +
-                    ", constant='" + constant + '\'' +
-                    '}';
-        }
-    }
 }

@@ -19,37 +19,37 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
 
     private final ImmutableType immutableType;
 
-    private final boolean anonymous;
-
     private final Category category;
 
     private final Fetcher<?> fetcher;
+
+    private final FetchByInfo fetchByInfo;
 
     private final Document document;
 
     private Map<String, Property> props;
 
-    private ImmutableObjectTypeImpl(ImmutableType immutableType, boolean anonymous, Fetcher<?> fetcher) {
+    private ImmutableObjectTypeImpl(ImmutableType immutableType, Fetcher<?> fetcher, FetchByInfo fetchByInfo) {
         this.immutableType = immutableType;
-        this.anonymous = anonymous;
         this.category = Category.FETCH;
         this.fetcher = fetcher;
+        this.fetchByInfo = fetchByInfo;
         this.document = DocumentImpl.of(immutableType.getJavaClass());
     }
 
     private ImmutableObjectTypeImpl(ImmutableType immutableType, Category category) {
         this.immutableType = immutableType;
-        this.anonymous = false;
         this.category = category;
         this.fetcher = null;
+        this.fetchByInfo = null;
         this.document = DocumentImpl.of(immutableType.getJavaClass());
     }
 
     private ImmutableObjectTypeImpl(ImmutableType immutableType, boolean anonymous, Category category, Map<String, Property> props) {
         this.immutableType = immutableType;
-        this.anonymous = anonymous;
         this.category = category;
         this.fetcher = null;
+        this.fetchByInfo = null;
         this.props = props;
         this.document = DocumentImpl.of(immutableType.getJavaClass());
     }
@@ -62,11 +62,6 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
     @Override
     public boolean isEntity() {
         return immutableType.isEntity();
-    }
-
-    @Override
-    public boolean isAnonymous() {
-        return anonymous;
     }
 
     @Override
@@ -84,6 +79,11 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
         return category;
     }
 
+    @Override
+    public FetchByInfo getFetchByInfo() {
+        return fetchByInfo;
+    }
+
     @Nullable
     @Override
     public Document getDocument() {
@@ -91,10 +91,11 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
     }
 
     Fetcher<?> getFetcher() {
-        if (fetcher == null) {
-            throw new AssertionError("Internal bug: No fetcher");
-        }
         return fetcher;
+    }
+
+    FetchByInfo fetchByInfo() {
+        return fetchByInfo;
     }
 
     @Override
@@ -130,10 +131,9 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
         return builder.toString();
     }
 
-    static ImmutableObjectType fetch(Context ctx, ImmutableType immutableType, boolean anonymous, Fetcher<?> fetcher) {
-
+    static ImmutableObjectType fetch(Context ctx, ImmutableType immutableType, Fetcher<?> fetcher, FetchByInfo info) {
         ImmutableObjectTypeImpl impl;
-        if (!anonymous) {
+        if (info != null) {
             impl = (ImmutableObjectTypeImpl) ctx.getImmutableObjectType(Category.FETCH, immutableType, fetcher);
             if (impl != null) {
                 return impl;
@@ -154,8 +154,8 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
             );
         }
 
-        impl = new ImmutableObjectTypeImpl(fetcher.getImmutableType(), anonymous, fetcher);
-        if (!anonymous) {
+        impl = new ImmutableObjectTypeImpl(fetcher.getImmutableType(), fetcher, info);
+        if (info != null) {
             ctx.addImmutableObjectType(impl);
         }
 
@@ -163,7 +163,7 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
             if (prop.isAssociation(TargetLevel.ENTITY)) {
-                Type type = fetch(ctx, prop.getTargetType(), true, field.getChildFetcher());
+                Type type = fetch(ctx, prop.getTargetType(), field.getChildFetcher(), null);
                 if (prop.isNullable()) {
                     type = NullableTypeImpl.of(type);
                 }
