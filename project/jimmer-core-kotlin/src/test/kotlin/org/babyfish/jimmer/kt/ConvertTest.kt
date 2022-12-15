@@ -11,7 +11,7 @@ class ConvertTest {
     @Test
     fun testFullConverter() {
         assertFailsWith(IllegalArgumentException::class) {
-            newImmutableConverter(Book::class, Partial::class) {
+            immutableConverterForMethods(Book::class, Partial::class) {
                 autoMapOtherScalars()
             }
         }.let {
@@ -28,7 +28,7 @@ class ConvertTest {
 
     @Test
     fun testPartialConverter() {
-        val book = newImmutableConverter(Book::class, Partial::class) {
+        val book = immutableConverterForMethods(Book::class, Partial::class) {
             autoMapOtherScalars(true)
         }.convert(Partial("SQL in Action"))
         expect("{\"name\":\"SQL in Action\"}") {
@@ -38,7 +38,7 @@ class ConvertTest {
 
     @Test
     fun testCondConverter() {
-        val book = newImmutableConverter(Book::class, Partial::class) {
+        val book = immutableConverterForMethods(Book::class, Partial::class) {
             map(Book::name) {
                 useIf { it.name != null }
             }
@@ -50,7 +50,7 @@ class ConvertTest {
 
     @Test
     fun testEmptyConverter() {
-        newImmutableConverter(Book::class, BookInput::class) {}
+        immutableConverterForMethods(Book::class, BookInput::class) {}
             .convert(INPUT)
             .let {
                 expect(
@@ -63,7 +63,7 @@ class ConvertTest {
 
     @Test
     fun testDefaultConverter() {
-        newImmutableConverter(Book::class, BookInput::class) {
+        immutableConverterForMethods(Book::class, BookInput::class) {
             autoMapOtherScalars()
         }
             .convert(INPUT)
@@ -78,7 +78,7 @@ class ConvertTest {
 
     @Test
     fun testWithValueConverter() {
-        newImmutableConverter(Book::class, BookInput::class) {
+        immutableConverterForMethods(Book::class, BookInput::class) {
             map(Book::store, BookInput::storeName) {
                 valueConverter {
                     new(BookStore::class).by {
@@ -118,7 +118,7 @@ class ConvertTest {
 
     @Test
     fun testWithDraftModifier() {
-        newImmutableConverter(Book::class, BookInput::class) {
+        immutableConverterForMethods(Book::class, BookInput::class) {
             setDraftModifier<BookDraft> { input ->
                 store = input.storeName?.let {
                      new(BookStore::class).by {

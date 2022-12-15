@@ -13,10 +13,14 @@ import java.util.List;
 @Doc("BookService interface")
 public interface BookService {
 
-    Fetcher<Book> BOOK_FETCHER = BookFetcher.$
+    Fetcher<Book> SIMPLE_FETCHER = BookFetcher.$.name();
+
+    Fetcher<Book> COMPLEX_FETCHER = BookFetcher.$
             .allScalarFields()
             .store(BookStoreFetcher.$.name())
-            .authors(AuthorFetcher.$.firstName());
+            .authors(
+                    AuthorFetcher.$.allScalarFields().gender(false)
+            );
 
     Fetcher<Author> AUTHOR_FETCHER = AuthorFetcher.$
             .allScalarFields()
@@ -25,6 +29,9 @@ public interface BookService {
                             .name()
                             .store(BookStoreFetcher.$.name())
             );
+
+    @GetMapping("/books/simple")
+    List<@FetchBy("SIMPLE_FETCHER") Book> findComplexBooks();
 
     @Doc("Find book list")
     @Doc("Format of each element:")
@@ -38,8 +45,8 @@ public interface BookService {
     @Doc("- authors")
     @Doc("-- id")
     @Doc("-- firstName")
-    @GetMapping("/books")
-    List<@FetchBy("BOOK_FETCHER") Book> findBooks(
+    @GetMapping("/books/complex")
+    List<@FetchBy("COMPLEX_FETCHER") Book> findComplexBooks(
             @RequestParam("name") String name,
             @RequestParam("storeName") @Nullable String storeName,
             @RequestParam("authorName") @Nullable String authorName,
@@ -50,7 +57,7 @@ public interface BookService {
     @GetMapping("/tuples")
     Page<
             Tuple2<
-                    ? extends @FetchBy("BOOK_FETCHER") Book,
+                    ? extends @FetchBy("COMPLEX_FETCHER") Book,
                     ? extends @FetchBy("AUTHOR_FETCHER") Author
             >
     > findTuples(

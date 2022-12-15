@@ -31,7 +31,8 @@ public class DtoWriter extends CodeWriter {
                 scope(ScopeType.OBJECT, ", ", true, () -> {
                     for (Property prop : type.getProperties().values()) {
                         separator();
-                        code(prop.getName())
+                        code("readonly ")
+                                .code(prop.getName())
                                 .codeIf(prop.getType() instanceof NullableType, '?')
                                 .code(": ")
                                 .type(NullableType.unwrap(prop.getType()));

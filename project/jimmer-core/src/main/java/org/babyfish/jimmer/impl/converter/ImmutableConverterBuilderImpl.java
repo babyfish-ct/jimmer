@@ -2,6 +2,7 @@ package org.babyfish.jimmer.impl.converter;
 
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.ImmutableConverter;
+import org.babyfish.jimmer.impl.util.PropName;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -15,23 +16,29 @@ import java.util.stream.Collectors;
 
 public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConverter.Builder<T, Static> {
 
-    private static final int FULL_AUTO_MAPPING = 1;
-
-    private static final int PARTIAL_AUTO_MAPPING = 2;
-
     private final ImmutableType immutableType;
 
     private final Class<Static> staticType;
+
+    private final Map<String, StaticProp> staticPropMap;
 
     private BiConsumer<Draft, Static> draftModifier;
 
     private Map<ImmutableProp, ImmutableConverterImpl.Field> mappingMap = new HashMap<>();
 
-    private int autoMapOtherScalars;
-
-    public ImmutableConverterBuilderImpl(Class<T> immutableType, Class<Static> staticType) {
+    public ImmutableConverterBuilderImpl(Class<T> immutableType, Class<Static> staticType, boolean byField) {
         this.immutableType = ImmutableType.get(immutableType);
         this.staticType = staticType;
+        this.staticPropMap = staticProps(staticType, byField);
+        if (staticPropMap.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Cannot map the static type \"" +
+                            staticType.getName() +
+                            "\" by " +
+                            (byField ? "FIELDS" : "METHODS") +
+                            ", not static properties has been found"
+            );
+        }
     }
 
     @Override
@@ -64,17 +71,10 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
     }
 
     @Override
-    public ImmutableConverter.Builder<T, Static> unmap(ImmutableProp ... props) {
-        for (ImmutableProp prop : props) {
-            validateProp(prop);
-            mappingMap.put(prop, null);
+    public ImmutableConverter.Builder<T, Static> unmapStaticProps(Collection<String> staticPropNames) {
+        for (String staticPropName : staticPropNames) {
+            staticProp(staticPropName, false).mapped = true;
         }
-        return this;
-    }
-
-    @Override
-    public ImmutableConverter.Builder<T, Static> autoMapOtherScalars(boolean partial) {
-        autoMapOtherScalars = partial ? PARTIAL_AUTO_MAPPING : FULL_AUTO_MAPPING;
         return this;
     }
 
@@ -86,18 +86,26 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
 
     @Override
     public ImmutableConverter<T, Static> build() {
-        if (autoMapOtherScalars != 0) {
-            for (ImmutableProp prop : immutableType.getProps().values()) {
-                if (!prop.isAssociation(TargetLevel.OBJECT) && !mappingMap.containsKey(prop)) {
-                    mapImpl(
-                            prop,
-                            prop.getName(),
-                            null,
-                            prop.isScalarList() || prop.isReferenceList(TargetLevel.OBJECT),
-                            true
-                    );
-                }
+        for (ImmutableProp prop : immutableType.getProps().values()) {
+            if (!prop.isAssociation(TargetLevel.OBJECT) && !mappingMap.containsKey(prop)) {
+                mapImpl(
+                        prop,
+                        prop.getName(),
+                        null,
+                        prop.isScalarList() || prop.isReferenceList(TargetLevel.OBJECT),
+                        true
+                );
             }
+        }
+        List<StaticProp> unmappedStaticProps = staticPropMap
+                .values()
+                .stream()
+                .filter(it -> !it.mapped)
+                .collect(Collectors.toList());
+        if (!unmappedStaticProps.isEmpty()) {
+            throw new IllegalArgumentException(
+                    unmappedStaticProps + " has not not been mapped"
+            );
         }
         return new ImmutableConverterImpl<>(
                 immutableType,
@@ -131,70 +139,125 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
             boolean treatAsList,
             boolean autoMapping
     ) {
-        List<String> methodNames = new ArrayList<>();
-        String suffix = Character.toUpperCase(staticPropName.charAt(0)) + staticPropName.substring(1);
-        if (prop.getElementClass() == boolean.class) {
-            methodNames.add("is" + suffix);
+        StaticProp staticProp = staticProp(staticPropName, autoMapping);
+        if (staticProp == null) {
+            return;
         }
-        methodNames.add("get" + suffix);
-        methodNames.add(staticPropName);
-        Method method = null;
-        Field field = null;
-        for (String methodName : methodNames) {
-            for (Class<?> type = staticType; type != null; type = type.getSuperclass()) {
-                try {
-                    method = staticType.getDeclaredMethod(methodName);
-                    if (Modifier.isStatic(method.getModifiers())) {
-                        method = null;
-                    } else {
-                        method.setAccessible(true);
-                        break;
-                    }
-                } catch (NoSuchMethodException ex) {
-                    // Do nothing
-                }
-            }
-        }
-        if (method == null) {
-            for (Class<?> type = staticType; type != null; type = type.getSuperclass()) {
-                try {
-                    field = staticType.getDeclaredField(staticPropName);
-                    if (Modifier.isStatic(field.getModifiers())) {
-                        field = null;
-                    } else {
-                        field.setAccessible(true);
-                        break;
-                    }
-                } catch (NoSuchFieldException ex) {
-                    // Do nothing
-                }
-            }
-        }
-        if (method == null && field == null) {
-            if (autoMapping && autoMapOtherScalars == PARTIAL_AUTO_MAPPING) {
-                return;
-            }
-            throw new IllegalArgumentException(
-                    (autoMapping ?
-                            "Cannot automatically map the property \"" + prop + "\"" :
-                            "Illegal static property name: \"" + staticPropName + '"'
-                    ) +
-                            ", the static type \"" +
-                            staticType.getName() +
-                            "\" has neither methods " +
-                            methodNames.stream().map(it -> '"' + it + "()\"").collect(Collectors.joining(", ")) +
-                            " nor field \"" +
-                            staticPropName +
-                            "\""
-            );
-        }
+        staticProp.mapped = true;
         FieldBuilder builder = treatAsList ?
-                new ListMappingImpl<>(prop, method, field, autoMapping) :
-                new MappingImpl<>(prop, method, field, autoMapping);
+                new ListMappingImpl<>(prop, staticProp.method, staticProp.field, autoMapping) :
+                new MappingImpl<>(prop, staticProp.method, staticProp.field, autoMapping);
         if (mappingBuilderConsumer != null) {
             ((Consumer<FieldBuilder>) mappingBuilderConsumer).accept(builder);
         }
         mappingMap.put(prop, builder.build());
+    }
+
+    private StaticProp staticProp(String staticPropName, boolean nullable) {
+        StaticProp staticProp = staticPropMap.get(staticPropName);
+        if (nullable || staticProp != null) {
+            return staticProp;
+        }
+        throw new IllegalArgumentException(
+                "Illegal static property name \"" +
+                        staticPropName +
+                        "\", available choices are " +
+                        staticPropMap.keySet()
+        );
+    }
+
+    private static Map<String, StaticProp> staticProps(Class<?> staticType, boolean byField) {
+        Map<String, StaticProp> possiblePropMap = new HashMap<>();
+        possibleStaticProps(staticType, byField, possiblePropMap);
+        Map<String, StaticProp> map = new TreeMap<>();
+        for (Map.Entry<String, StaticProp> e : possiblePropMap.entrySet()) {
+            if (e.getValue().use()) {
+                map.put(e.getKey(), e.getValue());
+            }
+        }
+        return map;
+    }
+
+    private static void possibleStaticProps(Class<?> staticType, boolean byField, Map<String, StaticProp> map) {
+        if (staticType == null || staticType == Object.class) {
+            return;
+        }
+        if (!byField) {
+            for (Method method : staticType.getDeclaredMethods()) {
+                PropName propName = PropName.fromBeanGetter(method);
+                if (propName != null) {
+                    StaticProp staticProp = map.get(propName.getText());
+                    if (staticProp == null) {
+                        staticProp = new StaticProp(propName.getText(), propName.isRecordStyle());
+                        staticProp.method = method;
+                        map.put(propName.getText(), staticProp);
+                    } else if (staticProp.mayBe) {
+                        staticProp.method = method;
+                        staticProp.mayBe = propName.isRecordStyle();
+                    }
+                }
+            }
+        }
+        for (Field field : staticType.getDeclaredFields()) {
+            if (Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
+            StaticProp staticProp = map.get(field.getName());
+            if (staticProp == null) {
+                staticProp = new StaticProp(field.getName(), !byField);
+                staticProp.field = field;
+                map.put(field.getName(), staticProp);
+            } else if (staticProp.mayBe) {
+                staticProp.field = field;
+                staticProp.mayBe = !byField;
+            }
+        }
+        possibleStaticProps(staticType.getSuperclass(), byField, map);
+        for (Class<?> itfType : staticType.getInterfaces()) {
+            possibleStaticProps(itfType, byField, map);
+        }
+    }
+
+    private static class StaticProp {
+        final String name;
+        boolean mayBe;
+        Method method;
+        Field field;
+        boolean mapped;
+
+        StaticProp(String name, boolean mayBe) {
+            this.name = name;
+            this.mayBe = mayBe;
+        }
+
+        boolean use() {
+            if (!mayBe) {
+                prepare();
+                return true;
+            }
+            if (method != null && field != null) {
+                Class<?> methodType = method.getReturnType();
+                if (methodType == field.getType()) {
+                    prepare();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void prepare() {
+            if (method != null) {
+                method.setAccessible(true);
+            }
+            if (field != null) {
+                field.setAccessible(true);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return method != null ? method.toString() : field.toString();
+        }
     }
     
     private interface FieldBuilder {
