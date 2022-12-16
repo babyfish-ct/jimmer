@@ -1,13 +1,12 @@
 package org.babyfish.jimmer.spring.dal;
 
-import org.babyfish.jimmer.spring.JRepository;
-import org.babyfish.jimmer.spring.model.AuthorTableEx;
-import org.babyfish.jimmer.spring.model.Book;
-import org.babyfish.jimmer.spring.model.BookTable;
-import org.babyfish.jimmer.spring.model.Page;
+import org.babyfish.jimmer.spring.repository.JRepository;
+import org.babyfish.jimmer.spring.model.*;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface BookRepository extends JRepository<Book, Long> {
 
@@ -22,16 +21,15 @@ public interface BookRepository extends JRepository<Book, Long> {
             Fetcher<Book> fetcher
     ) {
         AuthorTableEx author = AuthorTableEx.$;
-        return paginate(
-                pageIndex,
-                pageSize,
-                client().createQuery(table)
+        return page(
+                Pageable.ofSize(pageSize).withPage(pageIndex),
+                sql().createQuery(table)
                         .whereIf(name != null, table.name().ilike(name))
                         .whereIf(storeName != null, table.store().name().ilike(name))
                         .whereIf(
                                 authorName != null,
                                 table.id().in(
-                                        client().createSubQuery(author)
+                                        sql().createSubQuery(author)
                                                 .where(
                                                         Predicate.or(
                                                                 author.firstName().ilike(authorName),

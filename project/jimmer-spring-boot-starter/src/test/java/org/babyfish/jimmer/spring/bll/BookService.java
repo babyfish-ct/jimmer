@@ -4,23 +4,10 @@ import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.spring.dal.BookRepository;
 import org.babyfish.jimmer.spring.model.*;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.springframework.data.domain.Page;
 
+//@RestController
 public class BookService {
-
-    private static final Fetcher<Book> SIMPLE_FETCHER =
-            BookFetcher.$.name();
-
-    private static final Fetcher<Book> COMPLEX_FETCHER =
-            BookFetcher.$
-                    .allScalarFields()
-                    .store(
-                            BookStoreFetcher.$.name()
-                    )
-                    .authors(
-                            AuthorFetcher.$
-                                    .allScalarFields()
-                                    .gender(false)
-                    );
 
     private final BookRepository bookRepository;
 
@@ -61,4 +48,19 @@ public class BookService {
                 COMPLEX_FETCHER
         );
     }
+
+    private static final Fetcher<Book> SIMPLE_FETCHER =
+            BookFetcher.$.name();
+
+    private static final Fetcher<Book> COMPLEX_FETCHER =
+            BookFetcher.$
+                    .allScalarFields()
+                    .store(
+                            BookStoreFetcher.$.name()
+                    )
+                    .authors(
+                            AuthorFetcher.$
+                                    .allScalarFields()
+                                    .gender(false)
+                    );
 }

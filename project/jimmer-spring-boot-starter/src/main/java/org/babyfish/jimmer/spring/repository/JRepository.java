@@ -1,22 +1,24 @@
-package org.babyfish.jimmer.spring;
+package org.babyfish.jimmer.spring.repository;
 
 import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.spring.model.Page;
 import org.babyfish.jimmer.sql.Input;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.Repository;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public interface JRepository<E, ID> {
+public interface JRepository<E, ID> extends Repository<E, ID> {
 
-    JSqlClient client();
+    JSqlClient sql();
 
-    Page<E> paginate(int pageIndex, int pageSize, ConfigurableRootQuery<?, E> query);
+    Page<E> page(Pageable pageable, ConfigurableRootQuery<?, E> query);
 
     E findById(ID id);
 
