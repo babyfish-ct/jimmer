@@ -1,17 +1,19 @@
-package org.babyfish.jimmer.spring
+package org.babyfish.jimmer.spring.repository
 
-import org.babyfish.jimmer.spring.model.Page
 import org.babyfish.jimmer.sql.Input
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.repository.Repository
 import kotlin.reflect.KProperty1
 
-interface KRepository<E: Any, ID> {
+interface KRepository<E: Any, ID> : Repository<E, ID> {
 
-    val client: KSqlClient
+    val sql: KSqlClient
 
-    fun paginate(pageIndex: Int, pageSize: Int, query: KConfigurableRootQuery<*, E>): Page<E>
+    fun page(pageable: Pageable, query: KConfigurableRootQuery<*, E>): Page<E>
 
     fun findById(id: ID, fetcher: Fetcher<E>? = null): E?
 
