@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.example.kt.sql.cfg
 
 import org.babyfish.jimmer.example.kt.sql.model.*
+import org.babyfish.jimmer.spring.repository.SpringConnectionManager
 import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.cache.CacheFactory
 import org.babyfish.jimmer.sql.dialect.H2Dialect
@@ -31,19 +32,7 @@ class SqlClientConfig {
         val isH2 = jdbcUrl.startsWith("jdbc:h2:")
         return newKSqlClient {
 
-            setConnectionManager {
-                /*
-                 * It's very important to use
-                 *      "org.springframework.jdbc.datasource.DataSourceUtils"!
-                 * This is spring transaction aware ConnectionManager
-                 */
-                val con: Connection = DataSourceUtils.getConnection(dataSource)
-                try {
-                    proceed(con)
-                } finally {
-                    DataSourceUtils.releaseConnection(con, dataSource)
-                }
-            }
+            setConnectionManager(SpringConnectionManager(dataSource))
 
             setEntityManager(ENTITY_MANAGER)
 

@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.*
 
 @RestController
-class TreeController(
+class TreeService(
     private val sqlClient: KSqlClient,
     private val objectMapper: ObjectMapper
 ) {
@@ -139,4 +139,4 @@ class TreeController(
     }
 }
 
-private val LOGGER = LoggerFactory.getLogger(TreeController::class.java)
+private val LOGGER = LoggerFactory.getLogger(TreeService::class.java)
