@@ -4,6 +4,7 @@ import org.babyfish.jimmer.spring.repository.JRepository;
 import org.babyfish.jimmer.spring.repository.KRepository;
 import org.babyfish.jimmer.spring.repository.bytecode.ClassCodeWriter;
 import org.babyfish.jimmer.spring.repository.bytecode.JavaClassCodeWriter;
+import org.babyfish.jimmer.spring.repository.bytecode.JavaClasses;
 import org.babyfish.jimmer.spring.repository.bytecode.KotlinClassCodeWriter;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.kt.KSqlClient;
@@ -13,7 +14,6 @@ import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 
 public class JimmerRepositoryFactory extends RepositoryFactorySupport {
@@ -96,16 +96,8 @@ public class JimmerRepositoryFactory extends RepositoryFactorySupport {
             ClassCodeWriter writer = jRepository ?
                     new JavaClassCodeWriter(metadata) :
                     new KotlinClassCodeWriter(metadata);
-            byte[] byteCode = writer.write();
-            try {
-                clazz = MethodHandles.privateLookupIn(repositoryInterface, MethodHandles.lookup()).defineClass(byteCode);
-            } catch (IllegalAccessException ex) {
-                throw new IllegalArgumentException(
-                        "Cannot create implementation class for \"" +
-                                repositoryInterface +
-                                "\""
-                );
-            }
+            byte[] bytecode = writer.write();
+            clazz = JavaClasses.define(bytecode, repositoryInterface);
         }
         try {
             return clazz.getConstructor(jRepository ? JSqlClient.class : KSqlClient.class).newInstance(sqlClient);
