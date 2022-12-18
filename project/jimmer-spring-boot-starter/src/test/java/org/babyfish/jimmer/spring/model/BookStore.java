@@ -6,12 +6,13 @@ import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.OneToMany;
 
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 public interface BookStore {
 
     @Id
-    long id();
+    UUID id();
 
     String name();
 

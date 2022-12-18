@@ -2,7 +2,7 @@ package org.babyfish.jimmer.spring.repository;
 
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.spring.model.Input;
-import org.babyfish.jimmer.spring.repository.support.Iterables;
+import org.babyfish.jimmer.spring.repository.support.Utils;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.NoRepositoryBean;
@@ -29,7 +30,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     Pager<E> pager(Pageable pageable);
 
-    Pager<E> pager(int pageIndex, int pageSize);
+    Pager<E> pager(int pageIndex, int pageSize, TypedProp.Scalar<?, ?> ... props);
+
+    default Pager<E> pager(int pageIndex, int pageSize, Sort sort) {
+        return pager(PageRequest.of(pageIndex, pageSize, sort));
+    }
 
 
     /*
@@ -171,7 +176,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     default <S extends E> Iterable<S> saveAll(@NotNull Iterable<S> entities) {
         return sql()
                 .getEntities()
-                .batchSave(Iterables.toCollection(entities), true)
+                .batchSave(Utils.toCollection(entities), true)
                 .getSimpleResults()
                 .stream()
                 .map(SimpleSaveResult::getModifiedEntity)

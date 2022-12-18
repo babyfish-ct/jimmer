@@ -2,7 +2,6 @@ package org.babyfish.jimmer.spring.repository.bytecode;
 
 import org.babyfish.jimmer.impl.asm.MethodVisitor;
 import org.babyfish.jimmer.impl.asm.Opcodes;
-import org.babyfish.jimmer.impl.asm.Type;
 
 import java.lang.reflect.Method;
 
@@ -12,44 +11,22 @@ public class MethodCodeWriter {
 
     protected final Method method;
 
-    private final Class<?>[] parameterTypes;
-
     private MethodVisitor mv;
 
     protected MethodCodeWriter(ClassCodeWriter parent, Method method) {
         this.parent = parent;
         this.method = method;
-        this.parameterTypes = method.getParameterTypes();
     }
 
     public void write() {
-//        if (!method.isDefault()) {
-//            throw new IllegalStateException(
-//                    "The current version does not support spring-data-style abstract custom method \"" +
-//                            method +
-//                            "\", please wait for the next version. " +
-//                            "Now, you can write strongly typed DSL using java-default method."
-//            );
-//        }
-//        mv = parent.getClassVisitor().visitMethod(
-//                Opcodes.ACC_PUBLIC,
-//                method.getName(),
-//                Type.getMethodDescriptor(method),
-//                null,
-//                null
-//        );
-//        mv.visitVarInsn(Opcodes.ALOAD, 0);
-//        mv.visitMethodInsn(
-//                Opcodes.INVOKEINTERFACE,
-//                parent.getEntityInternalName(),
-//                method.getName(),
-//                Type.getMethodDescriptor(method),
-//                true
-//        );
-//        visitReturn(method.getReturnType());
-//        mv.visitCode();
-//        mv.visitMaxs(0, 0);
-//        mv.visitEnd();
+        if (!method.isDefault()) {
+            throw new IllegalStateException(
+                    "The current version does not support spring-data-style abstract custom method \"" +
+                            method +
+                            "\", please wait for the next version. " +
+                            "Now, you can write strongly typed DSL using java-default method."
+            );
+        }
     }
 
     protected void visitLoadSqlClient() {

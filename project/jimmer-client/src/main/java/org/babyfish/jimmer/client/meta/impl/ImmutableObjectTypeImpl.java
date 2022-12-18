@@ -164,7 +164,7 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
             ImmutableProp prop = field.getProp();
             if (prop.isAssociation(TargetLevel.ENTITY)) {
                 Type type = fetch(ctx, prop.getTargetType(), field.getChildFetcher(), null);
-                if (prop.isNullable()) {
+                if (prop.isNullable() && field.getRecursionStrategy() == null) {
                     type = NullableTypeImpl.of(type);
                 }
                 if (prop.isReferenceList(TargetLevel.ENTITY)) {

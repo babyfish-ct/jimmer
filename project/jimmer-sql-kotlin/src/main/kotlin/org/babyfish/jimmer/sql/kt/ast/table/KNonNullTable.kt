@@ -9,7 +9,8 @@ import kotlin.reflect.KProperty1
 
 interface KNonNullTable<E: Any> : KTable<E>, KNonNullProps<E>, Selection<E> {
 
-    fun fetch(fetcher: Fetcher<E>): Selection<E>
+    fun fetch(fetcher: Fetcher<E>?): Selection<E>
+
     override fun asTableEx(): KNonNullTableEx<E>
 }
 

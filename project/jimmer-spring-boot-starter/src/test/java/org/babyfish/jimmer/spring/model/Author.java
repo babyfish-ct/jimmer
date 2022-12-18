@@ -6,12 +6,13 @@ import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.ManyToMany;
 
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 public interface Author {
 
     @Id
-    long id();
+    UUID id();
 
     String firstName();
 

@@ -8,7 +8,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -77,7 +76,7 @@ public interface Metadata {
     interface ParameterParser {
 
         @Nullable
-        Tuple2<String, Boolean> requestParamName(Parameter javaParameter);
+        Tuple2<String, Boolean> requestParamNameAndNullable(Parameter javaParameter);
 
         @Nullable
         String pathVariableName(Parameter javaParameter);
