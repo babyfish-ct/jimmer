@@ -48,7 +48,7 @@ internal class KNullableTableExImpl<E: Any>(
             javaTable.weakJoinImplementor(weakJoinType.java, JoinType.INNER)
         )
 
-    override fun fetch(fetcher: Fetcher<E>): Selection<E?> =
+    override fun fetch(fetcher: Fetcher<E>?): Selection<E?> =
         javaTable.fetch(fetcher)
 
     override fun asTableEx(): KNullableTableEx<E> =

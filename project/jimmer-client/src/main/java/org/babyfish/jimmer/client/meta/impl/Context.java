@@ -74,7 +74,7 @@ class Context {
         this.ignoreTypeVariableResolving = base.ignoreTypeVariableResolving;
     }
 
-    private Context(Context base, AnnotatedParameterizedType parameterizedType) {
+    public Context(Context base, AnnotatedParameterizedType parameterizedType) {
         this.base = base;
         this.operationParser = base.operationParser;
         this.parameterParser = base.parameterParser;
@@ -168,7 +168,7 @@ class Context {
             if (simpleType != null) {
                 return simpleType;
             }
-            if (Iterable.class.isAssignableFrom(javaClass) ||
+            if (Collection.class.isAssignableFrom(javaClass) ||
                     Map.class.isAssignableFrom(javaClass)) {
                 throw new IllegalDocMetaException(
                         "Illegal type \"" +
@@ -202,6 +202,7 @@ class Context {
             return parseType(resolve((AnnotatedTypeVariable) annotatedType));
         }
         if (annotatedType instanceof AnnotatedParameterizedType) {
+            System.out.println("Parameterized type: " + annotatedType);
             AnnotatedParameterizedType annotatedParameterizedType = (AnnotatedParameterizedType) annotatedType;
             ParameterizedType parameterizedType = (ParameterizedType) annotatedParameterizedType.getType();
             java.lang.reflect.Type rawType = parameterizedType.getRawType();
@@ -215,7 +216,7 @@ class Context {
                 );
             }
             Class<?> rawClass = (Class<?>) rawType;
-            if (Iterable.class.isAssignableFrom(rawClass)) {
+            if (Collection.class.isAssignableFrom(rawClass)) {
                 return new ArrayTypeImpl(parseType(annotatedParameterizedType.getAnnotatedActualTypeArguments()[0]));
             }
             if (Map.class.isAssignableFrom(rawClass)) {
@@ -266,7 +267,12 @@ class Context {
         if (base != null) {
             return base.resolve0(typeVariable);
         }
-        return null;
+        throw new IllegalArgumentException(
+                "Cannot resolve the typeVariable: " +
+                        typeVariable +
+                        " of " +
+                        typeVariable.getGenericDeclaration()
+        );
     }
 
     private ImmutableObjectType objectType(ImmutableType type, FetchBy fetchBy) {

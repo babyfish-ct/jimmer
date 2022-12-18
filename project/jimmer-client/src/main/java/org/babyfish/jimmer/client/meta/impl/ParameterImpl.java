@@ -127,7 +127,7 @@ class ParameterImpl implements Parameter {
     ) {
         Metadata.ParameterParser parameterParser = ctx.getParameterParser();
 
-        Tuple2<String, Boolean> tuple = parameterParser.requestParamName(rawParameter);
+        Tuple2<String, Boolean> tuple = parameterParser.requestParamNameAndNullable(rawParameter);
         String requestParam = tuple != null ? tuple.get_1() : null;
         if (requestParam != null) {
             if (requestParam.isEmpty()) {

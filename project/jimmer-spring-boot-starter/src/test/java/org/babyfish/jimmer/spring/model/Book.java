@@ -9,12 +9,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 public interface Book {
 
     @Id
-    long id();
+    UUID id();
 
     String name();
 

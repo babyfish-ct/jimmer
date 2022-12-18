@@ -5,8 +5,10 @@ import org.babyfish.jimmer.spring.dal.BookRepository;
 import org.babyfish.jimmer.spring.model.*;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.springframework.data.domain.Page;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-//@RestController
+@RestController
 public class BookService {
 
     private final BookRepository bookRepository;
@@ -15,6 +17,7 @@ public class BookService {
         this.bookRepository = bookRepository;
     }
 
+    @GetMapping("/simpleBooks")
     public Page<@FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks(
             int pageIndex,
             int pageSize,
@@ -32,6 +35,7 @@ public class BookService {
         );
     }
 
+    @GetMapping("/complexBooks")
     public Page<@FetchBy("COMPLEX_FETCHER") Book> findComplexBooks(
             int pageIndex,
             int pageSize,

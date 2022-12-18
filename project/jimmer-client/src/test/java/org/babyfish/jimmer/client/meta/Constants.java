@@ -33,7 +33,7 @@ public class Constants {
 
                         @Nullable
                         @Override
-                        public Tuple2<String, Boolean> requestParamName(java.lang.reflect.Parameter javaParameter) {
+                        public Tuple2<String, Boolean> requestParamNameAndNullable(java.lang.reflect.Parameter javaParameter) {
                             RequestParam requestParam = javaParameter.getAnnotation(RequestParam.class);
                             return requestParam != null ? new Tuple2<>(requestParam.value(), !requestParam.required()) : null;
                         }

@@ -13,11 +13,6 @@ public interface BookRepository extends JRepository<Book, Long> {
 
     BookTable table = BookTable.$;
 
-    default List<Book> findByName(String name) {
-        System.out.println("Accept: " + name);
-        return null;
-    }
-
     default Page<Book> findBooks(
             int pageIndex,
             int pageSize,

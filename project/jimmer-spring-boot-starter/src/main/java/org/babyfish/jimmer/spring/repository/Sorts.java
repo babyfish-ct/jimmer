@@ -40,7 +40,7 @@ public class Sorts {
         return orders;
     }
 
-    Sort toSort(Iterable<TypedProp.Scalar<?, ?>> props) {
+    public static Sort toSort(TypedProp.Scalar<?, ?> ... props) {
         List<Sort.Order> orders = new ArrayList<>();
         ImmutableType entityType = null;
         for (TypedProp.Scalar<?, ?> prop : props) {

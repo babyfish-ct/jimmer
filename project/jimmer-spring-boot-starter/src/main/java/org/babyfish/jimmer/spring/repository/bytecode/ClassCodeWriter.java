@@ -4,7 +4,6 @@ import org.babyfish.jimmer.impl.asm.ClassWriter;
 import org.babyfish.jimmer.impl.asm.MethodVisitor;
 import org.babyfish.jimmer.impl.asm.Opcodes;
 import org.babyfish.jimmer.impl.asm.Type;
-import org.babyfish.jimmer.spring.repository.support.JRepositoryImpl;
 import org.springframework.data.repository.core.RepositoryInformation;
 
 import java.lang.reflect.Method;
@@ -15,6 +14,8 @@ public abstract class ClassCodeWriter {
     public static final String ASM_IMPL_SUFFIX = "{AsmImpl}";
 
     private final RepositoryInformation metadata;
+
+    private final Class<?> superType;
 
     private final String interfaceInternalName;
 
@@ -30,11 +31,12 @@ public abstract class ClassCodeWriter {
 
     private ClassWriter cw;
 
-    protected ClassCodeWriter(RepositoryInformation metadata, Class<?> sqlClientType) {
+    protected ClassCodeWriter(RepositoryInformation metadata, Class<?> sqlClientType, Class<?> superType) {
         this.metadata = metadata;
+        this.superType = superType;
         this.interfaceInternalName = Type.getInternalName(metadata.getRepositoryInterface());
         this.implInternalName = interfaceInternalName + ASM_IMPL_SUFFIX;
-        this.superInternalName = Type.getInternalName(JRepositoryImpl.class);
+        this.superInternalName = Type.getInternalName(superType);
         this.entityInternalName = Type.getInternalName(metadata.getDomainType());
         this.sqlClientInternalName = Type.getInternalName(sqlClientType);
         this.sqlClientDescriptor = Type.getDescriptor(sqlClientType);
@@ -80,10 +82,9 @@ public abstract class ClassCodeWriter {
         );
         writeInit();
         Class<?> repositoryInterface = metadata.getRepositoryInterface();
-        Class<?> repositoryBaseClass = JRepositoryImpl.class;
         for (Method method : repositoryInterface.getMethods()) {
             if (!Modifier.isStatic(method.getModifiers()) &&
-                    !method.getDeclaringClass().isAssignableFrom(JRepositoryImpl.class)) {
+                    !method.getDeclaringClass().isAssignableFrom(superType)) {
                 createMethodCodeWriter(method).write();
             }
         }

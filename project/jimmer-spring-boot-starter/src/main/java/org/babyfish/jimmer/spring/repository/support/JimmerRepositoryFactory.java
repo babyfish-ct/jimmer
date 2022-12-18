@@ -82,24 +82,30 @@ public class JimmerRepositoryFactory extends RepositoryFactorySupport {
                             "\""
             );
         }
-        Class<?> clazz;
+        Class<?> clazz = null;
         try {
-            clazz = Class.forName(ClassCodeWriter.implementationClassName(repositoryInterface));
+            clazz = Class.forName(
+                    ClassCodeWriter.implementationClassName(repositoryInterface),
+                    true,
+                    repositoryInterface.getClassLoader()
+            );
         } catch (ClassNotFoundException ex) {
             // Do nothing
         }
-        ClassCodeWriter writer = jRepository ?
-                new JavaClassCodeWriter(metadata) :
-                new KotlinClassCodeWriter(metadata);
-        byte[] byteCode = writer.write();
-        try {
-            clazz = MethodHandles.privateLookupIn(repositoryInterface, MethodHandles.lookup()).defineClass(byteCode);
-        } catch (IllegalAccessException ex) {
-            throw new IllegalArgumentException(
-                    "Cannot create implementation class for \"" +
-                            repositoryInterface +
-                            "\""
-            );
+        if (clazz == null) {
+            ClassCodeWriter writer = jRepository ?
+                    new JavaClassCodeWriter(metadata) :
+                    new KotlinClassCodeWriter(metadata);
+            byte[] byteCode = writer.write();
+            try {
+                clazz = MethodHandles.privateLookupIn(repositoryInterface, MethodHandles.lookup()).defineClass(byteCode);
+            } catch (IllegalAccessException ex) {
+                throw new IllegalArgumentException(
+                        "Cannot create implementation class for \"" +
+                                repositoryInterface +
+                                "\""
+                );
+            }
         }
         try {
             return clazz.getConstructor(jRepository ? JSqlClient.class : KSqlClient.class).newInstance(sqlClient);

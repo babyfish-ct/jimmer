@@ -39,6 +39,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @SuppressWarnings("unchecked")
     public JRepositoryImpl(JSqlClient sqlClient, Class<E> entityType) {
+        Utils.validateSqlClient(sqlClient);
         this.sqlClient = sqlClient;
         if (entityType != null) {
             this.entityType = entityType;
@@ -77,8 +78,8 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     }
 
     @Override
-    public Pager<E> pager(int pageIndex, int pageSize) {
-        return new PagerImpl<>(Pageable.ofSize(pageSize).withPage(pageIndex));
+    public Pager<E> pager(int pageIndex, int pageSize, TypedProp.Scalar<?, ?> ... props) {
+        return new PagerImpl<>(PageRequest.of(pageIndex, pageSize, Sorts.toSort(props)));
     }
 
     @Override
@@ -96,7 +97,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @Override
     public List<E> findByIds(Iterable<ID> ids) {
-        return sqlClient.getEntities().findByIds(entityType, Iterables.toCollection(ids));
+        return sqlClient.getEntities().findByIds(entityType, Utils.toCollection(ids));
     }
 
     @Override
@@ -104,12 +105,12 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         if (fetcher == null) {
             return findByIds(ids);
         }
-        return sqlClient.getEntities().findByIds(fetcher, Iterables.toCollection(ids));
+        return sqlClient.getEntities().findByIds(fetcher, Utils.toCollection(ids));
     }
 
     @Override
     public Map<ID, E> findMapByIds(Iterable<ID> ids) {
-        return sqlClient.getEntities().findMapByIds(entityType, Iterables.toCollection(ids));
+        return sqlClient.getEntities().findMapByIds(entityType, Utils.toCollection(ids));
     }
 
     @Override
@@ -117,7 +118,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         if (fetcher == null) {
             return findMapByIds(ids);
         }
-        return sqlClient.getEntities().findMapByIds(fetcher, Iterables.toCollection(ids));
+        return sqlClient.getEntities().findMapByIds(fetcher, Utils.toCollection(ids));
     }
 
     @NotNull
@@ -178,7 +179,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @Override
     public Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<?, ?>... sortedProps) {
-        return pager(pageIndex, pageSize).execute(createQuery(fetcher, EMPTY_SORTED_PROPS));
+        return pager(pageIndex, pageSize, sortedProps).execute(createQuery(fetcher, sortedProps));
     }
 
     @Override
@@ -221,7 +222,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     public void deleteAll(@NotNull Iterable<? extends E> entities) {
         sqlClient.getEntities().batchDelete(
                 entityType,
-                Iterables
+                Utils
                         .toCollection(entities)
                         .stream()
                         .map(it -> ImmutableObjects.get(it, immutableType.getIdProp().getId()))
@@ -245,7 +246,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     public void deleteByIds(Iterable<? extends ID> ids) {
         sqlClient
                 .getEntities()
-                .batchDelete(entityType, Iterables.toCollection(ids));
+                .batchDelete(entityType, Utils.toCollection(ids));
     }
 
     private ConfigurableRootQuery<?, E> createQuery(Fetcher<E> fetcher, TypedProp.Scalar<?, ?>[] sortedProps) {
@@ -287,7 +288,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
             }
             long offset = pageable.getOffset();
             if (offset > Integer.MAX_VALUE - pageable.getPageSize()) {
-                throw new IllegalArgumentException("offset is big");
+                throw new IllegalArgumentException("offset is too big");
             }
             int total = query.count();
             List<E> content =
