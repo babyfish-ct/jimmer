@@ -202,7 +202,6 @@ class Context {
             return parseType(resolve((AnnotatedTypeVariable) annotatedType));
         }
         if (annotatedType instanceof AnnotatedParameterizedType) {
-            System.out.println("Parameterized type: " + annotatedType);
             AnnotatedParameterizedType annotatedParameterizedType = (AnnotatedParameterizedType) annotatedType;
             ParameterizedType parameterizedType = (ParameterizedType) annotatedParameterizedType.getType();
             java.lang.reflect.Type rawType = parameterizedType.getRawType();
