@@ -5,6 +5,7 @@ import org.babyfish.jimmer.client.meta.Metadata;
 import org.babyfish.jimmer.client.meta.Operation;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Controller;
@@ -37,7 +38,7 @@ public class TypeScriptService {
 
     private Metadata parseMetadata() {
         List<String> packageNames = AutoConfigurationPackages.get(ctx);
-        List<Object> beans = new ArrayList<>();
+        List<Class<?>> serviceTypes = new ArrayList<>();
         for (Object bean : ctx.getBeansWithAnnotation(RestController.class).values()) {
             boolean shouldBeParsed = false;
             for (String packageName : packageNames) {
@@ -47,12 +48,12 @@ public class TypeScriptService {
                 }
             }
             if (shouldBeParsed) {
-                beans.add(bean);
+                serviceTypes.add(AopUtils.getTargetClass(bean));
             }
         }
         return Metadata
                 .newBuilder()
-                .addServices(beans)
+                .addServiceTypes(serviceTypes)
                 .setOperationParser(
                         javaMethod -> {
                             GetMapping getMapping = javaMethod.getAnnotation(GetMapping.class);
