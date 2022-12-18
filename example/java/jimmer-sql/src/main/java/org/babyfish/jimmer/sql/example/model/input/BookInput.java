@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.example.model.input;
 
 import org.babyfish.jimmer.ImmutableConverter;
 import org.babyfish.jimmer.ImmutableObjects;
+import org.babyfish.jimmer.spring.model.Input;
 import org.babyfish.jimmer.sql.example.model.Author;
 import org.babyfish.jimmer.sql.example.model.Book;
 import org.babyfish.jimmer.sql.example.model.BookProps;
@@ -11,9 +12,9 @@ import org.jetbrains.annotations.Nullable;
 import java.math.BigDecimal;
 import java.util.List;
 
-public class BookInput {
+public class BookInput implements Input<Book> {
 
-    private static final ImmutableConverter<Book, BookInput> BOOK_CONVERTER =
+    private static final ImmutableConverter<Book, BookInput> CONVERTER =
         ImmutableConverter
                 .forFields(Book.class, BookInput.class)
                 .map(BookProps.ID, mapping -> {
@@ -61,8 +62,9 @@ public class BookInput {
         this.authorIds = authorIds;
     }
 
-    public Book toBook() {
-        return BOOK_CONVERTER.convert(this);
+    @Override
+    public Book toEntity() {
+        return CONVERTER.convert(this);
     }
 
     @Override
