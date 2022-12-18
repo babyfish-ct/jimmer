@@ -45,6 +45,8 @@ class SqlClientConfig {
                 }
             }
 
+            setEntityManager(ENTITY_MANAGER)
+
             setExecutor(Executor.log())
 
             setDialect(if (isH2) H2Dialect() else MySqlDialect())
@@ -53,7 +55,6 @@ class SqlClientConfig {
 
             addFilters(filters)
 
-            setEntityManager(ENTITY_MANAGER)
             setCaches {
                 if (cacheFactory != null) {
                     setCacheFactory(cacheFactory)

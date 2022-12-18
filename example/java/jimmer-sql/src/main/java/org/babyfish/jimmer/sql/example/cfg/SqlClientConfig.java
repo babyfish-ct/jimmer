@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.example.cfg;
 
+import org.babyfish.jimmer.spring.repository.SpringConnectionManager;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
@@ -37,29 +38,12 @@ public class SqlClientConfig {
     ) {
         boolean isH2 = jdbcUrl.startsWith("jdbc:h2:");
         JSqlClient sqlClient = JSqlClient.newBuilder()
-                .setConnectionManager(
-                        /*
-                         * It's very important to use
-                         *      "org.springframework.jdbc.datasource.DataSourceUtils"!
-                         * This is spring transaction aware ConnectionManager
-                         */
-                        new ConnectionManager() {
-                            @Override
-                            public <R> R execute(Function<Connection, R> block) {
-                                Connection con = DataSourceUtils.getConnection(dataSource);
-                                try {
-                                    return block.apply(con);
-                                } finally {
-                                    DataSourceUtils.releaseConnection(con, dataSource);
-                                }
-                            }
-                        }
-                )
+                .setConnectionManager(new SpringConnectionManager(dataSource))
+                .setEntityManager(JimmerModule.ENTITY_MANAGER)
                 .setDialect(isH2 ? new H2Dialect() : new MySqlDialect())
                 .setExecutor(Executor.log())
                 .addDraftInterceptors(interceptors)
                 .addFilters(filters)
-                .setEntityManager(JimmerModule.ENTITY_MANAGER)
                 .setCaches(it -> {
                     if (cacheFactory != null) {
                         it.setCacheFactory(cacheFactory);

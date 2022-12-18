@@ -1,11 +1,11 @@
 package org.babyfish.jimmer.example.kt.sql.cfg
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.babyfish.jimmer.example.kt.sql.cache.binder.CaffeineBinder
-import org.babyfish.jimmer.example.kt.sql.cache.binder.RedisHashBinder
-import org.babyfish.jimmer.example.kt.sql.cache.binder.RedisValueBinder
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
+import org.babyfish.jimmer.spring.cache.CaffeineBinder
+import org.babyfish.jimmer.spring.cache.RedisHashBinder
+import org.babyfish.jimmer.spring.cache.RedisValueBinder
 import org.babyfish.jimmer.sql.cache.Cache
 import org.babyfish.jimmer.sql.cache.CacheFactory
 import org.babyfish.jimmer.sql.cache.chain.*

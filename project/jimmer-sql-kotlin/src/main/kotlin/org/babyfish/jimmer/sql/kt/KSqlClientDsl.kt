@@ -39,6 +39,18 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setConnectionManager(ConnectionManagerImpl(block))
     }
 
+    fun setConnectionManager(connectionManager: ConnectionManager) {
+        javaBuilder.setConnectionManager(connectionManager)
+    }
+
+    fun setSlaveConnectionManager(block: ConnectionManagerDsl.() -> Unit) {
+        javaBuilder.setSlaveConnectionManager(ConnectionManagerImpl(block))
+    }
+
+    fun setSlaveConnectionManager(connectionManager: ConnectionManager) {
+        javaBuilder.setSlaveConnectionManager(connectionManager)
+    }
+
     fun setExecutor(executor: Executor?) {
         javaBuilder.setExecutor(executor)
     }

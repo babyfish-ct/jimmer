@@ -1,8 +1,11 @@
 package org.babyfish.jimmer.example.kt.sql.model.input
 
+import org.babyfish.jimmer.ImmutableConverter
 import org.babyfish.jimmer.example.kt.sql.model.Book
 import org.babyfish.jimmer.kt.makeIdOnly
-import org.babyfish.jimmer.kt.newImmutableConverter
+import org.babyfish.jimmer.kt.map
+import org.babyfish.jimmer.kt.mapList
+import org.babyfish.jimmer.spring.model.Input
 import java.math.BigDecimal
 
 data class BookInput(
@@ -12,24 +15,25 @@ data class BookInput(
     val price: BigDecimal,
     val storeId: Long?,
     val authorIds: List<Long>
-) {
-    fun toBook(): Book =
-        BOOK_CONVERTER.convert(this)
+): Input<Book> {
+
+    override fun toEntity(): Book =
+        CONVERTER.convert(this)
 
     companion object {
 
         @JvmStatic
-        private val BOOK_CONVERTER = newImmutableConverter(Book::class, BookInput::class) {
-            map(Book::id) {
+        private val CONVERTER = ImmutableConverter
+            .forFields(Book::class.java, BookInput::class.java)
+            .map(Book::id) {
                 useIf { it.id !== null }
             }
-            map(Book::store, BookInput::storeId) {
+            .map(Book::store, BookInput::storeId) {
                 valueConverter(::makeIdOnly)
             }
-            mapList(Book::authors, BookInput::authorIds) {
+            .mapList(Book::authors, BookInput::authorIds) {
                 elementConverter(::makeIdOnly)
             }
-            autoMapOtherScalars(true)
-        }
+            .build()
     }
 }
