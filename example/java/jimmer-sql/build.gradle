@@ -14,18 +14,12 @@ repositories {
 
 dependencies {
 
-    implementation 'org.babyfish.jimmer:jimmer-spring-boot-starter:0.5.14'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.5.15'
-
-    implementation 'org.springframework.boot:spring-boot-starter'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.babyfish.jimmer:jimmer-spring-boot-starter:0.5.16'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.5.16'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
-    implementation 'org.springframework.data:spring-data-redis'
+
     implementation 'org.springframework.kafka:spring-kafka:2.9.0'
     implementation 'org.springdoc:springdoc-openapi-ui:1.6.13'
-
-    // In order to work with java-8, caffeine 2.x must be used
-    implementation 'com.github.ben-manes.caffeine:caffeine:2.9.1'
 
     runtimeOnly 'com.h2database:h2:2.1.212'
     runtimeOnly 'mysql:mysql-connector-java:8.0.30'

@@ -47,3 +47,10 @@ tasks.getByName<Test>("test") {
 tasks.withType<Javadoc>{
     options.encoding = "UTF-8"
 }
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    kotlinOptions {
+        freeCompilerArgs = listOf("-Xjsr305=strict", "-Xjvm-default=all")
+        jvmTarget = "1.8"
+    }
+}

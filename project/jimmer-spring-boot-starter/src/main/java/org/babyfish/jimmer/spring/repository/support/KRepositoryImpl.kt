@@ -13,13 +13,17 @@ import org.springframework.data.domain.*
 import kotlin.reflect.KClass
 
 open class KRepositoryImpl<E: Any, ID: Any> (
-    protected val sqlClient: KSqlClient,
-    entityType: KClass<E>? = null, override val sql: KSqlClient
+    override val sql: KSqlClient,
+    entityType: KClass<E>? = null
 ) : KRepository<E, ID> {
 
     init {
-        Utils.validateSqlClient(sqlClient.javaClient)
+        Utils.validateSqlClient(sql.javaClient)
     }
+
+    // For bytecode
+    protected constructor(sql: KSqlClient, entityType: Class<E>) :
+        this(sql, entityType.kotlin)
 
     @Suppress("UNCHECKED_CAST")
     protected val entityType: KClass<E> =
@@ -50,37 +54,37 @@ open class KRepositoryImpl<E: Any, ID: Any> (
 
     override fun findNullable(id: ID, fetcher: Fetcher<E>?): E? =
         if (fetcher !== null) {
-            sqlClient.entities.findById(fetcher, id)
+            sql.entities.findById(fetcher, id)
         } else {
-            sqlClient.entities.findById(entityType, id)
+            sql.entities.findById(entityType, id)
         }
 
     override fun findByIds(ids: Iterable<ID>, fetcher: Fetcher<E>?): List<E> =
         if (fetcher !== null) {
-            sqlClient.entities.findByIds(fetcher, Utils.toCollection(ids))
+            sql.entities.findByIds(fetcher, Utils.toCollection(ids))
         } else {
-            sqlClient.entities.findByIds(entityType, Utils.toCollection(ids))
+            sql.entities.findByIds(entityType, Utils.toCollection(ids))
         }
 
     override fun findMapByIds(ids: Iterable<ID>, fetcher: Fetcher<E>?): Map<ID, E> =
         if (fetcher !== null) {
-            sqlClient.entities.findMapByIds(fetcher, Utils.toCollection(ids))
+            sql.entities.findMapByIds(fetcher, Utils.toCollection(ids))
         } else {
-            sqlClient.entities.findMapByIds(entityType, Utils.toCollection(ids))
+            sql.entities.findMapByIds(entityType, Utils.toCollection(ids))
         }
 
     override fun findAll(fetcher: Fetcher<E>?, block: (FindDsl<E>.() -> Unit)?): List<E> =
         if (fetcher !== null) {
-            sqlClient.entities.findAll(fetcher, block)
+            sql.entities.findAll(fetcher, block)
         } else {
-            sqlClient.entities.findAll(entityType, block)
+            sql.entities.findAll(entityType, block)
         }
 
     override fun findAll(fetcher: Fetcher<E>?, sort: Sort): List<E> =
         if (fetcher !== null) {
-            sqlClient.entities.findAll(fetcher, sort.toFindDslBlock(immutableType))
+            sql.entities.findAll(fetcher, sort.toFindDslBlock(immutableType))
         } else {
-            sqlClient.entities.findAll(entityType, sort.toFindDslBlock(immutableType))
+            sql.entities.findAll(entityType, sort.toFindDslBlock(immutableType))
         }
 
     override fun findAll(
@@ -91,7 +95,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
     ): Page<E> =
         pager(pageIndex, pageSize, block)
             .execute(
-                sqlClient.createQuery(entityType) {
+                sql.createQuery(entityType) {
                     orderBy(block)
                     select(table.fetch(fetcher))
                 }
@@ -100,7 +104,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
     override fun findAll(pageIndex: Int, pageSize: Int, fetcher: Fetcher<E>?, sort: Sort): Page<E> =
         pager(pageIndex, pageSize, sort)
             .execute(
-                sqlClient.createQuery(entityType) {
+                sql.createQuery(entityType) {
                     orderBy(sort)
                     select(table.fetch(fetcher))
                 }
@@ -112,50 +116,50 @@ open class KRepositoryImpl<E: Any, ID: Any> (
     override fun findAll(pageable: Pageable, fetcher: Fetcher<E>?): Page<E> =
         pager(pageable)
             .execute(
-                sqlClient.createQuery(entityType) {
+                sql.createQuery(entityType) {
                     orderBy(pageable.sort)
                     select(table.fetch(fetcher))
                 }
             )
 
     override fun count(): Long =
-        sqlClient.createQuery(entityType) {
+        sql.createQuery(entityType) {
             select(org.babyfish.jimmer.sql.kt.ast.expression.count(table))
         }.fetchOne()
 
     override fun <S : E> save(entity: S): S =
-        sqlClient.entities.save(entity) {
+        sql.entities.save(entity) {
             setAutoAttachingAll()
         }.modifiedEntity
 
     override fun <S : E> saveAll(entities: Iterable<S>): List<S> =
-        sqlClient.entities.batchSave(Utils.toCollection(entities)) {
+        sql.entities.batchSave(Utils.toCollection(entities)) {
             setAutoAttachingAll()
         }.simpleResults.map { it.modifiedEntity }
 
     override fun save(input: Input<E>): E =
-        sqlClient.entities.save(input.toEntity()) {
+        sql.entities.save(input.toEntity()) {
             setAutoAttachingAll()
         }.modifiedEntity
 
     override fun delete(entity: E) {
-        sqlClient.entities.delete(entityType, ImmutableObjects.get(entity, immutableType.idProp))
+        sql.entities.delete(entityType, ImmutableObjects.get(entity, immutableType.idProp))
     }
 
     override fun deleteById(id: ID) {
-        sqlClient.entities.delete(entityType, id)
+        sql.entities.delete(entityType, id)
     }
 
     override fun deleteByIds(ids: Iterable<ID>) {
-        sqlClient.entities.batchDelete(entityType, Utils.toCollection(ids))
+        sql.entities.batchDelete(entityType, Utils.toCollection(ids))
     }
 
     override fun deleteAll() {
-        sqlClient.createDelete(entityType) {}.execute()
+        sql.createDelete(entityType) {}.execute()
     }
 
     override fun deleteAll(entities: Iterable<E>) {
-        sqlClient
+        sql
             .entities
             .batchDelete(
                 entityType,

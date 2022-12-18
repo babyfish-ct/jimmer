@@ -15,7 +15,7 @@ public class BookInput {
 
     private static final ImmutableConverter<Book, BookInput> BOOK_CONVERTER =
         ImmutableConverter
-                .newBuilder(Book.class, BookInput.class)
+                .forFields(Book.class, BookInput.class)
                 .map(BookProps.ID, mapping -> {
                     mapping.useIf(input -> input.id != null);
                 })
@@ -29,7 +29,6 @@ public class BookInput {
                             ImmutableObjects.makeIdOnly(Author.class, element)
                     );
                 })
-                .autoMapOtherScalars(true)
                 .build();
 
     @Nullable
