@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -15,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -97,13 +99,23 @@ public abstract class AbstractMutableQueryImpl
     }
 
     @Override
-    public Sortable orderBy(Order... orders) {
+    public AbstractMutableQueryImpl orderByIf(boolean condition, Expression<?>... expressions) {
+        return (AbstractMutableQueryImpl) MutableQuery.super.orderByIf(condition, expressions);
+    }
+
+    @Override
+    public AbstractMutableQueryImpl orderBy(Order... orders) {
         for (Order order : orders) {
             if (order != null) {
                 this.orders.add(order);
             }
         }
         return this;
+    }
+
+    @Override
+    public AbstractMutableQueryImpl orderByIf(boolean condition, Order... orders) {
+        return (AbstractMutableQueryImpl) MutableQuery.super.orderByIf(condition, orders);
     }
 
     @Override

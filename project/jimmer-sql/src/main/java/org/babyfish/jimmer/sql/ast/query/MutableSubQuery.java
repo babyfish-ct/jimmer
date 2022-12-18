@@ -39,7 +39,19 @@ public interface MutableSubQuery extends MutableQuery, SubSelectable {
 
     @OldChain
     @Override
+    default MutableSubQuery orderByIf(boolean condition, Expression<?>... expressions) {
+        return (MutableSubQuery) MutableQuery.super.orderByIf(condition, expressions);
+    }
+
+    @OldChain
+    @Override
     MutableSubQuery orderBy(Order ... orders);
+
+    @OldChain
+    @Override
+    default MutableSubQuery orderByIf(boolean condition, Order... orders) {
+        return (MutableSubQuery) MutableQuery.super.orderByIf(condition, orders);
+    }
 
     @OldChain
     @Override

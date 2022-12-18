@@ -4,7 +4,6 @@ import org.babyfish.jimmer.ImmutableConverter;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.client.Doc;
 import org.babyfish.jimmer.client.ExportFields;
-import org.babyfish.jimmer.sql.Input;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;

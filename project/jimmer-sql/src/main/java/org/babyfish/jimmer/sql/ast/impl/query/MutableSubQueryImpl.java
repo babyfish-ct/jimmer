@@ -104,8 +104,18 @@ public class MutableSubQueryImpl
     }
 
     @Override
+    public MutableSubQueryImpl orderByIf(boolean condition, Expression<?>... expressions) {
+        return (MutableSubQueryImpl) super.orderByIf(condition, expressions);
+    }
+
+    @Override
     public MutableSubQueryImpl orderBy(Order... orders) {
         return (MutableSubQueryImpl) super.orderBy(orders);
+    }
+
+    @Override
+    public MutableSubQueryImpl orderByIf(boolean condition, Order... orders) {
+        return (MutableSubQueryImpl) super.orderByIf(condition, orders);
     }
 
     @Override

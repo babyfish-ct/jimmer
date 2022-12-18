@@ -3,11 +3,7 @@ package org.babyfish.jimmer.sql.kt.ast.query.impl
 import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
-import org.babyfish.jimmer.sql.ast.query.MutableRootQuery
-import org.babyfish.jimmer.sql.ast.query.NullOrderMode
 import org.babyfish.jimmer.sql.ast.query.Order
-import org.babyfish.jimmer.sql.ast.query.OrderMode
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.ast.tuple.*
 import org.babyfish.jimmer.sql.kt.KSubQueries
@@ -37,8 +33,16 @@ internal class KMutableRootQueryImpl<E: Any>(
         javaQuery.orderBy(*expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
     }
 
+    override fun orderByIf(condition: Boolean, vararg expressions: KExpression<*>?) {
+        javaQuery.orderByIf(condition, *expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
+    }
+
     override fun orderBy(vararg orders: Order?) {
         javaQuery.orderBy(*orders)
+    }
+
+    override fun orderByIf(condition: Boolean, vararg orders: Order?) {
+        javaQuery.orderByIf(condition, *orders)
     }
 
     @Suppress("UNCHECKED_CAST")

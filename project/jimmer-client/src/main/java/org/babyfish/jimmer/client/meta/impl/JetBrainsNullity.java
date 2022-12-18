@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.client.meta.impl;
 
 import org.babyfish.jimmer.client.IllegalDocMetaException;
-import org.babyfish.jimmer.client.asm.*;
+import org.babyfish.jimmer.impl.asm.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;

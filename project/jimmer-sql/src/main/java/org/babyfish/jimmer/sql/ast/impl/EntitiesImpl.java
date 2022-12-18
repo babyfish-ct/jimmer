@@ -354,13 +354,13 @@ public class EntitiesImpl implements Entities {
             example.applyTo(query);
         }
         for (TypedProp.Scalar<?, ?> sortedProp : sortedProps) {
-            if (sortedProp.unwrap().getDeclaringType() != type) {
+            if (!sortedProp.unwrap().getDeclaringType().isAssignableFrom(type)) {
                 throw new IllegalArgumentException(
                         "The sorted field \"" +
                                 sortedProp +
                                 "\" does not belong to the type \"" +
                                 type +
-                                "\""
+                                "\" or its super types"
                 );
             }
             if (sortedProp instanceof TypedProp.Scalar.Desc<?, ?>) {
