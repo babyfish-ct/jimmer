@@ -35,19 +35,31 @@ public interface MutableRootQuery<T extends Table<?>> extends MutableQuery, Root
     @OldChain
     @SuppressWarnings("unchecked")
     @Override
-    default MutableRootQuery<T> orderBy(Expression<?> ... expressions) {
+    default MutableRootQuery<T> orderBy(Expression<?>... expressions) {
         return (MutableRootQuery<T>) MutableQuery.super.orderBy(expressions);
     }
 
     @OldChain
+    @SuppressWarnings("unchecked")
     @Override
-    MutableRootQuery<T> orderBy(Order ... orders);
+    default MutableRootQuery<T> orderByIf(boolean condition, Expression<?>... expressions) {
+        return (MutableRootQuery<T>) MutableQuery.super.orderByIf(condition, expressions);
+    }
 
     @OldChain
+    @Override
+    MutableRootQuery<T> orderBy(Order... orders);
+
+    @OldChain
+    @SuppressWarnings("unchecked")
+    @Override
+    default MutableRootQuery<T> orderByIf(boolean condition, Order... orders) {
+        return (MutableRootQuery<T>) MutableQuery.super.orderByIf(condition, orders);
+    }
+
     @Override
     MutableRootQuery<T> groupBy(Expression<?>... expressions);
 
-    @OldChain
     @Override
     MutableRootQuery<T> having(Predicate... predicates);
 }

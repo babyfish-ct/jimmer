@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
 @SpringBootTest
 @SpringBootConfiguration
 @AutoConfigurationPackage
-@EnableJimmerRepositories(basePackageClasses = BookRepository.class)
+@EnableJimmerRepositories
 public class SpringTest {
 
     @Configuration
@@ -22,7 +22,9 @@ public class SpringTest {
 
         @Bean
         public JSqlClient sqlClient() {
-            return JSqlClient.newBuilder().build();
+            return JSqlClient
+                    .newBuilder()
+                    .build();
         }
     }
 
@@ -31,6 +33,6 @@ public class SpringTest {
 
     @Test
     public void test() {
-        // bookRepository.findAll();
+        bookRepository.findByName("Hello world");
     }
 }

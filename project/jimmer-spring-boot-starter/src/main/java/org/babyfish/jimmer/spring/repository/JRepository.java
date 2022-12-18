@@ -1,88 +1,213 @@
 package org.babyfish.jimmer.spring.repository;
 
 import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.sql.Input;
+import org.babyfish.jimmer.spring.model.Input;
+import org.babyfish.jimmer.spring.repository.support.Iterables;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.repository.Repository;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.repository.NoRepositoryBean;
+import org.springframework.data.repository.PagingAndSortingRepository;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
-public interface JRepository<E, ID> extends Repository<E, ID> {
+@NoRepositoryBean
+public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
+
+    /*
+     * For provider
+     */
 
     JSqlClient sql();
 
-    Page<E> page(Pageable pageable, ConfigurableRootQuery<?, E> query);
+    Pager<E> pager(Pageable pageable);
 
-    E findById(ID id);
+    Pager<E> pager(int pageIndex, int pageSize);
 
-    E findById(ID id, Fetcher<E> fetcher);
 
-    Optional<E> findOptionalById(ID id);
+    /*
+     * For consumer
+     */
 
-    Optional<E> findOptionalById(ID id, Fetcher<E> fetcher);
+    E findNullable(ID id);
 
-    List<E> findByIds(Collection<ID> ids);
+    E findNullable(ID id, Fetcher<E> fetcher);
 
-    List<E> findByIds(Collection<ID> ids, Fetcher<E> fetcher);
+    @NotNull
+    @Override
+    default Optional<E> findById(ID id) {
+        return Optional.ofNullable(findNullable(id));
+    }
 
-    Map<ID, E> findMapByIds(Collection<ID> ids);
+    default Optional<E> findById(ID id, Fetcher<E> fetcher) {
+        return Optional.ofNullable(findNullable(id, fetcher));
+    }
 
-    Map<ID, E> findMapByIds(Collection<ID> ids, Fetcher<E> fetcher);
+    @AliasFor("findAllById")
+    List<E> findByIds(Iterable<ID> ids);
 
+    @AliasFor("findByIds")
+    @NotNull
+    @Override
+    default Iterable<E> findAllById(@NotNull Iterable<ID> ids) {
+        return findByIds(ids);
+    }
+
+    List<E> findByIds(Iterable<ID> ids, Fetcher<E> fetcher);
+
+    Map<ID, E> findMapByIds(Iterable<ID> ids);
+
+    Map<ID, E> findMapByIds(Iterable<ID> ids, Fetcher<E> fetcher);
+
+    @NotNull
+    @Override
     List<E> findAll();
 
     List<E> findAll(Fetcher<E> fetcher);
 
-    List<E> findAll(TypedProp.Scalar<E, ?> prop);
+    default List<E> findAll(TypedProp.Scalar<E, ?> sortedProp) {
+        return findAll(new TypedProp.Scalar[]{ sortedProp });
+    }
 
-    List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<E, ?> prop);
+    default List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<E, ?> sortedProp) {
+        return findAll(fetcher, new TypedProp.Scalar[]{ sortedProp });
+    }
 
-    List<E> findAll(TypedProp.Scalar<E, ?> prop1, TypedProp.Scalar<E, ?> prop2);
+    default List<E> findAll(TypedProp.Scalar<E, ?> sortedProp1, TypedProp.Scalar<E, ?> sortedProp2) {
+        return findAll(new TypedProp.Scalar[]{ sortedProp1, sortedProp2 });
+    }
 
-    List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<E, ?> prop1, TypedProp.Scalar<E, ?> prop2);
+    default List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<E, ?> sortedProp1, TypedProp.Scalar<E, ?> sortedProp2) {
+        return findAll(fetcher, new TypedProp.Scalar[]{ sortedProp1, sortedProp2 });
+    }
 
-    List<E> findAll(TypedProp.Scalar<E, ?> prop1, TypedProp.Scalar<E, ?> prop2, TypedProp.Scalar<E, ?> prop3);
+    default List<E> findAll(TypedProp.Scalar<E, ?> sortedProp1, TypedProp.Scalar<E, ?> sortedProp2, TypedProp.Scalar<E, ?> sortedProp3) {
+        return findAll(new TypedProp.Scalar[]{ sortedProp1, sortedProp2 });
+    }
 
-    List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<E, ?> prop1, TypedProp.Scalar<E, ?> prop2, TypedProp.Scalar<E, ?> prop3);
+    default List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<E, ?> sortedProp1, TypedProp.Scalar<E, ?> sortedProp2, TypedProp.Scalar<E, ?> sortedProp3) {
+        return findAll(fetcher, new TypedProp.Scalar[]{ sortedProp1, sortedProp2, sortedProp3 });
+    }
 
-    List<E> findAll(TypedProp.Scalar<?, ?> ... props);
+    @SuppressWarnings("unchecked")
+    List<E> findAll(TypedProp.Scalar<?, ?> ... sortedProps);
 
-    List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... props);
+    @SuppressWarnings("unchecked")
+    List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... sortedProps);
 
-    Page<E> findPage(int pageIndex, int pageSize);
+    @NotNull
+    @Override
+    List<E> findAll(@NotNull Sort sort);
 
-    Page<E> findPage(int pageIndex, int pageSize, Fetcher<E> fetcher);
+    List<E> findAll(Fetcher<E> fetcher, Sort sort);
 
-    Page<E> findPage(int pageIndex, int pageSize, TypedProp.Scalar<E, ?> prop);
+    Page<E> findAll(int pageIndex, int pageSize);
 
-    Page<E> findPage(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<E, ?> prop);
+    Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher);
 
-    Page<E> findPage(int pageIndex, int pageSize, TypedProp.Scalar<E, ?> prop1, TypedProp.Scalar<E, ?> prop2);
+    default Page<E> findAll(int pageIndex, int pageSize, TypedProp.Scalar<E, ?> sortedProp) {
+        return findAll(pageIndex, pageSize, new TypedProp.Scalar[]{ sortedProp });
+    }
 
-    Page<E> findPage(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<E, ?> prop1, TypedProp.Scalar<E, ?> prop2);
+    default Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<E, ?> sortedProp) {
+        return findAll(pageIndex, pageSize, fetcher, new TypedProp.Scalar[]{ sortedProp });
+    }
 
-    Page<E> findPage(int pageIndex, int pageSize, TypedProp.Scalar<E, ?> prop1, TypedProp.Scalar<E, ?> prop2, TypedProp.Scalar<E, ?> prop3);
+    default Page<E> findAll(int pageIndex, int pageSize, TypedProp.Scalar<E, ?> sortedProp1, TypedProp.Scalar<E, ?> sortedProp2) {
+        return findAll(pageIndex, pageSize, new TypedProp.Scalar[]{ sortedProp1, sortedProp2 });
+    }
 
-    Page<E> findPage(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<E, ?> prop1, TypedProp.Scalar<E, ?> prop2, TypedProp.Scalar<E, ?> prop3);
+    default Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<E, ?> sortedProp1, TypedProp.Scalar<E, ?> sortedProp2) {
+        return findAll(pageIndex, pageSize, fetcher, new TypedProp.Scalar[]{ sortedProp1, sortedProp2 });
+    }
 
-    Page<E> findPage(int pageIndex, int pageSize, TypedProp.Scalar<?, ?> ... props);
+    default Page<E> findAll(int pageIndex, int pageSize, TypedProp.Scalar<E, ?> sortedProp1, TypedProp.Scalar<E, ?> sortedProp2, TypedProp.Scalar<E, ?> sortedProp3) {
+        return findAll(pageIndex, pageSize, new TypedProp.Scalar[]{ sortedProp1, sortedProp2, sortedProp3 });
+    }
 
-    Page<E> findPage(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... props);
+    default Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<E, ?> sortedProp1, TypedProp.Scalar<E, ?> sortedProp2, TypedProp.Scalar<E, ?> sortedProp3) {
+        return findAll(pageIndex, pageSize, fetcher, new TypedProp.Scalar[]{ sortedProp1, sortedProp2, sortedProp3 });
+    }
 
-    E save(E entity);
+    @SuppressWarnings("unchecked")
+    Page<E> findAll(int pageIndex, int pageSize, TypedProp.Scalar<?, ?> ... sortedProps);
 
-    E save(Input<E> input);
+    @SuppressWarnings("unchecked")
+    Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... sortedProps);
+    
+    Page<E> findAll(int pageIndex, int pageSize, Sort sort);
 
-    int delete(E entity);
+    Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, Sort sort);
 
-    int deleteById(ID id);
+    @NotNull
+    @Override
+    Page<E> findAll(@NotNull Pageable pageable);
+    
+    Page<E> findAll(Pageable pageable, Fetcher<E> fetcher);
 
-    int deleteByIds(Collection<ID> ids);
+    @Override
+    default boolean existsById(ID id) {
+        return findNullable(id) != null;
+    }
+
+    @Override
+    long count();
+
+    @NotNull
+    @Override
+    default <S extends E> S save(@NotNull S entity) {
+        return sql().getEntities().save(entity, true).getModifiedEntity();
+    }
+    
+    @NotNull
+    @Override
+    default <S extends E> Iterable<S> saveAll(@NotNull Iterable<S> entities) {
+        return sql()
+                .getEntities()
+                .batchSave(Iterables.toCollection(entities), true)
+                .getSimpleResults()
+                .stream()
+                .map(SimpleSaveResult::getModifiedEntity)
+                .collect(Collectors.toList());
+    }
+
+    default E save(Input<E> input) {
+        return sql()
+                .getEntities()
+                .save(input.toEntity(), true)
+                .getModifiedEntity();
+    }
+
+    @Override
+    void delete(@NotNull E entity);
+
+    @Override
+    void deleteAll(@NotNull Iterable<? extends E> entities);
+
+    @Override
+    void deleteAll();
+
+    @Override
+    void deleteById(@NotNull ID id);
+    
+    @AliasFor("deleteAllById")
+    void deleteByIds(Iterable<? extends ID> ids);
+
+    @AliasFor("deleteByIds")
+    @Override
+    default void deleteAllById(@NotNull Iterable<? extends ID> ids) {
+        deleteByIds(ids);
+    }
+
+    interface Pager<E> {
+
+        Page<E> execute(ConfigurableRootQuery<?, E> query);
+    }
 }

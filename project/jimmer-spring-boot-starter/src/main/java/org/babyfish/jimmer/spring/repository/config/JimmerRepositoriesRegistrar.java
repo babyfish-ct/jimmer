@@ -24,7 +24,5 @@ public class JimmerRepositoriesRegistrar extends AbstractRepositoryConfiguration
     }
 
     @EnableJimmerRepositories
-    private static class EnableJimmerRepositoriesConfiguration {
-
-    }
+    private static class EnableJimmerRepositoriesConfiguration {}
 }

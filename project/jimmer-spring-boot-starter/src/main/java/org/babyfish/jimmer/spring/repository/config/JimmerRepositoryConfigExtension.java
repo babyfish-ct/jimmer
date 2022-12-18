@@ -12,7 +12,6 @@ import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Locale;
-import java.util.Optional;
 
 public class JimmerRepositoryConfigExtension extends RepositoryConfigurationExtensionSupport {
 
@@ -37,8 +36,9 @@ public class JimmerRepositoryConfigExtension extends RepositoryConfigurationExte
     @NotNull
     @Override
     public void postProcess(@NotNull BeanDefinitionBuilder builder, RepositoryConfigurationSource source) {
-        Optional<String> sqlClientRef = source.getAttribute("sqlClientRef");
-        builder.addPropertyValue("sqlClientRef", sqlClientRef.orElse("sqlClient"));
+        source.getAttribute("sqlClientRef") //
+        .filter(StringUtils::hasText) //
+        .ifPresent(s -> builder.addPropertyReference("sqlClient", s));
     }
 
     @NotNull

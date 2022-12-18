@@ -1,20 +1,8 @@
 package org.babyfish.jimmer.client.meta;
 
-import org.babyfish.jimmer.client.generator.ts.Context;
-import org.babyfish.jimmer.client.generator.ts.ServiceWriter;
-import org.babyfish.jimmer.client.generator.ts.TypeDefinitionWriter;
-import org.babyfish.jimmer.client.model.Book;
-import org.babyfish.jimmer.client.model.BookInput;
-import org.babyfish.jimmer.client.model.Gender;
-import org.babyfish.jimmer.client.model.Page;
 import org.babyfish.jimmer.client.service.*;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 public class MetadataTest {
 
@@ -52,7 +40,8 @@ public class MetadataTest {
                         "--->}?, " +
                         "--->authors: Array<{" +
                         "--->--->id: long, " +
-                        "--->--->firstName: String" +
+                        "--->--->firstName: String, " +
+                        "--->--->lastName: String" +
                         "--->}>" +
                         "}",
                 bookType

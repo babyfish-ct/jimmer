@@ -257,8 +257,20 @@ public class MutableRootQueryImpl<T extends Table<?>>
 
     @SuppressWarnings("unchecked")
     @Override
+    public MutableRootQueryImpl<T> orderByIf(boolean condition, Expression<?>... expressions) {
+        return (MutableRootQueryImpl<T>) super.orderByIf(condition, expressions);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
     public MutableRootQueryImpl<T> orderBy(Order... orders) {
         return (MutableRootQueryImpl<T>) super.orderBy(orders);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public MutableRootQueryImpl<T> orderByIf(boolean condition, Order... orders) {
+        return (MutableRootQueryImpl<T>)super.orderByIf(condition, orders);
     }
 
     @Override

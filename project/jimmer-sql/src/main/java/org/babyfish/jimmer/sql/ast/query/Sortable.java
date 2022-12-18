@@ -43,5 +43,21 @@ public interface Sortable extends Filterable {
     }
 
     @OldChain
+    default Sortable orderByIf(boolean condition, Expression<?> ... expressions) {
+        if (condition) {
+            orderBy(expressions);
+        }
+        return this;
+    }
+
+    @OldChain
     Sortable orderBy(Order ... orders);
+
+    @OldChain
+    default Sortable orderByIf(boolean condition, Order ... orders) {
+        if (condition) {
+            orderBy(orders);
+        }
+        return this;
+    }
 }

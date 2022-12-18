@@ -30,8 +30,16 @@ internal class KFilterDslImpl<E: Any>(
         javaQuery.orderBy(*expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
     }
 
+    override fun orderByIf(condition: Boolean, vararg expressions: KExpression<*>?) {
+        javaQuery.orderByIf(condition, *expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
+    }
+
     override fun orderBy(vararg orders: Order?) {
         javaQuery.orderBy(*orders)
+    }
+
+    override fun orderByIf(condition: Boolean, vararg orders: Order?) {
+        javaQuery.orderByIf(condition, *orders)
     }
 
     override val subQueries: KSubQueries<E> by lazy {

@@ -6,6 +6,7 @@ import org.babyfish.jimmer.spring.repository.support.JimmerRepositoryFactoryBean
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.annotation.AliasFor;
 
 import java.lang.annotation.*;
 
@@ -21,12 +22,14 @@ public @interface EnableJimmerRepositories {
      * {@code @EnableJimmerRepositories("org.my.pkg")} instead of
      * {@code @EnableJimmerRepositories(basePackages="org.my.pkg")}.
      */
+    @AliasFor("basePackages")
     String[] value() default {};
 
     /**
      * Base packages to scan for annotated components. {@link #value()} is an alias for (and mutually exclusive with) this
      * attribute. Use {@link #basePackageClasses()} for a type-safe alternative to String-based package names.
      */
+    @AliasFor("value")
     String[] basePackages() default {};
 
     /**

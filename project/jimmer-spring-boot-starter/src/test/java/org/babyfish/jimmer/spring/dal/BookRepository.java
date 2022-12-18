@@ -6,11 +6,17 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 public interface BookRepository extends JRepository<Book, Long> {
 
     BookTable table = BookTable.$;
+
+    default List<Book> findByName(String name) {
+        System.out.println("Accept: " + name);
+        return null;
+    }
 
     default Page<Book> findBooks(
             int pageIndex,
@@ -21,8 +27,10 @@ public interface BookRepository extends JRepository<Book, Long> {
             Fetcher<Book> fetcher
     ) {
         AuthorTableEx author = AuthorTableEx.$;
-        return page(
-                Pageable.ofSize(pageSize).withPage(pageIndex),
+        return pager(
+                pageIndex,
+                pageSize
+        ).execute(
                 sql().createQuery(table)
                         .whereIf(name != null, table.name().ilike(name))
                         .whereIf(storeName != null, table.store().name().ilike(name))
