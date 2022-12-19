@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.spring.repository;
 
 import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.spring.java.model.Input;
+import org.babyfish.jimmer.spring.model.Input;
 import org.babyfish.jimmer.spring.repository.support.Utils;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
