@@ -45,7 +45,7 @@ public class KotlinMethodCodeWriter extends MethodCodeWriter {
         }
         mv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
-                parent.getInterfaceInternalName(),
+                Type.getInternalName(defaultMethod.getDeclaringClass()),
                 method.getName(),
                 Type.getMethodDescriptor(defaultMethod),
                 false

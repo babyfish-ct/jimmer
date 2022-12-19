@@ -19,16 +19,15 @@ class TreeService(
     @Transactional
     @GetMapping("/rootNodes")
     fun findRootNodes(
-        @RequestParam(required = false) rootName: String,
-        @RequestParam(required = false) noRecursiveNames: String
+        @RequestParam(required = false) rootName: String?
     ): List<TreeNode> =
         treeNodeRepository.findRootNodes(rootName, null)
 
     @Transactional
     @GetMapping("/rootTrees")
     fun findRootTrees(
-        @RequestParam(defaultValue = "") rootName: String,
-        @RequestParam(defaultValue = "") noRecursiveNames: String
+        @RequestParam(required = false) rootName: String?,
+        @RequestParam(required = false) noRecursiveNames: String?
     ): List<TreeNode> =
         treeNodeRepository.findRootNodes(
             rootName,
@@ -36,7 +35,7 @@ class TreeService(
                 RECURSIVE_TREE_NODE_FETCHER
             } else {
                 val excludedNames =
-                    if (noRecursiveNames.isEmpty()) {
+                    if (noRecursiveNames!!.isEmpty()) {
                         emptySet()
                     } else {
                         noRecursiveNames
