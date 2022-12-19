@@ -2,13 +2,17 @@ package org.babyfish.jimmer.sql.example.bll;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.client.FetchBy;
+import org.babyfish.jimmer.sql.example.dal.TreeNodeRepository;
 import org.babyfish.jimmer.sql.example.model.TreeNode;
 import org.babyfish.jimmer.sql.example.model.TreeNodeDraft;
 import org.babyfish.jimmer.sql.example.model.TreeNodeFetcher;
 import org.babyfish.jimmer.sql.example.model.TreeNodeTable;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
@@ -22,20 +26,30 @@ public class TreeService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TreeService.class);
 
-    private final JSqlClient sqlClient;
+    private final TreeNodeRepository treeNodeRepository;
 
     private final ObjectMapper objectMapper;
 
-    public TreeService(JSqlClient sqlClient, ObjectMapper objectMapper) {
-        this.sqlClient = sqlClient;
+    public TreeService(TreeNodeRepository treeNodeRepository, ObjectMapper objectMapper) {
+        this.treeNodeRepository = treeNodeRepository;
         this.objectMapper = objectMapper;
     }
 
-    @GetMapping("/trees")
-    public List<TreeNode> trees(
-            @RequestParam(defaultValue = "") String rootName,
-            @RequestParam(defaultValue = "") String noRecursiveNames
-    ) throws JsonProcessingException {
+    @GetMapping("/rootNodes")
+    public List<TreeNode> findRootTrees(
+            @RequestParam(required = false) String rootName
+    ) {
+        return treeNodeRepository.findRootNodes(rootName, null);
+    }
+
+    @GetMapping("/rootTrees")
+    public List<@FetchBy("RECURSIVE_TREE_NODE_FETCHER") TreeNode> findRootTrees(
+            @RequestParam(required = false) String rootName,
+            @RequestParam(required = false) String noRecursiveNames
+    ) {
+        if (!StringUtils.hasText(noRecursiveNames)) {
+            return treeNodeRepository.findRootNodes(rootName, RECURSIVE_TREE_NODE_FETCHER);
+        }
 
         Set<String> excludedNames;
         if (noRecursiveNames.isEmpty()) {
@@ -46,32 +60,18 @@ public class TreeService {
                     .map(String::toLowerCase)
                     .collect(Collectors.toSet());
         }
-
-        TreeNodeTable treeNode = TreeNodeTable.$;
-        return sqlClient
-                .createQuery(treeNode)
-                .where(treeNode.parent().isNull())
-                .whereIf(
-                        !rootName.isEmpty(),
-                        treeNode.name().ilike(rootName)
-                )
-                .select(
-                        treeNode.fetch(
-                                TreeNodeFetcher.$
-                                        .allScalarFields()
-                                        .childNodes(
-                                                TreeNodeFetcher.$
-                                                        .allScalarFields(),
-                                                it -> it
-                                                        .recursive(args ->
-                                                                !excludedNames.contains(
-                                                                        args.getEntity().name().toLowerCase()
-                                                                )
-                                                        )
-                                        )
+        return treeNodeRepository.findRootNodes(
+                rootName,
+                RECURSIVE_TREE_NODE_FETCHER // override `RECURSIVE_TREE_NODE_FETCHER`
+                        .childNodes(
+                                TreeNodeFetcher.$.allScalarFields(),
+                                cfg -> cfg.recursive(strategy ->
+                                    !excludedNames.contains(
+                                            strategy.getEntity().name().toLowerCase()
+                                    )
+                                )
                         )
-                )
-                .execute();
+        );
     }
 
     @PutMapping("/tree")
@@ -110,20 +110,7 @@ public class TreeService {
                             " into database"
             );
         }
-        return sqlClient
-                .getEntities()
-                .saveCommand(rootNode)
-                .configure(
-                        // If child nodes do not exist, insert them automatically
-                        it -> it.setAutoAttachingAll()
-
-                        // Need not `setAutoDetaching` because `on cascade delete`
-                        // is configured on model interface,
-                        // If user update a tree with less child nodes,
-                        // abandoned child nodes will be deleted automatically
-                )
-                .execute()
-                .getModifiedEntity();
+        return treeNodeRepository.save(rootNode);
     }
 
     private static void createChildNodes(
@@ -153,6 +140,14 @@ public class TreeService {
 
     @DeleteMapping("/tree/{id}")
     public void deleteTree(@PathVariable long id) {
-        sqlClient.getEntities().delete(TreeNode.class, id);
+        treeNodeRepository.deleteById(id);
     }
+
+    private static final TreeNodeFetcher RECURSIVE_TREE_NODE_FETCHER =
+            TreeNodeFetcher.$
+                    .allScalarFields()
+                    .childNodes(
+                            TreeNodeFetcher.$.allScalarFields(),
+                            RecursiveListFieldConfig::recursive
+                    );
 }
