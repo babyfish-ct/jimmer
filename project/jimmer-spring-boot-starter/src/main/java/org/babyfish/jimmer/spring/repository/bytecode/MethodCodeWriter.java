@@ -11,7 +11,7 @@ public class MethodCodeWriter {
 
     protected final Method method;
 
-    private MethodVisitor mv;
+    protected MethodVisitor mv;
 
     protected MethodCodeWriter(ClassCodeWriter parent, Method method) {
         this.parent = parent;

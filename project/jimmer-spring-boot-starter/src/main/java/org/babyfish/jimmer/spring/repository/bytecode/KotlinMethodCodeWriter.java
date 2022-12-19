@@ -32,7 +32,7 @@ public class KotlinMethodCodeWriter extends MethodCodeWriter {
     }
 
     private void writeDefaultInvocation(Method defaultMethod) {
-        MethodVisitor mv = parent.getClassVisitor().visitMethod(
+        mv = parent.getClassVisitor().visitMethod(
                 Opcodes.ACC_PUBLIC,
                 method.getName(),
                 Type.getMethodDescriptor(method),
