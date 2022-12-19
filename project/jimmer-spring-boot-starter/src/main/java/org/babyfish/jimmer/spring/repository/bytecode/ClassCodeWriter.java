@@ -78,7 +78,7 @@ public abstract class ClassCodeWriter {
                 implInternalName,
                 null,
                 superInternalName,
-                null
+                new String[] { interfaceInternalName }
         );
         writeInit();
         Class<?> repositoryInterface = metadata.getRepositoryInterface();

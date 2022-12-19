@@ -14,6 +14,7 @@ public class JimmerRepositoryFactoryBean<R extends Repository<E, ID>, E, ID> ext
 
     public JimmerRepositoryFactoryBean(Class<? extends R> repositoryInterface) {
         super(repositoryInterface);
+        this.setLazyInit(false);
     }
 
     public void setSqlClient(Object sqlClient) {
