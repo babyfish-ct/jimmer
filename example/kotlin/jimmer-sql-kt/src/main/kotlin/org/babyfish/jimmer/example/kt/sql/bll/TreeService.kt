@@ -1,22 +1,25 @@
 package org.babyfish.jimmer.example.kt.sql.bll
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.babyfish.jimmer.example.kt.sql.dal.TreeNodeRepository
 import org.babyfish.jimmer.example.kt.sql.model.*
 import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.expression.ilike
 import org.babyfish.jimmer.sql.kt.ast.table.isNull
+import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.*
 
 @RestController
 class TreeService(
     private val sqlClient: KSqlClient,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val treeNodeRepository: TreeNodeRepository
 ) {
 
     @GetMapping("/trees")
-    fun trees(
+    fun findRootNodes(
         @RequestParam(defaultValue = "") rootName: String,
         @RequestParam(defaultValue = "") noRecursiveNames: String
     ): List<TreeNode> {
@@ -137,6 +140,12 @@ class TreeService(
     fun deleteTree(@PathVariable id: Long) {
         sqlClient.entities.delete(TreeNode::class, id)
     }
-}
 
-private val LOGGER = LoggerFactory.getLogger(TreeService::class.java)
+    companion object {
+        private val RECURSIVE_TREE_NODE_FETCHER = newFetcher(TreeNode::class).by {
+
+        }
+
+        private val LOGGER = LoggerFactory.getLogger(TreeService::class.java)
+    }
+}

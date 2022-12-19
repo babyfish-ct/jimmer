@@ -1,6 +1,7 @@
 plugins {
     `java-library`
     kotlin("jvm") version "1.6.10"
+    id("com.google.devtools.ksp") version "1.7.10-1.0.6"
 }
 
 group = "org.babyfish.jimmer"
@@ -26,10 +27,17 @@ dependencies {
     api("org.springframework.data:spring-data-redis:2.7.0")
     api( "com.github.ben-manes.caffeine:caffeine:2.9.1")
     testAnnotationProcessor(project(":jimmer-apt"))
+    kspTest(project(":jimmer-ksp"))
     testImplementation("org.springframework.boot:spring-boot-starter-test:2.7.0")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
     testImplementation("com.h2database:h2:2.1.212")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+}
+
+kotlin {
+    sourceSets.test {
+        kotlin.srcDir("build/generated/ksp/test/kotlin")
+    }
 }
 
 tasks.getByName<Test>("test") {
@@ -41,4 +49,8 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         freeCompilerArgs = listOf("-Xjsr305=strict", "-Xjvm-default=all")
         jvmTarget = "1.8"
     }
+}
+
+ksp {
+    arg("jimmer.source.excludes", "org.babyfish.jimmer.spring.java")
 }

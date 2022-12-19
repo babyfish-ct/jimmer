@@ -179,6 +179,9 @@ public abstract class CodeWriter {
                             .code("['")
                             .code(ctx.getDtoSuffix(immutableObjectType))
                             .code("']");
+                } else if (immutableObjectType.getCategory() == ImmutableObjectType.Category.VIEW) {
+                    code(ctx.getDtoPrefix(immutableObjectType.getJavaType()))
+                            .code("['DEFAULT']");
                 } else {
                     scope(ScopeType.OBJECT, ", ", immutableObjectType.getProperties().size() > 1, () -> {
                         for (Property property : immutableObjectType.getProperties().values()) {

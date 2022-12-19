@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.client.meta;
 
-import org.babyfish.jimmer.client.service.*;
+import org.babyfish.jimmer.client.java.service.BookService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -8,7 +8,7 @@ public class MetadataTest {
 
     @Test
     public void test() {
-        Type pageType = Constants.METADATA
+        Type pageType = Constants.JAVA_METADATA
                 .getServices()
                 .get(BookService.class)
                 .getOperations()
