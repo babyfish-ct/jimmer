@@ -99,6 +99,9 @@ public class Context {
     }
 
     public File getFile(Service service) {
+        if (service == null) {
+            throw new IllegalArgumentException("service cannot be null");
+        }
         return serviceFileMap.get(service);
     }
 

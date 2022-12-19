@@ -133,7 +133,6 @@ class Context {
     }
 
     public Type parseType(AnnotatedType annotatedType) {
-
         java.lang.reflect.Type javaType = annotatedType.getType();
         FetchBy fetchBy = annotatedType.getAnnotation(FetchBy.class);
         ImmutableType immutableType = null;

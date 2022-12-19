@@ -47,7 +47,8 @@ class FetcherGenerator(
                             .build()
                     )
                     val type = ctx.typeOf(modelClassDeclaration)
-                    addCreateFun(type)
+                    addCreateFun(type, false)
+                    addCreateFun(type, true)
                     FetcherDslGenerator(type, this).generate()
                     addEmptyFetcher(type)
                 }.build()
@@ -57,7 +58,7 @@ class FetcherGenerator(
         }
     }
 
-    private fun FileSpec.Builder.addCreateFun(type: ImmutableType) {
+    private fun FileSpec.Builder.addCreateFun(type: ImmutableType, withBase: Boolean) {
         addFunction(
             FunSpec
                 .builder("by")
@@ -66,6 +67,16 @@ class FetcherGenerator(
                         type.className
                     )
                 )
+                .apply {
+                    if (withBase) {
+                        addParameter(
+                            "base",
+                            FETCHER_CLASS_NAME.parameterizedBy(
+                                type.className
+                            ).copy(nullable = true)
+                        )
+                    }
+                }
                 .addParameter(
                     "block",
                     LambdaTypeName.get(
@@ -79,7 +90,7 @@ class FetcherGenerator(
                         type.className
                     )
                 )
-                .addStatement("val dsl = %T(empty${type.simpleName}$FETCHER)", type.fetcherDslClassName)
+                .addStatement("val dsl = %T(%Lempty${type.simpleName}$FETCHER)", type.fetcherDslClassName, if (withBase) "base ?: " else "")
                 .addStatement("dsl.block()")
                 .addStatement("return dsl.internallyGetFetcher()")
                 .build()

@@ -89,7 +89,7 @@ class ImmutableType(
         val reorderedPropDeclarations = mutableListOf<KSPropertyDeclaration>()
         for (function in classDeclaration.getDeclaredFunctions()) {
             if (function.isAbstract) {
-                throw MetaException("Illegal function '${function}', only non-abstract function is acceptable")
+                throw MetaException("Illegal function '${classDeclaration.fullName}.${function}', only non-abstract function is acceptable")
             }
             for (anno in function.annotations) {
                 if (anno.fullName.startsWith("org.babyfish.jimmer.")) {
