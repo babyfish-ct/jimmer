@@ -9,7 +9,6 @@ import org.babyfish.jimmer.sql.kt.ast.expression.or
 import org.babyfish.jimmer.sql.kt.ast.expression.valueIn
 import org.springframework.data.domain.Page
 
-@JvmDefaultWithCompatibility
 interface BookRepository : KRepository<Book, Long> {
 
     fun findBooks(

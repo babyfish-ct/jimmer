@@ -6,7 +6,6 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.ast.expression.ilike
 
-@JvmDefaultWithCompatibility
 interface AuthorRepository : KRepository<Author, Long> {
 
     fun findAuthors(

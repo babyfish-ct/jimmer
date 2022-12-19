@@ -4,63 +4,62 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.babyfish.jimmer.example.kt.sql.dal.TreeNodeRepository
 import org.babyfish.jimmer.example.kt.sql.model.*
 import org.babyfish.jimmer.kt.new
-import org.babyfish.jimmer.sql.kt.KSqlClient
-import org.babyfish.jimmer.sql.kt.ast.expression.ilike
-import org.babyfish.jimmer.sql.kt.ast.table.isNull
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.slf4j.LoggerFactory
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.util.StringUtils
 import org.springframework.web.bind.annotation.*
 
 @RestController
 class TreeService(
-    private val sqlClient: KSqlClient,
     private val objectMapper: ObjectMapper,
     private val treeNodeRepository: TreeNodeRepository
 ) {
 
-    @GetMapping("/trees")
+    @Transactional
+    @GetMapping("/rootNodes")
     fun findRootNodes(
+        @RequestParam(required = false) rootName: String,
+        @RequestParam(required = false) noRecursiveNames: String
+    ): List<TreeNode> =
+        treeNodeRepository.findRootNodes(rootName, null)
+
+    @Transactional
+    @GetMapping("/rootTrees")
+    fun findRootTrees(
         @RequestParam(defaultValue = "") rootName: String,
         @RequestParam(defaultValue = "") noRecursiveNames: String
-    ): List<TreeNode> {
-
-        val excludedNames =
-            if (noRecursiveNames.isEmpty()) {
-                emptySet()
+    ): List<TreeNode> =
+        treeNodeRepository.findRootNodes(
+            rootName,
+            if (!StringUtils.hasText(noRecursiveNames)) {
+                RECURSIVE_TREE_NODE_FETCHER
             } else {
-                noRecursiveNames
-                    .trim()
-                    .split("\\s*,\\s*")
-                    .map {
-                        it.lowercase()
-                    }
-                    .toSet()
-            }
-
-        return sqlClient
-            .createQuery(TreeNode::class) {
-                where(table.parent.isNull())
-                rootName.takeIf { it.isNotEmpty() }?.let {
-                    where(table.name ilike it)
-                }
-                orderBy(table.name)
-                select(
-                    table.fetchBy {
-                        allScalarFields()
-                        childNodes({
-                            recursive {
-                                !excludedNames.contains(
-                                    entity.name.lowercase()
-                                )
+                val excludedNames =
+                    if (noRecursiveNames.isEmpty()) {
+                        emptySet()
+                    } else {
+                        noRecursiveNames
+                            .trim()
+                            .split("\\s*,\\s*")
+                            .map {
+                                it.lowercase()
                             }
-                        }) {
-                            allScalarFields()
-                        }
+                            .toSet()
                     }
-                )
+                newFetcher(TreeNode::class).by(RECURSIVE_TREE_NODE_FETCHER) {
+                    childNodes({ // override `childNodes` of `RECURSIVE_TREE_NODE_FETCHER`
+                        recursive {
+                            !excludedNames.contains(
+                                entity.name.lowercase()
+                            )
+                        }
+                    }) {
+                        allScalarFields()
+                    }
+                }
             }
-            .execute()
-    }
+        )
 
     @PutMapping("/tree")
     fun saveTree(
@@ -98,18 +97,7 @@ class TreeService(
                     " into database"
             )
         }
-        return sqlClient
-            .entities
-            .save(rootNode) {
-                // If child nodes do not exist, insert them automatically
-                setAutoAttachingAll()
-
-                // Need not `setAutoDetaching` because `on cascade delete`
-                // is configured on model interface,
-                // If user update a tree with less child nodes,
-                // abandoned child nodes will be deleted automatically
-            }
-            .modifiedEntity
+        return treeNodeRepository.save(rootNode)
     }
 
     private fun createChildNodes(
@@ -138,12 +126,18 @@ class TreeService(
 
     @DeleteMapping("/tree/{id}")
     fun deleteTree(@PathVariable id: Long) {
-        sqlClient.entities.delete(TreeNode::class, id)
+        treeNodeRepository.deleteById(id)
     }
 
     companion object {
-        private val RECURSIVE_TREE_NODE_FETCHER = newFetcher(TreeNode::class).by {
 
+        private val RECURSIVE_TREE_NODE_FETCHER = newFetcher(TreeNode::class).by {
+            allScalarFields()
+            childNodes({
+                recursive()
+            }) {
+                allScalarFields()
+            }
         }
 
         private val LOGGER = LoggerFactory.getLogger(TreeService::class.java)

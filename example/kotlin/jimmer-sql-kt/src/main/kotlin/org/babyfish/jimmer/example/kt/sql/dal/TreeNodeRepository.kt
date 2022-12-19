@@ -8,7 +8,6 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.ast.table.isNull
 
-@JvmDefaultWithCompatibility
 interface TreeNodeRepository : KRepository<TreeNode, Long> {
 
     fun findRootNodes(
