@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.spring.repository.bytecode;
 
-import org.babyfish.jimmer.impl.asm.MethodVisitor;
 import org.babyfish.jimmer.impl.asm.Opcodes;
 import org.babyfish.jimmer.impl.asm.Type;
 

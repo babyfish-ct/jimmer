@@ -151,7 +151,7 @@ class ParameterImpl implements Parameter {
             Type type = ctx
                     .locate(new ParameterLocation(declaringOperation, index, rawParameter.getName()))
                     .parseType(rawParameter.getAnnotatedType());
-            type = Utils.wrap(ctx, type, rawParameter);
+            // Need not `Utils.wrap` because path variable should be considered as non-null in client side
             return new ParameterImpl(declaringOperation, rawParameter, index, null, pathVariable, type);
         }
 

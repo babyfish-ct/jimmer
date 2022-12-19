@@ -180,6 +180,7 @@ public abstract class CodeWriter {
                             .code(ctx.getDtoSuffix(immutableObjectType))
                             .code("']");
                 } else if (immutableObjectType.getCategory() == ImmutableObjectType.Category.VIEW) {
+                    importFile(DtoWriter.dtoFile(ctx, immutableObjectType.getJavaType()));
                     code(ctx.getDtoPrefix(immutableObjectType.getJavaType()))
                             .code("['DEFAULT']");
                 } else {
