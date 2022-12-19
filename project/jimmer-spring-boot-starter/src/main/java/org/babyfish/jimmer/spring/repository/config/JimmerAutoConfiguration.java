@@ -29,11 +29,13 @@ public class JimmerAutoConfiguration {
 
     }
 
+    @ConditionalOnMissingBean(ImmutableModule.class)
     @Bean
     public ImmutableModule immutableModule() {
         return new ImmutableModule();
     }
 
+    @ConditionalOnMissingBean(TypeScriptService.class)
     @Bean
     public TypeScriptService typeScriptService(ApplicationContext ctx) {
         return new TypeScriptService(ctx);

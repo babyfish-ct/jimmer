@@ -5,7 +5,7 @@ import org.babyfish.jimmer.example.kt.sql.model.Book
 import org.babyfish.jimmer.kt.makeIdOnly
 import org.babyfish.jimmer.kt.map
 import org.babyfish.jimmer.kt.mapList
-import org.babyfish.jimmer.spring.java.model.Input
+import org.babyfish.jimmer.spring.model.Input
 import java.math.BigDecimal
 
 data class BookInput(
