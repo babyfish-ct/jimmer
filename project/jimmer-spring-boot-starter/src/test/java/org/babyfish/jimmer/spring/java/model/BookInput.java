@@ -4,6 +4,8 @@ import org.babyfish.jimmer.ImmutableConverter;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.client.Doc;
 import org.babyfish.jimmer.client.ExportFields;
+import org.babyfish.jimmer.spring.model.Input;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
@@ -53,6 +55,7 @@ public class BookInput implements Input<Book> {
         this.authorIds = authorIds;
     }
 
+    @NotNull
     @Override
     public Book toEntity() {
         return CONVERTER.convert(this);
