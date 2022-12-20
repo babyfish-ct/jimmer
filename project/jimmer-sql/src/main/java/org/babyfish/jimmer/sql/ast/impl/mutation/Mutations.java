@@ -51,4 +51,17 @@ public class Mutations {
         block.accept(delete, delete.getTable());
         return delete;
     }
+
+    public static <T extends Table<?>> Executable<Integer> createDelete(
+            JSqlClient sqlClient,
+            ImmutableType type,
+            BiConsumer<MutableDelete, T> block
+    ) {
+        MutableDeleteImpl delete = new MutableDeleteImpl(
+                sqlClient,
+                type
+        );
+        block.accept(delete, delete.getTable());
+        return delete;
+    }
 }
