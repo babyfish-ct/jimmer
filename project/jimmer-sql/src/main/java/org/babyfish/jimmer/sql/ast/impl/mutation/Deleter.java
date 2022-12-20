@@ -131,9 +131,9 @@ public class Deleter {
                 addOutput(AffectedTable.of(prop), affectedRowCount);
             } else {
                 ImmutableProp mappedByProp = prop.getMappedBy();
-                if (prop.isReferenceList(TargetLevel.ENTITY) &&
-                        mappedByProp != null &&
-                        mappedByProp.isReference(TargetLevel.ENTITY)
+                if (mappedByProp != null &&
+                        mappedByProp.isReference(TargetLevel.ENTITY) &&
+                        mappedByProp.getStorage() instanceof ColumnDefinition
                 ) {
                     DissociateAction dissociateAction = data.getDissociateAction(mappedByProp);
                     if (dissociateAction == DissociateAction.SET_NULL) {

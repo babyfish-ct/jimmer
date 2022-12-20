@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.meta;
 
+import org.babyfish.jimmer.client.meta.impl.UnresolvedTypeParameterImpl;
 import org.babyfish.jimmer.client.meta.impl.UnresolvedTypeVariableImpl;
 
 public interface Visitor {
@@ -35,4 +36,6 @@ public interface Visitor {
     default void visitSimpleType(SimpleType simpleType) {}
 
     default void visitUnresolvedTypeVariable(UnresolvedTypeVariableImpl unresolvedTypeVariable) {}
+
+    default void visitUnresolvedTypeParameter(UnresolvedTypeParameterImpl unresolvedTypeParameter) {}
 }

@@ -10,6 +10,7 @@ import java.math.BigDecimal
 
 @Doc("BookService interface")
 interface KBookService {
+
     @GetMapping("/books/simple")
     fun findSimpleBooks(): List<@FetchBy("SIMPLE_BOOK_FETCHER") KBook>
 

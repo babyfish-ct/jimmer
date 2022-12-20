@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.client.meta.impl;
 
+import kotlin.jvm.internal.ClassBasedDeclarationContainer;
+import kotlin.reflect.*;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.IllegalDocMetaException;
 import org.babyfish.jimmer.client.meta.*;
@@ -7,6 +9,7 @@ import org.babyfish.jimmer.client.meta.Type;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -19,7 +22,7 @@ class Context {
 
     private final Metadata.ParameterParser parameterParser;
 
-    private final Map<Class<?>, JetBrainsNullity> jetBrainsNullityMap;
+    private final Map<Class<?>, JetBrainsMetadata> jetBrainsMetadataMap;
 
     private final Location location;
 
@@ -35,7 +38,11 @@ class Context {
 
     private final Map<FetchByInfo, Fetcher<?>> fetcherMap;
 
+    // For java generic type
     private final Map<TypeVariable<?>, AnnotatedType> typeVariableMap;
+
+    // For kotlin generic type
+    private final Map<KTypeParameter, KType> typeParameterMap;
 
     private final boolean ignoreTypeVariableResolving;
 
@@ -46,7 +53,7 @@ class Context {
         this.base = null;
         this.operationParser = operationParser;
         this.parameterParser = parameterParser;
-        this.jetBrainsNullityMap = new HashMap<>();
+        this.jetBrainsMetadataMap = new HashMap<>();
         this.location = null;
         this.staticObjectTypeMap = new LinkedHashMap<>();
         this.enumTypeMap = new LinkedHashMap<>();
@@ -55,6 +62,7 @@ class Context {
         this.fetchedImmutableObjectTypeMap = new LinkedHashMap<>();
         this.fetcherMap = new HashMap<>();
         this.typeVariableMap = Collections.emptyMap();
+        this.typeParameterMap = Collections.emptyMap();
         this.ignoreTypeVariableResolving = false;
     }
 
@@ -62,7 +70,7 @@ class Context {
         this.base = base;
         this.operationParser = base.operationParser;
         this.parameterParser = base.parameterParser;
-        this.jetBrainsNullityMap = base.jetBrainsNullityMap;
+        this.jetBrainsMetadataMap = base.jetBrainsMetadataMap;
         this.location = location;
         this.staticObjectTypeMap = base.staticObjectTypeMap;
         this.enumTypeMap = base.enumTypeMap;
@@ -71,6 +79,7 @@ class Context {
         this.viewImmutableObjectTypeMap = base.viewImmutableObjectTypeMap;
         this.fetcherMap = base.fetcherMap;
         this.typeVariableMap = Collections.emptyMap();
+        this.typeParameterMap = Collections.emptyMap();
         this.ignoreTypeVariableResolving = base.ignoreTypeVariableResolving;
     }
 
@@ -78,7 +87,7 @@ class Context {
         this.base = base;
         this.operationParser = base.operationParser;
         this.parameterParser = base.parameterParser;
-        this.jetBrainsNullityMap = base.jetBrainsNullityMap;
+        this.jetBrainsMetadataMap = base.jetBrainsMetadataMap;
         this.location = base.location;
         this.staticObjectTypeMap = base.staticObjectTypeMap;
         this.enumTypeMap = base.enumTypeMap;
@@ -93,14 +102,15 @@ class Context {
             map.put(typeVariables[i], actualTypes[i]);
         }
         this.typeVariableMap = map;
+        this.typeParameterMap = base.typeParameterMap;
         this.ignoreTypeVariableResolving = base.ignoreTypeVariableResolving;
     }
 
-    private Context(Context base, boolean ignoreTypeVariableResolving) {
+    public Context(Context base, KType parameterizedType) {
         this.base = base;
         this.operationParser = base.operationParser;
         this.parameterParser = base.parameterParser;
-        this.jetBrainsNullityMap = base.jetBrainsNullityMap;
+        this.jetBrainsMetadataMap = base.jetBrainsMetadataMap;
         this.location = base.location;
         this.staticObjectTypeMap = base.staticObjectTypeMap;
         this.enumTypeMap = base.enumTypeMap;
@@ -109,6 +119,30 @@ class Context {
         this.viewImmutableObjectTypeMap = base.viewImmutableObjectTypeMap;
         this.fetcherMap = base.fetcherMap;
         this.typeVariableMap = base.typeVariableMap;
+        List<KTypeParameter> typeParameters = ((KClass<?>)parameterizedType.getClassifier()).getTypeParameters();
+        List<KTypeProjection> projections = parameterizedType.getArguments();
+        Map<KTypeParameter, KType> map = new HashMap<>();
+        for (int i = typeParameters.size() - 1; i >= 0; --i) {
+            map.put(typeParameters.get(i), projections.get(i).getType());
+        }
+        this.typeParameterMap = map;
+        this.ignoreTypeVariableResolving = base.ignoreTypeVariableResolving;
+    }
+
+    private Context(Context base, boolean ignoreTypeVariableResolving) {
+        this.base = base;
+        this.operationParser = base.operationParser;
+        this.parameterParser = base.parameterParser;
+        this.jetBrainsMetadataMap = base.jetBrainsMetadataMap;
+        this.location = base.location;
+        this.staticObjectTypeMap = base.staticObjectTypeMap;
+        this.enumTypeMap = base.enumTypeMap;
+        this.fetchedImmutableObjectTypeMap = base.fetchedImmutableObjectTypeMap;
+        this.rawImmutableObjectTypeMap = base.rawImmutableObjectTypeMap;
+        this.viewImmutableObjectTypeMap = base.viewImmutableObjectTypeMap;
+        this.fetcherMap = base.fetcherMap;
+        this.typeVariableMap = base.typeVariableMap;
+        this.typeParameterMap = base.typeParameterMap;
         this.ignoreTypeVariableResolving = ignoreTypeVariableResolving;
     }
 
@@ -128,8 +162,8 @@ class Context {
         return parameterParser;
     }
 
-    public JetBrainsNullity getJetBrainsNullity(Class<?> type) {
-        return jetBrainsNullityMap.computeIfAbsent(type, JetBrainsNullity::new);
+    public JetBrainsMetadata getJetBrainsMetadata(Class<?> type) {
+        return jetBrainsMetadataMap.computeIfAbsent(type, JetBrainsMetadata::new);
     }
 
     public Type parseType(AnnotatedType annotatedType) {
@@ -270,6 +304,139 @@ class Context {
                         typeVariable +
                         " of " +
                         typeVariable.getGenericDeclaration()
+        );
+    }
+
+    public Type parseType(KType type) {
+        Type parsed = parseType0(type);
+        if (type.isMarkedNullable()) {
+            return NullableTypeImpl.of(parsed);
+        }
+        return parsed;
+    }
+
+    public Type parseType0(KType type) {
+        FetchBy fetchBy = null;
+        for (Annotation ann : type.getAnnotations()) {
+            if (ann instanceof FetchBy) {
+                fetchBy = (FetchBy) ann;
+                break;
+            }
+        }
+        Class<?> javaClass = null;
+        ImmutableType immutableType = null;
+        if (type.getClassifier() instanceof KClass<?>) {
+            javaClass = ((ClassBasedDeclarationContainer)type.getClassifier()).getJClass();
+            immutableType = ImmutableType.tryGet(javaClass);
+        }
+        if (fetchBy != null && (immutableType == null || !immutableType.isEntity())) {
+            throw new IllegalDocMetaException(
+                    "Illegal type \"" +
+                            type +
+                            "\" declared in " +
+                            location +
+                            ", @" +
+                            FetchBy.class.getName() +
+                            " can only used to decorate entity type"
+            );
+        }
+        if (javaClass != null && type.getArguments().isEmpty()) {
+            if (immutableType != null) {
+                return objectType(immutableType, fetchBy);
+            }
+            if (javaClass.isEnum()) {
+                EnumType enumType = enumTypeMap.get(javaClass);
+                if (enumType == null) {
+                    enumType = new EnumTypeImpl(javaClass);
+                    enumTypeMap.put(javaClass, enumType);
+                }
+                return enumType;
+            }
+            SimpleType simpleType = SimpleTypeImpl.get(javaClass);
+            if (simpleType != null) {
+                return simpleType;
+            }
+            if (Collection.class.isAssignableFrom(javaClass) ||
+                    Map.class.isAssignableFrom(javaClass)) {
+                throw new IllegalDocMetaException(
+                        "Illegal type \"" +
+                                type +
+                                "\" declared in " +
+                                location +
+                                ", collection and map must be parameterized type"
+                );
+            }
+            if (!ignoreTypeVariableResolving && javaClass.getTypeParameters().length != 0) {
+                throw new IllegalDocMetaException(
+                        "Illegal type \"" +
+                                type +
+                                "\" declared in " +
+                                location +
+                                ", generic type must be parameterized type"
+                );
+            }
+            return objectType(javaClass, null);
+        }
+        if (javaClass != null && !type.getArguments().isEmpty()) {
+            for (KTypeProjection projection : type.getArguments()) {
+                if (projection.getType() == null) {
+                    throw new IllegalDocMetaException(
+                            "Illegal type \"" +
+                                    type +
+                                    "\" declared in " +
+                                    location +
+                                    ", generic type argument cannot be star"
+                    );
+                }
+            }
+            if (Collection.class.isAssignableFrom(javaClass)) {
+                return new ArrayTypeImpl(parseType(type.getArguments().get(0).getType()));
+            }
+            if (Map.class.isAssignableFrom(javaClass)) {
+                return new MapTypeImpl(
+                        parseType(type.getArguments().get(0).getType()),
+                        parseType(type.getArguments().get(1).getType())
+                );
+            }
+            return new Context(this, type).objectType(
+                    javaClass,
+                    type
+                            .getArguments()
+                            .stream()
+                            .map(it -> parseType(it.getType()))
+                            .collect(Collectors.toList())
+            );
+        }
+        if (type.getClassifier() instanceof KTypeParameter) {
+            if (ignoreTypeVariableResolving) {
+                return new UnresolvedTypeParameterImpl((KTypeParameter) type.getClassifier());
+            }
+            return parseType(resolve((KTypeParameter) type.getClassifier()));
+        }
+        throw new AssertionError("Internal bug: unexpected kotlin type " + type);
+    }
+
+    private KType resolve(KTypeParameter typeParameter) {
+        KType resolvedType = resolve0(typeParameter);
+        if (!(resolvedType.getClassifier() instanceof KTypeParameter)) {
+            return resolvedType;
+        }
+        return resolve((KTypeParameter) resolvedType.getClassifier());
+    }
+
+    private KType resolve0(KTypeParameter typeParameter) {
+        KType resolvedType = typeParameterMap.get(typeParameter);
+        if (resolvedType != null) {
+            return resolvedType;
+        }
+        if (base != null) {
+            return base.resolve0(typeParameter);
+        }
+        throw new IllegalArgumentException(
+                "Cannot resolve the typeVariable: " +
+                        typeParameter +
+                        " of " +
+                        typeParameter
         );
     }
 

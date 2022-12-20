@@ -12,7 +12,7 @@ public class ExecutorWriter extends CodeWriter {
     protected void write() {
         code("export type Executor = ");
         scope(ScopeType.BLANK, "", true, () -> {
-            code("async (args: ");
+            code("(args: ");
             scope(ScopeType.OBJECT, ",", true, () -> {
                 code("readonly uri: string");
                 separator();

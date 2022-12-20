@@ -28,7 +28,8 @@ class Utils {
             )
     );
 
-    private Utils() {}
+    private Utils() {
+    }
 
     public static Type wrap(Context ctx, Type type, AnnotatedElement annotatedElement) {
         if (annotatedElement.isAnnotationPresent(Null.class)) {
@@ -45,8 +46,8 @@ class Utils {
             if (BOX_TYPES.contains(field.getType())) {
                 return NullableTypeImpl.of(type);
             }
-            JetBrainsNullity nullity = ctx.getJetBrainsNullity(field.getDeclaringClass());
-            if (nullity.isNull(field.getName())) {
+            JetBrainsMetadata metadata = ctx.getJetBrainsMetadata(field.getDeclaringClass());
+            if (metadata.isNull(field.getName())) {
                 return NullableTypeImpl.of(type);
             }
         } else if (annotatedElement instanceof Method) {
@@ -57,8 +58,8 @@ class Utils {
             if (BOX_TYPES.contains(method.getReturnType())) {
                 return NullableTypeImpl.of(type);
             }
-            JetBrainsNullity nullity = ctx.getJetBrainsNullity(method.getDeclaringClass());
-            if (nullity.isNull(method.getName())) {
+            JetBrainsMetadata metadata = ctx.getJetBrainsMetadata(method.getDeclaringClass());
+            if (metadata.isNull(method.getName())) {
                 return NullableTypeImpl.of(type);
             }
         } else if (annotatedElement instanceof Parameter) {
@@ -74,8 +75,8 @@ class Utils {
             int index = 0;
             while (index < parameters.length) {
                 if (parameters[index] == parameter) {
-                    JetBrainsNullity nullity = ctx.getJetBrainsNullity(method.getDeclaringClass());
-                    if (nullity.isNull(method.getName(), index)) {
+                    JetBrainsMetadata metadata = ctx.getJetBrainsMetadata(method.getDeclaringClass());
+                    if (metadata.isNull(method.getName(), index)) {
                         return NullableTypeImpl.of(type);
                     }
                     break;

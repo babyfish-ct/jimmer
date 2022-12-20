@@ -1,10 +1,7 @@
 package org.babyfish.jimmer.client.generator.ts;
 
 import org.babyfish.jimmer.client.IllegalDocMetaException;
-import org.babyfish.jimmer.client.meta.NullableType;
-import org.babyfish.jimmer.client.meta.Operation;
-import org.babyfish.jimmer.client.meta.Parameter;
-import org.babyfish.jimmer.client.meta.Service;
+import org.babyfish.jimmer.client.meta.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -83,16 +80,20 @@ public class ServiceWriter extends CodeWriter {
     private void impl(Operation operation) {
         List<UriPart> parts = UriPart.parts(operation.getUri());
         if (parts.get(0).variable) {
+            Parameter parameter = pathVariableParameter(operation, parts.get(0).text);
             code("let uri = encodeURIComponent(options.")
-                    .code(pathVariableParameter(operation, parts.get(0).text))
+                    .code(parameter.getName())
+                    .codeIf(parameter.getType() instanceof ArrayType, "join(',')")
                     .code(");\n");
         } else {
             code("let uri = '").code(parts.get(0).text).code("';\n");
         }
         for (int i = 1; i < parts.size(); i++) {
             if (parts.get(i).variable) {
+                Parameter parameter = pathVariableParameter(operation, parts.get(i).text);
                 code("uri += encodeURIComponent(options.")
-                        .code(pathVariableParameter(operation, parts.get(i).text))
+                        .code(parameter.getName())
+                        .codeIf(parameter.getType() instanceof ArrayType, "join(',')")
                         .code(");\n");
             } else {
                 code("uri += '").code(parts.get(i).text).code("';\n");
@@ -159,10 +160,10 @@ public class ServiceWriter extends CodeWriter {
         code("})) as ").type(operation.getType());
     }
 
-    private static String pathVariableParameter(Operation operation, String pathVariable) {
+    private static Parameter pathVariableParameter(Operation operation, String pathVariable) {
         for (Parameter parameter : operation.getParameters()) {
             if (pathVariable.equals(parameter.getName())) {
-                return parameter.getName();
+                return parameter;
             }
         }
         throw new IllegalDocMetaException(

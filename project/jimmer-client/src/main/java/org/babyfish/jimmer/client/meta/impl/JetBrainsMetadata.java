@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.util.*;
 
-class JetBrainsNullity {
+class JetBrainsMetadata {
 
     private static final String JETBRAINS_NULLABLE_DESC = Type.getDescriptor(Nullable.class);
 
@@ -17,7 +17,7 @@ class JetBrainsNullity {
 
     private final Map<String, Set<Integer>> nullableParameterIndices = new HashMap<>();
 
-    JetBrainsNullity(Class<?> clazz) {
+    JetBrainsMetadata(Class<?> clazz) {
         try {
             ClassReader reader = new ClassReader(clazz.getName());
             reader.accept(
