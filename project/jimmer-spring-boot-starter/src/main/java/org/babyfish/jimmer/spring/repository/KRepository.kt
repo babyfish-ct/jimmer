@@ -15,7 +15,6 @@ import org.springframework.data.repository.PagingAndSortingRepository
 import java.util.*
 
 @NoRepositoryBean
-@JvmDefaultWithCompatibility
 interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
 
     val sql: KSqlClient

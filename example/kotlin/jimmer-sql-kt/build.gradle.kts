@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "org.babyfish.jimmer.example.kt"
-version = "0.5.22"
+version = "0.5.23"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
