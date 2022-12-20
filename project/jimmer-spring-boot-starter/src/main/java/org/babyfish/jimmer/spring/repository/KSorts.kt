@@ -5,11 +5,8 @@ import org.babyfish.jimmer.sql.ast.query.OrderMode
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.asc
 import org.babyfish.jimmer.sql.kt.ast.expression.desc
-import org.babyfish.jimmer.sql.kt.ast.expression.or
 import org.babyfish.jimmer.sql.kt.ast.query.FindDsl
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableQuery
-import org.babyfish.jimmer.sql.kt.ast.query.KSortable
-import org.babyfish.jimmer.sql.kt.ast.table.KProps
 import org.springframework.data.domain.Sort
 
 fun KMutableQuery<*>.orderBy(sort: Sort?) {

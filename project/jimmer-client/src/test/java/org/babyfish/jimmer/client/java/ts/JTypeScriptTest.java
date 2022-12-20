@@ -12,11 +12,10 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class TypeScriptTest {
+public class JTypeScriptTest {
 
     @Test
     public void testModuleWriter() throws IOException {

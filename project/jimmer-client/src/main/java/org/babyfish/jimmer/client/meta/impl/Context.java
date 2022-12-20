@@ -1,11 +1,13 @@
 package org.babyfish.jimmer.client.meta.impl;
 
-import kotlin.jvm.internal.ClassBasedDeclarationContainer;
+import kotlin.jvm.JvmClassMappingKt;
 import kotlin.reflect.*;
+import kotlin.reflect.jvm.internal.KotlinReflectionInternalError;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.IllegalDocMetaException;
 import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.client.meta.Type;
+import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
@@ -38,11 +40,7 @@ class Context {
 
     private final Map<FetchByInfo, Fetcher<?>> fetcherMap;
 
-    // For java generic type
-    private final Map<TypeVariable<?>, AnnotatedType> typeVariableMap;
-
-    // For kotlin generic type
-    private final Map<KTypeParameter, KType> typeParameterMap;
+    private final Map<UnifiedTypeParameter, Object> typeVariableMap;
 
     private final boolean ignoreTypeVariableResolving;
 
@@ -62,7 +60,6 @@ class Context {
         this.fetchedImmutableObjectTypeMap = new LinkedHashMap<>();
         this.fetcherMap = new HashMap<>();
         this.typeVariableMap = Collections.emptyMap();
-        this.typeParameterMap = Collections.emptyMap();
         this.ignoreTypeVariableResolving = false;
     }
 
@@ -79,7 +76,6 @@ class Context {
         this.viewImmutableObjectTypeMap = base.viewImmutableObjectTypeMap;
         this.fetcherMap = base.fetcherMap;
         this.typeVariableMap = Collections.emptyMap();
-        this.typeParameterMap = Collections.emptyMap();
         this.ignoreTypeVariableResolving = base.ignoreTypeVariableResolving;
     }
 
@@ -97,16 +93,18 @@ class Context {
         this.fetcherMap = base.fetcherMap;
         TypeVariable<?>[] typeVariables = ((Class<?>)((ParameterizedType)parameterizedType.getType()).getRawType()).getTypeParameters();
         AnnotatedType[] actualTypes = parameterizedType.getAnnotatedActualTypeArguments();
-        Map<TypeVariable<?>, AnnotatedType> map = new HashMap<>();
+        Map<UnifiedTypeParameter, Object> map = new HashMap<>();
         for (int i = typeVariables.length - 1; i >= 0; --i) {
-            map.put(typeVariables[i], actualTypes[i]);
+            map.put(new UnifiedTypeParameter(typeVariables[i]), actualTypes[i]);
         }
         this.typeVariableMap = map;
-        this.typeParameterMap = base.typeParameterMap;
         this.ignoreTypeVariableResolving = base.ignoreTypeVariableResolving;
     }
 
     public Context(Context base, KType parameterizedType) {
+        if (parameterizedType.getArguments().isEmpty()) {
+            throw new IllegalArgumentException("parameterizedType must have type arguments");
+        }
         this.base = base;
         this.operationParser = base.operationParser;
         this.parameterParser = base.parameterParser;
@@ -118,14 +116,16 @@ class Context {
         this.rawImmutableObjectTypeMap = base.rawImmutableObjectTypeMap;
         this.viewImmutableObjectTypeMap = base.viewImmutableObjectTypeMap;
         this.fetcherMap = base.fetcherMap;
-        this.typeVariableMap = base.typeVariableMap;
         List<KTypeParameter> typeParameters = ((KClass<?>)parameterizedType.getClassifier()).getTypeParameters();
         List<KTypeProjection> projections = parameterizedType.getArguments();
-        Map<KTypeParameter, KType> map = new HashMap<>();
+        Map<UnifiedTypeParameter, Object> map = new HashMap<>();
         for (int i = typeParameters.size() - 1; i >= 0; --i) {
-            map.put(typeParameters.get(i), projections.get(i).getType());
+            map.put(
+                    new UnifiedTypeParameter(typeParameters.get(i)),
+                    UnifiedTypeParameter.wrap(projections.get(i).getType())
+            );
         }
-        this.typeParameterMap = map;
+        this.typeVariableMap = map;
         this.ignoreTypeVariableResolving = base.ignoreTypeVariableResolving;
     }
 
@@ -142,7 +142,6 @@ class Context {
         this.viewImmutableObjectTypeMap = base.viewImmutableObjectTypeMap;
         this.fetcherMap = base.fetcherMap;
         this.typeVariableMap = base.typeVariableMap;
-        this.typeParameterMap = base.typeParameterMap;
         this.ignoreTypeVariableResolving = ignoreTypeVariableResolving;
     }
 
@@ -163,7 +162,7 @@ class Context {
     }
 
     public JetBrainsMetadata getJetBrainsMetadata(Class<?> type) {
-        return jetBrainsMetadataMap.computeIfAbsent(type, JetBrainsMetadata::new);
+        return jetBrainsMetadataMap.computeIfAbsent(type, t -> new JetBrainsMetadata(type));
     }
 
     public Type parseType(AnnotatedType annotatedType) {
@@ -232,7 +231,12 @@ class Context {
             if (ignoreTypeVariableResolving) {
                 return new UnresolvedTypeVariableImpl(((TypeVariable<?>)annotatedType.getType()).getName());
             }
-            return parseType(resolve((AnnotatedTypeVariable) annotatedType));
+            TypeVariable<?> typeVariable = (TypeVariable<?>) annotatedType.getType();
+            Object resolvedType = resolve(new UnifiedTypeParameter(typeVariable));
+            if (resolvedType instanceof KType) {
+                return parseKotlinType((KType) resolvedType);
+            }
+            return parseType((AnnotatedType) resolvedType);
         }
         if (annotatedType instanceof AnnotatedParameterizedType) {
             AnnotatedParameterizedType annotatedParameterizedType = (AnnotatedParameterizedType) annotatedType;
@@ -283,39 +287,26 @@ class Context {
         return map;
     }
 
-    private AnnotatedType resolve(AnnotatedTypeVariable typeVariable) {
-        AnnotatedType annotatedType = resolve0((TypeVariable<?>) typeVariable.getType());
-        if (!(annotatedType instanceof AnnotatedTypeVariable)) {
-            return annotatedType;
-        }
-        return resolve((AnnotatedTypeVariable) annotatedType);
-    }
-
-    private AnnotatedType resolve0(TypeVariable<?> typeVariable) {
-        AnnotatedType resolvedType = typeVariableMap.get(typeVariable);
-        if (resolvedType != null) {
+    private Object resolve(UnifiedTypeParameter typeParameter) {
+        Object resolvedType = typeVariableMap.get(typeParameter);
+        if (resolvedType != null && !(resolvedType instanceof UnifiedTypeParameter)) {
             return resolvedType;
         }
         if (base != null) {
-            return base.resolve0(typeVariable);
+            return base.resolve(resolvedType != null ? (UnifiedTypeParameter) resolvedType : typeParameter);
         }
-        throw new IllegalArgumentException(
-                "Cannot resolve the typeVariable: " +
-                        typeVariable +
-                        " of " +
-                        typeVariable.getGenericDeclaration()
-        );
+        throw new IllegalDocMetaException("Cannot resolve " + typeParameter + " of " + location);
     }
 
-    public Type parseType(KType type) {
-        Type parsed = parseType0(type);
+    public Type parseKotlinType(KType type) {
+        Type parsed = parseKotlinType0(type);
         if (type.isMarkedNullable()) {
             return NullableTypeImpl.of(parsed);
         }
         return parsed;
     }
 
-    public Type parseType0(KType type) {
+    public Type parseKotlinType0(KType type) {
         FetchBy fetchBy = null;
         for (Annotation ann : type.getAnnotations()) {
             if (ann instanceof FetchBy) {
@@ -323,10 +314,12 @@ class Context {
                 break;
             }
         }
+        KClass<?> kotlinClass = null;
         Class<?> javaClass = null;
         ImmutableType immutableType = null;
         if (type.getClassifier() instanceof KClass<?>) {
-            javaClass = ((ClassBasedDeclarationContainer)type.getClassifier()).getJClass();
+            kotlinClass = (KClass<?>) type.getClassifier();
+            javaClass = JvmClassMappingKt.getJavaClass(kotlinClass);
             immutableType = ImmutableType.tryGet(javaClass);
         }
         if (fetchBy != null && (immutableType == null || !immutableType.isEntity())) {
@@ -375,11 +368,13 @@ class Context {
                                 ", generic type must be parameterized type"
                 );
             }
-            return objectType(javaClass, null);
+            return objectType(kotlinClass, null);
         }
         if (javaClass != null && !type.getArguments().isEmpty()) {
+            List<KType> argumentTypes = new ArrayList<>();
             for (KTypeProjection projection : type.getArguments()) {
-                if (projection.getType() == null) {
+                KType argumentType = projection.getType();
+                if (argumentType == null) {
                     throw new IllegalDocMetaException(
                             "Illegal type \"" +
                                     type +
@@ -388,63 +383,47 @@ class Context {
                                     ", generic type argument cannot be star"
                     );
                 }
+                argumentTypes.add(argumentType);
             }
             if (Collection.class.isAssignableFrom(javaClass)) {
-                return new ArrayTypeImpl(parseType(type.getArguments().get(0).getType()));
+                return new ArrayTypeImpl(parseKotlinType(argumentTypes.get(0)));
             }
             if (Map.class.isAssignableFrom(javaClass)) {
                 return new MapTypeImpl(
-                        parseType(type.getArguments().get(0).getType()),
-                        parseType(type.getArguments().get(1).getType())
+                        parseKotlinType(argumentTypes.get(0)),
+                        parseKotlinType(argumentTypes.get(1))
                 );
             }
             return new Context(this, type).objectType(
-                    javaClass,
-                    type
-                            .getArguments()
-                            .stream()
-                            .map(it -> parseType(it.getType()))
-                            .collect(Collectors.toList())
+                    kotlinClass,
+                    argumentTypes.stream().map(this::parseKotlinType).collect(Collectors.toList())
             );
         }
         if (type.getClassifier() instanceof KTypeParameter) {
             if (ignoreTypeVariableResolving) {
                 return new UnresolvedTypeParameterImpl((KTypeParameter) type.getClassifier());
             }
-            return parseType(resolve((KTypeParameter) type.getClassifier()));
+            Object resolved = resolve(new UnifiedTypeParameter((KTypeParameter) type.getClassifier()));
+            if (resolved instanceof KType) {
+                return parseKotlinType((KType) resolved);
+            }
+            return parseType((AnnotatedType) resolved);
         }
         throw new AssertionError("Internal bug: unexpected kotlin type " + type);
     }
 
-    private KType resolve(KTypeParameter typeParameter) {
-        KType resolvedType = resolve0(typeParameter);
-        if (!(resolvedType.getClassifier() instanceof KTypeParameter)) {
-            return resolvedType;
-        }
-        return resolve((KTypeParameter) resolvedType.getClassifier());
-    }
-
-    private KType resolve0(KTypeParameter typeParameter) {
-        KType resolvedType = typeParameterMap.get(typeParameter);
-        if (resolvedType != null) {
-            return resolvedType;
-        }
-        if (base != null) {
-            return base.resolve0(typeParameter);
-        }
-        throw new IllegalArgumentException(
-                "Cannot resolve the typeVariable: " +
-                        typeParameter +
-                        " of " +
-                        typeParameter
-        );
-    }
-
     private ImmutableObjectType objectType(ImmutableType type, FetchBy fetchBy) {
         if (fetchBy != null) {
+            Class<?> ownerType;
+            try {
+                ownerType = fetchBy.ownerType();
+            } catch (KotlinReflectionInternalError ex) {
+                // Bug of kotlin reflection
+                ownerType = void.class;
+            }
             FetchByInfo info = new FetchByInfo(
-                    fetchBy.ownerType() != void.class ?
-                            fetchBy.ownerType() :
+                    ownerType != void.class ?
+                            ownerType :
                             location.getDeclaringType(),
                     fetchBy.value()
             );
@@ -458,7 +437,18 @@ class Context {
     }
 
     private StaticObjectType objectType(Class<?> type, List<Type> typeArguments) {
-        StaticObjectType staticType = staticObjectTypeMap.get(type);
+        if (type.isAnnotationPresent(kotlin.Metadata.class)) {
+            return objectType(JvmClassMappingKt.getKotlinClass(type), typeArguments);
+        }
+        StaticObjectType staticType = staticObjectTypeMap.get(new StaticObjectType.Key(type, typeArguments));
+        if (staticType == null) {
+            staticType = StaticObjectTypeImpl.create(this, type, typeArguments);
+        }
+        return staticType;
+    }
+
+    private StaticObjectType objectType(KClass<?> type, List<Type> typeArguments) {
+        StaticObjectType staticType = staticObjectTypeMap.get(new StaticObjectType.Key(JvmClassMappingKt.getJavaClass(type), typeArguments));
         if (staticType == null) {
             staticType = StaticObjectTypeImpl.create(this, type, typeArguments);
         }
@@ -468,42 +458,126 @@ class Context {
     private Fetcher<?> fetcherOf(FetchByInfo info) {
         Fetcher<?> fetcher = fetcherMap.get(info);
         if (fetcher == null && !fetcherMap.containsKey(info)) {
-            Field field;
-            try {
-                field = info.getOwnerType().getDeclaredField(info.getConstant());
-            } catch (NoSuchFieldException ex) {
-                throw new IllegalDocMetaException(
-                        "Illegal annotation @" +
-                                FetchBy.class.getName() +
-                                " in " +
-                                location +
-                                ", there is not field \"" +
-                                info.getConstant() +
-                                "\" in the type \"" +
-                                info.getOwnerType().getName() +
-                                "\""
-                );
-            }
-            if (!Modifier.isStatic(field.getModifiers()) || !Modifier.isFinal(field.getModifiers())) {
-                throw new IllegalDocMetaException(
-                        "Illegal annotation @" +
-                                FetchBy.class.getName() +
-                                " in " +
-                                location +
-                                ", the field \"" +
-                                field +
-                                "\" must be static and final"
-                );
-            }
-            field.setAccessible(true);
-            try {
-                fetcher = (Fetcher<?>) field.get(null);
-            } catch (IllegalAccessException ex) {
-                throw new AssertionError("Internal bug", ex);
+            Ref<Fetcher<?>> fetcherRef = staticFetcherOf(info, info.getOwnerType().isAnnotationPresent(kotlin.Metadata.class));
+            if (fetcherRef != null) {
+                fetcher = fetcherRef.getValue();
+            } else {
+                fetcher = companionFetcherOf(info);
             }
             fetcherMap.put(info, fetcher);
         }
         return fetcher;
+    }
+
+    private Ref<Fetcher<?>> staticFetcherOf(FetchByInfo info, boolean allowReturnNull) {
+        Field field;
+        try {
+            field = info.getOwnerType().getDeclaredField(info.getConstant());
+        } catch (NoSuchFieldException ex) {
+            if (allowReturnNull) {
+                return null;
+            }
+            throw new IllegalDocMetaException(
+                    "Illegal annotation @" +
+                            FetchBy.class.getName() +
+                            " in " +
+                            location +
+                            ", there is no field \"" +
+                            info.getConstant() +
+                            "\" in the type \"" +
+                            info.getOwnerType().getName() +
+                            "\""
+            );
+        }
+        if (!Modifier.isStatic(field.getModifiers()) ||
+                !Modifier.isFinal(field.getModifiers()) ||
+                !Fetcher.class.isAssignableFrom(field.getType())
+        ) {
+            if (allowReturnNull) {
+                return null;
+            }
+            throw new IllegalDocMetaException(
+                    "Illegal annotation @" +
+                            FetchBy.class.getName() +
+                            " in " +
+                            location +
+                            ", the field \"" +
+                            field +
+                            "\" must be static and final and must return fetcher"
+            );
+        }
+        field.setAccessible(true);
+        try {
+            return Ref.of((Fetcher<?>) field.get(null));
+        } catch (IllegalAccessException ex) {
+            throw new IllegalDocMetaException(
+                    "Cannot get `" +
+                            info.getConstant() +
+                            "` from \"" +
+                            info.getOwnerType().getName() +
+                            "\""
+            );
+        }
+    }
+
+    private Fetcher<?> companionFetcherOf(FetchByInfo info) {
+        Field companionField;
+        try {
+            companionField = info.getOwnerType().getDeclaredField("Companion");
+        } catch (NoSuchFieldException ex) {
+            companionField = null;
+        }
+        Object companion = null;
+        Field field = null;
+        if (companionField != null) {
+            companionField.setAccessible(true);
+            try {
+                companion = companionField.get(null);
+            } catch (IllegalAccessException ex) {
+                // Do nothing
+            }
+            if (companion != null) {
+                try {
+                    field = companionField.getType().getDeclaredField(info.getConstant());
+                } catch (NoSuchFieldException ex) {
+                    // Do nothing
+                }
+            }
+        }
+        if (field == null) {
+            throw new IllegalDocMetaException(
+                    "Illegal annotation @" +
+                            FetchBy.class.getName() +
+                            " in " +
+                            location +
+                            ", no static of companion fetcher \"" +
+                            info.getConstant() +
+                            "\""
+            );
+        }
+        if (!Fetcher.class.isAssignableFrom(field.getType())) {
+            throw new IllegalDocMetaException(
+                    "Illegal annotation @" +
+                            FetchBy.class.getName() +
+                            " in " +
+                            location +
+                            ", the field \"" +
+                            field +
+                            "\" must return fetcher"
+            );
+        }
+        field.setAccessible(true);
+        try {
+            return (Fetcher<?>) field.get(companion);
+        } catch (IllegalAccessException ex) {
+            throw new IllegalDocMetaException(
+                    "Cannot get `" +
+                            info.getConstant() +
+                            "` from \"" +
+                            info.getOwnerType().getName() +
+                            "\""
+            );
+        }
     }
 
     ImmutableObjectType getImmutableObjectType(ImmutableObjectType.Category category, ImmutableType type, Fetcher<?> fetcher) {
@@ -541,4 +615,47 @@ class Context {
         }
     }
 
+    private static class UnifiedTypeParameter {
+
+        private final String name;
+
+        UnifiedTypeParameter(TypeVariable<?> typeVariable) {
+            name = typeVariable.getName();
+        }
+
+        UnifiedTypeParameter(KTypeParameter typeParameter) {
+            name = typeParameter.getName();
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            UnifiedTypeParameter that = (UnifiedTypeParameter) o;
+            return name.equals(that.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return name.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return '<' + name + '>';
+        }
+
+        public static Object wrap(Object o) {
+            if (o instanceof TypeVariable<?>) {
+                return new UnifiedTypeParameter((TypeVariable<?>) o);
+            } else if (o instanceof KTypeParameter) {
+                return new UnifiedTypeParameter((KTypeParameter) o);
+            }
+            return o;
+        }
+    }
 }
