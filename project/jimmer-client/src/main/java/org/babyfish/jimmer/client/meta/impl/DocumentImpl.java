@@ -26,6 +26,9 @@ class DocumentImpl implements Document {
 
     @Nullable
     static Document of(AnnotatedElement annotatedElement) {
+        if (annotatedElement == null) {
+            return null;
+        }
         List<Item> items = new ArrayList<>();
         Docs docs = annotatedElement.getAnnotation(Docs.class);
         if (docs != null) {

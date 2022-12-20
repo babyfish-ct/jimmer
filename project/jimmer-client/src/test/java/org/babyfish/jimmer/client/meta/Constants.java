@@ -50,8 +50,8 @@ public class Constants {
     };
 
     public final static Metadata JAVA_METADATA = Metadata.newBuilder()
-//            .addServiceType(BookService.class)
-//            .addServiceType(AuthorService.class)
+            .addServiceType(BookService.class)
+            .addServiceType(AuthorService.class)
             .setOperationParser(
                     OPERATION_PARSER
             )

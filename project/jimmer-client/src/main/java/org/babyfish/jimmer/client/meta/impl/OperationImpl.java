@@ -118,8 +118,14 @@ class OperationImpl implements Operation {
             httpMethod = HttpMethod.GET;
         }
         Context subContext = ctx.locate(new OperationLocation(rawMethod, httpMethod));
-        Type type = subContext.parseType(rawMethod.getAnnotatedReturnType());
-        type = Utils.wrap(ctx, type, rawMethod);
+        JetBrainsMetadata jetBrainsMetadata = ctx.getJetBrainsMetadata(rawMethod.getDeclaringClass());
+        Type type =
+                jetBrainsMetadata.isKotlinClass() ?
+                        subContext.parseKotlinType(jetBrainsMetadata.toKFunction(rawMethod).getReturnType()) :
+                        subContext.parseType(rawMethod.getAnnotatedReturnType());
+        if (jetBrainsMetadata.isNullable(rawMethod)) {
+            type = NullableTypeImpl.of(type);
+        }
         OperationImpl operation = new OperationImpl(declaringService, rawMethod, http.get_1(), httpMethod, type);
         int index = 0;
         List<Parameter> list = new ArrayList<>();

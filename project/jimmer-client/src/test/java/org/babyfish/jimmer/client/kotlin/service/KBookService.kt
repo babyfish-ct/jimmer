@@ -12,7 +12,7 @@ import java.math.BigDecimal
 interface KBookService {
 
     @GetMapping("/books/simple")
-    fun findSimpleBooks(): List<@FetchBy("SIMPLE_BOOK_FETCHER") KBook>
+    fun findSimpleBooks(): List<@FetchBy("SIMPLE_FETCHER") KBook>
 
     @Doc("Find book list")
     @Doc("Format of each element:")
@@ -33,14 +33,14 @@ interface KBookService {
         @RequestParam("authorName") authorName: String?,
         @RequestParam(value = "minPrice", required = false) minPrice: BigDecimal,
         @RequestParam(value = "maxPrice", required = false) maxPrice: BigDecimal
-    ): List<@FetchBy("COMPLEX_BOOK_FETCHER") KBook>
+    ): List<@FetchBy("COMPLEX_FETCHER") KBook>
 
     @GetMapping("/tuples")
     fun findTuples(
         @Doc("Match the book name, optional") @RequestParam("name") name: String?,
         @Doc("Start from 0, not 1") @RequestParam("pageIndex") pageIndex: Int,
         @RequestParam("pageSize") pageSize: Int
-    ): KPage<Tuple2<out @FetchBy("COMPLEX_BOOK_FETCHER") KBook, out @FetchBy("AUTHOR_FETCHER") KAuthor>>
+    ): KPage<Tuple2<out @FetchBy("COMPLEX_FETCHER") KBook, out @FetchBy("AUTHOR_FETCHER") KAuthor>>
 
     @PutMapping("/book")
     fun saveBooks(@RequestBody input: KBookInput?): KBook?

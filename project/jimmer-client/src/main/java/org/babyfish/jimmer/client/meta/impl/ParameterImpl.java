@@ -126,6 +126,8 @@ class ParameterImpl implements Parameter {
             int index
     ) {
         Metadata.ParameterParser parameterParser = ctx.getParameterParser();
+        JetBrainsMetadata jetBrainsMetadata = ctx.getJetBrainsMetadata(declaringOperation.getRawMethod().getDeclaringClass());
+        boolean isNullable = jetBrainsMetadata.isNullable(declaringOperation.getRawMethod(), index);
 
         Tuple2<String, Boolean> tuple = parameterParser.requestParamNameAndNullable(rawParameter);
         String requestParam = tuple != null ? tuple.get_1() : null;
@@ -136,7 +138,9 @@ class ParameterImpl implements Parameter {
             Type type = ctx
                     .locate(new ParameterLocation(declaringOperation, index, rawParameter.getName()))
                     .parseType(rawParameter.getAnnotatedType());
-            type = Utils.wrap(ctx, type, rawParameter);
+            if (isNullable) {
+                type = NullableTypeImpl.of(type);
+            }
             if (tuple.get_2()) {
                 type = NullableTypeImpl.of(type);
             }
@@ -159,26 +163,13 @@ class ParameterImpl implements Parameter {
             Type type = ctx
                     .locate(new ParameterLocation(declaringOperation, index, rawParameter.getName()))
                     .parseType(rawParameter.getAnnotatedType());
-            type = Utils.wrap(ctx, type, rawParameter);
+            if (isNullable) {
+                type = NullableTypeImpl.of(type);
+            }
             return new ParameterImpl(declaringOperation, rawParameter, index, null, null, type);
         }
 
         return null;
-    }
-
-    private static Type parameterType(
-            Context ctx,
-            Operation declaringOperation,
-            java.lang.reflect.Parameter rawParameter,
-            int index
-    ) {
-        Type type = ctx
-                .locate(new ParameterLocation(declaringOperation, index, rawParameter.getName()))
-                .parseType(rawParameter.getAnnotatedType());
-        if (ctx.getParameterParser().isOptional(rawParameter)) {
-            return NullableTypeImpl.of(type);
-        }
-        return Utils.wrap(ctx, type, rawParameter);
     }
 
     private static class ParameterLocation implements Location {

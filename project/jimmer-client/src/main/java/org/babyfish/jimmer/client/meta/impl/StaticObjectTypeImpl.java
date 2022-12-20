@@ -1,5 +1,11 @@
 package org.babyfish.jimmer.client.meta.impl;
 
+import kotlin.jvm.JvmClassMappingKt;
+import kotlin.reflect.KClass;
+import kotlin.reflect.KProperty1;
+import kotlin.reflect.KType;
+import kotlin.reflect.full.KClasses;
+import kotlin.reflect.jvm.ReflectJvmMapping;
 import org.babyfish.jimmer.client.ExportFields;
 import org.babyfish.jimmer.client.IllegalDocMetaException;
 import org.babyfish.jimmer.client.meta.*;
@@ -16,6 +22,8 @@ public class StaticObjectTypeImpl implements StaticObjectType {
 
     private final Class<?> javaType;
 
+    private final KClass<?> kotlinType;
+
     private final List<Type> typeArguments;
 
     private Map<String, Property> props;
@@ -24,6 +32,16 @@ public class StaticObjectTypeImpl implements StaticObjectType {
 
     StaticObjectTypeImpl(Class<?> javaType, List<Type> typeArguments) {
         this.javaType = javaType;
+        this.kotlinType = null;
+        this.typeArguments = typeArguments != null ?
+                Collections.unmodifiableList(typeArguments) :
+                Collections.emptyList();
+        this.document = DocumentImpl.of(javaType);
+    }
+
+    StaticObjectTypeImpl(KClass<?> kotlinType, List<Type> typeArguments) {
+        this.javaType = JvmClassMappingKt.getJavaClass(kotlinType);
+        this.kotlinType = kotlinType;
         this.typeArguments = typeArguments != null ?
                 Collections.unmodifiableList(typeArguments) :
                 Collections.emptyList();
@@ -90,6 +108,25 @@ public class StaticObjectTypeImpl implements StaticObjectType {
         return impl;
     }
 
+    static StaticObjectType create(Context ctx, KClass<?> kotlinType, List<Type> typeArguments) {
+
+        StaticObjectTypeImpl impl = (StaticObjectTypeImpl) ctx.getStaticObjectType(
+                JvmClassMappingKt.getJavaClass(kotlinType),
+                typeArguments
+        );
+        if (impl != null) {
+            return impl;
+        }
+
+        impl = new StaticObjectTypeImpl(kotlinType, typeArguments);
+        ctx.addStaticObjectType(impl);
+
+        Map<String, Property> props = new LinkedHashMap<>();
+        collectProps(ctx, kotlinType, props);
+        impl.props = Collections.unmodifiableMap(props);
+        return impl;
+    }
+
     private static void collectProps(Context ctx, Class<?> javaType, Map<String, Property> props) {
         if (javaType == null || javaType == Object.class) {
             return;
@@ -98,7 +135,9 @@ public class StaticObjectTypeImpl implements StaticObjectType {
             for (Field field : javaType.getDeclaredFields()) {
                 if (!Modifier.isStatic(field.getModifiers())) {
                     Type type = ctx.parseType(field.getAnnotatedType());
-                    type = Utils.wrap(ctx, type, field);
+                    if (ctx.getJetBrainsMetadata(javaType).isNullable(field)) {
+                        type = NullableTypeImpl.of(type);
+                    }
                     props.putIfAbsent(field.getName(), new PropertyImpl(field.getName(), type, DocumentImpl.of(field)));
                 }
             }
@@ -129,7 +168,9 @@ public class StaticObjectTypeImpl implements StaticObjectType {
                 }
                 name = Character.toLowerCase(name.charAt(0)) + name.substring(1);
                 Type type = ctx.parseType(method.getAnnotatedReturnType());
-                type = Utils.wrap(ctx, type, method);
+                if (ctx.getJetBrainsMetadata(javaType).isNullable(method)) {
+                    type = NullableTypeImpl.of(type);
+                }
                 props.put(name, new PropertyImpl(name, type, DocumentImpl.of(method)));
             }
         }
@@ -146,6 +187,41 @@ public class StaticObjectTypeImpl implements StaticObjectType {
         } else if (type != null) {
             Class<?> rawType = (Class<?>) type.getType();
             collectProps(ctx, rawType, props);
+        }
+    }
+
+    private static void collectProps(Context ctx, KClass<?> kotlinType, Map<String, Property> props) {
+        for (KProperty1<?, ?> prop : KClasses.getDeclaredMemberProperties(kotlinType)) {
+            Type type = ctx.parseKotlinType(prop.getReturnType());
+            if (prop.getReturnType().isMarkedNullable()) {
+                type = NullableTypeImpl.of(type);
+            }
+            Method method = ReflectJvmMapping.getJavaGetter(prop);
+            props.putIfAbsent(
+                    prop.getName(),
+                    new PropertyImpl(
+                            prop.getName(),
+                            type,
+                            DocumentImpl.of(
+                                    method != null ?
+                                            method :
+                                            ReflectJvmMapping.getJavaField(prop)
+                            )
+                    )
+            );
+        }
+        for (KType superType : kotlinType.getSupertypes()) {
+            collectProps(ctx, superType, props);
+        }
+    }
+
+    private static void collectProps(Context ctx, KType type, Map<String, Property> props) {
+        if (!type.getArguments().isEmpty()) {
+            KClass<?> rawClass = (KClass<?>) type.getClassifier();
+            collectProps(new Context(ctx, type), rawClass, props);
+        } else {
+            KClass<?> rawClass = (KClass<?>) type.getClassifier();
+            collectProps(ctx, rawClass, props);
         }
     }
 }
