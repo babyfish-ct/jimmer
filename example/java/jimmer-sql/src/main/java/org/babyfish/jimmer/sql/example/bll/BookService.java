@@ -60,14 +60,15 @@ public class BookService {
     private static final Fetcher<Book> COMPLEX_BOOK_FETCHER =
             BookFetcher.$
                     .allScalarFields()
+                    .tenant(false)
                     .store(
                             BookStoreFetcher.$
                                     .allScalarFields()
+                                    .avgPrice()
                     )
                     .authors(
                             AuthorFetcher.$
                                     .allScalarFields()
-                                    .gender(false)
                     );
 
     @Transactional

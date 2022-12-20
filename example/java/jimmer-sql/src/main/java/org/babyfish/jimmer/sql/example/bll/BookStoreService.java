@@ -44,10 +44,10 @@ public class BookStoreService {
                     .books(
                             BookFetcher.$
                                     .allScalarFields()
+                                    .tenant(false)
                                     .authors(
                                             AuthorFetcher.$
                                                     .allScalarFields()
-                                                    .gender(false)
                                     )
                     );
 }
