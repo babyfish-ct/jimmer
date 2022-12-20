@@ -54,6 +54,7 @@ class AuthorService(
             allScalarFields()
             books {
                 allScalarFields()
+                tenant(false)
                 store {
                     allScalarFields()
                     avgPrice()

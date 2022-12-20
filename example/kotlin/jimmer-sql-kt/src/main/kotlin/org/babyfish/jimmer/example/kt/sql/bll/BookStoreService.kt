@@ -38,9 +38,9 @@ class BookStoreService(
             avgPrice()
             books {
                 allScalarFields()
+                tenant(false)
                 authors {
                     allScalarFields()
-                    gender(false)
                 }
             }
         }

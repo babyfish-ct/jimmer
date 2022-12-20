@@ -58,6 +58,7 @@ public class AuthorService {
                     .books(
                             BookFetcher.$
                                     .allScalarFields()
+                                    .tenant(false)
                                     .store(
                                             BookStoreFetcher.$
                                                     .allScalarFields()
