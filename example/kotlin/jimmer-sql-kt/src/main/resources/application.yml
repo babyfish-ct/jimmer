@@ -4,7 +4,7 @@ spring:
     url: jdbc:h2:mem:jimmer-sql-kt;database_to_upper=true
 
 # You can download the typescript files generated for the client via
-#  https://localhost:8080/ts.zip.
+#  http://localhost:8080/ts.zip.
 #
 # Unlike other solutions that automatically connects the front-end
 # team and the back-end team, jimmer allows the front-end team and
