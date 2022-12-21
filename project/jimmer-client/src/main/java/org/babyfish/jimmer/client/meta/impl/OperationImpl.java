@@ -108,14 +108,32 @@ class OperationImpl implements Operation {
     }
 
     @Nullable
-    static Operation create(Context ctx, Service declaringService, java.lang.reflect.Method rawMethod) {
+    static Operation create(
+            Context ctx,
+            Service declaringService,
+            java.lang.reflect.Method rawMethod
+    ) {
         Tuple2<String, HttpMethod> http = ctx.getOperationParser().http(rawMethod);
-        if (http == null || http.get_1() == null) {
+        if (http == null) {
             return null;
+        }
+        String uri = http.get_1();
+        if (uri == null || uri.isEmpty()) {
+            return null;
+        }
+        String parentUri = declaringService.getUri();
+        if (parentUri != null) {
+            if (parentUri.endsWith("/") && uri.startsWith("/")) {
+                uri = parentUri + uri.substring(1);
+            } else if (!parentUri.endsWith("/") && !uri.startsWith("/")) {
+                uri = parentUri + '/' + uri;
+            } else {
+                uri = parentUri + uri;
+            }
         }
         HttpMethod httpMethod = http.get_2();
         if (httpMethod == null) {
-            httpMethod = HttpMethod.GET;
+            httpMethod = declaringService.getDefaultMethod();
         }
         Context subContext = ctx.locate(new OperationLocation(rawMethod, httpMethod));
         JetBrainsMetadata jetBrainsMetadata = ctx.getJetBrainsMetadata(rawMethod.getDeclaringClass());
@@ -126,7 +144,7 @@ class OperationImpl implements Operation {
         if (jetBrainsMetadata.isNullable(rawMethod)) {
             type = NullableTypeImpl.of(type);
         }
-        OperationImpl operation = new OperationImpl(declaringService, rawMethod, http.get_1(), httpMethod, type);
+        OperationImpl operation = new OperationImpl(declaringService, rawMethod, uri, httpMethod, type);
         int index = 0;
         List<Parameter> list = new ArrayList<>();
         for (java.lang.reflect.Parameter rawParameter : rawMethod.getParameters()) {

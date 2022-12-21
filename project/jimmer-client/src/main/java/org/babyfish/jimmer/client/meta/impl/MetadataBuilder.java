@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.client.meta.impl;
 
 import org.babyfish.jimmer.client.meta.Metadata;
+import org.babyfish.jimmer.client.meta.Operation;
 import org.babyfish.jimmer.client.meta.Service;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 
 import java.util.*;
 
@@ -46,7 +48,23 @@ public class MetadataBuilder implements Metadata.Builder {
         Context ctx = new Context(operationParser, parameterParser);
         Map<Class<?>, Service> serviceMap = new LinkedHashMap<>();
         for (Class<?> serviceType : serviceTypes) {
-            Service service = ServiceImpl.create(ctx, serviceType);
+            Tuple2<String, Operation.HttpMethod> tuple = operationParser.http(serviceType);
+            String uri = null;
+            Operation.HttpMethod defaultMethod = Operation.HttpMethod.GET;
+            if (tuple != null) {
+                if (!tuple.get_1().isEmpty()) {
+                    uri = tuple.get_1();
+                }
+                if (tuple.get_2() != null) {
+                    defaultMethod = tuple.get_2();
+                }
+            }
+            Service service = ServiceImpl.create(
+                    ctx,
+                    serviceType,
+                    uri,
+                    defaultMethod
+            );
             serviceMap.put(serviceType, service);
         }
         return new MetadataImpl(

@@ -6,6 +6,7 @@ import org.babyfish.jimmer.client.java.model.Author;
 import org.babyfish.jimmer.client.java.model.Book;
 import org.babyfish.jimmer.client.java.model.BookInput;
 import org.babyfish.jimmer.client.java.model.Page;
+import org.babyfish.jimmer.client.meta.Operation;
 import org.babyfish.jimmer.client.meta.common.*;
 import org.babyfish.jimmer.client.java.model.*;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -16,6 +17,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Doc("BookService interface")
+@RequestMapping(value = "/java", method = Operation.HttpMethod.GET)
 public interface BookService {
 
     Fetcher<Book> SIMPLE_FETCHER = BookFetcher.$.name();
@@ -76,4 +78,7 @@ public interface BookService {
 
     @DeleteMapping("/book/{id}")
     int deleteBook(@PathVariable("id") long id);
+
+    @RequestMapping("version")
+    int version();
 }

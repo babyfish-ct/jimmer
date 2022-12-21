@@ -63,7 +63,7 @@ public class JTypeScriptTest {
                         "    constructor(private executor: Executor) {}\n" +
                         "    \n" +
                         "    async deleteBook(options: {readonly id: number}): Promise<number> {\n" +
-                        "        let uri = '/book/';\n" +
+                        "        let uri = '/java/book/';\n" +
                         "        uri += encodeURIComponent(options.id);\n" +
                         "        return (await this.executor({uri, method: 'DELETE'})) as number\n" +
                         "    }\n" +
@@ -90,7 +90,7 @@ public class JTypeScriptTest {
                         "        readonly minPrice?: number, \n" +
                         "        readonly maxPrice?: number\n" +
                         "    }): Promise<ReadonlyArray<BookDto['BookService/COMPLEX_FETCHER']>> {\n" +
-                        "        let uri = '/books/complex';\n" +
+                        "        let uri = '/java/books/complex';\n" +
                         "        uri += '?name=';\n" +
                         "        uri += encodeURIComponent(options.name);\n" +
                         "        if (options.storeName !== undefined && options.storeName !== null) {\n" +
@@ -113,7 +113,7 @@ public class JTypeScriptTest {
                         "    }\n" +
                         "    \n" +
                         "    async findSimpleBooks(): Promise<ReadonlyArray<BookDto['BookService/SIMPLE_FETCHER']>> {\n" +
-                        "        let uri = '/books/simple';\n" +
+                        "        let uri = '/java/books/simple';\n" +
                         "        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<BookDto['BookService/SIMPLE_FETCHER']>\n" +
                         "    }\n" +
                         "    \n" +
@@ -130,7 +130,7 @@ public class JTypeScriptTest {
                         "        readonly pageIndex: number, \n" +
                         "        readonly pageSize: number\n" +
                         "    }): Promise<Page<Tuple2<BookDto['BookService/COMPLEX_FETCHER'], AuthorDto['BookService/AUTHOR_FETCHER']>>> {\n" +
-                        "        let uri = '/tuples';\n" +
+                        "        let uri = '/java/tuples';\n" +
                         "        let separator = '?';\n" +
                         "        if (options.name !== undefined && options.name !== null) {\n" +
                         "            uri += separator;\n" +
@@ -147,8 +147,13 @@ public class JTypeScriptTest {
                         "    }\n" +
                         "    \n" +
                         "    async saveBooks(options: {readonly body: BookInput}): Promise<Dynamic<Book>> {\n" +
-                        "        let uri = '/book';\n" +
+                        "        let uri = '/java/book';\n" +
                         "        return (await this.executor({uri, method: 'PUT', body: options.body})) as Dynamic<Book>\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    async version(): Promise<number> {\n" +
+                        "        let uri = '/java/version';\n" +
+                        "        return (await this.executor({uri, method: 'GET'})) as number\n" +
                         "    }\n" +
                         "}",
                 code

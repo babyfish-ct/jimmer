@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
@@ -70,7 +71,7 @@ public interface Metadata {
 
     interface OperationParser {
 
-        Tuple2<String, Operation.HttpMethod> http(Method javaMethod);
+        Tuple2<String, Operation.HttpMethod> http(AnnotatedElement typeOfMethod);
     }
 
     interface ParameterParser {

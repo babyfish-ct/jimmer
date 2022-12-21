@@ -389,15 +389,15 @@ public abstract class CodeWriter {
         map.put(BigDecimal.class, "number");
         map.put(String.class, "string");
         map.put(UUID.class, "string");
-        map.put(Date.class, "Date");
-        map.put(java.sql.Date.class, "Date");
-        map.put(java.sql.Time.class, "Date");
-        map.put(java.sql.Timestamp.class, "Date");
-        map.put(LocalDate.class, "Date");
-        map.put(LocalTime.class, "Date");
-        map.put(LocalDateTime.class, "Date");
-        map.put(OffsetDateTime.class, "Date");
-        map.put(ZonedDateTime.class, "Date");
+        map.put(Date.class, "string");
+        map.put(java.sql.Date.class, "string");
+        map.put(java.sql.Time.class, "string");
+        map.put(java.sql.Timestamp.class, "string");
+        map.put(LocalDate.class, "string");
+        map.put(LocalTime.class, "string");
+        map.put(LocalDateTime.class, "string");
+        map.put(OffsetDateTime.class, "string");
+        map.put(ZonedDateTime.class, "string");
         SIMPLE_TYPE_NAMES = map;
     }
 }

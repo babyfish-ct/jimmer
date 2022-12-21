@@ -17,18 +17,34 @@ class ServiceImpl implements Service {
 
     private final Class<?> rawType;
 
+    private final String uri;
+
+    private final Operation.HttpMethod defaultMethod;
+
     private final Document document;
 
     List<Operation> operations;
 
-    ServiceImpl(Class<?> rawType) {
+    ServiceImpl(Class<?> rawType, String uri, Operation.HttpMethod defaultMethod) {
         this.rawType = rawType;
         this.document = DocumentImpl.of(rawType);
+        this.uri = uri;
+        this.defaultMethod = defaultMethod;
     }
 
     @Override
     public Class<?> getJavaType() {
         return rawType;
+    }
+
+    @Override
+    public String getUri() {
+        return uri;
+    }
+
+    @Override
+    public Operation.HttpMethod getDefaultMethod() {
+        return defaultMethod;
     }
 
     @Override
@@ -62,8 +78,13 @@ class ServiceImpl implements Service {
         return builder.toString();
     }
 
-    public static Service create(Context ctx, Class<?> serviceType) {
-        ServiceImpl service = new ServiceImpl(serviceType);
+    public static Service create(
+            Context ctx,
+            Class<?> serviceType,
+            String uri,
+            Operation.HttpMethod defaultMethod
+    ) {
+        ServiceImpl service = new ServiceImpl(serviceType, uri, defaultMethod);
         List<Operation> list = new ArrayList<>();
         for (Method method : serviceType.getMethods()) {
             Operation operation = OperationImpl.create(ctx, service, method);
