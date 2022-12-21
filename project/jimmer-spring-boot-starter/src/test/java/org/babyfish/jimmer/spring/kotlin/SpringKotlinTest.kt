@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.spring.kotlin
 
 import org.babyfish.jimmer.spring.AbstractTest
+import org.babyfish.jimmer.spring.cfg.JimmerProperties
 import org.babyfish.jimmer.spring.datasource.DataSources
 import org.babyfish.jimmer.spring.datasource.TxCallback
 import org.babyfish.jimmer.spring.repository.EnableJimmerRepositories
@@ -14,15 +15,17 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.SpringBootConfiguration
 import org.springframework.boot.autoconfigure.AutoConfigurationPackage
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import javax.sql.DataSource
 
-@SpringBootTest
+@SpringBootTest(properties = ["jimmer.ts.path=/my-ts.zip"])
 @SpringBootConfiguration
 @AutoConfigurationPackage
 @EnableJimmerRepositories
+@EnableConfigurationProperties(JimmerProperties::class)
 open class SpringKotlinTest : AbstractTest() {
 
     @BeforeEach
@@ -65,10 +68,18 @@ open class SpringKotlinTest : AbstractTest() {
     }
 
     @Autowired
+    private lateinit var jimmerProperties: JimmerProperties
+
+    @Autowired
     private lateinit var treeNodeRepository: TreeNodeRepository
 
     @Test
-    fun test() {
+    fun testProperties() {
+        Assertions.assertEquals("/my-ts.zip", jimmerProperties.ts.path)
+    }
+
+    @Test
+    fun testRepository() {
         Assertions.assertEquals(
             "{\"id\":2,\"name\":\"Food\",\"parent\":{\"id\":1}}",
             treeNodeRepository.findNullable(2L)?.toString()

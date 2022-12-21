@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.spring.java;
 
 import org.babyfish.jimmer.spring.AbstractTest;
+import org.babyfish.jimmer.spring.cfg.JimmerProperties;
 import org.babyfish.jimmer.spring.java.bll.BookService;
 import org.babyfish.jimmer.spring.client.TypeScriptService;
 import org.babyfish.jimmer.spring.java.dal.BookRepository;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackage;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -54,6 +56,7 @@ import java.util.List;
 @SpringBootConfiguration
 @AutoConfigurationPackage
 @EnableJimmerRepositories
+@EnableConfigurationProperties(JimmerProperties.class)
 public class SpringJavaTest extends AbstractTest {
 
     private final static List<String> TRANSACTION_EVENTS = new ArrayList<>();
@@ -156,6 +159,17 @@ public class SpringJavaTest extends AbstractTest {
 
     @Autowired
     private MockMvc mvc;
+
+    @Autowired
+    private JimmerProperties jimmerProperties;
+
+    @Test
+    public void testProperties() {
+        Assertions.assertEquals(
+                "/my-ts.zip",
+                jimmerProperties.getTs().getPath()
+        );
+    }
 
     @Test
     public void testBySortedProps() {
