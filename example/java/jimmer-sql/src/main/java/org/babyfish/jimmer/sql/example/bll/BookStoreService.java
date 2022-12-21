@@ -19,25 +19,25 @@ public class BookStoreService {
     }
 
     @GetMapping("/stores/simple")
-    public List<@FetchBy("SIMPLE_BOOK_STORE_FETCHER") BookStore> findSimpleStores() {
+    public List<@FetchBy("SIMPLE_FETCHER") BookStore> findSimpleStores() {
         return bookStoreRepository.findAll(
-                SIMPLE_BOOK_STORE_FETCHER,
+                SIMPLE_FETCHER,
                 BookStoreProps.NAME
         );
     }
 
     @GetMapping("/stores/complex")
-    public List<@FetchBy("COMPLEX_BOOK_STORE_FETCHER") BookStore> findComplexStores() {
+    public List<@FetchBy("COMPLEX_FETCHER") BookStore> findComplexStores() {
         return bookStoreRepository.findAll(
-                COMPLEX_BOOK_STORE_FETCHER,
+                COMPLEX_FETCHER,
                 BookStoreProps.NAME
         );
     }
 
-    private static final Fetcher<BookStore> SIMPLE_BOOK_STORE_FETCHER =
+    private static final Fetcher<BookStore> SIMPLE_FETCHER =
             BookStoreFetcher.$.name();
 
-    private static final Fetcher<BookStore> COMPLEX_BOOK_STORE_FETCHER =
+    private static final Fetcher<BookStore> COMPLEX_FETCHER =
             BookStoreFetcher.$
                     .allScalarFields()
                     .avgPrice()

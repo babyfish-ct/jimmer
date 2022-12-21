@@ -19,7 +19,7 @@ public class BookService {
     }
 
     @GetMapping("/books/simple")
-    public Page<@FetchBy("SIMPLE_BOOK_FETCHER") Book> findSimpleBooks(
+    public Page<@FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks(
             @RequestParam(defaultValue = "0") int pageIndex,
             @RequestParam(defaultValue = "5") int pageSize,
             @RequestParam(required = false) String name,
@@ -32,12 +32,12 @@ public class BookService {
                 name,
                 storeName,
                 authorName,
-                SIMPLE_BOOK_FETCHER
+                SIMPLE_FETCHER
         );
     }
 
     @GetMapping("/books/complex")
-    public Page<@FetchBy("COMPLEX_BOOK_FETCHER") Book> findComplexBooks(
+    public Page<@FetchBy("COMPLEX_FETCHER") Book> findComplexBooks(
             @RequestParam(defaultValue = "0") int pageIndex,
             @RequestParam(defaultValue = "5") int pageSize,
             @RequestParam(required = false) String name,
@@ -50,14 +50,14 @@ public class BookService {
                 name,
                 storeName,
                 authorName,
-                COMPLEX_BOOK_FETCHER
+                COMPLEX_FETCHER
         );
     }
 
-    private static final Fetcher<Book> SIMPLE_BOOK_FETCHER =
+    private static final Fetcher<Book> SIMPLE_FETCHER =
             BookFetcher.$.name();
 
-    private static final Fetcher<Book> COMPLEX_BOOK_FETCHER =
+    private static final Fetcher<Book> COMPLEX_FETCHER =
             BookFetcher.$
                     .allScalarFields()
                     .tenant(false)

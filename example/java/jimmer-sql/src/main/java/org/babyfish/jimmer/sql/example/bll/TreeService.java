@@ -7,7 +7,6 @@ import org.babyfish.jimmer.sql.example.dal.TreeNodeRepository;
 import org.babyfish.jimmer.sql.example.model.TreeNode;
 import org.babyfish.jimmer.sql.example.model.TreeNodeDraft;
 import org.babyfish.jimmer.sql.example.model.TreeNodeFetcher;
-import org.babyfish.jimmer.sql.example.model.TreeNodeTable;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig;
 import org.slf4j.Logger;
@@ -43,12 +42,12 @@ public class TreeService {
     }
 
     @GetMapping("/rootTrees")
-    public List<@FetchBy("RECURSIVE_TREE_NODE_FETCHER") TreeNode> findRootTrees(
+    public List<@FetchBy("RECURSIVE_FETCHER") TreeNode> findRootTrees(
             @RequestParam(required = false) String rootName,
             @RequestParam(required = false) String noRecursiveNames
     ) {
         if (!StringUtils.hasText(noRecursiveNames)) {
-            return treeNodeRepository.findRootNodes(rootName, RECURSIVE_TREE_NODE_FETCHER);
+            return treeNodeRepository.findRootNodes(rootName, RECURSIVE_FETCHER);
         }
 
         Set<String> excludedNames;
@@ -62,7 +61,7 @@ public class TreeService {
         }
         return treeNodeRepository.findRootNodes(
                 rootName,
-                RECURSIVE_TREE_NODE_FETCHER // override `RECURSIVE_TREE_NODE_FETCHER`
+                TreeNodeFetcher.$from(RECURSIVE_FETCHER) // override `RECURSIVE_TREE_NODE_FETCHER`
                         .childNodes(
                                 TreeNodeFetcher.$.allScalarFields(),
                                 cfg -> cfg.recursive(strategy ->
@@ -143,7 +142,7 @@ public class TreeService {
         treeNodeRepository.deleteById(id);
     }
 
-    private static final TreeNodeFetcher RECURSIVE_TREE_NODE_FETCHER =
+    private static final Fetcher<TreeNode> RECURSIVE_FETCHER =
             TreeNodeFetcher.$
                     .allScalarFields()
                     .childNodes(
