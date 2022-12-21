@@ -289,11 +289,15 @@ class Context {
 
     private Object resolve(UnifiedTypeParameter typeParameter) {
         Object resolvedType = typeVariableMap.get(typeParameter);
-        if (resolvedType != null && !(resolvedType instanceof UnifiedTypeParameter)) {
-            return resolvedType;
+        if (resolvedType != null) {
+            Object wrappedResolvedType = UnifiedTypeParameter.wrap(resolvedType);
+            if (!(wrappedResolvedType instanceof UnifiedTypeParameter)) {
+                return resolvedType;
+            }
+            typeParameter = (UnifiedTypeParameter) wrappedResolvedType;
         }
         if (base != null) {
-            return base.resolve(resolvedType != null ? (UnifiedTypeParameter) resolvedType : typeParameter);
+            return base.resolve(typeParameter);
         }
         throw new IllegalDocMetaException("Cannot resolve " + typeParameter + " of " + location);
     }
@@ -401,7 +405,7 @@ class Context {
         }
         if (type.getClassifier() instanceof KTypeParameter) {
             if (ignoreTypeVariableResolving) {
-                return new UnresolvedTypeParameterImpl((KTypeParameter) type.getClassifier());
+                return new UnresolvedTypeVariableImpl(((KTypeParameter) type.getClassifier()).getName());
             }
             Object resolved = resolve(new UnifiedTypeParameter((KTypeParameter) type.getClassifier()));
             if (resolved instanceof KType) {
@@ -650,7 +654,10 @@ class Context {
         }
 
         public static Object wrap(Object o) {
-            if (o instanceof TypeVariable<?>) {
+            if (o instanceof AnnotatedTypeVariable) {
+                TypeVariable<?> typeVariable = (TypeVariable<?>)((AnnotatedTypeVariable)o).getType();
+                return new UnifiedTypeParameter(typeVariable);
+            } if (o instanceof TypeVariable<?>) {
                 return new UnifiedTypeParameter((TypeVariable<?>) o);
             } else if (o instanceof KTypeParameter) {
                 return new UnifiedTypeParameter((KTypeParameter) o);

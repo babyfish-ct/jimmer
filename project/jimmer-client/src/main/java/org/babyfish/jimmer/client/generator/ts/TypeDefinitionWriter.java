@@ -63,7 +63,7 @@ public class TypeDefinitionWriter extends CodeWriter {
         scope(ScopeType.BLANK, " | ", enumType.getItems().size() > 3, () -> {
             for (String item : enumType.getItems()) {
                 separator();
-                code('"').code(item).code('"');
+                code('\'').code(item).code('\'');
             }
         });
         code(";\n");

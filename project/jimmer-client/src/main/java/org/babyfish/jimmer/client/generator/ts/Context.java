@@ -12,6 +12,11 @@ public class Context {
     private static final Comparator<Service> SERVICE_COMPARATOR =
             Comparator.comparing(a -> a.getJavaType().getName());
 
+    private static final Comparator<ImmutableObjectType> DTO_COMPARATOR =
+            Comparator.comparing(Context::totalPropCount)
+                    .thenComparing(it -> it.getFetchByInfo().getOwnerType().getName())
+                    .thenComparing(it -> it.getFetchByInfo().getConstant());
+
     private final OutputStream out;
 
     private final File moduleFile;
@@ -69,7 +74,9 @@ public class Context {
                     .add(immutableObjectType);
         }
         for (Map.Entry<Class<?>, List<ImmutableObjectType>> e : dtoMap.entrySet()) {
-            e.setValue(Collections.unmodifiableList(e.getValue()));
+            List<ImmutableObjectType> types = e.getValue();
+            types.sort(DTO_COMPARATOR);
+            e.setValue(Collections.unmodifiableList(types));
         }
         this.dtoMap = Collections.unmodifiableMap(dtoMap);
 
@@ -148,6 +155,16 @@ public class Context {
             }
         }
         return type;
+    }
+
+    private static int totalPropCount(ImmutableObjectType type) {
+        int count = type.getProperties().size();
+        for (Property prop : type.getProperties().values()) {
+            if (prop.getType() instanceof ImmutableObjectType) {
+                count += totalPropCount((ImmutableObjectType) prop.getType());
+            }
+        }
+        return count;
     }
 
     private static class VisitorImpl implements Visitor {

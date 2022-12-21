@@ -16,7 +16,7 @@ interface KAuthor {
 
     val lastName: String
 
-    val gender: Gender?
+    val gender: KGender?
 
     @Doc("All the books i have written")
     @ManyToMany(mappedBy = "authors")
