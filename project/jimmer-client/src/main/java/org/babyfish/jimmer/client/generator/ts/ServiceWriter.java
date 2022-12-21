@@ -42,8 +42,9 @@ public class ServiceWriter extends CodeWriter {
         code("async ").code(getContext().getOperationName(operation))
                 .scope(ScopeType.ARGUMENTS, "", false, () -> {
                     if (!operation.getParameters().isEmpty()) {
+                        boolean optionsOptional = operation.getParameters().stream().allMatch(it -> it.getType() instanceof NullableType);
                         code("options");
-                        codeIf(operation.getParameters().stream().allMatch(it -> it.getType() instanceof NullableType), '?');
+                        codeIf(optionsOptional, '?');
                         code(": ");
                         scope(
                                 ScopeType.OBJECT,
@@ -80,6 +81,7 @@ public class ServiceWriter extends CodeWriter {
     }
 
     private void impl(Operation operation) {
+        boolean optionsOptional = operation.getParameters().stream().allMatch(it -> it.getType() instanceof NullableType);
         List<UriPart> parts = UriPart.parts(operation.getUri());
         if (parts.get(0).variable) {
             Parameter parameter = pathVariableParameter(operation, parts.get(0).text);
@@ -136,7 +138,7 @@ public class ServiceWriter extends CodeWriter {
                         }
                     };
                     if (parameter.getType() instanceof NullableType) {
-                        code("if (options.")
+                        code("if (options").codeIf(optionsOptional, '?').code(".")
                                 .code(parameter.getName()).code(" !== undefined && options.")
                                 .code(parameter.getName()).code(" !== null) ");
                         scope(ScopeType.OBJECT, "", true, addUrlParameter);

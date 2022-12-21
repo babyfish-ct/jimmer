@@ -6,3 +6,7 @@ spring:
 springdoc:
   swagger-ui:
     path: /ui
+
+jimmer:
+  ts:
+    path: /ts.zip
