@@ -1,8 +1,8 @@
-package org.babyfish.jimmer.sql.example.graphql.interceptor.output;
+package org.babyfish.jimmer.sql.example.graphql.bll.interceptor.output;
 
 import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.example.graphql.entities.common.TenantAwareProps;
-import org.babyfish.jimmer.sql.example.graphql.interceptor.TenantProvider;
+import org.babyfish.jimmer.sql.example.graphql.bll.interceptor.TenantProvider;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;

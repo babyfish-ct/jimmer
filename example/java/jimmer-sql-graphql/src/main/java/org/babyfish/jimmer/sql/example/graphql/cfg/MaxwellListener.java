@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.graphql.cache;
+package org.babyfish.jimmer.sql.example.graphql.cfg;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;

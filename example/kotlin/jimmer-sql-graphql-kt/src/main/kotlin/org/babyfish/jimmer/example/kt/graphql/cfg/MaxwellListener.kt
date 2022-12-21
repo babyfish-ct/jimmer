@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.example.kt.graphql.cache
+package org.babyfish.jimmer.example.kt.graphql.cfg
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.babyfish.jimmer.sql.event.binlog.BinLog

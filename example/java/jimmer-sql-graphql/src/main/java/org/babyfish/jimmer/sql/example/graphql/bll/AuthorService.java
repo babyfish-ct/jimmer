@@ -1,7 +1,5 @@
-package org.babyfish.jimmer.sql.example.graphql.controller;
+package org.babyfish.jimmer.sql.example.graphql.bll;
 
-import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.example.graphql.dal.AuthorRepository;
 import org.babyfish.jimmer.sql.example.graphql.entities.Author;
 import org.babyfish.jimmer.sql.example.graphql.entities.AuthorProps;
@@ -18,17 +16,11 @@ import java.util.List;
 import java.util.Map;
 
 @Controller
-public class AuthorController {
-
-    private final JSqlClient sqlClient;
+public class AuthorService {
 
     private final AuthorRepository authorRepository;
 
-    public AuthorController(
-            JSqlClient sqlClient,
-            AuthorRepository authorRepository
-    ) {
-        this.sqlClient = sqlClient;
+    public AuthorService(AuthorRepository authorRepository) {
         this.authorRepository = authorRepository;
     }
 
@@ -45,7 +37,8 @@ public class AuthorController {
     public Map<Author, List<Book>> books(
             List<Author> authors
     ) {
-        return sqlClient
+        return authorRepository
+                .sql()
                 .getLoaders()
                 .list(AuthorProps.BOOKS)
                 .batchLoad(authors);
@@ -55,14 +48,15 @@ public class AuthorController {
 
     @MutationMapping
     public Author saveAuthor(@Argument AuthorInput input) {
-        return sqlClient.getEntities().save(input.toAuthor()).getModifiedEntity();
+        return authorRepository.save(input);
     }
 
     @MutationMapping
     public int deleteAuthor(@Argument long id) {
-        return sqlClient
-                .getEntities()
-                .delete(Author.class, id)
-                .getAffectedRowCount(AffectedTable.of(Author.class));
+        authorRepository.deleteById(id);
+        // GraphQL requires return value,
+        // but `deleteById` of spring-data does not support value.
+        // Is there a better design?
+        return 1;
     }
 }

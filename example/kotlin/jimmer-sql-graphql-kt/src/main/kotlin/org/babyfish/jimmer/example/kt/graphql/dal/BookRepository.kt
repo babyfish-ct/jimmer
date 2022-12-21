@@ -1,21 +1,17 @@
 package org.babyfish.jimmer.example.kt.graphql.dal
 
 import org.babyfish.jimmer.example.kt.graphql.entities.*
-import org.babyfish.jimmer.sql.kt.KSqlClient
+import org.babyfish.jimmer.spring.repository.KRepository
 import org.babyfish.jimmer.sql.kt.ast.expression.*
-import org.springframework.stereotype.Repository
 
-@Repository
-class BookRepository(
-    private val sqlClient: KSqlClient
-) {
+interface BookRepository : KRepository<Book, Long> {
 
     fun find(
         name: String?,
         storeName: String?,
         authorName: String?
     ): List<Book> =
-        sqlClient.createQuery(Book::class) {
+        sql.createQuery(Book::class) {
             name?.let {
                 where(table.name ilike it)
             }

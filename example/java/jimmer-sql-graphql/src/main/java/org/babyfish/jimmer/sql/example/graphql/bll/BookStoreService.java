@@ -1,7 +1,5 @@
-package org.babyfish.jimmer.sql.example.graphql.controller;
+package org.babyfish.jimmer.sql.example.graphql.bll;
 
-import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.example.graphql.dal.BookStoreRepository;
 import org.babyfish.jimmer.sql.example.graphql.entities.Book;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStore;
@@ -20,17 +18,11 @@ import java.util.List;
 import java.util.Map;
 
 @Controller
-public class BookStoreController {
-
-    private final JSqlClient sqlClient;
+public class BookStoreService {
 
     private final BookStoreRepository bookStoreRepository;
 
-    public BookStoreController(
-            JSqlClient sqlClient,
-            BookStoreRepository bookStoreRepository
-    ) {
-        this.sqlClient = sqlClient;
+    public BookStoreService(BookStoreRepository bookStoreRepository) {
         this.bookStoreRepository = bookStoreRepository;
     }
 
@@ -49,7 +41,8 @@ public class BookStoreController {
     public Map<BookStore, List<Book>> books(
             List<BookStore> stores
     ) {
-        return sqlClient
+        return bookStoreRepository
+                .sql()
                 .getLoaders()
                 .list(BookStoreProps.BOOKS)
                 .batchLoad(stores);
@@ -59,7 +52,8 @@ public class BookStoreController {
 
     @BatchMapping
     public Map<BookStore, BigDecimal> avgPrice(List<BookStore> stores) {
-        return sqlClient
+        return bookStoreRepository
+                .sql()
                 .getLoaders()
                 .value(BookStoreProps.AVG_PRICE)
                 .batchLoad(stores);
@@ -70,15 +64,16 @@ public class BookStoreController {
     @MutationMapping
     @Transactional
     public BookStore saveBookStore(@Argument BookStoreInput input) {
-        return sqlClient.getEntities().save(input.toBookStore()).getModifiedEntity();
+        return bookStoreRepository.save(input);
     }
 
     @MutationMapping
     @Transactional
     public int deleteBookStore(@Argument long id) {
-        return sqlClient
-                .getEntities()
-                .delete(BookStore.class, id)
-                .getAffectedRowCount(AffectedTable.of(BookStore.class));
+        bookStoreRepository.deleteById(id);
+        // GraphQL requires return value,
+        // but `deleteById` of spring-data does not support value.
+        // Is there a better design?
+        return 1;
     }
 }
