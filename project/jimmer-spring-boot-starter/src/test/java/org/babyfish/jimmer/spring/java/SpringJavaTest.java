@@ -50,7 +50,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-@SpringBootTest
+@SpringBootTest(properties = "jimmer.ts.path=/my-ts.zip")
 @SpringBootConfiguration
 @AutoConfigurationPackage
 @EnableJimmerRepositories
@@ -313,7 +313,7 @@ public class SpringJavaTest extends AbstractTest {
 
     @Test
     public void testDownloadTypescript() throws Exception {
-        mvc.perform(get("/ts.zip"))
+        mvc.perform(get("/my-ts.zip"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("application/zip"));
     }

@@ -21,14 +21,14 @@ class BookService(
         @RequestParam name: String?,
         @RequestParam storeName: String?,
         @RequestParam authorName: String?,
-    ): Page<@FetchBy("SIMPLE_BOOK_FETCHER") Book> =
+    ): Page<@FetchBy("SIMPLE_FETCHER") Book> =
         bookRepository.findBooks(
             pageIndex,
             pageSize,
             name,
             storeName,
             authorName,
-            SIMPLE_BOOK_FETCHER
+            SIMPLE_FETCHER
         )
 
     @GetMapping("/books/complex")
@@ -38,14 +38,14 @@ class BookService(
         @RequestParam name: String?,
         @RequestParam storeName: String?,
         @RequestParam authorName: String?,
-    ): Page<@FetchBy("COMPLEX_BOOK_FETCHER") Book> =
+    ): Page<@FetchBy("COMPLEX_FETCHER") Book> =
         bookRepository.findBooks(
             pageIndex,
             pageSize,
             name,
             storeName,
             authorName,
-            COMPLEX_BOOK_FETCHER
+            COMPLEX_FETCHER
         )
 
     @Transactional
@@ -61,12 +61,12 @@ class BookService(
     companion object {
 
         @JvmStatic
-        private val SIMPLE_BOOK_FETCHER = newFetcher(Book::class).by {
+        private val SIMPLE_FETCHER = newFetcher(Book::class).by {
             name()
         }
 
         @JvmStatic
-        private val COMPLEX_BOOK_FETCHER = newFetcher(Book::class).by {
+        private val COMPLEX_FETCHER = newFetcher(Book::class).by {
             allScalarFields()
             tenant(false)
             store {

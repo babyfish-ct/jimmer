@@ -20,12 +20,12 @@ class AuthorService(
         @RequestParam firstName: String?,
         @RequestParam lastName: String?,
         @RequestParam gender: Gender?
-    ): List<@FetchBy("SIMPLE_AUTHOR_FETCHER") Author> =
+    ): List<@FetchBy("SIMPLE_FETCHER") Author> =
         authorRepository.findAuthors(
             firstName,
             lastName,
             gender,
-            SIMPLE_AUTHOR_FETCHER
+            SIMPLE_FETCHER
         )
 
     @GetMapping("/authors/complex")
@@ -33,24 +33,24 @@ class AuthorService(
         @RequestParam firstName: String?,
         @RequestParam lastName: String?,
         @RequestParam gender: Gender?
-    ): List<@FetchBy("COMPLEX_AUTHOR_FETCHER") Author> =
+    ): List<@FetchBy("COMPLEX_FETCHER") Author> =
         authorRepository.findAuthors(
             firstName,
             lastName,
             gender,
-            COMPLEX_AUTHOR_FETCHER
+            COMPLEX_FETCHER
         )
 
     companion object {
 
         @JvmStatic
-        private val SIMPLE_AUTHOR_FETCHER = newFetcher(Author::class).by {
+        private val SIMPLE_FETCHER = newFetcher(Author::class).by {
             firstName()
             lastName()
         }
 
         @JvmStatic
-        private val COMPLEX_AUTHOR_FETCHER = newFetcher(Author::class).by {
+        private val COMPLEX_FETCHER = newFetcher(Author::class).by {
             allScalarFields()
             books {
                 allScalarFields()

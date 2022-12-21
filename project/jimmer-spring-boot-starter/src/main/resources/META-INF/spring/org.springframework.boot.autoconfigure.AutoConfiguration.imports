@@ -1,1 +1,1 @@
-org.babyfish.jimmer.spring.repository.config.JimmerAutoConfiguration
+org.babyfish.jimmer.spring.cfg.JimmerAutoConfiguration

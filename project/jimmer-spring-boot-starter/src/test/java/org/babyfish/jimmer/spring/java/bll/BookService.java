@@ -17,6 +17,24 @@ public class BookService {
         this.bookRepository = bookRepository;
     }
 
+    @GetMapping("/defaultBooks")
+    public Page<Book> findDefaultBooks(
+            int pageIndex,
+            int pageSize,
+            String name,
+            String storeName,
+            String authorName
+    ) {
+        return bookRepository.findBooks(
+                pageIndex,
+                pageSize,
+                name,
+                storeName,
+                authorName,
+                null
+        );
+    }
+
     @GetMapping("/simpleBooks")
     public Page<@FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks(
             int pageIndex,
