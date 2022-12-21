@@ -2,7 +2,11 @@ package org.babyfish.jimmer.spring.cfg;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.ConstructorBinding;
 
+@ConstructorBinding
+@ConfigurationProperties("jimmer")
 public class JimmerProperties {
 
     @NotNull
@@ -21,6 +25,7 @@ public class JimmerProperties {
         return ts;
     }
 
+    @ConstructorBinding
     public static class TypeScript {
 
         @Nullable
@@ -30,7 +35,7 @@ public class JimmerProperties {
             if (path == null || path.isEmpty()) {
                 this.path = null;
             } else {
-                if (path.startsWith("/")) {
+                if (!path.startsWith("/")) {
                     throw new IllegalArgumentException("`jimmer.ts.path` must start with \"/\"");
                 }
                 this.path = path;
