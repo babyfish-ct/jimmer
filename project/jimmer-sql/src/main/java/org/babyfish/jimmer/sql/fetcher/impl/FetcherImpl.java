@@ -39,16 +39,40 @@ public class FetcherImpl<E> implements Fetcher<E> {
     private Boolean isSimpleFetcher;
 
     public FetcherImpl(Class<E> javaClass) {
-        this.prev = null;
-        this.immutableType = ImmutableType.get(javaClass);
-        this.negative = false;
-        this.prop = immutableType.getIdProp();
-        this.filter = null;
-        this.batchSize = 0;
-        this.limit = Integer.MAX_VALUE;
-        this.offset = 0;
-        this.recursionStrategy = null;
-        this.childFetcher = null;
+        this(javaClass, null);
+    }
+
+    public FetcherImpl(Class<E> javaClass, FetcherImpl<E> base) {
+        if (base != null) {
+            if (base.getJavaClass() != javaClass) {
+                throw new IllegalArgumentException(
+                        "The owner type of base fetcher must be \"" +
+                                javaClass.getName() +
+                                "\""
+                );
+            }
+            this.prev = base.prev;
+            this.immutableType = base.immutableType;
+            this.negative = base.negative;
+            this.prop = base.prop;
+            this.filter = base.filter;
+            this.batchSize = base.batchSize;
+            this.limit = base.limit;
+            this.offset = base.offset;
+            this.recursionStrategy = base.recursionStrategy;
+            this.childFetcher = base.childFetcher;
+        } else {
+            this.prev = null;
+            this.immutableType = ImmutableType.get(javaClass);
+            this.negative = false;
+            this.prop = immutableType.getIdProp();
+            this.filter = null;
+            this.batchSize = 0;
+            this.limit = Integer.MAX_VALUE;
+            this.offset = 0;
+            this.recursionStrategy = null;
+            this.childFetcher = null;
+        }
     }
 
     protected FetcherImpl(FetcherImpl<E> prev, ImmutableProp prop, boolean negative) {
