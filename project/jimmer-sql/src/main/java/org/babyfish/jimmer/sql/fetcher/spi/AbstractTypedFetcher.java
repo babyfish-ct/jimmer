@@ -11,8 +11,8 @@ import java.util.function.Consumer;
 
 public abstract class AbstractTypedFetcher<E, T extends AbstractTypedFetcher<E, T>> extends FetcherImpl<E> {
 
-    protected AbstractTypedFetcher(Class<E> type) {
-        super(type);
+    protected AbstractTypedFetcher(Class<E> type, FetcherImpl<E> base) {
+        super(type, base);
     }
 
     protected AbstractTypedFetcher(

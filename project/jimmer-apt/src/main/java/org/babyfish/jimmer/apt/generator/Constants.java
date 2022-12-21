@@ -137,6 +137,12 @@ class Constants {
                     "Fetcher"
             );
 
+    public static final ClassName FETCHER_IMPL_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher.impl",
+                    "FetcherImpl"
+            );
+
     public static final ClassName FIELD_CONFIG_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher",

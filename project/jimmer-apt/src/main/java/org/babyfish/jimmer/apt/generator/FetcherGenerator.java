@@ -70,6 +70,7 @@ public class FetcherGenerator {
         typeBuilder = builder;
         try {
             add$();
+            add$from();
             addConstructor();
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.getAnnotation(Id.class) == null) {
@@ -93,20 +94,52 @@ public class FetcherGenerator {
         return builder.build();
     }
 
-    public void add$() {
+    private void add$() {
         FieldSpec.Builder builder = FieldSpec
                 .builder(type.getFetcherClassName(), "$")
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.STATIC)
-                .initializer("new $T()", type.getFetcherClassName());
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
+                .initializer("new $T(null)", type.getFetcherClassName());
         typeBuilder.addField(builder.build());
+    }
+
+    private void add$from() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("$from")
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.FETCHER_CLASS_NAME,
+                                type.getClassName()
+                        ),
+                        "base"
+                )
+                .returns(type.getFetcherClassName())
+                .addCode("return base instanceof $T ? \n", type.getFetcherClassName())
+                .addCode("\t($T)base : \n", type.getFetcherClassName())
+                .addCode(
+                        "\tnew $T(($T)base);\n",
+                        type.getFetcherClassName(),
+                        ParameterizedTypeName.get(
+                                Constants.FETCHER_IMPL_CLASS_NAME,
+                                type.getClassName()
+                        )
+                );
+        typeBuilder.addMethod(builder.build());
     }
 
     private void addConstructor() {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
                 .addModifiers(Modifier.PRIVATE)
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.FETCHER_IMPL_CLASS_NAME,
+                                type.getClassName()
+                        ),
+                        "base"
+                )
                 .addStatement(
-                        "super($T.class)",
+                        "super($T.class, base)",
                         type.getClassName()
                 );
         typeBuilder.addMethod(builder.build());
