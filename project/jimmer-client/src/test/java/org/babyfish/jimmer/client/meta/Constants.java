@@ -11,18 +11,22 @@ import java.lang.reflect.Parameter;
 
 public class Constants {
 
-    private static final Metadata.OperationParser OPERATION_PARSER = javaMethod -> {
-        GetMapping getMapping = javaMethod.getAnnotation(GetMapping.class);
+    private static final Metadata.OperationParser OPERATION_PARSER = methodMethod -> {
+        GetMapping getMapping = methodMethod.getAnnotation(GetMapping.class);
         if (getMapping != null) {
             return new Tuple2<>(getMapping.value(), Operation.HttpMethod.GET);
         }
-        PutMapping putMapping = javaMethod.getAnnotation(PutMapping.class);
+        PutMapping putMapping = methodMethod.getAnnotation(PutMapping.class);
         if (putMapping != null) {
             return new Tuple2<>(putMapping.value(), Operation.HttpMethod.PUT);
         }
-        DeleteMapping deleteMapping = javaMethod.getAnnotation(DeleteMapping.class);
+        DeleteMapping deleteMapping = methodMethod.getAnnotation(DeleteMapping.class);
         if (deleteMapping != null) {
             return new Tuple2<>(deleteMapping.value(), Operation.HttpMethod.DELETE);
+        }
+        RequestMapping requestMapping = methodMethod.getAnnotation(RequestMapping.class);
+        if (requestMapping != null) {
+            return new Tuple2<>(requestMapping.value(), requestMapping.method().length == 0 ? null : requestMapping.method()[0]);
         }
         return null;
     };

@@ -8,6 +8,10 @@ public interface Service extends Node {
 
     Class<?> getJavaType();
 
+    String getUri();
+
+    Operation.HttpMethod getDefaultMethod();
+
     List<Operation> getOperations();
 
     @Nullable

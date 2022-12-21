@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,29 +57,31 @@ public class TypeScriptService {
                 .newBuilder()
                 .addServiceTypes(serviceTypes)
                 .setOperationParser(
-                        javaMethod -> {
-                            GetMapping getMapping = javaMethod.getAnnotation(GetMapping.class);
-                            if (getMapping != null) {
-                                return new Tuple2<>(text(getMapping.value(), getMapping.path()), Operation.HttpMethod.GET);
+                        annotatedElement -> {
+                            if (annotatedElement instanceof Method) {
+                                GetMapping getMapping = annotatedElement.getAnnotation(GetMapping.class);
+                                if (getMapping != null) {
+                                    return new Tuple2<>(text(getMapping.value(), getMapping.path()), Operation.HttpMethod.GET);
+                                }
+                                PostMapping postMapping = annotatedElement.getAnnotation(PostMapping.class);
+                                if (postMapping != null) {
+                                    return new Tuple2<>(text(postMapping.value(), postMapping.path()), Operation.HttpMethod.POST);
+                                }
+                                PutMapping putMapping = annotatedElement.getAnnotation(PutMapping.class);
+                                if (putMapping != null) {
+                                    return new Tuple2<>(text(putMapping.value(), putMapping.path()), Operation.HttpMethod.PUT);
+                                }
+                                DeleteMapping deleteMapping = annotatedElement.getAnnotation(DeleteMapping.class);
+                                if (deleteMapping != null) {
+                                    return new Tuple2<>(text(deleteMapping.value(), deleteMapping.path()), Operation.HttpMethod.DELETE);
+                                }
                             }
-                            PostMapping postMapping = javaMethod.getAnnotation(PostMapping.class);
-                            if (postMapping != null) {
-                                return new Tuple2<>(text(postMapping.value(), postMapping.path()), Operation.HttpMethod.POST);
-                            }
-                            PutMapping putMapping = javaMethod.getAnnotation(PutMapping.class);
-                            if (putMapping != null) {
-                                return new Tuple2<>(text(putMapping.value(), putMapping.path()), Operation.HttpMethod.PUT);
-                            }
-                            DeleteMapping deleteMapping = javaMethod.getAnnotation(DeleteMapping.class);
-                            if (deleteMapping != null) {
-                                return new Tuple2<>(text(deleteMapping.value(), deleteMapping.path()), Operation.HttpMethod.DELETE);
-                            }
-                            RequestMapping requestMapping = javaMethod.getAnnotation(RequestMapping.class);
+                            RequestMapping requestMapping = annotatedElement.getAnnotation(RequestMapping.class);
                             if (requestMapping != null) {
                                 return new Tuple2<>(text(requestMapping.value(), requestMapping.path()),
                                         requestMapping.method().length != 0 ?
                                                 Operation.HttpMethod.valueOf(requestMapping.method()[0].name()) :
-                                                Operation.HttpMethod.GET
+                                                null
                                 );
                             }
                             return null;
