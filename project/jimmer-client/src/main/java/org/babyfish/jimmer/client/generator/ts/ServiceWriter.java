@@ -42,7 +42,9 @@ public class ServiceWriter extends CodeWriter {
         code("async ").code(getContext().getOperationName(operation))
                 .scope(ScopeType.ARGUMENTS, "", false, () -> {
                     if (!operation.getParameters().isEmpty()) {
-                        code("options: ");
+                        code("options");
+                        codeIf(operation.getParameters().stream().allMatch(it -> it.getType() instanceof NullableType), '?');
+                        code(": ");
                         scope(
                                 ScopeType.OBJECT,
                                 ", ",
