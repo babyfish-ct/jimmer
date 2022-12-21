@@ -13,10 +13,7 @@ import org.babyfish.jimmer.client.meta.Type;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.*;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class StaticObjectTypeImpl implements StaticObjectType {
 
@@ -26,7 +23,7 @@ public class StaticObjectTypeImpl implements StaticObjectType {
 
     private final List<Type> typeArguments;
 
-    private Map<String, Property> props;
+    private NavigableMap<String, Property> props;
 
     private final Document document;
 
@@ -102,9 +99,9 @@ public class StaticObjectTypeImpl implements StaticObjectType {
         impl = new StaticObjectTypeImpl(javaType, typeArguments);
         ctx.addStaticObjectType(impl);
 
-        Map<String, Property> props = new LinkedHashMap<>();
+        NavigableMap<String, Property> props = new TreeMap<>();
         collectProps(ctx, javaType, props);
-        impl.props = Collections.unmodifiableMap(props);
+        impl.props = Collections.unmodifiableNavigableMap(props);
         return impl;
     }
 
@@ -121,9 +118,9 @@ public class StaticObjectTypeImpl implements StaticObjectType {
         impl = new StaticObjectTypeImpl(kotlinType, typeArguments);
         ctx.addStaticObjectType(impl);
 
-        Map<String, Property> props = new LinkedHashMap<>();
+        NavigableMap<String, Property> props = new TreeMap<>();
         collectProps(ctx, kotlinType, props);
-        impl.props = Collections.unmodifiableMap(props);
+        impl.props = Collections.unmodifiableNavigableMap(props);
         return impl;
     }
 
