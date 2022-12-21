@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.example.kt.sql.bll
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.babyfish.jimmer.client.FetchBy
 import org.babyfish.jimmer.example.kt.sql.dal.TreeNodeRepository
 import org.babyfish.jimmer.example.kt.sql.model.*
 import org.babyfish.jimmer.kt.new
@@ -28,11 +29,11 @@ class TreeService(
     fun findRootTrees(
         @RequestParam(required = false) rootName: String?,
         @RequestParam(required = false) noRecursiveNames: String?
-    ): List<TreeNode> =
+    ): List<@FetchBy("RECURSIVE_FETCHER") TreeNode> =
         treeNodeRepository.findRootNodes(
             rootName,
             if (!StringUtils.hasText(noRecursiveNames)) {
-                RECURSIVE_TREE_NODE_FETCHER
+                RECURSIVE_FETCHER
             } else {
                 val excludedNames =
                     if (noRecursiveNames!!.isEmpty()) {
@@ -46,7 +47,7 @@ class TreeService(
                             }
                             .toSet()
                     }
-                newFetcher(TreeNode::class).by(RECURSIVE_TREE_NODE_FETCHER) {
+                newFetcher(TreeNode::class).by(RECURSIVE_FETCHER) {
                     childNodes({ // override `childNodes` of `RECURSIVE_TREE_NODE_FETCHER`
                         recursive {
                             !excludedNames.contains(
@@ -130,7 +131,7 @@ class TreeService(
 
     companion object {
 
-        private val RECURSIVE_TREE_NODE_FETCHER = newFetcher(TreeNode::class).by {
+        private val RECURSIVE_FETCHER = newFetcher(TreeNode::class).by {
             allScalarFields()
             childNodes({
                 recursive()

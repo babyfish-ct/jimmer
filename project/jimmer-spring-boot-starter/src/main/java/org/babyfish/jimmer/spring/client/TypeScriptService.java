@@ -3,6 +3,7 @@ package org.babyfish.jimmer.spring.client;
 import org.babyfish.jimmer.client.generator.ts.TypeScriptGenerator;
 import org.babyfish.jimmer.client.meta.Metadata;
 import org.babyfish.jimmer.client.meta.Operation;
+import org.babyfish.jimmer.spring.cfg.JimmerProperties;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.aop.support.AopUtils;
@@ -27,7 +28,7 @@ public class TypeScriptService {
         this.ctx = ctx;
     }
 
-    @GetMapping("/ts.zip")
+    @GetMapping("${jimmer.ts.path}")
     public void download(HttpServletResponse response) throws IOException {
         Metadata metadata = parseMetadata();
         response.setContentType("application/zip");

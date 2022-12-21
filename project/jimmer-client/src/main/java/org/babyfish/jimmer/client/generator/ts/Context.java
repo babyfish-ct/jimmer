@@ -13,9 +13,16 @@ public class Context {
             Comparator.comparing(a -> a.getJavaType().getName());
 
     private static final Comparator<ImmutableObjectType> DTO_COMPARATOR =
-            Comparator.comparing(Context::totalPropCount)
-                    .thenComparing(it -> it.getFetchByInfo().getOwnerType().getName())
-                    .thenComparing(it -> it.getFetchByInfo().getConstant());
+            Comparator
+                    .comparing((ImmutableObjectType it) -> it.getJavaType().getName())
+                    .thenComparing((ImmutableObjectType it) -> {
+                        FetchByInfo info = it.getFetchByInfo();
+                        return info != null ? info.getOwnerType().getName() : "";
+                    })
+                    .thenComparing((ImmutableObjectType it) -> {
+                        FetchByInfo info = it.getFetchByInfo();
+                        return info != null ? info.getConstant() : "";
+                    });
 
     private final OutputStream out;
 
