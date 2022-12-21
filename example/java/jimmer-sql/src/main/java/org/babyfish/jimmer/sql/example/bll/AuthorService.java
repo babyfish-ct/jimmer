@@ -20,7 +20,7 @@ public class AuthorService {
     }
 
     @GetMapping("/authors/simple")
-    public List<@FetchBy("SIMPLE_AUTHOR_FETCHER") Author> findSimpleAuthors(
+    public List<@FetchBy("SIMPLE_FETCHER") Author> findSimpleAuthors(
             @RequestParam(required = false) String firstName,
             @RequestParam(required = false) String lastName,
             @RequestParam(required = false) Gender gender
@@ -29,12 +29,12 @@ public class AuthorService {
                 firstName,
                 lastName,
                 gender,
-                SIMPLE_AUTHOR_FETCHER
+                SIMPLE_FETCHER
         );
     }
 
     @GetMapping("/authors/complex")
-    public List<@FetchBy("COMPLEX_AUTHOR_FETCHER") Author> findComplexAuthors(
+    public List<@FetchBy("COMPLEX_FETCHER") Author> findComplexAuthors(
             @RequestParam(required = false) String firstName,
             @RequestParam(required = false) String lastName,
             @RequestParam(required = false) Gender gender
@@ -43,16 +43,16 @@ public class AuthorService {
                 firstName,
                 lastName,
                 gender,
-                COMPLEX_AUTHOR_FETCHER
+                COMPLEX_FETCHER
         );
     }
 
-    private static final Fetcher<Author> SIMPLE_AUTHOR_FETCHER =
+    private static final Fetcher<Author> SIMPLE_FETCHER =
             AuthorFetcher.$
                     .firstName()
                     .lastName();
 
-    private static final Fetcher<Author> COMPLEX_AUTHOR_FETCHER =
+    private static final Fetcher<Author> COMPLEX_FETCHER =
             AuthorFetcher.$
                     .allScalarFields()
                     .books(

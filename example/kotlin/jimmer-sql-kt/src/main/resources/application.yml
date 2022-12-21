@@ -3,10 +3,28 @@ spring:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:jimmer-sql-kt;database_to_upper=true
 
-springdoc:
-  swagger-ui:
-    path: /ui
-
+# You can download the typescript files generated for the client via
+#  https://localhost:8080/ts.zip.
+#
+# Unlike other solutions that automatically connects the front-end
+# team and the back-end team, jimmer allows the front-end team and
+# the back-end team to see different perspectives.
+#
+# The backend team uses jimmer's unified dynamic entity model instead
+# of defining DTO types for each business scenario.
+# For service providers, eliminating the DTO explosion problem will
+# bring great convenience.
+#
+# However, for service consumers, each business scenario has a
+# corresponding DTO definition to make the usage very clear. It needs DTO
+# definition explosion, because it only considers consumption, not providing.
+#
+# The annotation `@org.babyfish.jimmer.client.FetchBy` is used to make the
+# generated TypeScript code contain the DTO model hidden by jimmer backend
 jimmer:
   ts:
     path: /ts.zip
+
+springdoc:
+  swagger-ui:
+    path: /ui
