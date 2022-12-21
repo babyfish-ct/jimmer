@@ -1,39 +1,31 @@
 package org.babyfish.jimmer.sql.example.graphql.dal;
 
-import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.spring.repository.JRepository;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.example.graphql.entities.Author;
 import org.babyfish.jimmer.sql.example.graphql.entities.AuthorTable;
 import org.springframework.lang.Nullable;
-import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
 
-@Repository
-public class AuthorRepository {
+public interface AuthorRepository extends JRepository<Author, Long> {
 
-    private final JSqlClient sqlClient;
+    AuthorTable table = AuthorTable.$;
 
-    public AuthorRepository(JSqlClient sqlClient) {
-        this.sqlClient = sqlClient;
-    }
+    default List<Author> find(@Nullable String name) {
 
-    public List<Author> find(@Nullable String name) {
-
-        AuthorTable author = AuthorTable.$;
-
-        return sqlClient
-                .createQuery(author)
+        return sql()
+                .createQuery(table)
                 .whereIf(
                         StringUtils.hasText(name),
                         Predicate.or(
-                                author.firstName().ilike(name),
-                                author.lastName().ilike(name)
+                                table.firstName().ilike(name),
+                                table.lastName().ilike(name)
                         )
                 )
-                .orderBy(author.firstName(), author.lastName())
-                .select(author)
+                .orderBy(table.firstName(), table.lastName())
+                .select(table)
                 .execute();
     }
 }

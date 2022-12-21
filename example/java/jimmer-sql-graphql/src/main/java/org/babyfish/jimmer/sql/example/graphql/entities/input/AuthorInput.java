@@ -1,21 +1,18 @@
 package org.babyfish.jimmer.sql.example.graphql.entities.input;
 
 import org.babyfish.jimmer.ImmutableConverter;
-import org.babyfish.jimmer.sql.example.graphql.entities.Author;
-import org.babyfish.jimmer.sql.example.graphql.entities.AuthorDraft;
-import org.babyfish.jimmer.sql.example.graphql.entities.AuthorProps;
-import org.babyfish.jimmer.sql.example.graphql.entities.Gender;
+import org.babyfish.jimmer.spring.model.Input;
+import org.babyfish.jimmer.sql.example.graphql.entities.*;
 import org.springframework.lang.Nullable;
 
-public class AuthorInput {
+public class AuthorInput implements Input<Author> {
 
     private static final ImmutableConverter<Author, AuthorInput> CONVERTER =
             ImmutableConverter.
-                    newBuilder(Author.class, AuthorInput.class)
+                    forFields(Author.class, AuthorInput.class)
                     .map(AuthorProps.ID, mapping -> {
                         mapping.useIf(input -> input.id != null);
                     })
-                    .autoMapOtherScalars(true)
                     .build();
 
     @Nullable
@@ -39,15 +36,28 @@ public class AuthorInput {
         this.gender = gender;
     }
 
-    public Author toAuthor() {
-        return AuthorDraft.$.produce(author -> {
-            if (id != null) {
-                author.setId(id);
-            }
-            author
-                    .setFirstName(firstName)
-                    .setLastName(lastName)
-                    .setGender(gender);
-        });
+    @Override
+    public Author toEntity() {
+        return CONVERTER.convert(this);
+    }
+
+    /**
+     * The only value of this class is the method `toEntity`,
+     * which converts the current static InputDTO into a dynamic entity object.
+     *
+     * If the code does not explicitly use private fields, it will cause Intellij to warn,
+     * and it is necessary to provide a view for the debugger,
+     * so define this toString method
+     *
+     * @return
+     */
+    @Override
+    public String toString() {
+        return "AuthorInput{" +
+                "id=" + id +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", gender=" + gender +
+                '}';
     }
 }

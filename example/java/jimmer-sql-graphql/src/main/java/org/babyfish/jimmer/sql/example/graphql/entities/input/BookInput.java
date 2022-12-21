@@ -2,17 +2,18 @@ package org.babyfish.jimmer.sql.example.graphql.entities.input;
 
 import org.babyfish.jimmer.ImmutableConverter;
 import org.babyfish.jimmer.ImmutableObjects;
+import org.babyfish.jimmer.spring.model.Input;
 import org.babyfish.jimmer.sql.example.graphql.entities.*;
 import org.springframework.lang.Nullable;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-public class BookInput {
+public class BookInput implements Input<Book> {
 
-    private static final ImmutableConverter<Book, BookInput> BOOK_CONVERTER =
+    private static final ImmutableConverter<Book, BookInput> CONVERTER =
             ImmutableConverter
-                    .newBuilder(Book.class, BookInput.class)
+                    .forFields(Book.class, BookInput.class)
                     .map(BookProps.ID, mapping -> {
                         mapping.useIf(input -> input.id != null);
                     })
@@ -26,7 +27,6 @@ public class BookInput {
                                 ImmutableObjects.makeIdOnly(Author.class, element)
                         );
                     })
-                    .autoMapOtherScalars(true)
                     .build();
 
     @Nullable
@@ -59,10 +59,21 @@ public class BookInput {
         this.authorIds = authorIds;
     }
 
-    public Book toBook() {
-        return BOOK_CONVERTER.convert(this);
+    @Override
+    public Book toEntity() {
+        return CONVERTER.convert(this);
     }
 
+    /**
+     * The only value of this class is the method `toEntity`,
+     * which converts the current static InputDTO into a dynamic entity object.
+     *
+     * If the code does not explicitly use private fields, it will cause Intellij to warn,
+     * and it is necessary to provide a view for the debugger,
+     * so define this toString method
+     *
+     * @return
+     */
     @Override
     public String toString() {
         return "BookInput{" +

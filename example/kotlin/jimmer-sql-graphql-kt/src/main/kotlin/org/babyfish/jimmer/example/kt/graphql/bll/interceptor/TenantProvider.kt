@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.example.kt.graphql.interceptor
+package org.babyfish.jimmer.example.kt.graphql.bll.interceptor
 
 import org.springframework.stereotype.Component
 import javax.servlet.http.HttpServletRequest

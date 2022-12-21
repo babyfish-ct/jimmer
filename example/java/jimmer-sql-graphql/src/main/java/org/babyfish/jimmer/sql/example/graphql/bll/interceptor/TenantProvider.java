@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.graphql.interceptor;
+package org.babyfish.jimmer.sql.example.graphql.bll.interceptor;
 
 import org.springframework.stereotype.Component;
 

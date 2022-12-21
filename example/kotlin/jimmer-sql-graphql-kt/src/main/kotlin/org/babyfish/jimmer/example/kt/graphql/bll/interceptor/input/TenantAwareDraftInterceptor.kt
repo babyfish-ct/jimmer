@@ -1,8 +1,8 @@
-package org.babyfish.jimmer.example.kt.graphql.interceptor.input
+package org.babyfish.jimmer.example.kt.graphql.bll.interceptor.input
 
 import org.babyfish.jimmer.example.kt.graphql.entities.common.TenantAware
 import org.babyfish.jimmer.example.kt.graphql.entities.common.TenantAwareDraft
-import org.babyfish.jimmer.example.kt.graphql.interceptor.TenantProvider
+import org.babyfish.jimmer.example.kt.graphql.bll.interceptor.TenantProvider
 import org.babyfish.jimmer.kt.isLoaded
 import org.babyfish.jimmer.sql.DraftInterceptor
 import org.springframework.stereotype.Component

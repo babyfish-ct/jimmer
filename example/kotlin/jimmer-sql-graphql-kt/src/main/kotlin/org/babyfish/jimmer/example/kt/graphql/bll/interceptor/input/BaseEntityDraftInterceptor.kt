@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.example.kt.graphql.interceptor.input
+package org.babyfish.jimmer.example.kt.graphql.bll.interceptor.input
 
 import org.babyfish.jimmer.example.kt.graphql.entities.common.BaseEntity
 import org.babyfish.jimmer.example.kt.graphql.entities.common.BaseEntityDraft

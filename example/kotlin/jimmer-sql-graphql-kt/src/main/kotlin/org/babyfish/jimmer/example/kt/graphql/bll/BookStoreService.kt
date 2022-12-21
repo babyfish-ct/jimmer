@@ -1,10 +1,9 @@
-package org.babyfish.jimmer.example.kt.graphql.controller
+package org.babyfish.jimmer.example.kt.graphql.bll
 
 import org.babyfish.jimmer.example.kt.graphql.dal.BookStoreRepository
 import org.babyfish.jimmer.example.kt.graphql.entities.Book
 import org.babyfish.jimmer.example.kt.graphql.entities.BookStore
 import org.babyfish.jimmer.example.kt.graphql.entities.input.BookStoreInput
-import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.BatchMapping
 import org.springframework.graphql.data.method.annotation.MutationMapping
@@ -14,8 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 
 @Controller
-class BookStoreController(
-    private val sqlClient: KSqlClient,
+class BookStoreService(
     private val bookStoreRepository: BookStoreRepository
 ) {
 
@@ -35,7 +33,8 @@ class BookStoreController(
         // Must use `java.util.List` because Spring-GraphQL has a bug: #454
         stores: java.util.List<BookStore>
     ): Map<BookStore, List<Book>> =
-        sqlClient
+        bookStoreRepository
+            .sql
             .loaders
             .list(BookStore::books)
             .batchLoad(stores)
@@ -47,7 +46,8 @@ class BookStoreController(
         // Must use `java.util.List` because Spring-GraphQL has a bug: #454
         stores: java.util.List<BookStore>
     ): Map<BookStore, BigDecimal> =
-        sqlClient
+        bookStoreRepository
+            .sql
             .loaders
             .value(BookStore::avgPrice)
             .batchLoad(stores)
@@ -56,17 +56,15 @@ class BookStoreController(
     @MutationMapping
     @Transactional
     fun saveBookStore(@Argument input: BookStoreInput): BookStore =
-        sqlClient
-            .entities
-            .save(input.toBookStore())
-            .modifiedEntity
+        bookStoreRepository.save(input)
 
     @MutationMapping
     @Transactional
     fun deleteBookStore(@Argument id: Long): Int {
-        return sqlClient
-            .entities
-            .delete(BookStore::class, id)
-            .affectedRowCount(BookStore::class)
+        bookStoreRepository.deleteById(id)
+        // GraphQL requires return value,
+        // but `deleteById` of spring data return nothing!
+        // Is there better design?
+        return 1
     }
 }

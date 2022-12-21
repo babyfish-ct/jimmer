@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.graphql.interceptor.input;
+package org.babyfish.jimmer.sql.example.graphql.bll.interceptor.input;
 
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DraftInterceptor;

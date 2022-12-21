@@ -1,9 +1,5 @@
 package org.babyfish.jimmer.sql.example.graphql.cfg;
 
-import graphql.language.FloatValue;
-import graphql.language.IntValue;
-import graphql.language.StringValue;
-import graphql.language.Value;
 import graphql.scalars.ExtendedScalars;
 import graphql.schema.*;
 import org.jetbrains.annotations.NotNull;
@@ -11,10 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.graphql.execution.RuntimeWiringConfigurer;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 @Configuration
 public class GraphQLConfig {

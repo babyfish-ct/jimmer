@@ -1,8 +1,11 @@
 package org.babyfish.jimmer.example.kt.graphql.entities.input
 
+import org.babyfish.jimmer.ImmutableConverter
 import org.babyfish.jimmer.example.kt.graphql.entities.Book
 import org.babyfish.jimmer.kt.makeIdOnly
-import org.babyfish.jimmer.kt.newImmutableConverter
+import org.babyfish.jimmer.kt.map
+import org.babyfish.jimmer.kt.mapList
+import org.babyfish.jimmer.spring.model.Input
 import java.math.BigDecimal
 
 data class BookInput(
@@ -12,26 +15,24 @@ data class BookInput(
     val price: BigDecimal,
     val storeId: Long?,
     val authorIds: List<Long>
-) {
+) : Input<Book> {
 
-    fun toBook(): Book =
-        BOOK_CONVERTER.convert(this)
+    override fun toEntity(): Book =
+        CONVERTER.convert(this)
 
     companion object {
 
-        private val BOOK_CONVERTER =
-            newImmutableConverter(Book::class, BookInput::class) {
-                map(Book::id) {
-                    useIf { it.id != null }
-                }
-                map(Book::store, BookInput::storeId) {
-                    valueConverter(::makeIdOnly)
-                }
-                mapList(Book::authors, BookInput::authorIds) {
-                    elementConverter(::makeIdOnly)
-                }
-                autoMapOtherScalars(true)
+        private val CONVERTER = ImmutableConverter
+            .forFields(Book::class.java, BookInput::class.java)
+            .map(Book::id) {
+                useIf { it.id != null }
             }
-
+            .map(Book::store, BookInput::storeId) {
+                valueConverter(::makeIdOnly)
+            }
+            .mapList(Book::authors, BookInput::authorIds) {
+                elementConverter(::makeIdOnly)
+            }
+            .build()
     }
 }
