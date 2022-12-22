@@ -87,7 +87,7 @@ public class ServiceWriter extends CodeWriter {
             Parameter parameter = pathVariableParameter(operation, parts.get(0).text);
             code("let uri = encodeURIComponent(options.")
                     .code(parameter.getName())
-                    .codeIf(parameter.getType() instanceof ArrayType, "join(',')")
+                    .codeIf(parameter.getType() instanceof ArrayType, ".join(',')")
                     .code(");\n");
         } else {
             code("let uri = '").code(parts.get(0).text).code("';\n");

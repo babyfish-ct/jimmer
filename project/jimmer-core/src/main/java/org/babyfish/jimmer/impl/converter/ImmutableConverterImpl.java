@@ -22,7 +22,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static> {
+class ImmutableConverterImpl<Dynamic, Static> implements ImmutableConverter<Dynamic, Static> {
 
     private final ImmutableType immutableType;
 
@@ -47,7 +47,7 @@ class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static>
     @SuppressWarnings("unchecked")
     @NotNull
     @Override
-    public T convert(Static staticObj) {
+    public Dynamic convert(Static staticObj) {
         if (staticObj == null) {
             throw new IllegalArgumentException("staticObj cannot be null");
         }
@@ -56,7 +56,7 @@ class ImmutableConverterImpl<T, Static> implements ImmutableConverter<T, Static>
                     "`staticObj` is not instance whose type is \"" + staticType.getName() + "\""
             );
         }
-        return (T) Internal.produce(immutableType, null, draft -> {
+        return (Dynamic) Internal.produce(immutableType, null, draft -> {
             for (Field field : fields) {
                 Predicate<Object> cond = (Predicate<Object>) field.cond;
                 if (cond == null || cond.test(staticObj)) {

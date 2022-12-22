@@ -172,6 +172,27 @@ public class ConvertTest {
         );
     }
 
+    @Test
+    public void testNestedConverter() {
+        BookInput2 input = new BookInput2(
+                "SQL in Action",
+                49,
+                "MANNING",
+                Arrays.asList(
+                        new BookInput2.AuthorInput("Scott"),
+                        new BookInput2.AuthorInput("Linda"))
+        );
+        Book book = input.toBook();
+        Assertions.assertEquals(
+                "{" +
+                        "\"name\":\"SQL in Action\"," +
+                        "\"store\":{\"name\":\"MANNING\"}," +
+                        "\"price\":49," +
+                        "\"authors\":[{\"name\":\"Scott\"},{\"name\":\"Linda\"}]}",
+                book.toString()
+        );
+    }
+
     public static class BookInput {
 
         private final String name;
@@ -227,6 +248,72 @@ public class ConvertTest {
 
         public Partial(String name) {
             this.name = name;
+        }
+    }
+
+    public static class BookInput2 {
+
+        private final static ImmutableConverter<Book, BookInput2> CONVERTER =
+                ImmutableConverter
+                        .forFields(Book.class, BookInput2.class)
+                        .map(BookProps.STORE, "storeName", mapping -> {
+                            mapping.valueConverter(value ->
+                                    BookStoreDraft.$.produce(draft -> draft.setName((String)value))
+                            );
+                        })
+                        .mapList(BookProps.AUTHORS, mapping -> {
+                            mapping.nestedConverter(AuthorInput.CONVERTER);
+                        })
+                        .build();
+
+        private final String name;
+
+        private final Integer price;
+
+        private final String storeName;
+
+        private final List<AuthorInput> authors;
+
+        public BookInput2(String name, Integer price, String storeName, List<AuthorInput> authors) {
+            this.name = name;
+            this.price = price;
+            this.storeName = storeName;
+            this.authors = authors;
+        }
+
+        public Book toBook() {
+            return CONVERTER.convert(this);
+        }
+
+        @Override
+        public String toString() {
+            return "BookInput2{" +
+                    "name='" + name + '\'' +
+                    ", price=" + price +
+                    ", storeName='" + storeName + '\'' +
+                    ", authors=" + authors +
+                    '}';
+        }
+
+        public static class AuthorInput {
+
+            static ImmutableConverter<Author, AuthorInput> CONVERTER =
+                    ImmutableConverter
+                            .forFields(Author.class, AuthorInput.class)
+                            .build();
+
+            private final String name;
+
+            public AuthorInput(String name) {
+                this.name = name;
+            }
+
+            @Override
+            public String toString() {
+                return "AuthorInput{" +
+                        "name='" + name + '\'' +
+                        '}';
+            }
         }
     }
 

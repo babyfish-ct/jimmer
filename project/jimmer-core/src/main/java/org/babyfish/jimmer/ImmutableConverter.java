@@ -9,35 +9,46 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.*;
 
-public interface ImmutableConverter<T, Static> {
+public interface ImmutableConverter<Dynamic, Static> {
 
-    @NotNull T convert(Static staticObj);
+    @NotNull
+    Dynamic convert(Static staticObj);
 
     /**
      * Only for java, kotlin developers should use `newImmutableConverter`
-     * @param <T>
+     * @param <Dynamic>
      * @param <Static>
      */
-    static <T, Static> Builder<T, Static> forMethods(Class<T> immutableType, Class<Static> staticType) {
-        return new ImmutableConverterBuilderImpl<>(immutableType, staticType, false);
+    static <Dynamic, Static> Builder<Dynamic, Static> forMethods(
+            Class<Dynamic> immutableType,
+            Class<Static> staticType
+    ) {
+        return new ImmutableConverterBuilderImpl<>(
+                immutableType,
+                staticType,
+                false
+        );
     }
 
-    static <T, Static> Builder<T, Static> forFields(Class<T> immutableType, Class<Static> staticType) {
+    static <Dynamic, Static> Builder<Dynamic, Static> forFields(
+            Class<Dynamic> immutableType,
+            Class<Static> staticType
+    ) {
         return new ImmutableConverterBuilderImpl<>(immutableType, staticType, true);
     }
 
     /**
      * Only for java, kotlin developers should use `newImmutableConverter`
-     * @param <T>
+     * @param <Dynamic>
      * @param <Static>
      */
-    interface Builder<T, Static> {
+    interface Builder<Dynamic, Static> {
 
-        default Builder<T, Static> map(TypedProp<?, ?> prop) {
+        default Builder<Dynamic, Static> map(TypedProp<?, ?> prop) {
             return map(prop.unwrap(), prop.unwrap().getName(), null);
         }
 
-        default Builder<T, Static> map(
+        default Builder<Dynamic, Static> map(
                 TypedProp<?, ?> prop,
                 String staticPropName
         ) {
@@ -45,41 +56,41 @@ public interface ImmutableConverter<T, Static> {
         }
 
         @SuppressWarnings("unchecked")
-        default <Y> Builder<T, Static> map(
-                TypedProp<T, Y> prop,
-                Consumer<Mapping<Static, ?, Y>> block
+        default <DynamicProp> Builder<Dynamic, Static> map(
+                TypedProp<Dynamic, DynamicProp> prop,
+                Consumer<Mapping<Static, DynamicProp>> block
         ) {
             return map(
                     prop.unwrap(),
                     prop.unwrap().getName(),
-                    (Consumer<Mapping<Static, ?, ?>>)(Consumer<?>)block
+                    (Consumer<Mapping<Static, ?>>)(Consumer<?>)block
             );
         }
 
         @SuppressWarnings("unchecked")
-        default <Y> Builder<T, Static> map(
-                TypedProp<T, Y> prop,
+        default <DynamicProp> Builder<Dynamic, Static> map(
+                TypedProp<Dynamic, DynamicProp> prop,
                 String staticPropName,
-                Consumer<Mapping<Static, ?, Y>> block
+                Consumer<Mapping<Static, DynamicProp>> block
         ) {
             return map(
                     prop.unwrap(),
                     staticPropName,
-                    (Consumer<Mapping<Static, ?, ?>>)(Consumer<?>)block
+                    (Consumer<Mapping<Static, ?>>)(Consumer<?>)block
             );
         }
 
-        Builder<T, Static> map(
+        Builder<Dynamic, Static> map(
                 ImmutableProp prop, 
                 String staticPropName, 
-                Consumer<Mapping<Static, ?, ?>> block
+                Consumer<Mapping<Static, ?>> block
         );
 
-        default Builder<T, Static> mapList(TypedProp.Multiple<?, ?> prop) {
+        default Builder<Dynamic, Static> mapList(TypedProp.Multiple<?, ?> prop) {
             return mapList(prop.unwrap(), prop.unwrap().getName(), null);
         }
 
-        default Builder<T, Static> mapList(
+        default Builder<Dynamic, Static> mapList(
                 TypedProp.Multiple<?, ?> prop,
                 String staticPropName
         ) {
@@ -87,70 +98,70 @@ public interface ImmutableConverter<T, Static> {
         }
 
         @SuppressWarnings("unchecked")
-        default <Y> Builder<T, Static> mapList(
-                TypedProp.Multiple<T, Y> prop,
-                Consumer<ListMapping<Static, ?, Y>> block
+        default <DynamicProp> Builder<Dynamic, Static> mapList(
+                TypedProp.Multiple<Dynamic, DynamicProp> prop,
+                Consumer<ListMapping<Static, DynamicProp>> block
         ) {
             return mapList(
                     prop.unwrap(),
                     prop.unwrap().getName(),
-                    (Consumer<ListMapping<Static, ?, ?>>)(Consumer<?>)block
+                    (Consumer<ListMapping<Static, ?>>)(Consumer<?>)block
             );
         }
 
         @SuppressWarnings("unchecked")
-        default <Y> Builder<T, Static> mapList(
-                TypedProp.Multiple<T, Y> prop,
+        default <DynamicProp> Builder<Dynamic, Static> mapList(
+                TypedProp.Multiple<Dynamic, DynamicProp> prop,
                 String staticPropName, 
-                Consumer<ListMapping<Static, ?, Y>> block
+                Consumer<ListMapping<Static, DynamicProp>> block
         ) {
             return mapList(
                     prop.unwrap(),
                     staticPropName,
-                    (Consumer<ListMapping<Static, ?, ?>>)(Consumer<?>)block
+                    (Consumer<ListMapping<Static, ?>>)(Consumer<?>)block
             );
         }
 
-        Builder<T, Static> mapList(
+        Builder<Dynamic, Static> mapList(
                 ImmutableProp prop,
                 String staticPropName,
-                Consumer<ListMapping<Static, ?, ?>> block
+                Consumer<ListMapping<Static, ?>> block
         );
 
-        default Builder<T, Static> unmapStaticProps(String ... staticPropNames) {
+        default Builder<Dynamic, Static> unmapStaticProps(String ... staticPropNames) {
             return unmapStaticProps(Arrays.asList(staticPropNames));
         }
 
-        Builder<T, Static> unmapStaticProps(Collection<String> staticPropNames);
+        Builder<Dynamic, Static> unmapStaticProps(Collection<String> staticPropNames);
 
-        Builder<T, Static> setDraftModifier(BiConsumer<Draft, Static> modifier);
+        Builder<Dynamic, Static> setDraftModifier(BiConsumer<Draft, Static> modifier);
 
-        ImmutableConverter<T, Static> build();
+        ImmutableConverter<Dynamic, Static> build();
     }
 
-    interface Mapping<Static, X, Y> {
+    interface Mapping<Static, DynamicProp> {
 
-        Mapping<Static, X, Y> useIf(Predicate<Static> cond);
+        Mapping<Static, DynamicProp> useIf(Predicate<Static> cond);
 
-        Mapping<Static, X, Y> valueConverter(Function<X, Y> valueConverter);
+        Mapping<Static, DynamicProp> valueConverter(Function<?, DynamicProp> valueConverter);
 
-        Mapping<Static, X, Y> immutableValueConverter(ImmutableConverter<Y, X> valueConverter);
+        Mapping<Static, DynamicProp> nestedConverter(ImmutableConverter<DynamicProp, ?> valueConverter);
 
-        Mapping<Static, X, Y> defaultValue(Y defaultValue);
+        Mapping<Static, DynamicProp> defaultValue(DynamicProp defaultValue);
 
-        Mapping<Static, X, Y> defaultValue(Supplier<Y> defaultValueSupplier);
+        Mapping<Static, DynamicProp> defaultValue(Supplier<DynamicProp> defaultValueSupplier);
     }
 
-    interface ListMapping<Static, X, Y> {
+    interface ListMapping<Static, DynamicProp> {
 
-        ListMapping<Static, X, Y> useIf(Predicate<Static> cond);
+        ListMapping<Static, DynamicProp> useIf(Predicate<Static> cond);
 
-        ListMapping<Static, X, Y> elementConverter(Function<X, Y> elementConverter);
+        ListMapping<Static, DynamicProp> elementConverter(Function<?, DynamicProp> elementConverter);
 
-        ListMapping<Static, X, Y> immutableValueConverter(ImmutableConverter<Y, X> elementConverter);
+        ListMapping<Static, DynamicProp> nestedConverter(ImmutableConverter<DynamicProp, ?> elementConverter);
 
-        ListMapping<Static, X, Y> defaultElement(Y defaultElement);
+        ListMapping<Static, DynamicProp> defaultElement(DynamicProp defaultElement);
 
-        ListMapping<Static, X, Y> defaultElement(Supplier<Y> defaultValueSupplier);
+        ListMapping<Static, DynamicProp> defaultElement(Supplier<DynamicProp> defaultValueSupplier);
     }
 }

@@ -3,72 +3,72 @@ package org.babyfish.jimmer.kt
 import org.babyfish.jimmer.ImmutableConverter
 import kotlin.reflect.KProperty1
 
-fun <T, Static> ImmutableConverter.Builder<T, Static>.map(
-    prop: KProperty1<T, Static>
-): ImmutableConverter.Builder<T, Static> =
+fun <Dynamic, Static> ImmutableConverter.Builder<Dynamic, Static>.map(
+    prop: KProperty1<Dynamic, Static>
+): ImmutableConverter.Builder<Dynamic, Static> =
     map(prop.toImmutableProp(), prop.name, null)
 
-fun <T, Static> ImmutableConverter.Builder<T, Static>.map(
-    prop: KProperty1<T, *>, staticProp: KProperty1<Static, *>
-): ImmutableConverter.Builder<T, Static> =
+fun <Dynamic, Static> ImmutableConverter.Builder<Dynamic, Static>.map(
+    prop: KProperty1<Dynamic, *>, staticProp: KProperty1<Static, *>
+): ImmutableConverter.Builder<Dynamic, Static> =
     map(prop.toImmutableProp(), staticProp.name, null)
 
 @Suppress("UNCHECKED_CAST")
-fun <T, Static, Y> ImmutableConverter.Builder<T, Static>.map(
-    prop: KProperty1<T, Y?>,
-    block: ImmutableConverter.Mapping<Static, *, Y>.() -> Unit
-): ImmutableConverter.Builder<T, Static> =
+fun <Dynamic, Static, DynamicProp> ImmutableConverter.Builder<Dynamic, Static>.map(
+    prop: KProperty1<Dynamic, DynamicProp?>,
+    block: ImmutableConverter.Mapping<Static, DynamicProp>.() -> Unit
+): ImmutableConverter.Builder<Dynamic, Static> =
     map(prop.toImmutableProp(), prop.name) {
-        block(it as ImmutableConverter.Mapping<Static, *, Y>)
+        block(it as ImmutableConverter.Mapping<Static, DynamicProp>)
     }
 
 @Suppress("UNCHECKED_CAST")
-fun <T, Static, X, Y> ImmutableConverter.Builder<T, Static>.map(
-    prop: KProperty1<T, Y?>,
-    staticProp: KProperty1<Static, X?>,
-    block: ImmutableConverter.Mapping<Static, X, Y>.() -> Unit
-): ImmutableConverter.Builder<T, Static> =
+fun <Dynamic, Static, DynamicProp> ImmutableConverter.Builder<Dynamic, Static>.map(
+    prop: KProperty1<Dynamic, DynamicProp?>,
+    staticProp: KProperty1<Static, Any?>,
+    block: ImmutableConverter.Mapping<Static, DynamicProp>.() -> Unit
+): ImmutableConverter.Builder<Dynamic, Static> =
     map(prop.toImmutableProp(), staticProp.name) {
-        block(it as ImmutableConverter.Mapping<Static, X, Y>)
+        block(it as ImmutableConverter.Mapping<Static, DynamicProp>)
     }
 
-fun <T, Static> ImmutableConverter.Builder<T, Static>.mapList(
-    prop: KProperty1<T, List<*>>
-): ImmutableConverter.Builder<T, Static> =
+fun <Dynamic, Static> ImmutableConverter.Builder<Dynamic, Static>.mapList(
+    prop: KProperty1<Dynamic, List<*>>
+): ImmutableConverter.Builder<Dynamic, Static> =
     mapList(prop.toImmutableProp(), prop.name, null)
 
-fun <T, Static> ImmutableConverter.Builder<T, Static>.mapList(
-    prop: KProperty1<T, List<*>>,
+fun <Dynamic, Static> ImmutableConverter.Builder<Dynamic, Static>.mapList(
+    prop: KProperty1<Dynamic, List<*>>,
     staticProp: KProperty1<Static, List<*>>
-): ImmutableConverter.Builder<T, Static> =
+): ImmutableConverter.Builder<Dynamic, Static> =
     mapList(prop.toImmutableProp(), staticProp.name, null)
 
 @Suppress("UNCHECKED_CAST")
-fun <T, Static, Y> ImmutableConverter.Builder<T, Static>.mapList(
-    prop: KProperty1<T, List<Y>>, 
-    block: ImmutableConverter.ListMapping<Static, *, Y>.() -> Unit
-): ImmutableConverter.Builder<T, Static> =
+fun <Dynamic, Static, DynamicProp> ImmutableConverter.Builder<Dynamic, Static>.mapList(
+    prop: KProperty1<Dynamic, List<DynamicProp>>, 
+    block: ImmutableConverter.ListMapping<Static, DynamicProp>.() -> Unit
+): ImmutableConverter.Builder<Dynamic, Static> =
     mapList(prop.toImmutableProp(), prop.name) {
-        block(it as ImmutableConverter.ListMapping<Static, *, Y>)
+        block(it as ImmutableConverter.ListMapping<Static, DynamicProp>)
     }
 
 @Suppress("UNCHECKED_CAST")
-fun <T, Static, X, Y> ImmutableConverter.Builder<T, Static>.mapList(
-    prop: KProperty1<T, List<Y>>,
-    staticProp: KProperty1<Static, List<X>>,
-    block: ImmutableConverter.ListMapping<Static, X, Y>.() -> Unit
-): ImmutableConverter.Builder<T, Static> =
+fun <Dynamic, Static, DynamicProp> ImmutableConverter.Builder<Dynamic, Static>.mapList(
+    prop: KProperty1<Dynamic, List<DynamicProp>>,
+    staticProp: KProperty1<Static, List<Any>>,
+    block: ImmutableConverter.ListMapping<Static, DynamicProp>.() -> Unit
+): ImmutableConverter.Builder<Dynamic, Static> =
     mapList(prop.toImmutableProp(), staticProp.name) {
-        block(it as ImmutableConverter.ListMapping<Static, X, Y>)
+        block(it as ImmutableConverter.ListMapping<Static, DynamicProp>)
     }
 
-fun <T, Static> ImmutableConverter.Builder<T, Static>.unmapStaticProps(
+fun <Dynamic, Static> ImmutableConverter.Builder<Dynamic, Static>.unmapStaticProps(
     vararg staticProps: KProperty1<Static, *>
-): ImmutableConverter.Builder<T, Static> =
+): ImmutableConverter.Builder<Dynamic, Static> =
     unmapStaticProps(staticProps.map { it.name })
 
-fun <T, Static> ImmutableConverter.Builder<T, Static>.unmapStaticProps(
+fun <Dynamic, Static> ImmutableConverter.Builder<Dynamic, Static>.unmapStaticProps(
     staticProps: Collection<KProperty1<Static, *>>
-): ImmutableConverter.Builder<T, Static> =
+): ImmutableConverter.Builder<Dynamic, Static> =
     unmapStaticProps(staticProps.map { it.name })
 
