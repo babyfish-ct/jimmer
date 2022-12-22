@@ -14,7 +14,7 @@ import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collectors;
 
-public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConverter.Builder<T, Static> {
+public class ImmutableConverterBuilderImpl<Dynamic, Static> implements ImmutableConverter.Builder<Dynamic, Static> {
 
     private final ImmutableType immutableType;
 
@@ -26,7 +26,7 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
 
     private Map<ImmutableProp, ImmutableConverterImpl.Field> mappingMap = new HashMap<>();
 
-    public ImmutableConverterBuilderImpl(Class<T> immutableType, Class<Static> staticType, boolean byField) {
+    public ImmutableConverterBuilderImpl(Class<Dynamic> immutableType, Class<Static> staticType, boolean byField) {
         this.immutableType = ImmutableType.get(immutableType);
         this.staticType = staticType;
         this.staticPropMap = staticProps(staticType, byField);
@@ -42,10 +42,10 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
     }
 
     @Override
-    public ImmutableConverter.Builder<T, Static> map(
+    public ImmutableConverter.Builder<Dynamic, Static> map(
             ImmutableProp prop,
             String staticPropName,
-            Consumer<ImmutableConverter.Mapping<Static, ?, ?>> block
+            Consumer<ImmutableConverter.Mapping<Static, ?>> block
     ) {
         validateProp(prop);
         mapImpl(prop, staticPropName, block, false, false);
@@ -53,10 +53,10 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
     }
 
     @Override
-    public ImmutableConverter.Builder<T, Static> mapList(
+    public ImmutableConverter.Builder<Dynamic, Static> mapList(
             ImmutableProp prop,
             String staticPropName,
-            Consumer<ImmutableConverter.ListMapping<Static, ?, ?>> block
+            Consumer<ImmutableConverter.ListMapping<Static, ?>> block
     ) {
         validateProp(prop);
         if (!prop.isReferenceList(TargetLevel.OBJECT) && !prop.isScalarList()) {
@@ -71,7 +71,7 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
     }
 
     @Override
-    public ImmutableConverter.Builder<T, Static> unmapStaticProps(Collection<String> staticPropNames) {
+    public ImmutableConverter.Builder<Dynamic, Static> unmapStaticProps(Collection<String> staticPropNames) {
         for (String staticPropName : staticPropNames) {
             staticProp(staticPropName, false).mapped = true;
         }
@@ -79,13 +79,13 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
     }
 
     @Override
-    public ImmutableConverter.Builder<T, Static> setDraftModifier(BiConsumer<Draft, Static> draftModifier) {
+    public ImmutableConverter.Builder<Dynamic, Static> setDraftModifier(BiConsumer<Draft, Static> draftModifier) {
         this.draftModifier = draftModifier;
         return this;
     }
 
     @Override
-    public ImmutableConverter<T, Static> build() {
+    public ImmutableConverter<Dynamic, Static> build() {
         for (ImmutableProp prop : immutableType.getProps().values()) {
             if (!prop.isAssociation(TargetLevel.OBJECT) && !mappingMap.containsKey(prop)) {
                 mapImpl(
@@ -264,7 +264,7 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
         ImmutableConverterImpl.Field build();
     }
 
-    private static class MappingImpl<Static, X, Y> implements ImmutableConverter.Mapping<Static, X, Y>, FieldBuilder {
+    private static class MappingImpl<Static, DynamicProp> implements ImmutableConverter.Mapping<Static, DynamicProp>, FieldBuilder {
 
         private final ImmutableProp prop;
 
@@ -288,31 +288,32 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
         }
 
         @Override
-        public ImmutableConverter.Mapping<Static, X, Y> useIf(Predicate<Static> cond) {
+        public ImmutableConverter.Mapping<Static, DynamicProp> useIf(Predicate<Static> cond) {
             this.cond = cond;
             return this;
         }
 
         @Override
-        public ImmutableConverter.Mapping<Static, X, Y> valueConverter(Function<X, Y> valueConverter) {
+        public ImmutableConverter.Mapping<Static, DynamicProp> valueConverter(Function<?, DynamicProp> valueConverter) {
             this.valueConverter = valueConverter;
             return this;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
-        public ImmutableConverter.Mapping<Static, X, Y> immutableValueConverter(ImmutableConverter<Y, X> valueConverter) {
-            valueConverter(value -> valueConverter.convert((X)value));
+        public ImmutableConverter.Mapping<Static, DynamicProp> nestedConverter(ImmutableConverter<DynamicProp, ?> nestedValueConverter) {
+            valueConverter(value -> ((ImmutableConverter<DynamicProp, Object>)nestedValueConverter).convert(value));
             return this;
         }
 
         @Override
-        public ImmutableConverter.Mapping<Static, X, Y> defaultValue(Y defaultValue) {
+        public ImmutableConverter.Mapping<Static, DynamicProp> defaultValue(DynamicProp defaultValue) {
             this.defaultValueSupplier = () -> defaultValue;
             return this;
         }
 
         @Override
-        public ImmutableConverter.Mapping<Static, X, Y> defaultValue(Supplier<Y> defaultValueSupplier) {
+        public ImmutableConverter.Mapping<Static, DynamicProp> defaultValue(Supplier<DynamicProp> defaultValueSupplier) {
             this.defaultValueSupplier = defaultValueSupplier;
             return this;
         }
@@ -331,7 +332,7 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
         }
     }
 
-    private static class ListMappingImpl<Static, X, Y> implements ImmutableConverter.ListMapping<Static, X, Y>, FieldBuilder {
+    private static class ListMappingImpl<Static, DynamicProp> implements ImmutableConverter.ListMapping<Static, DynamicProp>, FieldBuilder {
 
         private final ImmutableProp prop;
 
@@ -355,31 +356,34 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
         }
 
         @Override
-        public ImmutableConverter.ListMapping<Static, X, Y> useIf(Predicate<Static> cond) {
+        public ImmutableConverter.ListMapping<Static, DynamicProp> useIf(Predicate<Static> cond) {
             this.cond = cond;
             return this;
         }
 
         @Override
-        public ImmutableConverter.ListMapping<Static, X, Y> elementConverter(Function<X, Y> elementConverter) {
+        public ImmutableConverter.ListMapping<Static, DynamicProp> elementConverter(Function<?, DynamicProp> elementConverter) {
             this.elementConverter = new ListConverter<>(elementConverter);
             return this;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
-        public ImmutableConverter.ListMapping<Static, X, Y> immutableValueConverter(ImmutableConverter<Y, X> elementConverter) {
-            elementConverter(value -> elementConverter.convert((X)value));
+        public ImmutableConverter.ListMapping<Static, DynamicProp> nestedConverter(
+                ImmutableConverter<DynamicProp, ?> nestedElementConverter
+        ) {
+            elementConverter(element -> ((ImmutableConverter<DynamicProp, Object>)nestedElementConverter).convert(element));
             return this;
         }
 
         @Override
-        public ImmutableConverter.ListMapping<Static, X, Y> defaultElement(Y defaultElement) {
+        public ImmutableConverter.ListMapping<Static, DynamicProp> defaultElement(DynamicProp defaultElement) {
             this.defaultElementSupplier = () -> defaultElement;
             return this;
         }
 
         @Override
-        public ImmutableConverter.ListMapping<Static, X, Y> defaultElement(Supplier<Y> defaultElementSupplier) {
+        public ImmutableConverter.ListMapping<Static, DynamicProp> defaultElement(Supplier<DynamicProp> defaultElementSupplier) {
             this.defaultElementSupplier = defaultElementSupplier;
             return this;
         }
@@ -397,34 +401,34 @@ public class ImmutableConverterBuilderImpl<T, Static> implements ImmutableConver
             );
         }
 
-        private class ListConverter<X, Y> implements Function<List<X>, List<Y>> {
+        private class ListConverter<DynamicProp> implements Function<List<?>, List<DynamicProp>> {
 
-            private final Function<X, Y> elementConverter;
+            private final Function<?, DynamicProp> elementConverter;
 
-            private ListConverter(Function<X, Y> elementConverter) {
+            private ListConverter(Function<?, DynamicProp> elementConverter) {
                 this.elementConverter = elementConverter;
             }
 
             @SuppressWarnings("unchecked")
             @Override
-            public List<Y> apply(List<X> list) {
-                List<Y> newList = new ArrayList<>(list.size());
-                for (X x : list) {
-                    Y y;
-                    if (x == null) {
+            public List<DynamicProp> apply(List<?> list) {
+                List<DynamicProp> newList = new ArrayList<>(list.size());
+                for (Object staticElement : list) {
+                    DynamicProp dynamicElement;
+                    if (staticElement == null) {
                         if (defaultElementSupplier == null) {
-                            y = null;
+                            dynamicElement = null;
                         } else {
-                            y = (Y) defaultElementSupplier.get();
+                            dynamicElement = (DynamicProp) defaultElementSupplier.get();
                         }
                     } else {
                         if (elementConverter == null) {
-                            y = (Y)x;
+                            dynamicElement = (DynamicProp)staticElement;
                         } else {
-                            y = elementConverter.apply(x);
+                            dynamicElement = ((Function<Object, DynamicProp>)elementConverter).apply(staticElement);
                         }
                     }
-                    newList.add(y);
+                    newList.add(dynamicElement);
                 }
                 return newList;
             }
