@@ -18,6 +18,7 @@ import org.springframework.core.GenericTypeResolver;
 import org.springframework.data.domain.*;
 import org.springframework.data.repository.NoRepositoryBean;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -249,6 +250,11 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
                 .batchDelete(entityType, Utils.toCollection(ids));
     }
 
+    @Override
+    public GraphQl<E> graphql() {
+        return new GraphQlImpl();
+    }
+
     private ConfigurableRootQuery<?, E> createQuery(Fetcher<E> fetcher, TypedProp.Scalar<?, ?>[] sortedProps) {
         MutableRootQueryImpl<Table<E>> query =
                 new MutableRootQueryImpl<>(sqlClient, immutableType, ExecutionPurpose.QUERY, false);
@@ -296,6 +302,24 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
                             .limit(pageable.getPageSize(), (int)offset)
                             .execute();
             return new PageImpl<>(content, pageable, total);
+        }
+    }
+
+    private class GraphQlImpl implements GraphQl<E> {
+
+        @Override
+        public <X> Map<E, X> load(TypedProp.Scalar<E, X> prop, Collection<E> sources) {
+            return sqlClient.getLoaders().value(prop).batchLoad(sources);
+        }
+
+        @Override
+        public <X> Map<E, X> load(TypedProp.Reference<E, X> prop, Collection<E> sources) {
+            return sqlClient.getLoaders().reference(prop).batchLoad(sources);
+        }
+
+        @Override
+        public <X> Map<E, List<X>> load(TypedProp.ReferenceList<E, X> prop, Collection<E> sources) {
+            return sqlClient.getLoaders().list(prop).batchLoad(sources);
         }
     }
 }

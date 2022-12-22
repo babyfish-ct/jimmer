@@ -78,7 +78,8 @@ class ReferenceLoaderImpl<SE, TE, TT extends Table<TE>> implements FilterableRef
                 (FieldFilter<Table<ImmutableSpi>>) filter,
                 Integer.MAX_VALUE,
                 0,
-                (ImmutableSpi) source
+                (ImmutableSpi) source,
+                null
         );
     }
 
@@ -90,7 +91,8 @@ class ReferenceLoaderImpl<SE, TE, TT extends Table<TE>> implements FilterableRef
                 con,
                 prop,
                 (FieldFilter<Table<ImmutableSpi>>) filter,
-                (Collection<ImmutableSpi>) sources
+                (Collection<ImmutableSpi>) sources,
+                null
         );
     }
 }

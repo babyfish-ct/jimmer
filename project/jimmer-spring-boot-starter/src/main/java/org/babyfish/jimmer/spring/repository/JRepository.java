@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.loader.ValueLoader;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.domain.Page;
@@ -31,6 +32,8 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     Pager<E> pager(Pageable pageable);
 
     Pager<E> pager(int pageIndex, int pageSize, TypedProp.Scalar<?, ?> ... props);
+
+
 
     default Pager<E> pager(int pageIndex, int pageSize, Sort sort) {
         return pager(PageRequest.of(pageIndex, pageSize, sort));
@@ -211,8 +214,19 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
         deleteByIds(ids);
     }
 
+    GraphQl<E> graphql();
+
     interface Pager<E> {
 
         Page<E> execute(ConfigurableRootQuery<?, E> query);
+    }
+
+    interface GraphQl<E> {
+
+        <X> Map<E, X> load(TypedProp.Scalar<E, X> prop, Collection<E> sources);
+
+        <X> Map<E, X> load(TypedProp.Reference<E, X> prop, Collection<E> sources);
+
+        <X> Map<E, List<X>> load(TypedProp.ReferenceList<E, X> prop, Collection<E> sources);
     }
 }

@@ -58,7 +58,8 @@ class ValueLoaderImpl<S, V> implements ValueLoader<S, V> {
                 null,
                 Integer.MAX_VALUE,
                 0,
-                (ImmutableSpi) source
+                (ImmutableSpi) source,
+                null
         );
     }
 
@@ -70,7 +71,8 @@ class ValueLoaderImpl<S, V> implements ValueLoader<S, V> {
                 con,
                 prop,
                 null,
-                (Collection<ImmutableSpi>) sources
+                (Collection<ImmutableSpi>) sources,
+                null
         );
     }
 }

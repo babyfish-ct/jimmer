@@ -26,6 +26,8 @@ class SingleCommand<T> implements Executable<T> {
 
     private final ImmutableSpi source;
 
+    private final T defaultValue;
+
     public SingleCommand(
             JSqlClient sqlClient,
             Connection con,
@@ -33,7 +35,8 @@ class SingleCommand<T> implements Executable<T> {
             FieldFilter<Table<ImmutableSpi>> filter,
             int limit,
             int offset,
-            ImmutableSpi source
+            ImmutableSpi source,
+            T defaultValue
     ) {
         this.sqlClient = sqlClient;
         this.con = con;
@@ -42,6 +45,7 @@ class SingleCommand<T> implements Executable<T> {
         this.limit = limit;
         this.offset = offset;
         this.source = source;
+        this.defaultValue = defaultValue;
     }
 
     @Override
@@ -69,7 +73,7 @@ class SingleCommand<T> implements Executable<T> {
 
     @SuppressWarnings("unchecked")
     private T executeImpl(Connection con) {
-        return (T) new DataLoader(
+        T result = (T) new DataLoader(
                 sqlClient,
                 con,
                 prop,
@@ -77,5 +81,6 @@ class SingleCommand<T> implements Executable<T> {
                 limit,
                 offset
         ).load(Collections.singleton(source)).get(source);
+        return result != null ? result : defaultValue;
     }
 }

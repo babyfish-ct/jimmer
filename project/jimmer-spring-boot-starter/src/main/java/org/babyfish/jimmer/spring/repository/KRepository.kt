@@ -13,6 +13,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.repository.NoRepositoryBean
 import org.springframework.data.repository.PagingAndSortingRepository
 import java.util.*
+import kotlin.reflect.KProperty1
 
 @NoRepositoryBean
 interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
@@ -98,8 +99,15 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
 
     override fun deleteAll(entities: Iterable<E>)
 
+    val graphql: GraphQl<E>
+
     interface Pager<E> {
 
         fun execute(query: KConfigurableRootQuery<*, E>): Page<E>
+    }
+
+    interface GraphQl<E> {
+
+        fun <X: Any> load(prop: KProperty1<E, X?>, sources: Collection<E>): Map<E, X>
     }
 }

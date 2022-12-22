@@ -9,6 +9,8 @@ import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 
 import java.sql.Connection;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 class BatchCommand<S, T> implements Executable<Map<S, T>> {
@@ -23,18 +25,22 @@ class BatchCommand<S, T> implements Executable<Map<S, T>> {
 
     private final Collection<ImmutableSpi> sources;
 
+    private final T defaultValue;
+
     public BatchCommand(
             JSqlClient sqlClient,
             Connection con,
             ImmutableProp prop,
             FieldFilter<Table<ImmutableSpi>> filter,
-            Collection<ImmutableSpi> sources
+            Collection<ImmutableSpi> sources,
+            T defaultValue
     ) {
         this.sqlClient = sqlClient;
         this.con = con;
         this.prop = prop;
         this.filter = filter;
         this.sources = sources;
+        this.defaultValue = defaultValue;
     }
 
     @Override
@@ -62,11 +68,21 @@ class BatchCommand<S, T> implements Executable<Map<S, T>> {
 
     @SuppressWarnings("unchecked")
     private Map<S, T> executeImpl(Connection con) {
-        return (Map<S, T>) new DataLoader(
+        Map<S, T> resultMap = (Map<S, T>) new DataLoader(
                 sqlClient,
                 con,
                 prop,
                 filter
         ).load(sources);
+        if (defaultValue == null || resultMap.size() == sources.size()) {
+            return resultMap;
+        }
+        if (!(resultMap instanceof HashMap<?, ?>)) {
+            resultMap = new LinkedHashMap<>(resultMap); // toMutableMap
+        }
+        for (ImmutableSpi source : sources) {
+            resultMap.putIfAbsent((S) source, null);
+        }
+        return resultMap;
     }
 }
