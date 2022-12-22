@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -72,7 +73,8 @@ class ListLoaderImpl<SE, TE, TT extends Table<TE>> implements FilterableListLoad
                 (FieldFilter<Table<ImmutableSpi>>) filter,
                 limit,
                 offset,
-                (ImmutableSpi) source
+                (ImmutableSpi) source,
+                Collections.emptyList()
         );
     }
 
@@ -85,7 +87,8 @@ class ListLoaderImpl<SE, TE, TT extends Table<TE>> implements FilterableListLoad
                 con,
                 prop,
                 (FieldFilter<Table<ImmutableSpi>>) filter,
-                (Collection<ImmutableSpi>) sources
+                (Collection<ImmutableSpi>) sources,
+                Collections.emptyList()
         );
     }
 }

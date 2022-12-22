@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.springframework.core.GenericTypeResolver
 import org.springframework.data.domain.*
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty1
 
 open class KRepositoryImpl<E: Any, ID: Any> (
     override val sql: KSqlClient,
@@ -169,6 +170,9 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             )
     }
 
+    override val graphql: KRepository.GraphQl<E>
+        get() = GraphQlImpl()
+
     private class PagerImpl<E>(
         private val pageable: Pageable
     ) : KRepository.Pager<E> {
@@ -185,5 +189,11 @@ open class KRepositoryImpl<E: Any, ID: Any> (
                 .execute()
             return PageImpl(content, pageable, total.toLong())
         }
+    }
+
+    private inner class GraphQlImpl : KRepository.GraphQl<E> {
+
+        override fun <X : Any> load(prop: KProperty1<E, X?>, sources: Collection<E>): Map<E, X> =
+            sql.loaders.batchLoad(prop, sources)
     }
 }
