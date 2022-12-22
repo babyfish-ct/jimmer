@@ -186,7 +186,7 @@ public class ImmutableProcessor extends AbstractProcessor {
                     index++;
                 }
                 if (index < paths.size()) {
-                    paths.subList(index, paths.size() - index).clear();
+                    paths.subList(index, paths.size()).clear();
                 }
             }
         }
