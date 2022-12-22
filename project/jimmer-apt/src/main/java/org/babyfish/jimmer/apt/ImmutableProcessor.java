@@ -170,7 +170,7 @@ public class ImmutableProcessor extends AbstractProcessor {
             for (Element parent = typeElement.getEnclosingElement(); parent != null; parent = parent.getEnclosingElement()) {
                 if (parent instanceof PackageElement) {
                     String packageName = ((PackageElement) parent).getQualifiedName().toString();
-                    newPaths = Arrays.asList(DOT_PATTERN.split(packageName));
+                    newPaths = new ArrayList<>(Arrays.asList(DOT_PATTERN.split(packageName)));
                     break;
                 }
             }
