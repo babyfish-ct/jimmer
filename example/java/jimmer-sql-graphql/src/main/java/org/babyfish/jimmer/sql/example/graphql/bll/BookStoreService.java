@@ -41,22 +41,14 @@ public class BookStoreService {
     public Map<BookStore, List<Book>> books(
             List<BookStore> stores
     ) {
-        return bookStoreRepository
-                .sql()
-                .getLoaders()
-                .list(BookStoreProps.BOOKS)
-                .batchLoad(stores);
+        return bookStoreRepository.graphql().load(BookStoreProps.BOOKS, stores);
     }
 
     // --- Calculation ---
 
     @BatchMapping
     public Map<BookStore, BigDecimal> avgPrice(List<BookStore> stores) {
-        return bookStoreRepository
-                .sql()
-                .getLoaders()
-                .value(BookStoreProps.AVG_PRICE)
-                .batchLoad(stores);
+        return bookStoreRepository.graphql().load(BookStoreProps.AVG_PRICE, stores);
     }
 
     // --- Mutation ---

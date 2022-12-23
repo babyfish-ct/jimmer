@@ -33,11 +33,7 @@ class BookStoreService(
         // Must use `java.util.List` because Spring-GraphQL has a bug: #454
         stores: java.util.List<BookStore>
     ): Map<BookStore, List<Book>> =
-        bookStoreRepository
-            .sql
-            .loaders
-            .list(BookStore::books)
-            .batchLoad(stores)
+        bookStoreRepository.graphql.load(BookStore::books, stores)
 
     // --- Calculation ---
 
@@ -46,11 +42,7 @@ class BookStoreService(
         // Must use `java.util.List` because Spring-GraphQL has a bug: #454
         stores: java.util.List<BookStore>
     ): Map<BookStore, BigDecimal> =
-        bookStoreRepository
-            .sql
-            .loaders
-            .value(BookStore::avgPrice)
-            .batchLoad(stores)
+        bookStoreRepository.graphql.load(BookStore::avgPrice, stores)
 
     // --- Mutation ---
     @MutationMapping

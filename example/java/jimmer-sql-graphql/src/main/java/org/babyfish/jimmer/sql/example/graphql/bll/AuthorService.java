@@ -37,11 +37,7 @@ public class AuthorService {
     public Map<Author, List<Book>> books(
             List<Author> authors
     ) {
-        return authorRepository
-                .sql()
-                .getLoaders()
-                .list(AuthorProps.BOOKS)
-                .batchLoad(authors);
+        return authorRepository.graphql().load(AuthorProps.BOOKS, authors);
     }
 
     // --- Mutation ---

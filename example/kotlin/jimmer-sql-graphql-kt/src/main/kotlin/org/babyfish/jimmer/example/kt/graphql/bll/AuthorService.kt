@@ -30,11 +30,7 @@ class AuthorService(
         // Must use `java.util.List` because Spring-GraphQL has a bug: #454
         authors: java.util.List<Author>
     ): Map<Author, List<Book>> =
-        authorRepository
-            .sql
-            .loaders
-            .list(Author::books)
-            .batchLoad(authors)
+        authorRepository.graphql.load(Author::books, authors)
 
     // --- Mutation ---
 
