@@ -97,7 +97,7 @@ public class ServiceWriter extends CodeWriter {
                 Parameter parameter = pathVariableParameter(operation, parts.get(i).text);
                 code("uri += encodeURIComponent(options.")
                         .code(parameter.getName())
-                        .codeIf(parameter.getType() instanceof ArrayType, "join(',')")
+                        .codeIf(parameter.getType() instanceof ArrayType, ".join(',')")
                         .code(");\n");
             } else {
                 code("uri += '").code(parts.get(i).text).code("';\n");
