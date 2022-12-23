@@ -81,7 +81,7 @@ class BatchCommand<S, T> implements Executable<Map<S, T>> {
             resultMap = new LinkedHashMap<>(resultMap); // toMutableMap
         }
         for (ImmutableSpi source : sources) {
-            resultMap.putIfAbsent((S) source, null);
+            resultMap.putIfAbsent((S) source, defaultValue);
         }
         return resultMap;
     }
