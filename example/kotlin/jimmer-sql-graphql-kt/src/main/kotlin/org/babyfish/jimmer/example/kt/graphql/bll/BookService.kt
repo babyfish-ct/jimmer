@@ -34,22 +34,14 @@ class BookService(
         // Must use `java.util.List` because Spring-GraphQL has a bug: #454
         books: java.util.List<Book>
     ): Map<Book, BookStore> =
-        bookRepository
-            .sql
-            .loaders
-            .reference(Book::store)
-            .batchLoad(books)
+        bookRepository.graphql.load(Book::store, books)
 
     @BatchMapping
     fun authors(
         // Must use `java.util.List` because Spring-GraphQL has a bug: #454
         books: java.util.List<Book>
     ): Map<Book, List<Author>> =
-        bookRepository
-            .sql
-            .loaders
-            .list(Book::authors)
-            .batchLoad(books)
+        bookRepository.graphql.load(Book::authors, books)
 
     // --- Mutation ---
 

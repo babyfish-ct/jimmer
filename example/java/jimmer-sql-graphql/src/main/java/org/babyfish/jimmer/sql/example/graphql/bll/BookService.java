@@ -39,20 +39,12 @@ public class BookService {
 
     @BatchMapping
     public Map<Book, BookStore> store(Collection<Book> books) {
-        return bookRepository
-                .sql()
-                .getLoaders()
-                .reference(BookProps.STORE)
-                .batchLoad(books);
+        return bookRepository.graphql().load(BookProps.STORE, books);
     }
 
     @BatchMapping
     public Map<Book, List<Author>> authors(List<Book> books) {
-        return bookRepository
-                .sql()
-                .getLoaders()
-                .list(BookProps.AUTHORS)
-                .batchLoad(books);
+        return bookRepository.graphql().load(BookProps.AUTHORS, books);
     }
 
     // --- Mutation ---
