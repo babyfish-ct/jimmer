@@ -79,42 +79,42 @@ public class ExpressionFactories {
         static final Num INSTANCE = new Num();
 
         @Override
-        public <N extends Number> NumericExpression<N> value(N value) {
+        public <N extends Number & Comparable<N>> NumericExpression<N> value(N value) {
             return Literals.number(value);
         }
 
         @Override
-        public <N extends Number> NumericExpression<N> sql(Class<N> type, String sql) {
+        public <N extends Number & Comparable<N>> NumericExpression<N> sql(Class<N> type, String sql) {
             return SqlExpressions.of(type, sql, null);
         }
 
         @Override
-        public <N extends Number> NumericExpression<N> sql(Class<N> type, String sql, Expression<?> expression, Object ... values) {
+        public <N extends Number & Comparable<N>> NumericExpression<N> sql(Class<N> type, String sql, Expression<?> expression, Object ... values) {
             return SqlExpressions.of(type, sql, new Expression[] { expression }, values);
         }
 
         @Override
-        public <N extends Number> NumericExpression<N> sql(Class<N> type, String sql, Expression<?>[] expressions, Object ... values) {
+        public <N extends Number & Comparable<N>> NumericExpression<N> sql(Class<N> type, String sql, Expression<?>[] expressions, Object ... values) {
             return SqlExpressions.of(type, sql, expressions, values);
         }
 
         @Override
-        public <N extends Number> NumericExpression<N> sql(Class<N> type, String sql, Consumer<SqlExpressionContext> block) {
+        public <N extends Number & Comparable<N>> NumericExpression<N> sql(Class<N> type, String sql, Consumer<SqlExpressionContext> block) {
             return SqlExpressions.of(type, sql, block);
         }
 
         @Override
-        public <C, N extends Number> SimpleCaseBuilder.Num<C, N> caseBuilder(Class<N> type, C value) {
+        public <C, N extends Number & Comparable<N>> SimpleCaseBuilder.Num<C, N> caseBuilder(Class<N> type, C value) {
             return caseBuilder(type, Literals.any(value));
         }
 
         @Override
-        public <C, N extends Number> SimpleCaseBuilder.Num<C, N> caseBuilder(Class<N> type, Expression<C> expression) {
+        public <C, N extends Number & Comparable<N>> SimpleCaseBuilder.Num<C, N> caseBuilder(Class<N> type, Expression<C> expression) {
             return new SimpleCaseBuilder.Num<>(type, expression);
         }
 
         @Override
-        public <N extends Number> CaseBuilder.Num<N> caseBuilder(Class<N> type) {
+        public <N extends Number & Comparable<N>> CaseBuilder.Num<N> caseBuilder(Class<N> type) {
             return new CaseBuilder.Num<>(type);
         }
     }

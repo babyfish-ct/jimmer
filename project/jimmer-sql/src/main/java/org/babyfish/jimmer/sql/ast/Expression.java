@@ -84,7 +84,7 @@ public interface Expression<T> extends Selection<T> {
 
     Order desc();
 
-    static <N extends Number> NumericExpression<N> constant(N value) {
+    static <N extends Number & Comparable<N>> NumericExpression<N> constant(N value) {
         return Constants.number(value);
     }
 
@@ -214,35 +214,35 @@ public interface Expression<T> extends Selection<T> {
 
     interface NumericFactory {
 
-        <N extends Number> NumericExpression<N> value(N value);
+        <N extends Number & Comparable<N>> NumericExpression<N> value(N value);
 
-        <N extends Number> NumericExpression<N> sql(Class<N> type, String sql);
+        <N extends Number & Comparable<N>> NumericExpression<N> sql(Class<N> type, String sql);
 
-        <N extends Number> NumericExpression<N> sql(
+        <N extends Number & Comparable<N>> NumericExpression<N> sql(
                 Class<N> type,
                 String sql,
                 Expression<?> expression,
                 Object ... values
         );
 
-        <N extends Number> NumericExpression<N> sql(
+        <N extends Number & Comparable<N>> NumericExpression<N> sql(
                 Class<N> type,
                 String sql,
                 Expression<?>[] expressions,
                 Object ... values
         );
 
-        <N extends Number> NumericExpression<N> sql(
+        <N extends Number & Comparable<N>> NumericExpression<N> sql(
                 Class<N> type,
                 String sql,
                 Consumer<SqlExpressionContext> block
         );
 
-        <C, N extends Number> SimpleCaseBuilder.Num<C, N> caseBuilder(Class<N> type, C value);
+        <C, N extends Number & Comparable<N>> SimpleCaseBuilder.Num<C, N> caseBuilder(Class<N> type, C value);
 
-        <C, N extends Number> SimpleCaseBuilder.Num<C, N> caseBuilder(Class<N> type, Expression<C> expression);
+        <C, N extends Number & Comparable<N>> SimpleCaseBuilder.Num<C, N> caseBuilder(Class<N> type, Expression<C> expression);
 
-        <N extends Number> CaseBuilder.Num<N> caseBuilder(Class<N> type);
+        <N extends Number & Comparable<N>> CaseBuilder.Num<N> caseBuilder(Class<N> type);
     }
 
     /*

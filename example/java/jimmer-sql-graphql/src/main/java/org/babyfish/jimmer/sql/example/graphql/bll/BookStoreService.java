@@ -38,9 +38,7 @@ public class BookStoreService {
     // --- Association ---
 
     @BatchMapping
-    public Map<BookStore, List<Book>> books(
-            List<BookStore> stores
-    ) {
+    public Map<BookStore, List<Book>> books(List<BookStore> stores) {
         return bookStoreRepository.graphql().load(BookStoreProps.BOOKS, stores);
     }
 

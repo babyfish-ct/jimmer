@@ -57,7 +57,7 @@ public class SqlExpressions {
             return (E)new Str(sql, expressions, values);
         }
         if (type.isPrimitive() || Number.class.isAssignableFrom(type)) {
-            return (E)new Num<Number>((Class<Number>)type, sql, expressions, values);
+            return (E)new Num((Class<Number>)type, sql, expressions, values);
         }
         if (Comparable.class.isAssignableFrom(type)) {
             return (E)new Cmp(type, sql, expressions, values);
@@ -167,7 +167,7 @@ public class SqlExpressions {
         }
     }
 
-    private static class Num<N extends Number> extends Any<N> implements NumericExpressionImplementor<N> {
+    private static class Num<N extends Number & Comparable<N>> extends Any<N> implements NumericExpressionImplementor<N> {
 
         Num(Class<N> type, String sql, List<Expression<?>> expressions, List<Object> values) {
             super(type, sql, expressions, values);

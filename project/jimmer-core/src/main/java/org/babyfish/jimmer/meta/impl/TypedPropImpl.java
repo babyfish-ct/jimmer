@@ -25,8 +25,26 @@ public class TypedPropImpl<S, T> implements TypedProp<S, T> {
 
     public static class Scalar<S, T> extends TypedPropImpl<S, T> implements TypedProp.Scalar<S, T> {
 
+        private final boolean desc;
+
+        private final boolean nullsFirst;
+
+        private final boolean nullsLast;
+
         public Scalar(ImmutableProp prop) {
+            this(prop, false, false, false);
+        }
+
+        private Scalar(
+                ImmutableProp prop,
+                boolean desc,
+                boolean nullsFirst,
+                boolean nullsLast
+        ) {
             super(prop);
+            this.desc = desc;
+            this.nullsFirst = nullsFirst;
+            this.nullsLast = nullsLast;
             if (!prop.isScalar(TargetLevel.OBJECT)) {
                 throw new IllegalArgumentException(
                         "\"" +
@@ -38,29 +56,64 @@ public class TypedPropImpl<S, T> implements TypedProp<S, T> {
 
         @Override
         public TypedProp.Scalar<S, T> asc() {
-            return this;
+            if (!desc) {
+                return this;
+            }
+            return new TypedPropImpl.Scalar<>(prop, false, nullsFirst, nullsLast);
         }
 
         @Override
         public TypedProp.Scalar<S, T> desc() {
-            return new Desc<S, T>(prop);
-        }
-
-        static class Desc<S, T> extends TypedPropImpl.Scalar<S, T> implements TypedProp.Scalar.Desc<S,  T> {
-
-            public Desc(ImmutableProp prop) {
-                super(prop);
-            }
-
-            @Override
-            public TypedProp.Scalar<S, T> asc() {
-                return new TypedPropImpl.Scalar<>(prop);
-            }
-
-            @Override
-            public TypedProp.Scalar<S, T> desc() {
+            if (desc) {
                 return this;
             }
+            return new TypedPropImpl.Scalar<>(prop, true, nullsFirst, nullsLast);
+        }
+
+        @Override
+        public TypedProp.Scalar<S, T> nullsFirst() {
+            if (nullsFirst) {
+                return this;
+            }
+            return new TypedPropImpl.Scalar<>(prop, desc, true, false);
+        }
+
+        @Override
+        public TypedProp.Scalar<S, T> nullsLast() {
+            if (nullsLast) {
+                return this;
+            }
+            return new TypedPropImpl.Scalar<>(prop, desc, false, true);
+        }
+
+        @Override
+        public boolean isDesc() {
+            return desc;
+        }
+
+        @Override
+        public boolean isNullsFirst() {
+            return nullsFirst;
+        }
+
+        @Override
+        public boolean isNullsLast() {
+            return nullsLast;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder(super.toString());
+            if (desc) {
+                builder.append(" desc");
+            }
+            if (nullsFirst) {
+                builder.append(" nullsFirst");
+            }
+            if (nullsLast) {
+                builder.append(" nullLast");
+            }
+            return builder.toString();
         }
     }
 

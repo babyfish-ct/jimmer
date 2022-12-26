@@ -7,11 +7,11 @@ import java.util.Objects;
 
 public class Order {
 
-    private Expression<?> expression;
+    private final Expression<?> expression;
 
-    private OrderMode orderMode;
+    private final OrderMode orderMode;
 
-    private NullOrderMode nullOrderMode;
+    private final NullOrderMode nullOrderMode;
 
     public Order(Expression<?> expression, OrderMode orderMode, NullOrderMode nullOrderMode) {
         this.expression = Objects.requireNonNull(expression);

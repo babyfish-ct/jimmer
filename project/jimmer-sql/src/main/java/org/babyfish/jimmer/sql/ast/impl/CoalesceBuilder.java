@@ -75,7 +75,7 @@ public class CoalesceBuilder<T> {
         }
     }
 
-    public static class Num<N extends Number> extends CoalesceBuilder<N> {
+    public static class Num<N extends Number & Comparable<N>> extends Cmp<N> {
 
         Num(Expression<N> expression) {
             super(expression);
@@ -168,7 +168,7 @@ public class CoalesceBuilder<T> {
         }
     }
 
-    private static class NumExpr<N extends Number> extends Expr<N> implements NumericExpressionImplementor<N> {
+    private static class NumExpr<N extends Number & Comparable<N>> extends Expr<N> implements NumericExpressionImplementor<N> {
 
         public NumExpr(List<Expression<?>> expressions) {
             super(expressions);

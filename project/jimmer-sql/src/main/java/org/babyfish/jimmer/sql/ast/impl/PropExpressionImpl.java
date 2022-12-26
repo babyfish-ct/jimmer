@@ -183,7 +183,7 @@ public class PropExpressionImpl<T>
         }
     }
 
-    private static class NumImpl<N extends Number>
+    private static class NumImpl<N extends Number & Comparable<N>>
             extends PropExpressionImpl<N>
             implements PropExpression.Num<N>, NumericExpressionImplementor<N> {
 

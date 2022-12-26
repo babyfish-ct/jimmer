@@ -13,7 +13,7 @@ class Literals {
         return new Str(value);
     }
 
-    public static <N extends Number> NumericExpression<N> number(N value) {
+    public static <N extends Number & Comparable<N>> NumericExpression<N> number(N value) {
         return new Num<>(value);
     }
 
@@ -27,7 +27,7 @@ class Literals {
             return (Expression<T>) string((String)value);
         }
         if (value instanceof Number) {
-            return (Expression<T>) number((Number)value);
+            return (Expression<T>) number((Number & Comparable)value);
         }
         if (value instanceof Comparable<?>) {
             return (Expression<T>) comparable((Comparable)value);
@@ -73,7 +73,7 @@ class Literals {
         }
     }
 
-    private static class Num<N extends Number> extends Any<N> implements NumericExpressionImplementor<N> {
+    private static class Num<N extends Number & Comparable<N>> extends Any<N> implements NumericExpressionImplementor<N> {
         public Num(N value) {
             super(value);
         }

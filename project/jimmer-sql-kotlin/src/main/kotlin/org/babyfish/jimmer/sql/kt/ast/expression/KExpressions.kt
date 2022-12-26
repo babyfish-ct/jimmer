@@ -17,8 +17,6 @@ import org.babyfish.jimmer.sql.kt.ast.query.KTypedSubQuery
 import org.babyfish.jimmer.sql.kt.ast.table.KTable
 import kotlin.reflect.KClass
 
-
-
 fun <T: Any> KNullableExpression<T>.asNonNull(): KNonNullExpression<T> =
     if (this is NullableExpressionWrapper<*>) {
         (this as NullableExpressionWrapper<T>).target

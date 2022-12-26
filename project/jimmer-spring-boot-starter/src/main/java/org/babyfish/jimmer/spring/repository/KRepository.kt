@@ -3,7 +3,7 @@ package org.babyfish.jimmer.spring.repository
 import org.babyfish.jimmer.spring.model.Input
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
-import org.babyfish.jimmer.sql.kt.ast.query.FindDsl
+import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.springframework.core.annotation.AliasFor
 import org.springframework.data.domain.Page
@@ -20,7 +20,7 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
 
     val sql: KSqlClient
 
-    fun pager(pageIndex: Int, pageSize: Int, block: (FindDsl<E>.() -> Unit)? = null): Pager<E>
+    fun pager(pageIndex: Int, pageSize: Int, block: (SortDsl<E>.() -> Unit)? = null): Pager<E>
 
     fun pager(pageIndex: Int, pageSize: Int, sort: Sort?): Pager<E> =
         pager(PageRequest.of(pageIndex, pageSize, sort ?: Sort.unsorted()))
@@ -47,7 +47,7 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
     override fun findAll(): List<E> =
         findAll(null, null)
 
-    fun findAll(fetcher: Fetcher<E>? = null, block: (FindDsl<E>.() -> Unit)? = null): List<E>
+    fun findAll(fetcher: Fetcher<E>? = null, block: (SortDsl<E>.() -> Unit)? = null): List<E>
 
     fun findAll(fetcher: Fetcher<E>? = null, sort: Sort): List<E>
 
@@ -58,7 +58,7 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
         pageIndex: Int,
         pageSize: Int,
         fetcher: Fetcher<E>? = null,
-        block: (FindDsl<E>.() -> Unit)? = null
+        block: (SortDsl<E>.() -> Unit)? = null
     ): Page<E>
 
     fun findAll(

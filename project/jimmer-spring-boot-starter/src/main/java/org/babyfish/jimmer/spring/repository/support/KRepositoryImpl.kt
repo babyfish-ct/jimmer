@@ -3,10 +3,11 @@ package org.babyfish.jimmer.spring.repository.support
 import org.babyfish.jimmer.ImmutableObjects
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.spring.model.Input
+import org.babyfish.jimmer.spring.model.toSort
 import org.babyfish.jimmer.spring.repository.*
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
-import org.babyfish.jimmer.sql.kt.ast.query.FindDsl
+import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.springframework.core.GenericTypeResolver
 import org.springframework.data.domain.*
@@ -45,7 +46,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
     protected val immutableType: ImmutableType =
         ImmutableType.get(this.entityType.java)
 
-    override fun pager(pageIndex: Int, pageSize: Int, block: (FindDsl<E>.() -> Unit)?): KRepository.Pager<E> {
+    override fun pager(pageIndex: Int, pageSize: Int, block: (SortDsl<E>.() -> Unit)?): KRepository.Pager<E> {
         val sort = block?.toSort() ?: Sort.unsorted()
         return PagerImpl(PageRequest.of(pageIndex, pageSize, sort))
     }
@@ -74,7 +75,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             sql.entities.findMapByIds(entityType, Utils.toCollection(ids))
         }
 
-    override fun findAll(fetcher: Fetcher<E>?, block: (FindDsl<E>.() -> Unit)?): List<E> =
+    override fun findAll(fetcher: Fetcher<E>?, block: (SortDsl<E>.() -> Unit)?): List<E> =
         if (fetcher !== null) {
             sql.entities.findAll(fetcher, block)
         } else {
@@ -83,16 +84,16 @@ open class KRepositoryImpl<E: Any, ID: Any> (
 
     override fun findAll(fetcher: Fetcher<E>?, sort: Sort): List<E> =
         if (fetcher !== null) {
-            sql.entities.findAll(fetcher, sort.toFindDslBlock(immutableType))
+            sql.entities.findAll(fetcher, sort.toSortDslBlock(immutableType))
         } else {
-            sql.entities.findAll(entityType, sort.toFindDslBlock(immutableType))
+            sql.entities.findAll(entityType, sort.toSortDslBlock(immutableType))
         }
 
     override fun findAll(
         pageIndex: Int,
         pageSize: Int,
         fetcher: Fetcher<E>?,
-        block: (FindDsl<E>.() -> Unit)?
+        block: (SortDsl<E>.() -> Unit)?
     ): Page<E> =
         pager(pageIndex, pageSize, block)
             .execute(

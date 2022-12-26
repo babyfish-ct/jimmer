@@ -16,7 +16,7 @@ public interface PropExpression<T> extends Expression<T> {
         CoalesceBuilder.Str coalesceBuilder();
     }
 
-    interface Num<N extends Number> extends PropExpression<N>, NumericExpression<N> {
+    interface Num<N extends Number & Comparable<N>> extends PropExpression<N>, NumericExpression<N> {
 
         @Override
         NumericExpression<N> coalesce(N defaultValue);

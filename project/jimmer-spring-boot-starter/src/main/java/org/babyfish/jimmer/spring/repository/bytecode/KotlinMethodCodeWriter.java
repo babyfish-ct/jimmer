@@ -8,8 +8,8 @@ import java.lang.reflect.Modifier;
 
 public class KotlinMethodCodeWriter extends MethodCodeWriter {
 
-    protected KotlinMethodCodeWriter(ClassCodeWriter parent, Method method) {
-        super(parent, method);
+    protected KotlinMethodCodeWriter(ClassCodeWriter parent, Method method, String id) {
+        super(parent, method, id);
     }
 
     @Override
@@ -17,7 +17,7 @@ public class KotlinMethodCodeWriter extends MethodCodeWriter {
         if (method.isDefault()) {
             return;
         }
-        Method defaultMethod = findDefaultMethod();
+        Method defaultMethod = getDefaultImplMethod();
         if (defaultMethod != null) {
             writeDefaultInvocation(defaultMethod);
             return;
@@ -39,7 +39,7 @@ public class KotlinMethodCodeWriter extends MethodCodeWriter {
                 null
         );
         mv.visitCode();
-        VarLoader loader = new VarLoader(mv, 0);
+        VarLoader loader = new VarLoader(0);
         for (Class<?> type : defaultMethod.getParameterTypes()) {
             loader.load(type);
         }
@@ -55,7 +55,8 @@ public class KotlinMethodCodeWriter extends MethodCodeWriter {
         mv.visitEnd();
     }
 
-    private Method findDefaultMethod() {
+    @Override
+    protected Method onGetDefaultImplMethod() {
         Class<?> repositoryInterface = parent.getMetadata().getRepositoryInterface();
         Class<?> defaultImpl = null;
         for (Class<?> nestedClass : repositoryInterface.getClasses()) {
