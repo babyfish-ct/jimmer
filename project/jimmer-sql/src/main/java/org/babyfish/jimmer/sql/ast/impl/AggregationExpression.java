@@ -72,7 +72,7 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
         }
     }
 
-    static class Sum<N extends Number> extends AggregationExpression<N> implements NumericExpressionImplementor<N> {
+    static class Sum<N extends Number & Comparable<N>> extends AggregationExpression<N> implements NumericExpressionImplementor<N> {
 
         public Sum(Expression<?> expression) {
             super(expression);
@@ -90,7 +90,7 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
         }
     }
 
-    static class Min<N extends Number> extends AggregationExpression<N> implements NumericExpressionImplementor<N> {
+    static class Min<N extends Number & Comparable<N>> extends AggregationExpression<N> implements NumericExpressionImplementor<N> {
 
         public Min(Expression<?> expression) {
             super(expression);
@@ -108,7 +108,7 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
         }
     }
 
-    static class Max<N extends Number> extends AggregationExpression<N> implements NumericExpressionImplementor<N> {
+    static class Max<N extends Number & Comparable<N>> extends AggregationExpression<N> implements NumericExpressionImplementor<N> {
 
         public Max(Expression<?> expression) {
             super(expression);

@@ -6,11 +6,11 @@ import org.jetbrains.annotations.NotNull;
 
 public class Constants {
 
-    public static <N extends Number> NumericExpression<N> number(N value) {
+    public static <N extends Number & Comparable<N>> NumericExpression<N> number(N value) {
         return new Num<>(value);
     }
 
-    private static class Num<N extends Number> extends AbstractExpression<N> implements NumericExpressionImplementor<N> {
+    private static class Num<N extends Number & Comparable<N>> extends AbstractExpression<N> implements NumericExpressionImplementor<N> {
 
         private N value;
 

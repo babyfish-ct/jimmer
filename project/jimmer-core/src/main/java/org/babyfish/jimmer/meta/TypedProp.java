@@ -17,7 +17,11 @@ public interface TypedProp<S, T> {
     interface Scalar<S, T> extends TypedProp<S, T>, Single<S, T> {
         Scalar<S, T> asc();
         Scalar<S, T> desc();
-        interface Desc<S, T> extends Scalar<S, T> {}
+        Scalar<S, T> nullsFirst();
+        Scalar<S, T> nullsLast();
+        boolean isDesc();
+        boolean isNullsFirst();
+        boolean isNullsLast();
     }
 
     interface ScalarList<S, T> extends TypedProp<S, T>, Multiple<S, T> {}

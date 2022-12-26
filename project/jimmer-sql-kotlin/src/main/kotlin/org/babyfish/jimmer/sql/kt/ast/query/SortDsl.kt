@@ -6,19 +6,19 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.TargetLevel
 import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
+import org.babyfish.jimmer.sql.ast.query.NullOrderMode
 import org.babyfish.jimmer.sql.ast.query.OrderMode
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.ast.expression.or
-import org.babyfish.jimmer.sql.meta.SingleColumn
 import org.babyfish.jimmer.sql.meta.Storage
 import kotlin.reflect.KProperty1
 
 @DslScope
-class FindDsl<E: Any>(
+class SortDsl<E: Any>(
     private val orders: MutableList<Order> = mutableListOf()
 ) {
 
-    fun asc(prop: KProperty1<E, *>) {
+    fun asc(prop: KProperty1<E, *>, nullOrderMode: NullOrderMode = NullOrderMode.UNSPECIFIED) {
         val immutableProp = prop.toImmutableProp()
         if (!immutableProp.isScalar(TargetLevel.OBJECT)) {
             throw IllegalArgumentException("\"$immutableProp\" is not scalar property")
@@ -26,10 +26,10 @@ class FindDsl<E: Any>(
         if (immutableProp.getStorage<Storage>() == null) {
             throw IllegalArgumentException("\"$immutableProp\" is not mapped by database columns")
         }
-        orders += Order(immutableProp, OrderMode.ASC)
+        orders += Order(immutableProp, OrderMode.ASC, nullOrderMode)
     }
 
-    fun desc(prop: KProperty1<E, *>) {
+    fun desc(prop: KProperty1<E, *>, nullOrderMode: NullOrderMode = NullOrderMode.UNSPECIFIED) {
         val immutableProp = prop.toImmutableProp()
         if (!immutableProp.isScalar(TargetLevel.OBJECT)) {
             throw IllegalArgumentException("\"$immutableProp\" is not scalar property")
@@ -37,7 +37,7 @@ class FindDsl<E: Any>(
         if (immutableProp.getStorage<Storage>() == null) {
             throw IllegalArgumentException("\"$immutableProp\" is not mapped by database columns")
         }
-        orders += Order(immutableProp, OrderMode.DESC)
+        orders += Order(immutableProp, OrderMode.DESC, nullOrderMode)
     }
 
     operator fun plusAssign(orders: List<Order>) {
@@ -48,16 +48,24 @@ class FindDsl<E: Any>(
         val table = query.getTable<Table<*>>()
         for (order in orders) {
             val expr = table.get<Expression<*>>(order.prop.name)
-            if (order.mode == OrderMode.DESC) {
-                query.orderBy(expr.desc())
+            val astOrder = if (order.mode == OrderMode.DESC) {
+                expr.desc()
             } else {
-                query.orderBy(expr)
+                expr.asc()
             }
+            query.orderBy(
+                when (order.nullOrderMode) {
+                    NullOrderMode.NULLS_FIRST -> astOrder.nullsFirst()
+                    NullOrderMode.NULLS_LAST -> astOrder.nullsLast()
+                    else -> astOrder
+                }
+            )
         }
     }
 
     data class Order(
         val prop: ImmutableProp,
-        val mode: OrderMode
+        val mode: OrderMode,
+        val nullOrderMode: NullOrderMode
     )
 }

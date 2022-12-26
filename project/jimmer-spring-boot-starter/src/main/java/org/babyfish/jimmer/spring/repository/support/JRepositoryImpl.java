@@ -7,9 +7,11 @@ import org.babyfish.jimmer.spring.repository.JRepository;
 import org.babyfish.jimmer.spring.repository.Sorts;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
+import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
@@ -269,11 +271,20 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
                                 "\" or its super types"
                 );
             }
-            if (sortedProp instanceof TypedProp.Scalar.Desc<?, ?>) {
-                query.orderBy(table.get(sortedProp.unwrap().getName()).desc());
+            PropExpression<?> expr = table.get(sortedProp.unwrap().getName());
+            Order astOrder;
+            if (sortedProp.isDesc()) {
+                astOrder = expr.desc();
             } else {
-                query.orderBy(table.get(sortedProp.unwrap().getName()).asc());
+                astOrder = expr.asc();
             }
+            if (sortedProp.isNullsFirst()) {
+                astOrder = astOrder.nullsFirst();
+            }
+            if (sortedProp.isNullsLast()) {
+                astOrder = astOrder.nullsLast();
+            }
+            query.orderBy(astOrder);
         }
         query.freeze();
         return query.select(fetcher != null ? table.fetch(fetcher) : table);

@@ -13,7 +13,7 @@ public class KotlinClassCodeWriter extends ClassCodeWriter {
     }
 
     @Override
-    protected MethodCodeWriter createMethodCodeWriter(Method method) {
-        return new KotlinMethodCodeWriter(this, method);
+    protected MethodCodeWriter createMethodCodeWriter(Method method, String id) {
+        return new KotlinMethodCodeWriter(this, method, id);
     }
 }

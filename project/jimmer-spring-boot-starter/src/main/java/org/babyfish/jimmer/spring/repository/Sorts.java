@@ -14,7 +14,9 @@ import java.util.List;
 
 public class Sorts {
 
-    private static final TypedProp.Scalar<?, ?>[] EMPTY_ARR = new TypedProp.Scalar<?, ?>[0];
+    private static final TypedProp.Scalar<?, ?>[] EMPTY_PROPS = new TypedProp.Scalar<?, ?>[0];
+
+    private static final Order[] EMPTY_ORDERS = new Order[0];
 
     private Sorts() {}
 
@@ -25,19 +27,28 @@ public class Sorts {
             TypedProp.Scalar<?, ?> prop = TypedProp.scalar(immutableType.getProp(order.getProperty()));
             props.add(order.isDescending() ? prop.desc() : prop);
         }
-        return props.toArray(EMPTY_ARR);
+        return props.toArray(EMPTY_PROPS);
     }
 
-    public static List<Order> toOrder(Props table, Sort sort) {
+    public static Order[] toOrders(Props table, Sort sort) {
         if (sort == null || sort.isEmpty()) {
-            return Collections.emptyList();
+            return EMPTY_ORDERS;
         }
-        List<Order> orders = new ArrayList<>();
+        List<Order> astOrders = new ArrayList<>();
         for (Sort.Order order : sort) {
             Expression<?> expr = table.get(order.getProperty());
-            orders.add(order.isDescending() ? expr.desc() : expr.asc());
+            Order astOrder = order.isDescending() ? expr.desc() : expr.asc();
+            switch (order.getNullHandling()) {
+                case NULLS_FIRST:
+                    astOrder = astOrder.nullsFirst();
+                    break;
+                case NULLS_LAST:
+                    astOrder = astOrder.nullsLast();
+                    break;
+            }
+            astOrders.add(astOrder);
         }
-        return orders;
+        return astOrders.toArray(EMPTY_ORDERS);
     }
 
     public static Sort toSort(TypedProp.Scalar<?, ?> ... props) {
@@ -52,9 +63,14 @@ public class Sorts {
                 }
                 entityType = dt;
             }
-            if (prop instanceof TypedProp.Scalar.Desc<?, ?>) {
-                orders.add(new Sort.Order(Sort.Direction.DESC, ip.getName()));
-            }
+            Sort.Order order = new Sort.Order(
+                    prop.isDesc() ? Sort.Direction.DESC : Sort.Direction.ASC,
+                    ip.getName(),
+                    prop.isNullsFirst() ? Sort.NullHandling.NULLS_FIRST :
+                            prop.isNullsLast() ? Sort.NullHandling.NULLS_LAST :
+                                    Sort.NullHandling.NATIVE
+            );
+            orders.add(order);
         }
         return Sort.by(orders);
     }

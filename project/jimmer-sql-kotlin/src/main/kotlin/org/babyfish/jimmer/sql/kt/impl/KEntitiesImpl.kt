@@ -13,7 +13,7 @@ import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KDeleteCommandDslImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KDeleteResultImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KSaveCommandDslImpl
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KSimpleSaveResultImpl
-import org.babyfish.jimmer.sql.kt.ast.query.FindDsl
+import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.babyfish.jimmer.sql.kt.ast.query.KExample
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose
 import java.sql.Connection
@@ -71,16 +71,16 @@ internal class KEntitiesImpl(
     ): Map<ID, E> =
         javaEntities.findMapByIds(fetcher, ids)
 
-    override fun <E : Any> findAll(type: KClass<E>, block: (FindDsl<E>.() -> Unit)?): List<E> =
+    override fun <E : Any> findAll(type: KClass<E>, block: (SortDsl<E>.() -> Unit)?): List<E> =
         find(ImmutableType.get(type.java), null, null, block)
 
-    override fun <E : Any> findAll(fetcher: Fetcher<E>, block: (FindDsl<E>.() -> Unit)?): List<E> =
+    override fun <E : Any> findAll(fetcher: Fetcher<E>, block: (SortDsl<E>.() -> Unit)?): List<E> =
         find(fetcher.immutableType, fetcher, null, block)
 
     override fun <E : Any> findByExample(
         example: KExample<E>,
         fetcher: Fetcher<E>?,
-        block: (FindDsl<E>.() -> Unit)?
+        block: (SortDsl<E>.() -> Unit)?
     ): List<E> =
         find(example.type, fetcher, example, block)
 
@@ -88,7 +88,7 @@ internal class KEntitiesImpl(
         type: ImmutableType,
         fetcher: Fetcher<E>?,
         example: KExample<E>?,
-        block: (FindDsl<E>.() -> Unit)?
+        block: (SortDsl<E>.() -> Unit)?
     ): List<E> {
         if (fetcher !== null && fetcher.immutableType !== type) {
             throw IllegalArgumentException(
@@ -105,7 +105,7 @@ internal class KEntitiesImpl(
         val table = query.getTable<Table<E>>()
         example?.applyTo(query)
         if (block !== null) {
-            val dsl = FindDsl<E>()
+            val dsl = SortDsl<E>()
             dsl.block()
             dsl.applyTo(query)
         }

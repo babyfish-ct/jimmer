@@ -56,11 +56,11 @@ public class SimpleCaseBuilder<C, T> {
             );
         }
         if (type.isPrimitive() || Number.class.isAssignableFrom(type)) {
-            return (Expression<T>) new NumExpr<>(
-                    (Class<Number>) type,
+            return (Expression<T>) new NumExpr(
+                    type,
                     expression,
-                    (List<Tuple2<Expression<?>, Expression<Number>>>)(List<?>)whens,
-                    (Expression<Number>)otherwise
+                    (List<?>)whens,
+                    otherwise
             );
         }
         if (Comparable.class.isAssignableFrom(type)) {
@@ -111,7 +111,7 @@ public class SimpleCaseBuilder<C, T> {
         }
     }
     
-    public static class Num<C, N extends Number> extends SimpleCaseBuilder<C, N> {
+    public static class Num<C, N extends Number & Comparable<N>> extends SimpleCaseBuilder<C, N> {
 
         Num(Class<N> type, Expression<?> expression) {
             super(type, expression);
@@ -257,7 +257,7 @@ public class SimpleCaseBuilder<C, T> {
         }
     }
     
-    private static class NumExpr<N extends Number> extends AnyExpr<N> implements NumericExpressionImplementor<N> {
+    private static class NumExpr<N extends Number & Comparable<N>> extends AnyExpr<N> implements NumericExpressionImplementor<N> {
 
         NumExpr(
                 Class<N> type, 

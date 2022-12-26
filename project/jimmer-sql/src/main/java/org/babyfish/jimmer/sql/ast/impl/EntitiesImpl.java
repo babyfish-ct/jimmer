@@ -17,6 +17,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Example;
+import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
@@ -363,11 +364,20 @@ public class EntitiesImpl implements Entities {
                                 "\" or its super types"
                 );
             }
-            if (sortedProp instanceof TypedProp.Scalar.Desc<?, ?>) {
-                query.orderBy(table.get(sortedProp.unwrap().getName()).desc());
+            Expression<?> expr = table.get(sortedProp.unwrap().getName());
+            Order astOrder;
+            if (sortedProp.isDesc()) {
+                astOrder = expr.desc();
             } else {
-                query.orderBy(table.get(sortedProp.unwrap().getName()).asc());
+                astOrder = expr.asc();
             }
+            if (sortedProp.isNullsFirst()) {
+                astOrder = astOrder.nullsFirst();
+            }
+            if (sortedProp.isNullsLast()) {
+                astOrder = astOrder.nullsLast();
+            }
+            query.orderBy(astOrder);
         }
         query.freeze();
         return query.select(
