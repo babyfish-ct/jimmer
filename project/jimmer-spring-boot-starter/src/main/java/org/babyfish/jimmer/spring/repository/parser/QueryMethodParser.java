@@ -255,7 +255,7 @@ class QueryMethodParser {
 
     private Param nextParam(PropPredicate predicate) {
         paramIndex++;
-        while (isImplicitParameterType(parameterTypes[paramIndex]) && paramIndex < parameterTypes.length) {
+        while (paramIndex < parameterTypes.length && isImplicitParameterType(parameterTypes[paramIndex])) {
             paramIndex++;
         }
         if (paramIndex >= parameterTypes.length) {
