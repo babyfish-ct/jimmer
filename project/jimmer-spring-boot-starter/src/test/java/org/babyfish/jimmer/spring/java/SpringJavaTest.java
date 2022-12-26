@@ -1,10 +1,10 @@
 package org.babyfish.jimmer.spring.java;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.spring.AbstractTest;
+import org.babyfish.jimmer.spring.cfg.JimmerAutoConfiguration;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
+import org.babyfish.jimmer.spring.cfg.SqlClientConfig;
 import org.babyfish.jimmer.spring.java.bll.BookService;
 import org.babyfish.jimmer.spring.client.TypeScriptService;
 import org.babyfish.jimmer.spring.java.dal.BookRepository;
@@ -13,8 +13,6 @@ import org.babyfish.jimmer.spring.datasource.TxCallback;
 import org.babyfish.jimmer.spring.java.model.*;
 import org.babyfish.jimmer.spring.repository.EnableJimmerRepositories;
 import org.babyfish.jimmer.spring.repository.Sorts;
-import org.babyfish.jimmer.spring.repository.SpringConnectionManager;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -29,6 +27,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -54,11 +53,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-@SpringBootTest(properties = "jimmer.ts.path=/my-ts.zip")
+@SpringBootTest(properties = {"jimmer.client.ts.path=/my-ts.zip", "jimmer.dialect=org.babyfish.jimmer.sql.dialect.H2Dialect"})
 @SpringBootConfiguration
 @AutoConfigurationPackage
 @EnableJimmerRepositories
 @EnableConfigurationProperties(JimmerProperties.class)
+@Import(SqlClientConfig.class)
 public class SpringJavaTest extends AbstractTest {
 
     private final static List<String> TRANSACTION_EVENTS = new ArrayList<>();
@@ -103,28 +103,26 @@ public class SpringJavaTest extends AbstractTest {
         }
 
         @Bean
-        public JSqlClient sqlClient(DataSource dataSource) {
-            return JSqlClient
-                    .newBuilder()
-                    .setConnectionManager(new SpringConnectionManager(dataSource))
-                    .setEntityManager(JimmerModule.ENTITY_MANAGER)
-                    .setExecutor(
-                            new Executor() {
-                                @Override
-                                public <R> R execute(
-                                        Connection con,
-                                        String sql,
-                                        List<Object> variables,
-                                        ExecutionPurpose purpose,
-                                        StatementFactory statementFactory,
-                                        SqlFunction<PreparedStatement, R> block
-                                ) {
-                                    SQL_STATEMENTS.add(sql);
-                                    return DefaultExecutor.INSTANCE.execute(con, sql, variables, purpose, statementFactory, block);
-                                }
-                            }
-                    )
-                    .build();
+        public EntityManager entityManager() {
+            return JimmerModule.ENTITY_MANAGER;
+        }
+
+        @Bean
+        public Executor executor() {
+            return new Executor() {
+                @Override
+                public <R> R execute(
+                        Connection con,
+                        String sql,
+                        List<Object> variables,
+                        ExecutionPurpose purpose,
+                        StatementFactory statementFactory,
+                        SqlFunction<PreparedStatement, R> block
+                ) {
+                    SQL_STATEMENTS.add(sql);
+                    return DefaultExecutor.INSTANCE.execute(con, sql, variables, purpose, statementFactory, block);
+                }
+            };
         }
 
         @Bean
@@ -169,7 +167,7 @@ public class SpringJavaTest extends AbstractTest {
     public void testProperties() {
         Assertions.assertEquals(
                 "/my-ts.zip",
-                jimmerProperties.getTs().getPath()
+                jimmerProperties.getClient().getTs().getPath()
         );
     }
 

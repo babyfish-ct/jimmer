@@ -137,6 +137,10 @@ public interface JSqlClient extends SubQueryProvider {
 
     interface Builder {
 
+        int DEFAULT_BATCH_SIZE = 128;
+
+        int DEFAULT_LIST_BATCH_SIZE = 16;
+
         @OldChain
         Builder setConnectionManager(ConnectionManager connectionManager);
 

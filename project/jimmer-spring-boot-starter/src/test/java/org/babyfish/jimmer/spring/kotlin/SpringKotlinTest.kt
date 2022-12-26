@@ -2,12 +2,11 @@ package org.babyfish.jimmer.spring.kotlin
 
 import org.babyfish.jimmer.spring.AbstractTest
 import org.babyfish.jimmer.spring.cfg.JimmerProperties
+import org.babyfish.jimmer.spring.cfg.SqlClientConfig
 import org.babyfish.jimmer.spring.datasource.DataSources
 import org.babyfish.jimmer.spring.datasource.TxCallback
 import org.babyfish.jimmer.spring.repository.EnableJimmerRepositories
-import org.babyfish.jimmer.spring.repository.SpringConnectionManager
-import org.babyfish.jimmer.sql.kt.KSqlClient
-import org.babyfish.jimmer.sql.kt.newKSqlClient
+import org.babyfish.jimmer.sql.runtime.*
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -19,13 +18,17 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
+import java.sql.Connection
+import java.sql.PreparedStatement
 import javax.sql.DataSource
 
-@SpringBootTest(properties = ["jimmer.ts.path=/my-ts.zip"])
+@SpringBootTest(properties = ["jimmer.client.ts.path=/my-ts.zip", "jimmer.language=kotlin"])
 @SpringBootConfiguration
 @AutoConfigurationPackage
 @EnableJimmerRepositories
 @EnableConfigurationProperties(JimmerProperties::class)
+@Import(SqlClientConfig::class)
 open class SpringKotlinTest : AbstractTest() {
 
     @BeforeEach
@@ -35,7 +38,8 @@ open class SpringKotlinTest : AbstractTest() {
     }
 
     @Configuration
-    open class SqlClientConfig {
+    open class DataSourceConfig {
+
         @Bean
         open fun dataSource(): DataSource {
             return DataSources.create(
@@ -56,15 +60,25 @@ open class SpringKotlinTest : AbstractTest() {
         }
 
         @Bean
-        open fun sqlClient(dataSource: DataSource): KSqlClient =
-            newKSqlClient {
-                setConnectionManager(SpringConnectionManager(dataSource))
-                setEntityManager(ENTITY_MANAGER)
-                setExecutor {
+        open fun entityManage(): EntityManager =
+            ENTITY_MANAGER
+
+        @Bean
+        open fun executor(): Executor? {
+            return object : Executor {
+                override fun <R> execute(
+                    con: Connection,
+                    sql: String,
+                    variables: List<Any>,
+                    purpose: ExecutionPurpose,
+                    statementFactory: StatementFactory?,
+                    block: SqlFunction<PreparedStatement, R>
+                ): R {
                     SQL_STATEMENTS.add(sql)
-                    proceed()
+                    return DefaultExecutor.INSTANCE.execute(con, sql, variables, purpose, statementFactory, block)
                 }
             }
+        }
     }
 
     @Autowired
@@ -75,7 +89,7 @@ open class SpringKotlinTest : AbstractTest() {
 
     @Test
     fun testProperties() {
-        Assertions.assertEquals("/my-ts.zip", jimmerProperties.ts.path)
+        Assertions.assertEquals("/my-ts.zip", jimmerProperties.client.ts.path)
     }
 
     @Test

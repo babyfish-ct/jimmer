@@ -470,9 +470,9 @@ class JSqlClientImpl implements JSqlClient {
 
         private final Map<Class<?>, IdGenerator> idGeneratorMap = new HashMap<>();
 
-        private int defaultBatchSize = 128;
+        private int defaultBatchSize = DEFAULT_BATCH_SIZE;
 
-        private int defaultListBatchSize = 16;
+        private int defaultListBatchSize = DEFAULT_LIST_BATCH_SIZE;
 
         private EntityManager entityManager;
 
@@ -634,6 +634,9 @@ class JSqlClientImpl implements JSqlClient {
         @Override
         @OldChain
         public JSqlClient.Builder setCaches(Consumer<CacheConfig> block) {
+            if (caches != null) {
+                throw new IllegalStateException("caches cannot be set twice");
+            }
             createTriggersIfNecessary();
             caches = CachesImpl.of(triggers, entityManager, block);
             return this;

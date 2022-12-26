@@ -15,16 +15,22 @@ public interface BookRepository extends JRepository<Book, Long> {
 
     BookTable table = BookTable.$;
 
-    List<Book> findByNameOrderByNameAscEditionDesc(String name, Fetcher<Book> fetcher);
+    List<Book> findByNameOrderByNameAscEditionDesc(
+            @Nullable String name,
+            @Nullable Fetcher<Book> fetcher
+    );
 
     Page<Book> findByNameLikeIgnoreCaseAndStoreNameOrderByNameAscEditionDesc(
             Pageable pageable,
-            Fetcher<Book> fetcher,
-            String name,
-            String storeName
+            @Nullable Fetcher<Book> fetcher,
+            @Nullable String name,
+            @Nullable String storeName
     );
 
-    List<BigDecimal> findDistinctPriceByPriceBetween(BigDecimal min, BigDecimal max);
+    List<BigDecimal> findDistinctPriceByPriceBetween(
+            @Nullable BigDecimal min,
+            @Nullable BigDecimal max
+    );
 
     default Page<Book> findBooks(
             int pageIndex,
