@@ -25,7 +25,7 @@ public class AuthorService {
             @RequestParam(required = false) String lastName,
             @RequestParam(required = false) Gender gender
     ) {
-        return authorRepository.findAuthors(
+        return authorRepository.findByFirstNameAndLastNameAndGender(
                 firstName,
                 lastName,
                 gender,
@@ -39,7 +39,7 @@ public class AuthorService {
             @RequestParam(required = false) String lastName,
             @RequestParam(required = false) Gender gender
     ) {
-        return authorRepository.findAuthors(
+        return authorRepository.findByFirstNameAndLastNameAndGender(
                 firstName,
                 lastName,
                 gender,

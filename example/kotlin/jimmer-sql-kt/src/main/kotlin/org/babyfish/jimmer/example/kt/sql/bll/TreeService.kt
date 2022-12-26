@@ -22,7 +22,7 @@ class TreeService(
     fun findRootNodes(
         @RequestParam(required = false) rootName: String?
     ): List<TreeNode> =
-        treeNodeRepository.findRootNodes(rootName, null)
+        treeNodeRepository.findByParentIsNullAndName(rootName, null)
 
     @Transactional
     @GetMapping("/rootTrees")
@@ -30,7 +30,7 @@ class TreeService(
         @RequestParam(required = false) rootName: String?,
         @RequestParam(required = false) noRecursiveNames: String?
     ): List<@FetchBy("RECURSIVE_FETCHER") TreeNode> =
-        treeNodeRepository.findRootNodes(
+        treeNodeRepository.findByParentIsNullAndName(
             rootName,
             if (!StringUtils.hasText(noRecursiveNames)) {
                 RECURSIVE_FETCHER

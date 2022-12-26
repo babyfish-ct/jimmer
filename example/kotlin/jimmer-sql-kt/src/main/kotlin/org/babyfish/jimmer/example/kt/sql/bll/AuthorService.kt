@@ -21,7 +21,7 @@ class AuthorService(
         @RequestParam lastName: String?,
         @RequestParam gender: Gender?
     ): List<@FetchBy("SIMPLE_FETCHER") Author> =
-        authorRepository.findAuthors(
+        authorRepository.findByFirstNameAndLastNameAndGender(
             firstName,
             lastName,
             gender,
@@ -34,7 +34,7 @@ class AuthorService(
         @RequestParam lastName: String?,
         @RequestParam gender: Gender?
     ): List<@FetchBy("COMPLEX_FETCHER") Author> =
-        authorRepository.findAuthors(
+        authorRepository.findByFirstNameAndLastNameAndGender(
             firstName,
             lastName,
             gender,

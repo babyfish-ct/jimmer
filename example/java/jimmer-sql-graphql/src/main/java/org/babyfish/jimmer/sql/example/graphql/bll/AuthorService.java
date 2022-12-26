@@ -28,7 +28,7 @@ public class AuthorService {
 
     @QueryMapping
     public List<Author> authors(@Argument @Nullable String name) {
-        return authorRepository.find(name);
+        return authorRepository.findByName(name);
     }
 
     // --- Association ---

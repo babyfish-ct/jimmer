@@ -21,7 +21,7 @@ class AuthorInput(
         private val CONVERTER = ImmutableConverter
             .forFields(Author::class.java, AuthorInput::class.java)
             .map(Author::id) {
-                useIf { it.id != null }
+                useIf { id != null }
             }
             .build()
     }
