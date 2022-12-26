@@ -9,9 +9,8 @@ import org.babyfish.jimmer.spring.repository.parser.*;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
-public class MethodCodeWriter implements Constants {
+public abstract class MethodCodeWriter implements Constants {
 
     protected final ClassCodeWriter parent;
 
@@ -32,12 +31,9 @@ public class MethodCodeWriter implements Constants {
     }
 
     public void write() {
-        if (!method.isDefault()) {
-            writeImpl();
+        if (method.isDefault()) {
+            return;
         }
-    }
-
-    protected void writeImpl() {
         QueryMethod queryMethod = QueryMethod.of(
                 parent.ctx,
                 ImmutableType.get(parent.metadata.getDomainType()),
@@ -65,7 +61,9 @@ public class MethodCodeWriter implements Constants {
     }
 
     private void writeCode(QueryMethod queryMethod, List<Integer> slots) {
-        visitLoadSqlClient();
+
+        visitLoadJSqlClient();
+
         mv.visitLdcInsn(Type.getType(parent.metadata.getDomainType()));
         mv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
@@ -74,22 +72,26 @@ public class MethodCodeWriter implements Constants {
                 "(Ljava/lang/Class;)" + IMMUTABLE_TYPE_DESCRIPTOR,
                 true
         );
+
         mv.visitFieldInsn(
                 Opcodes.GETSTATIC,
                 parent.getImplInternalName(),
                 queryMethodFieldName(),
                 QUERY_METHOD_DESCRIPTOR
         );
+
         if (queryMethod.getPageableParamIndex() != -1) {
             mv.visitVarInsn(Opcodes.ALOAD, slots.get(queryMethod.getPageableParamIndex()));
         } else {
             mv.visitInsn(Opcodes.ACONST_NULL);
         }
+
         if (queryMethod.getSortParamIndex() != -1) {
             mv.visitVarInsn(Opcodes.ALOAD, slots.get(queryMethod.getSortParamIndex()));
         } else {
             mv.visitInsn(Opcodes.ACONST_NULL);
         }
+
         if (queryMethod.getFetcherIndex() != -1) {
             mv.visitVarInsn(Opcodes.ALOAD, slots.get(queryMethod.getFetcherIndex()));
         } else {
@@ -119,9 +121,9 @@ public class MethodCodeWriter implements Constants {
         }
         mv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
-                JAVA_EXECUTORS_INTERNAL_NAME,
+                QUERY_EXECUTORS_INTERNAL_NAME,
                 "execute",
-                JAVA_EXECUTORS_EXECUTE_DESCRIPTOR,
+                QUERY_EXECUTORS_METHOD_DESCRIPTOR,
                 false
         );
         visitUnbox(method.getReturnType(), true);
@@ -158,15 +160,7 @@ public class MethodCodeWriter implements Constants {
         return count;
     }
 
-    protected void visitLoadSqlClient() {
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitFieldInsn(
-                Opcodes.GETFIELD,
-                parent.getImplInternalName(),
-                "sqlClient",
-                parent.getSqlClientDescriptor()
-        );
-    }
+    protected abstract void visitLoadJSqlClient();
 
     public MethodVisitor getMethodVisitor() {
         return mv;

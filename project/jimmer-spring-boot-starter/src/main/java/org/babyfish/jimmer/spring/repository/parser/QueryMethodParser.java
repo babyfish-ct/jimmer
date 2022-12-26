@@ -203,7 +203,7 @@ class QueryMethodParser {
     }
 
     private Predicate resolve(PropPredicate propPredicate) {
-        if (propPredicate.getPath().isReference() &&
+        if (!propPredicate.getPath().isScalar() &&
                 propPredicate.getOp() != PropPredicate.Op.NULL &&
                 propPredicate.getOp() != PropPredicate.Op.NOT_NULL) {
             throw new IllegalArgumentException(
