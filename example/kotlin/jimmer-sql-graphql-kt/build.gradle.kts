@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "org.babyfish.jimmer.example.kt"
-version = "0.5.37"
+version = "0.5.38"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
@@ -18,12 +18,10 @@ repositories {
 
 dependencies {
 
-	implementation("org.babyfish.jimmer:jimmer-spring-boot-starter:0.5.37")
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.5.37")
+	implementation("org.babyfish.jimmer:jimmer-spring-boot-starter:0.5.38")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.5.38")
 
 	implementation("org.springframework.boot:spring-boot-starter-graphql")
-	implementation("org.springframework.boot:spring-boot-starter-web")
-	implementation("org.springframework.boot:spring-boot-starter-jdbc")
 
 	implementation("com.graphql-java:graphql-java-extended-scalars:18.1")
 
