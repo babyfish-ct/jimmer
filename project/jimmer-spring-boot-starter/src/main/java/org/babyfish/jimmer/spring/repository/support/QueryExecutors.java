@@ -5,12 +5,10 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.spring.repository.Sorts;
 import org.babyfish.jimmer.spring.repository.parser.*;
+import org.babyfish.jimmer.spring.repository.parser.Predicate;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.JoinType;
-import org.babyfish.jimmer.sql.ast.ComparableExpression;
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.PropExpression;
-import org.babyfish.jimmer.sql.ast.StringExpression;
+import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
@@ -27,9 +25,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-public class JavaExecutors {
+public class QueryExecutors {
 
-    private JavaExecutors() {}
+    private QueryExecutors() {}
 
     @SuppressWarnings("unchecked")
     public static Object execute(
@@ -54,8 +52,8 @@ public class JavaExecutors {
                         for (Query.Order order : queryData.getOrders()) {
                             q.orderBy(
                                     order.getOrderMode() == OrderMode.DESC ?
-                                            astExpression(table, order.getPath(), true).desc() :
-                                            astExpression(table, order.getPath(), true).asc()
+                                            ((Expression<?>) astSelection(table, order.getPath(), true)).desc() :
+                                            ((Expression<?>) astSelection(table, order.getPath(), true)).asc()
                             );
                         }
                         Sort finalSort = pageable != null ? pageable.getSort() : sort;
@@ -66,7 +64,7 @@ public class JavaExecutors {
                             return q.select(((Table<Object>)table).fetch((Fetcher<Object>) fetcher));
                         }
                         if (queryData.getSelectedPath() != null) {
-                            return q.select((Expression<Object>)astExpression(table, queryData.getSelectedPath(), false));
+                            return q.select((Expression<Object>) astSelection(table, queryData.getSelectedPath(), false));
                         }
                         if (queryData.getAction() == Query.Action.COUNT) {
                             return q.select((Expression<Object>)(Expression<?>)table.count());
@@ -119,35 +117,39 @@ public class JavaExecutors {
         }
         if (predicate instanceof PropPredicate) {
             PropPredicate propPredicate = (PropPredicate) predicate;
-            Expression<?> astExpression;
+            Selection<?> astSelection;
             switch (propPredicate.getOp()) {
                 case NOT_IN:
                 case NOT_NULL:
-                    astExpression = astExpression(table, propPredicate.getPath(), true);
+                    astSelection = astSelection(table, propPredicate.getPath(), true);
                     break;
                 default:
-                    astExpression = astExpression(table, propPredicate.getPath(), false);
+                    astSelection = astSelection(table, propPredicate.getPath(), false);
                     break;
             }
             switch (propPredicate.getOp()) {
                 case TRUE:
-                    return ((Expression<Boolean>)astExpression).eq(true);
+                    return ((Expression<Boolean>)astSelection).eq(true);
                 case FALSE:
-                    return ((Expression<Boolean>)astExpression).eq(false);
+                    return ((Expression<Boolean>)astSelection).eq(false);
                 case NULL:
-                    return astExpression(table, propPredicate.getPath(), true).isNull();
+                    return astSelection instanceof Expression<?> ?
+                            ((Expression<?>)astSelection).isNull() :
+                            ((Table<?>)astSelection).isNull();
                 case NOT_NULL:
-                    return astExpression(table, propPredicate.getPath(), true).isNotNull();
+                    return astSelection instanceof Expression<?> ?
+                            ((Expression<?>)astSelection).isNotNull() :
+                            ((Table<?>)astSelection).isNotNull();
                 case IN: {
                     Collection<Object> c = (Collection<Object>) args[propPredicate.getLogicParamIndex()];
-                    return c == null ? null : ((Expression<Object>)astExpression).in(c);
+                    return c == null ? null : ((Expression<Object>)astSelection).in(c);
                 }
                 case NOT_IN: {
                     Collection<Object> c = (Collection<Object>) args[propPredicate.getLogicParamIndex()];
-                    return c == null ? null : ((Expression<Object>)astExpression).notIn(c);
+                    return c == null ? null : ((Expression<Object>)astSelection).notIn(c);
                 }
                 case BETWEEN: {
-                    astExpression = insensitive(propPredicate.isInsensitive(), astExpression);
+                    astSelection = insensitive(propPredicate.isInsensitive(), astSelection);
                     Comparable min = (Comparable) insensitive(
                             propPredicate.isInsensitive(),
                             args[propPredicate.getLogicParamIndex()]
@@ -157,18 +159,18 @@ public class JavaExecutors {
                             args[propPredicate.getLogicParamIndex2()]
                     );
                     if (min != null && max != null) {
-                        return ((ComparableExpression)astExpression).between(min, max);
+                        return ((ComparableExpression)astSelection).between(min, max);
                     }
                     if (min != null) {
-                        return ((ComparableExpression)astExpression).ge(min);
+                        return ((ComparableExpression)astSelection).ge(min);
                     }
                     if (max != null) {
-                        return ((ComparableExpression)astExpression).le(max);
+                        return ((ComparableExpression)astSelection).le(max);
                     }
                     return null;
                 }
                 case NOT_BETWEEN: {
-                    astExpression = insensitive(propPredicate.isInsensitive(), astExpression);
+                    astSelection = insensitive(propPredicate.isInsensitive(), astSelection);
                     Comparable min = (Comparable) insensitive(
                             propPredicate.isInsensitive(),
                             args[propPredicate.getLogicParamIndex()]
@@ -178,13 +180,13 @@ public class JavaExecutors {
                             args[propPredicate.getLogicParamIndex2()]
                     );
                     if (min != null && max != null) {
-                        return ((ComparableExpression)astExpression).notBetween(min, max);
+                        return ((ComparableExpression)astSelection).notBetween(min, max);
                     }
                     if (min != null) {
-                        return ((ComparableExpression)astExpression).lt(min);
+                        return ((ComparableExpression)astSelection).lt(min);
                     }
                     if (max != null) {
-                        return ((ComparableExpression)astExpression).gt(max);
+                        return ((ComparableExpression)astSelection).gt(max);
                     }
                     return null;
                 }
@@ -193,58 +195,58 @@ public class JavaExecutors {
                     return pattern == null || pattern.isEmpty() ?
                             null :
                             propPredicate.isInsensitive() ?
-                                    ((StringExpression) astExpression).ilike(pattern, propPredicate.getLikeMode()) :
-                                    ((StringExpression) astExpression).like(pattern, propPredicate.getLikeMode());
+                                    ((StringExpression) astSelection).ilike(pattern, propPredicate.getLikeMode()) :
+                                    ((StringExpression) astSelection).like(pattern, propPredicate.getLikeMode());
                 }
                 case NOT_LIKE: {
                     String pattern = (String) args[propPredicate.getLogicParamIndex()];
                     return pattern == null || pattern.isEmpty() ?
                             null :
                             propPredicate.isInsensitive() ?
-                                    ((StringExpression) astExpression).ilike(pattern, propPredicate.getLikeMode()).not() :
-                                    ((StringExpression) astExpression).like(pattern, propPredicate.getLikeMode()).not();
+                                    ((StringExpression) astSelection).ilike(pattern, propPredicate.getLikeMode()).not() :
+                                    ((StringExpression) astSelection).like(pattern, propPredicate.getLikeMode()).not();
                 }
                 case EQ: {
-                    astExpression = insensitive(propPredicate.isInsensitive(), astExpression);
+                    astSelection = insensitive(propPredicate.isInsensitive(), astSelection);
                     Object value = insensitive(propPredicate.isInsensitive(), args[propPredicate.getLogicParamIndex()]);
-                    return value == null ? null : ((Expression<Object>) astExpression).eq(value);
+                    return value == null ? null : ((Expression<Object>) astSelection).eq(value);
                 }
                 case NE: {
-                    astExpression = insensitive(propPredicate.isInsensitive(), astExpression);
+                    astSelection = insensitive(propPredicate.isInsensitive(), astSelection);
                     Object value = insensitive(propPredicate.isInsensitive(), args[propPredicate.getLogicParamIndex()]);
-                    return value == null ? null : ((Expression<Object>) astExpression).ne(value);
+                    return value == null ? null : ((Expression<Object>) astSelection).ne(value);
                 }
                 case LT: {
-                    astExpression = insensitive(propPredicate.isInsensitive(), astExpression);
+                    astSelection = insensitive(propPredicate.isInsensitive(), astSelection);
                     Comparable value = (Comparable) insensitive(
                             propPredicate.isInsensitive(),
                             args[propPredicate.getLogicParamIndex()]
                     );
-                    return value == null ? null : ((ComparableExpression) astExpression).lt(value);
+                    return value == null ? null : ((ComparableExpression) astSelection).lt(value);
                 }
                 case LE: {
-                    astExpression = insensitive(propPredicate.isInsensitive(), astExpression);
+                    astSelection = insensitive(propPredicate.isInsensitive(), astSelection);
                     Comparable value = (Comparable) insensitive(
                             propPredicate.isInsensitive(),
                             args[propPredicate.getLogicParamIndex()]
                     );
-                    return value == null ? null : ((ComparableExpression) astExpression).le(value);
+                    return value == null ? null : ((ComparableExpression) astSelection).le(value);
                 }
                 case GT: {
-                    astExpression = insensitive(propPredicate.isInsensitive(), astExpression);
+                    astSelection = insensitive(propPredicate.isInsensitive(), astSelection);
                     Comparable value = (Comparable) insensitive(
                             propPredicate.isInsensitive(),
                             args[propPredicate.getLogicParamIndex()]
                     );
-                    return value == null ? null : ((ComparableExpression) astExpression).gt(value);
+                    return value == null ? null : ((ComparableExpression) astSelection).gt(value);
                 }
                 case GE: {
-                    astExpression = insensitive(propPredicate.isInsensitive(), astExpression);
+                    astSelection = insensitive(propPredicate.isInsensitive(), astSelection);
                     Comparable value = (Comparable) insensitive(
                             propPredicate.isInsensitive(),
                             args[propPredicate.getLogicParamIndex()]
                     );
-                    return value == null ? null : ((ComparableExpression) astExpression).ge(value);
+                    return value == null ? null : ((ComparableExpression) astSelection).ge(value);
                 }
             }
         }
@@ -271,7 +273,7 @@ public class JavaExecutors {
         throw new AssertionError("Internal bug, unexpected prop predicate " + predicate);
     }
 
-    private static Expression<?> astExpression(Table<?> table, Path path, boolean outerJoin) {
+    private static Selection<?> astSelection(Table<?> table, Path path, boolean outerJoin) {
         PropExpression<?> propExpr = null;
         for (ImmutableProp prop : path.getProps()) {
             if (prop.isAssociation(TargetLevel.ENTITY)) {
@@ -282,14 +284,14 @@ public class JavaExecutors {
                 propExpr = table.get(prop.getName());
             }
         }
-        return propExpr;
+        return propExpr != null ? propExpr : table;
     }
 
-    private static Expression<?> insensitive(boolean apply, Expression<?> astExpression) {
+    private static Expression<?> insensitive(boolean apply, Selection<?> astExpression) {
         if (apply) {
             return ((StringExpression) astExpression).lower();
         }
-        return astExpression;
+        return (Expression<?>) astExpression;
     }
 
     private static Object insensitive(boolean apply, Object arg) {

@@ -13,6 +13,25 @@ public class KotlinMethodCodeWriter extends MethodCodeWriter {
     }
 
     @Override
+    protected void visitLoadJSqlClient() {
+        mv.visitVarInsn(Opcodes.ALOAD, 0);
+        mv.visitMethodInsn(
+                Opcodes.INVOKEVIRTUAL,
+                K_REPOSITORY_IMPL,
+                "getSql",
+                "()" + K_SQL_CLIENT_DESCRIPTOR,
+                false
+        );
+        mv.visitMethodInsn(
+                Opcodes.INVOKEINTERFACE,
+                K_SQL_CLIENT_INTERNAL_NAME,
+                "getJavaClient",
+                "()" + J_SQL_CLIENT_DESCRIPTOR,
+                true
+        );
+    }
+
+    @Override
     public void write() {
         if (method.isDefault()) {
             return;
@@ -22,12 +41,7 @@ public class KotlinMethodCodeWriter extends MethodCodeWriter {
             writeDefaultInvocation(defaultMethod);
             return;
         }
-        throw new IllegalStateException(
-                "The current version does not support spring-data-style abstract custom method \"" +
-                        method +
-                        "\", please wait for the next version. " +
-                        "Now, you can write strongly typed DSL using java-default method."
-        );
+        super.write();
     }
 
     private void writeDefaultInvocation(Method defaultMethod) {

@@ -258,12 +258,18 @@ class QueryParser {
             int descIndex = source.indexOf("Desc");
             if (ascIndex == -1 && descIndex == -1) {
                 Path path = new PathParser(ctx, distinct).parse(source, type);
+                if (!path.isScalar()) {
+                    throw new IllegalArgumentException("The ordered property of \"" + source + "\" must be scalar");
+                }
                 orders.add(new Query.Order(path, OrderMode.ASC));
                 break;
             }
             if (descIndex == -1 || (ascIndex > 0 && ascIndex < descIndex)) {
                 Source propSource = source.subSource(0, ascIndex);
                 Path path = new PathParser(ctx, distinct).parse(propSource, type);
+                if (!path.isScalar()) {
+                    throw new IllegalArgumentException("The ordered property of \"" + source + "\" must be scalar");
+                }
                 orders.add(new Query.Order(path, OrderMode.ASC));
                 source = source.subSource(ascIndex + 3);
                 continue;
@@ -271,6 +277,9 @@ class QueryParser {
             if (ascIndex == -1 || (descIndex > 0 && descIndex < ascIndex)) {
                 Source propSource = source.subSource(0, descIndex);
                 Path path = new PathParser(ctx, distinct).parse(propSource, type);
+                if (!path.isScalar()) {
+                    throw new IllegalArgumentException("The ordered property of \"" + source + "\" must be scalar");
+                }
                 orders.add(new Query.Order(path, OrderMode.DESC));
                 source = source.subSource(descIndex + 4);
             }

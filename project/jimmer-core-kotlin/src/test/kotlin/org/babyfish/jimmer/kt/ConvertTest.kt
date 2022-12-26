@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.kt
 
+import org.babyfish.jimmer.ImmutableConverter
 import org.babyfish.jimmer.kt.model.*
 import java.math.BigDecimal
 import kotlin.test.Test
@@ -9,28 +10,11 @@ import kotlin.test.expect
 class ConvertTest {
 
     @Test
-    fun testFullConverter() {
-        assertFailsWith(IllegalArgumentException::class) {
-            immutableConverterForMethods(Book::class, Partial::class) {
-                autoMapOtherScalars()
-            }
-        }.let {
-            expect(
-                "Cannot automatically map the property " +
-                    "\"org.babyfish.jimmer.kt.model.Book.edition\", " +
-                    "the static type \"org.babyfish.jimmer.kt.ConvertTest\$Partial\" " +
-                    "has neither methods \"getEdition()\", \"edition()\" nor field \"edition\""
-            ) {
-                it.message
-            }
-        }
-    }
-
-    @Test
     fun testPartialConverter() {
-        val book = immutableConverterForMethods(Book::class, Partial::class) {
-            autoMapOtherScalars(true)
-        }.convert(Partial("SQL in Action"))
+        val book = ImmutableConverter
+            .forMethods(Book::class.java, Partial::class.java)
+            .build()
+            .convert(Partial("SQL in Action"))
         expect("{\"name\":\"SQL in Action\"}") {
             book.toString()
         }
@@ -38,34 +22,25 @@ class ConvertTest {
 
     @Test
     fun testCondConverter() {
-        val book = immutableConverterForMethods(Book::class, Partial::class) {
-            map(Book::name) {
+        val book = ImmutableConverter
+            .forMethods(Book::class.java, Partial::class.java)
+            .map(Book::name) {
                 useIf { it.name != null }
             }
-        }.convert(Partial(null))
+            .build()
+            .convert(Partial(null))
         expect("{}") {
             book.toString()
         }
     }
 
     @Test
-    fun testEmptyConverter() {
-        immutableConverterForMethods(Book::class, BookInput::class) {}
-            .convert(INPUT)
-            .let {
-                expect(
-                    "{}"
-                ) {
-                    it.toString()
-                }
-            }
-    }
-
-    @Test
     fun testDefaultConverter() {
-        immutableConverterForMethods(Book::class, BookInput::class) {
-            autoMapOtherScalars()
-        }
+        ImmutableConverter
+            .forMethods(Book::class.java, BookInput::class.java)
+            .unmapStaticProps(BookInput::storeName)
+            .unmapStaticProps(BookInput::authorNames)
+            .build()
             .convert(INPUT)
             .let {
                 expect(
@@ -78,25 +53,25 @@ class ConvertTest {
 
     @Test
     fun testWithValueConverter() {
-        immutableConverterForMethods(Book::class, BookInput::class) {
-            map(Book::store, BookInput::storeName) {
+        ImmutableConverter
+            .forMethods(Book::class.java, BookInput::class.java)
+            .map(Book::store, BookInput::storeName) {
                 valueConverter {
                     new(BookStore::class).by {
-                        name = it
+                        name = it as String
                     }
                 }
             }
-            mapList(Book::authors, BookInput::authorNames) {
+            .mapList(Book::authors, BookInput::authorNames) {
                 elementConverter {
                     new(Author::class).by {
-                        val index = it.indexOf('-')
+                        val index = (it as String).indexOf('-')
                         firstName = it.substring(0, index)
                         lastName = it.substring(index + 1)
                     }
                 }
             }
-            autoMapOtherScalars()
-        }
+            .build()
             .convert(INPUT)
             .let {
                 expect(
@@ -118,23 +93,25 @@ class ConvertTest {
 
     @Test
     fun testWithDraftModifier() {
-        immutableConverterForMethods(Book::class, BookInput::class) {
-            setDraftModifier<BookDraft> { input ->
-                store = input.storeName?.let {
+        ImmutableConverter
+            .forMethods(Book::class.java, BookInput::class.java)
+            .unmapStaticProps(BookInput::storeName)
+            .unmapStaticProps(BookInput::authorNames)
+            .setDraftModifier { draft, input ->
+                (draft as BookDraft).store = input.storeName?.let {
                      new(BookStore::class).by {
                          name = it
                      }
                 }
                 for (authorName in input.authorNames) {
-                    authors().addBy {
+                    draft.authors().addBy {
                         val index = authorName.indexOf('-')
                         firstName = authorName.substring(0, index)
                         lastName = authorName.substring(index + 1)
                     }
                 }
             }
-            autoMapOtherScalars()
-        }
+            .build()
             .convert(INPUT)
             .let {
                 expect(

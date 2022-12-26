@@ -79,7 +79,7 @@ open class SpringKotlinTest : AbstractTest() {
     }
 
     @Test
-    fun testRepository() {
+    fun testFindRootNodes() {
         Assertions.assertEquals(
             "{\"id\":2,\"name\":\"Food\",\"parent\":{\"id\":1}}",
             treeNodeRepository.findNullable(2L)?.toString()
@@ -97,6 +97,26 @@ open class SpringKotlinTest : AbstractTest() {
             """select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID 
                 |from TREE_NODE as tb_1_ 
                 |where tb_1_.PARENT_ID is null""".trimMargin()
+        )
+    }
+
+    @Test
+    fun testByParentIsNullAndNameOrderByIdAsc() {
+        treeNodeRepository.findByParentIsNullAndNameOrderByIdAsc(null, null)
+        assertSQLs(
+            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                "from TREE_NODE as tb_1_ " +
+                "where tb_1_.PARENT_ID is null " +
+                "order by tb_1_.NODE_ID asc"
+        )
+
+        treeNodeRepository.findByParentIsNullAndNameOrderByIdAsc("X", null)
+        assertSQLs(
+            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                "from TREE_NODE as tb_1_ " +
+                "where tb_1_.PARENT_ID is null " +
+                "and tb_1_.NAME = ? " +
+                "order by tb_1_.NODE_ID asc"
         )
     }
 

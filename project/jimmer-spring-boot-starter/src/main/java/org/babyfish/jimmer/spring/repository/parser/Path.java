@@ -30,8 +30,8 @@ public class Path {
         return props;
     }
 
-    public boolean isReference() {
-        return props.get(props.size() - 1).isReference(TargetLevel.ENTITY);
+    public boolean isScalar() {
+        return props.get(props.size() - 1).isScalar(TargetLevel.ENTITY);
     }
 
     public Class<?> getType() {
