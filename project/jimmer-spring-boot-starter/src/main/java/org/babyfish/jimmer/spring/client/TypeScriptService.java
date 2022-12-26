@@ -29,7 +29,7 @@ public class TypeScriptService {
         this.ctx = ctx;
     }
 
-    @GetMapping("${jimmer.ts.path}")
+    @GetMapping("${jimmer.client.ts.path}")
     public void download(HttpServletResponse response) throws IOException {
         Metadata metadata = parseMetadata();
         response.setContentType("application/zip");

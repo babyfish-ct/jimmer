@@ -15,7 +15,7 @@ class ExecutorForLog implements Executor {
 
     static Executor wrap(Executor raw) {
         if (raw == null) {
-            return null;
+            return new ExecutorForLog(DefaultExecutor.INSTANCE);
         }
         if (raw instanceof ExecutorForLog) {
             return raw;

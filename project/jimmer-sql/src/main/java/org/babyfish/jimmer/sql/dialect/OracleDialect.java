@@ -30,4 +30,9 @@ public class OracleDialect implements Dialect {
     public String getSelectIdFromSequenceSql(String sequenceName) {
         return "select " + sequenceName + ".nextval from dual";
     }
+
+    @Override
+    public String toString() {
+        return getClass().getName();
+    }
 }

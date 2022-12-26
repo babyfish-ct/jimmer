@@ -11,4 +11,9 @@ public class DefaultDialect implements Dialect {
             ctx.sql(" offset ").variable(ctx.getOffset());
         }
     }
+
+    @Override
+    public String toString() {
+        return getClass().getName();
+    }
 }
