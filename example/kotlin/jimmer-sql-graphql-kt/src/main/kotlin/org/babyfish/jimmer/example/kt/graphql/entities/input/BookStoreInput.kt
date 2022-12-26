@@ -19,7 +19,7 @@ class BookStoreInput(
         private val CONVERTER = ImmutableConverter
             .forFields(BookStore::class.java, BookStoreInput::class.java)
             .map(BookStore::id) {
-                useIf { it.id != null }
+                useIf { id != null }
             }
             .build()
     }

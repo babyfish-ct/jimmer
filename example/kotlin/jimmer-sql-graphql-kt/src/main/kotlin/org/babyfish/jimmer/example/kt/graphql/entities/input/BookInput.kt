@@ -25,7 +25,7 @@ data class BookInput(
         private val CONVERTER = ImmutableConverter
             .forFields(Book::class.java, BookInput::class.java)
             .map(Book::id) {
-                useIf { it.id != null }
+                useIf { id != null }
             }
             .map(Book::store, BookInput::storeId) {
                 valueConverter(::makeIdOnly)

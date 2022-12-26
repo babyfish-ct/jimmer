@@ -5,3 +5,7 @@ spring:
   datasource:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:jimmer-sql-graphql-kt;database_to_upper=true
+
+jimmer:
+  language: kotlin
+  show-sql: true

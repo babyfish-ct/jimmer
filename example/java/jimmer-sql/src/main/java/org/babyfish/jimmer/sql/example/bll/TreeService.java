@@ -38,7 +38,7 @@ public class TreeService {
     public List<TreeNode> findRootTrees(
             @RequestParam(required = false) String rootName
     ) {
-        return treeNodeRepository.findRootNodes(rootName, null);
+        return treeNodeRepository.findByParentIsNullAndName(rootName, null);
     }
 
     @GetMapping("/rootTrees")
@@ -47,7 +47,10 @@ public class TreeService {
             @RequestParam(required = false) String noRecursiveNames
     ) {
         if (!StringUtils.hasText(noRecursiveNames)) {
-            return treeNodeRepository.findRootNodes(rootName, RECURSIVE_FETCHER);
+            return treeNodeRepository.findByParentIsNullAndName(
+                    rootName,
+                    RECURSIVE_FETCHER
+            );
         }
 
         Set<String> excludedNames;
@@ -59,7 +62,7 @@ public class TreeService {
                     .map(String::toLowerCase)
                     .collect(Collectors.toSet());
         }
-        return treeNodeRepository.findRootNodes(
+        return treeNodeRepository.findByParentIsNullAndName(
                 rootName,
                 TreeNodeFetcher.$from(RECURSIVE_FETCHER) // override `RECURSIVE_TREE_NODE_FETCHER`
                         .childNodes(

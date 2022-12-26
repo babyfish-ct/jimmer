@@ -13,7 +13,7 @@ public interface AuthorRepository extends JRepository<Author, Long> {
 
     AuthorTable table = AuthorTable.$;
 
-    default List<Author> find(@Nullable String name) {
+    default List<Author> findByName(@Nullable String name) {
 
         return sql()
                 .createQuery(table)

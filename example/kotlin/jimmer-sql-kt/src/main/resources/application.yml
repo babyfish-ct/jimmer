@@ -22,8 +22,11 @@ spring:
 # The annotation `@org.babyfish.jimmer.client.FetchBy` is used to make the
 # generated TypeScript code contain the DTO model hidden by jimmer backend
 jimmer:
-  ts:
-    path: /ts.zip
+  language: kotlin
+  show-sql: true
+  client:
+    ts:
+      path: /ts.zip
 
 springdoc:
   swagger-ui:
