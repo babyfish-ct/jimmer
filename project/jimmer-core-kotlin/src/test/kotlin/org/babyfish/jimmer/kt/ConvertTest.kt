@@ -25,7 +25,7 @@ class ConvertTest {
         val book = ImmutableConverter
             .forMethods(Book::class.java, Partial::class.java)
             .map(Book::name) {
-                useIf { it.name != null }
+                useIf { name != null }
             }
             .build()
             .convert(Partial(null))
@@ -58,14 +58,14 @@ class ConvertTest {
             .map(Book::store, BookInput::storeName) {
                 valueConverter {
                     new(BookStore::class).by {
-                        name = it as String
+                        name = it
                     }
                 }
             }
             .mapList(Book::authors, BookInput::authorNames) {
                 elementConverter {
                     new(Author::class).by {
-                        val index = (it as String).indexOf('-')
+                        val index = it.indexOf('-')
                         firstName = it.substring(0, index)
                         lastName = it.substring(index + 1)
                     }

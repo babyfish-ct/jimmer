@@ -14,11 +14,6 @@ public interface ImmutableConverter<Dynamic, Static> {
     @NotNull
     Dynamic convert(Static staticObj);
 
-    /**
-     * Only for java, kotlin developers should use `newImmutableConverter`
-     * @param <Dynamic>
-     * @param <Static>
-     */
     static <Dynamic, Static> Builder<Dynamic, Static> forMethods(
             Class<Dynamic> immutableType,
             Class<Static> staticType
@@ -152,16 +147,16 @@ public interface ImmutableConverter<Dynamic, Static> {
         Mapping<Static, DynamicProp> defaultValue(Supplier<DynamicProp> defaultValueSupplier);
     }
 
-    interface ListMapping<Static, DynamicProp> {
+    interface ListMapping<Static, DynamicElement> {
 
-        ListMapping<Static, DynamicProp> useIf(Predicate<Static> cond);
+        ListMapping<Static, DynamicElement> useIf(Predicate<Static> cond);
 
-        ListMapping<Static, DynamicProp> elementConverter(Function<?, DynamicProp> elementConverter);
+        ListMapping<Static, DynamicElement> elementConverter(Function<?, DynamicElement> elementConverter);
 
-        ListMapping<Static, DynamicProp> nestedConverter(ImmutableConverter<DynamicProp, ?> elementConverter);
+        ListMapping<Static, DynamicElement> nestedConverter(ImmutableConverter<DynamicElement, ?> elementConverter);
 
-        ListMapping<Static, DynamicProp> defaultElement(DynamicProp defaultElement);
+        ListMapping<Static, DynamicElement> defaultElement(DynamicElement defaultElement);
 
-        ListMapping<Static, DynamicProp> defaultElement(Supplier<DynamicProp> defaultValueSupplier);
+        ListMapping<Static, DynamicElement> defaultElement(Supplier<DynamicElement> defaultValueSupplier);
     }
 }

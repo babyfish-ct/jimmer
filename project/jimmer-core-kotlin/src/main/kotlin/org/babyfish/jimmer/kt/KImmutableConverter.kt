@@ -9,27 +9,28 @@ fun <Dynamic, Static> ImmutableConverter.Builder<Dynamic, Static>.map(
     map(prop.toImmutableProp(), prop.name, null)
 
 fun <Dynamic, Static> ImmutableConverter.Builder<Dynamic, Static>.map(
-    prop: KProperty1<Dynamic, *>, staticProp: KProperty1<Static, *>
+    prop: KProperty1<Dynamic, *>,
+    staticProp: KProperty1<Static, *>
 ): ImmutableConverter.Builder<Dynamic, Static> =
     map(prop.toImmutableProp(), staticProp.name, null)
 
 @Suppress("UNCHECKED_CAST")
 fun <Dynamic, Static, DynamicProp> ImmutableConverter.Builder<Dynamic, Static>.map(
     prop: KProperty1<Dynamic, DynamicProp?>,
-    block: ImmutableConverter.Mapping<Static, DynamicProp>.() -> Unit
+    block: KtMappingDsl<Static, DynamicProp>.() -> Unit
 ): ImmutableConverter.Builder<Dynamic, Static> =
     map(prop.toImmutableProp(), prop.name) {
-        block(it as ImmutableConverter.Mapping<Static, DynamicProp>)
+        block(KtMappingDsl(it as ImmutableConverter.Mapping<Static, DynamicProp>))
     }
 
 @Suppress("UNCHECKED_CAST")
-fun <Dynamic, Static, DynamicProp> ImmutableConverter.Builder<Dynamic, Static>.map(
+fun <Dynamic, Static, DynamicProp, StaticProp> ImmutableConverter.Builder<Dynamic, Static>.map(
     prop: KProperty1<Dynamic, DynamicProp?>,
-    staticProp: KProperty1<Static, Any?>,
-    block: ImmutableConverter.Mapping<Static, DynamicProp>.() -> Unit
+    staticProp: KProperty1<Static, StaticProp?>,
+    block: KtMappingWithConverterDsl<Static, StaticProp, DynamicProp>.() -> Unit
 ): ImmutableConverter.Builder<Dynamic, Static> =
     map(prop.toImmutableProp(), staticProp.name) {
-        block(it as ImmutableConverter.Mapping<Static, DynamicProp>)
+        block(KtMappingWithConverterDsl(it as ImmutableConverter.Mapping<Static, DynamicProp>))
     }
 
 fun <Dynamic, Static> ImmutableConverter.Builder<Dynamic, Static>.mapList(
@@ -44,22 +45,22 @@ fun <Dynamic, Static> ImmutableConverter.Builder<Dynamic, Static>.mapList(
     mapList(prop.toImmutableProp(), staticProp.name, null)
 
 @Suppress("UNCHECKED_CAST")
-fun <Dynamic, Static, DynamicProp> ImmutableConverter.Builder<Dynamic, Static>.mapList(
-    prop: KProperty1<Dynamic, List<DynamicProp>>, 
-    block: ImmutableConverter.ListMapping<Static, DynamicProp>.() -> Unit
+fun <Dynamic, Static, DynamicElement> ImmutableConverter.Builder<Dynamic, Static>.mapList(
+    prop: KProperty1<Dynamic, List<DynamicElement>>,
+    block: KtListMappingDsl<Static, DynamicElement>.() -> Unit
 ): ImmutableConverter.Builder<Dynamic, Static> =
     mapList(prop.toImmutableProp(), prop.name) {
-        block(it as ImmutableConverter.ListMapping<Static, DynamicProp>)
+        block(KtListMappingDsl(it) as KtListMappingDsl<Static, DynamicElement>)
     }
 
 @Suppress("UNCHECKED_CAST")
-fun <Dynamic, Static, DynamicProp> ImmutableConverter.Builder<Dynamic, Static>.mapList(
-    prop: KProperty1<Dynamic, List<DynamicProp>>,
-    staticProp: KProperty1<Static, List<Any>>,
-    block: ImmutableConverter.ListMapping<Static, DynamicProp>.() -> Unit
+fun <Dynamic, Static, DynamicElement, StaticElement> ImmutableConverter.Builder<Dynamic, Static>.mapList(
+    prop: KProperty1<Dynamic, List<DynamicElement>>,
+    staticProp: KProperty1<Static, List<StaticElement>>,
+    block: KtListMappingWithConverterDsl<Static, StaticElement, DynamicElement>.() -> Unit
 ): ImmutableConverter.Builder<Dynamic, Static> =
     mapList(prop.toImmutableProp(), staticProp.name) {
-        block(it as ImmutableConverter.ListMapping<Static, DynamicProp>)
+        block(KtListMappingWithConverterDsl(it as ImmutableConverter.ListMapping<Static, DynamicElement>))
     }
 
 fun <Dynamic, Static> ImmutableConverter.Builder<Dynamic, Static>.unmapStaticProps(
@@ -72,3 +73,84 @@ fun <Dynamic, Static> ImmutableConverter.Builder<Dynamic, Static>.unmapStaticPro
 ): ImmutableConverter.Builder<Dynamic, Static> =
     unmapStaticProps(staticProps.map { it.name })
 
+class KtMappingDsl<Static, DynamicProp>(
+    private val javaMapping: ImmutableConverter.Mapping<Static, DynamicProp>
+) {
+    fun useIf(block: Static.() -> Boolean) {
+        javaMapping.useIf(block)
+    }
+
+    fun defaultValue(defaultValue: DynamicProp) {
+        javaMapping.defaultValue(defaultValue)
+    }
+
+    fun defaultValue(block: () -> DynamicProp) {
+        javaMapping.defaultValue(block)
+    }
+}
+
+class KtMappingWithConverterDsl<Static, StaticProp, DynamicProp>(
+    private val javaMapping: ImmutableConverter.Mapping<Static, DynamicProp>
+) {
+    fun useIf(block: Static.() -> Boolean) {
+        javaMapping.useIf(block)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun valueConverter(block: (StaticProp) -> DynamicProp) {
+        javaMapping.valueConverter { block(it as StaticProp) }
+    }
+
+    fun nestedConverter(valueConverter: ImmutableConverter<DynamicProp, StaticProp>) {
+        javaMapping.nestedConverter(valueConverter)
+    }
+
+    fun defaultValue(defaultValue: DynamicProp) {
+        javaMapping.defaultValue(defaultValue)
+    }
+
+    fun defaultValue(block: () -> DynamicProp) {
+        javaMapping.defaultValue(block)
+    }
+}
+
+class KtListMappingDsl<Static, DynamicElement>(
+    private val javaMapping: ImmutableConverter.ListMapping<Static, DynamicElement>
+) {
+    fun useIf(block: Static.() -> Boolean) {
+        javaMapping.useIf(block)
+    }
+
+    fun defaultElement(defaultElement: DynamicElement) {
+        javaMapping.defaultElement(defaultElement);
+    }
+
+    fun defaultElement(block: () -> DynamicElement) {
+        javaMapping.defaultElement(block)
+    }
+}
+
+class KtListMappingWithConverterDsl<Static, StaticElement, DynamicElement>(
+    private val javaMapping: ImmutableConverter.ListMapping<Static, DynamicElement>
+) {
+    fun useIf(block: Static.() -> Boolean) {
+        javaMapping.useIf(block)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun elementConverter(block: (StaticElement) -> DynamicElement) {
+        javaMapping.elementConverter { block(it as StaticElement) }
+    }
+
+    fun nestedConverter(elementConverter: ImmutableConverter<DynamicElement, StaticElement>) {
+        javaMapping.nestedConverter(elementConverter)
+    }
+
+    fun defaultElement(defaultElement: DynamicElement) {
+        javaMapping.defaultElement(defaultElement);
+    }
+
+    fun defaultElement(block: () -> DynamicElement) {
+        javaMapping.defaultElement(block)
+    }
+}
