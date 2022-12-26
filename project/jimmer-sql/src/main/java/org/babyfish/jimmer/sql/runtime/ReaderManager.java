@@ -14,6 +14,7 @@ import org.babyfish.jimmer.impl.util.StaticCache;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -147,6 +148,22 @@ public class ReaderManager {
         }
     }
 
+    private static class ByteArrayReader implements Reader<byte[]> {
+
+        @Override
+        public byte[] read(ResultSet rs, Col col) throws SQLException {
+            return rs.getBytes(col.get());
+        }
+    }
+
+    private static class BoxedByteArrayReader implements Reader<Byte[]> {
+
+        @Override
+        public Byte[] read(ResultSet rs, Col col) throws SQLException {
+            return rs.getObject(col.get(), Byte[].class);
+        }
+    }
+
     private static class ShortReader implements Reader<Short> {
 
         @Override
@@ -227,6 +244,14 @@ public class ReaderManager {
                 return new UUID(high, low);
             }
             return UUID.fromString(obj.toString());
+        }
+    }
+
+    private static class BlobReader implements Reader<Blob> {
+
+        @Override
+        public Blob read(ResultSet rs, Col col) throws SQLException {
+            return rs.getBlob(col.get());
         }
     }
 
@@ -420,6 +445,8 @@ public class ReaderManager {
         map.put(Character.class, new CharReader());
         map.put(byte.class, new ByteReader());
         map.put(Byte.class, new ByteReader());
+        map.put(byte[].class, new ByteArrayReader());
+        map.put(Byte[].class, new BoxedByteArrayReader());
         map.put(short.class, new ShortReader());
         map.put(Short.class, new ShortReader());
         map.put(int.class, new IntReader());
@@ -434,6 +461,7 @@ public class ReaderManager {
         map.put(BigDecimal.class, new BigDecimalReader());
         map.put(String.class, new StringReader());
         map.put(UUID.class, new UUIDReader());
+        map.put(Blob.class, new BlobReader());
         map.put(java.sql.Date.class, new SqlDateReader());
         map.put(java.sql.Time.class, new SqlTimeReader());
         map.put(java.sql.Timestamp.class, new SqlTimestampReader());
