@@ -1,12 +1,11 @@
 plugins {
-    // Spring Shell Boot report errors on 2.7.0, so use 2.5.7
     id 'org.springframework.boot' version '2.7.0'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
 }
 
 group 'org.babyfish.jimmer.example.sql'
-version '0.6.0'
+version '0.6.1'
 
 repositories {
     mavenCentral()
@@ -14,8 +13,8 @@ repositories {
 
 dependencies {
 
-    implementation 'org.babyfish.jimmer:jimmer-spring-boot-starter:0.6.0'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.0'
+    implementation 'org.babyfish.jimmer:jimmer-spring-boot-starter:0.6.1'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.1'
 
     implementation 'org.springframework.kafka:spring-kafka:2.9.0'
     implementation 'org.springdoc:springdoc-openapi-ui:1.6.13'
