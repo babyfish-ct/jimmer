@@ -3,7 +3,6 @@ package org.babyfish.jimmer.spring.client;
 import org.babyfish.jimmer.client.generator.ts.TypeScriptGenerator;
 import org.babyfish.jimmer.client.meta.Metadata;
 import org.babyfish.jimmer.client.meta.Operation;
-import org.babyfish.jimmer.spring.cfg.JimmerProperties;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.aop.support.AopUtils;
@@ -21,11 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Controller
-public class TypeScriptService {
+public class TypeScriptController {
 
     private final ApplicationContext ctx;
 
-    public TypeScriptService(ApplicationContext ctx) {
+    public TypeScriptController(ApplicationContext ctx) {
         this.ctx = ctx;
     }
 

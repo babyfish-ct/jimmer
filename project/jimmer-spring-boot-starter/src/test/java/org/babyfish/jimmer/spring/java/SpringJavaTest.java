@@ -2,11 +2,10 @@ package org.babyfish.jimmer.spring.java;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.babyfish.jimmer.spring.AbstractTest;
-import org.babyfish.jimmer.spring.cfg.JimmerAutoConfiguration;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
 import org.babyfish.jimmer.spring.cfg.SqlClientConfig;
 import org.babyfish.jimmer.spring.java.bll.BookService;
-import org.babyfish.jimmer.spring.client.TypeScriptService;
+import org.babyfish.jimmer.spring.client.TypeScriptController;
 import org.babyfish.jimmer.spring.java.dal.BookRepository;
 import org.babyfish.jimmer.spring.datasource.DataSources;
 import org.babyfish.jimmer.spring.datasource.TxCallback;
@@ -22,6 +21,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackage;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
@@ -140,9 +141,11 @@ public class SpringJavaTest extends AbstractTest {
             return new BookService(bookRepository);
         }
 
+        @ConditionalOnProperty("jimmer.client.ts.path")
+        @ConditionalOnMissingBean(TypeScriptController.class)
         @Bean
-        public TypeScriptService typeScriptService(ApplicationContext ctx) {
-            return new TypeScriptService(ctx);
+        public TypeScriptController typeScriptService(ApplicationContext ctx) {
+            return new TypeScriptController(ctx);
         }
 
         @Bean
