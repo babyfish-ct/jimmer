@@ -6,7 +6,7 @@ plugins {
 }
 
 group 'org.babyfish.jimmer.example.sql'
-version '0.5.38'
+version '0.6.0'
 
 repositories {
     mavenCentral()
@@ -14,8 +14,8 @@ repositories {
 
 dependencies {
 
-    implementation 'org.babyfish.jimmer:jimmer-spring-boot-starter:0.5.38'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.5.38'
+    implementation 'org.babyfish.jimmer:jimmer-spring-boot-starter:0.6.0'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.0'
 
     implementation 'org.springframework.kafka:spring-kafka:2.9.0'
     implementation 'org.springdoc:springdoc-openapi-ui:1.6.13'
