@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.generator.ts;
 
+import org.babyfish.jimmer.client.generator.ts.simple.DynamicWriter;
 import org.babyfish.jimmer.client.meta.*;
 
 import java.io.IOException;
@@ -23,6 +24,8 @@ public abstract class CodeWriter {
 
     private final File file;
 
+    protected final boolean anonymous;
+
     private final StringBuilder codeBuilder = new StringBuilder();
 
     private final Map<String, Set<String>> importMap = new HashMap<>();
@@ -38,6 +41,13 @@ public abstract class CodeWriter {
     protected CodeWriter(Context ctx, File file) {
         this.ctx = ctx;
         this.file = file;
+        this.anonymous = false;
+    }
+
+    protected CodeWriter(Context ctx, File file, boolean anonymous) {
+        this.ctx = ctx;
+        this.file = file;
+        this.anonymous = anonymous;
     }
 
     public Context getContext() {
@@ -173,13 +183,13 @@ public abstract class CodeWriter {
                 }
             } else if (type instanceof ImmutableObjectType) {
                 ImmutableObjectType immutableObjectType = (ImmutableObjectType) type;
-                if (immutableObjectType.getFetchByInfo() != null) {
+                if (!anonymous && immutableObjectType.getFetchByInfo() != null) {
                     importFile(DtoWriter.dtoFile(ctx, immutableObjectType.getJavaType()));
                     code(ctx.getDtoPrefix(immutableObjectType.getJavaType()))
                             .code("['")
                             .code(ctx.getDtoSuffix(immutableObjectType))
                             .code("']");
-                } else if (immutableObjectType.getCategory() == ImmutableObjectType.Category.VIEW) {
+                } else if (!anonymous && immutableObjectType.getCategory() == ImmutableObjectType.Category.VIEW) {
                     importFile(DtoWriter.dtoFile(ctx, immutableObjectType.getJavaType()));
                     code(ctx.getDtoPrefix(immutableObjectType.getJavaType()))
                             .code("['DEFAULT']");
@@ -323,7 +333,7 @@ public abstract class CodeWriter {
         return false;
     }
 
-    enum ScopeType {
+    public enum ScopeType {
         OBJECT("{", "}"),
         LIST("[", "]"),
         ARGUMENTS("(", ")"),

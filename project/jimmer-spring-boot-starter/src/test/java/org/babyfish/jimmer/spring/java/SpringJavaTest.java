@@ -12,6 +12,8 @@ import org.babyfish.jimmer.spring.datasource.TxCallback;
 import org.babyfish.jimmer.spring.java.model.*;
 import org.babyfish.jimmer.spring.repository.EnableJimmerRepositories;
 import org.babyfish.jimmer.spring.repository.Sorts;
+import org.babyfish.jimmer.spring.repository.config.JimmerRepositoryConfigExtension;
+import org.babyfish.jimmer.spring.repository.support.JimmerRepositoryFactoryBean;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -75,6 +77,14 @@ public class SpringJavaTest extends AbstractTest {
     public void beforeEach() {
         TRANSACTION_EVENTS.clear();
         SQL_STATEMENTS.clear();
+    }
+
+    @EnableJimmerRepositories
+    @ConditionalOnMissingBean({ JimmerRepositoryFactoryBean.class, JimmerRepositoryConfigExtension.class })
+    @Configuration
+    static class DuplicatedConfig {
+        // Use @EnableJimmerRepositories twice,
+        // use @ConditionalOnMissBean to resolve conflict
     }
 
     @Configuration
@@ -144,8 +154,8 @@ public class SpringJavaTest extends AbstractTest {
         @ConditionalOnProperty("jimmer.client.ts.path")
         @ConditionalOnMissingBean(TypeScriptController.class)
         @Bean
-        public TypeScriptController typeScriptService(ApplicationContext ctx) {
-            return new TypeScriptController(ctx);
+        public TypeScriptController typeScriptService(ApplicationContext ctx, JimmerProperties properties) {
+            return new TypeScriptController(ctx, properties);
         }
 
         @Bean

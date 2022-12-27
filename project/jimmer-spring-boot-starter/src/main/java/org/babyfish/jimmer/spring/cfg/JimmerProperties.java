@@ -159,7 +159,7 @@ public class JimmerProperties {
 
         public Client(@Nullable TypeScript ts) {
             if (ts == null) {
-                this.ts = new TypeScript(null);
+                this.ts = new TypeScript(null, "Api", 4, false);
             } else {
                 this.ts = ts;
             }
@@ -183,7 +183,14 @@ public class JimmerProperties {
             @Nullable
             private final String path;
 
-            public TypeScript(@Nullable String path) {
+            @NotNull
+            private final String apiName;
+
+            private final int indent;
+
+            private final boolean anonymous;
+
+            public TypeScript(@Nullable String path, String apiName, int indent, boolean anonymous) {
                 if (path == null || path.isEmpty()) {
                     this.path = null;
                 } else {
@@ -192,6 +199,13 @@ public class JimmerProperties {
                     }
                     this.path = path;
                 }
+                if (apiName == null || apiName.isEmpty()) {
+                    this.apiName = "Api";
+                } else {
+                    this.apiName = apiName;
+                }
+                this.indent = indent != 0 ? Math.max(indent, 2) : 4;
+                this.anonymous = anonymous;
             }
 
             @Nullable
@@ -199,10 +213,24 @@ public class JimmerProperties {
                 return path;
             }
 
+            @NotNull
+            public String getApiName() {
+                return apiName;
+            }
+
+            public int getIndent() {
+                return indent;
+            }
+
+            public boolean isAnonymous() {
+                return anonymous;
+            }
+
             @Override
             public String toString() {
                 return "TypeScript{" +
                         "path='" + path + '\'' +
+                        ", anonymous=" + anonymous +
                         '}';
             }
         }

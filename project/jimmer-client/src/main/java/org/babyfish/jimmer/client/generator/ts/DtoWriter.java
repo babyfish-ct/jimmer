@@ -3,8 +3,6 @@ package org.babyfish.jimmer.client.generator.ts;
 import org.babyfish.jimmer.client.meta.ImmutableObjectType;
 import org.babyfish.jimmer.client.meta.NullableType;
 import org.babyfish.jimmer.client.meta.Property;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
 
 import java.util.List;
 

@@ -6,6 +6,8 @@ import org.babyfish.jimmer.spring.java.model.*;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -19,11 +21,11 @@ public class BookService {
 
     @GetMapping("/defaultBooks")
     public Page<Book> findDefaultBooks(
-            int pageIndex,
-            int pageSize,
-            String name,
-            String storeName,
-            String authorName
+            @RequestParam int pageIndex,
+            @RequestParam int pageSize,
+            @RequestParam String name,
+            @RequestParam String storeName,
+            @RequestParam String authorName
     ) {
         return bookRepository.findBooks(
                 pageIndex,
@@ -37,11 +39,11 @@ public class BookService {
 
     @GetMapping("/simpleBooks")
     public Page<@FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks(
-            int pageIndex,
-            int pageSize,
-            String name,
-            String storeName,
-            String authorName
+            @RequestParam int pageIndex,
+            @RequestParam int pageSize,
+            @RequestParam String name,
+            @RequestParam String storeName,
+            @RequestParam String authorName
     ) {
         return bookRepository.findBooks(
                 pageIndex,
@@ -55,11 +57,11 @@ public class BookService {
 
     @GetMapping("/complexBooks")
     public Page<@FetchBy("COMPLEX_FETCHER") Book> findComplexBooks(
-            int pageIndex,
-            int pageSize,
-            String name,
-            String storeName,
-            String authorName
+            @RequestParam int pageIndex,
+            @RequestParam int pageSize,
+            @RequestParam String name,
+            @RequestParam String storeName,
+            @RequestParam String authorName
     ) {
         return bookRepository.findBooks(
                 pageIndex,
@@ -69,6 +71,11 @@ public class BookService {
                 authorName,
                 COMPLEX_FETCHER
         );
+    }
+
+    @PutMapping("/book")
+    public Book save(BookInput input) {
+        return bookRepository.save(input);
     }
 
     private static final Fetcher<Book> SIMPLE_FETCHER =

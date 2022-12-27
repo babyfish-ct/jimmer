@@ -41,7 +41,7 @@ class KTypeScriptTest {
         val out = ByteArrayOutputStream()
         val ctx = createContext(out)
         val service = Constants.KOTLIN_METADATA.services[KBookService::class.java]
-        ServiceWriter(ctx, service).flush()
+        ServiceWriter(ctx, service, false).flush()
         val code = out.toString()
         Assertions.assertEquals(
             "import type { KBook } from '../model/entities';\n" +
@@ -56,7 +56,7 @@ class KTypeScriptTest {
                 "    \n" +
                 "    constructor(private executor: Executor) {}\n" +
                 "    \n" +
-                "    async deleteBook(options: {readonly id: number}): Promise<number> {\n" +
+                "    async deleteBook(options: KBookServiceOptions['deleteBook']): Promise<number> {\n" +
                 "        let uri = '/book/';\n" +
                 "        uri += encodeURIComponent(options.id);\n" +
                 "        return (await this.executor({uri, method: 'DELETE'})) as number\n" +
@@ -77,13 +77,9 @@ class KTypeScriptTest {
                 "     *     -   id\n" +
                 "     *     -   firstName\n" +
                 "     */\n" +
-                "    async findComplexBooks(options: {\n" +
-                "        readonly name: string, \n" +
-                "        readonly storeName?: string, \n" +
-                "        readonly authorName?: string, \n" +
-                "        readonly minPrice?: number, \n" +
-                "        readonly maxPrice?: number\n" +
-                "    }): Promise<ReadonlyArray<KBookDto['KBookService/COMPLEX_FETCHER']>> {\n" +
+                "    async findComplexBooks(options: KBookServiceOptions['findComplexBooks']): Promise<\n" +
+                "        ReadonlyArray<KBookDto['KBookService/COMPLEX_FETCHER']>\n" +
+                "    > {\n" +
                 "        let uri = '/books/complex';\n" +
                 "        uri += '?name=';\n" +
                 "        uri += encodeURIComponent(options.name);\n" +
@@ -106,24 +102,16 @@ class KTypeScriptTest {
                 "        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<KBookDto['KBookService/COMPLEX_FETCHER']>\n" +
                 "    }\n" +
                 "    \n" +
-                "    async findSimpleBooks(): Promise<ReadonlyArray<KBookDto['KBookService/SIMPLE_FETCHER']>> {\n" +
+                "    async findSimpleBooks(): Promise<\n" +
+                "        ReadonlyArray<KBookDto['KBookService/SIMPLE_FETCHER']>\n" +
+                "    > {\n" +
                 "        let uri = '/books/simple';\n" +
                 "        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<KBookDto['KBookService/SIMPLE_FETCHER']>\n" +
                 "    }\n" +
                 "    \n" +
-                "    async findTuples(options: {\n" +
-                "        \n" +
-                "        /**\n" +
-                "         * Match the book name, optional\n" +
-                "         */\n" +
-                "        readonly name: string, \n" +
-                "        \n" +
-                "        /**\n" +
-                "         * Start from 0, not 1\n" +
-                "         */\n" +
-                "        readonly pageIndex?: number, \n" +
-                "        readonly pageSize: number\n" +
-                "    }): Promise<KPage<Tuple2<KBookDto['KBookService/COMPLEX_FETCHER'], KAuthorDto['KBookService/AUTHOR_FETCHER']>>> {\n" +
+                "    async findTuples(options: KBookServiceOptions['findTuples']): Promise<\n" +
+                "        KPage<Tuple2<KBookDto['KBookService/COMPLEX_FETCHER'], KAuthorDto['KBookService/AUTHOR_FETCHER']>>\n" +
+                "    > {\n" +
                 "        let uri = '/tuples';\n" +
                 "        uri += '?name=';\n" +
                 "        uri += encodeURIComponent(options.name);\n" +
@@ -136,10 +124,38 @@ class KTypeScriptTest {
                 "        return (await this.executor({uri, method: 'GET'})) as KPage<Tuple2<KBookDto['KBookService/COMPLEX_FETCHER'], KAuthorDto['KBookService/AUTHOR_FETCHER']>>\n" +
                 "    }\n" +
                 "    \n" +
-                "    async saveBooks(options: {readonly body: KBookInput}): Promise<Dynamic<KBook> | undefined> {\n" +
+                "    async saveBooks(options: KBookServiceOptions['saveBooks']): Promise<\n" +
+                "        Dynamic<KBook> | undefined\n" +
+                "    > {\n" +
                 "        let uri = '/book';\n" +
                 "        return (await this.executor({uri, method: 'PUT', body: options.body})) as Dynamic<KBook> | undefined\n" +
                 "    }\n" +
+                "}\n" +
+                "\n" +
+                "export type KBookServiceOptions = {\n" +
+                "    'deleteBook': {readonly id: number},\n" +
+                "    'findComplexBooks': {\n" +
+                "        readonly name: string, \n" +
+                "        readonly storeName?: string, \n" +
+                "        readonly authorName?: string, \n" +
+                "        readonly minPrice?: number, \n" +
+                "        readonly maxPrice?: number\n" +
+                "    },\n" +
+                "    'findSimpleBooks': {},\n" +
+                "    'findTuples': {\n" +
+                "        \n" +
+                "        /**\n" +
+                "         * Match the book name, optional\n" +
+                "         */\n" +
+                "        readonly name: string, \n" +
+                "        \n" +
+                "        /**\n" +
+                "         * Start from 0, not 1\n" +
+                "         */\n" +
+                "        readonly pageIndex?: number, \n" +
+                "        readonly pageSize: number\n" +
+                "    },\n" +
+                "    'saveBooks': {readonly body: KBookInput}\n" +
                 "}",
             code
         )

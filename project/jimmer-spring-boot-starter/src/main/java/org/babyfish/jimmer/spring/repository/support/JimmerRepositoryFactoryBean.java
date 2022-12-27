@@ -1,9 +1,5 @@
 package org.babyfish.jimmer.spring.repository.support;
 
-import org.babyfish.jimmer.spring.repository.JRepository;
-import org.babyfish.jimmer.spring.repository.KRepository;
-import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.kt.KSqlClient;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.core.support.RepositoryFactoryBeanSupport;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
