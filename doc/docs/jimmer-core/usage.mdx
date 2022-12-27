@@ -14,8 +14,8 @@ import TabItem from '@theme/TabItem';
 ```groovy title="build.gradle"
 depdencies {
     
-    implementation 'org.babyfish.jimmer:jimmer-core:0.5.38'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.5.38'
+    implementation 'org.babyfish.jimmer:jimmer-core:0.6.0'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.0'
 }
 ```
 
@@ -27,7 +27,7 @@ depdencies {
     <dependency>
         <groupId>org.babyfish.jimmer</groupId>
         <artifactId>jimmer-core</artifactId>
-        <version>0.5.38</version>
+        <version>0.6.0</version>
     </dependency>
 </dependencies>
 
@@ -42,7 +42,7 @@ depdencies {
                     <path>
                         <groupId>org.babyfish.jimmer</groupId>
                         <artifactId>jimmer-apt</artifactId>
-                        <version>0.5.38</version>
+                        <version>0.6.0</version>
                     </path>
                 </annotationProcessorPaths>
             </configuration>
@@ -64,10 +64,10 @@ plugins {
 dependencies {
 
     // Step2: Add jimmer-core-kotlin
-    implementation("org.babyfish.jimmer:jimmer-core-kotlin:0.5.38")
+    implementation("org.babyfish.jimmer:jimmer-core-kotlin:0.6.0")
 
     // Step3: Apply ksp plugin
-    ksp("org.babyfish.jimmer:jimmer-ksp:0.5.38")
+    ksp("org.babyfish.jimmer:jimmer-ksp:0.6.0")
 }
 
 // Step4: Add generated sources into compile path.
@@ -87,7 +87,7 @@ kotlin {
 <dependency>
     <groupId>org.babyfish.jimmer</groupId>
     <artifactId>jimmer-core-kotlin</artifactId>
-    <version>0.5.38</version>
+    <version>0.6.0</version>
 </dependency>
 
 <build>
@@ -129,7 +129,7 @@ kotlin {
                 <dependency>
                     <groupId>org.babyfish.jimmer</groupId>
                     <artifactId>jimmer-ksp</artifactId>
-                    <version>0.5.38</version>
+                    <version>0.6.0</version>
                 </dependency>
             </dependencies>
         </plugin>
