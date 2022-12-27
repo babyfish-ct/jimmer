@@ -1,12 +1,12 @@
 package org.babyfish.jimmer.client.generator.ts;
 
-import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.client.generator.Generator;
 import org.babyfish.jimmer.client.generator.GeneratorException;
-import org.babyfish.jimmer.client.meta.ImmutableObjectType;
-import org.babyfish.jimmer.client.meta.Metadata;
-import org.babyfish.jimmer.client.meta.Service;
-import org.babyfish.jimmer.client.meta.Type;
+import org.babyfish.jimmer.client.generator.ts.simple.DynamicWriter;
+import org.babyfish.jimmer.client.generator.ts.simple.ExecutorWriter;
+import org.babyfish.jimmer.client.generator.ts.simple.RequestOfWriter;
+import org.babyfish.jimmer.client.generator.ts.simple.ResponseOfWriter;
+import org.babyfish.jimmer.client.meta.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -21,19 +21,30 @@ public class TypeScriptGenerator implements Generator {
 
     private final int indent;
 
+    private final boolean anonymous;
+
     public TypeScriptGenerator() {
         this.moduleName = "Api";
         this.indent = 4;
+        this.anonymous = false;
     }
 
     public TypeScriptGenerator(String moduleName) {
         this.moduleName = moduleName;
         this.indent = 4;
+        this.anonymous = false;
     }
 
     public TypeScriptGenerator(String moduleName, int indent) {
         this.moduleName = moduleName;
         this.indent = indent;
+        this.anonymous = false;
+    }
+
+    public TypeScriptGenerator(String moduleName, int indent, boolean anonymous) {
+        this.moduleName = moduleName;
+        this.indent = indent;
+        this.anonymous = anonymous;
     }
 
     @Override
@@ -61,13 +72,21 @@ public class TypeScriptGenerator implements Generator {
         new DynamicWriter(ctx).flush();
         zipOut.closeEntry();
 
+        zipOut.putNextEntry(new ZipEntry(RequestOfWriter.FILE.toString()));
+        new RequestOfWriter(ctx).flush();
+        zipOut.closeEntry();
+
+        zipOut.putNextEntry(new ZipEntry(ResponseOfWriter.FILE.toString()));
+        new ResponseOfWriter(ctx).flush();
+        zipOut.closeEntry();
+
         Map<String, Index> indexMap = new HashMap<>();
         for (Map.Entry<Service, File> e : ctx.getServiceFileMap().entrySet()) {
             Service service = e.getKey();
             File file = e.getValue();
             indexMap.computeIfAbsent(file.getDir(), Index::new).addServiceFile(file);
             zipOut.putNextEntry(new ZipEntry(file.toString()));
-            new ServiceWriter(ctx, service).flush();
+            new ServiceWriter(ctx, service, anonymous).flush();
             zipOut.closeEntry();
         }
         for (Map.Entry<Type, File> e : ctx.getTypeFilePairs()) {
@@ -78,19 +97,23 @@ public class TypeScriptGenerator implements Generator {
             new TypeDefinitionWriter(ctx, type).flush();
             zipOut.closeEntry();
         }
-        for (Map.Entry<Class<?>, List<ImmutableObjectType>> e : ctx.getDtoMap().entrySet()) {
-            Class<?> rawType = e.getKey();
-            DtoWriter dtoWriter = new DtoWriter(ctx, rawType, e.getValue());
-            indexMap.computeIfAbsent(dtoWriter.getFile().getDir(), Index::new).addTypeFile(dtoWriter.getFile());
-            zipOut.putNextEntry(new ZipEntry(dtoWriter.getFile().toString()));
-            dtoWriter.flush();
-            zipOut.closeEntry();
+        if (!anonymous) {
+            for (Map.Entry<Class<?>, List<ImmutableObjectType>> e : ctx.getDtoMap().entrySet()) {
+                Class<?> rawType = e.getKey();
+                DtoWriter dtoWriter = new DtoWriter(ctx, rawType, e.getValue());
+                indexMap.computeIfAbsent(dtoWriter.getFile().getDir(), Index::new).addTypeFile(dtoWriter.getFile());
+                zipOut.putNextEntry(new ZipEntry(dtoWriter.getFile().toString()));
+                dtoWriter.flush();
+                zipOut.closeEntry();
+            }
         }
 
         indexMap.computeIfAbsent("", Index::new)
                 .addServiceFile(ctx.getModuleFile())
                 .addTypeFile(ExecutorWriter.FILE)
-                .addTypeFile(DynamicWriter.FILE);
+                .addTypeFile(DynamicWriter.FILE)
+                .addTypeFile(RequestOfWriter.FILE)
+                .addTypeFile(ResponseOfWriter.FILE);
         for (Index index : indexMap.values()) {
             writeIndex(index, zipOut);
         }
@@ -106,7 +129,16 @@ public class TypeScriptGenerator implements Generator {
                             " } from './" +
                             file.getName() +
                             "';\n"
-                    );
+            );
+            if (!anonymous) {
+                writer.write(
+                        "export type { " +
+                                file.getName() +
+                                "Options } from './" +
+                                file.getName() +
+                                "';\n"
+                );
+            }
         }
         for (File file : index.typeFiles) {
             writer.write(

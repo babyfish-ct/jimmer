@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.client.generator.ts;
 
 import org.babyfish.jimmer.client.IllegalDocMetaException;
+import org.babyfish.jimmer.client.generator.ts.simple.ExecutorWriter;
 import org.babyfish.jimmer.client.meta.*;
 
 import java.util.ArrayList;
@@ -13,8 +14,8 @@ public class ServiceWriter extends CodeWriter {
 
     private final Service service;
 
-    public ServiceWriter(Context ctx, Service service) {
-        super(ctx, ctx.getFile(service));
+    public ServiceWriter(Context ctx, Service service, boolean anonymous) {
+        super(ctx, ctx.getFile(service), anonymous);
         this.service = service;
     }
 
@@ -34,6 +35,18 @@ public class ServiceWriter extends CodeWriter {
                 write(operation);
             }
         });
+
+        if (!anonymous) {
+            code('\n');
+            code("\nexport type ").code(getFile().getName()).code("Options = ");
+            scope(ScopeType.OBJECT, ",", true, () -> {
+                for (Operation operation : service.getOperations()) {
+                    separator();
+                    code('\'').code(getContext().getOperationName(operation)).code("': ");
+                    optionsBody(operation);
+                }
+            });
+        }
     }
 
     private void write(Operation operation) {
@@ -46,26 +59,23 @@ public class ServiceWriter extends CodeWriter {
                         code("options");
                         codeIf(optionsOptional, '?');
                         code(": ");
-                        scope(
-                                ScopeType.OBJECT,
-                                ", ",
-                                operation.getParameters().size() > 2,
-                                () -> {
-                                    for (Parameter parameter : operation.getParameters()) {
-                                        separator();
-                                        if (parameter.getDocument() != null) {
-                                            code('\n');
-                                            document(parameter.getDocument());
-                                        }
-                                        write(parameter);
-                                    }
-                                }
-                        );
+                        if (anonymous) {
+                            optionsBody(operation);
+                        } else {
+                            optionsName(operation);
+                        }
                     }
                 })
-                .code(": Promise<")
-                .type(operation.getType())
-                .code("> ")
+                .code(": Promise")
+                .scope(
+                        ScopeType.GENERIC,
+                        ", ",
+                        !(NullableType.unwrap(operation.getType()) instanceof SimpleType),
+                        () -> {
+                            type(operation.getType());
+                        }
+                )
+                .code(" ")
                 .scope(ScopeType.OBJECT, "", true, () -> {
                     impl(operation);
                 })
@@ -78,6 +88,31 @@ public class ServiceWriter extends CodeWriter {
                 .codeIf(parameter.getType() instanceof NullableType, '?')
                 .code(": ")
                 .type(NullableType.unwrap(parameter.getType()));
+    }
+
+    private void optionsName(Operation operation) {
+        code(getFile().getName())
+                .code("Options['")
+                .code(getContext().getOperationName(operation))
+                .code("']");
+    }
+
+    private void optionsBody(Operation operation) {
+        scope(
+                ScopeType.OBJECT,
+                ", ",
+                operation.getParameters().size() > 2,
+                () -> {
+                    for (Parameter parameter : operation.getParameters()) {
+                        separator();
+                        if (parameter.getDocument() != null) {
+                            code('\n');
+                            document(parameter.getDocument());
+                        }
+                        write(parameter);
+                    }
+                }
+        );
     }
 
     private void impl(Operation operation) {

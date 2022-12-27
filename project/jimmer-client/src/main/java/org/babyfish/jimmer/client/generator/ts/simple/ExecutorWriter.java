@@ -1,4 +1,8 @@
-package org.babyfish.jimmer.client.generator.ts;
+package org.babyfish.jimmer.client.generator.ts.simple;
+
+import org.babyfish.jimmer.client.generator.ts.CodeWriter;
+import org.babyfish.jimmer.client.generator.ts.Context;
+import org.babyfish.jimmer.client.generator.ts.File;
 
 public class ExecutorWriter extends CodeWriter {
 

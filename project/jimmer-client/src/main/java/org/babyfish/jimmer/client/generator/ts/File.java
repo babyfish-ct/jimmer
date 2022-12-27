@@ -8,7 +8,7 @@ public class File {
 
     private final String name;
 
-    File(String dir, String name) {
+    public File(String dir, String name) {
         if (dir.startsWith("/")) {
             dir = dir.substring(1);
         }

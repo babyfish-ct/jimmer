@@ -4,6 +4,7 @@ import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.spring.client.TypeScriptController;
 import org.babyfish.jimmer.spring.repository.config.JimmerRepositoriesRegistrar;
 import org.babyfish.jimmer.spring.repository.config.JimmerRepositoryConfigExtension;
+import org.babyfish.jimmer.spring.repository.support.JimmerRepositoryFactoryBean;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -21,6 +22,7 @@ import org.springframework.context.annotation.Import;
         havingValue = "true",
         matchIfMissing = true
 )
+@ConditionalOnMissingBean({ JimmerRepositoryFactoryBean.class, JimmerRepositoryConfigExtension.class })
 @EnableConfigurationProperties(JimmerProperties.class)
 @Import(SqlClientConfig.class)
 public class JimmerAutoConfiguration {
@@ -41,8 +43,8 @@ public class JimmerAutoConfiguration {
     @ConditionalOnProperty("jimmer.client.ts.path")
     @ConditionalOnMissingBean(TypeScriptController.class)
     @Bean
-    public TypeScriptController typeScriptService(ApplicationContext ctx) {
-        return new TypeScriptController(ctx);
+    public TypeScriptController typeScriptService(ApplicationContext ctx, JimmerProperties properties) {
+        return new TypeScriptController(ctx, properties);
     }
 }
 

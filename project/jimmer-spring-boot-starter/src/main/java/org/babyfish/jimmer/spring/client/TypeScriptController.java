@@ -3,6 +3,7 @@ package org.babyfish.jimmer.spring.client;
 import org.babyfish.jimmer.client.generator.ts.TypeScriptGenerator;
 import org.babyfish.jimmer.client.meta.Metadata;
 import org.babyfish.jimmer.client.meta.Operation;
+import org.babyfish.jimmer.spring.cfg.JimmerProperties;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.aop.support.AopUtils;
@@ -24,16 +25,29 @@ public class TypeScriptController {
 
     private final ApplicationContext ctx;
 
-    public TypeScriptController(ApplicationContext ctx) {
+    private final JimmerProperties properties;
+
+    public TypeScriptController(ApplicationContext ctx, JimmerProperties properties) {
         this.ctx = ctx;
+        this.properties = properties;
     }
 
     @GetMapping("${jimmer.client.ts.path}")
-    public void download(HttpServletResponse response) throws IOException {
+    public void download(
+            @RequestParam(name = "apiName", required = false) String apiName,
+            @RequestParam(name = "indent", defaultValue = "0") int indent,
+            @RequestParam(name = "anonymous", required = false) Boolean anonymous,
+            HttpServletResponse response
+    ) throws IOException {
+        JimmerProperties.Client.TypeScript ts = properties.getClient().getTs();
         Metadata metadata = parseMetadata();
         response.setContentType("application/zip");
         try (OutputStream out = response.getOutputStream()) {
-            new TypeScriptGenerator().generate(metadata, out);
+            new TypeScriptGenerator(
+                    apiName != null && !apiName.isEmpty() ? apiName : ts.getApiName(),
+                    indent != 0 ? indent : ts.getIndent(),
+                    anonymous != null ? anonymous : ts.isAnonymous()
+            ).generate(metadata, out);
         }
     }
 
