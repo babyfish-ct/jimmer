@@ -63,10 +63,10 @@ Due to the existence of Annotation Processor/KSP plugin in the gradle configurat
 ```groovy title="build.gradle"
 dependencies {
 
-    implementation 'org.babyfish.jimmer:jimmer-core:0.5.38'
+    implementation 'org.babyfish.jimmer:jimmer-core:0.6.0'
 
     // highlight-next-line
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.5.38'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.0'
     // This annotation processor generates source code
     // for INTERFACEs marked by
     // `@org.babyfish.jimmer.Immutable` or
@@ -84,9 +84,9 @@ plugins {
 }
 dependencies {
 
-    implementation("org.babyfish.jimmer:jimmer-core-kotlin:0.5.38")
+    implementation("org.babyfish.jimmer:jimmer-core-kotlin:0.6.0")
     // highlight-next-line
-    ksp("org.babyfish.jimmer:jimmer-ksp:0.5.38")
+    ksp("org.babyfish.jimmer:jimmer-ksp:0.6.0")
     // The ksp plugin generates source code
     // for INTERFACEs marked by
     // `@org.babyfish.jimmer.Immutable` or
