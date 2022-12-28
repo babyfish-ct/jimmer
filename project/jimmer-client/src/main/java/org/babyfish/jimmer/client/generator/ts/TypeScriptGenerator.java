@@ -84,7 +84,7 @@ public class TypeScriptGenerator implements Generator {
         for (Map.Entry<Service, File> e : ctx.getServiceFileMap().entrySet()) {
             Service service = e.getKey();
             File file = e.getValue();
-            indexMap.computeIfAbsent(file.getDir(), Index::new).addServiceFile(file);
+            indexMap.computeIfAbsent(file.getDir(), Index::new).addObjectFile(file);
             zipOut.putNextEntry(new ZipEntry(file.toString()));
             new ServiceWriter(ctx, service, anonymous).flush();
             zipOut.closeEntry();
@@ -109,20 +109,20 @@ public class TypeScriptGenerator implements Generator {
         }
 
         indexMap.computeIfAbsent("", Index::new)
-                .addServiceFile(ctx.getModuleFile())
+                .addObjectFile(ctx.getModuleFile())
                 .addTypeFile(ExecutorWriter.FILE)
                 .addTypeFile(DynamicWriter.FILE)
                 .addTypeFile(RequestOfWriter.FILE)
                 .addTypeFile(ResponseOfWriter.FILE);
         for (Index index : indexMap.values()) {
-            writeIndex(index, zipOut);
+            writeIndex(ctx, index, zipOut);
         }
     }
 
-    private void writeIndex(Index index, ZipOutputStream zipOut) throws IOException {
+    private void writeIndex(Context ctx, Index index, ZipOutputStream zipOut) throws IOException {
         zipOut.putNextEntry(new ZipEntry(index.dir + "/index.ts"));
         OutputStreamWriter writer = new OutputStreamWriter(zipOut);
-        for (File file : index.serviceFiles) {
+        for (File file : index.objectFiles) {
             writer.write(
                     "export { " +
                             file.getName() +
@@ -130,7 +130,7 @@ public class TypeScriptGenerator implements Generator {
                             file.getName() +
                             "';\n"
             );
-            if (!anonymous) {
+            if (!anonymous && file != ctx.getModuleFile()) {
                 writer.write(
                         "export type { " +
                                 file.getName() +
@@ -157,7 +157,7 @@ public class TypeScriptGenerator implements Generator {
 
         final String dir;
 
-        final List<File> serviceFiles = new ArrayList<>();
+        final List<File> objectFiles = new ArrayList<>();
 
         final List<File> typeFiles = new ArrayList<>();
 
@@ -165,8 +165,8 @@ public class TypeScriptGenerator implements Generator {
             this.dir = dir;
         }
 
-        public Index addServiceFile(File file) {
-            serviceFiles.add(file);
+        public Index addObjectFile(File file) {
+            objectFiles.add(file);
             return this;
         }
 
