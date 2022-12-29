@@ -81,7 +81,7 @@ class QueryParser {
     }
 
     private Source parseAction(Source source) {
-        Source restSource = source.trimStart("find", "read", "get", "query", "search");
+        Source restSource = source.trimStart("find", "findAll", "read", "get", "query", "search");
         if (restSource != null) {
             return restSource;
         }

@@ -235,7 +235,8 @@ class ImplGenerator(
                             for (prop in type.properties.values) {
                                 val localLoadedName = "__${prop.name}Loaded"
                                 val objLoadedName = prop.loadedFieldName ?: "${prop.valueFieldName} !== null"
-                                addStatement("val %L = this.%L", localLoadedName, objLoadedName)
+                                add("val %L = \n", localLoadedName)
+                                addStatement("    this.%L", objLoadedName)
                                 beginControlFlow(
                                     "if (%L != (__other.__isLoaded(%L)))",
                                     localLoadedName,
