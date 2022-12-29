@@ -3,6 +3,7 @@ package org.babyfish.jimmer.client.meta;
 import org.babyfish.jimmer.client.java.service.AuthorService;
 import org.babyfish.jimmer.client.java.service.BookService;
 import org.babyfish.jimmer.client.kotlin.service.KBookService;
+import org.babyfish.jimmer.client.kotlin.service.KBookStoreService;
 import org.babyfish.jimmer.client.meta.common.*;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.jetbrains.annotations.Nullable;
@@ -66,6 +67,7 @@ public class Constants {
 
     public final static Metadata KOTLIN_METADATA = Metadata.newBuilder()
             .addServiceType(KBookService.class)
+            .addServiceType(KBookStoreService.class)
             .setOperationParser(
                     OPERATION_PARSER
             )

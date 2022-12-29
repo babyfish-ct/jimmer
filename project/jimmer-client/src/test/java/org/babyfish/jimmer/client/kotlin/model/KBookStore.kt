@@ -14,6 +14,8 @@ interface KBookStore {
 
     val name: String?
 
+    val coordinate: KCoordinate
+
     @Doc("All books available in this bookstore")
     @OneToMany(mappedBy = "store")
     val books: List<KBook>

@@ -434,7 +434,7 @@ class Context {
             Fetcher<?> fetcher = fetcherOf(info);
             return ImmutableObjectTypeImpl.fetch(this, type, fetcher, info);
         }
-        if (location.isQueryResult()) {
+        if (location.isQueryResult() && type.isEntity()) {
             return ImmutableObjectTypeImpl.view(this, type);
         }
         return ImmutableObjectTypeImpl.raw(this, type);
