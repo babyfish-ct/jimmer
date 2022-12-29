@@ -193,7 +193,7 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
 
         Map<String, Property> props = new LinkedHashMap<>();
         for (ImmutableProp prop : immutableType.getProps().values()) {
-            if (prop.getStorage() != null) {
+            if (immutableType.isEmbeddable() || prop.getStorage() != null) {
                 if (prop.isAssociation(TargetLevel.ENTITY)) {
                     Type type = idOnly(ctx, prop.getTargetType());
                     if (prop.isNullable()) {

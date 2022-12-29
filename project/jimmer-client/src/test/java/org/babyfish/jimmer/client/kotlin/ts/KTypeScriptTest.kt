@@ -3,6 +3,7 @@ package org.babyfish.jimmer.client.kotlin.ts
 import org.babyfish.jimmer.client.generator.ts.*
 import org.babyfish.jimmer.client.kotlin.model.*
 import org.babyfish.jimmer.client.kotlin.service.KBookService
+import org.babyfish.jimmer.client.kotlin.service.KBookStoreService
 import org.babyfish.jimmer.client.meta.Constants
 import org.babyfish.jimmer.client.meta.StaticObjectType
 import org.babyfish.jimmer.meta.ImmutableType
@@ -22,14 +23,17 @@ class KTypeScriptTest {
         Assertions.assertEquals(
             "import type { Executor } from './';\n" +
                 "\n" +
-                "import { KBookService } from './services';\n" +
+                "import { KBookService, KBookStoreService } from './services';\n" +
                 "\n" +
                 "export class Api {\n" +
                 "    \n" +
                 "    readonly kbookService: KBookService;\n" +
                 "    \n" +
+                "    readonly kbookStoreService: KBookStoreService;\n" +
+                "    \n" +
                 "    constructor(executor: Executor) {\n" +
                 "        this.kbookService = new KBookService(executor);\n" +
+                "        this.kbookStoreService = new KBookStoreService(executor);\n" +
                 "    }\n" +
                 "}",
             code
@@ -169,13 +173,15 @@ class KTypeScriptTest {
         TypeDefinitionWriter(ctx, bookStoreType).flush()
         val code = out.toString()
         Assertions.assertEquals(
-            "import type { KBook } from './';\n" +
+            "import type { KCoordinate, KBook } from './';\n" +
                 "\n" +
                 "export interface KBookStore {\n" +
                 "    \n" +
                 "    readonly id: number;\n" +
                 "    \n" +
                 "    readonly name?: string;\n" +
+                "    \n" +
+                "    readonly coordinate: KCoordinate;\n" +
                 "    \n" +
                 "    readonly books: ReadonlyArray<KBook>;\n" +
                 "}",
@@ -298,6 +304,26 @@ class KTypeScriptTest {
                 "                readonly name?: string\n" +
                 "            }\n" +
                 "        }>\n" +
+                "    }\n" +
+                "}",
+            code
+        )
+    }
+
+    @Test
+    fun testKBookStoreDto() {
+        val out = ByteArrayOutputStream()
+        val ctx = createContext(out)
+        DtoWriter(ctx, KBookStore::class.java, ctx.dtoMap[KBookStore::class.java]).flush()
+        val code = out.toString()
+        Assertions.assertEquals(
+            "import type { KCoordinate } from '../entities';\n" +
+                "\n" +
+                "export type KBookStoreDto = {\n" +
+                "    'DEFAULT': {\n" +
+                "        readonly id: number, \n" +
+                "        readonly name?: string, \n" +
+                "        readonly coordinate: KCoordinate\n" +
                 "    }\n" +
                 "}",
             code
