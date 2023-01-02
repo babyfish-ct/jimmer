@@ -87,7 +87,7 @@ public class ImmutableConverterBuilderImpl<Dynamic, Static> implements Immutable
     @Override
     public ImmutableConverter<Dynamic, Static> build() {
         for (ImmutableProp prop : immutableType.getProps().values()) {
-            if (!prop.isAssociation(TargetLevel.OBJECT) && !mappingMap.containsKey(prop)) {
+            if (!prop.isAssociation(TargetLevel.ENTITY) && !mappingMap.containsKey(prop)) {
                 mapImpl(
                         prop,
                         prop.getName(),
