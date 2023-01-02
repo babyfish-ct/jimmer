@@ -2,10 +2,7 @@ package org.babyfish.jimmer.client.generator.ts;
 
 import org.babyfish.jimmer.client.generator.Generator;
 import org.babyfish.jimmer.client.generator.GeneratorException;
-import org.babyfish.jimmer.client.generator.ts.simple.DynamicWriter;
-import org.babyfish.jimmer.client.generator.ts.simple.ExecutorWriter;
-import org.babyfish.jimmer.client.generator.ts.simple.RequestOfWriter;
-import org.babyfish.jimmer.client.generator.ts.simple.ResponseOfWriter;
+import org.babyfish.jimmer.client.generator.ts.simple.*;
 import org.babyfish.jimmer.client.meta.*;
 
 import java.io.IOException;
@@ -78,6 +75,10 @@ public class TypeScriptGenerator implements Generator {
 
         zipOut.putNextEntry(new ZipEntry(ResponseOfWriter.FILE.toString()));
         new ResponseOfWriter(ctx).flush();
+        zipOut.closeEntry();
+
+        zipOut.putNextEntry(new ZipEntry(ElementOfWriter.FILE.toString()));
+        new ElementOfWriter(ctx).flush();
         zipOut.closeEntry();
 
         Map<String, Index> indexMap = new HashMap<>();
