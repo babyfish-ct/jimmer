@@ -6,7 +6,7 @@ import org.babyfish.jimmer.client.generator.ts.File;
 
 public class ElementOfWriter extends CodeWriter {
 
-    public static final File FILE = new File("", "RequestOf");
+    public static final File FILE = new File("", "ElementOf");
 
     public ElementOfWriter(Context ctx) {
         super(ctx, FILE);
