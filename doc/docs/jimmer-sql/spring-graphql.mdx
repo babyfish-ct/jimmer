@@ -1,5 +1,5 @@
 ---
-sidebar_position: 7
+sidebar_position: 6
 title: Support for Spring GraphQL
 ---
 
@@ -551,7 +551,7 @@ data class BookInput(
 </Tabs>
 
 :::info
-1. The [Save command](./jimmer-sql/mutation/save-command) of jimmer-sql provides the function of saving object tree with arbitrary complexity into database. Therefore, jimmer-sql focuses on the entity object tree, not the input object. So, we need to provide the method `BookInput.toBook` to convert the static `BookInput` object to a dynamic `Book` object.
+1. The [Save command](./mutation/save-command) of jimmer-sql provides the function of saving object tree with arbitrary complexity into database. Therefore, jimmer-sql focuses on the entity object tree, not the input object. So, we need to provide the method `BookInput.toBook` to convert the static `BookInput` object to a dynamic `Book` object.
 
 2. The `Book` object is a jimmer-core immutable object, which is dynamic, that is, the format of `Book` is ever-changing and all-encompassing. So, no matter how `BookInput` type is defined, and whether `BookInput` has deep data nesting, it can be converted to `Book` type. It can never happen that `BookInput` cannot be converted to `Book`.
 
@@ -562,7 +562,7 @@ data class BookInput(
 
 Now, we know
 
-1. The [Save command](./jimmer-sql/mutation/save-command) of jimmer-sql allows developers to use one sentence to save any complex entity object tree into the database.
+1. The [Save command](./mutation/save-command) of jimmer-sql allows developers to use one sentence to save any complex entity object tree into the database.
 
 2. The `BookInput` defined above can be converted to an entity object tree of `Book` through its  method `toBook`.
 

@@ -344,7 +344,7 @@ This will result in the following two SQL statements being generated
 It's not hard to see that an object fetcher is used here. Although the object fetcher does not impose any [field-level filters] (../query/fetcher#field-filters) on the associated property `Author.books`, the global filters for the `Book` class still take effect. As a result, the final generated SQL still filters tenant field.
 
 :::info
-The filtering of associated objects is demonstrated here through [object fetcher](../query/fetcher). In fact, the [GraphQL](../../spring-graphql) function provided by Jimmer can also use global filters to filter associated objects.
+The filtering of associated objects is demonstrated here through [object fetcher](../query/fetcher). In fact, the [GraphQL](../spring-graphql) function provided by Jimmer can also use global filters to filter associated objects.
 :::
 
 ## Enable/disable filter

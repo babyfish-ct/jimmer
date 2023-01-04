@@ -12,8 +12,19 @@ https://www.youtube.com/watch?v=Rt5zNv0YR2E
 
 ## Tutorual pages
 
-1. [jimmer-core](./jimmer-core/usage.mdx)
-2. [jimmer-sql](./jimmer-sql/basic/usage.mdx)
+1.  jimmer-core
+    
+    [Click here](./jimmer-core/usage.mdx)
+
+2.  jimmer-sql
+    
+    -   I use spring-boot and expect to greatly simplify development with jimmer's spring-boot-starter and spring-data-jimmer
+        
+        [Click here](./jimmer-sql/spring-boot)
+
+    -   I want to know all the details of using Jimmer, and even consider integrating Jimmer with other non-spring frameworks
+
+        [Click here](./jimmer-sql/basic/usage.mdx)
 
 ## Quick experience
 
@@ -27,37 +38,12 @@ For more information, please view [Demos](./demo)
 
 ## Note 
 
-### Serialization of Jimmer objects
+:::caution
 
-If you use Spring REST, not Spring GraphQL, you need to enable Jackson to support serialization and deserialization of Jimmer objects, like this, 
-
-<Tabs groupId="buildScript">
-<TabItem value="java" label="Java">
-
-```java
-@Bean
-public ImmutableModule immutableModule() {
-    return new ImmutableModule();
-}
-```
-</TabItem>
-
-<TabItem value="kotlin" label="Kotin">
-
-```kotlin
-@Bean
-fun immutableModule() = ImmutableModule()
-```
-
-</TabItem>
-</Tabs>
-
-please view [Jimmer and Jackson](jimmer-core/dynamic/#jimmer-and-jackson)
-
-### Open Demo with IDE
-
-This framework uses a code generator, which is AnnotationProcessor for Java and KSP for Kotlin.
+Like other strong type dsl frameworks, jimmer uses a code generator, which is AnnotationProcessor for Java and KSP for Kotlin.
 
 Therefore, when you open any project in the demo with the framework attached to the IDE for the first time, compilation errors will be reported because the code that should be automatically generated does not exist temporarily.
 
 Don't be afraid, click the "Run" button with confidence, and all problems will disappear automatically and immediately.
+
+:::
