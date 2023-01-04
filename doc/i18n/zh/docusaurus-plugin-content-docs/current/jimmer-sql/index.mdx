@@ -792,7 +792,7 @@ val authors = SqlClient
 不难发现，这里使用了对象抓取器。虽然对象抓取器没有对关联属性`Author.books`施加任何[字段级过滤器](./query/fetcher#字段过滤器)，但`Book`类的全局过滤器仍然生效。导致，最终生产的SQL仍然过滤了租户信息。
 
 :::info
-这里通过[对象抓取器](./query/fetcher)演示了关联对象的过滤。事实上，Jimmer提供的[GraphQL](../spring-graphql)功能同样可以利用全局过滤器过滤关联对象，二者效果一样，不再赘述。
+这里通过[对象抓取器](./query/fetcher)演示了关联对象的过滤。事实上，Jimmer提供的[GraphQL](./spring-graphql)功能同样可以利用全局过滤器过滤关联对象，二者效果一样，不再赘述。
 :::
 
 </details>

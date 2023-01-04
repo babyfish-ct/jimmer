@@ -82,7 +82,6 @@ where
 
 ```java
 BookTable book = BookTable.$;
-BookTable book2 = BookTable.$;
 
 List<Book> newestBooks = sqlClient
     .createQuery(book)
@@ -91,11 +90,11 @@ List<Book> newestBooks = sqlClient
             book.name(),
             book.edition()
         ).in(sqlClient
-            .createSubQuery(book2)
-            .groupBy(book2.name())
+            .createSubQuery(book)
+            .groupBy(book.name())
             .select(
-                book2.name(),
-                book2.edition().max()
+                book.name(),
+                book.edition().max()
             )
         )
     )
@@ -169,16 +168,15 @@ where
 
 ```java
 BookTable book = BookTable.$;
-BookTable book2 = BookTable.$;
 
 List<Book> newestBooks = sqlClient
     .createQuery(book)
     .where(
         book.price().gt(sqlClient
-            .createSubQuery(book2)
-            .groupBy(book2.name())
+            .createSubQuery(book)
+            .groupBy(book.name())
             .select(
-                book2
+                book
                     .price()
                     .avg()
                     .coalesce(BigDecimal.ZERO)

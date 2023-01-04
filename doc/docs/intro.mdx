@@ -942,7 +942,7 @@ This will result in the following two SQL statements being generated
 It's not hard to see that an object fetcher is used here. Although the object fetcher does not impose any [field-level filters](./jimmer-sql/query/fetcher#field-filters) on the associated property `Author.books`, the global filter for the `Book` class still takes effect. As a result, the final production SQL still filters tenant information.
 
 :::info
-The filtering of associated objects is demonstrated here through [object fetcher](./jimmer-sql/query/fetcher). In fact, the [GraphQL](./spring-graphql) function provided by Jimmer can also use global filters to filter related objects. The effect of the two is the same, so I won't go into details.
+The filtering of associated objects is demonstrated here through [object fetcher](./jimmer-sql/query/fetcher). In fact, the [GraphQL](./jimmer-sql/spring-graphql) function provided by Jimmer can also use global filters to filter related objects. The effect of the two is the same, so I won't go into details.
 :::
 
 </details>

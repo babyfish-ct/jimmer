@@ -1,5 +1,5 @@
 ---
-sidebar_position: 7
+sidebar_position: 6
 title: 对Spring GraphQL的支持
 ---
 
@@ -550,7 +550,7 @@ data class BookInput(
 </Tabs>
 
 :::info
-1. jimmer-sql的[Save指令](./jimmer-sql/mutation/save-command)提供把任意复杂的对象树保存到数据库的功能，因此，jimmer-sql关注的是实体对象树，而非input对象。所以，我们需要提供`toBook`方法，把静态的`BookInput`对象转换为动态的`Book`对象。
+1. jimmer-sql的[Save指令](./mutation/save-command)提供把任意复杂的对象树保存到数据库的功能，因此，jimmer-sql关注的是实体对象树，而非input对象。所以，我们需要提供`toBook`方法，把静态的`BookInput`对象转换为动态的`Book`对象。
 
 2. `Book`对象是jimmer-core不可变对象，本身具备动态性，即，`Book`的数据格式千变万化，包罗万象。所以，无论如何定义`BookInput`类型，以及`BookInput`是否存在较深数据镶套，都可以将之转换为`Book`类型。根本不存在`BookInput`和`Book`因格式不兼容而无法转换的问题。
 
@@ -561,7 +561,7 @@ data class BookInput(
 
 现在我们知道
 
-1. jimmer-sql的[Save指令](./jimmer-sql/mutation/save-command)，允许开发使人使用一句话，把任意复杂的实体对象树保存到数据库。
+1. jimmer-sql的[Save指令](./mutation/save-command)，允许开发使人使用一句话，把任意复杂的实体对象树保存到数据库。
 
 2. 上面定义的`BookInput`类型，可以通过其`toBook`方法，转换为`Book`类型的实体对象树。
 

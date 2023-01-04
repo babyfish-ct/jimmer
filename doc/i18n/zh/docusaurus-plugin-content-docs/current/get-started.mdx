@@ -8,14 +8,28 @@ import TabItem from '@theme/TabItem';
 
 ## B站视频
 
-- 全局介绍：https://www.bilibili.com/video/BV1kd4y1A7K3
-- 多表连接专题：https://www.bilibili.com/video/BV19t4y177PX
-- 全局过滤器和参数化缓存：https://www.bilibili.com/video/BV1Mt4y1u7fz/
+|视频地址|内容简介|难度|版本要求|
+|-------|------|----|----|
+|https://www.bilibili.com/video/BV1wD4y1L7xr/|前后端免对接+spring boot starter|易|从0.6开始|
+|https://www.bilibili.com/video/BV19t4y177PX|多表连接|易|无|
+|https://www.bilibili.com/video/BV1kd4y1A7K3|所有功能|中|从0.3开始|
+|https://www.bilibili.com/video/BV1Mt4y1u7fz/|多视角缓存|难|从0.5开始|
 
-## 快速上手页面
+## 快速上手
 
-1. [jimmer-core](./jimmer-core/usage.mdx)
-2. [jimmer-sql](./jimmer-sql/basic/usage.mdx)
+1.  jimmer-core *(不可变对象部分)* 快速上手
+
+    [请点击这里](./jimmer-core/usage.mdx)
+
+2.  jimmer-sql *(ORM部分)* 快速上手
+
+    -   我使用spring-boot，期望利用jimmer的spring-boot-starter和spring-data-jimmer大幅简化开发
+        
+        [请点击这里](./jimmer-sql/spring-boot)
+
+    -   我想了解使用Jimmer的所有细节，甚至考虑亲手将Jimmer和非spring的其他框架整合起来
+
+        [请点击这里](./jimmer-sql/basic/usage)
 
 ## 快速体验
 
@@ -29,37 +43,12 @@ import TabItem from '@theme/TabItem';
 
 ## 注意事项
 
-### Jimmer对象的序列化
+:::caution
 
-如果你使用Spring REST而非Spring GraphQL，需要让Jackson支持Jimmer对象的序列化与反序列化，如下。
-
-<Tabs groupId="buildScript">
-<TabItem value="java" label="Java">
-
-```java
-@Bean
-public ImmutableModule immutableModule() {
-    return new ImmutableModule();
-}
-```
-</TabItem>
-
-<TabItem value="kotlin" label="Kotin">
-
-```kotlin
-@Bean
-fun immutableModule() = ImmutableModule()
-```
-
-</TabItem>
-</Tabs>
-
-详情请参考[Jimmer和Jackson](./jimmer-core/dynamic#jimmer和jackson)
-
-### 用IDE打开Demo
-
-本框架使用了代码生成器，对Java而言，是AnnotationProcessor；对Kotlin而言，是KSP。
+和其他所有强类型DSL的Java框架一样，Jimmer使用了代码生成器，对Java而言，是AnnotationProcessor；对Kotlin而言，是KSP。
 
 所以，首次用IDE打开框架附带demo中任何项目，都会因为本该被自动生成的代码暂时不存在而报编译错。
 
 别怕，放心大胆地点击运行按钮，所有问题将会立即自动消失。
+
+:::
