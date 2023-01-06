@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
+import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableRootQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
@@ -77,12 +78,12 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @Override
     public Pager<E> pager(Pageable pageable) {
-        return new PagerImpl<>(pageable);
+        return new PagerImpl<>(pageable.getPageNumber(), pageable.getPageSize());
     }
 
     @Override
-    public Pager<E> pager(int pageIndex, int pageSize, TypedProp.Scalar<?, ?> ... props) {
-        return new PagerImpl<>(PageRequest.of(pageIndex, pageSize, Sorts.toSort(props)));
+    public Pager<E> pager(int pageIndex, int pageSize) {
+        return new PagerImpl<>(pageIndex, pageSize);
     }
 
     @Override
@@ -182,7 +183,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @Override
     public Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<?, ?>... sortedProps) {
-        return pager(pageIndex, pageSize, sortedProps).execute(createQuery(fetcher, sortedProps));
+        return pager(pageIndex, pageSize).execute(createQuery(fetcher, sortedProps));
     }
 
     @Override
@@ -292,27 +293,38 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     private static class PagerImpl<E> implements Pager<E> {
 
-        private final Pageable pageable;
+        private final int pageIndex;
 
-        private PagerImpl(Pageable pageable) {
-            this.pageable = pageable;
+        private final int pageSize;
+
+        PagerImpl(int pageIndex, int pageSize) {
+            this.pageIndex = pageIndex;
+            this.pageSize = pageSize;
         }
 
         @Override
         public Page<E> execute(ConfigurableRootQuery<?, E> query) {
-            if (pageable.getPageSize() == 0) {
+            if (pageSize == 0) {
                 return new PageImpl<>(query.execute());
             }
-            long offset = pageable.getOffset();
-            if (offset > Integer.MAX_VALUE - pageable.getPageSize()) {
+            int offset = pageIndex * pageSize;
+            if (offset > Integer.MAX_VALUE - pageSize) {
                 throw new IllegalArgumentException("offset is too big");
             }
             int total = query.count();
             List<E> content =
                     query
-                            .limit(pageable.getPageSize(), (int)offset)
+                            .limit(pageSize, offset)
                             .execute();
-            return new PageImpl<>(content, pageable, total);
+            return new PageImpl<>(
+                    content,
+                    PageRequest.of(
+                            pageIndex,
+                            pageSize,
+                            Utils.toSort(((ConfigurableRootQueryImplementor<?, ?>)query).getOrders())
+                    ),
+                    total
+            );
         }
     }
 

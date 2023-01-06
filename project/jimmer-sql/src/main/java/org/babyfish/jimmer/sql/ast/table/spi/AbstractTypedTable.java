@@ -293,6 +293,11 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
     }
 
     @Override
+    public boolean __isInverse() {
+        return delayedOperation instanceof DelayInverseJoin<?>;
+    }
+
+    @Override
     public TableImplementor<E> __unwrap() {
         return raw;
     }

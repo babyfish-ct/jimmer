@@ -11,6 +11,8 @@ public interface TableProxy<E> extends Table<E> {
 
     ImmutableProp __prop();
 
+    boolean __isInverse();
+
     TableImplementor<E> __unwrap();
 
     TableImplementor<E> __resolve(RootTableResolver resolver);

@@ -32,6 +32,13 @@ public interface BookRepository extends JRepository<Book, Long> {
             @Nullable BigDecimal max
     );
 
+    Page<Book> findByNameAndEdition(
+            String name,
+            int edition,
+            Pageable pageable,
+            Fetcher<Book> fetcher
+    );
+
     default Page<Book> findBooks(
             int pageIndex,
             int pageSize,

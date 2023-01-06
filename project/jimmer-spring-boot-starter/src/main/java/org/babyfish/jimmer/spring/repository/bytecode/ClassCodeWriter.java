@@ -4,6 +4,7 @@ import org.babyfish.jimmer.impl.asm.ClassWriter;
 import org.babyfish.jimmer.impl.asm.MethodVisitor;
 import org.babyfish.jimmer.impl.asm.Opcodes;
 import org.babyfish.jimmer.impl.asm.Type;
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.spring.repository.parser.Context;
 import org.springframework.data.repository.core.RepositoryInformation;
 
@@ -193,7 +194,16 @@ public abstract class ClassCodeWriter implements Constants {
             for (Class<?> clazz : writer.method.getParameterTypes()) {
                 mv.visitInsn(Opcodes.DUP);
                 mv.visitLdcInsn(index++);
-                mv.visitLdcInsn(Type.getType(clazz));
+                if (clazz.isPrimitive()) {
+                    mv.visitFieldInsn(
+                            Opcodes.GETSTATIC,
+                            Type.getInternalName(Classes.boxTypeOf(clazz)),
+                            "TYPE",
+                            "Ljava/lang/Class;"
+                    );
+                } else {
+                    mv.visitLdcInsn(Type.getType(clazz));
+                }
                 mv.visitInsn(Opcodes.AASTORE);
             }
             mv.visitMethodInsn(

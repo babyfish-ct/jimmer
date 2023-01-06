@@ -31,12 +31,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     Pager<E> pager(Pageable pageable);
 
-    Pager<E> pager(int pageIndex, int pageSize, TypedProp.Scalar<?, ?> ... props);
-
-    default Pager<E> pager(int pageIndex, int pageSize, Sort sort) {
-        return pager(PageRequest.of(pageIndex, pageSize, sort));
-    }
-
+    Pager<E> pager(int pageIndex, int pageSize);
 
     /*
      * For consumer

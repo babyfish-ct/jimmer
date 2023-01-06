@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.query.impl.KConfigurableRootQueryImplementor
 import org.springframework.core.GenericTypeResolver
 import org.springframework.data.domain.*
 import kotlin.reflect.KClass
@@ -46,13 +47,12 @@ open class KRepositoryImpl<E: Any, ID: Any> (
     protected val immutableType: ImmutableType =
         ImmutableType.get(this.entityType.java)
 
-    override fun pager(pageIndex: Int, pageSize: Int, block: (SortDsl<E>.() -> Unit)?): KRepository.Pager<E> {
-        val sort = block?.toSort() ?: Sort.unsorted()
-        return PagerImpl(PageRequest.of(pageIndex, pageSize, sort))
+    override fun pager(pageIndex: Int, pageSize: Int): KRepository.Pager<E> {
+        return PagerImpl(pageIndex, pageSize)
     }
 
     override fun pager(pageable: Pageable): KRepository.Pager<E> =
-        PagerImpl(pageable)
+        PagerImpl(pageable.pageNumber, pageable.pageSize)
 
     override fun findNullable(id: ID, fetcher: Fetcher<E>?): E? =
         if (fetcher !== null) {
@@ -95,7 +95,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
         fetcher: Fetcher<E>?,
         block: (SortDsl<E>.() -> Unit)?
     ): Page<E> =
-        pager(pageIndex, pageSize, block)
+        pager(pageIndex, pageSize)
             .execute(
                 sql.createQuery(entityType) {
                     orderBy(block)
@@ -104,7 +104,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             )
 
     override fun findAll(pageIndex: Int, pageSize: Int, fetcher: Fetcher<E>?, sort: Sort): Page<E> =
-        pager(pageIndex, pageSize, sort)
+        pager(pageIndex, pageSize)
             .execute(
                 sql.createQuery(entityType) {
                     orderBy(sort)
@@ -175,20 +175,31 @@ open class KRepositoryImpl<E: Any, ID: Any> (
         get() = GraphQlImpl()
 
     private class PagerImpl<E>(
-        private val pageable: Pageable
+        private val pageIndex: Int,
+        private val pageSize: Int
     ) : KRepository.Pager<E> {
 
         override fun execute(query: KConfigurableRootQuery<*, E>): Page<E> {
-            if (pageable.pageSize == 0) {
+            if (pageSize == 0) {
                 return PageImpl(query.execute())
             }
-            val offset = pageable.offset
-            require(offset <= Int.MAX_VALUE - pageable.pageSize) { "offset is too big" }
+            val offset = pageIndex * pageSize
+            require(offset <= Int.MAX_VALUE - pageSize) { "offset is too big" }
             val total = query.count()
             val content = query
-                .limit(pageable.pageSize, offset.toInt())
+                .limit(pageSize, offset)
                 .execute()
-            return PageImpl(content, pageable, total.toLong())
+            return PageImpl(
+                content,
+                PageRequest.of(
+                    pageIndex,
+                    pageSize,
+                    Utils.toSort(
+                        (query as KConfigurableRootQueryImplementor<*, *>).javaOrders
+                    )
+                ),
+                total.toLong()
+            )
         }
     }
 

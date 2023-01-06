@@ -128,6 +128,11 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     }
 
     @Override
+    public boolean __isInverse() {
+        return table.isInverse();
+    }
+
+    @Override
     public TableImplementor<E> __unwrap() {
         return table;
     }

@@ -259,14 +259,14 @@ public class SpringJavaTest extends AbstractTest {
     @Test
     public void testBySpringSort() {
 
-        Sort sort = Sorts.toSort(BookProps.NAME.desc());
+        Sort sort = Sorts.toSort(BookProps.NAME, BookProps.EDITION.desc());
 
         assertTransactionEvents();
         Assertions.assertEquals(12, bookRepository.findAll(sort).size());
         assertSQLs(
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                         "from BOOK as tb_1_ " +
-                        "order by tb_1_.NAME desc"
+                        "order by tb_1_.NAME asc, tb_1_.EDITION desc"
         );
         assertTransactionEvents("connect");
 
@@ -276,15 +276,16 @@ public class SpringJavaTest extends AbstractTest {
                 "select count(tb_1_.ID) from BOOK as tb_1_",
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                         "from BOOK as tb_1_ " +
-                        "order by tb_1_.NAME desc " +
+                        "order by tb_1_.NAME asc, tb_1_.EDITION desc " +
                         "limit ?"
         );
         Assertions.assertEquals(12, page.getTotalElements());
         Assertions.assertEquals(2, page.getTotalPages());
         Assertions.assertEquals(
                 Sort.by(
-                        Collections.singletonList(
-                                new Sort.Order(Sort.Direction.DESC, "name")
+                        Arrays.asList(
+                                new Sort.Order(Sort.Direction.ASC, "name"),
+                                new Sort.Order(Sort.Direction.DESC, "edition")
                         )
                 ),
                 page.getPageable().getSort()

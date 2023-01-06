@@ -289,6 +289,33 @@ public class QueryParserTest {
     }
 
     @Test
+    public void testFindImplicitTop() {
+        assertQuery(
+                Query.of(
+                        new Context(),
+                        new Source("findTopByNameContainsAndStoreNameStartsWithOrderByNameDescStoreNameAsc"),
+                        ImmutableType.get(Book.class)
+                ),
+                "Query{" +
+                        "--->action=FIND, " +
+                        "--->limit=1, " +
+                        "--->distinct=false, " +
+                        "--->selectedPath=null, " +
+                        "--->predicate=AndPredicate{" +
+                        "--->--->predicates=[" +
+                        "--->--->--->UnresolvedPredicate{path=name, op=LIKE, insensitive=false, likeMode=ANYWHERE}, " +
+                        "--->--->--->UnresolvedPredicate{path=store.name, op=LIKE, insensitive=false, likeMode=START}" +
+                        "--->--->]" +
+                        "--->}, " +
+                        "--->orders=[" +
+                        "--->--->Order{path=name, orderMode=DESC}, " +
+                        "--->--->Order{path=store.name, orderMode=ASC}" +
+                        "--->]" +
+                        "}"
+        );
+    }
+
+    @Test
     public void testIllegalDelete() {
         IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> {
             Query.of(new Context(), new Source("deleteXByName"), ImmutableType.get(Book.class));

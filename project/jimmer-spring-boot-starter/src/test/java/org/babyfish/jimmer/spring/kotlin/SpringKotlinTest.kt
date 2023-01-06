@@ -19,6 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+import org.springframework.data.domain.Sort
 import java.sql.Connection
 import java.sql.PreparedStatement
 import javax.sql.DataSource
@@ -90,6 +91,19 @@ open class SpringKotlinTest : AbstractTest() {
     @Test
     fun testProperties() {
         Assertions.assertEquals("/my-ts.zip", jimmerProperties.client.ts.path)
+    }
+
+    @Test
+    fun testFindSort() {
+        val page = treeNodeRepository.findAll(0, 1) {
+            asc(TreeNode::name)
+        }
+        Assertions.assertEquals(
+            Sort.by(
+                Sort.Order(Sort.Direction.ASC, "name")
+            ),
+            page.pageable.sort,
+        )
     }
 
     @Test
