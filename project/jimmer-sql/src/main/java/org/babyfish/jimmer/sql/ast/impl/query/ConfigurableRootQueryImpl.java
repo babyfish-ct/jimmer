@@ -6,10 +6,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
-import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
-import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
-import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
-import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
+import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.Selectors;
@@ -23,7 +20,7 @@ import java.util.function.Consumer;
 
 public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         extends AbstractConfigurableTypedQueryImpl
-        implements ConfigurableRootQuery<T, R>, TypedRootQueryImplementor<R> {
+        implements ConfigurableRootQuery<T, R>, ConfigurableRootQueryImplementor<T, R> {
 
     public ConfigurableRootQueryImpl(
             TypedQueryData data,
@@ -229,6 +226,11 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     @Override
     public boolean isForUpdate() {
         return getData().isForUpdate();
+    }
+
+    @Override
+    public List<Order> getOrders() {
+        return getBaseQuery().getOrders();
     }
 
     private static class ReselectValidator extends AstVisitor {

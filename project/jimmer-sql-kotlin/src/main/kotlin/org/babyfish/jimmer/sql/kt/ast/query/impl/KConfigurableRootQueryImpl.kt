@@ -1,9 +1,10 @@
 package org.babyfish.jimmer.sql.kt.ast.query.impl
 
+import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableRootQueryImplementor
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery
+import org.babyfish.jimmer.sql.ast.query.Order
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
@@ -11,7 +12,7 @@ import java.util.function.BiFunction
 
 internal class KConfigurableRootQueryImpl<E: Any, R>(
     javaQuery: ConfigurableRootQuery<Table<E>, R>
-) : KTypedRootQueryImpl<R>(javaQuery), KConfigurableRootQuery<E, R> {
+) : KTypedRootQueryImpl<R>(javaQuery), KConfigurableRootQueryImplementor<E, R> {
 
     @Suppress("UNCHECKED_CAST")
     override val javaQuery: ConfigurableRootQuery<Table<E>, R>
@@ -37,4 +38,7 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
 
     override fun forUpdate(): KConfigurableRootQuery<E, R> =
         KConfigurableRootQueryImpl(javaQuery.forUpdate())
+
+    override val javaOrders: List<Order>
+        get() = (javaQuery as ConfigurableRootQueryImplementor<*, *>).orders
 }

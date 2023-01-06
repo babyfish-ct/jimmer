@@ -17,6 +17,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -226,6 +227,10 @@ public abstract class AbstractMutableQueryImpl
 
     protected boolean isGroupByClauseUsed() {
         return !this.groupByExpressions.isEmpty();
+    }
+
+    List<Order> getOrders() {
+        return Collections.unmodifiableList(orders);
     }
 
     private static class UseJoinOfIgnoredClauseVisitor extends AstVisitor {

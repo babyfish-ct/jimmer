@@ -58,7 +58,7 @@ public class Sorts {
             ImmutableProp ip = prop.unwrap();
             ImmutableType dt = prop.unwrap().getDeclaringType();
             if (dt.isEntity()) {
-                if (entityType != null) {
+                if (entityType != null && entityType != dt) {
                     throw new IllegalArgumentException("props do not belong to one entity type");
                 }
                 entityType = dt;

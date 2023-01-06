@@ -20,10 +20,7 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
 
     val sql: KSqlClient
 
-    fun pager(pageIndex: Int, pageSize: Int, block: (SortDsl<E>.() -> Unit)? = null): Pager<E>
-
-    fun pager(pageIndex: Int, pageSize: Int, sort: Sort?): Pager<E> =
-        pager(PageRequest.of(pageIndex, pageSize, sort ?: Sort.unsorted()))
+    fun pager(pageIndex: Int, pageSize: Int): Pager<E>
 
     fun pager(pageable: Pageable): Pager<E>
 

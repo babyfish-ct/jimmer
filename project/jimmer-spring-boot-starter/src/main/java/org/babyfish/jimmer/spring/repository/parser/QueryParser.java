@@ -131,25 +131,25 @@ class QueryParser {
         }
         int len = source.length();
         Source numSource = null;
-        if (numStarIndex < len) {
-            for (int i = numStarIndex; i < len; i++) {
-                if (!Character.isDigit(source.charAt(i))) {
-                    numSource = source.subSource(numStarIndex, i);
-                    break;
-                }
-            }
-            if (numSource == null) {
-                numSource = source.subSource(numStarIndex);
+        for (int i = numStarIndex; i < len; i++) {
+            if (!Character.isDigit(source.charAt(i))) {
+                numSource = source.subSource(numStarIndex, i);
+                break;
             }
         }
         if (numSource == null) {
-            throw new IllegalArgumentException(
-                    "Cannot parse limit from \"" +
-                            source +
-                            "\""
-            );
+            numSource = source.subSource(numStarIndex);
         }
-        limit = Integer.parseInt(numSource.asString());
+        if (numSource.isEmpty()) {
+            limit = 1;
+        } else {
+            limit = Integer.parseInt(numSource.asString());
+            if (limit < 1) {
+                throw new IllegalArgumentException(
+                        "limit can not be less than 1"
+                );
+            }
+        }
         Source before = source.subSource(0, topStartIndex);
         Source after = source.subSource(numStarIndex + numSource.length());
         List<Source> restSources = new ArrayList<>();
