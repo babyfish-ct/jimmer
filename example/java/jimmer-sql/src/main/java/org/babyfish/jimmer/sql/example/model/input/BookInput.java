@@ -18,6 +18,8 @@ public class BookInput implements Input<Book> {
         ImmutableConverter
                 .forFields(Book.class, BookInput.class)
                 .map(BookProps.ID, mapping -> {
+                    // `Book.id` is only mapped when `input.id` is not null
+                    // otherwise, `Book.id` is unloaded
                     mapping.useIf(input -> input.id != null);
                 })
                 .map(BookProps.STORE, "storeId", mapping -> {
