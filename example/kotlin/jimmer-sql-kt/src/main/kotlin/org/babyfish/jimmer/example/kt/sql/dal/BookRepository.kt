@@ -3,10 +3,7 @@ package org.babyfish.jimmer.example.kt.sql.dal
 import org.babyfish.jimmer.example.kt.sql.model.*
 import org.babyfish.jimmer.spring.repository.KRepository
 import org.babyfish.jimmer.sql.fetcher.Fetcher
-import org.babyfish.jimmer.sql.kt.ast.expression.desc
-import org.babyfish.jimmer.sql.kt.ast.expression.ilike
-import org.babyfish.jimmer.sql.kt.ast.expression.or
-import org.babyfish.jimmer.sql.kt.ast.expression.valueIn
+import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.springframework.data.domain.Page
 
 interface BookRepository : KRepository<Book, Long> {
@@ -19,9 +16,7 @@ interface BookRepository : KRepository<Book, Long> {
         authorName: String?,
         fetcher: Fetcher<Book>?
     ): Page<Book> =
-        pager(pageIndex, pageSize) {
-            asc(Book::name)
-        }.execute(
+        pager(pageIndex, pageSize).execute(
             sql.createQuery(Book::class) {
                 name?.takeIf { it.isNotEmpty() }?.let {
                     where(table.name ilike it)
@@ -47,4 +42,19 @@ interface BookRepository : KRepository<Book, Long> {
                 select(table.fetch(fetcher))
             }
         )
+
+    fun findNewestIdsByStoreIds(storeIds: Collection<Long>): Map<Long, Long> =
+        sql
+            .createQuery(Book::class) {
+                where(table.store.id valueIn storeIds)
+                groupBy(table.store.id)
+                select(
+                    table.store.id,
+                    max(table.id).asNonNull()
+                )
+            }
+            .execute()
+            .associateBy({it._1}) {
+                it._2
+            }
 }
