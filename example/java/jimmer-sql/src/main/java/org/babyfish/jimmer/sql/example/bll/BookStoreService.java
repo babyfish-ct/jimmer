@@ -72,20 +72,19 @@ public class BookStoreService {
         List<BookStore> stores = bookStoreRepository.findAll(SIMPLE_FETCHER);
 
         // BookStoreId -> BookId
-        Map<Long, Long> newestBookIdMap;
-        if (stores.isEmpty()) {
-            newestBookIdMap = Collections.emptyMap();
-        } else {
-            newestBookIdMap = bookRepository.findNewestBookIdsByStoreIds(
-                    stores.stream().map(BookStore::id).collect(Collectors.toList())
-            );
-        }
+        Map<Long, Long> newestBookIdMap = stores.isEmpty() ?
+                Collections.emptyMap() :
+                bookRepository.findNewestBookIdsByStoreIds(
+                        stores.stream().map(BookStore::id).collect(Collectors.toList())
+                );
 
         // BookId -> Book
-        Map<Long, Book> bookMap = bookRepository.findMapByIds(
-                newestBookIdMap.values(),
-                NEWEST_BOOK_FETCHER
-        );
+        Map<Long, Book> bookMap = newestBookIdMap.isEmpty() ?
+                Collections.emptyMap() :
+                bookRepository.findMapByIds(
+                        newestBookIdMap.values(),
+                        NEWEST_BOOK_FETCHER
+                );
 
         return stores
                 .stream()
