@@ -48,8 +48,8 @@ class BookStoreService(
     @GetMapping("stores/withNewestBook")
     fun findStoresWithNewestBook(): List<
         Tuple2<
-            BookStore,
-            Book?
+            @FetchBy("SIMPLE_FETCHER") BookStore,
+            @FetchBy("NEWEST_BOOK_FETCHER") Book?
         >
     > {
         val stores = bookStoreRepository.findAll(SIMPLE_FETCHER)
