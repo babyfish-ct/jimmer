@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.client;
 
-import kotlin.Unit;
-
 import java.lang.annotation.*;
 
 @Documented
@@ -11,7 +9,10 @@ public @interface FetchBy {
 
     String value();
 
-    // This is `default Unit.class`, not `default void.class`,
-    // otherwise, kotlin reflection will crash
     Class<?> ownerType() default void.class;
+
+    /**
+     * Only for java, let the decorated generic argument be nullable
+     */
+    boolean nullable() default false;
 }

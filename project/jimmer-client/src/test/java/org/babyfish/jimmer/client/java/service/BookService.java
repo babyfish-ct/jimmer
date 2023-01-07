@@ -65,7 +65,7 @@ public interface BookService {
     Page<
                 Tuple2<
                         ? extends @FetchBy("COMPLEX_FETCHER") Book,
-                        ? extends @FetchBy("AUTHOR_FETCHER") Author
+                        ? extends @FetchBy(value = "AUTHOR_FETCHER", nullable = true) Author
                 >
         > findTuples(
             @Doc("Match the book name, optional") @RequestParam("name") @Nullable String name,

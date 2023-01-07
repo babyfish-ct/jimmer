@@ -186,7 +186,11 @@ class Context {
         if (javaType instanceof Class<?>) {
             Class<?> javaClass = (Class<?>) javaType;
             if (immutableType != null) {
-                return objectType(immutableType, fetchBy);
+                Type type = objectType(immutableType, fetchBy);
+                if (fetchBy != null && fetchBy.nullable()) {
+                    type = NullableTypeImpl.of(type);
+                }
+                return type;
             }
             if (javaClass.isEnum()) {
                 EnumType enumType = enumTypeMap.get(javaClass);
