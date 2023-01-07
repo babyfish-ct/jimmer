@@ -252,6 +252,7 @@ class KTypeScriptTest {
         val code = out.toString()
         Assertions.assertEquals(
             "import type { KGender } from '../enums';\n" +
+                "import type { KCoordinate } from '../entities';\n" +
                 "\n" +
                 "export type KBookDto = {\n" +
                 "    'KBookService/SIMPLE_FETCHER': {\n" +
@@ -265,7 +266,8 @@ class KTypeScriptTest {
                 "        readonly price?: number, \n" +
                 "        readonly store?: {\n" +
                 "            readonly id: number, \n" +
-                "            readonly name?: string\n" +
+                "            readonly name?: string, \n" +
+                "            readonly coordinate: KCoordinate\n" +
                 "        }, \n" +
                 "        readonly authors: ReadonlyArray<{\n" +
                 "            readonly id: number, \n" +
@@ -287,6 +289,7 @@ class KTypeScriptTest {
         val code = out.toString()
         Assertions.assertEquals(
             "import type { KGender } from '../enums';\n" +
+                "import type { KCoordinate } from '../entities';\n" +
                 "\n" +
                 "export type KAuthorDto = {\n" +
                 "    'KBookService/AUTHOR_FETCHER': {\n" +
@@ -301,7 +304,8 @@ class KTypeScriptTest {
                 "            readonly price?: number, \n" +
                 "            readonly store?: {\n" +
                 "                readonly id: number, \n" +
-                "                readonly name?: string\n" +
+                "                readonly name?: string, \n" +
+                "                readonly coordinate: KCoordinate\n" +
                 "            }\n" +
                 "        }>\n" +
                 "    }\n" +

@@ -116,7 +116,7 @@ public class JTypeScriptTest {
                         "    }\n" +
                         "    \n" +
                         "    async findTuples(options: BookServiceOptions['findTuples']): Promise<\n" +
-                        "        Page<Tuple2<BookDto['BookService/COMPLEX_FETCHER'], AuthorDto['BookService/AUTHOR_FETCHER']>>\n" +
+                        "        Page<Tuple2<BookDto['BookService/COMPLEX_FETCHER'], AuthorDto['BookService/AUTHOR_FETCHER'] | undefined>>\n" +
                         "    > {\n" +
                         "        let uri = '/java/tuples';\n" +
                         "        let separator = '?';\n" +
@@ -131,7 +131,7 @@ public class JTypeScriptTest {
                         "        uri += encodeURIComponent(options.pageIndex);\n" +
                         "        uri += '&pageSize=';\n" +
                         "        uri += encodeURIComponent(options.pageSize);\n" +
-                        "        return (await this.executor({uri, method: 'GET'})) as Page<Tuple2<BookDto['BookService/COMPLEX_FETCHER'], AuthorDto['BookService/AUTHOR_FETCHER']>>\n" +
+                        "        return (await this.executor({uri, method: 'GET'})) as Page<Tuple2<BookDto['BookService/COMPLEX_FETCHER'], AuthorDto['BookService/AUTHOR_FETCHER'] | undefined>>\n" +
                         "    }\n" +
                         "    \n" +
                         "    async saveBooks(options: BookServiceOptions['saveBooks']): Promise<\n" +
@@ -362,7 +362,7 @@ public class JTypeScriptTest {
                         "                    readonly name: string\n" +
                         "                }\n" +
                         "            }>\n" +
-                        "        }>>\n" +
+                        "        } | undefined>>\n" +
                         "    > {\n" +
                         "        let uri = '/java/tuples';\n" +
                         "        let separator = '?';\n" +
@@ -420,7 +420,7 @@ public class JTypeScriptTest {
                         "                    readonly name: string\n" +
                         "                }\n" +
                         "            }>\n" +
-                        "        }>>\n" +
+                        "        } | undefined>>\n" +
                         "    }\n" +
                         "    \n" +
                         "    async saveBooks(options: {readonly body: BookInput}): Promise<\n" +

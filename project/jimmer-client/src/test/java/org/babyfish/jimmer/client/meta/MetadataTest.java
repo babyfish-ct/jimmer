@@ -47,7 +47,10 @@ public class MetadataTest {
                 bookType
         );
 
-        Type authorType = ((StaticObjectType)tupleType).getProperties().get("_2").getType();
+        Type authorWrapperType = ((StaticObjectType)tupleType).getProperties().get("_2").getType();
+        Assertions.assertTrue(authorWrapperType instanceof NullableType);
+
+        Type authorType = ((NullableType)authorWrapperType).getTargetType();
         Assertions.assertTrue(authorType instanceof ImmutableObjectType);
         assertType(
                 "{" +
