@@ -29,7 +29,7 @@ public interface BookRepository extends JRepository<Book, Long> {
             @Nullable Fetcher<Book> fetcher
     ) {
         AuthorTableEx author = AuthorTableEx.$;
-        return pager(pageIndex, pageSize, BookProps.NAME)
+        return pager(pageIndex, pageSize)
                 .execute(
                         sql()
                                 .createQuery(table)
