@@ -71,12 +71,29 @@ public class BookService {
                                     .allScalarFields()
                     );
 
+    /*
+     * Recommend
+     *
+     * The save command can save arbitrarily complex data structures,
+     * which is too powerful and should be sealed inside the service and not exposed.
+     *
+     * You should accept static Input DTO parameter, convert it to a
+     * dynamic data structure and save it.
+     * Unlike output DTOs, input DTOs don't have explosion issues.
+     */
     @Transactional
     @PutMapping("/book")
     public Book saveBook(@RequestBody BookInput input) {
         return bookRepository.save(input);
     }
 
+    /*
+     * Not recommended.
+     *
+     * Since the save command can save arbitrarily complex data structure,
+     * it is `too powerful`, and direct exposure will cause serious security problems,
+     * unless your client is an internal system and absolutely reliable.
+     */
     @Transactional
     @PutMapping("/book/dynamic")
     public Book saveBook(@RequestBody Book book) {
