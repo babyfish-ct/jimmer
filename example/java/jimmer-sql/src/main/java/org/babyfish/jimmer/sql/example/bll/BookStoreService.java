@@ -61,13 +61,13 @@ public class BookStoreService {
      * has multiple generic parameters, or even nested generic types.
      * This is why `@FetchBy` decorates generic parameters but not return types.
      */
-    @GetMapping("stores/withMostExpensiveBook")
+    @GetMapping("stores/withNewestBook")
     public List<
             Tuple2<
                     @FetchBy("SIMPLE_FETCHER") BookStore,
                     @FetchBy("NEWEST_BOOK_FETCHER") Book
             >
-    > findStoresWithMostExpensiveBook() {
+    > findStoresWithNewestBook() {
 
         List<BookStore> stores = bookStoreRepository.findAll(SIMPLE_FETCHER);
 
