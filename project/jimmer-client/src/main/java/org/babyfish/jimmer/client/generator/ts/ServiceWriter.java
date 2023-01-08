@@ -10,12 +10,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class ServiceWriter extends CodeWriter {
+public class ServiceWriter extends TsCodeWriter {
 
     private final Service service;
 
-    public ServiceWriter(Context ctx, Service service, boolean anonymous) {
-        super(ctx, ctx.getFile(service), anonymous);
+    public ServiceWriter(TsContext ctx, Service service) {
+        super(ctx, ctx.getFile(service));
         this.service = service;
     }
 
@@ -36,7 +36,7 @@ public class ServiceWriter extends CodeWriter {
             }
         });
 
-        if (!anonymous) {
+        if (!getContext().isAnonymous()) {
             code('\n');
             code("\nexport type ").code(getFile().getName()).code("Options = ");
             scope(ScopeType.OBJECT, ",", true, () -> {
@@ -59,7 +59,7 @@ public class ServiceWriter extends CodeWriter {
                         code("options");
                         codeIf(optionsOptional, '?');
                         code(": ");
-                        if (anonymous) {
+                        if (getContext().isAnonymous()) {
                             optionsBody(operation);
                         } else {
                             optionsName(operation);
@@ -72,7 +72,7 @@ public class ServiceWriter extends CodeWriter {
                         ", ",
                         !(NullableType.unwrap(operation.getType()) instanceof SimpleType),
                         () -> {
-                            type(operation.getType());
+                            typeRef(operation.getType());
                         }
                 )
                 .code(" ")
@@ -87,7 +87,7 @@ public class ServiceWriter extends CodeWriter {
                 .code(parameter.getName())
                 .codeIf(parameter.getType() instanceof NullableType, '?')
                 .code(": ")
-                .type(NullableType.unwrap(parameter.getType()));
+                .typeRef(NullableType.unwrap(parameter.getType()));
     }
 
     private void optionsName(Operation operation) {
@@ -196,7 +196,7 @@ public class ServiceWriter extends CodeWriter {
                 code(", body: options.").code(parameter.getName());
             }
         }
-        code("})) as ").type(operation.getType());
+        code("})) as ").typeRef(operation.getType());
     }
 
     private static Parameter pathVariableParameter(Operation operation, String pathVariable) {

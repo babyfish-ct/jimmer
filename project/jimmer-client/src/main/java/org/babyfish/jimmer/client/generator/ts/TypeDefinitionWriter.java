@@ -4,11 +4,11 @@ import org.babyfish.jimmer.client.meta.*;
 
 import java.lang.reflect.TypeVariable;
 
-public class TypeDefinitionWriter extends CodeWriter {
+public class TypeDefinitionWriter extends TsCodeWriter {
 
     private final Type type;
 
-    public TypeDefinitionWriter(Context ctx, Type type) {
+    public TypeDefinitionWriter(TsContext ctx, Type type) {
         super(ctx, ctx.getFile(type));
         if (!type.hasDefinition()) {
             throw new IllegalArgumentException("The type does not have definition");
@@ -51,7 +51,7 @@ public class TypeDefinitionWriter extends CodeWriter {
                         .code(property.getName())
                         .codeIf(property.getType() instanceof NullableType, "?")
                         .code(": ");
-                type(NullableType.unwrap(property.getType()));
+                typeRef(NullableType.unwrap(property.getType()));
                 code(';');
             }
         });

@@ -1,14 +1,14 @@
 package org.babyfish.jimmer.client.generator.ts.simple;
 
-import org.babyfish.jimmer.client.generator.ts.CodeWriter;
-import org.babyfish.jimmer.client.generator.ts.Context;
 import org.babyfish.jimmer.client.generator.ts.File;
+import org.babyfish.jimmer.client.generator.ts.TsCodeWriter;
+import org.babyfish.jimmer.client.generator.ts.TsContext;
 
-public class DynamicWriter extends CodeWriter {
+public class DynamicWriter extends TsCodeWriter {
 
     public static final File FILE = new File("", "Dynamic");
 
-    public DynamicWriter(Context ctx) {
+    public DynamicWriter(TsContext ctx) {
         super(ctx, FILE);
     }
 

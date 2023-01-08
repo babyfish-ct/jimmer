@@ -42,6 +42,6 @@ public class File {
 
     @Override
     public String toString() {
-        return dir + '/' + name + ".ts";
+        return dir + '/' + name;
     }
 }

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.java.ts;
 
+import org.babyfish.jimmer.client.generator.Context;
 import org.babyfish.jimmer.client.generator.ts.*;
 import org.babyfish.jimmer.client.java.model.*;
 import org.babyfish.jimmer.client.java.service.AuthorService;
@@ -19,7 +20,7 @@ public class JTypeScriptTest {
     @Test
     public void testModule() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Context ctx = createContext(out);
+        TsContext ctx = createContext(out);
         new ModuleWriter(ctx).flush();
         String code = out.toString();
         Assertions.assertEquals(
@@ -45,9 +46,9 @@ public class JTypeScriptTest {
     @Test
     public void testBookService() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Context ctx = createContext(out);
+        TsContext ctx = createContext(out);
         Service service = Constants.JAVA_METADATA.getServices().get(BookService.class);
-        new ServiceWriter(ctx, service, false).flush();
+        new ServiceWriter(ctx, service).flush();
         String code = out.toString();
         Assertions.assertEquals(
                 "import type { Book } from '../model/entities';\n" +
@@ -180,9 +181,9 @@ public class JTypeScriptTest {
     @Test
     public void testBookServiceByAnonymousMode() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Context ctx = createContext(out);
+        TsContext ctx = createContext(out, true);
         Service service = Constants.JAVA_METADATA.getServices().get(BookService.class);
-        new ServiceWriter(ctx, service, true).flush();
+        new ServiceWriter(ctx, service).flush();
         String code = out.toString();
         Assertions.assertEquals(
                 "import type { Book } from '../model/entities';\n" +
@@ -442,9 +443,9 @@ public class JTypeScriptTest {
     @Test
     public void testAuthorService() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Context ctx = createContext(out);
+        TsContext ctx = createContext(out);
         Service service = Constants.JAVA_METADATA.getServices().get(AuthorService.class);
-        new ServiceWriter(ctx, service, false).flush();
+        new ServiceWriter(ctx, service).flush();
         String code = out.toString();
         Assertions.assertEquals(
                 "import type { AuthorDto } from '../model/dto';\n" +
@@ -482,7 +483,7 @@ public class JTypeScriptTest {
     @Test
     public void testRawBookStore() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Context ctx = createContext(out);
+        TsContext ctx = createContext(out);
         ImmutableObjectType bookStoreType = Constants.JAVA_METADATA.getRawImmutableObjectTypes().get(ImmutableType.get(BookStore.class));
         new TypeDefinitionWriter(ctx, bookStoreType).flush();
         String code = out.toString();
@@ -507,7 +508,7 @@ public class JTypeScriptTest {
     @Test
     public void testRawBook() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Context ctx = createContext(out);
+        TsContext ctx = createContext(out);
         ImmutableObjectType bookType = Constants.JAVA_METADATA.getRawImmutableObjectTypes().get(ImmutableType.get(Book.class));
         new TypeDefinitionWriter(ctx, bookType).flush();
         String code = out.toString();
@@ -541,7 +542,7 @@ public class JTypeScriptTest {
     @Test
     public void testRawAuthor() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Context ctx = createContext(out);
+        TsContext ctx = createContext(out);
         ImmutableObjectType authorType = Constants.JAVA_METADATA.getRawImmutableObjectTypes().get(ImmutableType.get(Author.class));
         new TypeDefinitionWriter(ctx, authorType).flush();
         String code = out.toString();
@@ -571,8 +572,8 @@ public class JTypeScriptTest {
     @Test
     public void testBookDto() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Context ctx = createContext(out);
-        new DtoWriter(ctx, Book.class, ctx.getDtoMap().get(Book.class)).flush();
+        TsContext ctx = createContext(out);
+        new DtoWriter(ctx, Book.class).flush();
         String code = out.toString();
         Assertions.assertEquals(
                 "export type BookDto = {\n" +
@@ -603,8 +604,8 @@ public class JTypeScriptTest {
     @Test
     public void testAuthorDto() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Context ctx = createContext(out);
-        new DtoWriter(ctx, Author.class, ctx.getDtoMap().get(Author.class)).flush();
+        TsContext ctx = createContext(out);
+        new DtoWriter(ctx, Author.class).flush();
         String code = out.toString();
         Assertions.assertEquals(
                 "import type { Gender } from '../enums';\n" +
@@ -660,7 +661,7 @@ public class JTypeScriptTest {
     @Test
     public void testBookInput() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Context ctx = createContext(out);
+        TsContext ctx = createContext(out);
         StaticObjectType bookInputType = Constants.JAVA_METADATA.getStaticTypes().get(new StaticObjectType.Key(BookInput.class, null));
         new TypeDefinitionWriter(ctx, bookInputType).flush();
         String code = out.toString();
@@ -687,7 +688,7 @@ public class JTypeScriptTest {
     @Test
     public void testPage() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Context ctx = createContext(out);
+        TsContext ctx = createContext(out);
         StaticObjectType pageType = Constants.JAVA_METADATA.getGenericTypes().get(Page.class);
         new TypeDefinitionWriter(ctx, pageType).flush();
         String code = out.toString();
@@ -707,7 +708,7 @@ public class JTypeScriptTest {
     @Test
     public void testTuple2() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Context ctx = createContext(out);
+        TsContext ctx = createContext(out);
         StaticObjectType tupleType = Constants.JAVA_METADATA.getGenericTypes().get(Tuple2.class);
         new TypeDefinitionWriter(ctx, tupleType).flush();
         String code = out.toString();
@@ -725,7 +726,7 @@ public class JTypeScriptTest {
     @Test
     public void testGender() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Context ctx = createContext(out);
+        TsContext ctx = createContext(out);
         EnumType genderType = Constants.JAVA_METADATA.getEnumTypes().get(Gender.class);
         new TypeDefinitionWriter(ctx, genderType).flush();
         String code = out.toString();
@@ -735,7 +736,11 @@ public class JTypeScriptTest {
         );
     }
     
-    private static Context createContext(OutputStream out) {
-        return new Context(Constants.JAVA_METADATA, out, "Api", 4);
+    private static TsContext createContext(OutputStream out, boolean anonymous) {
+        return new TsContext(Constants.JAVA_METADATA, out, "Api", 4, anonymous);
+    }
+
+    private static TsContext createContext(OutputStream out) {
+        return createContext(out, false);
     }
 }

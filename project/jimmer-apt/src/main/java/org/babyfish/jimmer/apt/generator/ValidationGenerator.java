@@ -43,10 +43,12 @@ public class ValidationGenerator {
         if (!prop.isNullable() && !prop.getTypeName().isPrimitive()) {
             methodBuilder
                     .beginControlFlow("if ($L == null)", valueName)
-                    .addStatement(
-                            "throw new IllegalArgumentException(\"'$L' cannot be null\")",
+                    .addCode("throw new IllegalArgumentException(\n")
+                    .addCode(
+                            "    \"'$L' cannot be null, please specify non-null value or use nullable annotation to decorate this property\"\n",
                             prop.getName()
                     )
+                    .addCode(");\n")
                     .endControlFlow();
         }
         generateNotEmpty();

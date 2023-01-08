@@ -2,9 +2,9 @@ package org.babyfish.jimmer.client.generator.ts;
 
 import org.babyfish.jimmer.client.generator.ts.simple.ExecutorWriter;
 
-public class ModuleWriter extends CodeWriter {
+public class ModuleWriter extends TsCodeWriter {
 
-    public ModuleWriter(Context ctx) {
+    public ModuleWriter(TsContext ctx) {
         super(ctx, ctx.getModuleFile());
     }
 

@@ -1,18 +1,19 @@
 package org.babyfish.jimmer.client.generator.ts;
 
+import org.babyfish.jimmer.client.generator.Context;
 import org.babyfish.jimmer.client.meta.ImmutableObjectType;
 import org.babyfish.jimmer.client.meta.NullableType;
 import org.babyfish.jimmer.client.meta.Property;
 
 import java.util.List;
 
-public class DtoWriter extends CodeWriter {
+public class DtoWriter extends TsCodeWriter {
 
     private final List<ImmutableObjectType> immutableObjectTypes;
 
-    public DtoWriter(Context ctx, Class<?> rawType, List<ImmutableObjectType> immutableObjectTypes) {
+    public DtoWriter(TsContext ctx, Class<?> rawType) {
         super(ctx, dtoFile(ctx, rawType));
-        this.immutableObjectTypes = immutableObjectTypes;
+        this.immutableObjectTypes = ctx.getDtoMap().get(rawType);
     }
 
     public static File dtoFile(Context ctx, Class<?> rawType) {
@@ -33,7 +34,7 @@ public class DtoWriter extends CodeWriter {
                                 .code(prop.getName())
                                 .codeIf(prop.getType() instanceof NullableType, '?')
                                 .code(": ")
-                                .type(NullableType.unwrap(prop.getType()));
+                                .typeRef(NullableType.unwrap(prop.getType()));
                     }
                 });
             }
