@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.generator.ts;
 
+import org.babyfish.jimmer.client.generator.Context;
 import org.babyfish.jimmer.client.generator.Generator;
 import org.babyfish.jimmer.client.generator.GeneratorException;
 import org.babyfish.jimmer.client.generator.ts.simple.*;
@@ -48,14 +49,14 @@ public class TypeScriptGenerator implements Generator {
     public void generate(Metadata metadata, OutputStream out) {
         try {
             ZipOutputStream zipOut = new ZipOutputStream(out);
-            generate0(new Context(metadata, zipOut, moduleName, indent), zipOut);
+            generate0(new TsContext(metadata, zipOut, moduleName, indent, anonymous), zipOut);
             zipOut.finish();
         } catch (IOException | RuntimeException | Error ex) {
             throw new GeneratorException(ex);
         }
     }
 
-    private void generate0(Context ctx, ZipOutputStream zipOut) throws IOException {
+    private void generate0(TsContext ctx, ZipOutputStream zipOut) throws IOException {
 
         zipOut.putNextEntry(new ZipEntry(ctx.getModuleFile().toString()));
         new ModuleWriter(ctx).flush();
@@ -87,7 +88,7 @@ public class TypeScriptGenerator implements Generator {
             File file = e.getValue();
             indexMap.computeIfAbsent(file.getDir(), Index::new).addObjectFile(file);
             zipOut.putNextEntry(new ZipEntry(file.toString()));
-            new ServiceWriter(ctx, service, anonymous).flush();
+            new ServiceWriter(ctx, service).flush();
             zipOut.closeEntry();
         }
         for (Map.Entry<Type, File> e : ctx.getTypeFilePairs()) {
@@ -101,7 +102,7 @@ public class TypeScriptGenerator implements Generator {
         if (!anonymous) {
             for (Map.Entry<Class<?>, List<ImmutableObjectType>> e : ctx.getDtoMap().entrySet()) {
                 Class<?> rawType = e.getKey();
-                DtoWriter dtoWriter = new DtoWriter(ctx, rawType, e.getValue());
+                DtoWriter dtoWriter = new DtoWriter(ctx, rawType);
                 indexMap.computeIfAbsent(dtoWriter.getFile().getDir(), Index::new).addTypeFile(dtoWriter.getFile());
                 zipOut.putNextEntry(new ZipEntry(dtoWriter.getFile().toString()));
                 dtoWriter.flush();

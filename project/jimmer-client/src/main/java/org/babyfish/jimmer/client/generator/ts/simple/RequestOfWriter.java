@@ -1,14 +1,14 @@
 package org.babyfish.jimmer.client.generator.ts.simple;
 
-import org.babyfish.jimmer.client.generator.ts.CodeWriter;
-import org.babyfish.jimmer.client.generator.ts.Context;
 import org.babyfish.jimmer.client.generator.ts.File;
+import org.babyfish.jimmer.client.generator.ts.TsCodeWriter;
+import org.babyfish.jimmer.client.generator.ts.TsContext;
 
-public class RequestOfWriter extends CodeWriter {
+public class RequestOfWriter extends TsCodeWriter {
 
     public static final File FILE = new File("", "RequestOf");
 
-    public RequestOfWriter(Context ctx) {
+    public RequestOfWriter(TsContext ctx) {
         super(ctx, FILE);
     }
 

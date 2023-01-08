@@ -1,7 +1,8 @@
-package org.babyfish.jimmer.client.generator.ts;
+package org.babyfish.jimmer.client.generator;
 
+import org.babyfish.jimmer.client.generator.ts.File;
+import org.babyfish.jimmer.client.generator.ts.TsCodeWriter;
 import org.babyfish.jimmer.client.meta.*;
-import org.babyfish.jimmer.client.meta.impl.ImmutableObjectTypeImpl;
 
 import java.io.OutputStream;
 import java.util.*;
@@ -36,8 +37,6 @@ public class Context {
     private final Map<Class<?>, StaticObjectType> genericTypeMap;
 
     private final Map<Operation, String> operationNameMap;
-
-    private final Namespace<Type> typeNamespace;
 
     private final NavigableMap<Service, File> serviceFileMap;
 
@@ -87,8 +86,6 @@ public class Context {
             e.setValue(Collections.unmodifiableList(types));
         }
         this.dtoMap = Collections.unmodifiableMap(dtoMap);
-
-        typeNamespace = impl.typeNamespace;
 
         NavigableMap<Service, File> map = new TreeMap<>(SERVICE_COMPARATOR);
         map.putAll(impl.serviceFileManager.getFileMap());
@@ -193,7 +190,7 @@ public class Context {
         final Namespace<Type> typeNamespace = new Namespace<>(
                 type -> {
                     if (type instanceof SimpleType) {
-                        return CodeWriter.SIMPLE_TYPE_NAMES.get(((SimpleType)type).getJavaType());
+                        return TsCodeWriter.SIMPLE_TYPE_NAMES.get(((SimpleType)type).getJavaType());
                     }
                     if (type instanceof ImmutableObjectType) {
                         return ((ImmutableObjectType)type).getJavaType().getSimpleName();

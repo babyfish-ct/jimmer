@@ -3,6 +3,7 @@ package org.babyfish.jimmer.apt;
 import org.babyfish.jimmer.apt.generator.*;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.apt.meta.MetaException;
+import org.babyfish.jimmer.sql.Entity;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -63,7 +64,6 @@ public class ImmutableProcessor extends AbstractProcessor {
         } else {
             return true;
         }
-        PackageCollector packageCollector = new PackageCollector();
         for (Element element : roundEnv.getRootElements()) {
             if (element instanceof TypeElement) {
                 TypeElement typeElement = (TypeElement)element;
@@ -113,7 +113,6 @@ public class ImmutableProcessor extends AbstractProcessor {
                     messager.printMessage(Diagnostic.Kind.NOTE, "Immutable: " + immutableType.getQualifiedName());
                     if (immutableType.isEntity()) {
                         messager.printMessage(Diagnostic.Kind.NOTE, "Entity: " + immutableType.getQualifiedName());
-                        packageCollector.accept(typeElement);
                         new TableGenerator(
                                 typeUtils,
                                 immutableType,
@@ -142,6 +141,10 @@ public class ImmutableProcessor extends AbstractProcessor {
             }
         }
         messager.printMessage(Diagnostic.Kind.NOTE, "JimmerModule");
+        PackageCollector packageCollector = new PackageCollector();
+        for (Element element : roundEnv.getElementsAnnotatedWith(Entity.class)) {
+            packageCollector.accept((TypeElement) element);
+        }
         new JimmerModuleGenerator(
                 packageCollector.toString(),
                 packageCollector.getTypeElements(),
