@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.client.generator.ts;
 
 import org.babyfish.jimmer.client.generator.CodeWriter;
+import org.babyfish.jimmer.client.generator.File;
 import org.babyfish.jimmer.client.generator.ts.simple.DynamicWriter;
 import org.babyfish.jimmer.client.meta.*;
 

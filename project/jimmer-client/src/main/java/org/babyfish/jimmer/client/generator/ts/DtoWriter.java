@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.client.generator.ts;
 
 import org.babyfish.jimmer.client.generator.Context;
+import org.babyfish.jimmer.client.generator.File;
 import org.babyfish.jimmer.client.meta.ImmutableObjectType;
 import org.babyfish.jimmer.client.meta.NullableType;
 import org.babyfish.jimmer.client.meta.Property;

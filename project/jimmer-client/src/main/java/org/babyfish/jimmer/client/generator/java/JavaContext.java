@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.client.generator.java;
 
 import org.babyfish.jimmer.client.generator.Context;
+import org.babyfish.jimmer.client.meta.ImmutableObjectType;
 import org.babyfish.jimmer.client.meta.Metadata;
 
 import java.io.OutputStream;
@@ -13,22 +14,25 @@ public class JavaContext extends Context {
 
     private final String basePackage;
 
-    private final boolean useLombok;
-
-    public JavaContext(Metadata metadata, OutputStream out, String moduleName, int indent, String basePackage, boolean useLombok) {
+    public JavaContext(Metadata metadata, OutputStream out, String moduleName, int indent, String basePackage) {
         super(metadata, out, moduleName, indent);
-        if (!BASE_PACKAGE.matcher(basePackage).matches()) {
-            throw new IllegalArgumentException("Illegal base package: \"" + basePackage + "\"");
+        if (basePackage != null && !basePackage.isEmpty() && !BASE_PACKAGE.matcher(basePackage).matches()) {
+            throw new IllegalArgumentException("Illegal base package: " + basePackage);
         }
-        this.basePackage = basePackage;
-        this.useLombok = useLombok;
+        this.basePackage = basePackage != null ? basePackage : "";
     }
 
     public String getBasePackage() {
         return basePackage;
     }
 
-    public boolean isUseLombok() {
-        return useLombok;
+    @Override
+    protected String dynamicTypeName(ImmutableObjectType type) {
+        return "Dynamic_" + type.getJavaType().getSimpleName();
+    }
+
+    @Override
+    protected String staticDirName() {
+        return "model/simple";
     }
 }

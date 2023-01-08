@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.client.generator.ts;
+package org.babyfish.jimmer.client.generator;
 
 import java.util.Objects;
 

@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.client.generator;
 
-import org.babyfish.jimmer.client.generator.ts.File;
 import org.babyfish.jimmer.client.meta.*;
 
 import java.io.IOException;
@@ -10,7 +9,7 @@ import java.util.List;
 
 public abstract class CodeWriter<C extends Context> {
 
-    private final C ctx;
+    protected final C ctx;
 
     protected final File file;
 
@@ -192,7 +191,7 @@ public abstract class CodeWriter<C extends Context> {
 
     protected abstract void write();
 
-    public void flush() throws IOException {
+    public final void flush() throws IOException {
         OutputStreamWriter writer = new OutputStreamWriter(ctx.getOutputStream());
         write();
 
