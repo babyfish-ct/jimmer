@@ -1,9 +1,13 @@
 package org.babyfish.jimmer.spring.java;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.babyfish.jimmer.client.meta.Metadata;
 import org.babyfish.jimmer.spring.AbstractTest;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
+import org.babyfish.jimmer.spring.cfg.MetadataCondition;
 import org.babyfish.jimmer.spring.cfg.SqlClientConfig;
+import org.babyfish.jimmer.spring.client.JavaFeignController;
+import org.babyfish.jimmer.spring.client.MetadataFactoryBean;
 import org.babyfish.jimmer.spring.java.bll.BookService;
 import org.babyfish.jimmer.spring.client.TypeScriptController;
 import org.babyfish.jimmer.spring.java.dal.BookRepository;
@@ -29,6 +33,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
@@ -56,7 +61,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-@SpringBootTest(properties = {"jimmer.client.ts.path=/my-ts.zip", "jimmer.dialect=org.babyfish.jimmer.sql.dialect.H2Dialect"})
+@SpringBootTest(properties = {
+        "jimmer.client.ts.path=/my-ts.zip",
+        "jimmer.client.java-feign.path=/my-java.zip",
+        "jimmer.client.java-feign.base-package=com.myapp.feign",
+        "jimmer.dialect=org.babyfish.jimmer.sql.dialect.H2Dialect",
+        "spring.application.name=java-client"
+})
 @SpringBootConfiguration
 @AutoConfigurationPackage
 @EnableJimmerRepositories
@@ -151,16 +162,30 @@ public class SpringJavaTest extends AbstractTest {
             return new BookService(bookRepository);
         }
 
-        @ConditionalOnProperty("jimmer.client.ts.path")
-        @ConditionalOnMissingBean(TypeScriptController.class)
-        @Bean
-        public TypeScriptController typeScriptService(ApplicationContext ctx, JimmerProperties properties) {
-            return new TypeScriptController(ctx, properties);
-        }
-
         @Bean
         public MockMvc mockMvc(WebApplicationContext ctx) {
             return webAppContextSetup(ctx).build();
+        }
+
+        @ConditionalOnProperty("jimmer.client.ts.path")
+        @ConditionalOnMissingBean(TypeScriptController.class)
+        @Bean
+        public TypeScriptController typeScriptController(Metadata metadata, JimmerProperties properties) {
+            return new TypeScriptController(metadata, properties);
+        }
+
+        @ConditionalOnProperty("jimmer.client.java-feign.path")
+        @ConditionalOnMissingBean(JavaFeignController.class)
+        @Bean
+        public JavaFeignController javaFeignController(Metadata metadata, JimmerProperties properties) {
+            return new JavaFeignController(metadata, properties);
+        }
+
+        @Conditional(MetadataCondition.class)
+        @ConditionalOnMissingBean(Metadata.class)
+        @Bean
+        public MetadataFactoryBean metadataFactoryBean(ApplicationContext ctx) throws Exception {
+            return new MetadataFactoryBean(ctx);
         }
     }
 
@@ -471,6 +496,13 @@ public class SpringJavaTest extends AbstractTest {
     @Test
     public void testDownloadTypescript() throws Exception {
         mvc.perform(get("/my-ts.zip"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("application/zip"));
+    }
+
+    @Test
+    public void testDownloadJavaFeign() throws Exception {
+        mvc.perform(get("/my-java.zip"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("application/zip"));
     }

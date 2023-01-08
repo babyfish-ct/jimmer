@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.client.generator.ts;
 
 import org.babyfish.jimmer.client.generator.Context;
+import org.babyfish.jimmer.client.generator.File;
 import org.babyfish.jimmer.client.generator.Generator;
 import org.babyfish.jimmer.client.generator.GeneratorException;
 import org.babyfish.jimmer.client.generator.ts.simple.*;
@@ -58,27 +59,27 @@ public class TypeScriptGenerator implements Generator {
 
     private void generate0(TsContext ctx, ZipOutputStream zipOut) throws IOException {
 
-        zipOut.putNextEntry(new ZipEntry(ctx.getModuleFile().toString()));
+        zipOut.putNextEntry(new ZipEntry(ctx.getModuleFile() + ".ts"));
         new ModuleWriter(ctx).flush();
         zipOut.closeEntry();
 
-        zipOut.putNextEntry(new ZipEntry(ExecutorWriter.FILE.toString()));
+        zipOut.putNextEntry(new ZipEntry(ExecutorWriter.FILE + ".ts"));
         new ExecutorWriter(ctx).flush();
         zipOut.closeEntry();
 
-        zipOut.putNextEntry(new ZipEntry(DynamicWriter.FILE.toString()));
+        zipOut.putNextEntry(new ZipEntry(DynamicWriter.FILE + ".ts"));
         new DynamicWriter(ctx).flush();
         zipOut.closeEntry();
 
-        zipOut.putNextEntry(new ZipEntry(RequestOfWriter.FILE.toString()));
+        zipOut.putNextEntry(new ZipEntry(RequestOfWriter.FILE + ".ts"));
         new RequestOfWriter(ctx).flush();
         zipOut.closeEntry();
 
-        zipOut.putNextEntry(new ZipEntry(ResponseOfWriter.FILE.toString()));
+        zipOut.putNextEntry(new ZipEntry(ResponseOfWriter.FILE + ".ts"));
         new ResponseOfWriter(ctx).flush();
         zipOut.closeEntry();
 
-        zipOut.putNextEntry(new ZipEntry(ElementOfWriter.FILE.toString()));
+        zipOut.putNextEntry(new ZipEntry(ElementOfWriter.FILE + ".ts"));
         new ElementOfWriter(ctx).flush();
         zipOut.closeEntry();
 
@@ -87,7 +88,7 @@ public class TypeScriptGenerator implements Generator {
             Service service = e.getKey();
             File file = e.getValue();
             indexMap.computeIfAbsent(file.getDir(), Index::new).addObjectFile(file);
-            zipOut.putNextEntry(new ZipEntry(file.toString()));
+            zipOut.putNextEntry(new ZipEntry(file + ".ts"));
             new ServiceWriter(ctx, service).flush();
             zipOut.closeEntry();
         }
@@ -95,7 +96,7 @@ public class TypeScriptGenerator implements Generator {
             Type type = e.getKey();
             File file = e.getValue();
             indexMap.computeIfAbsent(file.getDir(), Index::new).addTypeFile(file);
-            zipOut.putNextEntry(new ZipEntry(file.toString()));
+            zipOut.putNextEntry(new ZipEntry(file + ".ts"));
             new TypeDefinitionWriter(ctx, type).flush();
             zipOut.closeEntry();
         }
@@ -104,7 +105,7 @@ public class TypeScriptGenerator implements Generator {
                 Class<?> rawType = e.getKey();
                 DtoWriter dtoWriter = new DtoWriter(ctx, rawType);
                 indexMap.computeIfAbsent(dtoWriter.getFile().getDir(), Index::new).addTypeFile(dtoWriter.getFile());
-                zipOut.putNextEntry(new ZipEntry(dtoWriter.getFile().toString()));
+                zipOut.putNextEntry(new ZipEntry(dtoWriter.getFile() + ".ts"));
                 dtoWriter.flush();
                 zipOut.closeEntry();
             }

@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.client.generator.ts.simple;
 
-import org.babyfish.jimmer.client.generator.ts.File;
+import org.babyfish.jimmer.client.generator.File;
 import org.babyfish.jimmer.client.generator.ts.TsCodeWriter;
 import org.babyfish.jimmer.client.generator.ts.TsContext;
 

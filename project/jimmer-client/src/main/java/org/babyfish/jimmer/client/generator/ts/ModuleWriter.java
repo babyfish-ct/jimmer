@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.generator.ts;
 
+import org.babyfish.jimmer.client.generator.File;
 import org.babyfish.jimmer.client.generator.ts.simple.ExecutorWriter;
 
 public class ModuleWriter extends TsCodeWriter {

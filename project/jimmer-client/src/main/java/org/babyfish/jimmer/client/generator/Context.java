@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.client.generator;
 
-import org.babyfish.jimmer.client.generator.ts.File;
 import org.babyfish.jimmer.client.generator.ts.TsCodeWriter;
 import org.babyfish.jimmer.client.meta.*;
 
@@ -172,7 +171,15 @@ public class Context {
         return count;
     }
 
-    private static class VisitorImpl implements Visitor {
+    protected String dynamicTypeName(ImmutableObjectType type) {
+        return type.getJavaType().getSimpleName();
+    }
+
+    protected String staticDirName() {
+        return "model/static";
+    }
+
+    private class VisitorImpl implements Visitor {
 
         private String serviceName;
 
@@ -193,7 +200,7 @@ public class Context {
                         return TsCodeWriter.SIMPLE_TYPE_NAMES.get(((SimpleType)type).getJavaType());
                     }
                     if (type instanceof ImmutableObjectType) {
-                        return ((ImmutableObjectType)type).getJavaType().getSimpleName();
+                        return dynamicTypeName((ImmutableObjectType)type);
                     } else if (type instanceof StaticObjectType) {
                         Class<?> javaType = ((StaticObjectType)type).getJavaType();
                         return javaType.getSimpleName();
@@ -217,8 +224,7 @@ public class Context {
                     if (type instanceof ImmutableObjectType) {
                         return "model/entities";
                     } else if (type instanceof StaticObjectType) {
-                        Class<?> javaType = ((StaticObjectType)type).getJavaType();
-                        return "model/static";
+                        return staticDirName();
                     } else if (type instanceof EnumType) {
                         return "model/enums";
                     }

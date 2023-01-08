@@ -1,17 +1,16 @@
-package org.babyfish.jimmer.client.generator.java.feign;
+package org.babyfish.jimmer.client.generator.java;
 
 import org.babyfish.jimmer.client.generator.Context;
-import org.babyfish.jimmer.client.generator.java.JavaCodeWriter;
-import org.babyfish.jimmer.client.generator.ts.File;
+import org.babyfish.jimmer.client.generator.File;
 import org.babyfish.jimmer.client.meta.*;
 
 import java.util.List;
 
-public class DtoWriter extends JavaCodeWriter<FeignContext> {
+public class DtoWriter extends JavaCodeWriter<JavaContext> {
 
     private final List<ImmutableObjectType> immutableObjectTypes;
 
-    public DtoWriter(FeignContext ctx, Class<?> rawType) {
+    public DtoWriter(JavaContext ctx, Class<?> rawType) {
         super(ctx, dtoFile(ctx, rawType));
         this.immutableObjectTypes = ctx.getDtoMap().get(rawType);
     }
@@ -36,10 +35,19 @@ public class DtoWriter extends JavaCodeWriter<FeignContext> {
                 .code(getContext().getDtoSuffix(type).replace('/', '_'))
                 .code(' ');
         scope(ScopeType.OBJECT, "", true, () -> {
+            writeFields(type);
             writeProperties(type);
             writeTargetTypeDeclarations(type);
         });
         code('\n');
+    }
+
+    private void writeFields(ImmutableObjectType type) {
+        for (Property prop : type.getProperties().values()) {
+            handleDtoProp(prop, () -> {
+                writeField(prop);
+            });
+        }
     }
 
     private void writeProperties(ImmutableObjectType type) {
@@ -48,15 +56,6 @@ public class DtoWriter extends JavaCodeWriter<FeignContext> {
                 writeProperty(prop);
             });
         }
-    }
-
-    private void writeProperty(Property prop) {
-        if (prop.getType() instanceof NullableType) {
-            code("\n@Nullable");
-        }
-        code("\nprivate ");
-        typeRef(prop.getType());
-        code(' ').code(prop.getName()).code(";\n");
     }
 
     private void writeTargetTypeDeclarations(ImmutableObjectType type) {
@@ -78,6 +77,7 @@ public class DtoWriter extends JavaCodeWriter<FeignContext> {
         } else if (type instanceof ImmutableObjectType) {
             code("\npublic static class ").code(tempDtoTypeName()).code(' ');
             scope(ScopeType.OBJECT, "", true, () -> {
+                writeFields((ImmutableObjectType) type);
                 writeProperties((ImmutableObjectType) type);
                 writeTargetTypeDeclarations((ImmutableObjectType) type);
             });

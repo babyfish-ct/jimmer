@@ -100,7 +100,7 @@ public class JimmerProperties {
                         defaultListBatchSize :
                         JSqlClient.Builder.DEFAULT_LIST_BATCH_SIZE;
         if (client == null) {
-            this.client = new Client(null);
+            this.client = new Client(null, null);
         } else {
             this.client = client;
         }
@@ -157,11 +157,19 @@ public class JimmerProperties {
         @NotNull
         private final TypeScript ts;
 
-        public Client(@Nullable TypeScript ts) {
+        @NotNull
+        private final JavaFeign javaFeign;
+
+        public Client(@Nullable TypeScript ts, @Nullable JavaFeign javaFeign) {
             if (ts == null) {
                 this.ts = new TypeScript(null, "Api", 4, false);
             } else {
                 this.ts = ts;
+            }
+            if (javaFeign == null) {
+                this.javaFeign = new JavaFeign(null, "", 4, "");
+            } else {
+                this.javaFeign = javaFeign;
             }
         }
 
@@ -170,10 +178,16 @@ public class JimmerProperties {
             return ts;
         }
 
+        @NotNull
+        public JavaFeign getJavaFeign() {
+            return javaFeign;
+        }
+
         @Override
         public String toString() {
             return "Client{" +
                     "ts=" + ts +
+                    ", javaFeign=" + javaFeign +
                     '}';
         }
 
@@ -190,7 +204,7 @@ public class JimmerProperties {
 
             private final boolean anonymous;
 
-            public TypeScript(@Nullable String path, String apiName, int indent, boolean anonymous) {
+            public TypeScript(@Nullable String path, @Nullable String apiName, int indent, boolean anonymous) {
                 if (path == null || path.isEmpty()) {
                     this.path = null;
                 } else {
@@ -231,6 +245,70 @@ public class JimmerProperties {
                 return "TypeScript{" +
                         "path='" + path + '\'' +
                         ", anonymous=" + anonymous +
+                        '}';
+            }
+        }
+
+        @ConstructorBinding
+        public static class JavaFeign {
+
+            @Nullable
+            private final String path;
+
+            @NotNull
+            private final String apiName;
+
+            private final int indent;
+
+            private final String basePackage;
+
+            public JavaFeign(@Nullable String path, @Nullable String apiName, int indent, @Nullable String basePackage) {
+                if (path == null || path.isEmpty()) {
+                    this.path = null;
+                } else {
+                    if (!path.startsWith("/")) {
+                        throw new IllegalArgumentException("`jimmer.client.ts.path` must start with \"/\"");
+                    }
+                    this.path = path;
+                }
+                if (apiName == null || apiName.isEmpty()) {
+                    this.apiName = "Api";
+                } else {
+                    this.apiName = apiName;
+                }
+                this.indent = indent != 0 ? Math.max(indent, 2) : 4;
+                if (basePackage == null || basePackage.isEmpty()) {
+                    this.basePackage = "";
+                } else {
+                    this.basePackage = basePackage;
+                }
+            }
+
+            @Nullable
+            public String getPath() {
+                return path;
+            }
+
+            @NotNull
+            public String getApiName() {
+                return apiName;
+            }
+
+            public int getIndent() {
+                return indent;
+            }
+
+            public String getBasePackage() {
+                return basePackage;
+            }
+
+            @Override
+            public String toString() {
+                return "JavaFeign{" +
+                        "path='" + path + '\'' +
+                        ", clientName='" + apiName + '\'' +
+                        ", indent=" + indent +
+                        ", basePackage=" + basePackage +
                         '}';
             }
         }

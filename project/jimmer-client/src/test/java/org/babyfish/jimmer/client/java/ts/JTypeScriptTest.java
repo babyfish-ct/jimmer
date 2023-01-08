@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.client.java.ts;
 
-import org.babyfish.jimmer.client.generator.Context;
 import org.babyfish.jimmer.client.generator.ts.*;
 import org.babyfish.jimmer.client.java.model.*;
 import org.babyfish.jimmer.client.java.service.AuthorService;
