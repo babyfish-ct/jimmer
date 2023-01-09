@@ -413,9 +413,9 @@ save指令返回类型`SimpleSaveResult<E>`包含两个只读属性
 
 - `modifiedEntity`: 保存命令执行后，被保存对象的最新状态。
     
-    - 如果保存过程涉及一些自动户的对象变更，比如：id自动分配，乐观锁版本号自增，那么jimmer-sql会让`modifiedEntity`指向一个新对象。用户可以取到数据的最新状态。
+    - 如果保存过程涉及一些自动的对象变更，比如：id自动分配，乐观锁版本号自增，那么jimmer-sql会让`modifiedEntity`指向一个新对象。用户可以取到数据的最新状态。
 
-    - 否则，`modifiedEntity`和`originalEntity`相等，它们共享用户传递的旧对象。
+    - 否则，`modifiedEntity`和`originalEntity`指向同一个对象，共享用户传递的旧对象。
 
 ### 动态定义业务主键
 

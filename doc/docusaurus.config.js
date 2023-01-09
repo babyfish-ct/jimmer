@@ -27,6 +27,10 @@ const config = {
     locales: ['en', 'zh'],
   },
 
+  themes: [
+    require.resolve("@easyops-cn/docusaurus-search-local")
+  ],
+
   presets: [
     [
       'classic',
@@ -74,10 +78,14 @@ const config = {
             position: 'left',
           },
           {
+            type: 'search',
+            position: 'right',
+          },
+          {
             href: 'https://github.com/babyfish-ct/jimmer',
             label: 'GitHub',
             position: 'right',
-          },
+          }
         ],
       },
       footer: {
@@ -99,8 +107,8 @@ const config = {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
         additionalLanguages: ['java', 'kotlin', 'groovy', 'sql', 'cpp', 'kotlin', 'graphql'],
-      },
-    }),
+      }
+    })
 };
 
 module.exports = config;

@@ -253,6 +253,14 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     }
 
     @Override
+    public List<Annotation> getAnnotations() {
+        if (kotlinProp != null) {
+            return kotlinProp.getAnnotations();
+        }
+        return Arrays.asList(javaGetter.getAnnotations());
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
         if (kotlinProp != null) {

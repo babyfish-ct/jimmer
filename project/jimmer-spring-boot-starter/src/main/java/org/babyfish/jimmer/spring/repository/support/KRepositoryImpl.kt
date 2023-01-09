@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.spring.model.Input
 import org.babyfish.jimmer.spring.model.toSort
 import org.babyfish.jimmer.spring.repository.*
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
@@ -128,6 +129,18 @@ open class KRepositoryImpl<E: Any, ID: Any> (
         sql.createQuery(entityType) {
             select(org.babyfish.jimmer.sql.kt.ast.expression.count(table))
         }.fetchOne()
+
+    override fun insert(entity: E): E =
+        sql.entities.save(entity) {
+            setMode(SaveMode.INSERT_ONLY)
+            setAutoAttachingAll()
+        }.modifiedEntity
+
+    override fun update(entity: E): E =
+        sql.entities.save(entity) {
+            setMode(SaveMode.UPDATE_ONLY)
+            setAutoAttachingAll()
+        }.modifiedEntity
 
     override fun <S : E> save(entity: S): S =
         sql.entities.save(entity) {
