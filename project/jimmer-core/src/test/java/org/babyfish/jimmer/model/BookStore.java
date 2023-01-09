@@ -12,6 +12,7 @@ public interface BookStore {
     @NotBlank
     @Size(max = 50)
     @Pattern(regexp = "[^\\d]+\\S+")
+    @UpperCase
     String name();
 
     @Null

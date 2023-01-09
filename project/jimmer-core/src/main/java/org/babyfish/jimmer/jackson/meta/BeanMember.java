@@ -3,6 +3,8 @@ package org.babyfish.jimmer.jackson.meta;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.introspect.Annotated;
 import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
 import com.fasterxml.jackson.databind.introspect.AnnotationMap;
@@ -12,6 +14,7 @@ import org.babyfish.jimmer.jackson.PropUtils;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
 import java.util.List;
@@ -104,13 +107,27 @@ class BeanMember extends AnnotatedMember {
 
     private static AnnotationMap annotationMap(ImmutableProp prop) {
         AnnotationMap map = new AnnotationMap();
-        JsonIgnore jsonIgnore = prop.getAnnotation(JsonIgnore.class);
-        if (jsonIgnore != null) {
-            map = AnnotationMap.merge(map, AnnotationMap.of(JsonIgnore.class, jsonIgnore));
-        }
-        JsonFormat jsonFormat = prop.getAnnotation(JsonFormat.class);
-        if (jsonFormat != null) {
-            map = AnnotationMap.merge(map, AnnotationMap.of(JsonFormat.class, jsonFormat));
+        for (Annotation annotation : prop.getAnnotations()) {
+            if (annotation.annotationType() == JsonIgnore.class ||
+                annotation.annotationType() == JsonFormat.class ||
+                annotation.annotationType() == JsonSerialize.class ||
+                annotation.annotationType() == JsonDeserialize.class
+            ) {
+                map = AnnotationMap.merge(map, AnnotationMap.of(annotation.annotationType(), annotation));
+            } else {
+                for (Annotation deeperAnnotation : annotation.annotationType().getAnnotations()) {
+                    if (deeperAnnotation.annotationType() == JsonIgnore.class ||
+                            deeperAnnotation.annotationType() == JsonFormat.class ||
+                            deeperAnnotation.annotationType() == JsonSerialize.class ||
+                            deeperAnnotation.annotationType() == JsonDeserialize.class
+                    ) {
+//                        map = AnnotationMap.merge(
+//                                map,
+//                                AnnotationMap.of(deeperAnnotation.annotationType(), deeperAnnotation)
+//                        );
+                    }
+                }
+            }
         }
         return map;
     }

@@ -7,7 +7,6 @@ import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.springframework.core.annotation.AliasFor
 import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.repository.NoRepositoryBean
@@ -73,6 +72,10 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
         findNullable(id) != null
     
     override fun count(): Long
+
+    fun insert(entity: E): E
+
+    fun update(entity: E): E
 
     override fun <S: E> save(entity: S): S
 

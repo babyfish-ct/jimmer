@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.spring.model.Input;
 import org.babyfish.jimmer.spring.repository.support.Utils;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -160,6 +161,28 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     @Override
     long count();
+
+    @NotNull
+    default E insert(@NotNull E entity) {
+        return sql()
+                .getEntities()
+                .saveCommand(entity)
+                .configure(cfg -> {
+                    cfg.setMode(SaveMode.INSERT_ONLY);
+                    cfg.setAutoAttachingAll();
+                }).execute().getModifiedEntity();
+    }
+
+    @NotNull
+    default E update(@NotNull E entity) {
+        return sql()
+                .getEntities()
+                .saveCommand(entity)
+                .configure(cfg -> {
+                    cfg.setMode(SaveMode.UPDATE_ONLY);
+                    cfg.setAutoAttachingAll();
+                }).execute().getModifiedEntity();
+    }
 
     @NotNull
     @Override
