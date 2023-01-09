@@ -65,7 +65,7 @@ public class BookStoreService {
     public List<
             Tuple2<
                     @FetchBy("SIMPLE_FETCHER") BookStore,
-                    @FetchBy("NEWEST_BOOK_FETCHER") Book
+                    @FetchBy(value = "NEWEST_BOOK_FETCHER", nullable = true) Book
             >
     > findStoresWithNewestBook() {
 
