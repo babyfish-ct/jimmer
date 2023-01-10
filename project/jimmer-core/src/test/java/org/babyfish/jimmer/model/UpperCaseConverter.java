@@ -8,4 +8,9 @@ public class UpperCaseConverter implements Converter<String> {
     public String output(String value) {
         return value.toUpperCase();
     }
+
+    @Override
+    public String input(String value) {
+        return value.toLowerCase();
+    }
 }

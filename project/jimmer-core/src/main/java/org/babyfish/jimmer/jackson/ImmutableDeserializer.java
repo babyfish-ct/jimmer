@@ -26,6 +26,7 @@ public class ImmutableDeserializer extends StdDeserializer<Object> {
         this.immutableType = immutableType;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Object deserialize(
             JsonParser jp,
@@ -41,6 +42,9 @@ public class ImmutableDeserializer extends StdDeserializer<Object> {
                             node.get(prop.getName()),
                             BeanProps.get(ctx.getTypeFactory(), prop)
                     );
+                    if (value != null && prop.getConverter() != null) {
+                        value = ((Converter<Object>)prop.getConverter()).input(value);
+                    }
                     ((DraftSpi)draft).__set(prop.getId(), value);
                 }
             }
