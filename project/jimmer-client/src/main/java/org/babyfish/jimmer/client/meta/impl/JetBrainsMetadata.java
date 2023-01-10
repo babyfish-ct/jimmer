@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.validation.constraints.Null;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
@@ -157,8 +158,8 @@ class JetBrainsMetadata {
             for (Method method : clazz.getDeclaredMethods()) {
                 accessibleObjectMap.put(new Member(method.getName(), Type.getMethodDescriptor(method)), method);
             }
-            try {
-                ClassReader reader = new ClassReader(clazz.getName());
+            try (InputStream inputStream = clazz.getClassLoader().getResourceAsStream(clazz.getName().replace('.', '/') + ".class")) {
+                ClassReader reader = new ClassReader(inputStream);
                 reader.accept(
                         new ClassVisitor(Opcodes.ASM9, null) {
 
@@ -182,7 +183,8 @@ class JetBrainsMetadata {
                 throw new IllegalDocMetaException(
                         "Failed to parse the jetbrains nullity for class \"" +
                                 clazz.getName() +
-                                "\""
+                                "\"",
+                        ex
                 );
             }
         }
