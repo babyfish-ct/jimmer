@@ -11,7 +11,13 @@ jimmer对象的验证在Annotation Processor生成的源代码中直接硬编码
 
 ## Nullity
 
-jimmer使用如下手段判断字段是否允许为null。
+:::tip
+Kotlin 支持空安全，`T` 表示非空，`T?` 表示可为空，非常精确，没问题。
+
+所以这部分是为java写的，kotlin devloper可以跳过。
+:::
+
+对于Java而言，jimmer使用如下手段判断字段是否允许为null。
 
 对jimmer不可变数据接口中定义的任何一个属性，Annotation processor会先进行两个子判定
 
@@ -52,7 +58,7 @@ jimmer使用如下手段判断字段是否允许为null。
 - `@javax.validation.constraints.Min`
 - `@javax.validation.constraints.Max`
 - `@javax.validation.constraints.Positive`
-- `@javax.validation.constraints.MositiveOrZero`
+- `@javax.validation.constraints.PositiveOrZero`
 - `@javax.validation.constraints.Negative`
 - `@javax.validation.constraints.NegativeOrZero`
 - `@javax.validation.constraints.Email`
