@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.association.meta;
 
+import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.association.Association;
@@ -85,6 +86,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public Converter<?> getConverter() {
+        return null;
+    }
+
+    @Override
     public boolean isId() {
         return false;
     }
@@ -155,6 +161,11 @@ public abstract class AssociationProp implements ImmutableProp {
             return GETTER.getAnnotationsByType(annotationType);
         }
 
+        @Override
+        public Annotation[] getAnnotations() {
+            return GETTER.getAnnotations();
+        }
+
         @SuppressWarnings("unchecked")
         @Override
         public ColumnDefinition getStorage() {
@@ -209,6 +220,11 @@ public abstract class AssociationProp implements ImmutableProp {
         @Override
         public <A extends Annotation> A[] getAnnotations(Class<A> annotationType) {
             return GETTER.getAnnotationsByType(annotationType);
+        }
+
+        @Override
+        public Annotation[] getAnnotations() {
+            return GETTER.getAnnotations();
         }
 
         @SuppressWarnings("unchecked")

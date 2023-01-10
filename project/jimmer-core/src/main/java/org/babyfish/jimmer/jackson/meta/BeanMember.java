@@ -3,8 +3,6 @@ package org.babyfish.jimmer.jackson.meta;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.introspect.Annotated;
 import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
 import com.fasterxml.jackson.databind.introspect.AnnotationMap;
@@ -109,22 +107,18 @@ class BeanMember extends AnnotatedMember {
         AnnotationMap map = new AnnotationMap();
         for (Annotation annotation : prop.getAnnotations()) {
             if (annotation.annotationType() == JsonIgnore.class ||
-                annotation.annotationType() == JsonFormat.class ||
-                annotation.annotationType() == JsonSerialize.class ||
-                annotation.annotationType() == JsonDeserialize.class
+                annotation.annotationType() == JsonFormat.class
             ) {
                 map = AnnotationMap.merge(map, AnnotationMap.of(annotation.annotationType(), annotation));
             } else {
                 for (Annotation deeperAnnotation : annotation.annotationType().getAnnotations()) {
                     if (deeperAnnotation.annotationType() == JsonIgnore.class ||
-                            deeperAnnotation.annotationType() == JsonFormat.class ||
-                            deeperAnnotation.annotationType() == JsonSerialize.class ||
-                            deeperAnnotation.annotationType() == JsonDeserialize.class
+                            deeperAnnotation.annotationType() == JsonFormat.class
                     ) {
-//                        map = AnnotationMap.merge(
-//                                map,
-//                                AnnotationMap.of(deeperAnnotation.annotationType(), deeperAnnotation)
-//                        );
+                        map = AnnotationMap.merge(
+                                map,
+                                AnnotationMap.of(deeperAnnotation.annotationType(), deeperAnnotation)
+                        );
                     }
                 }
             }
