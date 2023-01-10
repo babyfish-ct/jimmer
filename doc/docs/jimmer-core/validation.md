@@ -65,7 +65,7 @@ In addition to Nullity, jimmer implements partial JSR380 validation. As of now, 
 - `@javax.validation.constraints.Min`
 - `@javax.validation.constraints.Max`
 - `@javax.validation.constraints.Positive`
-- `@javax.validation.constraints.MositiveOrZero`
+- `@javax.validation.constraints.PositiveOrZero`
 - `@javax.validation.constraints.Negative`
 - `@javax.validation.constraints.NegativeOrZero`
 - `@javax.validation.constraints.Email`
