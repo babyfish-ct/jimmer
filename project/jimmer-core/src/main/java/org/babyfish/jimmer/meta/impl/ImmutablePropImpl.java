@@ -433,12 +433,12 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     @Override
     public boolean isId() {
-        return this == declaringType.getIdProp();
+        return this == declaringType.getIdProp() || (base != null && base.isId());
     }
 
     @Override
     public boolean isVersion() {
-        return this == declaringType.getVersionProp();
+        return this == declaringType.getVersionProp() || (base != null && base.isVersion());
     }
 
     @Override
