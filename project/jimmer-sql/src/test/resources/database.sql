@@ -1,3 +1,4 @@
+drop table animal if exists;
 drop table order_item_product_mapping if exists;
 drop table product if exists;
 drop table order_item if exists;
@@ -453,3 +454,15 @@ insert into order_item_product_mapping(fk_order_item_a, fk_order_item_b, fk_orde
     (1, 2, 1, '00A', '00B'),
     (2, 1, 1, '00A', '00B'),
     (2, 1, 1, '00B', '00A');
+
+
+create table animal(
+    id bigint not null,
+    name varchar(20) not null
+);
+
+alter table animal
+    add constraint pk_animal
+        primary key(id);
+
+insert into animal(id, name) values(1, 'Trigger'), (2, 'Lion');

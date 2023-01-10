@@ -310,7 +310,11 @@ class ImmutableTypeImpl implements ImmutableType {
         Map<String, ImmutableProp> selectableProps = this.selectableProps;
         if (selectableProps == null) {
             selectableProps = new LinkedHashMap<>();
-            selectableProps.put(getIdProp().getName(), getIdProp());
+            for (ImmutableProp prop : getProps().values()) {
+                if (prop.isId() && prop.getStorage() instanceof ColumnDefinition) {
+                    selectableProps.put(prop.getName(), prop);
+                }
+            }
             for (ImmutableProp prop : getProps().values()) {
                 if (!prop.isId() && prop.getStorage() instanceof ColumnDefinition) {
                     selectableProps.put(prop.getName(), prop);
