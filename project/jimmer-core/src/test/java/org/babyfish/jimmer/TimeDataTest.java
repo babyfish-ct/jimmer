@@ -42,4 +42,10 @@ public class TimeDataTest {
                 timeData2.toString()
         );
     }
+
+    @Test
+    public void testNoTime() {
+        TimeData timeData = TimeDataDraft.$.produce(data -> {});
+        Assertions.assertEquals("", timeData.toString());
+    }
 }

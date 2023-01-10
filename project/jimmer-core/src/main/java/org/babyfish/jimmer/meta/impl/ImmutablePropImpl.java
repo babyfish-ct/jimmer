@@ -3,6 +3,9 @@ package org.babyfish.jimmer.meta.impl;
 import kotlin.reflect.KClass;
 import kotlin.reflect.KProperty1;
 import kotlin.reflect.full.KClasses;
+import org.apache.commons.lang3.reflect.TypeUtils;
+import org.babyfish.jimmer.jackson.Converter;
+import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.spi.EntityPropImplementor;
 import org.babyfish.jimmer.sql.*;
@@ -10,10 +13,14 @@ import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.*;
 
 class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
+
+    private static final Annotation[] EMPTY_ANNOTATIONS = new Annotation[0];
 
     private final ImmutableTypeImpl declaringType;
 
@@ -40,6 +47,10 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     private final DissociateAction dissociateAction;
 
     private final ImmutableProp base;
+
+    private Converter<?> converter;
+
+    private boolean converterResolved;
 
     private Storage storage;
 
@@ -253,14 +264,6 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     }
 
     @Override
-    public List<Annotation> getAnnotations() {
-        if (kotlinProp != null) {
-            return kotlinProp.getAnnotations();
-        }
-        return Arrays.asList(javaGetter.getAnnotations());
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
     public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
         if (kotlinProp != null) {
@@ -275,6 +278,22 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
             }
         }
         return javaGetter.getAnnotation(annotationType);
+    }
+
+    @Override
+    public Annotation[] getAnnotations() {
+        Annotation[] getterArr = javaGetter.getAnnotations();
+        Annotation[] propArr = null;
+        if (kotlinProp != null) {
+            propArr = kotlinProp.getAnnotations().toArray(EMPTY_ANNOTATIONS);
+        }
+        if (propArr == null || propArr.length == 0) {
+            return getterArr;
+        }
+        Annotation[] mergedArr = new Annotation[propArr.length + getterArr.length];
+        System.arraycopy(propArr, 0, mergedArr, 0, propArr.length);
+        System.arraycopy(getterArr, 0, mergedArr, propArr.length, getterArr.length);
+        return mergedArr;
     }
 
     @Override
@@ -311,6 +330,88 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     @Override
     public boolean hasTransientResolver() {
         return hasTransientResolver;
+    }
+
+    @Override
+    public Converter<?> getConverter() {
+        if (converterResolved) {
+            return converter;
+        }
+        Class<? extends Annotation> annotationType = null;
+        JsonConverter jsonConverter = getAnnotation(JsonConverter.class);
+        if (jsonConverter != null) {
+            annotationType = JsonConverter.class;
+        }
+        for (Annotation anno : getAnnotations()) {
+            if (anno.annotationType() != JsonConverter.class) {
+                JsonConverter deepAnno = anno.annotationType().getAnnotation(JsonConverter.class);
+                if (deepAnno != null) {
+                    if (annotationType != null) {
+                        throw new ModelException(
+                                "Illegal property \"" +
+                                        this +
+                                        "\", duplicate converter annotation @" +
+                                        annotationType.getName() +
+                                        " and @" +
+                                        anno.annotationType().getName()
+                        );
+                    }
+                    jsonConverter = deepAnno;
+                    annotationType = anno.annotationType();
+                }
+            }
+        }
+        if (jsonConverter != null) {
+            Class<? extends Converter<?>> converterType = jsonConverter.value();
+            Collection<Type> genericArguments = TypeUtils.getTypeArguments(converterType, Converter.class).values();
+            if (genericArguments.isEmpty() || !(genericArguments.iterator().next() instanceof Class<?>)) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                this +
+                                "\", it cannot be decorated by @" +
+                                annotationType.getName() +
+                                ", the converter type \"" +
+                                converterType.getName() +
+                                "\" does not specify the generic parameter of \"" +
+                                Converter.class.getName() +
+                                "\" as class"
+                );
+            }
+            Class<?> convertedType = (Class<?>)genericArguments.iterator().next();
+            if (convertedType != javaGetter.getReturnType()) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                this +
+                                "\", it cannot be decorated by @" +
+                                annotationType.getName() +
+                                ", the property type \"" +
+                                javaGetter.getReturnType() +
+                                "\" does not match the generic type \"" +
+                                convertedType.getName() +
+                                "\" of converter type \"" +
+                                converterType.getName() +
+                                "\""
+                );
+            }
+            try {
+                converter = converterType.getConstructor().newInstance();
+            } catch (Exception ex) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                this +
+                                "\", it cannot be decorated by @" +
+                                annotationType.getName() +
+                                ", cannot create instance for converter type \"" +
+                                converterType.getName() +
+                                "\"",
+                        ex instanceof InvocationTargetException ?
+                                ((InvocationTargetException)ex).getTargetException() :
+                                ex
+                );
+            }
+        }
+        converterResolved = true;
+        return converter;
     }
 
     @NotNull

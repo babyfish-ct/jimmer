@@ -78,12 +78,12 @@ const config = {
             position: 'left',
           },
           {
-            type: 'search',
+            href: 'https://github.com/babyfish-ct/jimmer',
+            label: 'GitHub',
             position: 'right',
           },
           {
-            href: 'https://github.com/babyfish-ct/jimmer',
-            label: 'GitHub',
+            type: 'search',
             position: 'right',
           }
         ],

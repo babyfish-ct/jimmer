@@ -34,17 +34,17 @@ public class BookTest {
         });
 
         Assertions.assertEquals(
-                "{\"name\":\"book\",\"store\":{\"name\":\"store\"},\"authors\":[{\"name\":\"Jim\"},{\"name\":\"Kate\"}]}",
+                "{\"name\":\"book\",\"store\":{\"name\":\"STORE\"},\"authors\":[{\"name\":\"Jim\"},{\"name\":\"Kate\"}]}",
                 book.toString()
         );
 
         Assertions.assertEquals(
-                "{\"name\":\"book\",\"store\":{\"name\":\"store\"},\"authors\":[{\"name\":\"Jim\"},{\"name\":\"Kate\"}]}",
+                "{\"name\":\"book\",\"store\":{\"name\":\"STORE\"},\"authors\":[{\"name\":\"Jim\"},{\"name\":\"Kate\"}]}",
                 book2.toString()
         );
 
         Assertions.assertEquals(
-                "{\"name\":\"book!\",\"store\":{\"name\":\"store!\"},\"authors\":[{\"name\":\"Jim!\"},{\"name\":\"Kate!\"}]}",
+                "{\"name\":\"book!\",\"store\":{\"name\":\"STORE!\"},\"authors\":[{\"name\":\"Jim!\"},{\"name\":\"Kate!\"}]}",
                 book3.toString()
         );
     }
