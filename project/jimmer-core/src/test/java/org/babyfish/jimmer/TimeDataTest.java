@@ -46,6 +46,6 @@ public class TimeDataTest {
     @Test
     public void testNoTime() {
         TimeData timeData = TimeDataDraft.$.produce(data -> {});
-        Assertions.assertEquals("", timeData.toString());
+        Assertions.assertEquals("{}", timeData.toString());
     }
 }
