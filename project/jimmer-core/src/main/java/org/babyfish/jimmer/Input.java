@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.spring.model;
+package org.babyfish.jimmer;
 
 import org.jetbrains.annotations.NotNull;
 

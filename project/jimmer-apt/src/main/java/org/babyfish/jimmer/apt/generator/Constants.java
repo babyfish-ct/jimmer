@@ -1,14 +1,19 @@
 package org.babyfish.jimmer.apt.generator;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.DraftConsumer;
+import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.impl.validation.Validator;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 class Constants {
@@ -21,6 +26,12 @@ class Constants {
 
     public static final ClassName JSON_IGNORE_CLASS_NAME =
             ClassName.get(JsonIgnore.class);
+
+    public static final ClassName LIST_CLASS_NAME =
+            ClassName.get(List.class);
+
+    public static final ClassName INPUT_CLASS_NAME =
+            ClassName.get(Input.class);
 
     public static final ClassName DRAFT_CONTEXT_CLASS_NAME =
             ClassName.get(DraftContext.class);
@@ -200,6 +211,15 @@ class Constants {
                     "PropExpression",
                     "Embedded"
             );
+
+    public static final ClassName JSON_CREATOR_CLASS_NAME =
+            ClassName.get(JsonCreator.class);
+
+    public static final ClassName JSON_PROPERTY_CLASS_NAME =
+            ClassName.get(JsonProperty.class);
+
+    public static final ClassName OBJECTS_CLASS_NAME =
+            ClassName.get(Objects.class);
 
     public static final String DRAFT_FIELD_CTX =
             "__ctx";

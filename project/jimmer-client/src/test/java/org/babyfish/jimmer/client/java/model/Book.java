@@ -29,5 +29,5 @@ public interface Book {
 
     @Doc("All authors involved in writing the work")
     @ManyToMany
-    public List<Author> authors();
+    List<Author> authors();
 }
