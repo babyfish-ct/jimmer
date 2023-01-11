@@ -1,18 +1,16 @@
 package org.babyfish.jimmer.spring.repository;
 
 import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.spring.model.Input;
+import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.spring.repository.support.Utils;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.loader.ValueLoader;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.NoRepositoryBean;

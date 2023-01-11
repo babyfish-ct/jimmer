@@ -7,7 +7,7 @@ import java.lang.annotation.*;
 @Repeatable(StaticTypeNameOverrides.class)
 public @interface StaticTypeNameOverride {
 
-    String value();
+    String alias();
 
-    String alias() default "";
+    String topLevelName();
 }

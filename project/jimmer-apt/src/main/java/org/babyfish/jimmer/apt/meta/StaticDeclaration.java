@@ -2,7 +2,7 @@ package org.babyfish.jimmer.apt.meta;
 
 public class StaticDeclaration {
 
-    private final ImmutableType dynamicType;
+    private final ImmutableType immutableType;
 
     private final String alias;
 
@@ -10,24 +10,23 @@ public class StaticDeclaration {
 
     private final boolean allScalars;
 
-    private final boolean isMutable;
+    private final boolean allOptional;
 
     public StaticDeclaration(
-            ImmutableType dynamicType,
+            ImmutableType immutableType,
             String alias,
             String topLevelName,
             boolean allScalars,
-            boolean isMutable
-    ) {
-        this.dynamicType = dynamicType;
+            boolean allOptional) {
+        this.immutableType = immutableType;
         this.alias = alias;
         this.topLevelName = topLevelName;
         this.allScalars = allScalars;
-        this.isMutable = isMutable;
+        this.allOptional = allOptional;
     }
 
-    public ImmutableType getDynamicType() {
-        return dynamicType;
+    public ImmutableType getImmutableType() {
+        return immutableType;
     }
 
     public String getAlias() {
@@ -42,24 +41,25 @@ public class StaticDeclaration {
         return allScalars;
     }
 
-    public boolean isMutable() {
-        return isMutable;
+    public boolean isAllOptional() {
+        return allOptional;
     }
 
     public StaticDeclaration rename(String name) {
         if (this.topLevelName.equals(name)) {
             return this;
         }
-        return new StaticDeclaration(dynamicType, alias, name, allScalars, isMutable);
+        return new StaticDeclaration(immutableType, alias, name, allScalars, allOptional);
     }
 
     @Override
     public String toString() {
         return "StaticDeclaration{" +
-                "alias='" + alias + '\'' +
-                ", name='" + topLevelName + '\'' +
+                "immutableType=" + immutableType +
+                ", alias='" + alias + '\'' +
+                ", topLevelName='" + topLevelName + '\'' +
                 ", allScalars=" + allScalars +
-                ", isMutable=" + isMutable +
+                ", allOptional=" + allOptional +
                 '}';
     }
 }

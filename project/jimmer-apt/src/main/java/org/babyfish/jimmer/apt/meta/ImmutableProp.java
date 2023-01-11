@@ -59,11 +59,13 @@ public class ImmutableProp {
 
     private final boolean isNullable;
 
-    private Annotation associationAnnotation;
-
     private final Map<ClassName, String> validationMessageMap;
 
     private final Map<String, StaticProp> staticPropMap;
+
+    private Annotation associationAnnotation;
+
+    private ImmutableType targetType;
 
     public ImmutableProp(
             TypeUtils typeUtils,
@@ -238,15 +240,20 @@ public class ImmutableProp {
         Statics statics = getAnnotation(Statics.class);
         if (statics != null) {
             for (Static s : statics.value()) {
-                if (staticPropMap.put(s.ownerAlias(), staticProp(s)) != null) {
+                if (staticPropMap.put(s.alias(), staticProp(s)) != null) {
                     throw new MetaException(
                             "Illegal property \"" +
                                     this +
                                     "\", conflict alias \"" +
-                                    s.ownerAlias() +
+                                    s.alias() +
                                     "\" in several @Static annotations"
                     );
                 }
+            }
+        } else {
+            Static s = getAnnotation(Static.class);
+            if (s != null) {
+                staticPropMap.put(s.alias(), staticProp(s));
             }
         }
         this.staticPropMap = staticPropMap;
@@ -361,44 +368,60 @@ public class ImmutableProp {
         return associationAnnotation;
     }
 
-    public Map<String, StaticProp> getStaticPropMap() {
-        return Collections.unmodifiableMap(staticPropMap);
+    public ImmutableType getTargetType() {
+        return targetType;
+    }
+
+    public StaticProp getStaticProp(String alias) {
+        StaticProp staticProp = staticPropMap.get(alias);
+        if (staticProp == null) {
+            staticProp = staticPropMap.get("");
+        }
+        return staticProp;
     }
 
     public void resolve(TypeUtils typeUtils, ImmutableType declaringType) {
         for (StaticProp staticProp : staticPropMap.values()) {
-            if (!declaringType.getStaticDeclarationMap().containsKey(staticProp.getOwnerAlias())) {
+            if (!staticProp.getAlias().isEmpty() && !declaringType.getStaticDeclarationMap().containsKey(staticProp.getAlias())) {
                 throw new MetaException(
                         "Illegal property \"" +
                                 this +
                                 "\", it is decorated by the annotation @Static " +
-                                "whose `ownerAlias` is \"" +
-                                staticProp.getOwnerAlias() +
-                                "\", but they entity \"" +
+                                "whose `alias` is \"" +
+                                staticProp.getAlias() +
+                                "\", but the declaring entity \"" +
                                 declaringType.getQualifiedName() +
                                 "\" does not have an static type whose alias is \"" +
-                                staticProp.getOwnerAlias() +
+                                staticProp.getAlias() +
                                 "\""
                 );
             }
-            if (isAssociation && !staticProp.isAsTargetId()) {
-                ImmutableType targetType = typeUtils.getImmutableType(elementType);
-                StaticDeclaration targetStaticType = targetType.getStaticDeclarationMap().get(staticProp.getTargetAlias());
-                if (targetStaticType == null) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", it is decorated by the annotation @Static " +
-                                    "whose `targetAlias` is \"" +
-                                    staticProp.getTargetAlias() +
-                                    "\", but they entity \"" +
-                                    targetType.getQualifiedName() +
-                                    "\" does not have an static type whose alias is \"" +
-                                    staticProp.getTargetAlias() +
-                                    "\""
-                    );
+            if (isAssociation) {
+                targetType = typeUtils.getImmutableType(elementType);
+                if (!staticProp.isIdOnly()) {
+                    StaticDeclaration targetStaticType = targetType.getStaticDeclarationMap().get(staticProp.getTargetAlias());
+                    if (targetStaticType != null) {
+                        staticPropMap.put(staticProp.getAlias(), staticProp.target(targetStaticType));
+                    } else if (staticProp.getTargetAlias().isEmpty()) {
+                        staticPropMap.put(
+                                staticProp.getAlias(),
+                                staticProp.target(new StaticDeclaration(targetType, "", "", true, false))
+                        );
+                    } else {
+                        throw new MetaException(
+                                "Illegal property \"" +
+                                        this +
+                                        "\", it is decorated by the annotation @Static " +
+                                        "whose `targetAlias` is \"" +
+                                        staticProp.getTargetAlias() +
+                                        "\", but the target entity \"" +
+                                        targetType.getQualifiedName() +
+                                        "\" does not have an static type whose alias is \"" +
+                                        staticProp.getTargetAlias() +
+                                        "\""
+                        );
+                    }
                 }
-                staticPropMap.put(staticProp.getOwnerAlias(), staticProp.target(targetStaticType));
             }
         }
     }
@@ -413,6 +436,14 @@ public class ImmutableProp {
     }
 
     private StaticProp staticProp(Static s) {
+        if (isTransient) {
+            throw new MetaException(
+                    "Illegal property \"" +
+                            this +
+                            "\", it is decorated by both @Static and @Transient, " +
+                            "this is not allowed"
+            );
+        }
         if (s.optional() && isNullable) {
             throw new MetaException(
                     "Illegal property \"" +
@@ -421,12 +452,12 @@ public class ImmutableProp {
                             "whose `optional` is true, it is not allowed for nullable property"
             );
         }
-        if (s.asTargetId() && !isAssociation(true)) {
+        if (s.idOnly() && !isAssociation(true)) {
             throw new MetaException(
                     "Illegal property \"" +
                             this +
                             "\", it is decorated by the annotation @Static " +
-                            "whose `asTargetId` is true, it is not allowed " +
+                            "whose `idOnly` is true, it is not allowed " +
                             "for non-orm-association property"
             );
         }
@@ -435,16 +466,17 @@ public class ImmutableProp {
                     "Illegal property \"" +
                             this +
                             "\", it is decorated by the annotation @Static " +
-                            "whose `toTargetId` is true, it is not allowed " +
+                            "whose `targetAlias` is not empty, it is not allowed " +
                             "for non-association property"
             );
         }
         return new StaticProp(
-                s.ownerAlias(),
+                this,
+                s.alias(),
                 s.name().isEmpty() ? name : s.name(),
-                s.optional(),
                 s.enabled(),
-                s.asTargetId(),
+                s.optional(),
+                s.idOnly(),
                 s.targetAlias()
         );
     }

@@ -10,7 +10,7 @@ import java.lang.annotation.*;
 @Repeatable(Statics.class)
 public @interface Static {
 
-    String ownerAlias() default "";
+    String alias() default "";
 
     boolean enabled() default true;
 
@@ -18,7 +18,7 @@ public @interface Static {
 
     String name() default "";
 
-    boolean asTargetId() default false;
+    boolean idOnly() default false;
 
     String targetAlias() default "";
 }

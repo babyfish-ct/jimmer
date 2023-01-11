@@ -9,13 +9,22 @@ import org.babyfish.jimmer.sql.*;
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
+import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class ImmutableType {
 
-    public final static String PROP_EXPRESSION_SUFFIX = "PropExpression";
+    public static final String PROP_EXPRESSION_SUFFIX = "PropExpression";
+
+    private static final String[] ILLEGAL_STATIC_SUFFIX = new String[] {
+            "Draft", "Fetcher", "Props", "Table", "TableEx"
+    };
+
+    private static final Pattern STATIC_TYPE_PATTERN =
+            Pattern.compile("[A-Za-z_$][A-Za-z_$0-9]*");
 
     private final TypeElement typeElement;
 
@@ -327,12 +336,12 @@ public class ImmutableType {
         StaticTypeNameOverrides overrides = typeElement.getAnnotation(StaticTypeNameOverrides.class);
         if (overrides != null) {
             for (StaticTypeNameOverride o : overrides.value()) {
-                if (overrideMap.put(o.alias(), o.value()) != null) {
+                if (overrideMap.put(o.alias(), o.topLevelName()) != null) {
                     throw new MetaException(
                             "Illegal type \"" +
                                     typeElement.getQualifiedName() +
                                     "\", conflict name \"" +
-                                    o.value() +
+                                    o.topLevelName() +
                                     "\" in several @StaticTypeNameOverride annotations"
                     );
                 }
@@ -340,7 +349,10 @@ public class ImmutableType {
         } else {
             StaticTypeNameOverride o = typeElement.getAnnotation(StaticTypeNameOverride.class);
             if (o != null) {
-                overrideMap.put(o.alias(), o.value());
+                overrideMap.put(
+                        o.alias(),
+                        validateTopLevelName(o.topLevelName(), StaticTypeNameOverride.class)
+                );
             }
         }
 
@@ -561,6 +573,14 @@ public class ImmutableType {
                             "\""
             );
         }
+        if (staticType.alias().isEmpty()) {
+            throw new MetaException(
+                    "Illegal type \"" +
+                            typeElement.getQualifiedName() +
+                            "\", there is a @StaticType annotation, " +
+                            "the `alias` must be specified"
+            );
+        }
         if (!staticType.topLevelName().isEmpty() && isMappedSuperClass) {
             throw new MetaException(
                     "Illegal type \"" +
@@ -574,9 +594,44 @@ public class ImmutableType {
         return new StaticDeclaration(
                 this,
                 staticType.alias(),
-                staticType.topLevelName(),
+                validateTopLevelName(staticType.topLevelName(), StaticType.class),
                 staticType.allScalars(),
-                staticType.style() == StaticTypeStyle.MUTABLE
+                staticType.allOptional()
         );
+    }
+
+    private String validateTopLevelName(String topLevelName, Class<? extends Annotation> annotationType) {
+        if (topLevelName.isEmpty() && annotationType == StaticType.class) {
+            return topLevelName;
+        }
+        if (!STATIC_TYPE_PATTERN.matcher(topLevelName).matches()) {
+            throw new MetaException(
+                    "Illegal type \"" +
+                            qualifiedName +
+                            "\", it is decorated by @" +
+                            annotationType.getName() +
+                            " with the static type name \"" +
+                            topLevelName +
+                            "\", that name is not does not match the regexp \"" +
+                            STATIC_TYPE_PATTERN.pattern() +
+                            "\""
+            );
+        }
+        for (String suffix : ILLEGAL_STATIC_SUFFIX) {
+            if (topLevelName.endsWith(suffix)) {
+                throw new MetaException(
+                        "Illegal type \"" +
+                                qualifiedName +
+                                "\", it is decorated by @" +
+                                annotationType.getName() +
+                                " with the static type name \"" +
+                                topLevelName +
+                                "\", that name cannot be end with \"" +
+                                suffix +
+                                "\""
+                );
+            }
+        }
+        return topLevelName;
     }
 }

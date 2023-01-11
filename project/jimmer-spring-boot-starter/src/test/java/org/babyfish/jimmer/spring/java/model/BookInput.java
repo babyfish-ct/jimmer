@@ -4,7 +4,7 @@ import org.babyfish.jimmer.ImmutableConverter;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.client.Doc;
 import org.babyfish.jimmer.client.ExportFields;
-import org.babyfish.jimmer.spring.model.Input;
+import org.babyfish.jimmer.Input;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -186,6 +186,14 @@ public class ImmutableProcessor extends AbstractProcessor {
                         immutableType,
                         filer
                 ).generate();
+                for (StaticDeclaration declaration : immutableType.getStaticDeclarationMap().values()) {
+                    if (!declaration.getTopLevelName().isEmpty()) {
+                        new StaticDeclarationGenerator(
+                                declaration,
+                                filer
+                        ).generate();
+                    }
+                }
             } else if (immutableType.isEmbeddable()) {
                 new PropExpressionGenerator(
                         typeUtils,

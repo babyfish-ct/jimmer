@@ -2,8 +2,7 @@ package org.babyfish.jimmer.spring.repository.support
 
 import org.babyfish.jimmer.ImmutableObjects
 import org.babyfish.jimmer.meta.ImmutableType
-import org.babyfish.jimmer.spring.model.Input
-import org.babyfish.jimmer.spring.model.toSort
+import org.babyfish.jimmer.Input
 import org.babyfish.jimmer.spring.repository.*
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.fetcher.Fetcher

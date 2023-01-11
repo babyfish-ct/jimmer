@@ -7,11 +7,11 @@ import java.lang.annotation.*;
 @Repeatable(StaticTypes.class)
 public @interface StaticType {
 
-    String alias() default "";
+    String alias();
 
     String topLevelName() default "";
 
     boolean allScalars() default true;
 
-    StaticTypeStyle style() default StaticTypeStyle.AUTO;
+    boolean allOptional() default false;
 }
