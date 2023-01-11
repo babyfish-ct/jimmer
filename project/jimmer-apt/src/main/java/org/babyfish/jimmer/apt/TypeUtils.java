@@ -34,8 +34,6 @@ public class TypeUtils {
 
     private final TypeMirror comparableType;
 
-    private Set<Class<? extends Annotation>> annotationTypes;
-
     private final Map<TypeElement, ImmutableType> immutableTypeMap = new HashMap<>();
 
     TypeUtils(Elements elements, Types types) {

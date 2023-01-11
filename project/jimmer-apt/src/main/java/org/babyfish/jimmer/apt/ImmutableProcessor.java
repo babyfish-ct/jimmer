@@ -3,6 +3,7 @@ package org.babyfish.jimmer.apt;
 import org.babyfish.jimmer.apt.generator.*;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.apt.meta.MetaException;
+import org.babyfish.jimmer.apt.meta.StaticDeclaration;
 import org.babyfish.jimmer.sql.Entity;
 
 import javax.annotation.processing.*;
@@ -14,6 +15,7 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @SupportedAnnotationTypes({
         "org.babyfish.jimmer.Immutable",
@@ -64,9 +66,13 @@ public class ImmutableProcessor extends AbstractProcessor {
         } else {
             return true;
         }
+
+        List<TypeElement> typeElements = new ArrayList<>();
+        Map<String, ImmutableType> simpleNameMap = new HashMap<>();
+        Map<String, ImmutableType> staticSimpleNameMap = new HashMap<>();
         for (Element element : roundEnv.getRootElements()) {
             if (element instanceof TypeElement) {
-                TypeElement typeElement = (TypeElement)element;
+                TypeElement typeElement = (TypeElement) element;
                 String qualifiedName = typeElement.getQualifiedName().toString();
                 if (includes != null) {
                     boolean matched = false;
@@ -96,48 +102,96 @@ public class ImmutableProcessor extends AbstractProcessor {
                     if (typeElement.getKind() != ElementKind.INTERFACE) {
                         throw new MetaException(
                                 "Illegal class \"" +
-                                        qualifiedName +
+                                        typeElement.getQualifiedName().toString() +
                                         "\", immutable type must be interface"
                         );
                     }
                     ImmutableType immutableType = typeUtils.getImmutableType(typeElement);
-                    new DraftGenerator(
-                            immutableType,
-                            filer
-                    ).generate();
-                    new PropsGenerator(
-                            typeUtils,
-                            immutableType,
-                            filer
-                    ).generate();
-                    messager.printMessage(Diagnostic.Kind.NOTE, "Immutable: " + immutableType.getQualifiedName());
-                    if (immutableType.isEntity()) {
-                        messager.printMessage(Diagnostic.Kind.NOTE, "Entity: " + immutableType.getQualifiedName());
-                        new TableGenerator(
-                                typeUtils,
-                                immutableType,
-                                false,
-                                filer
-                        ).generate();
-                        new TableGenerator(
-                                typeUtils,
-                                immutableType,
-                                true,
-                                filer
-                        ).generate();
-                        new FetcherGenerator(
-                                typeUtils,
-                                immutableType,
-                                filer
-                        ).generate();
-                    } else if (immutableType.isEmbeddable()) {
-                        new PropExpressionGenerator(
-                                typeUtils,
-                                immutableType,
-                                filer
-                        ).generate();
+                    typeElements.add(typeElement);
+                    simpleNameMap.put(typeElement.getSimpleName().toString(), immutableType);
+                }
+            }
+        }
+        for (TypeElement typeElement : typeElements) {
+            typeUtils.getImmutableType(typeElement).resolve(typeUtils);
+        }
+        for (TypeElement typeElement : typeElements) {
+            ImmutableType immutableType = typeUtils.getImmutableType(typeElement);
+            if (immutableType.isEntity()) {
+                for (StaticDeclaration declaration : immutableType.getStaticDeclarationMap().values()) {
+                    String topLevelName = declaration.getTopLevelName();
+                    if (!topLevelName.isEmpty()) {
+                        ImmutableType conflictImmutableType = simpleNameMap.get(topLevelName);
+                        if (conflictImmutableType != null) {
+                            throw new MetaException(
+                                    "Illegal type \"" +
+                                            immutableType.getQualifiedName() +
+                                            "\", it declares static type \"" +
+                                            topLevelName +
+                                            "\", this simple name is conflict with the immutable type \"" +
+                                            conflictImmutableType.getQualifiedName() +
+                                            "\""
+                            );
+                        }
+                        conflictImmutableType =
+                                staticSimpleNameMap.put(topLevelName, immutableType);
+                        if (conflictImmutableType != null) {
+                            throw new MetaException(
+                                    "Duplicated static type \"" +
+                                            topLevelName +
+                                            "\" declared in \"" +
+                                            immutableType.getQualifiedName() +
+                                            "\"" +
+                                            (
+                                                    conflictImmutableType != immutableType ?
+                                                            "and \"" +
+                                                                    conflictImmutableType.getQualifiedName() +
+                                                                    "\"" :
+                                                            ""
+                                            )
+                            );
+                        }
                     }
                 }
+            }
+        }
+        for (TypeElement typeElement : typeElements) {
+            ImmutableType immutableType = typeUtils.getImmutableType(typeElement);
+            new DraftGenerator(
+                    immutableType,
+                    filer
+            ).generate();
+            new PropsGenerator(
+                    typeUtils,
+                    immutableType,
+                    filer
+            ).generate();
+            messager.printMessage(Diagnostic.Kind.NOTE, "Immutable: " + immutableType.getQualifiedName());
+            if (immutableType.isEntity()) {
+                messager.printMessage(Diagnostic.Kind.NOTE, "Entity: " + immutableType.getQualifiedName());
+                new TableGenerator(
+                        typeUtils,
+                        immutableType,
+                        false,
+                        filer
+                ).generate();
+                new TableGenerator(
+                        typeUtils,
+                        immutableType,
+                        true,
+                        filer
+                ).generate();
+                new FetcherGenerator(
+                        typeUtils,
+                        immutableType,
+                        filer
+                ).generate();
+            } else if (immutableType.isEmbeddable()) {
+                new PropExpressionGenerator(
+                        typeUtils,
+                        immutableType,
+                        filer
+                ).generate();
             }
         }
         messager.printMessage(Diagnostic.Kind.NOTE, "JimmerModule");
