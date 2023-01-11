@@ -6,6 +6,8 @@ import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
+import org.babyfish.jimmer.pojo.Static;
+import org.babyfish.jimmer.pojo.Statics;
 import org.babyfish.jimmer.sql.*;
 
 import javax.lang.model.element.*;
@@ -60,6 +62,8 @@ public class ImmutableProp {
     private Annotation associationAnnotation;
 
     private final Map<ClassName, String> validationMessageMap;
+
+    private final Map<String, StaticProp> staticPropMap;
 
     public ImmutableProp(
             TypeUtils typeUtils,
@@ -229,6 +233,23 @@ public class ImmutableProp {
         }
 
         this.validationMessageMap = ValidationMessages.parseMessageMap(executableElement);
+
+        Map<String, StaticProp> staticPropMap = new HashMap<>();
+        Statics statics = getAnnotation(Statics.class);
+        if (statics != null) {
+            for (Static s : statics.value()) {
+                if (staticPropMap.put(s.ownerAlias(), staticProp(s)) != null) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", conflict alias \"" +
+                                    s.ownerAlias() +
+                                    "\" in several @Static annotations"
+                    );
+                }
+            }
+        }
+        this.staticPropMap = staticPropMap;
     }
 
     public int getId() {
@@ -340,6 +361,48 @@ public class ImmutableProp {
         return associationAnnotation;
     }
 
+    public Map<String, StaticProp> getStaticPropMap() {
+        return Collections.unmodifiableMap(staticPropMap);
+    }
+
+    public void resolve(TypeUtils typeUtils, ImmutableType declaringType) {
+        for (StaticProp staticProp : staticPropMap.values()) {
+            if (!declaringType.getStaticDeclarationMap().containsKey(staticProp.getOwnerAlias())) {
+                throw new MetaException(
+                        "Illegal property \"" +
+                                this +
+                                "\", it is decorated by the annotation @Static " +
+                                "whose `ownerAlias` is \"" +
+                                staticProp.getOwnerAlias() +
+                                "\", but they entity \"" +
+                                declaringType.getQualifiedName() +
+                                "\" does not have an static type whose alias is \"" +
+                                staticProp.getOwnerAlias() +
+                                "\""
+                );
+            }
+            if (isAssociation && !staticProp.isAsTargetId()) {
+                ImmutableType targetType = typeUtils.getImmutableType(elementType);
+                StaticDeclaration targetStaticType = targetType.getStaticDeclarationMap().get(staticProp.getTargetAlias());
+                if (targetStaticType == null) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it is decorated by the annotation @Static " +
+                                    "whose `targetAlias` is \"" +
+                                    staticProp.getTargetAlias() +
+                                    "\", but they entity \"" +
+                                    targetType.getQualifiedName() +
+                                    "\" does not have an static type whose alias is \"" +
+                                    staticProp.getTargetAlias() +
+                                    "\""
+                    );
+                }
+                staticPropMap.put(staticProp.getOwnerAlias(), staticProp.target(targetStaticType));
+            }
+        }
+    }
+
     @Override
     public String toString() {
         return declaringElement.getQualifiedName().toString() + '.' + name;
@@ -347,5 +410,42 @@ public class ImmutableProp {
 
     public Map<ClassName, String> getValidationMessageMap() {
         return validationMessageMap;
+    }
+
+    private StaticProp staticProp(Static s) {
+        if (s.optional() && isNullable) {
+            throw new MetaException(
+                    "Illegal property \"" +
+                            this +
+                            "\", it is decorated by the annotation @Static " +
+                            "whose `optional` is true, it is not allowed for nullable property"
+            );
+        }
+        if (s.asTargetId() && !isAssociation(true)) {
+            throw new MetaException(
+                    "Illegal property \"" +
+                            this +
+                            "\", it is decorated by the annotation @Static " +
+                            "whose `asTargetId` is true, it is not allowed " +
+                            "for non-orm-association property"
+            );
+        }
+        if (!s.targetAlias().isEmpty() && !isAssociation) {
+            throw new MetaException(
+                    "Illegal property \"" +
+                            this +
+                            "\", it is decorated by the annotation @Static " +
+                            "whose `toTargetId` is true, it is not allowed " +
+                            "for non-association property"
+            );
+        }
+        return new StaticProp(
+                s.ownerAlias(),
+                s.name().isEmpty() ? name : s.name(),
+                s.optional(),
+                s.enabled(),
+                s.asTargetId(),
+                s.targetAlias()
+        );
     }
 }
