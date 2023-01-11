@@ -26,9 +26,16 @@ const config = {
     defaultLocale: 'en',
     locales: ['en', 'zh'],
   },
-
-  themes: [
-    require.resolve("@easyops-cn/docusaurus-search-local")
+  themes:[
+    [
+      require.resolve("@easyops-cn/docusaurus-search-local"),
+      {
+        hashed: true,
+        language: ["en", "zh"],
+        highlightSearchTermsOnTargetPage: true,
+        explicitSearchResultPath: true,
+      }
+    ]
   ],
 
   presets: [
@@ -41,7 +48,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/babyfish-ct/jimmer/tree/main/doc/',
+              'https://github.com/babyfish-ct/jimmer/tree/main/doc/',
         },
         // blog: {
         //   showReadingTime: true,
@@ -58,57 +65,53 @@ const config = {
   ],
 
   themeConfig:
-    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
-    ({
-      navbar: {
-        title: 'Jimmer documentation',
-        logo: {
-          alt: 'My Site Logo',
-          src: 'https://raw.githubusercontent.com/babyfish-ct/jimmer/main/logo.png',
+  /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
+      ({
+        navbar: {
+          title: 'Jimmer documentation',
+          logo: {
+            alt: 'My Site Logo',
+            src: 'https://raw.githubusercontent.com/babyfish-ct/jimmer/main/logo.png',
+          },
+          items: [
+            {
+              type: 'doc',
+              docId: 'preface',
+              position: 'left',
+              label: 'View more',
+            },
+            {
+              type: 'localeDropdown',
+              position: 'left',
+            },
+            {
+              href: 'https://github.com/babyfish-ct/jimmer',
+              label: 'GitHub',
+              position: 'right',
+            },
+          ],
         },
-        items: [
-          {
-            type: 'doc',
-            docId: 'preface',
-            position: 'left',
-            label: 'View more',
-          },
-          {
-            type: 'localeDropdown',
-            position: 'left',
-          },
-          {
-            href: 'https://github.com/babyfish-ct/jimmer',
-            label: 'GitHub',
-            position: 'right',
-          },
-          {
-            type: 'search',
-            position: 'right',
-          }
-        ],
-      },
-      footer: {
-        style: 'dark',
-        links: [
-          {
-            title: 'Docs',
-            items: [
-              {
-                label: 'Tutorial',
-                to: '/docs/intro',
-              },
-            ],
-          },
-        ],
-        copyright: `Copyright © ${new Date().getFullYear()} jimmer, Inc.`,
-      },
-      prism: {
-        theme: lightCodeTheme,
-        darkTheme: darkCodeTheme,
-        additionalLanguages: ['java', 'kotlin', 'groovy', 'sql', 'cpp', 'kotlin', 'graphql'],
-      }
-    })
+        footer: {
+          style: 'dark',
+          links: [
+            {
+              title: 'Docs',
+              items: [
+                {
+                  label: 'Tutorial',
+                  to: '/docs/intro',
+                },
+              ],
+            },
+          ],
+          copyright: `Copyright © ${new Date().getFullYear()} jimmer, Inc.`,
+        },
+        prism: {
+          theme: lightCodeTheme,
+          darkTheme: darkCodeTheme,
+          additionalLanguages: ['java', 'kotlin', 'groovy', 'sql', 'cpp', 'kotlin', 'graphql'],
+        },
+      }),
 };
 
 module.exports = config;
