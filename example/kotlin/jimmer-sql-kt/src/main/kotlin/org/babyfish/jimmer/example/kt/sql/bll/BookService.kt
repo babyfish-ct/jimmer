@@ -3,7 +3,6 @@ package org.babyfish.jimmer.example.kt.sql.bll
 import org.babyfish.jimmer.client.FetchBy
 import org.babyfish.jimmer.example.kt.sql.dal.BookRepository
 import org.babyfish.jimmer.example.kt.sql.model.*
-import org.babyfish.jimmer.example.kt.sql.model.input.BookInput
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.springframework.data.domain.Page
 import org.springframework.transaction.annotation.Transactional

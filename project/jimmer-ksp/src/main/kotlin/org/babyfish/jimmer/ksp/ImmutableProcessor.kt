@@ -116,11 +116,13 @@ class ImmutableProcessor(
                     FetcherGenerator(environment.codeGenerator, ctx, file, sqlClassDeclaration)
                         .generate(allFiles)
                     for (staticDeclaration in ctx.typeOf(sqlClassDeclaration).staticDeclarationMap.values) {
-                        StaticDeclarationGenerator(
-                            staticDeclaration,
-                            environment.codeGenerator,
-                            file
-                        ).generate(allFiles)
+                        if (staticDeclaration.topLevelName.isNotEmpty()) {
+                            StaticDeclarationGenerator(
+                                staticDeclaration,
+                                environment.codeGenerator,
+                                file
+                            ).generate(allFiles)
+                        }
                     }
                     packageCollector.accept(sqlClassDeclaration)
                 }
