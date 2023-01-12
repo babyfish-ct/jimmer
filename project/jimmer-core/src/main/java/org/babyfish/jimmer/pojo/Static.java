@@ -31,7 +31,7 @@ public @interface Static {
      * otherwise, error will be raised during compilation.
      *
      * If a non-null dynamic property is mapped to an optional static property,
-     * when static object is used to create dynamic object, null value will
+     * when static object is used to create dynamic object, null value will not
      * be set into the dynamic instance, that means keep that dynamic property
      * be "unloaded"
      */
