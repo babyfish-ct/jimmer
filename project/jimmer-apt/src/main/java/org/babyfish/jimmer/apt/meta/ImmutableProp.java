@@ -370,6 +370,10 @@ public class ImmutableProp {
         return executableElement.getAnnotationsByType(annotationType);
     }
 
+    public List<? extends AnnotationMirror> getAnnotations() {
+        return executableElement.getAnnotationMirrors();
+    }
+
     public Annotation getAssociationAnnotation() {
         return associationAnnotation;
     }
