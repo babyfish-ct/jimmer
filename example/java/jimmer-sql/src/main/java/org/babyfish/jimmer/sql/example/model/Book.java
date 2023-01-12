@@ -50,6 +50,6 @@ public interface Book extends TenantAware {
             inverseJoinColumnName = "AUTHOR_ID"
     )
     @Static(alias = "default", name="authorIds", idOnly = true)
-    @Static(alias = "composite")
+    @Static(alias = "composite", targetAlias = "declaredOnly")
     List<Author> authors();
 }
