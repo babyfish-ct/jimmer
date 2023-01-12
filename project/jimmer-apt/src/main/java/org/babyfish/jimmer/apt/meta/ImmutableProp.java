@@ -401,7 +401,7 @@ public class ImmutableProp {
                                 staticProp.getAlias() +
                                 "\", but the declaring entity \"" +
                                 declaringType.getQualifiedName() +
-                                "\" does not have an static type whose alias is \"" +
+                                "\" does not have a static type whose alias is \"" +
                                 staticProp.getAlias() +
                                 "\""
                 );
@@ -426,7 +426,7 @@ public class ImmutableProp {
                                         staticProp.getTargetAlias() +
                                         "\", but the target entity \"" +
                                         targetType.getQualifiedName() +
-                                        "\" does not have an static type whose alias is \"" +
+                                        "\" does not have a static type whose alias is \"" +
                                         staticProp.getTargetAlias() +
                                         "\""
                         );

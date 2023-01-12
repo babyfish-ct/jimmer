@@ -24,6 +24,8 @@ internal const val FETCHER = "Fetcher"
 internal const val FETCHER_DSL = "FetcherDsl"
 
 internal val CLONEABLE_CLASS_NAME = Cloneable::class.asClassName()
+internal val LIST_CLASS_NAME = List::class.asClassName()
+internal val INPUT_CLASS_NAME = Input::class.asClassName()
 internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
 internal val INTERNAL_TYPE_CLASS_NAME = Internal::class.asClassName()
 internal val IMMUTABLE_PROP_CATEGORY_CLASS_NAME = ImmutablePropCategory::class.asClassName()
@@ -48,14 +50,6 @@ internal val ONE_TO_ONE_CLASS_NAME = OneToOne::class.asClassName()
 internal val MANY_TO_ONE_CLASS_NAME = ManyToOne::class.asClassName()
 internal val ONE_TO_MANY_CLASS_NAME = OneToMany::class.asClassName()
 internal val MANY_TO_MANY_CLASS_NAME = ManyToMany::class.asClassName()
-internal val K_NON_NULL_TABLE_EX_CLASS_NAME = ClassName(
-    "org.babyfish.jimmer.sql.kt.ast.table",
-    "KNonNullTableEx"
-)
-internal val K_NULLABLE_TABLE_EX_CLASS_NAME = ClassName(
-    "org.babyfish.jimmer.sql.kt.ast.table",
-    "KNullableTableEx"
-)
 internal val K_PROPS_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KProps"
