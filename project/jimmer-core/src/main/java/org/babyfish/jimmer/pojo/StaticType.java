@@ -11,7 +11,7 @@ public @interface StaticType {
 
     String topLevelName() default "";
 
-    boolean allScalars() default true;
+    AutoScalarStrategy autoScalarStrategy() default AutoScalarStrategy.ALL;
 
     boolean allOptional() default false;
 }

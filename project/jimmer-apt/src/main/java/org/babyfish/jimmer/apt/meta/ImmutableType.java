@@ -168,13 +168,13 @@ public class ImmutableType {
         }
         for (ExecutableElement executableElement : executableElements) {
             if (!executableElement.isDefault() && executableElement.getAnnotation(Id.class) != null) {
-                ImmutableProp prop = new ImmutableProp(typeUtils, executableElement, ++propIdSequence);
+                ImmutableProp prop = new ImmutableProp(typeUtils, this, executableElement, ++propIdSequence);
                 map.put(prop.getName(), prop);
             }
         }
         for (ExecutableElement executableElement : executableElements) {
             if (!executableElement.isDefault() && executableElement.getAnnotation(Id.class) == null) {
-                ImmutableProp prop = new ImmutableProp(typeUtils, executableElement, ++propIdSequence);
+                ImmutableProp prop = new ImmutableProp(typeUtils, this, executableElement, ++propIdSequence);
                 map.put(prop.getName(), prop);
             }
         }
@@ -332,53 +332,12 @@ public class ImmutableType {
             }
         }
 
-        Map<String, String> overrideMap = new HashMap<>();
-        StaticTypeNameOverrides overrides = typeElement.getAnnotation(StaticTypeNameOverrides.class);
-        if (overrides != null) {
-            for (StaticTypeNameOverride o : overrides.value()) {
-                if (overrideMap.put(o.alias(), o.topLevelName()) != null) {
-                    throw new MetaException(
-                            "Illegal type \"" +
-                                    typeElement.getQualifiedName() +
-                                    "\", conflict name \"" +
-                                    o.topLevelName() +
-                                    "\" in several @StaticTypeNameOverride annotations"
-                    );
-                }
-            }
-        } else {
-            StaticTypeNameOverride o = typeElement.getAnnotation(StaticTypeNameOverride.class);
-            if (o != null) {
-                overrideMap.put(
-                        o.alias(),
-                        validateTopLevelName(o.topLevelName(), StaticTypeNameOverride.class)
-                );
-            }
-        }
-
         Map<String, StaticDeclaration> staticMap;
 
         if (superType == null) {
             staticMap = declaredStaticMap;
         } else {
             staticMap = new HashMap<>(superType.declaredStaticDeclarationMap);
-            for (Map.Entry<String, String> e : overrideMap.entrySet()) {
-                String alias = e.getKey();
-                String name = e.getValue();
-                StaticDeclaration declaration = staticMap.get(alias);
-                if (declaration == null) {
-                    throw new MetaException(
-                            "Illegal type \"" +
-                                    typeElement.getQualifiedName() +
-                                    "\", there is a @StaticTypeNameOverride annotation, its alias \"" +
-                                    alias +
-                                    "\" has not been declared in super type \"" +
-                                    superType.getQualifiedName() +
-                                    "\""
-                    );
-                }
-                staticMap.put(alias, declaration.rename(name));
-            }
             for (StaticDeclaration declaration : declaredStaticMap.values()) {
                 if (staticMap.put(declaration.getAlias(), declaration) != null) {
                     throw new MetaException(
@@ -564,12 +523,12 @@ public class ImmutableType {
     }
 
     private StaticDeclaration staticType(StaticType staticType) {
-        if (isEmbeddable) {
+        if (!isEntity) {
             throw new MetaException(
                     "Illegal type \"" +
                             typeElement.getQualifiedName() +
-                            "\", the annotation @StaticType cannot be used to " +
-                            "decorate the type decorated by @Embeddable" +
+                            "\", the annotation @StaticType must be used to " +
+                            "decorate the type decorated by @Entity" +
                             "\""
             );
         }
@@ -595,7 +554,7 @@ public class ImmutableType {
                 this,
                 staticType.alias(),
                 validateTopLevelName(staticType.topLevelName(), StaticType.class),
-                staticType.allScalars(),
+                staticType.autoScalarStrategy(),
                 staticType.allOptional()
         );
     }

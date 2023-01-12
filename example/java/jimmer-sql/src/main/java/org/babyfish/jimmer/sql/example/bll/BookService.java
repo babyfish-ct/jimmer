@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.example.bll;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.sql.example.dal.BookRepository;
 import org.babyfish.jimmer.sql.example.model.*;
-import org.babyfish.jimmer.sql.example.model.input.BookInput;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.springframework.data.domain.Page;
 import org.springframework.transaction.annotation.Transactional;
@@ -81,11 +80,11 @@ public class BookService {
      * dynamic data structure and save it.
      * Unlike output DTOs, input DTOs don't have explosion issues.
      */
-    @Transactional
-    @PutMapping("/book")
-    public Book saveBook(@RequestBody BookInput input) {
-        return bookRepository.save(input);
-    }
+//    @Transactional
+//    @PutMapping("/book")
+//    public Book saveBook(@RequestBody BookInput input) {
+//        return bookRepository.save(input);
+//    }
 
     /*
      * Not recommended.
