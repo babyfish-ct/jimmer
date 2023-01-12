@@ -6,6 +6,7 @@ import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
+import org.babyfish.jimmer.pojo.AutoScalarStrategy;
 import org.babyfish.jimmer.pojo.Static;
 import org.babyfish.jimmer.pojo.Statics;
 import org.babyfish.jimmer.sql.*;
@@ -19,7 +20,7 @@ import java.util.*;
 
 public class ImmutableProp {
 
-    private final TypeElement declaringElement;
+    private final ImmutableType declaringType;
 
     private final ExecutableElement executableElement;
 
@@ -69,11 +70,12 @@ public class ImmutableProp {
 
     public ImmutableProp(
             TypeUtils typeUtils,
+            ImmutableType declaringType,
             ExecutableElement executableElement,
             int id
     ) {
         this.id = id;
-        this.declaringElement = (TypeElement) executableElement.getEnclosingElement();
+        this.declaringType = declaringType;
         this.executableElement = executableElement;
         getterName = executableElement.getSimpleName().toString();
         returnType = executableElement.getReturnType();
@@ -177,14 +179,14 @@ public class ImmutableProp {
         }
 
         PropDescriptor.Builder builder = PropDescriptor.newBuilder(
-                declaringElement.getQualifiedName().toString(),
-                typeUtils.getImmutableAnnotationType(declaringElement),
+                declaringType.getTypeElement().getQualifiedName().toString(),
+                typeUtils.getImmutableAnnotationType(declaringType.getTypeElement()),
                 this.toString(),
                 ClassName.get(elementType).toString(),
                 typeUtils.getImmutableAnnotationType(elementType),
                 isList,
                 null,
-                declaringElement.getAnnotation(Immutable.class),
+                declaringType.getTypeElement().getAnnotation(Immutable.class),
                 MetaException::new
         );
         for (AnnotationMirror annotationMirror : executableElement.getAnnotationMirrors()) {
@@ -257,6 +259,10 @@ public class ImmutableProp {
             }
         }
         this.staticPropMap = staticPropMap;
+    }
+
+    public ImmutableType getDeclaringType() {
+        return declaringType;
     }
 
     public int getId() {
@@ -382,7 +388,7 @@ public class ImmutableProp {
 
     public void resolve(TypeUtils typeUtils, ImmutableType declaringType) {
         for (StaticProp staticProp : staticPropMap.values()) {
-            if (!staticProp.getAlias().isEmpty() && !declaringType.getStaticDeclarationMap().containsKey(staticProp.getAlias())) {
+            if (declaringType.isEntity() && !staticProp.getAlias().isEmpty() && !declaringType.getStaticDeclarationMap().containsKey(staticProp.getAlias())) {
                 throw new MetaException(
                         "Illegal property \"" +
                                 this +
@@ -405,7 +411,7 @@ public class ImmutableProp {
                     } else if (staticProp.getTargetAlias().isEmpty()) {
                         staticPropMap.put(
                                 staticProp.getAlias(),
-                                staticProp.target(new StaticDeclaration(targetType, "", "", true, false))
+                                staticProp.target(new StaticDeclaration(targetType, "", "", AutoScalarStrategy.ALL, false))
                         );
                     } else {
                         throw new MetaException(
@@ -428,7 +434,7 @@ public class ImmutableProp {
 
     @Override
     public String toString() {
-        return declaringElement.getQualifiedName().toString() + '.' + name;
+        return declaringType.getTypeElement().getQualifiedName().toString() + '.' + name;
     }
 
     public Map<ClassName, String> getValidationMessageMap() {

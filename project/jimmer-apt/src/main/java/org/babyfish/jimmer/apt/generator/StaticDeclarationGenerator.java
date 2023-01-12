@@ -5,6 +5,7 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.StaticDeclaration;
 import org.babyfish.jimmer.apt.meta.StaticProp;
+import org.babyfish.jimmer.pojo.AutoScalarStrategy;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.Key;
@@ -74,12 +75,17 @@ public class StaticDeclarationGenerator {
             }
             StaticProp staticProp = prop.getStaticProp(alias);
             if (staticProp == null) {
-                if (declaration.isAllScalars() && !prop.isAssociation(true)) {
-                    staticProp = new StaticProp(prop, alias, prop.getName(), true, declaration.isAllOptional(), false, "");
-                    if (!staticProp.isOptional() && prop.getAnnotation(Id.class) != null && hasKey) {
-                        staticProp = staticProp.optional(true);
+                if (!prop.isAssociation(true)) {
+                    boolean all = declaration.getAutoScalarStrategy() == AutoScalarStrategy.ALL;
+                    boolean declared = declaration.getAutoScalarStrategy() == AutoScalarStrategy.DECLARED &&
+                            prop.getDeclaringType() == declaration.getImmutableType();
+                    if (all || declared) {
+                        staticProp = new StaticProp(prop, alias, prop.getName(), true, declaration.isAllOptional(), false, "");
+                        if (!staticProp.isOptional() && prop.getAnnotation(Id.class) != null && hasKey) {
+                            staticProp = staticProp.optional(true);
+                        }
+                        props.add(staticProp);
                     }
-                    props.add(staticProp);
                 }
             } else if (staticProp.isEnabled()) {
                 props.add(staticProp.optional(declaration.isAllOptional()));
@@ -521,9 +527,15 @@ public class StaticDeclarationGenerator {
     }
 
     public TypeName getPropTypeName(StaticProp prop) {
+        TypeName elementTypeName = getPropElementName(prop);
         return prop.getImmutableProp().isList() ?
-                ParameterizedTypeName.get(Constants.LIST_CLASS_NAME, getPropElementName(prop)) :
-                getPropElementName(prop);
+                ParameterizedTypeName.get(
+                        Constants.LIST_CLASS_NAME,
+                        elementTypeName.isPrimitive() ?
+                                elementTypeName.box() :
+                                elementTypeName
+                ) :
+                elementTypeName;
     }
 
     public TypeName getPropElementName(StaticProp prop) {

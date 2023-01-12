@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.apt.meta;
 
+import org.babyfish.jimmer.pojo.AutoScalarStrategy;
+
 public class StaticDeclaration {
 
     private final ImmutableType immutableType;
@@ -8,7 +10,7 @@ public class StaticDeclaration {
 
     private final String topLevelName;
 
-    private final boolean allScalars;
+    private final AutoScalarStrategy autoScalarStrategy;
 
     private final boolean allOptional;
 
@@ -16,12 +18,12 @@ public class StaticDeclaration {
             ImmutableType immutableType,
             String alias,
             String topLevelName,
-            boolean allScalars,
+            AutoScalarStrategy autoScalarStrategy,
             boolean allOptional) {
         this.immutableType = immutableType;
         this.alias = alias;
         this.topLevelName = topLevelName;
-        this.allScalars = allScalars;
+        this.autoScalarStrategy = autoScalarStrategy;
         this.allOptional = allOptional;
     }
 
@@ -37,19 +39,12 @@ public class StaticDeclaration {
         return topLevelName;
     }
 
-    public boolean isAllScalars() {
-        return allScalars;
+    public AutoScalarStrategy getAutoScalarStrategy() {
+        return autoScalarStrategy;
     }
 
     public boolean isAllOptional() {
         return allOptional;
-    }
-
-    public StaticDeclaration rename(String name) {
-        if (this.topLevelName.equals(name)) {
-            return this;
-        }
-        return new StaticDeclaration(immutableType, alias, name, allScalars, allOptional);
     }
 
     @Override
@@ -58,7 +53,7 @@ public class StaticDeclaration {
                 "immutableType=" + immutableType +
                 ", alias='" + alias + '\'' +
                 ", topLevelName='" + topLevelName + '\'' +
-                ", allScalars=" + allScalars +
+                ", autoScalarStrategy=" + autoScalarStrategy +
                 ", allOptional=" + allOptional +
                 '}';
     }

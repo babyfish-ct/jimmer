@@ -64,6 +64,7 @@ public class StaticProp {
         this.optional = optional;
         this.idOnly = base.idOnly;
         this.targetAlias = base.targetAlias;
+
         this.target = base.target;
     }
 
