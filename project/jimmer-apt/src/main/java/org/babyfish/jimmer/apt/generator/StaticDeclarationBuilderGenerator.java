@@ -95,6 +95,7 @@ public class StaticDeclarationBuilderGenerator {
     private void addBuild() {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("build")
+                .addModifiers(Modifier.PUBLIC)
                 .returns(parent.getClassName())
                 .addAnnotation(NotNull.class);
         for (StaticProp prop : props) {

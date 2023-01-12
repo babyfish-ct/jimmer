@@ -13,9 +13,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.processing.Filer;
-import javax.lang.model.element.Modifier;
+import javax.lang.model.element.*;
 import javax.validation.constraints.Null;
 import java.io.IOException;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -204,6 +206,11 @@ public class StaticDeclarationGenerator {
             builder.addAnnotation(Nullable.class).addAnnotation(Null.class);
         } else {
             builder.addAnnotation(NotNull.class).addAnnotation(javax.validation.constraints.NotNull.class);
+        }
+        for (AnnotationMirror annotationMirror : prop.getImmutableProp().getAnnotations()) {
+            if (isCopyableAnnotation(annotationMirror, false)) {
+                builder.addAnnotation(AnnotationSpec.get(annotationMirror));
+            }
         }
         typeBuilder.addField(builder.build());
     }
@@ -398,11 +405,17 @@ public class StaticDeclarationGenerator {
     private void addGetter(StaticProp prop) {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getGetterName())
+                .addModifiers(Modifier.PUBLIC)
                 .returns(getPropTypeName(prop));
         if (prop.isNullable()) {
             builder.addAnnotation(Nullable.class).addAnnotation(Null.class);
         } else {
             builder.addAnnotation(NotNull.class).addAnnotation(javax.validation.constraints.NotNull.class);
+        }
+        for (AnnotationMirror annotationMirror : prop.getImmutableProp().getAnnotations()) {
+            if (isCopyableAnnotation(annotationMirror, true)) {
+                builder.addAnnotation(AnnotationSpec.get(annotationMirror));
+            }
         }
         builder.addStatement("return $L", prop.getName());
         typeBuilder.addMethod(builder.build());
@@ -583,5 +596,22 @@ public class StaticDeclarationGenerator {
             return target.getTopLevelName();
         }
         return "TargetOf_" + prop.getName();
+    }
+
+    private static boolean isCopyableAnnotation(AnnotationMirror annotationMirror, boolean forMethod) {
+        Target target = annotationMirror.getAnnotationType().asElement().getAnnotation(Target.class);
+        if (target != null) {
+            boolean acceptField = Arrays.stream(target.value()).anyMatch(it -> it == ElementType.FIELD);
+            boolean acceptMethod = Arrays.stream(target.value()).anyMatch(it -> it == ElementType.METHOD);
+            if (forMethod ? acceptMethod && !acceptField : acceptField) {
+                String qualifiedName = ((TypeElement) annotationMirror.getAnnotationType().asElement()).getQualifiedName().toString();
+                return !qualifiedName.equals(NotNull.class.getName()) &&
+                        !qualifiedName.equals(javax.validation.constraints.NotNull.class.getName()) &&
+                        !qualifiedName.equals(Nullable.class.getName()) &&
+                        !qualifiedName.equals(Null.class.getName()) &&
+                        !qualifiedName.startsWith("org.babyfish.jimmer.");
+            }
+        }
+        return false;
     }
 }
