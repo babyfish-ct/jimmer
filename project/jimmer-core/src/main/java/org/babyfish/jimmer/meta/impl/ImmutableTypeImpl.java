@@ -346,6 +346,9 @@ class ImmutableTypeImpl implements ImmutableType {
     }
 
     void setIdProp(ImmutableProp idProp) {
+        if (idProp.getDeclaringType() != this) {
+            idProp = getProp(idProp.getName());
+        }
         if (idProp.isEmbedded(EmbeddedLevel.SCALAR)) {
             validateEmbeddedIdType(idProp.getTargetType(), null);
         }
@@ -505,11 +508,21 @@ class ImmutableTypeImpl implements ImmutableType {
     }
 
     void setVersionProp(ImmutableProp versionProp) {
+        if (versionProp != null && versionProp.getDeclaringType() != this) {
+            versionProp = getProp(versionProp.getName());
+        }
         this.versionProp = versionProp;
     }
 
     void setKeyProps(Set<ImmutableProp> keyProps) {
-        this.keyProps = Collections.unmodifiableSet(keyProps);
+        Set<ImmutableProp> set = new LinkedHashSet<>();
+        for (ImmutableProp keyProp : keyProps) {
+            if (keyProp.getDeclaringType() != this) {
+                keyProp = getProp(keyProp.getName());
+            }
+            set.add(keyProp);
+        }
+        this.keyProps = Collections.unmodifiableSet(set);
     }
 
     @Override
