@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.example.model;
 
+import org.babyfish.jimmer.pojo.AutoScalarStrategy;
 import org.babyfish.jimmer.pojo.Static;
 import org.babyfish.jimmer.pojo.StaticType;
 import org.babyfish.jimmer.sql.*;
@@ -10,8 +11,16 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
-@StaticType(alias = "default", topLevelName = "BookInput")
-@StaticType(alias = "composite", topLevelName = "CompositeBookInput")
+@StaticType(
+        alias = "default",
+        topLevelName = "BookInput",
+        autoScalarStrategy = AutoScalarStrategy.DECLARED
+)
+@StaticType(
+        alias = "composite",
+        topLevelName = "CompositeBookInput",
+        autoScalarStrategy = AutoScalarStrategy.DECLARED
+)
 public interface Book extends TenantAware {
 
     @Id
@@ -40,7 +49,7 @@ public interface Book extends TenantAware {
             joinColumnName = "BOOK_ID",
             inverseJoinColumnName = "AUTHOR_ID"
     )
-    @Static(alias = "default", enabled = false, name="authorIds", idOnly = true)
+    @Static(alias = "default", name="authorIds", idOnly = true)
     @Static(alias = "composite")
     List<Author> authors();
 }

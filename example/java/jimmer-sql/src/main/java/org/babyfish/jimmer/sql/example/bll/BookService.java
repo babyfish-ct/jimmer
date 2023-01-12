@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@Transactional
 public class BookService {
 
     private final BookRepository bookRepository;
@@ -80,11 +81,25 @@ public class BookService {
      * dynamic data structure and save it.
      * Unlike output DTOs, input DTOs don't have explosion issues.
      */
-//    @Transactional
-//    @PutMapping("/book")
-//    public Book saveBook(@RequestBody BookInput input) {
-//        return bookRepository.save(input);
-//    }
+    @PutMapping("/book")
+    public Book saveBook(@RequestBody BookInput input) {
+        return bookRepository.save(input);
+    }
+
+    /*
+     * Recommend
+     *
+     * The save command can save arbitrarily complex data structures,
+     * which is too powerful and should be sealed inside the service and not exposed.
+     *
+     * You should accept static Input DTO parameter, convert it to a
+     * dynamic data structure and save it.
+     * Unlike output DTOs, input DTOs don't have explosion issues.
+     */
+    @PutMapping("/book/withAuthors")
+    public Book saveBook(@RequestBody CompositeBookInput input) {
+        return bookRepository.save(input);
+    }
 
     /*
      * Not recommended.
@@ -93,7 +108,6 @@ public class BookService {
      * it is `too powerful`, and direct exposure will cause serious security problems,
      * unless your client is an internal system and absolutely reliable.
      */
-    @Transactional
     @PutMapping("/book/dynamic")
     public Book saveBook(@RequestBody Book book) {
         return bookRepository.save(book);
