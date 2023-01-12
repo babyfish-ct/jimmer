@@ -7,10 +7,27 @@ import java.lang.annotation.*;
 @Repeatable(StaticTypes.class)
 public @interface StaticType {
 
+    /**
+     * A short name for the static type,
+     * this name will only be used in mapping system internal,
+     * generated source code cannot be affected
+     */
     String alias();
 
+    /**
+     * If `topLevelName` is not empty,
+     * a top level static class will be generated;
+     *
+     * Otherwise, top level static class will not be
+     * generated, and it can only be referenced by
+     * other static classes
+     */
     String topLevelName() default "";
 
+    /**
+     * How to handle scalar fields that are not decorated
+     * by `@Static` explicitly
+     */
     AutoScalarStrategy autoScalarStrategy() default AutoScalarStrategy.ALL;
 
     boolean allOptional() default false;
