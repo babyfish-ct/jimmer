@@ -8,6 +8,8 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.*
 import org.babyfish.jimmer.ksp.generator.*
 import org.babyfish.jimmer.ksp.meta.Context
+import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.ksp.meta.MetaException
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.MappedSuperclass
@@ -42,6 +44,52 @@ class ImmutableProcessor(
         }
         val ctx = Context(resolver)
         val classDeclarationMultiMap = findModelMap(ctx)
+        val simpleNameMap = mutableMapOf<String, ImmutableType>()
+        for ((_, classDeclarations) in classDeclarationMultiMap) {
+            for (classDeclaration in classDeclarations) {
+                val immutableType = ctx.typeOf(classDeclaration)
+                immutableType.resolve()
+                simpleNameMap[classDeclaration.simpleName.asString()] = immutableType
+            }
+        }
+        val staticSimpleNameMap = mutableMapOf<String, ImmutableType>()
+        for ((_, classDeclarations) in classDeclarationMultiMap) {
+            for (classDeclaration in classDeclarations) {
+                val immutableType = ctx.typeOf(classDeclaration)
+                if (immutableType.isEntity) {
+                    for (declaration in immutableType.staticDeclarationMap.values) {
+                        val topLevelName: String = declaration.topLevelName
+                        if (topLevelName.isNotEmpty()) {
+                            var conflictImmutableType = simpleNameMap[topLevelName]
+                            if (conflictImmutableType !== null) {
+                                throw MetaException(
+                                    "Illegal type \"" +
+                                        immutableType +
+                                        "\", it declares static type \"" +
+                                        topLevelName +
+                                        "\", this simple name is conflict with the immutable type \"" +
+                                        conflictImmutableType +
+                                        "\""
+                                )
+                            }
+                            conflictImmutableType = staticSimpleNameMap.put(topLevelName, immutableType)
+                            if (conflictImmutableType != null) {
+                                throw MetaException(
+                                    "Duplicated static type \"" +
+                                        topLevelName +
+                                        "\" declared in \"" +
+                                        immutableType +
+                                        "\"" +
+                                        (if (conflictImmutableType !== immutableType) ("and \"" +
+                                            conflictImmutableType +
+                                            "\"") else "")
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
         val packageCollector = PackageCollector()
         val allFiles = resolver.getAllFiles().toList()
         for ((file, classDeclarations) in classDeclarationMultiMap) {
@@ -67,6 +115,13 @@ class ImmutableProcessor(
                 if (sqlClassDeclaration.annotation(Entity::class) !== null) {
                     FetcherGenerator(environment.codeGenerator, ctx, file, sqlClassDeclaration)
                         .generate(allFiles)
+                    for (staticDeclaration in ctx.typeOf(sqlClassDeclaration).staticDeclarationMap.values) {
+                        StaticDeclarationGenerator(
+                            staticDeclaration,
+                            environment.codeGenerator,
+                            file
+                        ).generate(allFiles)
+                    }
                     packageCollector.accept(sqlClassDeclaration)
                 }
             }
