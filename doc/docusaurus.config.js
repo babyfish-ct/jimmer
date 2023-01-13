@@ -85,6 +85,10 @@ const config = {
               position: 'left',
             },
             {
+              type: "search",
+              position: 'right'
+            },
+            {
               href: 'https://github.com/babyfish-ct/jimmer',
               label: 'GitHub',
               position: 'right',
