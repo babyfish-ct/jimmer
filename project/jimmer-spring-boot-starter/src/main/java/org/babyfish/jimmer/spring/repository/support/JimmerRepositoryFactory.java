@@ -15,6 +15,7 @@ import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.UndeclaredThrowableException;
 
 public class JimmerRepositoryFactory extends RepositoryFactorySupport {
 
@@ -104,7 +105,14 @@ public class JimmerRepositoryFactory extends RepositoryFactorySupport {
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException ex) {
             throw new AssertionError("Internal bug", ex);
         } catch (InvocationTargetException ex) {
-            throw new AssertionError("Internal bug", ex.getTargetException());
+            Throwable targetException = ex.getTargetException();
+            if (targetException instanceof RuntimeException) {
+                throw (RuntimeException) targetException;
+            }
+            if (targetException instanceof Error) {
+                throw (Error) targetException;
+            }
+            throw new UndeclaredThrowableException(ex.getTargetException(), "Failed to create repository");
         }
     }
 
