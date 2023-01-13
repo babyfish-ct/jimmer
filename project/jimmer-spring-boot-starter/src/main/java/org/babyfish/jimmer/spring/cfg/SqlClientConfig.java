@@ -9,9 +9,13 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.kt.KSqlClient;
 import org.babyfish.jimmer.sql.kt.KSqlClientKt;
+import org.babyfish.jimmer.sql.kt.filter.KFilter;
+import org.babyfish.jimmer.sql.kt.filter.impl.JavaFiltersKt;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.runtime.Executor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -20,9 +24,12 @@ import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 public class SqlClientConfig {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SqlClientConfig.class);
 
     @Bean(name = "sqlClient")
     @ConditionalOnMissingBean({JSqlClient.class, KSqlClient.class})
@@ -38,9 +45,16 @@ public class SqlClientConfig {
             List<ScalarProvider<?, ?>> providers,
             List<DraftInterceptor<?>> interceptors,
             List<Filter<?>> filters,
+            List<KFilter<?>> kotlinFilters,
             List<JimmerCustomizer> customizers,
             List<JimmerInitializer> initializers
     ) {
+        if (!kotlinFilters.isEmpty()) {
+            LOGGER.warn(
+                    "Jimmer is working in java mode, but some kotlin filters " +
+                            "has been found in spring context, they will be ignored"
+            );
+        }
         JSqlClient.Builder builder = JSqlClient.newBuilder();
         preCreateSqlClient(
                 builder,
@@ -74,10 +88,17 @@ public class SqlClientConfig {
             @Autowired(required = false) CacheFactory cacheFactory,
             List<ScalarProvider<?, ?>> providers,
             List<DraftInterceptor<?>> interceptors,
-            List<Filter<?>> filters,
+            List<Filter<?>> javaFilters,
+            List<KFilter<?>> filters,
             List<JimmerCustomizer> customizers,
             List<JimmerInitializer> initializers
     ) {
+        if (!javaFilters.isEmpty()) {
+            LOGGER.warn(
+                    "Jimmer is working in kotlin mode, but some java filters " +
+                            "has been found in spring context, they will be ignored"
+            );
+        }
         KSqlClient sqlClient = KSqlClientKt.newKSqlClient(dsl -> {
             preCreateSqlClient(
                     dsl.getJavaBuilder(),
@@ -90,7 +111,10 @@ public class SqlClientConfig {
                     cacheFactory,
                     providers,
                     interceptors,
-                    filters,
+                    filters
+                            .stream()
+                            .map(JavaFiltersKt::toJavaFilter)
+                            .collect(Collectors.toList()),
                     customizers
             );
             return Unit.INSTANCE;
