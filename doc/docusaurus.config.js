@@ -76,7 +76,7 @@ const config = {
           items: [
             {
               type: 'doc',
-              docId: 'preface',
+              docId: 'before',
               position: 'left',
               label: 'View more',
             },
