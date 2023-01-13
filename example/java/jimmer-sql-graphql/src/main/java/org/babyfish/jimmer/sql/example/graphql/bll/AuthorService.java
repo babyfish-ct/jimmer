@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.example.graphql.dal.AuthorRepository;
 import org.babyfish.jimmer.sql.example.graphql.entities.Author;
 import org.babyfish.jimmer.sql.example.graphql.entities.AuthorProps;
 import org.babyfish.jimmer.sql.example.graphql.entities.Book;
-import org.babyfish.jimmer.sql.example.graphql.entities.input.AuthorInput;
+import org.babyfish.jimmer.sql.example.graphql.entities.AuthorInput;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.BatchMapping;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
