@@ -1,11 +1,17 @@
 package org.babyfish.jimmer.example.kt.graphql.entities
 
 import org.babyfish.jimmer.example.kt.graphql.entities.common.BaseEntity
+import org.babyfish.jimmer.pojo.AutoScalarStrategy
+import org.babyfish.jimmer.pojo.StaticType
 import org.babyfish.jimmer.sql.*
 import javax.validation.constraints.NotBlank
 
-
 @Entity
+@StaticType(
+    alias = "default",
+    topLevelName = "AuthorInput",
+    autoScalarStrategy = AutoScalarStrategy.DECLARED
+)
 interface Author : BaseEntity {
 
     @Id

@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.example.graphql.dal.BookStoreRepository;
 import org.babyfish.jimmer.sql.example.graphql.entities.Book;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStore;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStoreProps;
-import org.babyfish.jimmer.sql.example.graphql.entities.input.BookStoreInput;
+import org.babyfish.jimmer.sql.example.graphql.entities.BookStoreInput;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.BatchMapping;
 import org.springframework.graphql.data.method.annotation.MutationMapping;

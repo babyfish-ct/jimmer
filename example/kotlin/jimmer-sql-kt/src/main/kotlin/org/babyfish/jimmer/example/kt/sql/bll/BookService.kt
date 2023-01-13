@@ -63,6 +63,21 @@ class BookService(
         bookRepository.save(input)
 
     /*
+     * Recommend
+     *
+     * The save command can save arbitrarily complex data structures,
+     * which is too powerful and should be sealed inside the service and not exposed.
+     *
+     * You should accept static Input DTO parameter, convert it to a
+     * dynamic data structure and save it.
+     * Unlike output DTOs, input DTOs don't have explosion issues.
+     */
+    @Transactional
+    @PutMapping("/book/withAuthors")
+    fun saveBook(@RequestBody input: CompositeBookInput): Book =
+        bookRepository.save(input)
+
+    /*
      * Not recommended.
      *
      * Since the save command can save arbitrarily complex data structure,

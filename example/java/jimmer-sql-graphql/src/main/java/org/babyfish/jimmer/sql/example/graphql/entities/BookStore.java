@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.example.graphql.entities;
 
+import org.babyfish.jimmer.pojo.AutoScalarStrategy;
+import org.babyfish.jimmer.pojo.StaticType;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.example.graphql.entities.common.BaseEntity;
 import org.springframework.lang.Nullable;
@@ -9,6 +11,11 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
+@StaticType(
+        alias = "default",
+        topLevelName = "BookStoreInput",
+        autoScalarStrategy = AutoScalarStrategy.DECLARED
+)
 public interface BookStore extends BaseEntity {
 
     @Id
