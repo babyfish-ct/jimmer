@@ -5,10 +5,7 @@ import org.babyfish.jimmer.spring.java.dal.BookRepository;
 import org.babyfish.jimmer.spring.java.model.*;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.springframework.data.domain.Page;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class BookService {
@@ -74,7 +71,7 @@ public class BookService {
     }
 
     @PutMapping("/book")
-    public Book save(BookInput input) {
+    public Book save(@RequestBody BookInput input) {
         return bookRepository.save(input);
     }
 

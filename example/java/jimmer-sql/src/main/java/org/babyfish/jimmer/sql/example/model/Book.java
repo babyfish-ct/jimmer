@@ -52,4 +52,7 @@ public interface Book extends TenantAware {
     @Static(alias = "default", name="authorIds", idOnly = true)
     @Static(alias = "composite", targetAlias = "declaredOnly")
     List<Author> authors();
+
+    @OneToMany(mappedBy = "book", orderedProps = @OrderedProp("index"))
+    List<Chapter> chapters();
 }
