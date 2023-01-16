@@ -57,19 +57,7 @@ class ParameterImpl implements Parameter {
             } else if (this.pathVariable != null) {
                 name = this.pathVariable;
             } else {
-                name = rawParameter.getName();
-                if (UNNAMED_PATTERN.matcher(name).matches()) {
-                    boolean bodyIsConflict = false;
-                    for (Parameter otherParameter : declaringOperation.getParameters()) {
-                        if (otherParameter != this && otherParameter.getName().equals("body")) {
-                            bodyIsConflict = true;
-                            break;
-                        }
-                    }
-                    if (!bodyIsConflict) {
-                        name = "body";
-                    }
-                }
+                name = "body";
             }
             this.name = name;
         }

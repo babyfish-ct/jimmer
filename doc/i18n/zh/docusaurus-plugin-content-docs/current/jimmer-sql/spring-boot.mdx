@@ -3,11 +3,411 @@ sidebar_position: 5
 title: 使用spring boot starter
 ---
 
-:::caution
-文档补充中。
+本文介绍经过spring-boot-starter和spring-data大幅简化后的用法，
 
-经过spring-boot-starter和spring-data大幅简化后的用法，
-请参考
-- B站视频https://www.bilibili.com/video/BV1wD4y1L7xr/
-- 本框架自带的example
-:::
+本文的重点
+
+- 服务端消灭DTO
+- 客户端重现DTO
+
+通过这样的组合，可以了解在REST开发模式下，Jimmer如何解决DTO爆炸带来的难题。
+
+你也可以请参考
+- B站视频：https://www.bilibili.com/video/BV1wD4y1L7xr/
+- 本框架自带的example: [jimmer-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql)或[jimmer-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt)
+
+## 引入依赖
+
+首先、建立一个空白的spring-boot项目，添加如下依赖
+
+<Tabs groupId="buildScript">
+<TabItem value="java" label="Java(Gradle)">
+
+```groovy title="build.gradle"
+depdencies {
+    
+    implementation 'org.babyfish.jimmer:jimmer-spring-boot-starter-:0.6.19'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.19'
+
+    runtimeOnly 'com.h2database:h2:2.1.212'
+}
+```
+
+</TabItem>
+<TabItem value="java-maven" label="Java(Maven)">
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.babyfish.jimmer</groupId>
+        <artifactId>jimmer-spring-boot-starter</artifactId>
+        <version>0.6.19</version>
+    </dependency>
+    <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>2.1.212</version>
+        <scope>runtime</scope>
+    </dependency>
+</dependencies>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.10.1</version>
+            <configuration>
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>org.babyfish.jimmer</groupId>
+                        <artifactId>jimmer-apt</artifactId>
+                        <version>0.6.19</version>
+                    </path>
+                </annotationProcessorPaths>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin(Gradle)">
+
+```kotlin title="build.gradle.kts"
+plugins {
+	id("com.google.devtools.ksp") version "1.7.10-1.0.6"
+
+    ...ommit other plugins...
+}
+depdencies {
+    
+    implementation("org.babyfish.jimmer:jimmer-spring-boot-starter:0.6.19")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.6.19")
+
+    runtimeOnly("com.h2database:h2:2.1.212")
+
+    ...ommit other dependency...
+}
+
+// 将生成的代码添加到编译目录中。
+// 没有这个配置，gradle命令仍然可以正常执行，
+// 但是, Intellij无法找到生成的源码。
+kotlin {
+    sourceSets.main {
+        kotlin.srcDir("build/generated/ksp/main/kotlin")
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin-maven" label="Kotlin(Maven)">
+
+```xml title="pom.xml"
+
+<dependencies>
+    <dependency>
+        <groupId>org.babyfish.jimmer</groupId>
+        <artifactId>jimmer-spring-boot-starter</artifactId>
+        <version>0.6.19</version>
+    </dependency>
+    <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>2.1.212</version>
+        <scope>runtime</scope>
+    </dependency>
+</dependencies>
+
+<build>
+    <sourceDirectory>src/main/kotlin</sourceDirectory>
+    <testSourceDirectory>src/test/kotlin</testSourceDirectory>
+
+    <plugins>
+        <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <version>${kotlin.version}</version>
+            <executions>
+                <execution>
+                    <id>compile</id>
+                    <phase>compile</phase>
+                    <goals>
+                        <goal>compile</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>test-compile</id>
+                    <phase>test-compile</phase>
+                    <goals>
+                        <goal>test-compile</goal>
+                    </goals>
+                </execution>
+            </executions>
+            <configuration>
+                <compilerPlugins>
+                    <compilerPlugin>ksp</compilerPlugin>
+                </compilerPlugins>
+            </configuration>
+            <dependencies>
+                <dependency>
+                    <groupId>com.dyescape</groupId>
+                    <artifactId>kotlin-maven-symbol-processing</artifactId>
+                    <version>1.3</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.babyfish.jimmer</groupId>
+                    <artifactId>jimmer-ksp</artifactId>
+                    <version>0.6.19</version>
+                </dependency>
+            </dependencies>
+        </plugin>
+    </plugins>
+</build>
+```
+
+</TabItem>
+</Tabs>
+
+## 定义实体
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStore.java"
+package org.babyfish.jimmer.sql.example.model;
+
+import javax.validation.constraints.Null;
+import java.util.List;
+
+import org.babyfish.jimmer.sql.Entity;
+import org.babyfish.jimmer.sql.Id;
+import org.babyfish.jimmer.sql.OneToMany;
+import org.babyfish.jimmer.sql.Key;
+
+@Entity
+public interface BookStore {
+
+    @Id
+    long id();
+
+    @Key
+    String name();
+
+    @Null
+    String website();
+
+    @OneToMany(mappedBy = "store")
+    List<Book> books();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStore.kt"
+package org.babyfish.jimmer.sql.example.model
+
+import org.babyfish.jimmer.sql.Entity
+import org.babyfish.jimmer.sql.Id
+import org.babyfish.jimmer.sql.OneToMany
+import org.babyfish.jimmer.sql.Key
+
+@Entity
+public interface BookStore {
+
+    @Id
+    val id: Long
+
+    @Key
+    val name: String
+
+    val website: String?
+
+    @OneToMany(mappedBy = "store")
+    val books: List<Book>
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+package org.babyfish.jimmer.sql.example.model;
+
+import javax.validation.constraints.Null;
+import java.math.BigDecimal;
+import java.util.List;
+
+import org.babyfish.jimmer.sql.Entity;
+import org.babyfish.jimmer.sql.JoinColumn;
+import org.babyfish.jimmer.sql.Key;
+import org.babyfish.jimmer.sql.ManyToOne;
+import org.babyfish.jimmer.sql.ManyToMany;
+
+@Entity
+public interface Book {
+
+    @Id
+    long id();
+
+    @Key
+    String name();
+
+    @Key
+    int edition();
+
+    BigDecimal price();
+
+    @Null
+    @ManyToOne(optional = true)
+    BookStore store();
+
+    @ManyToMany
+    @JoinTable(
+            name = "BOOK_AUTHOR_MAPPING",
+            joinColumnName = "BOOK_ID",
+            inverseJoinColumnName = "AUTHOR_ID"
+    )
+    List<Author> authors();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+package org.babyfish.jimmer.sql.example.model
+
+import java.math.BigDecimal
+import java.util.UUID
+
+import org.babyfish.jimmer.sql.Entity
+import org.babyfish.jimmer.sql.JoinColumn
+import org.babyfish.jimmer.sql.Key
+import org.babyfish.jimmer.sql.ManyToOne
+import org.babyfish.jimmer.sql.ManyToMany
+
+@Entity
+public interface Book {
+
+    @Id
+    val id: Long
+
+    @Key
+    val name: String
+
+    @Key
+    val edition: Int
+
+    val price: BigDecimal
+
+    @ManyToOne(optional = true)
+    val store: BookStore?
+
+    @ManyToMany
+    @JoinTable(
+            name = "BOOK_AUTHOR_MAPPING",
+            joinColumns = @JoinColumn(name = "BOOK_ID"),
+            inverseJoinColumns = @JoinColumn(name = "AUTHOR_ID")
+    )
+    val authors: List<Author>
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Author.java"
+package org.babyfish.jimmer.sql.example.model;
+
+import java.util.List;
+import org.babyfish.jimmer.sql.Entity;
+import org.babyfish.jimmer.sql.Key;
+import org.babyfish.jimmer.sql.ManyToMany;
+
+@Entity
+public interface Author {
+
+    @Id
+    long id();
+
+    @Key
+    String firstName();
+
+    @Key
+    String lastName();
+
+    Gender gender();
+
+    @ManyToMany(mappedBy = "authors")
+    List<Book> books();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java title="Author.kt"
+package org.babyfish.jimmer.sql.example.model
+
+import org.babyfish.jimmer.sql.Entity
+import org.babyfish.jimmer.sql.Key
+import org.babyfish.jimmer.sql.ManyToMany
+
+@Entity
+public interface Author {
+
+    @Id
+    val id: Long
+
+    @Key
+    val firstName: String
+
+    @Key
+    val lastName: String
+
+    val gender: Gender
+
+    @ManyToMany(mappedBy = "authors")
+    val books: List<Book>
+}
+```
+
+</TabItem>
+</Tabs>
+
+Author类中使用了一个Gender类型，这是一个枚举类型，其定义如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Gender.java"
+package org.babyfish.jimmer.sql.example.model;
+
+public enum Gender {
+    MALE,
+    FEMALE
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java title="Gender.kt"
+package org.babyfish.jimmer.sql.example.model
+
+enum class Gender {
+    MALE,
+    FEMALE
+}
+```
+
+</TabItem>
+</Tabs>
