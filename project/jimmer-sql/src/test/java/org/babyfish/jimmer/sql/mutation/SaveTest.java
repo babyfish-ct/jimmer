@@ -9,9 +9,10 @@ import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.Administrator;
-import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataDraft;
 import org.babyfish.jimmer.sql.runtime.DbNull;
+import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -786,36 +787,23 @@ public class SaveTest extends AbstractMutationTest {
 
     @Test
     public void testSaveNullParent() {
-        executeAndExpectResult(
-                getSqlClient()
-                        .getEntities()
-                        .saveCommand(
-                                AdministratorMetadataDraft.$.produce(metadata -> {
-                                    metadata.setName("am_4");
-                                    metadata.setAdministrator((Administrator) null);
-                                })
-                        ),
-                ctx -> {
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME " +
-                                        "from ADMINISTRATOR_METADATA as tb_1_ " +
-                                        "where tb_1_.NAME = ? for update"
-                        );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "update ADMINISTRATOR_METADATA " +
-                                        "set ADMINISTRATOR_ID = ? " +
-                                        "where ID = ?"
-                        );
-                    });
-                    ctx.rowCount(AffectedTable.of(AdministratorMetadata.class), 1);
-                    ctx.entity(it -> {
-                        it.original("{\"name\":\"am_4\",\"administrator\":null}");
-                        it.modified("{\"name\":\"am_4\",\"administrator\":null,\"id\":40}");
-                    });
-                }
+        ExecutionException ex = Assertions.assertThrows(ExecutionException.class, () -> {
+                jdbc(con -> {
+                    getSqlClient()
+                            .getEntities()
+                            .saveCommand(
+                                    AdministratorMetadataDraft.$.produce(metadata -> {
+                                        metadata.setName("am_4");
+                                        metadata.setAdministrator((Administrator) null);
+                                    })
+                            )
+                            .execute(con);
+                });
+        });
+        Assertions.assertEquals(
+                "The association \"org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata.administrator\" " +
+                        "of \"<root>\" cannot be null, because that association is `inputNotNull`",
+                ex.getMessage()
         );
     }
 }

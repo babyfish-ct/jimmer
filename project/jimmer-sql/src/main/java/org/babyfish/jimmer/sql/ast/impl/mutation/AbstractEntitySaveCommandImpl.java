@@ -190,6 +190,11 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                         "'" + prop + "' is not nullable so that it does not support 'on delete set null'"
                 );
             }
+            if (dissociateAction == DissociateAction.SET_NULL && prop.isInputNotNull()) {
+                throw new IllegalArgumentException(
+                        "'" + prop + "' is `inputNotNull` so that it does not support 'on delete set null'"
+                );
+            }
             dissociateActionMap.put(prop, dissociateAction);
             return this;
         }
@@ -208,33 +213,6 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             if (frozen) {
                 throw new IllegalStateException("The current configuration is frozen");
             }
-        }
-    }
-
-    private static class KeyPropCfgImpl<T extends Table<?>> implements KeyPropCfg<T> {
-
-        private Class<T> tableType;
-
-        private List<ImmutableProp> props = new ArrayList<>();
-
-        @SuppressWarnings("unchecked")
-        KeyPropCfgImpl(Class<T> tableType) {
-            this.tableType = tableType;
-        }
-
-        public List<ImmutableProp> getProps() {
-            return props;
-        }
-
-        @Override
-        public KeyPropCfg<T> add(ImmutableProp prop) {
-            props.add(prop);
-            return this;
-        }
-
-        @Override
-        public KeyPropCfg<T> add(TypedProp<?, ?> prop) {
-            return add(prop.unwrap());
         }
     }
 }

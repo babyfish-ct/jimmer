@@ -69,7 +69,12 @@ public abstract class AssociationProp implements ImmutableProp {
     public boolean isNullable() {
         return false;
     }
-    
+
+    @Override
+    public boolean isInputNotNull() {
+        return false;
+    }
+
     @Override
     public Annotation getAssociationAnnotation() {
         return null;

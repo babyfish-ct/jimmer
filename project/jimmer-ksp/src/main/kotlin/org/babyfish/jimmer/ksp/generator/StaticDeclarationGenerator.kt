@@ -94,6 +94,9 @@ class StaticDeclarationGenerator private constructor(
     internal val typeBuilder: TypeSpec.Builder
         get() = _typeBuilder ?: error("Type builder is not ready")
 
+    internal val isInput: Boolean
+        get() = parent?.isInput ?: declaration.topLevelName.endsWith("Input")
+
     fun generate(allFiles: List<KSFile>) {
         if (codeGenerator != null && file !== null) {
             codeGenerator.createNewFile(
@@ -138,7 +141,7 @@ class StaticDeclarationGenerator private constructor(
 
     private fun addMembers(allFiles: List<KSFile>) {
 
-        if (declaration.topLevelName.endsWith("Input")) {
+        if (isInput) {
             typeBuilder.addSuperinterface(
                 INPUT_CLASS_NAME.parameterizedBy(
                     immutableType.className
@@ -201,7 +204,7 @@ class StaticDeclarationGenerator private constructor(
                                 val target = prop.target
                                 when {
                                     target !== null ->
-                                        if (prop.isNullable) {
+                                        if (prop.isNullable(isInput)) {
                                             add(
                                                 "base.takeIf { (it as %T).__isLoaded(%L) }?.%N?.%N { %T(it) }",
                                                 IMMUTABLE_SPI_CLASS_NAME,
@@ -212,14 +215,15 @@ class StaticDeclarationGenerator private constructor(
                                             )
                                         } else {
                                             add(
-                                                "base.%N.%N { %T(it) }",
+                                                "base.%N%L%N { %T(it) }",
                                                 prop.immutableProp.name,
+                                                if (prop.isNullable(false)) "?." else ".",
                                                 if (prop.immutableProp.isList) "map" else "let",
                                                 propElementName(prop)
                                             )
                                         }
                                     prop.isIdOnly ->
-                                        if (prop.isNullable) {
+                                        if (prop.isNullable(isInput)) {
                                             add(
                                                 "base.takeIf { (it as %T).__isLoaded(%L) }?.%N?.%L",
                                                 IMMUTABLE_SPI_CLASS_NAME,
@@ -233,8 +237,9 @@ class StaticDeclarationGenerator private constructor(
                                             )
                                         } else {
                                             add(
-                                                "base.%N.%L",
+                                                "base.%N%L%L",
                                                 prop.immutableProp.name,
+                                                if (prop.isNullable(false)) "?." else ".",
                                                 if (prop.immutableProp.isList) {
                                                     "map{ it.${prop.immutableProp.targetType!!.idProp!!.name} }"
                                                 } else {
@@ -243,7 +248,7 @@ class StaticDeclarationGenerator private constructor(
                                             )
                                         }
                                     else ->
-                                        if (prop.isNullable) {
+                                        if (prop.isNullable(isInput)) {
                                             add(
                                                 "base.takeIf { (it as %T).__isLoaded(%L) }?.%N",
                                                 IMMUTABLE_SPI_CLASS_NAME,
@@ -252,10 +257,14 @@ class StaticDeclarationGenerator private constructor(
                                             )
                                         } else {
                                             add(
-                                                "base.%N",
+                                                "base%L%N",
+                                                if (prop.isNullable(false)) "?." else ".",
                                                 prop.immutableProp.name
                                             )
                                         }
+                                }
+                                if (!prop.isNullable(true) && prop.isNullable(false)) {
+                                    add(" ?: error(%S)", "\"base.${prop.immutableProp.name}\" cannot be null")
                                 }
                             }
                             .unindent()
@@ -272,7 +281,7 @@ class StaticDeclarationGenerator private constructor(
                 .builder("toEntity")
                 .returns(immutableType.className)
                 .apply {
-                    if (declaration.topLevelName.endsWith("Input")) {
+                    if (isInput) {
                         addModifiers(KModifier.OVERRIDE)
                     }
                 }
@@ -311,7 +320,7 @@ class StaticDeclarationGenerator private constructor(
                         }
                     )
                     for (prop in props) {
-                        if (prop.isNullable && !prop.immutableProp.isNullable) {
+                        if (prop.isNullable(isInput) && !prop.immutableProp.isNullable) {
                             beginControlFlow("if (that.%N !== null)", prop.name)
                             addAssignment(prop)
                             endControlFlow()
@@ -334,14 +343,14 @@ class StaticDeclarationGenerator private constructor(
                         "this.%N = that.%N%Lmap { it.toEntity() }",
                         prop.immutableProp.name,
                         prop.name,
-                        if (prop.isNullable) "?." else "."
+                        if (prop.isNullable(isInput)) "?." else "."
                     )
                 } else {
                     addStatement(
                         "this.%N = that.%N%LtoEntity()",
                         prop.immutableProp.name,
                         prop.name,
-                        if (prop.isNullable) "?." else "."
+                        if (prop.isNullable(isInput)) "?." else "."
                     )
                 }
             prop.isIdOnly -> {
@@ -349,7 +358,7 @@ class StaticDeclarationGenerator private constructor(
                     "this.%N = that.%N%L%N",
                     prop.immutableProp.name,
                     prop.name,
-                    if (prop.isNullable) "?." else ".",
+                    if (prop.isNullable(isInput)) "?." else ".",
                     if (prop.immutableProp.isNullable) "let" else "map"
                 )
                 beginControlFlow(
@@ -374,7 +383,7 @@ class StaticDeclarationGenerator private constructor(
         } else {
             elementTypeName
         }.let {
-            if (prop.isNullable) {
+            if (prop.isNullable(isInput)) {
                 it.copy(nullable = true)
             } else {
                 it

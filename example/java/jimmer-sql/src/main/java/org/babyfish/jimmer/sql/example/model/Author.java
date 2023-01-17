@@ -1,14 +1,11 @@
 package org.babyfish.jimmer.sql.example.model;
 
-import org.babyfish.jimmer.pojo.AutoScalarStrategy;
-import org.babyfish.jimmer.pojo.StaticType;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.example.model.common.BaseEntity;
 
 import java.util.List;
 
 @Entity
-@StaticType(alias = "declaredOnly", autoScalarStrategy = AutoScalarStrategy.DECLARED)
 public interface Author extends BaseEntity {
 
     @Id

@@ -8,6 +8,7 @@ import org.babyfish.jimmer.spring.cache.RedisValueBinder;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.cache.chain.*;
+import org.babyfish.jimmer.sql.example.graphql.entities.ChapterProps;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -47,6 +47,11 @@ public class BookService {
         return bookRepository.graphql().load(BookProps.AUTHORS, books);
     }
 
+    @BatchMapping
+    public Map<Book, List<Chapter>> chapters(List<Book> books) {
+        return bookRepository.graphql().load(BookProps.CHAPTERS, books);
+    }
+
     // --- Mutation ---
 
     @MutationMapping

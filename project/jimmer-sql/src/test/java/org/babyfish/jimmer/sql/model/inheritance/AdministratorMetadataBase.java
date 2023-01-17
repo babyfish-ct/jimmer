@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.model.inheritance;
 
+import org.babyfish.jimmer.pojo.Static;
 import org.babyfish.jimmer.sql.*;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,8 +11,10 @@ public interface AdministratorMetadataBase extends NamedEntity {
 
     String getWebsite();
 
-    @OneToOne
+    @OneToOne(inputNotNull = true)
     @Nullable
     @OnDissociate(DissociateAction.DELETE)
+    @Static(alias = "default", name="administratorId", idOnly = true)
+    @Static(alias = "composite")
     Administrator getAdministrator();
 }

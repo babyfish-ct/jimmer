@@ -60,6 +60,8 @@ public class ImmutableProp {
 
     private final boolean isNullable;
 
+    private final boolean isInputNotNull;
+
     private final Map<ClassName, String> validationMessageMap;
 
     private final Map<String, StaticProp> staticPropMap;
@@ -208,6 +210,31 @@ public class ImmutableProp {
             associationAnnotation = executableElement.getAnnotation(descriptor.getType().getAnnotationType());
         }
         isNullable = descriptor.isNullable();
+        ManyToOne manyToOne = getAnnotation(ManyToOne.class);
+        OneToOne oneToOne = getAnnotation(OneToOne.class);
+        if (manyToOne != null || oneToOne != null) {
+            isInputNotNull = manyToOne != null ? manyToOne.inputNotNull() : oneToOne.inputNotNull();
+            if (isInputNotNull && oneToOne != null && !oneToOne.mappedBy().isEmpty()) {
+                throw new MetaException(
+                        "Illegal property \"" +
+                                this +
+                                "\", the `inputNotNull` of annotation @" +
+                                (manyToOne != null ? "ManyToOne" : "OneToOne") +
+                                " is true but the `mappedBy` of that annotation is specified"
+                );
+            }
+            if (isInputNotNull && !isNullable) {
+                throw new MetaException(
+                        "Illegal property \"" +
+                                this +
+                                "\", the `inputNotNull` of annotation @" +
+                                (manyToOne != null ? "ManyToOne" : "OneToOne") +
+                                " is true but the property is not nullable"
+                );
+            }
+        } else {
+            isInputNotNull = false;
+        }
 
         elementTypeName = TypeName.get(elementType);
         if (isList) {
@@ -333,6 +360,10 @@ public class ImmutableProp {
 
     public boolean isNullable() {
         return isNullable;
+    }
+
+    public boolean isInputNotNull() {
+        return isInputNotNull;
     }
 
     public boolean isLoadedStateRequired() {

@@ -139,7 +139,17 @@ class Saver {
                 }
                 Object associatedValue = currentDraftSpi.__get(prop.getId());
                 Set<Object> associatedObjectIds = new LinkedHashSet<>();
-                if (associatedValue != null) {
+                if (associatedValue == null) {
+                    if (prop.isInputNotNull()) {
+                        throw new ExecutionException(
+                                "The association \"" +
+                                        prop +
+                                        "\" of \"" +
+                                        path +
+                                        "\" cannot be null, because that association is `inputNotNull`"
+                        );
+                    }
+                } else {
                     List<DraftSpi> associatedObjects =
                             associatedValue instanceof List<?> ?
                                     (List<DraftSpi>) associatedValue :

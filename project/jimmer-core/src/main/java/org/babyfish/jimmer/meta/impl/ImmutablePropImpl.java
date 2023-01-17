@@ -34,6 +34,8 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     private final boolean nullable;
 
+    private final boolean inputNotNull;
+
     private final KProperty1<?, ?> kotlinProp;
 
     private final Method javaGetter;
@@ -136,6 +138,18 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
             associationAnnotation = null;
         }
 
+        ManyToOne manyToOne = getAnnotation(ManyToOne.class);
+        OneToOne oneToOne = getAnnotation(OneToOne.class);
+        inputNotNull = manyToOne != null ?
+                manyToOne.inputNotNull() :
+                oneToOne != null && oneToOne.inputNotNull();
+        if (isInputNotNull() && !nullable) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            this +
+                            "\", it `inputNotNull` can only be specified for nullable property"
+            );
+        }
         OnDissociate onDissociate = getAnnotation(OnDissociate.class);
         if (onDissociate != null) {
             if (category != ImmutablePropCategory.REFERENCE) {
@@ -143,6 +157,13 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
                         "Illegal property \"" +
                                 this +
                                 "\", only reference property can be decorated by @OnDissociate"
+                );
+            }
+            if (oneToOne != null && !oneToOne.mappedBy().isEmpty()) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                this +
+                                "\", the one-to-one property with `mappedBy` cannot be decorated by @OnDissociate"
                 );
             }
             dissociateAction = onDissociate.value();
@@ -171,6 +192,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         this.category = base.category;
         this.elementClass = base.elementClass;
         this.nullable = base.nullable;
+        this.inputNotNull = base.inputNotNull;
         this.kotlinProp = base.kotlinProp;
         this.javaGetter = base.javaGetter;
         this.associationAnnotation = base.associationAnnotation;
@@ -256,6 +278,11 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     @Override
     public boolean isNullable() {
         return nullable;
+    }
+
+    @Override
+    public boolean isInputNotNull() {
+        return inputNotNull;
     }
 
     @Override
