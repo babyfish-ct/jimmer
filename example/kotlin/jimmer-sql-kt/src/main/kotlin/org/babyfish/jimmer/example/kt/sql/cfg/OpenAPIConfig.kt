@@ -15,7 +15,7 @@ class OpenAPIConfig {
     @Bean
     fun openAPI(): OpenAPI =
         OpenAPI()
-            .info(Info().title("demo:jimmer-sql-kt").version("0.4.10"))
+            .info(Info().title("demo:jimmer-sql-kt").version("0.6.21"))
             .components(
                 Components()
                     .addSecuritySchemes(
