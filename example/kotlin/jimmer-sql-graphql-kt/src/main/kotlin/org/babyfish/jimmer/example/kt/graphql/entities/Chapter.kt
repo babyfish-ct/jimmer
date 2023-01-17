@@ -14,7 +14,7 @@ interface Chapter : BaseEntity {
     val id: Long
 
     @Key
-    @ManyToOne
+    @ManyToOne(inputNotNull = true)
     @OnDissociate(DissociateAction.DELETE)
     val book: Book?
 

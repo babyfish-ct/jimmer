@@ -4,8 +4,7 @@ import org.babyfish.jimmer.pojo.AutoScalarStrategy;
 import org.babyfish.jimmer.pojo.StaticType;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.example.graphql.entities.common.BaseEntity;
-
-import javax.validation.constraints.Null;
+import org.jetbrains.annotations.Nullable;
 
 @Entity
 @StaticType(alias = "forBookInput", autoScalarStrategy = AutoScalarStrategy.DECLARED)
@@ -22,8 +21,8 @@ public interface Chapter extends BaseEntity {
      * (the demo shows how to use global filter).
      */
     @Key
-    @Null
-    @ManyToOne
+    @Nullable
+    @ManyToOne(inputNotNull = true)
     @OnDissociate(DissociateAction.DELETE)
     Book book();
 

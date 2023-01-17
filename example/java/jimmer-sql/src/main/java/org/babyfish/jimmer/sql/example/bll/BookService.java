@@ -100,7 +100,7 @@ public class BookService {
      * dynamic data structure and save it.
      * Unlike output DTOs, input DTOs don't have explosion issues.
      */
-    @PutMapping("/book/withAuthors")
+    @PutMapping("/book/withChapters")
     public Book saveBook(@RequestBody CompositeBookInput input) {
         return bookRepository.save(input);
     }

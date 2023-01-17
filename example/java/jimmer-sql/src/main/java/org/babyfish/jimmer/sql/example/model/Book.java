@@ -5,8 +5,8 @@ import org.babyfish.jimmer.pojo.Static;
 import org.babyfish.jimmer.pojo.StaticType;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.example.model.common.TenantAware;
+import org.jetbrains.annotations.Nullable;
 
-import javax.validation.constraints.Null;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -35,7 +35,7 @@ public interface Book extends TenantAware {
 
     BigDecimal price();
 
-    @Null // Null property, Java API requires this annotation, but kotlin API does not
+    @Nullable // Null property, Java API requires this annotation, but kotlin API does not
     @ManyToOne
     @Static(name = "storeId", idOnly = true)
     BookStore store();

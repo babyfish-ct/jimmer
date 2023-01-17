@@ -73,7 +73,7 @@ class BookService(
      * Unlike output DTOs, input DTOs don't have explosion issues.
      */
     @Transactional
-    @PutMapping("/book/withAuthors")
+    @PutMapping("/book/withChapters")
     fun saveBook(@RequestBody input: CompositeBookInput): Book =
         bookRepository.save(input)
 
