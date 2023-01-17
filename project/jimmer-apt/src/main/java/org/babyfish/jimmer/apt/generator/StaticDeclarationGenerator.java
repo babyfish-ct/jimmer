@@ -18,10 +18,7 @@ import javax.validation.constraints.Null;
 import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class StaticDeclarationGenerator {
@@ -131,7 +128,7 @@ public class StaticDeclarationGenerator {
         typeBuilder = TypeSpec
                 .classBuilder(simpleName)
                 .addModifiers(Modifier.PUBLIC);
-        if (simpleName.endsWith("Input")) {
+        if (isInput()) {
             typeBuilder.addSuperinterface(
                     ParameterizedTypeName.get(
                             Constants.INPUT_CLASS_NAME,
@@ -205,7 +202,7 @@ public class StaticDeclarationGenerator {
                         prop.getName()
                 )
                 .addModifiers(Modifier.PRIVATE, Modifier.FINAL);
-        if (prop.isNullable()) {
+        if (prop.isNullable(isInput())) {
             builder.addAnnotation(Nullable.class).addAnnotation(Null.class);
         } else {
             builder.addAnnotation(NotNull.class).addAnnotation(javax.validation.constraints.NotNull.class);
@@ -254,7 +251,7 @@ public class StaticDeclarationGenerator {
                     AnnotationSpec
                             .builder(Constants.JSON_PROPERTY_CLASS_NAME)
                             .addMember("value", "$S", prop.getName());
-            if (prop.isNullable()) {
+            if (prop.isNullable(isInput())) {
                 parameterBuilder.addAnnotation(Nullable.class).addAnnotation(Null.class);
             } else {
                 parameterBuilder.addAnnotation(NotNull.class).addAnnotation(javax.validation.constraints.NotNull.class);
@@ -264,7 +261,7 @@ public class StaticDeclarationGenerator {
             builder.addParameter(parameterBuilder.build());
         }
         for (StaticProp prop : props) {
-            if (prop.isNullable() || prop.getImmutableProp().getTypeName().isPrimitive()) {
+            if (prop.isNullable(isInput()) || prop.getImmutableProp().getTypeName().isPrimitive()) {
                 builder.addStatement("this.$L = $L", prop.getName(), prop.getName());
             } else {
                 builder.addStatement(
@@ -292,7 +289,7 @@ public class StaticDeclarationGenerator {
         for (StaticProp prop : props) {
             if (prop.isIdOnly()) {
                 if (prop.getImmutableProp().isList()) {
-                    if (prop.isNullable()) {
+                    if (prop.isNullable(isInput())) {
                         builder.addStatement(
                                 "this.$L = spi.__isLoaded($L) ? base.$L().stream().map($T::$L).collect($T.toList()) : $L",
                                 prop.getName(),
@@ -302,6 +299,17 @@ public class StaticDeclarationGenerator {
                                 prop.getImmutableProp().getTargetType().getIdProp().getName(),
                                 Collectors.class,
                                 prop.getDefaultValue()
+                        );
+                    } else if (prop.isNullable(false)) {
+                        builder.addStatement(
+                                "this.$L = $T.requireNonNull(base.$L(), $S).stream().map($T::$L).collect($T.toList())",
+                                Objects.class,
+                                prop.getName(),
+                                "\"`base." + prop.getImmutableProp().getGetterName() + "()` cannot be null\"",
+                                prop.getImmutableProp().getGetterName(),
+                                prop.getImmutableProp().getTargetType().getClassName(),
+                                prop.getImmutableProp().getTargetType().getIdProp().getName(),
+                                Collectors.class
                         );
                     } else {
                         builder.addStatement(
@@ -314,33 +322,51 @@ public class StaticDeclarationGenerator {
                         );
                     }
                 } else {
-                    if (prop.isNullable()) {
+                    if (prop.isNullable(isInput())) {
                         builder.addStatement(
-                                "$T _tmpFor$L = spi.__isLoaded($L) ? base.$L() : null",
+                                "$T _tmp_$L = spi.__isLoaded($L) ? base.$L() : null",
                                 prop.getImmutableProp().getTypeName(),
-                                prop.getName(),
+                                prop.getImmutableProp().getName(),
                                 prop.getImmutableProp().getId(),
                                 prop.getImmutableProp().getGetterName()
                         );
+                    } else if (prop.isNullable(false)) {
+                        builder.addStatement(
+                                "$T _tmp_$L = $T.requireNonNull(base.$L(), $S)",
+                                prop.getImmutableProp().getTypeName(),
+                                prop.getImmutableProp().getName(),
+                                Objects.class,
+                                prop.getImmutableProp().getGetterName(),
+                                "\"`base." + prop.getImmutableProp().getGetterName() + "()` cannot be null\""
+                        );
                     } else {
                         builder.addStatement(
-                                "$T _tmpFor$L = base.$L()",
+                                "$T _tmp_$L = base.$L()",
                                 prop.getImmutableProp().getTypeName(),
-                                prop.getName(),
+                                prop.getImmutableProp().getName(),
                                 prop.getImmutableProp().getGetterName()
                         );
                     }
-                    builder.addStatement(
-                            "this.$L = _tmpFor$L != null ? _tmpFor$L.$L() : null",
-                            prop.getName(),
-                            prop.getName(),
-                            prop.getName(),
-                            prop.getImmutableProp().getTargetType().getIdProp().getGetterName()
-                    );
+                    if (prop.isNullable(isInput())) {
+                        builder.addStatement(
+                                "this.$L = _tmp_$L != null ? _tmp_$L.$L() : null",
+                                prop.getName(),
+                                prop.getImmutableProp().getName(),
+                                prop.getImmutableProp().getName(),
+                                prop.getImmutableProp().getTargetType().getIdProp().getGetterName()
+                        );
+                    } else {
+                        builder.addStatement(
+                                "this.$L = _tmp_$L.$L()",
+                                prop.getName(),
+                                prop.getImmutableProp().getName(),
+                                prop.getImmutableProp().getTargetType().getIdProp().getGetterName()
+                        );
+                    }
                 }
             } else if (prop.getTarget() != null) {
                 if (prop.getImmutableProp().isList()) {
-                    if (prop.isNullable()) {
+                    if (prop.isNullable(isInput())) {
                         builder.addStatement(
                                 "this.$L = spi.__isLoaded($L) ? base.$L().stream().map($T::new).collect($T.toList()) : $L",
                                 prop.getName(),
@@ -349,6 +375,16 @@ public class StaticDeclarationGenerator {
                                 getPropElementName(prop),
                                 Collectors.class,
                                 prop.getDefaultValue()
+                        );
+                    } else if (prop.isNullable(false)) {
+                        builder.addStatement(
+                                "this.$L = $T.requireNonNull(base.$L(), $S).stream().map($T::new).collect($T.toList())",
+                                prop.getName(),
+                                Objects.class,
+                                prop.getImmutableProp().getGetterName(),
+                                "\"`base." + prop.getImmutableProp().getGetterName() + "()` cannot be null\"",
+                                getPropElementName(prop),
+                                Collectors.class
                         );
                     } else {
                         builder.addStatement(
@@ -360,32 +396,50 @@ public class StaticDeclarationGenerator {
                         );
                     }
                 } else {
-                    if (prop.isNullable()) {
+                    if (prop.isNullable(isInput())) {
                         builder.addStatement(
-                                "$T _tmpFor$L = spi.__isLoaded($L) ? base.$L() : null",
+                                "$T _tmp_$L = spi.__isLoaded($L) ? base.$L() : null",
                                 prop.getImmutableProp().getTypeName(),
-                                prop.getName(),
+                                prop.getImmutableProp().getName(),
                                 prop.getImmutableProp().getId(),
                                 prop.getImmutableProp().getGetterName()
                         );
+                    } else if (prop.isNullable(false)) {
+                        builder.addStatement(
+                                "$T _tmp_$L = $T.requireNonNull(base.$L(), $L)",
+                                prop.getImmutableProp().getTypeName(),
+                                prop.getImmutableProp().getName(),
+                                Objects.class,
+                                prop.getImmutableProp().getGetterName(),
+                                "\"`base." + prop.getImmutableProp().getGetterName() + "()` cannot be null\""
+                        );
                     } else {
                         builder.addStatement(
-                                "$T _tmpFor$L = base.$L()",
+                                "$T _tmp_$L = base.$L()",
                                 prop.getImmutableProp().getTypeName(),
-                                prop.getName(),
+                                prop.getImmutableProp().getName(),
                                 prop.getImmutableProp().getGetterName()
                         );
                     }
-                    builder.addStatement(
-                            "this.$L = _tmpFor$L != null ? new $T(_tmpFor$L) : null",
-                            prop.getName(),
-                            prop.getName(),
-                            getPropElementName(prop),
-                            prop.getName()
-                    );
+                    if (prop.isNullable(isInput())) {
+                        builder.addStatement(
+                                "this.$L = _tmp_$L != null ? new $T(_tmp_$L) : null",
+                                prop.getName(),
+                                prop.getImmutableProp().getName(),
+                                getPropElementName(prop),
+                                prop.getImmutableProp().getName()
+                        );
+                    } else {
+                        builder.addStatement(
+                                "this.$L = new $T(_tmp_$L)",
+                                prop.getName(),
+                                getPropElementName(prop),
+                                prop.getImmutableProp().getName()
+                        );
+                    }
                 }
             } else {
-                if (prop.isNullable()) {
+                if (prop.isNullable(isInput())) {
                     builder.addStatement(
                             "this.$L = spi.__isLoaded($L) ? base.$L() : $L",
                             prop.getName(),
@@ -410,7 +464,7 @@ public class StaticDeclarationGenerator {
                 .methodBuilder(prop.getGetterName())
                 .addModifiers(Modifier.PUBLIC)
                 .returns(getPropTypeName(prop));
-        if (prop.isNullable()) {
+        if (prop.isNullable(isInput())) {
             builder.addAnnotation(Nullable.class).addAnnotation(Null.class);
         } else {
             builder.addAnnotation(NotNull.class).addAnnotation(javax.validation.constraints.NotNull.class);
@@ -430,7 +484,7 @@ public class StaticDeclarationGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .returns(declaration.getImmutableType().getClassName())
                 .addStatement("return toEntity(null)");
-        if (getSimpleName().endsWith("Input")) {
+        if (isInput()) {
             builder.addAnnotation(Override.class);
         }
         typeBuilder.addMethod(builder.build());
@@ -456,7 +510,7 @@ public class StaticDeclarationGenerator {
                 "$"
         );
         for (StaticProp prop : props) {
-            if (prop.isNullable() && (prop.getImmutableProp().isAssociation(false) || !prop.getImmutableProp().isNullable())) {
+            if (prop.isNullable(isInput()) && (prop.getImmutableProp().isAssociation(false) || !prop.getImmutableProp().isNullable())) {
                 builder.beginControlFlow("if ($L != null)", prop.getName());
                 addAssignment(prop, builder);
                 builder.endControlFlow();
@@ -575,10 +629,14 @@ public class StaticDeclarationGenerator {
         TypeName typeName = prop.isIdOnly() ?
                 prop.getImmutableProp().getTargetType().getIdProp().getTypeName() :
                 prop.getImmutableProp().getTypeName();
-        if (typeName.isPrimitive() && prop.isNullable()) {
+        if (typeName.isPrimitive() && prop.isNullable(isInput())) {
             return typeName.box();
         }
         return typeName;
+    }
+
+    public boolean isInput() {
+        return parent != null ? parent.isInput() : declaration.getTopLevelName().endsWith("Input");
     }
 
     private void collectNames(List<String> list) {

@@ -13,7 +13,7 @@ create table book_store(
     modified_time timestamp not null
 );
 alter table book_store
-    add constraint uq_book_store
+    add constraint business_key_book_store
         unique(name)
 ;
 
@@ -28,7 +28,7 @@ create table book(
     modified_time timestamp not null
 );
 alter table book
-    add constraint uq_book
+    add constraint business_key_book
         unique(name, edition)
 ;
 alter table book
@@ -46,7 +46,7 @@ create table author(
     modified_time timestamp not null
 );
 alter table author
-    add constraint uq_author
+    add constraint business_key_author
         unique(first_name, last_name)
 ;
 alter table author
@@ -75,22 +75,16 @@ alter table book_author_mapping
 ;
 
 create table chapter(
-    id bigint not null,
+    id identity(400, 1) not null,
     book_id bigint not null,
-    index int not null,
+    chapter_no int not null,
     title varchar(100) not null,
     created_time timestamp not null,
     modified_time timestamp not null
 );
-
-alter table chapter
-    add constraint pk_chapter
-        primary key(id);
-
 alter table chapter
     add constraint business_key_chapter
-        unique(book_id, index);
-
+        unique(book_id, chapter_no);
 alter table chapter
     add constraint fk_chapter_book
         foreign key(book_id)
@@ -149,7 +143,7 @@ insert into book_author_mapping(book_id, author_id) values
     (12, 5)
 ;
 
-insert into chapter(id, book_id, index, title, created_time, modified_time) values
+insert into chapter(id, book_id, chapter_no, title, created_time, modified_time) values
     (1, 1, 0, 'Preface', current_timestamp(), current_timestamp()),
     (2, 1, 1, 'Welcome to GraphQL', current_timestamp(), current_timestamp()),
     (3, 1, 2, 'Graph Theory', current_timestamp(), current_timestamp()),
@@ -284,7 +278,7 @@ insert into chapter(id, book_id, index, title, created_time, modified_time) valu
     (328, 12, 7, 'Implementing mutations', current_timestamp(), current_timestamp()),
     (329, 12, 8, 'Using GraphQL APIs without a client library', current_timestamp(), current_timestamp()),
     (330, 12, 9, 'Using GraphQL APIs with Apollo client', current_timestamp(), current_timestamp())
-    ;
+;
 
 create table tree_node(
     node_id identity(100, 1) not null,
@@ -294,7 +288,7 @@ create table tree_node(
     modified_time timestamp not null
 );
 alter table tree_node
-    add constraint uq_tree_node
+    add constraint business_key_tree_node
         unique(parent_id, name);
 alter table tree_node
     add constraint fk_tree_node__parent

@@ -84,7 +84,7 @@ public class StaticDeclarationBuilderGenerator {
                 .addParameter(
                         ParameterSpec
                                 .builder(parent.getPropTypeName(prop), prop.getName())
-                                .addAnnotation(prop.isNullable() ? Nullable.class : NotNull.class)
+                                .addAnnotation(prop.isNullable(parent.isInput()) ? Nullable.class : NotNull.class)
                                 .build()
                 )
                 .addStatement("this.$L = $L", prop.getName(), prop.getName())
@@ -99,7 +99,15 @@ public class StaticDeclarationBuilderGenerator {
                 .returns(parent.getClassName())
                 .addAnnotation(NotNull.class);
         for (StaticProp prop : props) {
-            if (!prop.isNullable() && !prop.getImmutableProp().getTypeName().isPrimitive()) {
+            if (!prop.isNullable(parent.isInput()) && !prop.isIdOnly() && !prop.getImmutableProp().getTypeName().isPrimitive()) {
+                builder
+                        .beginControlFlow("if ($L == null)", prop.getName())
+                        .addStatement(
+                                "throw new IllegalArgumentException($S)",
+                                "Property \"" + prop.getName() + "\" has not been set"
+                        )
+                        .endControlFlow();
+            } else if (!prop.isNullable(parent.isInput()) && prop.isIdOnly() && !prop.getImmutableProp().getTargetType().getIdProp().getTypeName().isPrimitive()) {
                 builder
                         .beginControlFlow("if ($L == null)", prop.getName())
                         .addStatement(

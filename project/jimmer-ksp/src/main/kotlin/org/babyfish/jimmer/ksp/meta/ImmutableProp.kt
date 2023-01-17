@@ -98,6 +98,31 @@ class ImmutableProp(
         isNullable = descriptor.isNullable
     }
 
+    val isInputNotNull: Boolean =
+        (annotation(ManyToOne::class) ?: annotation(OneToOne::class)) ?.let {
+            val inputNotNull = it["inputNotNull"] ?: false
+            if (inputNotNull && it.get<String>("mappedBy")?.takeIf { v -> v.isNotEmpty() } !== null) {
+                throw MetaException(
+                    "Illegal property \"" +
+                        this +
+                        "\", the `inputNotNull` of annotation @${
+                            it.annotationType.resolve().declaration.qualifiedName
+                        } is true but the `mappedBy` of the annotation is specified " +
+                        ""
+                )
+            }
+            if (inputNotNull && !isNullable) {
+                throw MetaException(
+                    "Illegal property \"" +
+                        this +
+                        "\", the `inputNotNull` of annotation @${
+                            it.annotationType.resolve().declaration.qualifiedName
+                        } is true but the property is not nullable"
+                )
+            }
+            inputNotNull
+        } ?: false
+
     private val isAssociation: Boolean =
         (targetDeclaration.classKind === ClassKind.INTERFACE)
             ?.takeIf {

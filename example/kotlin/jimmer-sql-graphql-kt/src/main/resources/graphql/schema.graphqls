@@ -39,6 +39,7 @@ type Book implements CommonEntity {
     price: BigDecimal!
     store: BookStore
     authors: [Author!]!
+    chapters: [Chapter!]!
     createdTime: LocalDateTime!
     modifiedTime: LocalDateTime!
 }
@@ -49,6 +50,14 @@ type Author implements CommonEntity {
     lastName: String!
     gender: Gender!
     books(name: String): [Book!]!
+    createdTime: LocalDateTime!
+    modifiedTime: LocalDateTime!
+}
+
+type Chapter implements CommonEntity {
+    id: Long!
+    index: Int!
+    title: String!
     createdTime: LocalDateTime!
     modifiedTime: LocalDateTime!
 }
@@ -66,6 +75,7 @@ input BookInput {
     price: BigDecimal!
     storeId: Long
     authorIds: [Long!]!
+    chapters: [BookInput_Chapter!]!
 }
 
 input AuthorInput {
@@ -73,6 +83,12 @@ input AuthorInput {
     firstName: String!
     lastName: String!
     gender: Gender!
+}
+
+input BookInput_Chapter {
+    id: Long
+    index: Int!
+    title: String!
 }
 
 enum Gender { MALE, FEMALE }

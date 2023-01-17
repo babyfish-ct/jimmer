@@ -167,6 +167,11 @@ public class DeleteCommandImpl implements DeleteCommand {
                         "'" + prop + "' is not nullable so that it does not support 'on delete set null'"
                 );
             }
+            if (dissociateAction == DissociateAction.SET_NULL && prop.isInputNotNull()) {
+                throw new IllegalArgumentException(
+                        "'" + prop + "' is `inputNotNull` so that it does not support 'on delete set null'"
+                );
+            }
             dissociateActionMap.put(prop, dissociateAction);
             return this;
         }

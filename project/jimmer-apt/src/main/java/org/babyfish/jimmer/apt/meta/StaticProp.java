@@ -100,8 +100,14 @@ public class StaticProp {
         return target;
     }
 
-    public boolean isNullable() {
-        return optional || immutableProp.isNullable();
+    public boolean isNullable(boolean input) {
+        if (optional) {
+            return true;
+        }
+        if (immutableProp.isNullable()) {
+            return input ? !immutableProp.isInputNotNull() : true;
+        }
+        return false;
     }
 
     public StaticProp target(StaticDeclaration target) {

@@ -66,6 +66,10 @@ public class BookService {
                                     .allScalarFields()
                                     .avgPrice()
                     )
+                    .chapters(
+                            ChapterFetcher.$
+                                    .allScalarFields()
+                    )
                     .authors(
                             AuthorFetcher.$
                                     .allScalarFields()

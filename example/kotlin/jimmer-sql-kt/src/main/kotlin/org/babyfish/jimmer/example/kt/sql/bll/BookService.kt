@@ -98,13 +98,18 @@ class BookService(
 
         @JvmStatic
         private val COMPLEX_FETCHER = newFetcher(Book::class).by {
+
             allScalarFields()
             tenant(false)
+
             store {
                 allScalarFields()
                 avgPrice()
             }
             authors {
+                allScalarFields()
+            }
+            chapters {
                 allScalarFields()
             }
         }

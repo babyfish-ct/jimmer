@@ -20,7 +20,6 @@ public interface AdministratorBase extends NamedEntity {
     List<Role> getRoles();
 
     @OneToOne(mappedBy = "administrator")
-    @OnDissociate(DissociateAction.DELETE)
     @Nullable
     AdministratorMetadata getMetadata();
 }

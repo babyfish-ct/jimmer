@@ -10,6 +10,15 @@ data class StaticProp(
     val targetAlias: String,
     val target: StaticDeclaration? = null
 ) {
-    val isNullable: Boolean
-        get() = isOptional || immutableProp.isNullable
+    fun isNullable(input: Boolean): Boolean =
+        when {
+            isOptional -> true
+            immutableProp.isNullable ->
+                if (input) {
+                    !immutableProp.isInputNotNull
+                } else {
+                    true
+                }
+            else -> false
+        }
 }
