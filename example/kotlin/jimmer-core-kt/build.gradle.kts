@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "org.babyfish.jimmer.example.kt"
-version = "0.6.21"
+version = "0.6.22"
 
 repositories {
     mavenCentral()
@@ -14,8 +14,8 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib"))
 
-    implementation("org.babyfish.jimmer:jimmer-core-kotlin:0.6.21")
-    ksp("org.babyfish.jimmer:jimmer-ksp:0.6.21")
+    implementation("org.babyfish.jimmer:jimmer-core-kotlin:0.6.22")
+    ksp("org.babyfish.jimmer:jimmer-ksp:0.6.22")
 }
 
 // Without this configuration, gradle command can still run.
