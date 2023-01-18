@@ -513,7 +513,9 @@ public class StaticDeclarationGenerator {
             if (prop.isNullable(isInput()) && (prop.getImmutableProp().isAssociation(false) || !prop.getImmutableProp().isNullable())) {
                 builder.beginControlFlow("if ($L != null)", prop.getName());
                 addAssignment(prop, builder);
-                if (prop.getImmutableProp().isAssociation(true) && !prop.getImmutableProp().isList()) {
+                if (prop.getImmutableProp().isAssociation(true) &&
+                        !prop.getImmutableProp().isList() &&
+                        prop.getImmutableProp().isNullable()) {
                     builder.nextControlFlow("else");
                     builder.addStatement(
                             "draft.$L(($T)null)",
