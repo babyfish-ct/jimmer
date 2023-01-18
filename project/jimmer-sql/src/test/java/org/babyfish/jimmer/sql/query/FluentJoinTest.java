@@ -298,13 +298,15 @@ public class FluentJoinTest extends AbstractQueryTest {
     @Test
     public void testWeakJoin() {
         BookTable book = BookTable.$;
+        AuthorTable author = book.asTableEx().weakJoin(BookAuthorWeakJoin.class);
         executeAndExpect(
                 getSqlClient().createQuery(book)
-                        .where(book.asTableEx().weakJoin(BookAuthorWeakJoin.class).firstName().eq("Alex"))
-                        .select(book),
+                        .where(author.firstName().eq("Alex"))
+                        .select(book, author),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, " +
+                                    "tb_2_.ID, tb_2_.FIRST_NAME, tb_2_.LAST_NAME, tb_2_.GENDER " +
                                     "from BOOK as tb_1_ " +
                                     "inner join AUTHOR as tb_2_ on exists(" +
                                     "--->select * from book_author_mapping " +
@@ -315,23 +317,46 @@ public class FluentJoinTest extends AbstractQueryTest {
                     ctx.rows(
                             "[" +
                                     "--->{" +
-                                    "--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
-                                    "--->--->\"name\":\"Learning GraphQL\"," +
-                                    "--->--->\"edition\":1," +
-                                    "--->--->\"price\":50.00," +
-                                    "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                    "--->--->\"_1\":{" +
+                                    "--->--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                                    "--->--->--->\"name\":\"Learning GraphQL\"," +
+                                    "--->--->--->\"edition\":1," +
+                                    "--->--->--->\"price\":50.00," +
+                                    "--->--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                    "--->--->},\"_2\":{" +
+                                    "--->--->--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
+                                    "--->--->--->\"firstName\":\"Alex\"," +
+                                    "--->--->--->\"lastName\":\"Banks\"," +
+                                    "--->--->--->\"gender\":\"MALE\"" +
+                                    "--->--->}" +
                                     "--->},{" +
-                                    "--->--->\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"," +
-                                    "--->--->\"name\":\"Learning GraphQL\"," +
-                                    "--->--->\"edition\":2," +
-                                    "--->--->\"price\":55.00," +
-                                    "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                    "--->--->\"_1\":{" +
+                                    "--->--->--->\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"," +
+                                    "--->--->--->\"name\":\"Learning GraphQL\"," +
+                                    "--->--->--->\"edition\":2," +
+                                    "--->--->--->\"price\":55.00," +
+                                    "--->--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                    "--->--->}," +
+                                    "--->--->\"_2\":{" +
+                                    "--->--->--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
+                                    "--->--->--->\"firstName\":\"Alex\"," +
+                                    "--->--->--->\"lastName\":\"Banks\"," +
+                                    "--->--->--->\"gender\":\"MALE\"" +
+                                    "--->--->}" +
                                     "--->},{" +
-                                    "--->--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
-                                    "--->--->\"name\":\"Learning GraphQL\"," +
-                                    "--->--->\"edition\":3," +
-                                    "--->--->\"price\":51.00," +
-                                    "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                    "--->--->\"_1\":{" +
+                                    "--->--->--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                    "--->--->--->\"name\":\"Learning GraphQL\"," +
+                                    "--->--->--->\"edition\":3," +
+                                    "--->--->--->\"price\":51.00," +
+                                    "--->--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                    "--->--->}," +
+                                    "--->--->\"_2\":{" +
+                                    "--->--->--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
+                                    "--->--->--->\"firstName\":\"Alex\"," +
+                                    "--->--->--->\"lastName\":\"Banks\"," +
+                                    "--->--->--->\"gender\":\"MALE\"" +
+                                    "--->--->}" +
                                     "--->}" +
                                     "]"
                     );
@@ -342,14 +367,15 @@ public class FluentJoinTest extends AbstractQueryTest {
     @Test
     public void testMergeWeakJoin() {
         BookTable book = BookTable.$;
+        AuthorTable author = book.asTableEx().weakJoin(BookAuthorWeakJoin.class);
         executeAndExpect(
                 getSqlClient().createQuery(book)
-                        .where(book.asTableEx().weakJoin(BookAuthorWeakJoin.class).firstName().eq("Alex"))
-                        .where(book.asTableEx().weakJoin(BookAuthorWeakJoin.class).lastName().eq("Banks"))
-                        .select(book),
+                        .where(author.firstName().eq("Alex"))
+                        .where(author.lastName().eq("Banks"))
+                        .select(book.id(), author.id()),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                            "select tb_1_.ID, tb_2_.ID " +
                                     "from BOOK as tb_1_ " +
                                     "inner join AUTHOR as tb_2_ on exists(" +
                                     "--->select * from book_author_mapping " +
@@ -360,23 +386,14 @@ public class FluentJoinTest extends AbstractQueryTest {
                     ctx.rows(
                             "[" +
                                     "--->{" +
-                                    "--->--->\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
-                                    "--->--->\"name\":\"Learning GraphQL\"," +
-                                    "--->--->\"edition\":1," +
-                                    "--->--->\"price\":50.00," +
-                                    "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                    "--->--->\"_1\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                    "--->--->\"_2\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"" +
                                     "--->},{" +
-                                    "--->--->\"id\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"," +
-                                    "--->--->\"name\":\"Learning GraphQL\"," +
-                                    "--->--->\"edition\":2," +
-                                    "--->--->\"price\":55.00," +
-                                    "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                    "--->--->\"_1\":\"b649b11b-1161-4ad2-b261-af0112fdd7c8\"," +
+                                    "--->--->\"_2\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"" +
                                     "--->},{" +
-                                    "--->--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
-                                    "--->--->\"name\":\"Learning GraphQL\"," +
-                                    "--->--->\"edition\":3," +
-                                    "--->--->\"price\":51.00," +
-                                    "--->--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                                    "--->--->\"_1\":\"e110c564-23cc-4811-9e81-d587a13db634\"," +
+                                    "--->--->\"_2\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"" +
                                     "--->}" +
                                     "]"
                     );
