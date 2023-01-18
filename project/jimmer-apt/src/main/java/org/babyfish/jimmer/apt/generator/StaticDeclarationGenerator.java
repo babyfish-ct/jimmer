@@ -526,6 +526,13 @@ public class StaticDeclarationGenerator {
         ImmutableProp immutableProp = prop.getImmutableProp();
         if (prop.isIdOnly()) {
             if (immutableProp.isList()) {
+                builder.beginControlFlow("if ($L.isEmpty())", prop.getName());
+                builder.addStatement(
+                        "draft.$L($T.emptyList())",
+                        immutableProp.getSetterName(),
+                        Collections.class
+                );
+                builder.nextControlFlow("else");
                 builder.beginControlFlow(
                         "for ($T __e : $L)",
                         getPropElementName(prop),
@@ -538,6 +545,7 @@ public class StaticDeclarationGenerator {
                         "__e"
                 );
                 builder.endControlFlow();
+                builder.endControlFlow();
             } else {
                 builder.addStatement(
                         "draft.$L(targetDraft -> targetDraft.$L($L))",
@@ -548,6 +556,13 @@ public class StaticDeclarationGenerator {
             }
         } else if (prop.getTarget() != null) {
             if (immutableProp.isList()) {
+                builder.beginControlFlow("if ($L.isEmpty())", prop.getName());
+                builder.addStatement(
+                        "draft.$L($T.emptyList())",
+                        immutableProp.getSetterName(),
+                        Collections.class
+                );
+                builder.nextControlFlow("else");
                 builder.beginControlFlow(
                         "for ($T __e : $L)",
                         getPropElementName(prop),
@@ -558,6 +573,7 @@ public class StaticDeclarationGenerator {
                         immutableProp.getGetterName(),
                         immutableProp.getTargetType().getDraftClassName()
                 );
+                builder.endControlFlow();
                 builder.endControlFlow();
             } else {
                 builder.addStatement(
