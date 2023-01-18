@@ -161,6 +161,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     long count();
 
     @NotNull
+    default E insert(@NotNull Input<E> input) {
+        return insert(input.toEntity());
+    }
+
+    @NotNull
     default E insert(@NotNull E entity) {
         return sql()
                 .getEntities()
@@ -169,6 +174,11 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
                     cfg.setMode(SaveMode.INSERT_ONLY);
                     cfg.setAutoAttachingAll();
                 }).execute().getModifiedEntity();
+    }
+
+    @NotNull
+    default E update(@NotNull Input<E> input) {
+        return update(input.toEntity());
     }
 
     @NotNull

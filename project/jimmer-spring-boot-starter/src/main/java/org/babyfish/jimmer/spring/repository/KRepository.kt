@@ -73,7 +73,13 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
     
     override fun count(): Long
 
+    fun insert(input: Input<E>): E =
+        insert(input.toEntity())
+
     fun insert(entity: E): E
+
+    fun update(input: Input<E>): E =
+        update(input.toEntity())
 
     fun update(entity: E): E
 
