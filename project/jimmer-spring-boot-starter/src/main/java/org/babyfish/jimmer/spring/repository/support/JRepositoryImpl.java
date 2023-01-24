@@ -4,7 +4,7 @@ import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.spring.repository.JRepository;
-import org.babyfish.jimmer.spring.repository.Sorts;
+import org.babyfish.jimmer.spring.repository.SpringOrders;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.PropExpression;
@@ -155,7 +155,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     @NotNull
     @Override
     public List<E> findAll(@NotNull Sort sort) {
-        return sqlClient.getEntities().findAll(entityType, Sorts.toTypedProps(entityType, sort));
+        return sqlClient.getEntities().findAll(entityType, SpringOrders.toTypedProps(entityType, sort));
     }
 
     @Override
@@ -163,7 +163,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         if (fetcher == null) {
             return findAll(sort);
         }
-        return sqlClient.getEntities().findAll(fetcher, Sorts.toTypedProps(entityType, sort));
+        return sqlClient.getEntities().findAll(fetcher, SpringOrders.toTypedProps(entityType, sort));
     }
 
     @Override
@@ -205,7 +205,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     @Override
     public Page<E> findAll(Pageable pageable, Fetcher<E> fetcher) {
         return pager(pageable).execute(
-                createQuery(fetcher, Sorts.toTypedProps(entityType, pageable.getSort()))
+                createQuery(fetcher, SpringOrders.toTypedProps(entityType, pageable.getSort()))
         );
     }
 

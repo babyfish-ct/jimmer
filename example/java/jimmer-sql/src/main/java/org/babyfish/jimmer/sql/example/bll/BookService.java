@@ -5,6 +5,8 @@ import org.babyfish.jimmer.sql.example.dal.BookRepository;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,15 +22,13 @@ public class BookService {
 
     @GetMapping("/books/simple")
     public Page<@FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks(
-            @RequestParam(defaultValue = "0") int pageIndex,
-            @RequestParam(defaultValue = "5") int pageSize,
+            @RequestParam Pageable pageable,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String storeName,
             @RequestParam(required = false) String authorName
     ) {
         return bookRepository.findBooks(
-                pageIndex,
-                pageSize,
+                pageable,
                 name,
                 storeName,
                 authorName,
@@ -40,13 +40,13 @@ public class BookService {
     public Page<@FetchBy("COMPLEX_FETCHER") Book> findComplexBooks(
             @RequestParam(defaultValue = "0") int pageIndex,
             @RequestParam(defaultValue = "5") int pageSize,
+            @RequestParam String sort,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String storeName,
             @RequestParam(required = false) String authorName
     ) {
         return bookRepository.findBooks(
-                pageIndex,
-                pageSize,
+                PageRequest.of(pageIndex, pageSize),
                 name,
                 storeName,
                 authorName,

@@ -14,8 +14,8 @@ import org.babyfish.jimmer.spring.java.dal.BookRepository;
 import org.babyfish.jimmer.spring.datasource.DataSources;
 import org.babyfish.jimmer.spring.datasource.TxCallback;
 import org.babyfish.jimmer.spring.java.model.*;
+import org.babyfish.jimmer.spring.model.SortUtils;
 import org.babyfish.jimmer.spring.repository.EnableJimmerRepositories;
-import org.babyfish.jimmer.spring.repository.Sorts;
 import org.babyfish.jimmer.spring.repository.config.JimmerRepositoryConfigExtension;
 import org.babyfish.jimmer.spring.repository.support.JimmerRepositoryFactoryBean;
 import org.babyfish.jimmer.sql.runtime.*;
@@ -284,7 +284,7 @@ public class SpringJavaTest extends AbstractTest {
     @Test
     public void testBySpringSort() {
 
-        Sort sort = Sorts.toSort(BookProps.NAME, BookProps.EDITION.desc());
+        Sort sort = SortUtils.toSort(BookProps.NAME, BookProps.EDITION.desc());
 
         assertTransactionEvents();
         Assertions.assertEquals(12, bookRepository.findAll(sort).size());
@@ -321,7 +321,7 @@ public class SpringJavaTest extends AbstractTest {
     @Test
     public void testBySpringPageable() {
 
-        Pageable pageable = PageRequest.of(0, 10, Sorts.toSort(BookProps.NAME.desc()));
+        Pageable pageable = PageRequest.of(0, 10, SortUtils.toSort(BookProps.NAME.desc()));
 
         assertTransactionEvents();
         Page<Book> page = bookRepository.findAll(pageable);

@@ -3,7 +3,7 @@ package org.babyfish.jimmer.spring.repository.support;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.spring.repository.Sorts;
+import org.babyfish.jimmer.spring.repository.SpringOrders;
 import org.babyfish.jimmer.spring.repository.parser.*;
 import org.babyfish.jimmer.spring.repository.parser.Predicate;
 import org.babyfish.jimmer.sql.JSqlClient;
@@ -58,7 +58,7 @@ public class QueryExecutors {
                         }
                         Sort finalSort = pageable != null ? pageable.getSort() : sort;
                         if (finalSort != null) {
-                            q.orderBy(Sorts.toOrders(table, finalSort));
+                            q.orderBy(SpringOrders.toOrders(table, finalSort));
                         }
                         if (fetcher != null) {
                             return q.select(((Table<Object>)table).fetch((Fetcher<Object>) fetcher));

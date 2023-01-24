@@ -8,26 +8,11 @@ import org.babyfish.jimmer.sql.kt.ast.expression.asc
 import org.babyfish.jimmer.sql.kt.ast.expression.desc
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableQuery
+import org.babyfish.jimmer.sql.kt.ast.table.impl.KTableImplementor
 import org.springframework.data.domain.Sort
 
 fun KMutableQuery<*>.orderBy(sort: Sort?) {
-    if (sort != null) {
-        for (order in sort) {
-            val expr: KPropExpression<Any> = table.get(order.property)
-            val astOrder = if (order.isDescending) {
-                expr.desc()
-            } else {
-                expr.asc()
-            }
-            orderBy(
-                when (order.nullHandling) {
-                    Sort.NullHandling.NULLS_FIRST -> astOrder.nullsFirst()
-                    Sort.NullHandling.NULLS_LAST -> astOrder.nullsLast()
-                    else -> astOrder
-                }
-            )
-        }
-    }
+    orderBy(*SpringOrders.toOrders((this as KTableImplementor<*>).javaTable, sort))
 }
 
 fun <E: Any> KMutableQuery<*>.orderBy(block: (SortDsl<E>.() -> Unit)?) {
