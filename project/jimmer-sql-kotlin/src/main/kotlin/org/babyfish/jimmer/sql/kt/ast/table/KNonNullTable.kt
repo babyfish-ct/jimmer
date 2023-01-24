@@ -1,11 +1,8 @@
 package org.babyfish.jimmer.sql.kt.ast.table
 
-import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.association.Association
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.fetcher.Fetcher
-import kotlin.reflect.KClass
-import kotlin.reflect.KProperty1
 
 interface KNonNullTable<E: Any> : KTable<E>, KNonNullProps<E>, Selection<E> {
 

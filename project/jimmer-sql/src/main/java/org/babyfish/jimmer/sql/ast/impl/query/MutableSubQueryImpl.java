@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.function.Supplier;
 
 public class MutableSubQueryImpl
@@ -116,6 +117,16 @@ public class MutableSubQueryImpl
     @Override
     public MutableSubQueryImpl orderByIf(boolean condition, Order... orders) {
         return (MutableSubQueryImpl) super.orderByIf(condition, orders);
+    }
+
+    @Override
+    public MutableSubQueryImpl orderBy(List<Order> orders) {
+        return (MutableSubQueryImpl)super.orderBy(orders);
+    }
+
+    @Override
+    public MutableSubQueryImpl orderByIf(boolean condition, List<Order> orders) {
+        return (MutableSubQueryImpl)super.orderByIf(condition, orders);
     }
 
     @Override

@@ -4,6 +4,7 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 public interface Sortable extends Filterable {
@@ -31,16 +32,7 @@ public interface Sortable extends Filterable {
     }
 
     @OldChain
-    default Sortable orderBy(Expression<?> ... expressions) {
-        Order[] orders = new Order[expressions.length];
-        for (int i = orders.length - 1; i >= 0; --i) {
-            Expression<?> expression = expressions[i];
-            if (expression != null) {
-                orders[i] = new Order(expression, OrderMode.ASC, NullOrderMode.UNSPECIFIED);
-            }
-        }
-        return orderBy(orders);
-    }
+    Sortable orderBy(Expression<?> ... expressions);
 
     @OldChain
     default Sortable orderByIf(boolean condition, Expression<?> ... expressions) {
@@ -55,6 +47,17 @@ public interface Sortable extends Filterable {
 
     @OldChain
     default Sortable orderByIf(boolean condition, Order ... orders) {
+        if (condition) {
+            orderBy(orders);
+        }
+        return this;
+    }
+
+    @OldChain
+    Sortable orderBy(List<Order> orders);
+
+    @OldChain
+    default Sortable orderByIf(boolean condition, List<Order> orders) {
         if (condition) {
             orderBy(orders);
         }

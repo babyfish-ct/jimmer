@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.example.dal;
 
 import org.babyfish.jimmer.spring.repository.JRepository;
+import org.babyfish.jimmer.spring.repository.Sorts;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.example.model.AuthorTableEx;
@@ -9,6 +10,7 @@ import org.babyfish.jimmer.sql.example.model.BookTable;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Collection;
 import java.util.List;
@@ -19,15 +21,14 @@ public interface BookRepository extends JRepository<Book, Long> {
     BookTable table = BookTable.$;
 
     default Page<Book> findBooks(
-            int pageIndex,
-            int pageSize,
+            Pageable pageable,
             @Nullable String name,
             @Nullable String storeName,
             @Nullable String authorName,
             @Nullable Fetcher<Book> fetcher
     ) {
         AuthorTableEx author = AuthorTableEx.$;
-        return pager(pageIndex, pageSize)
+        return pager(pageable)
                 .execute(
                         sql()
                                 .createQuery(table)
@@ -52,7 +53,7 @@ public interface BookRepository extends JRepository<Book, Long> {
                                                 .select(author.books().id())
                                         )
                                 )
-                                .orderBy(table.name().asc())
+                                .orderBy(Sorts.toOrders(table, pageable.getSort()))
                                 .select(table.fetch(fetcher))
                 );
     }
