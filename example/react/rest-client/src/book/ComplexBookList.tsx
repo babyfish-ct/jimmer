@@ -10,9 +10,10 @@ import EditIcon from '@mui/icons-material/Edit';
 import EditRoadIcon from '@mui/icons-material/EditRoad';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { toSortModel, toSortCode } from "../common/SortModels";
-import { AppBar, Button, Chip, Drawer, Popover, TextField } from "@mui/material";
+import { Button, Chip, Drawer, TextField } from "@mui/material";
 import { BookInput, ComplexBook, toBookInput } from "./BookTypes";
 import { BookForm } from "./BookForm";
+import { BookDeleter } from "./BookDeleter";
 
 export const ComplexBookList:FC = memo(() => {
 
@@ -143,14 +144,10 @@ export const ComplexBookList:FC = memo(() => {
         setEditing(false);
     }, []);
 
-    const closePop = useCallback(() => {
+    const onPopClose = useCallback((row: ComplexBook | undefined) => {
         setDeletedRow(undefined);
         setPopAnchorEl(undefined);
     }, []);
-
-    const onPopClose = useCallback(() => {
-        closePop();
-    }, [closePop]);
 
     return (
         <Stack spacing={2}>
@@ -180,24 +177,7 @@ export const ComplexBookList:FC = memo(() => {
             <Drawer open={editing} anchor="right">
                 <BookForm value={selectedInput} onClose={onFormClose}/>
             </Drawer>
-            <Popover 
-            open={deletedRow !== undefined && popAnchorEl !== undefined}
-            anchorOrigin={{
-                horizontal: 'right',
-                vertical: 'bottom'
-            }}
-            onClose={onPopClose}
-            anchorEl={popAnchorEl}>
-                <div style={{padding: '1rem', width: 300}}>
-                    <Stack spacing={1}>
-                        <div>Are you sure to delete book "{deletedRow?.name}"(edition {deletedRow?.edition})?</div>
-                        <Stack direction="row" spacing={1} alignContent="center" style={{width: '100%'}}>
-                            <Button variant="outlined" onClick={closePop}>Yes</Button>
-                            <Button variant="outlined" onClick={closePop}>No</Button>
-                        </Stack>
-                    </Stack>
-                </div>
-            </Popover>
+            <BookDeleter row={deletedRow} anchorEl={popAnchorEl} onClose={onPopClose}/>
         </Stack>
     );
 });
