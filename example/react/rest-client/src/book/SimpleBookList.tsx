@@ -1,29 +1,29 @@
 import { Stack } from "@mui/system";
-import { DataGrid, GridActionsCellItem, GridColumns } from "@mui/x-data-grid";
+import { DataGrid, GridActionsCellItem, GridColumns, GridSortModel } from "@mui/x-data-grid";
 import { useQuery } from "@tanstack/react-query";
-import { Draft } from "immer";
 import { FC, memo, useCallback, useMemo } from "react";
 import { useImmer } from "use-immer";
-import { api } from "../common/api";
-import { RequestOf, ResponseOf } from "../__generated";
-import { ElementOf } from "../__generated/ElementOf";
+import { api } from "../common/ApiInstance";
+import { RequestOf } from "../__generated";
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { toSortModel, toSortCode } from "../common/SortModels";
+import { SimpleBook } from "./BookTypes";
 
 export const SimpleBookList:FC = memo(() => {
 
-    const getRowId = useCallback((row: Row) => row.id, []);
+    const getRowId = useCallback((row: SimpleBook) => row.id, []);
 
-    const onEdit = useCallback((row: Row) => {
-
-    }, []);
-
-    const onDelete = useCallback((row: Row) => {
+    const onEdit = useCallback((row: SimpleBook) => {
 
     }, []);
 
-    const columns = useMemo<GridColumns<Row>>(() => [
+    const onDelete = useCallback((row: SimpleBook) => {
+
+    }, []);
+
+    const columns = useMemo<GridColumns<SimpleBook>>(() => [
         {
             field: "id",
             headerName: "ID",
@@ -47,9 +47,16 @@ export const SimpleBookList:FC = memo(() => {
     const [options, setOptions] = useImmer<RequestOf<typeof api.bookService.findSimpleBooks>>(() => {
         return {
             pageIndex: 0,
-            pageSize: 10
+            pageSize: 10,
+            sortCode: "name asc"
         };
     });
+
+    const onSortModelChange = useCallback((model: GridSortModel) => {
+        setOptions(draft => {
+            draft.sortCode = toSortCode(model);
+        });
+    }, [setOptions]);
 
     const onPageChange = useCallback((page: number) => {
         setOptions(draft => {
@@ -70,6 +77,9 @@ export const SimpleBookList:FC = memo(() => {
             loading={isLoading}
             rows={data?.content ?? []}
             error={error}
+            sortingMode="server"
+            sortModel={toSortModel(options.sortCode)}
+            onSortModelChange={onSortModelChange}
             pagination
             paginationMode="server"
             rowCount={data?.totalElements ?? 0}
@@ -80,5 +90,3 @@ export const SimpleBookList:FC = memo(() => {
         </Stack>
     );
 });
-
-type Row = Draft<ElementOf<ResponseOf<typeof api.bookService.findSimpleBooks>["content"]>>;

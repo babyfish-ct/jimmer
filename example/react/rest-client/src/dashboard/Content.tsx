@@ -4,6 +4,7 @@ import { Route, Switch } from "wouter";
 import { SimpleBookStoreList } from "../store/SimpleBookStoreList";
 import { ComplexBookStoreList } from "../store/ComplexBookStoreList";
 import { SimpleBookList } from "../book/SimpleBookList";
+import { ComplexBookList } from "../book/ComplexBookList";
 
 export const Content: FC = memo(() => {
     return (
@@ -11,6 +12,7 @@ export const Content: FC = memo(() => {
             <Route path="/simpleBookStores" component={SimpleBookStoreList}/>
             <Route path="/complexBookStores" component={ComplexBookStoreList}/>
             <Route path="/simpleBooks" component={SimpleBookList}/>
+            <Route path="/complexBooks" component={ComplexBookList}/>
         </Switch>
     );
 });

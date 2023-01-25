@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.example.dal;
 
 import org.babyfish.jimmer.spring.repository.JRepository;
-import org.babyfish.jimmer.spring.repository.Sorts;
+import org.babyfish.jimmer.spring.repository.SpringOrders;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.example.model.AuthorTableEx;
@@ -53,7 +53,7 @@ public interface BookRepository extends JRepository<Book, Long> {
                                                 .select(author.books().id())
                                         )
                                 )
-                                .orderBy(Sorts.toOrders(table, pageable.getSort()))
+                                .orderBy(SpringOrders.toOrders(table, pageable.getSort()))
                                 .select(table.fetch(fetcher))
                 );
     }

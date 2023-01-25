@@ -15,6 +15,8 @@ export class BookService {
         uri += encodeURIComponent(options.pageIndex);
         uri += '&pageSize=';
         uri += encodeURIComponent(options.pageSize);
+        uri += '&sortCode=';
+        uri += encodeURIComponent(options.sortCode);
         if (options.name !== undefined && options.name !== null) {
             uri += '&name=';
             uri += encodeURIComponent(options.name);
@@ -38,6 +40,8 @@ export class BookService {
         uri += encodeURIComponent(options.pageIndex);
         uri += '&pageSize=';
         uri += encodeURIComponent(options.pageSize);
+        uri += '&sortCode=';
+        uri += encodeURIComponent(options.sortCode);
         if (options.name !== undefined && options.name !== null) {
             uri += '&name=';
             uri += encodeURIComponent(options.name);
@@ -56,21 +60,21 @@ export class BookService {
     async saveBook(options: BookServiceOptions['saveBook']): Promise<
         Dynamic<Book>
     > {
-        let uri = '/book/dynamic';
-        return (await this.executor({uri, method: 'PUT', body: options.body})) as Dynamic<Book>
-    }
-    
-    async saveBook_2(options: BookServiceOptions['saveBook_2']): Promise<
-        Dynamic<Book>
-    > {
         let uri = '/book';
         return (await this.executor({uri, method: 'PUT', body: options.body})) as Dynamic<Book>
     }
     
-    async saveBook_3(options: BookServiceOptions['saveBook_3']): Promise<
+    async saveCompositeBook(options: BookServiceOptions['saveCompositeBook']): Promise<
         Dynamic<Book>
     > {
         let uri = '/book/withChapters';
+        return (await this.executor({uri, method: 'PUT', body: options.body})) as Dynamic<Book>
+    }
+    
+    async saveDynamicBook(options: BookServiceOptions['saveDynamicBook']): Promise<
+        Dynamic<Book>
+    > {
+        let uri = '/book/dynamic';
         return (await this.executor({uri, method: 'PUT', body: options.body})) as Dynamic<Book>
     }
 }
@@ -79,6 +83,7 @@ export type BookServiceOptions = {
     'findComplexBooks': {
         readonly pageIndex: number, 
         readonly pageSize: number, 
+        readonly sortCode: string, 
         readonly name?: string, 
         readonly storeName?: string, 
         readonly authorName?: string
@@ -86,11 +91,12 @@ export type BookServiceOptions = {
     'findSimpleBooks': {
         readonly pageIndex: number, 
         readonly pageSize: number, 
+        readonly sortCode: string, 
         readonly name?: string, 
         readonly storeName?: string, 
         readonly authorName?: string
     },
-    'saveBook': {readonly body: Dynamic<Book>},
-    'saveBook_2': {readonly body: BookInput},
-    'saveBook_3': {readonly body: CompositeBookInput}
+    'saveBook': {readonly body: BookInput},
+    'saveCompositeBook': {readonly body: CompositeBookInput},
+    'saveDynamicBook': {readonly body: Dynamic<Book>}
 }

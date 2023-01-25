@@ -4,6 +4,7 @@ import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.sql.example.dal.AuthorRepository;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
+@Transactional
 public class AuthorService {
 
     private final AuthorRepository authorRepository;
