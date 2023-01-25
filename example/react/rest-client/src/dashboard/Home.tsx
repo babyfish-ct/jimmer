@@ -13,7 +13,8 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Menu } from './Menu';
 import { Content } from './Content';
-import { useMediaQuery } from '@mui/material';
+import { Stack, useMediaQuery } from '@mui/material';
+import { GlobalTenant } from './GlobalTenant';
 
 const drawerWidth = 240;
 
@@ -96,9 +97,12 @@ export function Home() {
                     >
                         <MenuIcon />
                     </IconButton>
-                    <Typography variant="h6" noWrap component="div">
-                        Jimmer example REST client
-                    </Typography>
+                    <Stack direction="row" spacing={2} style={{width: '100%'}}>
+                        <Typography variant="h6" noWrap component="div" flex={1}>
+                            Jimmer example REST client
+                        </Typography>
+                        <GlobalTenant/>
+                    </Stack>
                 </Toolbar>
             </AppBar>
             <Drawer
