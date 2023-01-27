@@ -10,39 +10,48 @@ import EditIcon from '@mui/icons-material/Edit';
 import EditRoadIcon from '@mui/icons-material/EditRoad';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { toSortModel, toSortCode } from "../common/SortModels";
-import { Button, Chip, Drawer, TextField } from "@mui/material";
-import { BookInput, ComplexBook, toBookInput } from "./BookTypes";
+import { Alert, Button, Chip, Drawer, Fab, TextField } from "@mui/material";
+import { BookInput, BookRow, toBookInput } from "./BookTypes";
 import { BookForm } from "./BookForm";
 import { BookDeleter } from "./BookDeleter";
+import { useTenant } from "../dashboard/TenantContext";
+import { CompositeBookForm } from "./CompositeBookForm";
 
-export const ComplexBookList:FC = memo(() => {
+export const BookList:FC = memo(() => {
 
-    const getRowId = useCallback((row: ComplexBook) => row.id, []);
+    const getRowId = useCallback((row: BookRow) => row.id, []);
 
-    const [selectedInput, setSelectedInput] = useState<BookInput>();
+    const [selectedRow, setSelectedRow] = useState<BookRow>();
 
-    const [editing, setEditing] = useState(false);
+    const [saveMode, setSaveMode] = useState<'NONE' | 'GENERIC' | 'COMPOSITE'>('NONE');
 
-    const [deletedRow, setDeletedRow] = useState<ComplexBook>();
+    const [deletedRow, setDeletedRow] = useState<BookRow>();
 
     const [popAnchorEl, setPopAnchorEl] = useState<HTMLButtonElement>();
 
+    const tenant = useTenant();
+
     const onAdd = useCallback(() => {
-        setSelectedInput(undefined);
-        setEditing(true);
+        setSelectedRow(undefined);
+        setSaveMode('GENERIC');
     }, []);
 
-    const onEdit = useCallback((row: ComplexBook) => {
-        setSelectedInput(toBookInput(row));
-        setEditing(true);
+    const onEdit = useCallback((row: BookRow) => {
+        setSelectedRow(row);
+        setSaveMode('GENERIC');
     }, []);
 
-    const onDelete = useCallback((row: ComplexBook, e: MouseEvent<HTMLButtonElement>) => {
+    const onEditComposite = useCallback((row: BookRow) => {
+        setSelectedRow(row);
+        setSaveMode('COMPOSITE');
+    }, []);
+
+    const onDelete = useCallback((row: BookRow, e: MouseEvent<HTMLButtonElement>) => {
         setDeletedRow(row);
         setPopAnchorEl(e.currentTarget);
     }, []);
 
-    const columns = useMemo<GridColumns<ComplexBook>>(() => [
+    const columns = useMemo<GridColumns<BookRow>>(() => [
         {
             field: "id",
             headerName: "ID"
@@ -86,14 +95,14 @@ export const ComplexBookList:FC = memo(() => {
             headerName: 'Actions', 
             type: 'actions',
             getActions: params => [
-                <GridActionsCellItem icon={<EditIcon/>} label="Edit" onClick={() => onEdit(params.row)}/>,
-                <GridActionsCellItem icon={<EditRoadIcon/>} label="EditComposite" onClick={() => onEdit(params.row)}/>,
+                <GridActionsCellItem icon={<EditIcon/>} label="Edit" onClick={() => onEdit(params.row)} disabled={tenant === undefined}/>,
+                <GridActionsCellItem icon={<EditRoadIcon/>} label="EditComposite" onClick={() => onEditComposite(params.row)} disabled={tenant === undefined}/>,
                 <GridActionsCellItem icon={<DeleteIcon/>} label="Delete" onClick={e => onDelete(params.row, e)}/>
             ]
         }
-    ], [onEdit, onDelete]);
+    ], [onEdit, onDelete, tenant]);
 
-    const [options, setOptions] = useImmer<RequestOf<typeof api.bookService.findComplexBooks>>(() => {
+    const [options, setOptions] = useImmer<RequestOf<typeof api.bookService.findBooks>>(() => {
         return {
             pageIndex: 0,
             pageSize: 10,
@@ -132,8 +141,8 @@ export const ComplexBookList:FC = memo(() => {
     }, [setOptions]);
 
     const { isLoading, data, error, refetch } = useQuery({
-       queryKey: ["complexBooks", options],
-       queryFn: () => api.bookService.findComplexBooks(options) 
+       queryKey: ["Books", options],
+       queryFn: () => api.bookService.findBooks(options) 
     });
 
     const onRefreshClick = useCallback(() => {
@@ -141,16 +150,17 @@ export const ComplexBookList:FC = memo(() => {
     }, [refetch]);
 
     const onFormClose = useCallback(() => {
-        setEditing(false);
+        setSaveMode('NONE');
     }, []);
 
-    const onPopClose = useCallback((row: ComplexBook | undefined) => {
+    const onPopClose = useCallback((row: BookRow | undefined) => {
         setDeletedRow(undefined);
         setPopAnchorEl(undefined);
     }, []);
 
     return (
         <Stack spacing={2}>
+            {tenant === undefined && <Alert severity="warning">Add/Edit can only be enabled when global tenant is set, please enter it(eg: a)</Alert>}
             <Stack direction="row" spacing={2}>
                 <TextField label="Search by book name" value={options.name} onChange={onNameChange}/>
                 <TextField label="Search by store name" value={options.storeName} onChange={onStoreNameChange}/>
@@ -174,8 +184,14 @@ export const ComplexBookList:FC = memo(() => {
             autoHeight
             disableSelectionOnClick
             disableColumnFilter={true}/>
-            <Drawer open={editing} anchor="right">
-                <BookForm value={selectedInput} onClose={onFormClose}/>
+            <Fab color="primary" onClick={onAdd} disabled={tenant === undefined}>
+                <AddIcon/>
+            </Fab>
+            <Drawer open={saveMode === 'GENERIC'} anchor="right">
+                <BookForm value={selectedRow !== undefined ? toBookInput(selectedRow) : undefined} onClose={onFormClose}/>
+            </Drawer>
+            <Drawer open={saveMode === 'COMPOSITE'} anchor="right">
+                <CompositeBookForm id={selectedRow?.id} onClose={onFormClose}/>
             </Drawer>
             <BookDeleter row={deletedRow} anchorEl={popAnchorEl} onClose={onPopClose}/>
         </Stack>

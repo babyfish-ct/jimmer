@@ -7,6 +7,31 @@ export class BookService {
     
     constructor(private executor: Executor) {}
     
+    async findBooks(options: BookServiceOptions['findBooks']): Promise<
+        Page<BookDto['BookService/LIST_ITEM_FETCHER']>
+    > {
+        let uri = '/books';
+        uri += '?pageIndex=';
+        uri += encodeURIComponent(options.pageIndex);
+        uri += '&pageSize=';
+        uri += encodeURIComponent(options.pageSize);
+        uri += '&sortCode=';
+        uri += encodeURIComponent(options.sortCode);
+        if (options.name !== undefined && options.name !== null) {
+            uri += '&name=';
+            uri += encodeURIComponent(options.name);
+        }
+        if (options.storeName !== undefined && options.storeName !== null) {
+            uri += '&storeName=';
+            uri += encodeURIComponent(options.storeName);
+        }
+        if (options.authorName !== undefined && options.authorName !== null) {
+            uri += '&authorName=';
+            uri += encodeURIComponent(options.authorName);
+        }
+        return (await this.executor({uri, method: 'GET'})) as Page<BookDto['BookService/LIST_ITEM_FETCHER']>
+    }
+    
     async findComplexBooks(options: BookServiceOptions['findComplexBooks']): Promise<
         Page<BookDto['BookService/COMPLEX_FETCHER']>
     > {
@@ -80,6 +105,14 @@ export class BookService {
 }
 
 export type BookServiceOptions = {
+    'findBooks': {
+        readonly pageIndex: number, 
+        readonly pageSize: number, 
+        readonly sortCode: string, 
+        readonly name?: string, 
+        readonly storeName?: string, 
+        readonly authorName?: string
+    },
     'findComplexBooks': {
         readonly pageIndex: number, 
         readonly pageSize: number, 

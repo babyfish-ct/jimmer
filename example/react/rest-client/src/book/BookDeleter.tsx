@@ -1,11 +1,11 @@
 import { Button, Popover, Stack } from "@mui/material";
 import { FC, memo, useCallback } from "react";
-import { ComplexBook } from "./BookTypes";
+import { BookRow } from "./BookTypes";
 
 export const BookDeleter: FC<{
-    readonly row?: ComplexBook,
+    readonly row?: BookRow,
     readonly anchorEl?: HTMLElement,
-    readonly onClose: (row: ComplexBook | undefined) => void
+    readonly onClose: (row: BookRow | undefined) => void
 }> = memo(({row, anchorEl, onClose}) => {
     
     const onNoClick = useCallback(() => {

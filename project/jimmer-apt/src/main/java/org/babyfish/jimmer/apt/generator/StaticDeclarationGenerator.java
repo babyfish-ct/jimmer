@@ -127,15 +127,13 @@ public class StaticDeclarationGenerator {
         String simpleName = getSimpleName();
         typeBuilder = TypeSpec
                 .classBuilder(simpleName)
-                .addModifiers(Modifier.PUBLIC);
-        if (isInput()) {
-            typeBuilder.addSuperinterface(
-                    ParameterizedTypeName.get(
-                            Constants.INPUT_CLASS_NAME,
-                            declaration.getImmutableType().getClassName()
-                    )
-            );
-        }
+                .addModifiers(Modifier.PUBLIC)
+                .addSuperinterface(
+                        ParameterizedTypeName.get(
+                                isInput() ? Constants.INPUT_CLASS_NAME : Constants.STATIC_CLASS_NAME,
+                                declaration.getImmutableType().getClassName()
+                        )
+                );
         if (innerClassName != null) {
             typeBuilder.addModifiers(Modifier.STATIC);
             addMembers();
@@ -168,6 +166,8 @@ public class StaticDeclarationGenerator {
 
     private void addMembers() {
 
+        addMetadata();
+
         for (StaticProp prop : props) {
             addField(prop);
         }
@@ -193,6 +193,50 @@ public class StaticDeclarationGenerator {
                 ).generate();
             }
         }
+    }
+
+    private void addMetadata() {
+        FieldSpec.Builder builder = FieldSpec
+                .builder(
+                        ParameterizedTypeName.get(
+                                Constants.STATIC_METADATA_CLASS_NAME,
+                                declaration.getImmutableType().getClassName(),
+                                getClassName()
+                        ),
+                        "METADATA"
+                )
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL);
+        CodeBlock.Builder cb = CodeBlock
+                .builder()
+                .indent()
+                .add("\n")
+                .add(
+                        "new $T<$T, $T>(\n",
+                        Constants.STATIC_METADATA_CLASS_NAME,
+                        declaration.getImmutableType().getClassName(),
+                        getClassName()
+                )
+                .indent()
+                .add("$T.$L", declaration.getImmutableType().getFetcherClassName(), "$")
+                .indent();
+        for (StaticProp prop : props) {
+            if (prop.getImmutableProp().getAnnotation(Id.class) == null) {
+                if (prop.getTarget() != null) {
+                    cb.add("\n.$N($T.METADATA.getFetcher())", prop.getImmutableProp().getName(), getPropElementName(prop));
+                } else {
+                    cb.add("\n.$N()", prop.getImmutableProp().getName());
+                }
+            }
+        }
+        cb
+                .add(",\n")
+                .unindent()
+                .add("$T::new\n", getClassName())
+                .unindent()
+                .unindent()
+                .add(")");
+        builder.initializer(cb.build());
+        typeBuilder.addField(builder.build());
     }
 
     private void addField(StaticProp prop) {
@@ -279,6 +323,7 @@ public class StaticDeclarationGenerator {
     private void addConverterConstructor() {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
                 .addParameter(
                         ParameterSpec
                                 .builder(declaration.getImmutableType().getClassName(), "base")
@@ -483,10 +528,8 @@ public class StaticDeclarationGenerator {
                 .methodBuilder("toEntity")
                 .addModifiers(Modifier.PUBLIC)
                 .returns(declaration.getImmutableType().getClassName())
-                .addStatement("return toEntity(null)");
-        if (isInput()) {
-            builder.addAnnotation(Override.class);
-        }
+                .addStatement("return toEntity(null)")
+                .addAnnotation(Override.class);
         typeBuilder.addMethod(builder.build());
     }
 
@@ -494,6 +537,7 @@ public class StaticDeclarationGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("toEntity")
                 .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
                 .addParameter(
                         ParameterSpec
                                 .builder(

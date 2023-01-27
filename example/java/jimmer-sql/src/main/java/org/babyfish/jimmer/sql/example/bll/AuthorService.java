@@ -35,6 +35,20 @@ public class AuthorService {
         );
     }
 
+    @GetMapping("/authors")
+    public List<@FetchBy("ROW_FETCHER") Author> findAuthors(
+            @RequestParam(required = false) String firstName,
+            @RequestParam(required = false) String lastName,
+            @RequestParam(required = false) Gender gender
+    ) {
+        return authorRepository.findByFirstNameAndLastNameAndGender(
+                firstName,
+                lastName,
+                gender,
+                ROW_FETCHER
+        );
+    }
+
     @GetMapping("/authors/complex")
     public List<@FetchBy("COMPLEX_FETCHER") Author> findComplexAuthors(
             @RequestParam(required = false) String firstName,
@@ -53,6 +67,10 @@ public class AuthorService {
             AuthorFetcher.$
                     .firstName()
                     .lastName();
+
+    private static final Fetcher<Author> ROW_FETCHER =
+            AuthorFetcher.$
+                    .allScalarFields();
 
     private static final Fetcher<Author> COMPLEX_FETCHER =
             AuthorFetcher.$

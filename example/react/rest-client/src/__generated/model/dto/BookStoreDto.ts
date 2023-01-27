@@ -5,6 +5,13 @@ export type BookStoreDto = {
         readonly id: number, 
         readonly name: string
     }, 
+    'BookStoreService/LIST_ITEM_FETCHER': {
+        readonly id: number, 
+        readonly createdTime: string, 
+        readonly modifiedTime: string, 
+        readonly name: string, 
+        readonly website?: string
+    }, 
     'BookStoreService/COMPLEX_FETCHER': {
         readonly id: number, 
         readonly createdTime: string, 

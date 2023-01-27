@@ -16,24 +16,18 @@ internal abstract class CompositePredicate(
     }
 
     override fun renderTo(builder: SqlBuilder) {
-        if (predicates.isEmpty()) {
-            builder.sql(emptyContent())
-        } else {
-            var sp: String? = null
-            for (predicate in predicates) {
-                if (sp !== null) {
-                    builder.sql(sp)
-                } else {
-                    sp = operator()
-                }
-                renderChild(predicate as Ast, builder)
+        var sp: String? = null
+        for (predicate in predicates) {
+            if (sp !== null) {
+                builder.sql(sp)
+            } else {
+                sp = operator()
             }
+            renderChild(predicate as Ast, builder)
         }
     }
 
     protected abstract fun operator(): String
-
-    protected abstract fun emptyContent(): String
 }
 
 internal class AndPredicate(
@@ -46,8 +40,6 @@ internal class AndPredicate(
         OrPredicate(predicates.map { it.not() })
 
     override fun precedence(): Int = ExpressionPrecedences.AND
-
-    override fun emptyContent(): String = "1 = 1"
 }
 
 internal class OrPredicate(
@@ -60,8 +52,6 @@ internal class OrPredicate(
         AndPredicate(predicates.map { it.not() })
 
     override fun precedence(): Int = ExpressionPrecedences.OR
-
-    override fun emptyContent(): String = "1 = 0"
 }
 
 internal class NotPredicate(

@@ -7,14 +7,14 @@ public interface PredicateImplementor extends Predicate, ExpressionImplementor<B
     @Override
     default Predicate and(Predicate other) {
         return other != null ?
-                new CompositePredicate.And(this, (AbstractPredicate)other) :
+                new CompositePredicate.And(this, other) :
                 this;
     }
 
     @Override
     default Predicate or(Predicate other) {
         return other != null ?
-                new CompositePredicate.Or(this, (AbstractPredicate)other) :
+                new CompositePredicate.Or(this, other) :
                 this;
     }
 

@@ -1,9 +1,4 @@
 package org.babyfish.jimmer;
 
-import org.jetbrains.annotations.NotNull;
-
-public interface Input<E> {
-
-    @NotNull
-    E toEntity();
+public interface Input<E> extends Static<E> {
 }
