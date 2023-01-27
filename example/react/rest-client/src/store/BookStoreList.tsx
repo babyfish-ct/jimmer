@@ -5,16 +5,16 @@ import { api } from "../common/ApiInstance";
 import { Stack } from "@mui/system";
 import { Fab } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
-import { SimpleBookStore } from "./BookStoreTypes";
+import { BookStoreRow } from "./BookStoreTypes";
 
-export const SimpleBookStoreList: FC = memo(() => {
+export const BookStoreList: FC = memo(() => {
 
     const { isLoading, data, error } = useQuery({
         queryKey: ["simpleBookStores"],
-        queryFn: () => api.bookStoreService.findSimpleStores()
+        queryFn: () => api.bookStoreService.findStores()
     });
 
-    const getRowId = useCallback((row: SimpleBookStore) => row.id, []);
+    const getRowId = useCallback((row: BookStoreRow) => row.id, []);
 
     const columns = useMemo<GridColumns>(() => [
         { field: 'id', headerName: 'Id', type: 'number' },

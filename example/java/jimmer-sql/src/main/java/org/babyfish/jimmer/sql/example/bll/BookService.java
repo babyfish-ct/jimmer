@@ -38,6 +38,24 @@ public class BookService {
         );
     }
 
+    @GetMapping("/books")
+    public Page<@FetchBy("ROW_FETCHER") Book> findBooks(
+            @RequestParam(defaultValue = "0") int pageIndex,
+            @RequestParam(defaultValue = "5") int pageSize,
+            @RequestParam(defaultValue = "name asc, edition desc") String sortCode,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String storeName,
+            @RequestParam(required = false) String authorName
+    ) {
+        return bookRepository.findBooks(
+                PageRequest.of(pageIndex, pageSize, SortUtils.toSort(sortCode)),
+                name,
+                storeName,
+                authorName,
+                ROW_FETCHER
+        );
+    }
+
     @GetMapping("/books/complex")
     public Page<@FetchBy("COMPLEX_FETCHER") Book> findComplexBooks(
             @RequestParam(defaultValue = "0") int pageIndex,
@@ -56,8 +74,27 @@ public class BookService {
         );
     }
 
+    @GetMapping("/book/{id}/composite")
+    public CompositeBookInput findCompositeBookInput(@PathVariable("id") long id) {
+        return new CompositeBookInput(bookRepository.findNullable(id, COMPOSITE_FETCHER));
+    }
+
     private static final Fetcher<Book> SIMPLE_FETCHER =
-            BookFetcher.$.name();
+            BookFetcher.$.name().edition();
+
+    private static final Fetcher<Book> ROW_FETCHER =
+            BookFetcher.$
+                    .allScalarFields()
+                    .tenant(false)
+                    .store(
+                            BookStoreFetcher.$
+                                    .name()
+                    )
+                    .authors(
+                            AuthorFetcher.$
+                                    .firstName()
+                                    .lastName()
+                    );
 
     private static final Fetcher<Book> COMPLEX_FETCHER =
             BookFetcher.$
@@ -74,6 +111,16 @@ public class BookService {
                     )
                     .authors(
                             AuthorFetcher.$
+                                    .allScalarFields()
+                    );
+
+    private static final Fetcher<Book> COMPOSITE_FETCHER =
+            BookFetcher.$
+                    .allScalarFields()
+                    .store()
+                    .authors()
+                    .chapters(
+                            ChapterFetcher.$
                                     .allScalarFields()
                     );
 

@@ -39,6 +39,14 @@ public class BookStoreService {
         );
     }
 
+    @GetMapping("/stores")
+    public List<@FetchBy("ROW_FETCHER") BookStore> findStores() {
+        return bookStoreRepository.findAll(
+                ROW_FETCHER,
+                BookStoreProps.NAME
+        );
+    }
+
     @GetMapping("/stores/complex")
     public List<@FetchBy("COMPLEX_FETCHER") BookStore> findComplexStores() {
         return bookStoreRepository.findAll(
@@ -100,6 +108,9 @@ public class BookStoreService {
 
     private static final Fetcher<BookStore> SIMPLE_FETCHER =
             BookStoreFetcher.$.name();
+
+    private static final Fetcher<BookStore> ROW_FETCHER =
+            BookStoreFetcher.$.allScalarFields();
 
     private static final Fetcher<BookStore> COMPLEX_FETCHER =
             BookStoreFetcher.$

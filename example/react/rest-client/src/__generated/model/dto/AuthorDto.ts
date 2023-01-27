@@ -6,6 +6,14 @@ export type AuthorDto = {
         readonly firstName: string, 
         readonly lastName: string
     }, 
+    'AuthorService/LIST_ITEM_FETCHER': {
+        readonly id: number, 
+        readonly createdTime: string, 
+        readonly modifiedTime: string, 
+        readonly firstName: string, 
+        readonly lastName: string, 
+        readonly gender: Gender
+    }, 
     'AuthorService/COMPLEX_FETCHER': {
         readonly id: number, 
         readonly createdTime: string, 

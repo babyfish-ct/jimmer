@@ -4,11 +4,11 @@ import { ElementOf, RequestOf, ResponseOf } from "../__generated";
 
 export type SimpleBook = MuxRow<ElementOf<ResponseOf<typeof api.bookService.findSimpleBooks>["content"]>>;
 
-export type ComplexBook = MuxRow<ElementOf<ResponseOf<typeof api.bookService.findComplexBooks>["content"]>>;
+export type BookRow = MuxRow<ElementOf<ResponseOf<typeof api.bookService.findBooks>["content"]>>;
 
 export type BookInput = RequestOf<typeof api.bookService.saveBook>["body"];
 
-export function toBookInput(book: ComplexBook): BookInput {
+export function toBookInput(book: BookRow): BookInput {
     return {
         id: book.id,
         name: book.name,

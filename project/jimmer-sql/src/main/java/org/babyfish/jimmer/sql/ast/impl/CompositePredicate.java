@@ -11,9 +11,7 @@ public abstract class CompositePredicate extends AbstractPredicate {
 
     private final Predicate[] predicates;
 
-    CompositePredicate(
-            Predicate[] predicates
-    ) {
+    CompositePredicate(Predicate[] predicates) {
         this.predicates = predicates;
     }
 

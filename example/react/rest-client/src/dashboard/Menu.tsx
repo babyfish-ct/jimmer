@@ -35,14 +35,11 @@ interface Item {
 }
 
 const ITEMS: ReadonlyArray<Item> = [
-    {location: "/simpleBookStores", text: "Simple BookStores"},
-    {location: "/complexBookStores", text: "Complex BookStores"},
+    {location: "/bookStores", text: "BookStore List"},
     {},
-    {location: "/simpleBooks", text: "Simple Books"},
-    {location: "/complexBooks", text: "Complex Books"},
+    {location: "/books", text: "BookList"},
     {},
-    {location: "/simpleAuthors", text: "Simple Authors"},
-    {location: "/complexAuthors", text: "Complex Authors"},
+    {location: "/authors", text: "Author List"},
 ].map((item, index) => {
     return {...item, key: item.location ?? `divider-${index}`};
 });

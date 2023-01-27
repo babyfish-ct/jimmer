@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.ksp.generator
 
-import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.KSAnnotation
@@ -18,18 +17,13 @@ import org.babyfish.jimmer.pojo.AutoScalarStrategy
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
 import java.io.OutputStreamWriter
-import java.lang.annotation.ElementType
-import java.lang.annotation.Target
 import java.util.*
-import javax.lang.model.element.AnnotationMirror
-import javax.lang.model.element.TypeElement
-import javax.validation.constraints.Null
 
 class StaticDeclarationGenerator private constructor(
     private val declaration: StaticDeclaration,
     private val codeGenerator: CodeGenerator?,
     private val file: KSFile?,
-    private val innerClasName: String?,
+    private val innerClassName: String?,
     private val parent: StaticDeclarationGenerator?
 ) {
     private var _typeBuilder: TypeSpec.Builder? = null
@@ -97,6 +91,24 @@ class StaticDeclarationGenerator private constructor(
     internal val isInput: Boolean
         get() = parent?.isInput ?: declaration.topLevelName.endsWith("Input")
 
+    internal fun getClassName(vararg nestedNames: String): ClassName {
+            if (innerClassName !== null) {
+                val list: MutableList<String> = ArrayList()
+                collectNames(list)
+                list.addAll(nestedNames.toList())
+                return ClassName(
+                    declaration.immutableType.className.packageName,
+                    list[0],
+                    *list.subList(1, list.size).toTypedArray()
+                )
+            }
+            return ClassName(
+                declaration.immutableType.className.packageName,
+                declaration.topLevelName,
+                *nestedNames
+            )
+        }
+
     fun generate(allFiles: List<KSFile>) {
         if (codeGenerator != null && file !== null) {
             codeGenerator.createNewFile(
@@ -125,9 +137,9 @@ class StaticDeclarationGenerator private constructor(
                 fileSpec.writeTo(writer)
                 writer.flush()
             }
-        } else if (innerClasName !== null && parent !== null) {
+        } else if (innerClassName !== null && parent !== null) {
             val builder = TypeSpec
-                .classBuilder(innerClasName)
+                .classBuilder(innerClassName)
                 .addModifiers(KModifier.DATA)
             _typeBuilder = builder
             try {
@@ -141,13 +153,13 @@ class StaticDeclarationGenerator private constructor(
 
     private fun addMembers(allFiles: List<KSFile>) {
 
-        if (isInput) {
-            typeBuilder.addSuperinterface(
-                INPUT_CLASS_NAME.parameterizedBy(
-                    immutableType.className
-                )
+        typeBuilder.addSuperinterface(
+            (if (isInput) INPUT_CLASS_NAME else STATIC_CLASS_NAME).parameterizedBy(
+                immutableType.className
             )
-        }
+        )
+
+        addMetadata()
 
         addJsonConstructor()
         addConverterConstructor()
@@ -165,6 +177,64 @@ class StaticDeclarationGenerator private constructor(
                 ).generate(allFiles)
             }
         }
+    }
+
+    private fun addMetadata() {
+        typeBuilder.addType(
+            TypeSpec
+                .companionObjectBuilder()
+                .apply {
+                    addProperty(
+                        PropertySpec
+                            .builder(
+                                "METADATA",
+                                STATIC_METADATA_CLASS_NAME.parameterizedBy(
+                                    declaration.immutableType.className,
+                                    getClassName()
+                                )
+                            )
+                            .initializer(
+                                CodeBlock
+                                    .builder()
+                                    .apply {
+                                        add("\n")
+                                        indent()
+                                        add(
+                                            "%T<%T, %T>(\n",
+                                            STATIC_METADATA_CLASS_NAME,
+                                            declaration.immutableType.className, getClassName()
+                                        )
+                                        indent()
+                                        add("%M(%T::class).by", NEW_FETCHER, declaration.immutableType.className)
+                                        beginControlFlow("")
+                                        for (prop in props) {
+                                            if (!prop.immutableProp.isId) {
+                                                if (prop.target !== null) {
+                                                    addStatement(
+                                                        "%N(%T.METADATA.fetcher)",
+                                                        prop.immutableProp.name,
+                                                        propElementName(prop)
+                                                    )
+                                                } else {
+                                                    addStatement("%N()", prop.immutableProp.name)
+                                                }
+                                            }
+                                        }
+                                        endControlFlow()
+                                        unindent()
+                                        add(")")
+                                        beginControlFlow("")
+                                        addStatement("%T(it)", getClassName())
+                                        endControlFlow()
+                                        unindent()
+                                    }
+                                    .build()
+                            )
+                            .build()
+                    )
+                }
+                .build()
+        )
     }
 
     private fun addJsonConstructor() {
@@ -280,11 +350,7 @@ class StaticDeclarationGenerator private constructor(
             FunSpec
                 .builder("toEntity")
                 .returns(immutableType.className)
-                .apply {
-                    if (isInput) {
-                        addModifiers(KModifier.OVERRIDE)
-                    }
-                }
+                .addModifiers(KModifier.OVERRIDE)
                 .addStatement("return toEntity(null)")
                 .build()
         )
@@ -295,13 +361,13 @@ class StaticDeclarationGenerator private constructor(
             FunSpec
                 .builder("toEntity")
                 .returns(immutableType.className)
+                .addModifiers(KModifier.OVERRIDE)
                 .addParameter(
                     ParameterSpec
                         .builder(
                             "base",
                             immutableType.className.copy(nullable = true)
                         )
-                        .defaultValue("null")
                         .build()
                 )
                 .beginControlFlow(
@@ -313,8 +379,8 @@ class StaticDeclarationGenerator private constructor(
                 .apply {
                     addStatement(
                         "val that = this@%L",
-                        if (innerClasName !== null && innerClasName.isNotEmpty()) {
-                            innerClasName
+                        if (innerClassName !== null && innerClassName.isNotEmpty()) {
+                            innerClassName
                         } else {
                             declaration.topLevelName
                         }
@@ -419,9 +485,9 @@ class StaticDeclarationGenerator private constructor(
     private fun collectNames(list: MutableList<String>) {
         if (parent == null) {
             list.add(declaration.topLevelName)
-        } else if (innerClasName !== null){
+        } else if (innerClassName !== null){
             parent.collectNames(list)
-            list.add(innerClasName)
+            list.add(innerClassName)
         }
     }
 
@@ -434,8 +500,12 @@ class StaticDeclarationGenerator private constructor(
             val target = prop.target ?: throw IllegalArgumentException("prop is not association")
             return target.topLevelName.ifEmpty { "TargetOf_" + prop.name }
         }
-        
+
+        @JvmStatic
         private val NEW = MemberName("org.babyfish.jimmer.kt", "new")
+
+        @JvmStatic
+        private val NEW_FETCHER = MemberName("org.babyfish.jimmer.sql.kt.fetcher", "newFetcher")
 
         private fun isCopyableAnnotation(annotation: KSAnnotation): Boolean {
             val declaration = annotation.annotationType.resolve().declaration
