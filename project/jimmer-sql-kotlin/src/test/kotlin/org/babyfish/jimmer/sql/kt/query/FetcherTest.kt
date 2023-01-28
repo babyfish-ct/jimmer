@@ -5,7 +5,6 @@ import org.babyfish.jimmer.sql.kt.ast.table.isNull
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.*
 import org.junit.Test
-import kotlin.test.expect
 
 class FetcherTest : AbstractQueryTest() {
 
@@ -630,6 +629,92 @@ class FetcherTest : AbstractQueryTest() {
                     |--->}
                     |]""".trimMargin()
             )
+        }
+    }
+
+    @Test
+    fun testBookInput() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(table.id eq 12L)
+                select(table.fetch(BookInput::class))
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK as tb_1_ 
+                    |where tb_1_.ID = ?""".trimMargin()
+            )
+            statement(1).sql(
+                """select tb_1_.AUTHOR_ID 
+                    |from BOOK_AUTHOR_MAPPING as tb_1_ 
+                    |where tb_1_.BOOK_ID = ?""".trimMargin()
+            )
+            rows {
+                contentEquals(
+                    """BookInput(
+                        |--->id=12, 
+                        |--->name=GraphQL in Action, 
+                        |--->edition=3, 
+                        |--->price=80.00, 
+                        |--->storeId=2, 
+                        |--->authorIds=[5]
+                        |)""".trimMargin(),
+                    it[0].toString()
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testCompositeBookInput() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(table.id eq 12L)
+                select(table.fetch(CompositeBookInput::class))
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK as tb_1_ 
+                    |where tb_1_.ID = ?""".trimMargin()
+            )
+            statement(1).sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
+                    |from BOOK_STORE as tb_1_ 
+                    |where tb_1_.ID = ?""".trimMargin()
+            )
+            statement(2).sql(
+                """select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER 
+                    |from AUTHOR as tb_1_ 
+                    |inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID 
+                    |where tb_2_.BOOK_ID = ?""".trimMargin()
+            )
+            rows {
+                contentEquals(
+                    """CompositeBookInput(
+                        |--->id=12, 
+                        |--->name=GraphQL in Action, 
+                        |--->edition=3, 
+                        |--->price=80.00, 
+                        |--->store=TargetOf_store(
+                        |--->--->id=2, 
+                        |--->--->name=MANNING, 
+                        |--->--->version=0, 
+                        |--->--->website=null
+                        |--->), 
+                        |--->authors=[
+                        |--->--->TargetOf_authors(
+                        |--->--->--->id=5, 
+                        |--->--->--->firstName=Samer, 
+                        |--->--->--->lastName=Buna, 
+                        |--->--->--->gender=MALE
+                        |--->--->)
+                        |--->]
+                        |)""".trimMargin(),
+                    it[0].toString()
+                )
+            }
         }
     }
 }

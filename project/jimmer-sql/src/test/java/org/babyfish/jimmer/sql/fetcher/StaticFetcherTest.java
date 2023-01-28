@@ -1,68 +1,132 @@
 package org.babyfish.jimmer.sql.fetcher;
 
-import org.babyfish.jimmer.sql.model.AuthorFetcher;
-import org.babyfish.jimmer.sql.model.BookFetcher;
-import org.babyfish.jimmer.sql.model.BookStoreFetcher;
-import org.babyfish.jimmer.sql.model.TreeNodeFetcher;
+import org.babyfish.jimmer.sql.common.AbstractQueryTest;
+import org.babyfish.jimmer.sql.common.Constants;
+import org.babyfish.jimmer.sql.model.BookInput;
+import org.babyfish.jimmer.sql.model.BookStoreDto;
+import org.babyfish.jimmer.sql.model.BookStoreTable;
+import org.babyfish.jimmer.sql.model.BookTable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class StaticFetcherTest {
+public class StaticFetcherTest extends AbstractQueryTest {
 
     @Test
-    public void testBookFetcher() {
-        Assertions.assertEquals(
-                "org.babyfish.jimmer.sql.model.Book { id, name, edition, price }",
-                BookFetcher.$.allScalarFields().toString()
-        );
-        Assertions.assertEquals(
-                "org.babyfish.jimmer.sql.model.Book { id, name, edition, price, store }",
-                BookFetcher.$.allTableFields().toString()
-        );
-        Assertions.assertEquals(
-                "org.babyfish.jimmer.sql.model.Book { id, name, edition, store { id } }",
-                BookFetcher.$
-                        .allScalarFields()
-                        .store().store(false).store()
-                        .price(false).price().price(false)
-                        .toString()
-        );
-        Assertions.assertEquals(
-                "org.babyfish.jimmer.sql.model.Book { " +
-                        "id, " +
-                        "store(batchSize: 128) { id, name }, " +
-                        "authors(batchSize: 1, limit: 100) { id, firstName, lastName } " +
-                        "}",
-                BookFetcher.$
-                        .store(BookStoreFetcher.$.name(), it -> it.batch(128))
-                        .authors(AuthorFetcher.$.firstName().lastName(), it -> it.batch(1).limit(100))
-                        .toString()
+    public void testBookStoreDto() {
+        BookStoreTable table = BookStoreTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(Constants.manningId))
+                        .select(table.fetch(BookStoreDto.class)),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                    "from BOOK_STORE as tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE " +
+                                    "from BOOK as tb_1_ " +
+                                    "where tb_1_.STORE_ID = ?"
+                    );
+                    ctx.statement(2).sql(
+                            "select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                    "from AUTHOR as tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "where tb_2_.BOOK_ID in (?, ?, ?)"
+                    );
+                    ctx.rows(rows -> {
+                        BookStoreDto dto = rows.get(0);
+                        expect(
+                                "BookStoreDto{" +
+                                        "--->id=2fa3955e-3e83-49b9-902e-0465c109c779, " +
+                                        "--->name=MANNING, " +
+                                        "--->website=null, " +
+                                        "--->version=0, " +
+                                        "--->books=[" +
+                                        "--->--->BookStoreDto.TargetOf_books{" +
+                                        "--->--->--->id=a62f7aa3-9490-4612-98b5-98aae0e77120, " +
+                                        "--->--->--->name=GraphQL in Action, " +
+                                        "--->--->--->edition=1, " +
+                                        "--->--->--->price=80.00, " +
+                                        "--->--->--->authors=[" +
+                                        "--->--->--->--->BookStoreDto.TargetOf_books.TargetOf_authors{" +
+                                        "--->--->--->--->--->id=eb4963fd-5223-43e8-b06b-81e6172ee7ae, " +
+                                        "--->--->--->--->--->firstName=Samer, " +
+                                        "--->--->--->--->--->lastName=Buna, " +
+                                        "--->--->--->--->--->gender=MALE" +
+                                        "--->--->--->--->}" +
+                                        "--->--->--->]" +
+                                        "--->--->}, BookStoreDto.TargetOf_books{" +
+                                        "--->--->--->id=e37a8344-73bb-4b23-ba76-82eac11f03e6, " +
+                                        "--->--->--->name=GraphQL in Action, " +
+                                        "--->--->--->edition=2, " +
+                                        "--->--->--->price=81.00, " +
+                                        "--->--->--->authors=[" +
+                                        "--->--->--->--->BookStoreDto.TargetOf_books.TargetOf_authors{" +
+                                        "--->--->--->--->--->id=eb4963fd-5223-43e8-b06b-81e6172ee7ae, " +
+                                        "--->--->--->--->--->firstName=Samer, " +
+                                        "--->--->--->--->--->lastName=Buna, " +
+                                        "--->--->--->--->--->gender=MALE" +
+                                        "--->--->--->--->}" +
+                                        "--->--->--->]" +
+                                        "--->--->}, BookStoreDto.TargetOf_books{" +
+                                        "--->--->--->id=780bdf07-05af-48bf-9be9-f8c65236fecc, " +
+                                        "--->--->--->name=GraphQL in Action, " +
+                                        "--->--->--->edition=3, " +
+                                        "--->--->--->price=80.00, " +
+                                        "--->--->--->authors=[" +
+                                        "--->--->--->--->BookStoreDto.TargetOf_books.TargetOf_authors{" +
+                                        "--->--->--->--->--->id=eb4963fd-5223-43e8-b06b-81e6172ee7ae, " +
+                                        "--->--->--->--->--->firstName=Samer, " +
+                                        "--->--->--->--->--->lastName=Buna, " +
+                                        "--->--->--->--->--->gender=MALE" +
+                                        "--->--->--->--->}" +
+                                        "--->--->--->]" +
+                                        "--->--->}" +
+                                        "--->]" +
+                                        "}",
+                                dto
+                        );
+                    });
+                }
         );
     }
 
     @Test
-    public void testTreeNodeFetcher() {
-        Assertions.assertEquals(
-                "org.babyfish.jimmer.sql.model.TreeNode { " +
-                        "id, " +
-                        "parent(depth: 5) { id, name, parent { id } }, " +
-                        "childNodes(depth: 10) { id, name } " +
-                        "}",
-                TreeNodeFetcher.$
-                        .parent(TreeNodeFetcher.$.name(), it -> it.depth(5))
-                        .childNodes(TreeNodeFetcher.$.name(), it -> it.depth(10))
-                        .toString()
-        );
-        Assertions.assertEquals(
-                "org.babyfish.jimmer.sql.model.TreeNode { " +
-                        "id, " +
-                        "parent(recursive: true) { id, name, parent { id } }, " +
-                        "childNodes(recursive: true) { id, name } " +
-                        "}",
-                TreeNodeFetcher.$
-                        .parent(TreeNodeFetcher.$.name(), RecursiveFieldConfig::recursive)
-                        .childNodes(TreeNodeFetcher.$.name(), RecursiveFieldConfig::recursive)
-                        .toString()
+    public void testBookInput() {
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(Constants.graphQLInActionId3))
+                        .select(table.fetch(BookInput.class)),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK as tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_1_.AUTHOR_ID from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "where tb_1_.BOOK_ID = ?"
+                    );
+                    ctx.rows(rows -> {
+                        BookInput input = rows.get(0);
+                        expect(
+                                "BookInput{" +
+                                        "--->id=780bdf07-05af-48bf-9be9-f8c65236fecc, " +
+                                        "--->name=GraphQL in Action, " +
+                                        "--->edition=3, " +
+                                        "--->price=80.00, " +
+                                        "--->storeId=2fa3955e-3e83-49b9-902e-0465c109c779, " +
+                                        "--->authorIds=[eb4963fd-5223-43e8-b06b-81e6172ee7ae]" +
+                                        "}",
+                                input
+                        );
+                    });
+                }
         );
     }
 }

@@ -3,9 +3,8 @@ package org.babyfish.jimmer.sql.kt.common
 import com.fasterxml.jackson.core.JsonProcessingException
 import org.babyfish.jimmer.sql.kt.ast.query.KTypedRootQuery
 import java.sql.Connection
-import java.util.*
 import java.util.function.Consumer
-import java.util.function.Function
+import kotlin.math.max
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
@@ -65,7 +64,7 @@ abstract class AbstractQueryTest : AbstractTest() {
         }
 
         fun sql(sql: String): QueryTestContext<R> {
-            maxStatementIndex = Math.max(maxStatementIndex, index)
+            maxStatementIndex = max(maxStatementIndex, index)
             assertFalse(
                 executions.isEmpty(),
                 "Not sql history"
@@ -118,8 +117,9 @@ abstract class AbstractQueryTest : AbstractTest() {
             )
         }
 
+        @Suppress("UNCHECKED_CAST")
         fun row(index: Int, consumer: Consumer<R>): QueryTestContext<R> {
-            consumer.accept(rows.get(index) as R)
+            consumer.accept(rows[index] as R)
             return this
         }
 

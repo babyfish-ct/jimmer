@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.model;
 
+import org.babyfish.jimmer.pojo.Static;
+import org.babyfish.jimmer.pojo.StaticType;
 import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 
@@ -9,6 +11,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
+@StaticType(alias = "dto", topLevelName = "BookStoreDto")
 @Entity
 public interface BookStore {
 
@@ -29,5 +32,6 @@ public interface BookStore {
     BigDecimal avgPrice();
 
     @OneToMany(mappedBy = "store")
+    @Static(alias = "dto", targetAlias = "dto")
     List<Book> books();
 }

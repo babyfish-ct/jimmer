@@ -193,6 +193,7 @@ class StaticDeclarationGenerator private constructor(
                                     getClassName()
                                 )
                             )
+                            .addAnnotation(JVM_STATIC_CLASS_NAME)
                             .initializer(
                                 CodeBlock
                                     .builder()
