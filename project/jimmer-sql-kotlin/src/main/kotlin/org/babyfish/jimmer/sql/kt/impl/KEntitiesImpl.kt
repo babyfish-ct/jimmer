@@ -130,8 +130,8 @@ internal class KEntitiesImpl(
         findStatic(staticType, null, block)
 
     override fun <E : Any, S : Static<E>> findStaticByExample(
-        example: KExample<E>,
         staticType: KClass<S>,
+        example: KExample<E>,
         block: (SortDsl<E>.() -> Unit)?
     ): List<S> =
         findStatic(staticType, example, block)

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.spring.repository.support;
 
 import org.babyfish.jimmer.ImmutableObjects;
+import org.babyfish.jimmer.Static;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.spring.repository.JRepository;
@@ -15,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.StaticMetadata;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.GenericTypeResolver;
@@ -77,13 +79,13 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     }
 
     @Override
-    public Pager<E> pager(Pageable pageable) {
-        return new PagerImpl<>(pageable.getPageNumber(), pageable.getPageSize());
+    public Pager pager(Pageable pageable) {
+        return new PagerImpl(pageable.getPageNumber(), pageable.getPageSize());
     }
 
     @Override
-    public Pager<E> pager(int pageIndex, int pageSize) {
-        return new PagerImpl<>(pageIndex, pageSize);
+    public Pager pager(int pageIndex, int pageSize) {
+        return new PagerImpl(pageIndex, pageSize);
     }
 
     @Override
@@ -100,6 +102,11 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     }
 
     @Override
+    public <S extends Static<E>> S findStaticNullable(Class<S> staticType, ID id) {
+        return sqlClient.getEntities().findStaticById(staticType, id);
+    }
+
+    @Override
     public List<E> findByIds(Iterable<ID> ids) {
         return sqlClient.getEntities().findByIds(entityType, Utils.toCollection(ids));
     }
@@ -110,6 +117,11 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
             return findByIds(ids);
         }
         return sqlClient.getEntities().findByIds(fetcher, Utils.toCollection(ids));
+    }
+
+    @Override
+    public <S extends Static<E>> List<S> findStaticByIds(Class<S> staticType, Iterable<ID> ids) {
+        return null;
     }
 
     @Override
@@ -125,18 +137,15 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         return sqlClient.getEntities().findMapByIds(fetcher, Utils.toCollection(ids));
     }
 
+    @Override
+    public <S extends Static<E>> Map<ID, S> findStaticMapByIds(Class<S> staticType, Iterable<ID> ids) {
+        return sqlClient.getEntities().findStaticMapByIds(staticType, Utils.toCollection(ids));
+    }
+
     @NotNull
     @Override
     public List<E> findAll() {
         return sqlClient.getEntities().findAll(entityType);
-    }
-
-    @Override
-    public List<E> findAll(Fetcher<E> fetcher) {
-        if (fetcher == null) {
-            return findAll();
-        }
-        return sqlClient.getEntities().findAll(fetcher);
     }
 
     @Override
@@ -152,6 +161,11 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         return sqlClient.getEntities().findAll(fetcher, sortedProps);
     }
 
+    @Override
+    public <S extends Static<E>> List<S> findAllStatic(Class<S> staticType, TypedProp.Scalar<?, ?>... sortedProps) {
+        return sqlClient.getEntities().findAllStatic(staticType, sortedProps);
+    }
+
     @NotNull
     @Override
     public List<E> findAll(@NotNull Sort sort) {
@@ -164,6 +178,11 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
             return findAll(sort);
         }
         return sqlClient.getEntities().findAll(fetcher, SpringOrders.toTypedProps(entityType, sort));
+    }
+
+    @Override
+    public <S extends Static<E>> List<S> findAllStatic(Class<S> staticType, Sort sort) {
+        return sqlClient.getEntities().findAllStatic(staticType, SpringOrders.toTypedProps(entityType, sort));
     }
 
     @Override
@@ -187,6 +206,11 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     }
 
     @Override
+    public <S extends Static<E>> Page<S> findAllStatic(Class<S> staticType, int pageIndex, int pageSize, TypedProp.Scalar<?, ?>... sortedProps) {
+        return pager(pageIndex, pageSize).execute(createStaticQuery(staticType, sortedProps));
+    }
+
+    @Override
     public Page<E> findAll(int pageIndex, int pageSize, Sort sort) {
         return findAll(PageRequest.of(pageIndex, pageSize, sort), null);
     }
@@ -194,6 +218,11 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     @Override
     public Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, Sort sort) {
         return findAll(PageRequest.of(pageIndex, pageSize, sort), fetcher);
+    }
+
+    @Override
+    public <S extends Static<E>> Page<S> findAllStatic(Class<S> staticType, int pageIndex, int pageSize, Sort sort) {
+        return findAllStatic(staticType, PageRequest.of(pageIndex, pageSize, sort));
     }
 
     @NotNull
@@ -206,6 +235,19 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     public Page<E> findAll(Pageable pageable, Fetcher<E> fetcher) {
         return pager(pageable).execute(
                 createQuery(fetcher, SpringOrders.toTypedProps(entityType, pageable.getSort()))
+        );
+    }
+
+    @Override
+    public <S extends Static<E>> Page<S> findAllStatic(Class<S> staticType, Pageable pageable) {
+        return pager(pageable).execute(
+                createStaticQuery(
+                        staticType,
+                        SpringOrders.toTypedProps(
+                                StaticMetadata.of(staticType).getFetcher().getImmutableType().getJavaClass(),
+                                pageable.getSort()
+                        )
+                )
         );
     }
 
@@ -291,7 +333,43 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         return query.select(fetcher != null ? table.fetch(fetcher) : table);
     }
 
-    private static class PagerImpl<E> implements Pager<E> {
+    private <S extends Static<E>> ConfigurableRootQuery<?, S> createStaticQuery(
+            Class<S> staticType,
+            TypedProp.Scalar<?, ?>[] sortedProps
+    ) {
+        MutableRootQueryImpl<Table<E>> query =
+                new MutableRootQueryImpl<>(sqlClient, immutableType, ExecutionPurpose.QUERY, false);
+        Table<E> table = query.getTable();
+        for (TypedProp.Scalar<?, ?> sortedProp : sortedProps) {
+            if (!sortedProp.unwrap().getDeclaringType().isAssignableFrom(immutableType)) {
+                throw new IllegalArgumentException(
+                        "The sorted field \"" +
+                                sortedProp +
+                                "\" does not belong to the type \"" +
+                                immutableType +
+                                "\" or its super types"
+                );
+            }
+            PropExpression<?> expr = table.get(sortedProp.unwrap().getName());
+            Order astOrder;
+            if (sortedProp.isDesc()) {
+                astOrder = expr.desc();
+            } else {
+                astOrder = expr.asc();
+            }
+            if (sortedProp.isNullsFirst()) {
+                astOrder = astOrder.nullsFirst();
+            }
+            if (sortedProp.isNullsLast()) {
+                astOrder = astOrder.nullsLast();
+            }
+            query.orderBy(astOrder);
+        }
+        query.freeze();
+        return query.select(table.fetch(staticType));
+    }
+
+    private static class PagerImpl implements Pager {
 
         private final int pageIndex;
 
@@ -303,7 +381,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         }
 
         @Override
-        public Page<E> execute(ConfigurableRootQuery<?, E> query) {
+        public <T> Page<T> execute(ConfigurableRootQuery<?, T> query) {
             if (pageSize == 0) {
                 return new PageImpl<>(query.execute());
             }
@@ -312,7 +390,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
                 throw new IllegalArgumentException("offset is too big");
             }
             int total = query.count();
-            List<E> content =
+            List<T> content =
                     query
                             .limit(pageSize, offset)
                             .execute();

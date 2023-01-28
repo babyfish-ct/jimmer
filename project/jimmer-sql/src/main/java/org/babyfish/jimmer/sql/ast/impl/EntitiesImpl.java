@@ -453,7 +453,7 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E, S extends Static<E>> List<S> findStaticByExample(Example<E> example, Class<S> staticType, TypedProp.Scalar<?, ?>... sortedProps) {
+    public <E, S extends Static<E>> List<S> findStaticByExample(Class<S> staticType, Example<E> example, TypedProp.Scalar<?, ?>... sortedProps) {
         return findStatic(staticType, (ExampleImpl<E>) example, sortedProps);
     }
 
