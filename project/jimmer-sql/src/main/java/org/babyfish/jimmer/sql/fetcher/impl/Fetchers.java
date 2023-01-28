@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
 import java.sql.Connection;
 import java.util.*;
+import java.util.function.Function;
 
 public class Fetchers {
 
@@ -54,20 +55,27 @@ public class Fetchers {
             int columnIndex = e.getKey();
             List<Object> columnValues = e.getValue();
             FetcherSelection<?> selection = (FetcherSelection<?>) selections.get(columnIndex);
-            e.setValue(
-                    Internal.produceList(
-                            selection.getFetcher().getImmutableType(),
-                            columnValues,
-                            values -> {
-                                fetch(
-                                        sqlClient,
-                                        con,
-                                        selection.getFetcher(),
-                                        (List<DraftSpi>)values
-                                );
-                            }
-                    )
+            List<Object> fetchedList = Internal.produceList(
+                    selection.getFetcher().getImmutableType(),
+                    columnValues,
+                    values -> {
+                        fetch(
+                                sqlClient,
+                                con,
+                                selection.getFetcher(),
+                                (List<DraftSpi>)values
+                        );
+                    }
             );
+            Function<Object, Object> converter = (Function<Object, Object>) selection.getConverter();
+            if (converter != null) {
+                List<Object> list = new ArrayList<>(fetchedList.size());
+                for (Object fetched : fetchedList) {
+                    list.add(converter.apply(fetched));
+                }
+                fetchedList = list;
+            }
+            e.setValue(fetchedList);
         }
 
         Map<Integer, Object> indexValueMap = new HashMap<>();

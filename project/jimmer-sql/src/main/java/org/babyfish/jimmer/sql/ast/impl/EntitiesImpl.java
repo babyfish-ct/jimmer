@@ -275,8 +275,13 @@ public class EntitiesImpl implements Entities {
                         Collections.singletonList(
                                 new FetcherSelection<E>() {
                                     @Override
-                                    public Fetcher<E> getFetcher() {
+                                    public Fetcher<?> getFetcher() {
                                         return fetcher;
+                                    }
+
+                                    @Override
+                                    public Function<?, E> getConverter() {
+                                        return null;
                                     }
                                 }
                         ),

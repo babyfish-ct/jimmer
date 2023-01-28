@@ -14,6 +14,7 @@ import java.util.UUID;
 @Entity
 @StaticType(alias = "default", topLevelName = "BookInput")
 @StaticType(alias = "complex", topLevelName = "CompositeBookInput")
+@StaticType(alias = "dto")
 public interface Book {
 
     @Id
@@ -44,5 +45,6 @@ public interface Book {
     )
     @Static(alias = "default", name = "authorIds", idOnly = true)
     @Static(alias = "complex")
+    @Static(alias = "dto")
     List<Author> authors();
 }
