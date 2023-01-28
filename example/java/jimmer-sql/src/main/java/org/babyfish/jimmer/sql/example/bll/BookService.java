@@ -10,7 +10,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
+@RequestMapping("/book")
 @Transactional
 public class BookService {
 
@@ -20,10 +23,16 @@ public class BookService {
         this.bookRepository = bookRepository;
     }
 
-    @GetMapping("/books/simple")
-    public Page<@FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks(
+    @GetMapping("/simpleList")
+    public List<@FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks() {
+        return bookRepository.findAll(SIMPLE_FETCHER, BookProps.NAME, BookProps.EDITION.desc());
+    }
+
+    @GetMapping("/list")
+    public Page<@FetchBy("DEFAULT_FETCHER") Book> findBooks(
             @RequestParam(defaultValue = "0") int pageIndex,
             @RequestParam(defaultValue = "5") int pageSize,
+            // The `sortCode` also support implicit join, like `store.name asc`
             @RequestParam(defaultValue = "name asc, edition desc") String sortCode,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String storeName,
@@ -34,32 +43,15 @@ public class BookService {
                 name,
                 storeName,
                 authorName,
-                SIMPLE_FETCHER
+                DEFAULT_FETCHER
         );
     }
 
-    @GetMapping("/books")
-    public Page<@FetchBy("ROW_FETCHER") Book> findBooks(
-            @RequestParam(defaultValue = "0") int pageIndex,
-            @RequestParam(defaultValue = "5") int pageSize,
-            @RequestParam(defaultValue = "name asc, edition desc") String sortCode,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String storeName,
-            @RequestParam(required = false) String authorName
-    ) {
-        return bookRepository.findBooks(
-                PageRequest.of(pageIndex, pageSize, SortUtils.toSort(sortCode)),
-                name,
-                storeName,
-                authorName,
-                ROW_FETCHER
-        );
-    }
-
-    @GetMapping("/books/complex")
+    @GetMapping("/complexList")
     public Page<@FetchBy("COMPLEX_FETCHER") Book> findComplexBooks(
             @RequestParam(defaultValue = "0") int pageIndex,
             @RequestParam(defaultValue = "5") int pageSize,
+            // The `sortCode` also support implicit join, like `store.name asc`
             @RequestParam(defaultValue = "name asc, edition desc") String sortCode,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String storeName,
@@ -74,15 +66,10 @@ public class BookService {
         );
     }
 
-    @GetMapping("/book/{id}/composite")
-    public CompositeBookInput findCompositeBookInput(@PathVariable("id") long id) {
-        return new CompositeBookInput(bookRepository.findNullable(id, COMPOSITE_FETCHER));
-    }
-
     private static final Fetcher<Book> SIMPLE_FETCHER =
             BookFetcher.$.name().edition();
 
-    private static final Fetcher<Book> ROW_FETCHER =
+    private static final Fetcher<Book> DEFAULT_FETCHER =
             BookFetcher.$
                     .allScalarFields()
                     .tenant(false)
@@ -114,55 +101,13 @@ public class BookService {
                                     .allScalarFields()
                     );
 
-    private static final Fetcher<Book> COMPOSITE_FETCHER =
-            BookFetcher.$
-                    .allScalarFields()
-                    .store()
-                    .authors()
-                    .chapters(
-                            ChapterFetcher.$
-                                    .allScalarFields()
-                    );
-
-    /*
-     * Recommend
-     *
-     * The save command can save arbitrarily complex data structures,
-     * which is too powerful and should be sealed inside the service and not exposed.
-     *
-     * You should accept static Input DTO parameter, convert it to a
-     * dynamic data structure and save it.
-     * Unlike output DTOs, input DTOs don't have explosion issues.
-     */
-    @PutMapping("/book")
+    @PutMapping
     public Book saveBook(@RequestBody BookInput input) {
         return bookRepository.save(input);
     }
 
-    /*
-     * Recommend
-     *
-     * The save command can save arbitrarily complex data structures,
-     * which is too powerful and should be sealed inside the service and not exposed.
-     *
-     * You should accept static Input DTO parameter, convert it to a
-     * dynamic data structure and save it.
-     * Unlike output DTOs, input DTOs don't have explosion issues.
-     */
-    @PutMapping("/book/withChapters")
+    @PutMapping("/withChapters")
     public Book saveCompositeBook(@RequestBody CompositeBookInput input) {
         return bookRepository.save(input);
-    }
-
-    /*
-     * Not recommended.
-     *
-     * Since the save command can save arbitrarily complex data structure,
-     * it is `too powerful`, and direct exposure will cause serious security problems,
-     * unless your client is an internal system and absolutely reliable.
-     */
-    @PutMapping("/book/dynamic")
-    public Book saveDynamicBook(@RequestBody Book book) {
-        return bookRepository.save(book);
     }
 }

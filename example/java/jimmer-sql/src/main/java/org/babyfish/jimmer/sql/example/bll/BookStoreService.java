@@ -7,8 +7,7 @@ import org.babyfish.jimmer.sql.example.dal.BookStoreRepository;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -16,6 +15,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
+@RequestMapping("/bookStore")
 @Transactional
 public class BookStoreService {
 
@@ -31,7 +31,7 @@ public class BookStoreService {
         this.bookRepository = bookRepository;
     }
 
-    @GetMapping("/stores/simple")
+    @GetMapping("/simpleList")
     public List<@FetchBy("SIMPLE_FETCHER") BookStore> findSimpleStores() {
         return bookStoreRepository.findAll(
                 SIMPLE_FETCHER,
@@ -39,15 +39,15 @@ public class BookStoreService {
         );
     }
 
-    @GetMapping("/stores")
-    public List<@FetchBy("ROW_FETCHER") BookStore> findStores() {
+    @GetMapping("/list")
+    public List<@FetchBy("DEFAULT_FETCHER") BookStore> findStores() {
         return bookStoreRepository.findAll(
-                ROW_FETCHER,
+                DEFAULT_FETCHER,
                 BookStoreProps.NAME
         );
     }
 
-    @GetMapping("/stores/complex")
+    @GetMapping("/complexList")
     public List<@FetchBy("COMPLEX_FETCHER") BookStore> findComplexStores() {
         return bookStoreRepository.findAll(
                 COMPLEX_FETCHER,
@@ -71,7 +71,7 @@ public class BookStoreService {
      * has multiple generic parameters, or even nested generic types.
      * This is why `@FetchBy` decorates generic parameters but not return types.
      */
-    @GetMapping("stores/withNewestBook")
+    @GetMapping("/listWithNewestBook")
     public List<
             Tuple2<
                     @FetchBy("SIMPLE_FETCHER") BookStore,
@@ -109,7 +109,7 @@ public class BookStoreService {
     private static final Fetcher<BookStore> SIMPLE_FETCHER =
             BookStoreFetcher.$.name();
 
-    private static final Fetcher<BookStore> ROW_FETCHER =
+    private static final Fetcher<BookStore> DEFAULT_FETCHER =
             BookStoreFetcher.$.allScalarFields();
 
     private static final Fetcher<BookStore> COMPLEX_FETCHER =
@@ -134,4 +134,9 @@ public class BookStoreService {
                             AuthorFetcher.$
                                     .allScalarFields()
                     );
+
+    @PutMapping
+    public BookStore saveBookStore(@RequestBody BookStoreInput input) {
+        return bookStoreRepository.save(input);
+    }
 }

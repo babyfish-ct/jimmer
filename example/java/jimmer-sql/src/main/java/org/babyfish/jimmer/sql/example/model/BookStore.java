@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.example.model;
 
+import org.babyfish.jimmer.pojo.StaticType;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.example.dal.calc.BookStoreAvgPriceResolver;
 import org.babyfish.jimmer.sql.example.model.common.BaseEntity;
@@ -9,6 +10,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
+@StaticType(alias = "input", topLevelName = "BookStoreInput")
 public interface BookStore extends BaseEntity {
 
     @Id

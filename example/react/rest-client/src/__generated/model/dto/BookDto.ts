@@ -3,7 +3,8 @@ import type { Gender } from '../enums';
 export type BookDto = {
     'BookService/SIMPLE_FETCHER': {
         readonly id: number, 
-        readonly name: string
+        readonly name: string, 
+        readonly edition: number
     }, 
     'BookStoreService/NEWEST_BOOK_FETCHER': {
         readonly id: number, 
@@ -21,7 +22,7 @@ export type BookDto = {
             readonly gender: Gender
         }>
     }, 
-    'BookService/LIST_ITEM_FETCHER': {
+    'BookService/DEFAULT_FETCHER': {
         readonly id: number, 
         readonly createdTime: string, 
         readonly modifiedTime: string, 

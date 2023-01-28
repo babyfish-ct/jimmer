@@ -2,10 +2,12 @@ package org.babyfish.jimmer.example.kt.sql.model
 
 import org.babyfish.jimmer.example.kt.sql.dal.calc.BookStoreAvgPriceResolver
 import org.babyfish.jimmer.example.kt.sql.model.common.BaseEntity
+import org.babyfish.jimmer.pojo.StaticType
 import org.babyfish.jimmer.sql.*
 import java.math.BigDecimal
 
 @Entity
+@StaticType(alias = "input", topLevelName = "BookStoreInput")
 interface BookStore : BaseEntity {
 
     @Id

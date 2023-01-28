@@ -1,11 +1,13 @@
 package org.babyfish.jimmer.sql.example.model;
 
+import org.babyfish.jimmer.pojo.StaticType;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.example.model.common.BaseEntity;
 
 import java.util.List;
 
 @Entity
+@StaticType(alias = "input", topLevelName = "AuthorInput")
 public interface Author extends BaseEntity {
 
     @Id

@@ -6,7 +6,6 @@ import org.babyfish.jimmer.pojo.StaticType
 import org.babyfish.jimmer.sql.*
 
 @Entity
-@StaticType(alias = "declaredOnly", autoScalarStrategy = AutoScalarStrategy.DECLARED)
 interface Chapter : BaseEntity {
 
     @Id
