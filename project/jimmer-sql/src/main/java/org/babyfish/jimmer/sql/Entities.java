@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql;
 
+import org.babyfish.jimmer.Static;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.mutation.*;
@@ -45,6 +46,16 @@ public interface Entities {
     <E> List<E> findByExample(Example<E> example, TypedProp.Scalar<?, ?> ... sortedProps);
 
     <E> List<E> findByExample(Example<E> example, Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... sortedProps);
+
+    <E, S extends Static<E>> S findStaticById(Class<S> staticType, Object id);
+
+    <E, S extends Static<E>> List<S> findStaticByIds(Class<S> staticType, Collection<?> ids);
+
+    <ID, E, S extends Static<E>> Map<ID, S> findStaticMapByIds(Class<S> staticType, Collection<ID> ids);
+
+    <E, S extends Static<E>> List<S> findAllStatic(Class<S> staticType, TypedProp.Scalar<?, ?> ... sortedProps);
+
+    <E, S extends Static<E>> List<S> findStaticByExample(Example<E> example, Class<S> staticType, TypedProp.Scalar<?, ?> ... sortedProps);
 
     default <E> SimpleSaveResult<E> save(E entity) {
         return saveCommand(entity).execute();

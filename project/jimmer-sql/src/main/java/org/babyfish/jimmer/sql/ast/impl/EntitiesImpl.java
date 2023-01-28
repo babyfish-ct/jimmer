@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.Static;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -23,6 +24,7 @@ import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.cache.CacheLoader;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.StaticMetadata;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.fetcher.impl.Fetchers;
 import org.babyfish.jimmer.sql.runtime.Converters;
@@ -308,6 +310,61 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
+    public <E, S extends Static<E>> S findStaticById(Class<S> staticType, Object id) {
+        List<S> list;
+        if (con != null) {
+            list = findStaticByIds(staticType, Collections.singleton(id), con);
+        } else {
+            list =getSqlClient().getConnectionManager().execute(
+                    con -> findStaticByIds(staticType, Collections.singleton(id), con)
+            );
+        }
+        return list != null ? list.get(0) : null;
+    }
+
+    @Override
+    public <E, S extends Static<E>> List<S> findStaticByIds(Class<S> staticType, Collection<?> ids) {
+        if (con != null) {
+            return findStaticByIds(staticType, ids, con);
+        }
+        return getSqlClient().getConnectionManager().execute(
+                con -> findStaticByIds(staticType, ids, con)
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <ID, E, S extends Static<E>> Map<ID, S> findStaticMapByIds(Class<S> staticType, Collection<ID> ids) {
+        StaticMetadata<E, S> staticMetadata = StaticMetadata.of(staticType);
+        Fetcher<E> fetcher = staticMetadata.getFetcher();
+        ImmutableProp idProp = ImmutableType.get(fetcher.getJavaClass()).getIdProp();
+        return this.findStaticByIds(staticType, ids, con).stream().collect(
+                Collectors.toMap(
+                        it -> (ID)((ImmutableSpi) it).__get(idProp.getId()),
+                        Function.identity(),
+                        (a, b) -> { throw new IllegalStateException("Objects with same id"); },
+                        LinkedHashMap::new
+                )
+        );
+    }
+
+    private <E, S extends Static<E>> List<S> findStaticByIds(
+            Class<S> staticType,
+            Collection<?> ids,
+            Connection con
+    ) {
+        StaticMetadata<E, S> staticMetadata = StaticMetadata.of(staticType);
+        Fetcher<E> fetcher = staticMetadata.getFetcher();
+        Function<E, S> converter = staticMetadata.getConverter();
+        List<E> entities = findByIds(fetcher, ids, con);
+        List<S> staticObjects = new ArrayList<>(entities.size());
+        for (E entity : entities) {
+            staticObjects.add(converter.apply(entity));
+        }
+        return staticObjects;
+    }
+
+    @Override
     public <E> List<E> findAll(Class<E> type, TypedProp.Scalar<?, ?>... sortedProps) {
         return find(ImmutableType.get(type), null, null, sortedProps);
     }
@@ -387,6 +444,70 @@ public class EntitiesImpl implements Entities {
         query.freeze();
         return query.select(
                 fetcher != null ? table.fetch(fetcher) : table
+        ).execute(con);
+    }
+
+    @Override
+    public <E, S extends Static<E>> List<S> findAllStatic(Class<S> staticType, TypedProp.Scalar<?, ?>... sortedProps) {
+        return findStatic(staticType, null, sortedProps);
+    }
+
+    @Override
+    public <E, S extends Static<E>> List<S> findStaticByExample(Example<E> example, Class<S> staticType, TypedProp.Scalar<?, ?>... sortedProps) {
+        return findStatic(staticType, (ExampleImpl<E>) example, sortedProps);
+    }
+
+    private <E, S extends Static<E>> List<S> findStatic(
+            Class<S> staticType,
+            ExampleImpl<E> example,
+            TypedProp.Scalar<?, ?>... sortedProps
+    ) {
+        StaticMetadata<E, S> metadata = StaticMetadata.of(staticType);
+        Fetcher<E> fetcher = metadata.getFetcher();
+        ImmutableType type = fetcher.getImmutableType();
+        if (example != null && example.type() != type) {
+            throw new IllegalArgumentException(
+                    "The type of example is \"" +
+                            example.type() +
+                            "\", it does not match the query root type \"" +
+                            type +
+                            "\""
+            );
+        }
+        MutableRootQueryImpl<Table<E>> query =
+                new MutableRootQueryImpl<>(sqlClient, type, ExecutionPurpose.QUERY, false);
+        Table<E> table = query.getTable();
+        if (example != null) {
+            example.applyTo(query);
+        }
+        for (TypedProp.Scalar<?, ?> sortedProp : sortedProps) {
+            if (!sortedProp.unwrap().getDeclaringType().isAssignableFrom(type)) {
+                throw new IllegalArgumentException(
+                        "The sorted field \"" +
+                                sortedProp +
+                                "\" does not belong to the type \"" +
+                                type +
+                                "\" or its super types"
+                );
+            }
+            Expression<?> expr = table.get(sortedProp.unwrap().getName());
+            Order astOrder;
+            if (sortedProp.isDesc()) {
+                astOrder = expr.desc();
+            } else {
+                astOrder = expr.asc();
+            }
+            if (sortedProp.isNullsFirst()) {
+                astOrder = astOrder.nullsFirst();
+            }
+            if (sortedProp.isNullsLast()) {
+                astOrder = astOrder.nullsLast();
+            }
+            query.orderBy(astOrder);
+        }
+        query.freeze();
+        return query.select(
+                table.fetch(staticType)
         ).execute(con);
     }
 
