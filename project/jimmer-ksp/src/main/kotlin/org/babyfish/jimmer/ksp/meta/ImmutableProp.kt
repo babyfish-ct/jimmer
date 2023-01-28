@@ -3,12 +3,14 @@ package org.babyfish.jimmer.ksp.meta
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.ksp.toClassName
 import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.ksp.*
-import org.babyfish.jimmer.ksp.generator.*
+import org.babyfish.jimmer.ksp.generator.DRAFT
+import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
+import org.babyfish.jimmer.ksp.generator.parseValidationMessages
 import org.babyfish.jimmer.meta.ModelException
 import org.babyfish.jimmer.meta.impl.PropDescriptor
-import org.babyfish.jimmer.pojo.AutoScalarStrategy
 import org.babyfish.jimmer.pojo.Static
 import org.babyfish.jimmer.pojo.Statics
 import org.babyfish.jimmer.sql.*
@@ -32,6 +34,12 @@ class ImmutableProp(
 
     val isTransient: Boolean =
         annotation(Transient::class) !== null
+
+    val hasTransientResolver: Boolean =
+        annotation(Transient::class)?.let {
+            val resolveClassName = it.get<KSType>("value")?.toClassName()
+            resolveClassName != UNIT
+        } ?: false
 
     val isList: Boolean =
         (resolvedType.declaration as KSClassDeclaration).asStarProjectedType().let { starType ->
@@ -222,7 +230,7 @@ class ImmutableProp(
             .apply {
                 this += annotations(Static::class)
                 for (statics in annotations(Statics::class)) {
-                    this += statics["value"] ?: emptyList<KSAnnotation>()
+                    this += statics["value"] ?: emptyList()
                 }
             }
             .map {
@@ -235,14 +243,6 @@ class ImmutableProp(
                     isIdOnly = it["idOnly"] ?: false,
                     targetAlias = it["targetAlias"] ?: ""
                 )
-                if (isTransient) {
-                    throw MetaException(
-                        "Illegal property \"" +
-                            this +
-                            "\", it is decorated by both @Static and @Transient, " +
-                            "this is not allowed"
-                    )
-                }
                 if (staticProp.isOptional && isNullable) {
                     throw MetaException(
                         "Illegal property \"" +
@@ -308,7 +308,6 @@ class ImmutableProp(
                                 targetType!!,
                                 "",
                                 "",
-                                AutoScalarStrategy.ALL,
                                 false
                             )
                         )

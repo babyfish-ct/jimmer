@@ -82,6 +82,8 @@ public class ImmutableType {
 
     private final Map<String, StaticDeclaration> staticDeclarationMap;
 
+    private final Map<String, AutoScalarStrategy> autoScalarStrategyMap;
+
     public ImmutableType(
             TypeUtils typeUtils,
             TypeElement typeElement
@@ -354,6 +356,8 @@ public class ImmutableType {
         }
         this.declaredStaticDeclarationMap = Collections.unmodifiableMap(declaredStaticMap);
         this.staticDeclarationMap = Collections.unmodifiableMap(staticMap);
+
+        this.autoScalarStrategyMap = createAutoScalarStrategyMap();
     }
 
     public TypeElement getTypeElement() {
@@ -516,10 +520,61 @@ public class ImmutableType {
         return staticDeclarationMap;
     }
 
+    public AutoScalarStrategy getAutoScalarStrategy(String alias) {
+        AutoScalarStrategy strategy = autoScalarStrategyMap.get(alias);
+        if (strategy == null && !alias.isEmpty()) {
+            strategy = autoScalarStrategyMap.get("");
+        }
+        return strategy != null ? strategy : AutoScalarStrategy.ALL;
+    }
+
     public void resolve(TypeUtils typeUtils) {
         for (ImmutableProp prop : declaredProps.values()) {
             prop.resolve(typeUtils, this);
         }
+    }
+
+    private Map<String, AutoScalarStrategy> createAutoScalarStrategyMap() {
+        Map<String, AutoScalarStrategy> map = new HashMap<>();
+        AutoScalarRules rules = typeElement.getAnnotation(AutoScalarRules.class);
+        if (rules != null) {
+            for (AutoScalarRule rule : rules.value()) {
+                if (map.put(rule.alias(), rule.value()) != null) {
+                    conflictAutoScalarStrategy(rule.alias());
+                }
+            }
+        }
+        AutoScalarRule rule = typeElement.getAnnotation(AutoScalarRule.class);
+        if (rule != null) {
+            if (map.put(rule.alias(), rule.value()) != null) {
+                conflictAutoScalarStrategy(rule.alias());
+            }
+        }
+        StaticTypes types = typeElement.getAnnotation(StaticTypes.class);
+        if (types != null) {
+            for (StaticType type : types.value()) {
+                if (map.put(type.alias(), type.autoScalarStrategy()) != null) {
+                    conflictAutoScalarStrategy(type.alias());
+                }
+            }
+        }
+        StaticType type = typeElement.getAnnotation(StaticType.class);
+        if (type != null) {
+            if (map.put(type.alias(), type.autoScalarStrategy()) != null) {
+                conflictAutoScalarStrategy(type.alias());
+            }
+        }
+        return map;
+    }
+
+    private void conflictAutoScalarStrategy(String alias) {
+        throw new MetaException(
+                "Illegal type \"" +
+                        typeElement.getQualifiedName().toString() +
+                        "\", the auto scalar strategy for alias \"" +
+                        alias +
+                        "\" cannot be configured multiple times"
+        );
     }
 
     private StaticDeclaration staticType(StaticType staticType) {
@@ -554,7 +609,6 @@ public class ImmutableType {
                 this,
                 staticType.alias(),
                 validateTopLevelName(staticType.topLevelName(), StaticType.class),
-                staticType.autoScalarStrategy(),
                 staticType.allOptional()
         );
     }

@@ -10,9 +10,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import org.babyfish.jimmer.ksp.annotation
 import org.babyfish.jimmer.ksp.get
-import org.babyfish.jimmer.ksp.meta.ImmutableType
-import org.babyfish.jimmer.ksp.meta.StaticDeclaration
-import org.babyfish.jimmer.ksp.meta.StaticProp
+import org.babyfish.jimmer.ksp.meta.*
 import org.babyfish.jimmer.pojo.AutoScalarStrategy
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
@@ -41,33 +39,61 @@ class StaticDeclarationGenerator private constructor(
                 .any {
                     it.isKey
                 }
-            for (prop in immutableType.properties.values) {
-                if (prop.isTransient) {
-                    continue
-                }
-                var staticProp = prop.staticProp(alias)
-                if (staticProp == null) {
-                    if (!prop.isAssociation(true)) {
-                        val all = declaration.autoScalarStrategy == AutoScalarStrategy.ALL
-                        val declared = declaration.autoScalarStrategy == AutoScalarStrategy.DECLARED &&
-                            prop.declaringType === immutableType
-                        if (all || declared) {
-                            staticProp = StaticProp(
-                                prop,
-                                alias,
-                                prop.name,
-                                true,
-                                declaration.allOptional,
-                                false,
-                                ""
-                            )
-                            if (!staticProp.isOptional && prop.isId && hasKey) {
-                                staticProp = staticProp.copy(isOptional = true)
-                            }
-                            this += (staticProp)
+
+            val possibleAutoScalars = mutableSetOf<ImmutableProp>().apply {
+                var type: ImmutableType? = declaration.immutableType
+                while (type !== null) {
+                    val strategy = type.autoScalarStrategy(declaration.alias)
+                    if (strategy == AutoScalarStrategy.NONE) {
+                        break
+                    }
+                    for (prop in type.properties.values) {
+                        if (!prop.isAssociation(true) && !prop.isTransient) {
+                            add(prop)
                         }
                     }
+                    if (strategy == AutoScalarStrategy.DECLARED) {
+                        break
+                    }
+                    type = type.superType
+                }
+            }
+            for (prop in immutableType.properties.values) {
+                var staticProp = prop.staticProp(alias)
+                if (staticProp == null) {
+                    if (possibleAutoScalars.contains(prop)) {
+                        staticProp = StaticProp(
+                            prop,
+                            alias,
+                            prop.name,
+                            true,
+                            declaration.allOptional,
+                            false,
+                            ""
+                        )
+                        if (!staticProp.isOptional && prop.isId && hasKey) {
+                            staticProp = staticProp.copy(isOptional = true)
+                        }
+                        this += (staticProp)
+                    }
                 } else if (staticProp.isEnabled) {
+                    if (prop.isTransient) {
+                        if (isInput) {
+                            throw MetaException(
+                                "Illegal property \"" +
+                                    prop +
+                                    "\", the transient property of input type can not be decorated by @Static"
+                            )
+                        }
+                        if (!prop.hasTransientResolver) {
+                            throw MetaException(
+                                "Illegal property \"" +
+                                    prop +
+                                    "\", if a property is decorated by both @Transient and @Static," +
+                                    "its transient resolver must be specified"
+                            )
+                        }
+                    }
                     this += staticProp.copy(isOptional = declaration.allOptional)
                 }
             }

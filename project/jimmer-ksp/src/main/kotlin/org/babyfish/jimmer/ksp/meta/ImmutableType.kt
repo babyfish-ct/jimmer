@@ -9,16 +9,13 @@ import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.FETCHER_DSL
 import org.babyfish.jimmer.ksp.generator.parseValidationMessages
-import org.babyfish.jimmer.pojo.AutoScalarStrategy
-import org.babyfish.jimmer.pojo.StaticType
-import org.babyfish.jimmer.pojo.StaticTypes
+import org.babyfish.jimmer.pojo.*
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.Id
 import org.babyfish.jimmer.sql.MappedSuperclass
 import java.util.regex.Pattern
 import kotlin.reflect.KClass
-import kotlin.reflect.full.superclasses
 
 class ImmutableType(
     ctx: Context,
@@ -202,7 +199,7 @@ class ImmutableType(
             .apply {
                 this += classDeclaration.annotations(StaticType::class)
                 for (staticTypes in classDeclaration.annotations(StaticTypes::class)) {
-                    this += staticTypes["value"] ?: emptyList<KSAnnotation>()
+                    this += staticTypes["value"] ?: emptyList()
                 }
             }
             .map {
@@ -237,11 +234,6 @@ class ImmutableType(
                                   }
                               }
                         },
-                    autoScalarStrategy = when (it.get<KSType>("autoScalarStrategy")?.declaration?.simpleName?.asString()) {
-                        "DECLARED" -> AutoScalarStrategy.DECLARED
-                        "NONE" -> AutoScalarStrategy.NONE
-                        else -> AutoScalarStrategy.ALL
-                    },
                     allOptional = it["allOptional"] ?: false
                 )
             }
@@ -280,6 +272,49 @@ class ImmutableType(
             staticMap
         }
 
+    fun autoScalarStrategy(alias: String): AutoScalarStrategy =
+        autoScalarStrategyMap[alias]
+            ?: alias.takeIf { it.isNotEmpty() }?.let { autoScalarStrategyMap[""] }
+            ?: AutoScalarStrategy.ALL
+
+    private val autoScalarStrategyMap: Map<String, AutoScalarStrategy> =
+        mutableMapOf<String, AutoScalarStrategy>().apply {
+            classDeclaration.annotation(AutoScalarRules::class)?.let {
+                for (rule in it.get<List<KSAnnotation>>("value") ?: emptyList()) {
+                    val alias: String = rule["alias"]!!
+                    put(alias, autoScalarStrategy(rule["value"])!!)?.let {
+                        conflictAutoScalarStrategy(alias)
+                    }
+                }
+            }
+            classDeclaration.annotation(AutoScalarRule::class)?.let {
+                val alias: String = it["alias"]!!
+                put(alias, autoScalarStrategy(it["value"])!!)?.let {
+                    conflictAutoScalarStrategy(alias)
+                }
+            }
+            classDeclaration.annotation(StaticTypes::class)?.let {
+                for (rule in it.get<List<KSAnnotation>>("value") ?: emptyList()) {
+                    val alias: String = rule["alias"]!!
+                    put(alias, autoScalarStrategy(rule["autoScalarStrategy"])!!)?.let {
+                        conflictAutoScalarStrategy(alias)
+                    }
+                }
+            }
+            classDeclaration.annotation(StaticType::class)?.let {
+                val alias: String = it["alias"]!!
+                put(alias, autoScalarStrategy(it["autoScalarStrategy"])!!)?.let {
+                    conflictAutoScalarStrategy(alias)
+                }
+            }
+        }
+
+    private fun conflictAutoScalarStrategy(alias: String): Nothing =
+        throw MetaException(
+            "Illegal type \"${classDeclaration.fullName}\", " +
+                "the auto scalar strategy of the alias \"${alias}\" cannot be configured multiple times"
+        )
+
     internal fun resolve() {
         for (prop in declaredProperties.values) {
             prop.resolve()
@@ -303,5 +338,14 @@ class ImmutableType(
         @JvmStatic
         private val STATIC_TYPE_PATTERN =
             Pattern.compile("[A-Za-z_$][A-Za-z_$0-9]*")
+
+        @JvmStatic
+        private fun autoScalarStrategy(ksType: KSType?): AutoScalarStrategy? =
+            when (ksType?.declaration?.simpleName?.asString()) {
+                "DECLARED" -> AutoScalarStrategy.DECLARED
+                "NONE" -> AutoScalarStrategy.NONE
+                "ALL" -> AutoScalarStrategy.ALL
+                else -> null
+            }
     }
 }

@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.kt.model
 import org.babyfish.jimmer.sql.*
 import java.math.BigDecimal
 import javax.validation.constraints.NotBlank
-import javax.validation.constraints.Null
 
 @Entity
 interface BookStore {

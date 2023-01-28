@@ -105,7 +105,7 @@ public class StaticProp {
             return true;
         }
         if (immutableProp.isNullable()) {
-            return input ? !immutableProp.isInputNotNull() : true;
+            return !input || !immutableProp.isInputNotNull();
         }
         return false;
     }

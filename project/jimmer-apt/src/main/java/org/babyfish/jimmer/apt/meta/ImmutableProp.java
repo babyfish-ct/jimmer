@@ -6,7 +6,6 @@ import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
-import org.babyfish.jimmer.pojo.AutoScalarStrategy;
 import org.babyfish.jimmer.pojo.Static;
 import org.babyfish.jimmer.pojo.Statics;
 import org.babyfish.jimmer.sql.*;
@@ -51,6 +50,8 @@ public class ImmutableProp {
     private final TypeMirror elementType;
 
     private final boolean isTransient;
+
+    private final boolean hasTransientResolver;
 
     private final boolean isList;
 
@@ -168,6 +169,24 @@ public class ImmutableProp {
 
         Transient trans = executableElement.getAnnotation(Transient.class);
         isTransient = trans != null;
+        boolean hasResolver = false;
+        if (isTransient) {
+            for (AnnotationMirror mirror : executableElement.getAnnotationMirrors()) {
+                if (((TypeElement) mirror.getAnnotationType().asElement())
+                        .getQualifiedName()
+                        .toString()
+                        .equals(Transient.class.getName())) {
+                    for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e : mirror.getElementValues().entrySet()) {
+                        if (e.getKey().getSimpleName().contentEquals("value")) {
+                            hasResolver = !e.getValue().toString().equals("void");
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        hasTransientResolver = hasResolver;
+
         isAssociation = typeUtils.isImmutable(elementType);
         isEntityAssociation = typeUtils.isEntity(elementType);
         if (isList && typeUtils.isEmbeddable(elementType)) {
@@ -350,6 +369,10 @@ public class ImmutableProp {
         return isTransient;
     }
 
+    public boolean hasTransientResolver() {
+        return hasTransientResolver;
+    }
+
     public boolean isList() {
         return isList;
     }
@@ -446,7 +469,7 @@ public class ImmutableProp {
                     } else if (staticProp.getTargetAlias().isEmpty()) {
                         staticPropMap.put(
                                 staticProp.getAlias(),
-                                staticProp.target(new StaticDeclaration(targetType, "", "", AutoScalarStrategy.ALL, false))
+                                staticProp.target(new StaticDeclaration(targetType, "", "", false))
                         );
                     } else {
                         throw new MetaException(
@@ -477,14 +500,6 @@ public class ImmutableProp {
     }
 
     private StaticProp staticProp(Static s) {
-        if (isTransient) {
-            throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", it is decorated by both @Static and @Transient, " +
-                            "this is not allowed"
-            );
-        }
         if (s.optional() && isNullable) {
             throw new MetaException(
                     "Illegal property \"" +
