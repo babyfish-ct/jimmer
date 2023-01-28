@@ -2,21 +2,23 @@ package org.babyfish.jimmer.example.kt.sql.dal
 
 import org.babyfish.jimmer.example.kt.sql.model.*
 import org.babyfish.jimmer.spring.repository.KRepository
+import org.babyfish.jimmer.spring.repository.SpringOrders
+import org.babyfish.jimmer.spring.repository.orderBy
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 
 interface BookRepository : KRepository<Book, Long> {
 
     fun findBooks(
-        pageIndex: Int,
-        pageSize: Int,
+        pageable: Pageable,
         name: String?,
         storeName: String?,
         authorName: String?,
         fetcher: Fetcher<Book>?
     ): Page<Book> =
-        pager(pageIndex, pageSize).execute(
+        pager(pageable).execute(
             sql.createQuery(Book::class) {
                 name?.takeIf { it.isNotEmpty() }?.let {
                     where(table.name ilike it)
@@ -37,8 +39,7 @@ interface BookRepository : KRepository<Book, Long> {
                         }
                     )
                 }
-                orderBy(table.name)
-                orderBy(table.edition.desc())
+                orderBy(pageable.sort)
                 select(table.fetch(fetcher))
             }
         )

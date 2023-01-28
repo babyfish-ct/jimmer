@@ -6,7 +6,7 @@ export type AuthorDto = {
         readonly firstName: string, 
         readonly lastName: string
     }, 
-    'AuthorService/LIST_ITEM_FETCHER': {
+    'AuthorService/DEFAULT_FETCHER': {
         readonly id: number, 
         readonly createdTime: string, 
         readonly modifiedTime: string, 

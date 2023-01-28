@@ -9,28 +9,28 @@ export class BookStoreService {
     async findComplexStores(): Promise<
         ReadonlyArray<BookStoreDto['BookStoreService/COMPLEX_FETCHER']>
     > {
-        let uri = '/stores/complex';
+        let uri = '/bookStore/complexList';
         return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<BookStoreDto['BookStoreService/COMPLEX_FETCHER']>
     }
     
     async findSimpleStores(): Promise<
         ReadonlyArray<BookStoreDto['BookStoreService/SIMPLE_FETCHER']>
     > {
-        let uri = '/stores/simple';
+        let uri = '/bookStore/simpleList';
         return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<BookStoreDto['BookStoreService/SIMPLE_FETCHER']>
     }
     
     async findStores(): Promise<
-        ReadonlyArray<BookStoreDto['BookStoreService/LIST_ITEM_FETCHER']>
+        ReadonlyArray<BookStoreDto['BookStoreService/DEFAULT_FETCHER']>
     > {
-        let uri = '/stores';
-        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<BookStoreDto['BookStoreService/LIST_ITEM_FETCHER']>
+        let uri = '/bookStore/list';
+        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<BookStoreDto['BookStoreService/DEFAULT_FETCHER']>
     }
     
     async findStoresWithNewestBook(): Promise<
         ReadonlyArray<Tuple2<BookStoreDto['BookStoreService/SIMPLE_FETCHER'], BookDto['BookStoreService/NEWEST_BOOK_FETCHER'] | undefined>>
     > {
-        let uri = '/stores/withNewestBook';
+        let uri = '/bookStore/listWithNewestBook';
         return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<Tuple2<BookStoreDto['BookStoreService/SIMPLE_FETCHER'], BookDto['BookStoreService/NEWEST_BOOK_FETCHER'] | undefined>>
     }
 }

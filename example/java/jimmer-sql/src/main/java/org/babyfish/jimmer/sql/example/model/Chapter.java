@@ -1,13 +1,10 @@
 package org.babyfish.jimmer.sql.example.model;
 
-import org.babyfish.jimmer.pojo.AutoScalarStrategy;
-import org.babyfish.jimmer.pojo.StaticType;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.example.model.common.BaseEntity;
 import org.jetbrains.annotations.Nullable;
 
 @Entity
-@StaticType(alias = "forCompositeBookInput", autoScalarStrategy = AutoScalarStrategy.DECLARED)
 public interface Chapter extends BaseEntity {
 
     @Id

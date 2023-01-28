@@ -6,99 +6,68 @@ export class AuthorService {
     
     constructor(private executor: Executor) {}
     
-    async findAuthors(options?: AuthorServiceOptions['findAuthors']): Promise<
-        ReadonlyArray<AuthorDto['AuthorService/LIST_ITEM_FETCHER']>
+    async findAuthors(options: AuthorServiceOptions['findAuthors']): Promise<
+        ReadonlyArray<AuthorDto['AuthorService/DEFAULT_FETCHER']>
     > {
-        let uri = '/authors';
-        let separator = '?';
-        if (options?.firstName !== undefined && options.firstName !== null) {
-            uri += separator;
-            uri += 'firstName=';
+        let uri = '/author/list';
+        uri += '?sortCode=';
+        uri += encodeURIComponent(options.sortCode);
+        if (options.firstName !== undefined && options.firstName !== null) {
+            uri += '&firstName=';
             uri += encodeURIComponent(options.firstName);
-            separator = '&';
         }
-        if (options?.lastName !== undefined && options.lastName !== null) {
-            uri += separator;
-            uri += 'lastName=';
+        if (options.lastName !== undefined && options.lastName !== null) {
+            uri += '&lastName=';
             uri += encodeURIComponent(options.lastName);
-            separator = '&';
         }
-        if (options?.gender !== undefined && options.gender !== null) {
-            uri += separator;
-            uri += 'gender=';
+        if (options.gender !== undefined && options.gender !== null) {
+            uri += '&gender=';
             uri += encodeURIComponent(options.gender);
-            separator = '&';
         }
-        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<AuthorDto['AuthorService/LIST_ITEM_FETCHER']>
+        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<AuthorDto['AuthorService/DEFAULT_FETCHER']>
     }
     
-    async findComplexAuthors(options?: AuthorServiceOptions['findComplexAuthors']): Promise<
+    async findComplexAuthors(options: AuthorServiceOptions['findComplexAuthors']): Promise<
         ReadonlyArray<AuthorDto['AuthorService/COMPLEX_FETCHER']>
     > {
-        let uri = '/authors/complex';
-        let separator = '?';
-        if (options?.firstName !== undefined && options.firstName !== null) {
-            uri += separator;
-            uri += 'firstName=';
+        let uri = '/author/complexList';
+        uri += '?sortCode=';
+        uri += encodeURIComponent(options.sortCode);
+        if (options.firstName !== undefined && options.firstName !== null) {
+            uri += '&firstName=';
             uri += encodeURIComponent(options.firstName);
-            separator = '&';
         }
-        if (options?.lastName !== undefined && options.lastName !== null) {
-            uri += separator;
-            uri += 'lastName=';
+        if (options.lastName !== undefined && options.lastName !== null) {
+            uri += '&lastName=';
             uri += encodeURIComponent(options.lastName);
-            separator = '&';
         }
-        if (options?.gender !== undefined && options.gender !== null) {
-            uri += separator;
-            uri += 'gender=';
+        if (options.gender !== undefined && options.gender !== null) {
+            uri += '&gender=';
             uri += encodeURIComponent(options.gender);
-            separator = '&';
         }
         return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<AuthorDto['AuthorService/COMPLEX_FETCHER']>
     }
     
-    async findSimpleAuthors(options?: AuthorServiceOptions['findSimpleAuthors']): Promise<
+    async findSimpleAuthors(): Promise<
         ReadonlyArray<AuthorDto['AuthorService/SIMPLE_FETCHER']>
     > {
-        let uri = '/authors/simple';
-        let separator = '?';
-        if (options?.firstName !== undefined && options.firstName !== null) {
-            uri += separator;
-            uri += 'firstName=';
-            uri += encodeURIComponent(options.firstName);
-            separator = '&';
-        }
-        if (options?.lastName !== undefined && options.lastName !== null) {
-            uri += separator;
-            uri += 'lastName=';
-            uri += encodeURIComponent(options.lastName);
-            separator = '&';
-        }
-        if (options?.gender !== undefined && options.gender !== null) {
-            uri += separator;
-            uri += 'gender=';
-            uri += encodeURIComponent(options.gender);
-            separator = '&';
-        }
+        let uri = '/author/simpleList';
         return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<AuthorDto['AuthorService/SIMPLE_FETCHER']>
     }
 }
 
 export type AuthorServiceOptions = {
     'findAuthors': {
+        readonly sortCode: string, 
         readonly firstName?: string, 
         readonly lastName?: string, 
         readonly gender?: Gender
     },
     'findComplexAuthors': {
+        readonly sortCode: string, 
         readonly firstName?: string, 
         readonly lastName?: string, 
         readonly gender?: Gender
     },
-    'findSimpleAuthors': {
-        readonly firstName?: string, 
-        readonly lastName?: string, 
-        readonly gender?: Gender
-    }
+    'findSimpleAuthors': {}
 }

@@ -12,12 +12,12 @@ import java.util.List;
 
 @Entity
 @StaticType(
-        alias = "default",
+        alias = "input",
         topLevelName = "BookInput",
         autoScalarStrategy = AutoScalarStrategy.DECLARED
 )
 @StaticType(
-        alias = "composite",
+        alias = "compositeInput",
         topLevelName = "CompositeBookInput",
         autoScalarStrategy = AutoScalarStrategy.DECLARED
 )
@@ -52,20 +52,7 @@ public interface Book extends TenantAware {
     @Static(name="authorIds", idOnly = true)
     List<Author> authors();
 
-    /*
-     * Here, `chapters` is mapped to static type, the `targetAlias` in `forCompositeBookInput`.
-     *
-     * The target type `Chapter` is decorated by the annotation @StaticType, whose `alias`
-     * is `forCompositeBookInput` and `autoScalarStrategy` is `AutoScalarStrategy.DECLARED`. That means
-     * only the properties declared in `Chapter` should be mapped automatically, not include
-     * the properties inherited from `BaseEntity`.
-     *
-     * There is another solution: using `@Static(enabled = false)` to decorate properties
-     * of `BaseEntity`, let those properties cannot be mapped into static types. That means
-     * it is unnecessary to specify the static type of `Chapter` with `AutoScalarStrategy.DECLARED`,
-     * at this time, the `targetAlias` of the current property can be unspecified.
-     */
     @OneToMany(mappedBy = "book", orderedProps = @OrderedProp("index"))
-    @Static(alias = "composite", targetAlias = "forCompositeBookInput")
+    @Static(alias = "compositeInput")
     List<Chapter> chapters();
 }

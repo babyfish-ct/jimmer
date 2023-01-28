@@ -119,7 +119,7 @@ class OperationImpl implements Operation {
         }
         String uri = http.get_1();
         if (uri == null || uri.isEmpty()) {
-            return null;
+            uri = "/";
         }
         String parentUri = declaringService.getUri();
         if (parentUri != null) {
