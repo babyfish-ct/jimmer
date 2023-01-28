@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.repository;
 
+import org.babyfish.jimmer.Static;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.spring.repository.support.Utils;
@@ -28,9 +29,9 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     JSqlClient sql();
 
-    Pager<E> pager(Pageable pageable);
+    Pager pager(Pageable pageable);
 
-    Pager<E> pager(int pageIndex, int pageSize);
+    Pager pager(int pageIndex, int pageSize);
 
     /*
      * For consumer
@@ -40,6 +41,8 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     E findNullable(ID id, Fetcher<E> fetcher);
 
+    <S extends Static<E>> S findStaticNullable(Class<S> staticType, ID id);
+
     @NotNull
     @Override
     default Optional<E> findById(ID id) {
@@ -48,6 +51,10 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     default Optional<E> findById(ID id, Fetcher<E> fetcher) {
         return Optional.ofNullable(findNullable(id, fetcher));
+    }
+
+    default <S extends Static<E>> Optional<S> findStaticById(Class<S> staticType, ID id) {
+        return Optional.ofNullable(findStaticNullable(staticType, id));
     }
 
     @AliasFor("findAllById")
@@ -62,39 +69,17 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     List<E> findByIds(Iterable<ID> ids, Fetcher<E> fetcher);
 
+    <S extends Static<E>> List<S> findStaticByIds(Class<S> staticType, Iterable<ID> ids);
+
     Map<ID, E> findMapByIds(Iterable<ID> ids);
 
     Map<ID, E> findMapByIds(Iterable<ID> ids, Fetcher<E> fetcher);
 
+    <S extends Static<E>> Map<ID, S> findStaticMapByIds(Class<S> staticType, Iterable<ID> ids);
+
     @NotNull
     @Override
     List<E> findAll();
-
-    List<E> findAll(Fetcher<E> fetcher);
-
-    default List<E> findAll(TypedProp.Scalar<E, ?> sortedProp) {
-        return findAll(new TypedProp.Scalar[]{ sortedProp });
-    }
-
-    default List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<E, ?> sortedProp) {
-        return findAll(fetcher, new TypedProp.Scalar[]{ sortedProp });
-    }
-
-    default List<E> findAll(TypedProp.Scalar<E, ?> sortedProp1, TypedProp.Scalar<E, ?> sortedProp2) {
-        return findAll(new TypedProp.Scalar[]{ sortedProp1, sortedProp2 });
-    }
-
-    default List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<E, ?> sortedProp1, TypedProp.Scalar<E, ?> sortedProp2) {
-        return findAll(fetcher, new TypedProp.Scalar[]{ sortedProp1, sortedProp2 });
-    }
-
-    default List<E> findAll(TypedProp.Scalar<E, ?> sortedProp1, TypedProp.Scalar<E, ?> sortedProp2, TypedProp.Scalar<E, ?> sortedProp3) {
-        return findAll(new TypedProp.Scalar[]{ sortedProp1, sortedProp2 });
-    }
-
-    default List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<E, ?> sortedProp1, TypedProp.Scalar<E, ?> sortedProp2, TypedProp.Scalar<E, ?> sortedProp3) {
-        return findAll(fetcher, new TypedProp.Scalar[]{ sortedProp1, sortedProp2, sortedProp3 });
-    }
 
     @SuppressWarnings("unchecked")
     List<E> findAll(TypedProp.Scalar<?, ?> ... sortedProps);
@@ -102,55 +87,51 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     @SuppressWarnings("unchecked")
     List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... sortedProps);
 
+    <S extends Static<E>> List<S> findAllStatic(Class<S> staticType, TypedProp.Scalar<?, ?> ... sortedProps);
+
     @NotNull
     @Override
     List<E> findAll(@NotNull Sort sort);
 
     List<E> findAll(Fetcher<E> fetcher, Sort sort);
 
+    <S extends Static<E>> List<S> findAllStatic(Class<S> staticType, Sort sort);
+
     Page<E> findAll(int pageIndex, int pageSize);
 
     Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher);
-
-    default Page<E> findAll(int pageIndex, int pageSize, TypedProp.Scalar<E, ?> sortedProp) {
-        return findAll(pageIndex, pageSize, new TypedProp.Scalar[]{ sortedProp });
-    }
-
-    default Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<E, ?> sortedProp) {
-        return findAll(pageIndex, pageSize, fetcher, new TypedProp.Scalar[]{ sortedProp });
-    }
-
-    default Page<E> findAll(int pageIndex, int pageSize, TypedProp.Scalar<E, ?> sortedProp1, TypedProp.Scalar<E, ?> sortedProp2) {
-        return findAll(pageIndex, pageSize, new TypedProp.Scalar[]{ sortedProp1, sortedProp2 });
-    }
-
-    default Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<E, ?> sortedProp1, TypedProp.Scalar<E, ?> sortedProp2) {
-        return findAll(pageIndex, pageSize, fetcher, new TypedProp.Scalar[]{ sortedProp1, sortedProp2 });
-    }
-
-    default Page<E> findAll(int pageIndex, int pageSize, TypedProp.Scalar<E, ?> sortedProp1, TypedProp.Scalar<E, ?> sortedProp2, TypedProp.Scalar<E, ?> sortedProp3) {
-        return findAll(pageIndex, pageSize, new TypedProp.Scalar[]{ sortedProp1, sortedProp2, sortedProp3 });
-    }
-
-    default Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<E, ?> sortedProp1, TypedProp.Scalar<E, ?> sortedProp2, TypedProp.Scalar<E, ?> sortedProp3) {
-        return findAll(pageIndex, pageSize, fetcher, new TypedProp.Scalar[]{ sortedProp1, sortedProp2, sortedProp3 });
-    }
 
     @SuppressWarnings("unchecked")
     Page<E> findAll(int pageIndex, int pageSize, TypedProp.Scalar<?, ?> ... sortedProps);
 
     @SuppressWarnings("unchecked")
     Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... sortedProps);
+
+    <S extends Static<E>> Page<S> findAllStatic(
+            Class<S> staticType,
+            int pageIndex,
+            int pageSize,
+            TypedProp.Scalar<?, ?> ... sortedProps
+    );
     
     Page<E> findAll(int pageIndex, int pageSize, Sort sort);
 
     Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, Sort sort);
+
+    <S extends Static<E>> Page<S> findAllStatic(
+            Class<S> staticType,
+            int pageIndex,
+            int pageSize,
+            Sort sort
+    );
 
     @NotNull
     @Override
     Page<E> findAll(@NotNull Pageable pageable);
     
     Page<E> findAll(Pageable pageable, Fetcher<E> fetcher);
+
+    <S extends Static<E>> Page<S> findAllStatic(Class<S> staticType, Pageable pageable);
 
     @Override
     default boolean existsById(ID id) {
@@ -240,9 +221,9 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     GraphQl<E> graphql();
 
-    interface Pager<E> {
+    interface Pager {
 
-        Page<E> execute(ConfigurableRootQuery<?, E> query);
+        <T> Page<T> execute(ConfigurableRootQuery<?, T> query);
     }
 
     interface GraphQl<E> {

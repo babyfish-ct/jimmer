@@ -58,8 +58,8 @@ interface KEntities {
     ): List<S>
 
     fun <E: Any, S: Static<E>> findStaticByExample(
-        example: KExample<E>,
         staticType: KClass<S>,
+        example: KExample<E>,
         block: (SortDsl<E>.() -> Unit)? = null
     ): List<S>
 

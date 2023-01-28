@@ -55,7 +55,7 @@ public interface Entities {
 
     <E, S extends Static<E>> List<S> findAllStatic(Class<S> staticType, TypedProp.Scalar<?, ?> ... sortedProps);
 
-    <E, S extends Static<E>> List<S> findStaticByExample(Example<E> example, Class<S> staticType, TypedProp.Scalar<?, ?> ... sortedProps);
+    <E, S extends Static<E>> List<S> findStaticByExample(Class<S> staticType, Example<E> example, TypedProp.Scalar<?, ?>... sortedProps);
 
     default <E> SimpleSaveResult<E> save(E entity) {
         return saveCommand(entity).execute();

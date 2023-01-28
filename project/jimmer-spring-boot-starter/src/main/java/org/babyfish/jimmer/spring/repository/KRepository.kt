@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.spring.repository
 
 import org.babyfish.jimmer.Input
+import org.babyfish.jimmer.Static
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.repository.NoRepositoryBean
 import org.springframework.data.repository.PagingAndSortingRepository
 import java.util.*
+import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 @NoRepositoryBean
@@ -19,17 +21,22 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
 
     val sql: KSqlClient
 
-    fun pager(pageIndex: Int, pageSize: Int): Pager<E>
+    fun pager(pageIndex: Int, pageSize: Int): Pager
 
-    fun pager(pageable: Pageable): Pager<E>
+    fun pager(pageable: Pageable): Pager
 
     fun findNullable(id: ID, fetcher: Fetcher<E>? = null): E?
+
+    fun <S: Static<E>> findStaticNullable(staticType: KClass<S>, id: ID): S?
 
     override fun findById(id: ID): Optional<E> =
         Optional.ofNullable(findNullable(id))
 
     fun findById(id: ID, fetcher: Fetcher<E>): Optional<E> =
         Optional.ofNullable(findNullable(id, fetcher))
+
+    fun <S: Static<E>> findStaticById(staticType: KClass<S>, id: ID): Optional<S> =
+        Optional.ofNullable(findStaticNullable(staticType, id))
 
     @AliasFor("findAllById")
     fun findByIds(ids: Iterable<ID>, fetcher: Fetcher<E>? = null): List<E>
@@ -38,17 +45,25 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
     override fun findAllById(ids: Iterable<ID>): List<E> = 
         findByIds(ids)
 
+    fun <S: Static<E>> findStaticByIds(staticType: KClass<S>, ids: Iterable<ID>): List<S>
+
     fun findMapByIds(ids: Iterable<ID>, fetcher: Fetcher<E>? = null): Map<ID, E>
+
+    fun <S: Static<E>> findStaticMapByIds(staticType: KClass<S>, ids: Iterable<ID>): Map<ID, S>
 
     override fun findAll(): List<E> =
         findAll(null, null)
 
     fun findAll(fetcher: Fetcher<E>? = null, block: (SortDsl<E>.() -> Unit)? = null): List<E>
 
-    fun findAll(fetcher: Fetcher<E>? = null, sort: Sort): List<E>
+    fun <S: Static<E>> findAllStatic(staticType: KClass<S>, block: (SortDsl<E>.() -> Unit)? = null): List<S>
 
     override fun findAll(sort: Sort): List<E> =
         findAll(null, sort)
+
+    fun findAll(fetcher: Fetcher<E>? = null, sort: Sort): List<E>
+
+    fun <S: Static<E>> findAllStatic(staticType: KClass<S>, sort: Sort): List<S>
 
     fun findAll(
         pageIndex: Int,
@@ -57,6 +72,13 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
         block: (SortDsl<E>.() -> Unit)? = null
     ): Page<E>
 
+    fun <S: Static<E>> findAllStatic(
+        staticType: KClass<S>,
+        pageIndex: Int,
+        pageSize: Int,
+        block: (SortDsl<E>.() -> Unit)? = null
+    ): Page<S>
+
     fun findAll(
         pageIndex: Int,
         pageSize: Int,
@@ -64,9 +86,18 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
         sort: Sort
     ): Page<E>
 
+    fun <S: Static<E>> findAllStatic(
+        staticType: KClass<S>,
+        pageIndex: Int,
+        pageSize: Int,
+        sort: Sort
+    ): Page<S>
+
     override fun findAll(pageable: Pageable): Page<E>
 
     fun findAll(pageable: Pageable, fetcher: Fetcher<E>? = null): Page<E>
+
+    fun <S: Static<E>> findAllStatic(staticType: KClass<S>, pageable: Pageable): Page<S>
 
     override fun existsById(id: ID): Boolean =
         findNullable(id) != null
@@ -107,9 +138,9 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
 
     val graphql: GraphQl<E>
 
-    interface Pager<E> {
+    interface Pager {
 
-        fun execute(query: KConfigurableRootQuery<*, E>): Page<E>
+        fun <T> execute(query: KConfigurableRootQuery<*, T>): Page<T>
     }
 
     interface GraphQl<E> {
