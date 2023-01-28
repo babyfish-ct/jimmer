@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.apt.meta;
 
-import org.babyfish.jimmer.pojo.AutoScalarStrategy;
-
 public class StaticDeclaration {
 
     private final ImmutableType immutableType;
@@ -10,20 +8,17 @@ public class StaticDeclaration {
 
     private final String topLevelName;
 
-    private final AutoScalarStrategy autoScalarStrategy;
-
     private final boolean allOptional;
 
     public StaticDeclaration(
             ImmutableType immutableType,
             String alias,
             String topLevelName,
-            AutoScalarStrategy autoScalarStrategy,
-            boolean allOptional) {
+            boolean allOptional
+    ) {
         this.immutableType = immutableType;
         this.alias = alias;
         this.topLevelName = topLevelName;
-        this.autoScalarStrategy = autoScalarStrategy;
         this.allOptional = allOptional;
     }
 
@@ -39,10 +34,6 @@ public class StaticDeclaration {
         return topLevelName;
     }
 
-    public AutoScalarStrategy getAutoScalarStrategy() {
-        return autoScalarStrategy;
-    }
-
     public boolean isAllOptional() {
         return allOptional;
     }
@@ -53,7 +44,6 @@ public class StaticDeclaration {
                 "immutableType=" + immutableType +
                 ", alias='" + alias + '\'' +
                 ", topLevelName='" + topLevelName + '\'' +
-                ", autoScalarStrategy=" + autoScalarStrategy +
                 ", allOptional=" + allOptional +
                 '}';
     }

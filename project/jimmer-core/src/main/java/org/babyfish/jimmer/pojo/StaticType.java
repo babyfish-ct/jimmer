@@ -25,8 +25,10 @@ public @interface StaticType {
     String topLevelName() default "";
 
     /**
-     * How to handle scalar fields that are not decorated
-     * by `@Static` explicitly
+     * How to handle scalar fields that are not decorated by @{@link Static} explicitly.
+     *
+     * For id field, if the entity type has key, it will be mapped as
+     * optional static field implicitly
      */
     AutoScalarStrategy autoScalarStrategy() default AutoScalarStrategy.ALL;
 

@@ -2,9 +2,7 @@ package org.babyfish.jimmer.apt.generator;
 
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.GeneratorException;
-import org.babyfish.jimmer.apt.meta.ImmutableProp;
-import org.babyfish.jimmer.apt.meta.StaticDeclaration;
-import org.babyfish.jimmer.apt.meta.StaticProp;
+import org.babyfish.jimmer.apt.meta.*;
 import org.babyfish.jimmer.pojo.AutoScalarStrategy;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Id;
@@ -60,6 +58,22 @@ public class StaticDeclarationGenerator {
         this.innerClassName = innerClassName;
         this.parent = parent;
 
+        Set<ImmutableProp> possibleAutoScalars = new HashSet<>();
+        for (ImmutableType type = declaration.getImmutableType(); type != null; type = type.getSuperType()) {
+            AutoScalarStrategy strategy = type.getAutoScalarStrategy(declaration.getAlias());
+            if (strategy == AutoScalarStrategy.NONE) {
+                break;
+            }
+            for (ImmutableProp prop : type.getDeclaredProps().values()) {
+                if (!prop.isAssociation(true) && !prop.isTransient()) {
+                    possibleAutoScalars.add(prop);
+                }
+            }
+            if (strategy == AutoScalarStrategy.DECLARED) {
+                break;
+            }
+        }
+
         List<StaticProp> props = new ArrayList<>();
         String alias = declaration.getAlias();
         boolean hasKey = declaration
@@ -69,24 +83,33 @@ public class StaticDeclarationGenerator {
                 .stream()
                 .anyMatch(it -> it.getAnnotation(Key.class) != null);
         for (ImmutableProp prop : declaration.getImmutableType().getProps().values()) {
-            if (prop.isTransient()) {
-                continue;
-            }
             StaticProp staticProp = prop.getStaticProp(alias);
             if (staticProp == null) {
-                if (!prop.isAssociation(true)) {
-                    boolean all = declaration.getAutoScalarStrategy() == AutoScalarStrategy.ALL;
-                    boolean declared = declaration.getAutoScalarStrategy() == AutoScalarStrategy.DECLARED &&
-                            prop.getDeclaringType() == declaration.getImmutableType();
-                    if (all || declared) {
-                        staticProp = new StaticProp(prop, alias, prop.getName(), true, declaration.isAllOptional(), false, "");
-                        if (!staticProp.isOptional() && prop.getAnnotation(Id.class) != null && hasKey) {
-                            staticProp = staticProp.optional(true);
-                        }
-                        props.add(staticProp);
+                if (possibleAutoScalars.contains(prop)) {
+                    staticProp = new StaticProp(prop, alias, prop.getName(), true, declaration.isAllOptional(), false, "");
+                    if (!staticProp.isOptional() && prop.getAnnotation(Id.class) != null && hasKey) {
+                        staticProp = staticProp.optional(true);
                     }
+                    props.add(staticProp);
                 }
             } else if (staticProp.isEnabled()) {
+                if (prop.isTransient()) {
+                    if (isInput()) {
+                        throw new MetaException(
+                                "Illegal property \"" +
+                                        prop +
+                                        "\", the transient property of input type can not be decorated by @Static"
+                        );
+                    }
+                    if (!prop.hasTransientResolver()) {
+                        throw new MetaException(
+                                "Illegal property \"" +
+                                        prop +
+                                        "\", if a property is decorated by both @Transient and @Static," +
+                                        "its transient resolver must be specified"
+                        );
+                    }
+                }
                 props.add(staticProp.optional(declaration.isAllOptional()));
             }
         }
