@@ -110,4 +110,9 @@ public class BookService {
     public Book saveCompositeBook(@RequestBody CompositeBookInput input) {
         return bookRepository.save(input);
     }
+
+    @DeleteMapping("/{id}")
+    public void deleteBook(@PathVariable("id") long id) {
+        bookRepository.deleteById(id);
+    }
 }

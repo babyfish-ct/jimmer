@@ -11,43 +11,37 @@ import EditRoadIcon from '@mui/icons-material/EditRoad';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { toSortModel, toSortCode } from "../common/SortModels";
 import { Alert, Button, Chip, Drawer, Fab, TextField } from "@mui/material";
-import { BookInput, BookRow, toBookInput } from "./BookTypes";
+import { BookRow, toBookInput } from "./BookTypes";
 import { BookForm } from "./BookForm";
 import { BookDeleter } from "./BookDeleter";
 import { useTenant } from "../dashboard/TenantContext";
-import { CompositeBookForm } from "./CompositeBookForm";
 
 export const BookList:FC = memo(() => {
 
     const getRowId = useCallback((row: BookRow) => row.id, []);
 
-    const [selectedRow, setSelectedRow] = useState<BookRow>();
+    const [editingRow, setEditingRow] = useState<BookRow>();
 
     const [saveMode, setSaveMode] = useState<'NONE' | 'GENERIC' | 'COMPOSITE'>('NONE');
 
-    const [deletedRow, setDeletedRow] = useState<BookRow>();
+    const [deletingRow, setDeletingRow] = useState<BookRow>();
 
     const [popAnchorEl, setPopAnchorEl] = useState<HTMLButtonElement>();
 
     const tenant = useTenant();
 
     const onAdd = useCallback(() => {
-        setSelectedRow(undefined);
+        setEditingRow(undefined);
         setSaveMode('GENERIC');
     }, []);
 
     const onEdit = useCallback((row: BookRow) => {
-        setSelectedRow(row);
+        setEditingRow(row);
         setSaveMode('GENERIC');
     }, []);
 
-    const onEditComposite = useCallback((row: BookRow) => {
-        setSelectedRow(row);
-        setSaveMode('COMPOSITE');
-    }, []);
-
     const onDelete = useCallback((row: BookRow, e: MouseEvent<HTMLButtonElement>) => {
-        setDeletedRow(row);
+        setDeletingRow(row);
         setPopAnchorEl(e.currentTarget);
     }, []);
 
@@ -96,7 +90,6 @@ export const BookList:FC = memo(() => {
             type: 'actions',
             getActions: params => [
                 <GridActionsCellItem icon={<EditIcon/>} label="Edit" onClick={() => onEdit(params.row)} disabled={tenant === undefined}/>,
-                <GridActionsCellItem icon={<EditRoadIcon/>} label="EditComposite" onClick={() => onEditComposite(params.row)} disabled={tenant === undefined}/>,
                 <GridActionsCellItem icon={<DeleteIcon/>} label="Delete" onClick={e => onDelete(params.row, e)}/>
             ]
         }
@@ -113,18 +106,21 @@ export const BookList:FC = memo(() => {
     const onNameChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
         setOptions(draft => {
             draft.name = e.target.value;
+            draft.pageIndex = 0;
         })
     }, [setOptions]);
 
     const onStoreNameChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
         setOptions(draft => {
             draft.storeName = e.target.value;
+            draft.pageIndex = 0;
         })
     }, [setOptions]);
 
     const onAuhtorChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
         setOptions(draft => {
             draft.authorName = e.target.value;
+            draft.pageIndex = 0;
         })
     }, [setOptions]);
 
@@ -153,8 +149,8 @@ export const BookList:FC = memo(() => {
         setSaveMode('NONE');
     }, []);
 
-    const onPopClose = useCallback((row: BookRow | undefined) => {
-        setDeletedRow(undefined);
+    const onPopClose = useCallback(() => {
+        setDeletingRow(undefined);
         setPopAnchorEl(undefined);
     }, []);
 
@@ -188,12 +184,11 @@ export const BookList:FC = memo(() => {
                 <AddIcon/>
             </Fab>
             <Drawer open={saveMode === 'GENERIC'} anchor="right">
-                <BookForm value={selectedRow !== undefined ? toBookInput(selectedRow) : undefined} onClose={onFormClose}/>
+                <div style={{padding: '1rem', width: 400}}>
+                    <BookForm value={editingRow !== undefined ? toBookInput(editingRow) : undefined} onClose={onFormClose}/>
+                </div>
             </Drawer>
-            <Drawer open={saveMode === 'COMPOSITE'} anchor="right">
-                <CompositeBookForm id={selectedRow?.id} onClose={onFormClose}/>
-            </Drawer>
-            <BookDeleter row={deletedRow} anchorEl={popAnchorEl} onClose={onPopClose}/>
+            <BookDeleter row={deletingRow} anchorEl={popAnchorEl} onClose={onPopClose}/>
         </Stack>
     );
 });

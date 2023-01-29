@@ -85,4 +85,9 @@ public class AuthorService {
     public Author saveAuthor(AuthorInput input) {
         return authorRepository.save(input);
     }
+
+    @DeleteMapping("/{id}")
+    public void deleteAuthor(@PathVariable("id") long id) {
+        authorRepository.deleteById(id);
+    }
 }

@@ -24,7 +24,7 @@ export const BookForm: FC<{
 
     const { isLoading, mutateAsync } = useMutation({
         mutationFn: () => api.bookService.saveBook({body: input}),
-        onSuccess: () => queryClient.invalidateQueries()
+        onSettled: () => queryClient.invalidateQueries()
     });
 
     const onNameChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
@@ -57,20 +57,20 @@ export const BookForm: FC<{
         });
     }, [setInput]);
 
-    const [alertInfo, setAlertInfo] = useState<MessageInfo>();
+    const [messageInfo, setMessageInfo] = useState<MessageInfo>();
 
     const onSaveClick = useCallback(async () => {
         try {
             await mutateAsync();
         } catch (ex) {
-            setAlertInfo({
+            setMessageInfo({
                 severity: "error", 
                 title: "Error", 
                 content: "Failed to save book"
             });
             return;
         }
-        setAlertInfo({ 
+        setMessageInfo({ 
             title: "Success", 
             content: "Book has been saved"
         });
@@ -80,8 +80,8 @@ export const BookForm: FC<{
         onClose(undefined);
     }, [onClose]);
 
-    const onAlertClose = useCallback(() => {
-        setAlertInfo(info => {
+    const onMessageClose = useCallback(() => {
+        setMessageInfo(info => {
             if (info?.severity !== "error") {
                 onClose(input);
             }
@@ -129,7 +129,7 @@ export const BookForm: FC<{
                     <Button variant="outlined" onClick={onCancelClick}>Cancel</Button>
                 </Stack>
 
-                <MessageDialog info={alertInfo} onClose={onAlertClose}/>
+                <MessageDialog info={messageInfo} onClose={onMessageClose}/>
             </Stack>
         </div>
     );

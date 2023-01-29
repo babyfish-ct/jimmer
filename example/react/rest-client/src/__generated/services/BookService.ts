@@ -1,11 +1,17 @@
 import type { Book } from '../model/entities';
-import type { Page, CompositeBookInput } from '../model/static';
+import type { Page, BookInput, CompositeBookInput } from '../model/static';
 import type { BookDto } from '../model/dto';
 import type { Executor, Dynamic } from '../';
 
 export class BookService {
     
     constructor(private executor: Executor) {}
+    
+    async deleteBook(options: BookServiceOptions['deleteBook']): Promise<void> {
+        let uri = '/book/';
+        uri += encodeURIComponent(options.id);
+        return (await this.executor({uri, method: 'DELETE'})) as void
+    }
     
     async findBooks(options: BookServiceOptions['findBooks']): Promise<
         Page<BookDto['BookService/DEFAULT_FETCHER']>
@@ -64,6 +70,13 @@ export class BookService {
         return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<BookDto['BookService/SIMPLE_FETCHER']>
     }
     
+    async saveBook(options: BookServiceOptions['saveBook']): Promise<
+        Dynamic<Book>
+    > {
+        let uri = '/book/';
+        return (await this.executor({uri, method: 'PUT', body: options.body})) as Dynamic<Book>
+    }
+    
     async saveCompositeBook(options: BookServiceOptions['saveCompositeBook']): Promise<
         Dynamic<Book>
     > {
@@ -73,6 +86,7 @@ export class BookService {
 }
 
 export type BookServiceOptions = {
+    'deleteBook': {readonly id: number},
     'findBooks': {
         readonly pageIndex: number, 
         readonly pageSize: number, 
@@ -90,5 +104,6 @@ export type BookServiceOptions = {
         readonly authorName?: string
     },
     'findSimpleBooks': {},
+    'saveBook': {readonly body: BookInput},
     'saveCompositeBook': {readonly body: CompositeBookInput}
 }

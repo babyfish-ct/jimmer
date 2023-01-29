@@ -139,4 +139,9 @@ public class BookStoreService {
     public BookStore saveBookStore(@RequestBody BookStoreInput input) {
         return bookStoreRepository.save(input);
     }
+
+    @DeleteMapping("/{id}")
+    public void deleteBookStore(@PathVariable("id") long id) {
+        bookStoreRepository.deleteById(id);
+    }
 }
