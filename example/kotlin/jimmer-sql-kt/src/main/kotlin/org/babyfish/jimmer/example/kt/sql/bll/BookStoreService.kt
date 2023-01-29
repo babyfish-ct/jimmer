@@ -9,13 +9,12 @@ import org.babyfish.jimmer.example.kt.sql.model.BookStoreInput
 import org.babyfish.jimmer.example.kt.sql.model.by
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/bookStore")
+@Transactional
 class BookStoreService(
     private val bookStoreRepository: BookStoreRepository,
     private val bookRepository: BookRepository
@@ -82,14 +81,19 @@ class BookStoreService(
 
         return stores.map {
             val newestBookId = newestBookIdMap[it.id]
-            val newestBook = newestBookId?.let { bookMap[it] }
+            val newestBook = newestBookId?.let { id -> bookMap[id] }
             Tuple2(it, newestBook)
         }
     }
 
     @PutMapping
-    fun saveBookStore(input: BookStoreInput): BookStore =
+    fun saveBookStore(@RequestBody input: BookStoreInput): BookStore =
         bookStoreRepository.save(input)
+
+    @DeleteMapping("{id}")
+    fun deleteBookStore(@PathVariable id: Long) {
+        bookStoreRepository.deleteById(id)
+    }
 
     companion object {
 

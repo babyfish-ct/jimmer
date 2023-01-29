@@ -57,8 +57,13 @@ class AuthorService(
         )
 
     @PutMapping
-    fun saveAuthor(input: AuthorInput): Author =
+    fun saveAuthor(@RequestBody input: AuthorInput): Author =
         authorRepository.save(input)
+
+    @DeleteMapping("/{id}")
+    fun deleteAuthor(@PathVariable id: Long) {
+        authorRepository.deleteById(id)
+    }
 
     companion object {
 
