@@ -12,20 +12,21 @@ import org.springframework.util.StringUtils
 import org.springframework.web.bind.annotation.*
 
 @RestController
+@RequestMapping("/tree")
+@Transactional
 class TreeService(
     private val objectMapper: ObjectMapper,
     private val treeNodeRepository: TreeNodeRepository
 ) {
 
-    @Transactional
-    @GetMapping("/rootNodes")
+    @GetMapping("/roots")
     fun findRootNodes(
         @RequestParam(required = false) rootName: String?
     ): List<TreeNode> =
         treeNodeRepository.findByParentIsNullAndName(rootName, null)
 
     @Transactional
-    @GetMapping("/rootTrees")
+    @GetMapping("/roots/recursive")
     fun findRootTrees(
         @RequestParam(required = false) rootName: String?,
         @RequestParam(required = false) noRecursiveNames: String?
@@ -61,7 +62,7 @@ class TreeService(
             }
         )
 
-    @PutMapping("/tree")
+    @PutMapping
     fun saveTree(
         @RequestParam rootName: String,
         @RequestParam(defaultValue = "2") depth: Int,

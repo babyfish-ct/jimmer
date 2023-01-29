@@ -68,6 +68,11 @@ class BookService(
     fun saveBook(@RequestBody input: CompositeBookInput): Book =
         bookRepository.save(input)
 
+    @DeleteMapping("/{id}")
+    fun deleteBook(@PathVariable id: Long) {
+        bookRepository.deleteById(id)
+    }
+
     companion object {
 
         private val SIMPLE_FETCHER = newFetcher(Book::class).by {

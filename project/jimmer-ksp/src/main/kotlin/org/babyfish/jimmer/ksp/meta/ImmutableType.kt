@@ -195,13 +195,8 @@ class ImmutableType(
         parseValidationMessages(classDeclaration)
 
     val declaredStaticDeclarationMap: Map<String, StaticDeclaration> =
-        mutableListOf<KSAnnotation>()
-            .apply {
-                this += classDeclaration.annotations(StaticType::class)
-                for (staticTypes in classDeclaration.annotations(StaticTypes::class)) {
-                    this += staticTypes["value"] ?: emptyList()
-                }
-            }
+        classDeclaration
+            .annotations(StaticType::class)
             .map {
                 StaticDeclaration(
                     immutableType = this,
@@ -279,31 +274,15 @@ class ImmutableType(
 
     private val autoScalarStrategyMap: Map<String, AutoScalarStrategy> =
         mutableMapOf<String, AutoScalarStrategy>().apply {
-            classDeclaration.annotation(AutoScalarRules::class)?.let {
-                for (rule in it.get<List<KSAnnotation>>("value") ?: emptyList()) {
-                    val alias: String = rule["alias"]!!
-                    put(alias, autoScalarStrategy(rule["value"])!!)?.let {
-                        conflictAutoScalarStrategy(alias)
-                    }
-                }
-            }
-            classDeclaration.annotation(AutoScalarRule::class)?.let {
-                val alias: String = it["alias"]!!
-                put(alias, autoScalarStrategy(it["value"])!!)?.let {
+            for (rule in classDeclaration.annotations(AutoScalarRule::class)) {
+                val alias: String = rule["alias"]!!
+                put(alias, autoScalarStrategy(rule["value"])!!)?.let {
                     conflictAutoScalarStrategy(alias)
                 }
             }
-            classDeclaration.annotation(StaticTypes::class)?.let {
-                for (rule in it.get<List<KSAnnotation>>("value") ?: emptyList()) {
-                    val alias: String = rule["alias"]!!
-                    put(alias, autoScalarStrategy(rule["autoScalarStrategy"])!!)?.let {
-                        conflictAutoScalarStrategy(alias)
-                    }
-                }
-            }
-            classDeclaration.annotation(StaticType::class)?.let {
-                val alias: String = it["alias"]!!
-                put(alias, autoScalarStrategy(it["autoScalarStrategy"])!!)?.let {
+            for (type in classDeclaration.annotations(StaticType::class)) {
+                val alias: String = type["alias"]!!
+                put(alias, autoScalarStrategy(type["autoScalarStrategy"])!!)?.let {
                     conflictAutoScalarStrategy(alias)
                 }
             }

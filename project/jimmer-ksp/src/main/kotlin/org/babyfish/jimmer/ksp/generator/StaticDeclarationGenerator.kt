@@ -47,7 +47,7 @@ class StaticDeclarationGenerator private constructor(
                     if (strategy == AutoScalarStrategy.NONE) {
                         break
                     }
-                    for (prop in type.properties.values) {
+                    for (prop in type.declaredProperties.values) {
                         if (!prop.isAssociation(true) && !prop.isTransient) {
                             add(prop)
                         }
