@@ -1,10 +1,17 @@
+import type { Author } from '../model/entities';
 import type { Gender } from '../model/enums';
 import type { AuthorDto } from '../model/dto';
-import type { Executor } from '../';
+import type { Executor, Dynamic } from '../';
 
 export class AuthorService {
     
     constructor(private executor: Executor) {}
+    
+    async deleteAuthor(options: AuthorServiceOptions['deleteAuthor']): Promise<void> {
+        let uri = '/author/';
+        uri += encodeURIComponent(options.id);
+        return (await this.executor({uri, method: 'DELETE'})) as void
+    }
     
     async findAuthors(options: AuthorServiceOptions['findAuthors']): Promise<
         ReadonlyArray<AuthorDto['AuthorService/DEFAULT_FETCHER']>
@@ -54,9 +61,17 @@ export class AuthorService {
         let uri = '/author/simpleList';
         return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<AuthorDto['AuthorService/SIMPLE_FETCHER']>
     }
+    
+    async saveAuthor(): Promise<
+        Dynamic<Author>
+    > {
+        let uri = '/author/';
+        return (await this.executor({uri, method: 'PUT'})) as Dynamic<Author>
+    }
 }
 
 export type AuthorServiceOptions = {
+    'deleteAuthor': {readonly id: number},
     'findAuthors': {
         readonly sortCode: string, 
         readonly firstName?: string, 
@@ -69,5 +84,6 @@ export type AuthorServiceOptions = {
         readonly lastName?: string, 
         readonly gender?: Gender
     },
-    'findSimpleAuthors': {}
+    'findSimpleAuthors': {},
+    'saveAuthor': {}
 }

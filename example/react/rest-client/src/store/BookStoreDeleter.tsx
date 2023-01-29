@@ -1,12 +1,12 @@
 import { Button, CircularProgress, Popover, Stack } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { FC, memo, useCallback, useState } from "react";
+import { FC, memo, useCallback, useState } from "react"
 import { api } from "../common/ApiInstance";
 import { MessageDialog, MessageInfo } from "../common/MessageDialog";
-import { BookRow } from "./BookTypes";
+import { BookStoreRow } from "./BookStoreTypes"
 
-export const BookDeleter: FC<{
-    readonly row?: BookRow,
+export const BookStoreDeleter: FC<{
+    readonly row?: BookStoreRow,
     readonly anchorEl?: HTMLElement,
     readonly onClose: () => void
 }> = memo(({row, anchorEl, onClose}) => {
@@ -14,7 +14,7 @@ export const BookDeleter: FC<{
     const queryClient = useQueryClient();
 
     const { isLoading, mutateAsync } = useMutation({
-        mutationFn: () => api.bookService.deleteBook({id: row!!.id}),
+        mutationFn: () => api.bookStoreService.deleteBookStore({id: row!!.id}),
         onSettled: () => queryClient.invalidateQueries(),
     });
 
@@ -27,13 +27,13 @@ export const BookDeleter: FC<{
             setMessageInfo({
                 severity: "error",
                 title: "Error",
-                content: "Failed to delete book"
+                content: "Failed to delete book store"
             });
             return;
         }
         setMessageInfo({
             title: "Success",
-            content: "The book has been deleted"
+            content: "The book store has been deleted"
         });
     }, [mutateAsync]);
 
@@ -58,10 +58,10 @@ export const BookDeleter: FC<{
             anchorEl={anchorEl}>
                 <div style={{padding: '1rem', width: 300}}>
                     <Stack spacing={1}>
-                        <div>Are you sure to delete book "{row?.name}"(edition {row?.edition})?</div>
+                        <div>Are you sure to delete book store "{row?.name}"?</div>
                         <Stack direction="row" spacing={1} alignContent="center" style={{width: '100%'}}>
                             <Button variant="outlined" onClick={onYesClick}>
-                                {isLoading ? <CircularProgress/> : "Yes"}
+                            {isLoading ? <CircularProgress size="small"/> : "Yes"}
                             </Button>
                             <Button variant="outlined" onClick={onNoClick}>No</Button>
                         </Stack>
