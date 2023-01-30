@@ -1,5 +1,5 @@
 import type { BookStore } from '../model/entities';
-import type { Unit, Tuple2, BookStoreInput } from '../model/static';
+import type { Tuple2, BookStoreInput } from '../model/static';
 import type { BookStoreDto, BookDto } from '../model/dto';
 import type { Executor, Dynamic } from '../';
 
@@ -7,12 +7,10 @@ export class BookStoreService {
     
     constructor(private executor: Executor) {}
     
-    async deleteBookStore(options: BookStoreServiceOptions['deleteBookStore']): Promise<
-        Unit
-    > {
+    async deleteBookStore(options: BookStoreServiceOptions['deleteBookStore']): Promise<void> {
         let uri = '/bookStore/';
         uri += encodeURIComponent(options.id);
-        return (await this.executor({uri, method: 'DELETE'})) as Unit
+        return (await this.executor({uri, method: 'DELETE'})) as void
     }
     
     async findComplexStores(): Promise<
@@ -39,7 +37,7 @@ export class BookStoreService {
     async findStoresWithNewestBook(): Promise<
         ReadonlyArray<Tuple2<BookStoreDto['BookStoreService/SIMPLE_FETCHER'], BookDto['BookStoreService/NEWEST_BOOK_FETCHER'] | undefined>>
     > {
-        let uri = '/bookStore/withNewestBook';
+        let uri = '/bookStore/listWithNewestBook';
         return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<Tuple2<BookStoreDto['BookStoreService/SIMPLE_FETCHER'], BookDto['BookStoreService/NEWEST_BOOK_FETCHER'] | undefined>>
     }
     

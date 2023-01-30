@@ -1,5 +1,4 @@
 import type { TreeNode } from '../model/entities';
-import type { Unit } from '../model/static';
 import type { TreeNodeDto } from '../model/dto';
 import type { Executor, Dynamic } from '../';
 
@@ -7,18 +6,16 @@ export class TreeService {
     
     constructor(private executor: Executor) {}
     
-    async deleteTree(options: TreeServiceOptions['deleteTree']): Promise<
-        Unit
-    > {
-        let uri = '/tree/tree/';
+    async deleteTree(options: TreeServiceOptions['deleteTree']): Promise<void> {
+        let uri = '/tree/';
         uri += encodeURIComponent(options.id);
-        return (await this.executor({uri, method: 'DELETE'})) as Unit
+        return (await this.executor({uri, method: 'DELETE'})) as void
     }
     
-    async findRootNodes(options?: TreeServiceOptions['findRootNodes']): Promise<
+    async findRootTrees(options?: TreeServiceOptions['findRootTrees']): Promise<
         ReadonlyArray<TreeNodeDto['DEFAULT']>
     > {
-        let uri = '/tree/roots';
+        let uri = '/rootNodes';
         if (options?.rootName !== undefined && options.rootName !== null) {
             uri += '?rootName=';
             uri += encodeURIComponent(options.rootName);
@@ -26,10 +23,10 @@ export class TreeService {
         return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<TreeNodeDto['DEFAULT']>
     }
     
-    async findRootTrees(options?: TreeServiceOptions['findRootTrees']): Promise<
+    async findRootTrees_2(options?: TreeServiceOptions['findRootTrees_2']): Promise<
         ReadonlyArray<TreeNodeDto['TreeService/RECURSIVE_FETCHER']>
     > {
-        let uri = '/tree/roots/recursive';
+        let uri = '/rootTrees';
         let separator = '?';
         if (options?.rootName !== undefined && options.rootName !== null) {
             uri += separator;
@@ -49,7 +46,7 @@ export class TreeService {
     async saveTree(options: TreeServiceOptions['saveTree']): Promise<
         Dynamic<TreeNode>
     > {
-        let uri = '/tree/';
+        let uri = '/tree';
         uri += '?rootName=';
         uri += encodeURIComponent(options.rootName);
         uri += '&depth=';
@@ -62,8 +59,8 @@ export class TreeService {
 
 export type TreeServiceOptions = {
     'deleteTree': {readonly id: number},
-    'findRootNodes': {readonly rootName?: string},
-    'findRootTrees': {readonly rootName?: string, readonly noRecursiveNames?: string},
+    'findRootTrees': {readonly rootName?: string},
+    'findRootTrees_2': {readonly rootName?: string, readonly noRecursiveNames?: string},
     'saveTree': {
         readonly rootName: string, 
         readonly depth: number, 

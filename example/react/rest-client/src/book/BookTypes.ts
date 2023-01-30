@@ -1,10 +1,9 @@
 import { api } from "../common/ApiInstance";
-import { MuxRow } from "../common/MuxRow";
 import { ElementOf, RequestOf, ResponseOf } from "../__generated";
 
-export type SimpleBook = MuxRow<ElementOf<ResponseOf<typeof api.bookService.findSimpleBooks>>>;
+export type SimpleBook = ElementOf<ResponseOf<typeof api.bookService.findSimpleBooks>>;
 
-export type BookRow = MuxRow<ElementOf<ResponseOf<typeof api.bookService.findBooks>["content"]>>;
+export type BookRow = ElementOf<ResponseOf<typeof api.bookService.findBooks>["content"]>;
 
 export type BookInput = RequestOf<typeof api.bookService.saveBook>["body"];
 

@@ -1,5 +1,5 @@
 import type { Book } from '../model/entities';
-import type { Unit, Page, BookInput, CompositeBookInput } from '../model/static';
+import type { Page, BookInput, CompositeBookInput } from '../model/static';
 import type { BookDto } from '../model/dto';
 import type { Executor, Dynamic } from '../';
 
@@ -7,12 +7,10 @@ export class BookService {
     
     constructor(private executor: Executor) {}
     
-    async deleteBook(options: BookServiceOptions['deleteBook']): Promise<
-        Unit
-    > {
+    async deleteBook(options: BookServiceOptions['deleteBook']): Promise<void> {
         let uri = '/book/';
         uri += encodeURIComponent(options.id);
-        return (await this.executor({uri, method: 'DELETE'})) as Unit
+        return (await this.executor({uri, method: 'DELETE'})) as void
     }
     
     async findBooks(options: BookServiceOptions['findBooks']): Promise<
@@ -25,8 +23,10 @@ export class BookService {
         uri += encodeURIComponent(options.pageSize);
         uri += '&sortCode=';
         uri += encodeURIComponent(options.sortCode);
-        uri += '&name=';
-        uri += encodeURIComponent(options.name);
+        if (options.name !== undefined && options.name !== null) {
+            uri += '&name=';
+            uri += encodeURIComponent(options.name);
+        }
         if (options.storeName !== undefined && options.storeName !== null) {
             uri += '&storeName=';
             uri += encodeURIComponent(options.storeName);
@@ -48,8 +48,10 @@ export class BookService {
         uri += encodeURIComponent(options.pageSize);
         uri += '&sortCode=';
         uri += encodeURIComponent(options.sortCode);
-        uri += '&name=';
-        uri += encodeURIComponent(options.name);
+        if (options.name !== undefined && options.name !== null) {
+            uri += '&name=';
+            uri += encodeURIComponent(options.name);
+        }
         if (options.storeName !== undefined && options.storeName !== null) {
             uri += '&storeName=';
             uri += encodeURIComponent(options.storeName);
@@ -75,7 +77,7 @@ export class BookService {
         return (await this.executor({uri, method: 'PUT', body: options.body})) as Dynamic<Book>
     }
     
-    async saveBook_2(options: BookServiceOptions['saveBook_2']): Promise<
+    async saveCompositeBook(options: BookServiceOptions['saveCompositeBook']): Promise<
         Dynamic<Book>
     > {
         let uri = '/book/withChapters';
@@ -89,7 +91,7 @@ export type BookServiceOptions = {
         readonly pageIndex: number, 
         readonly pageSize: number, 
         readonly sortCode: string, 
-        readonly name: string, 
+        readonly name?: string, 
         readonly storeName?: string, 
         readonly authorName?: string
     },
@@ -97,11 +99,11 @@ export type BookServiceOptions = {
         readonly pageIndex: number, 
         readonly pageSize: number, 
         readonly sortCode: string, 
-        readonly name: string, 
+        readonly name?: string, 
         readonly storeName?: string, 
         readonly authorName?: string
     },
     'findSimpleBooks': {},
     'saveBook': {readonly body: BookInput},
-    'saveBook_2': {readonly body: CompositeBookInput}
+    'saveCompositeBook': {readonly body: CompositeBookInput}
 }
