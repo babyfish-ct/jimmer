@@ -42,6 +42,7 @@ class ImmutableProcessor(
         if (!processed.compareAndSet(false, true)) {
             return emptyList()
         }
+
         val ctx = Context(resolver)
         val classDeclarationMultiMap = findModelMap(ctx)
         val simpleNameMap = mutableMapOf<String, ImmutableType>()

@@ -1,5 +1,4 @@
 import type { Author } from '../model/entities';
-import type { Unit, AuthorInput } from '../model/static';
 import type { Gender } from '../model/enums';
 import type { AuthorDto } from '../model/dto';
 import type { Executor, Dynamic } from '../';
@@ -8,12 +7,10 @@ export class AuthorService {
     
     constructor(private executor: Executor) {}
     
-    async deleteAuthor(options: AuthorServiceOptions['deleteAuthor']): Promise<
-        Unit
-    > {
+    async deleteAuthor(options: AuthorServiceOptions['deleteAuthor']): Promise<void> {
         let uri = '/author/';
         uri += encodeURIComponent(options.id);
-        return (await this.executor({uri, method: 'DELETE'})) as Unit
+        return (await this.executor({uri, method: 'DELETE'})) as void
     }
     
     async findAuthors(options: AuthorServiceOptions['findAuthors']): Promise<
@@ -22,8 +19,10 @@ export class AuthorService {
         let uri = '/author/list';
         uri += '?sortCode=';
         uri += encodeURIComponent(options.sortCode);
-        uri += '&firstName=';
-        uri += encodeURIComponent(options.firstName);
+        if (options.firstName !== undefined && options.firstName !== null) {
+            uri += '&firstName=';
+            uri += encodeURIComponent(options.firstName);
+        }
         if (options.lastName !== undefined && options.lastName !== null) {
             uri += '&lastName=';
             uri += encodeURIComponent(options.lastName);
@@ -38,11 +37,13 @@ export class AuthorService {
     async findComplexAuthors(options: AuthorServiceOptions['findComplexAuthors']): Promise<
         ReadonlyArray<AuthorDto['AuthorService/COMPLEX_FETCHER']>
     > {
-        let uri = '/author/authors/complex';
+        let uri = '/author/complexList';
         uri += '?sortCode=';
         uri += encodeURIComponent(options.sortCode);
-        uri += '&firstName=';
-        uri += encodeURIComponent(options.firstName);
+        if (options.firstName !== undefined && options.firstName !== null) {
+            uri += '&firstName=';
+            uri += encodeURIComponent(options.firstName);
+        }
         if (options.lastName !== undefined && options.lastName !== null) {
             uri += '&lastName=';
             uri += encodeURIComponent(options.lastName);
@@ -61,11 +62,11 @@ export class AuthorService {
         return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<AuthorDto['AuthorService/SIMPLE_FETCHER']>
     }
     
-    async saveAuthor(options: AuthorServiceOptions['saveAuthor']): Promise<
+    async saveAuthor(): Promise<
         Dynamic<Author>
     > {
         let uri = '/author/';
-        return (await this.executor({uri, method: 'PUT', body: options.body})) as Dynamic<Author>
+        return (await this.executor({uri, method: 'PUT'})) as Dynamic<Author>
     }
 }
 
@@ -73,16 +74,16 @@ export type AuthorServiceOptions = {
     'deleteAuthor': {readonly id: number},
     'findAuthors': {
         readonly sortCode: string, 
-        readonly firstName: string, 
+        readonly firstName?: string, 
         readonly lastName?: string, 
         readonly gender?: Gender
     },
     'findComplexAuthors': {
         readonly sortCode: string, 
-        readonly firstName: string, 
+        readonly firstName?: string, 
         readonly lastName?: string, 
         readonly gender?: Gender
     },
     'findSimpleAuthors': {},
-    'saveAuthor': {readonly body: AuthorInput}
+    'saveAuthor': {}
 }
