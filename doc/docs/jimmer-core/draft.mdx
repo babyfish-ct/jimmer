@@ -693,7 +693,7 @@ public interface TreeNodeDraft : TreeNode, Draft {
 
     override var childNodes: List<TreeNode>
     
-    fun childNodes(): MutableList<TreeNode>
+    fun childNodes(): MutableList<TreeNodeDraft>
 
     ...omit other code...
 }
