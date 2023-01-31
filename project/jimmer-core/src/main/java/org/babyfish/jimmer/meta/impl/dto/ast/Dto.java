@@ -3,14 +3,11 @@ package org.babyfish.jimmer.meta.impl.dto.ast;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
-import org.babyfish.jimmer.dto.DtoLexer;
-import org.babyfish.jimmer.dto.DtoParser;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
