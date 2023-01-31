@@ -9,6 +9,7 @@ package org.babyfish.jimmer.meta.impl.dto.ast;
 dto
     :
     (dtoTypes+=dtoType)*
+    EOF
     ;
 
 dtoType

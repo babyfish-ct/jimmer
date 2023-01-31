@@ -8,6 +8,21 @@ import java.util.List;
 public class DtoTest {
 
     @Test
+    public void testIllegalCode() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            Dto.parse(
+                    "BookInput {\n" +
+                            "#<allScalars>\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 2: token recognition error at: '<'",
+                ex.getMessage()
+        );
+    }
+
+    @Test
     public void test() {
         List<Dto> dtoList = Dto.parse(
                         "input BookInput {\n" +

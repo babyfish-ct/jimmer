@@ -1,8 +1,7 @@
 package org.babyfish.jimmer.meta.impl.dto.ast;
 
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -34,7 +33,7 @@ public class Dto {
         this.explicitProps = explicitProps;
     }
 
-    private Dto(Dto base, String name) {
+    private Dto(Dto base, @NotNull String name) {
         this.isInput = base.isInput;
         this.name = name;
         this.allScalars = base.allScalars;
@@ -72,35 +71,35 @@ public class Dto {
     }
 
     public static List<Dto> parse(String code) {
-        DtoParser parser = new DtoParser(
-                new CommonTokenStream(
-                        new DtoLexer(
-                                new ANTLRInputStream(code)
-                        )
-                )
-        );
+        DtoLexer lexer = new DtoLexer(new ANTLRInputStream(code));
+        DtoParser parser = new DtoParser(new CommonTokenStream(lexer));
+        DtoErrorListener listener = new DtoErrorListener();
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(listener);
+        parser.removeErrorListeners();
+        parser.addErrorListener(listener);
         return parse(parser);
     }
 
     public static List<Dto> parse(Reader reader) throws IOException {
-        DtoParser parser = new DtoParser(
-                new CommonTokenStream(
-                        new DtoLexer(
-                                new ANTLRInputStream(reader)
-                        )
-                )
-        );
+        DtoLexer lexer = new DtoLexer(new ANTLRInputStream(reader));
+        DtoParser parser = new DtoParser(new CommonTokenStream(lexer));
+        DtoErrorListener listener = new DtoErrorListener();
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(listener);
+        parser.removeErrorListeners();
+        parser.addErrorListener(listener);
         return parse(parser);
     }
 
     public static List<Dto> parse(InputStream input) throws IOException {
-        DtoParser parser = new DtoParser(
-                new CommonTokenStream(
-                        new DtoLexer(
-                                new ANTLRInputStream(input)
-                        )
-                )
-        );
+        DtoLexer lexer = new DtoLexer(new ANTLRInputStream(input));
+        DtoParser parser = new DtoParser(new CommonTokenStream(lexer));
+        DtoErrorListener listener = new DtoErrorListener();
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(listener);
+        parser.removeErrorListeners();
+        parser.addErrorListener(listener);
         return parse(parser);
     }
 
@@ -208,6 +207,20 @@ public class Dto {
 
         private DtoProp parse(DtoParser.NegativePropContext ctx) {
             return new DtoProp(true, ctx.Identifier().getText());
+        }
+    }
+
+    private static class DtoErrorListener extends BaseErrorListener {
+
+        @Override
+        public void syntaxError(
+                Recognizer<?, ?> recognizer,
+                Object offendingSymbol,
+                int line,
+                int charPositionInLine,
+                String msg,
+                RecognitionException ex) {
+            throw new DtoAstException(line, msg);
         }
     }
 }
