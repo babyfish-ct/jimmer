@@ -1,7 +1,7 @@
 grammar Dto;
 
 @header {
-package org.babyfish.jimmer.dto;
+package org.babyfish.jimmer.meta.impl.dto.ast;
 }
 
 // Parser --------
