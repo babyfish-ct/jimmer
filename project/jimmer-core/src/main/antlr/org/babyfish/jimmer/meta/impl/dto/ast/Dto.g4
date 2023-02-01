@@ -34,7 +34,7 @@ macro
     :
     '#' name=Identifier
     (
-        '(' args+=Identifier (',' args+=Identifier)? ')'
+        '(' args+=qualifiedName (',' args+=qualifiedName)? ')'
     )?
     ;
 
@@ -54,6 +54,11 @@ positiveProp
 negativeProp
     :
     '-' Identifier
+    ;
+
+qualifiedName
+    :
+    parts+=Identifier ('.' parts+=Identifier)*
     ;
 
 // Lexer --------
