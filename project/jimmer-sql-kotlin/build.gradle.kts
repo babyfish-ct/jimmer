@@ -9,6 +9,10 @@ repositories {
     mavenCentral()
 }
 
+ksp {
+    arg("jimmer.dtoDirs", "src/test/dto")
+}
+
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(kotlin("reflect"))
@@ -18,7 +22,6 @@ dependencies {
 
     testImplementation(kotlin("test"))
     kspTest(project(":jimmer-ksp"))
-    kaptTest(project(":jimmer-ksp"))
     testAnnotationProcessor(project(":jimmer-ksp"))
 
     testImplementation("com.h2database:h2:2.1.212")

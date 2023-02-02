@@ -4,6 +4,8 @@ import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.ast.table.isNull
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.*
+import org.babyfish.jimmer.sql.kt.model.dto.BookInput
+import org.babyfish.jimmer.sql.kt.model.dto.ComplexBookInput
 import org.junit.Test
 
 class FetcherTest : AbstractQueryTest() {
@@ -667,11 +669,11 @@ class FetcherTest : AbstractQueryTest() {
     }
 
     @Test
-    fun testCompositeBookInput() {
+    fun testComplexBookInput() {
         executeAndExpect(
             sqlClient.createQuery(Book::class) {
                 where(table.id eq 12L)
-                select(table.fetch(CompositeBookInput::class))
+                select(table.fetch(ComplexBookInput::class))
             }
         ) {
             sql(
@@ -692,7 +694,7 @@ class FetcherTest : AbstractQueryTest() {
             )
             rows {
                 contentEquals(
-                    """CompositeBookInput(
+                    """ComplexBookInput(
                         |--->id=12, 
                         |--->name=GraphQL in Action, 
                         |--->edition=3, 

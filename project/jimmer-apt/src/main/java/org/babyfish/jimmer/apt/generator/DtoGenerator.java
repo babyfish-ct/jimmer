@@ -53,7 +53,7 @@ public class DtoGenerator {
             throw new IllegalArgumentException("The nullity values of `filer` and `parent` cannot be same");
         }
         if ((parent == null) != (innerClassName == null)) {
-            throw new IllegalArgumentException("The nullity values of `parentBuilder` and `innerClassName` cannot be same");
+            throw new IllegalArgumentException("The nullity values of `parent` and `innerClassName` must be same");
         }
         this.dtoType = dtoType;
         this.filer = filer;

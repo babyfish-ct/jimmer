@@ -1,0 +1,10 @@
+input TheAdministratorInput {
+    #allScalars
+    roles {
+        #allScalars
+    }
+}
+
+input DeclaredAdministratorInput {
+    #allScalars(Administrator)
+}
