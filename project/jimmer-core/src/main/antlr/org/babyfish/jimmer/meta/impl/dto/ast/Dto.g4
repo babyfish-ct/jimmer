@@ -34,7 +34,7 @@ macro
     :
     '#' name=Identifier
     (
-        '(' args+=qualifiedName (',' args+=qualifiedName)? ')'
+        '(' args+=qualifiedName (',' args+=qualifiedName)* ')'
     )?
     ;
 

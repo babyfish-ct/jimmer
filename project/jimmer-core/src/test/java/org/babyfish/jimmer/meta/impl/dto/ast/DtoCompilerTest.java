@@ -10,7 +10,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class DtoTypeTest {
+public class DtoCompilerTest {
 
     @Test
     public void testIllegalCode() {
