@@ -4,6 +4,7 @@ import org.babyfish.jimmer.apt.generator.*;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.apt.meta.MetaException;
+import org.babyfish.jimmer.meta.impl.dto.ast.DtoProp;
 import org.babyfish.jimmer.meta.impl.dto.ast.DtoType;
 import org.babyfish.jimmer.meta.impl.dto.ast.DtoAstException;
 import org.babyfish.jimmer.sql.Entity;
@@ -60,7 +61,7 @@ public class ImmutableProcessor extends AbstractProcessor {
         }
         if (dtoDirs != null && !dtoDirs.isEmpty()) {
             Set<String> dirs = new LinkedHashSet<>();
-            for (String path : dtoDirs.trim().split("\\*[,|]\\s*")) {
+            for (String path : dtoDirs.trim().split("\\*[,:;]\\s*")) {
                 if (path.startsWith("/")) {
                     path = path.substring(1);
                 }
@@ -170,7 +171,6 @@ public class ImmutableProcessor extends AbstractProcessor {
         }
         path = path.substring(0, path.lastIndexOf('/'));
         File file = new File(path);
-
         List<String> actualDtoDirs = new ArrayList<>();
         while (file != null) {
             collectActualDtoDir(file, actualDtoDirs);
@@ -209,29 +209,23 @@ public class ImmutableProcessor extends AbstractProcessor {
                 }
             }
         }
-        for (ImmutableType type : immutableTypes) {
-            List<DtoType<ImmutableType, ImmutableProp>> dtoTypes = dtoMap.get(type);
-            if (dtoTypes != null) {
-                for (ImmutableType otherType : immutableTypes) {
-                    if (otherType != type && otherType.getPackageName().equals(type.getPackageName())) {
-                        List<DtoType<ImmutableType, ImmutableProp>> otherDtoTypes = dtoMap.get(otherType);
-                        if (otherDtoTypes != null) {
-                            for (DtoType<ImmutableType, ImmutableProp> dtoType : dtoTypes) {
-                                for (DtoType<ImmutableType, ImmutableProp> otherDtoType : otherDtoTypes) {
-                                    if (dtoType.getName().equals(otherDtoType.getName())) {
-                                        throw new MetaException(
-                                                "Conflict dto type name, the \"" +
-                                                        type.getQualifiedName() +
-                                                        "\" and \"" +
-                                                        otherType.getQualifiedName() +
-                                                        "\" are belong to same package, " +
-                                                        "but they have define a dto type named \"" +
-                                                        dtoType.getName() +
-                                                        "\""
-                                        );
-                                    }
-                                }
-                            }
+        for (Map.Entry<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> e : dtoMap.entrySet()) {
+            ImmutableType type = e.getKey();
+            for (DtoType<ImmutableType, ImmutableProp> dtoType : e.getValue()) {
+                for (Map.Entry<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> otherEntry : dtoMap.entrySet()) {
+                    ImmutableType otherType = otherEntry.getKey();
+                    for (DtoType<ImmutableType, ImmutableProp> otherDtoType : otherEntry.getValue()) {
+                        if (type != otherType && Objects.equals(dtoType.getName(), otherDtoType.getName())) {
+                            throw new MetaException(
+                                    "Conflict dto type name, the \"" +
+                                            type.getQualifiedName() +
+                                            "\" and \"" +
+                                            otherType.getQualifiedName() +
+                                            "\" are belong to same package, " +
+                                            "but they have define a dto type named \"" +
+                                            dtoType.getName() +
+                                            "\""
+                            );
                         }
                     }
                 }

@@ -11,145 +11,79 @@ import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import org.babyfish.jimmer.ksp.annotation
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.meta.*
-import org.babyfish.jimmer.pojo.AutoScalarStrategy
+import org.babyfish.jimmer.meta.impl.dto.ast.DtoProp
+import org.babyfish.jimmer.meta.impl.dto.ast.DtoType
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
 import java.io.OutputStreamWriter
 import java.util.*
 
-class StaticDeclarationGenerator private constructor(
-    private val declaration: StaticDeclaration,
+class DtoGenerator private constructor(
+    private val dtoType: DtoType<ImmutableType, ImmutableProp>,
     private val codeGenerator: CodeGenerator?,
-    private val file: KSFile?,
-    private val innerClassName: String?,
-    private val parent: StaticDeclarationGenerator?
+    private val parent: DtoGenerator?,
+    private val innerClassName: String?
 ) {
+    init {
+        if ((codeGenerator === null) == (parent === null)) {
+            throw IllegalArgumentException("The nullity values of `codeGenerator` and `parent` cannot be same")
+        }
+        if ((parent === null) != (innerClassName === null)) {
+            throw IllegalArgumentException("The nullity values of `parent` and `innerClassName` must be same")
+        }
+    }
     private var _typeBuilder: TypeSpec.Builder? = null
     
-    private val immutableType: ImmutableType
-        get() = declaration.immutableType
-
-    private val props: List<StaticProp> =
-        mutableListOf<StaticProp>().apply {
-            val alias = declaration.alias
-            val hasKey = declaration
-                .immutableType
-                .properties
-                .values
-                .any {
-                    it.isKey
-                }
-
-            val possibleAutoScalars = mutableSetOf<ImmutableProp>().apply {
-                var type: ImmutableType? = declaration.immutableType
-                while (type !== null) {
-                    val strategy = type.autoScalarStrategy(declaration.alias)
-                    if (strategy == AutoScalarStrategy.NONE) {
-                        break
-                    }
-                    for (prop in type.declaredProperties.values) {
-                        if (!prop.isAssociation(true) && !prop.isTransient) {
-                            add(prop)
-                        }
-                    }
-                    if (strategy == AutoScalarStrategy.DECLARED) {
-                        break
-                    }
-                    type = type.superType
-                }
-            }
-            for (prop in immutableType.properties.values) {
-                var staticProp = prop.staticProp(alias)
-                if (staticProp == null) {
-                    if (possibleAutoScalars.contains(prop)) {
-                        staticProp = StaticProp(
-                            prop,
-                            alias,
-                            prop.name,
-                            true,
-                            declaration.allOptional,
-                            false,
-                            ""
-                        )
-                        if (!staticProp.isOptional && prop.isId && hasKey) {
-                            staticProp = staticProp.copy(isOptional = true)
-                        }
-                        this += (staticProp)
-                    }
-                } else if (staticProp.isEnabled) {
-                    if (prop.isTransient) {
-                        if (isInput) {
-                            throw MetaException(
-                                "Illegal property \"" +
-                                    prop +
-                                    "\", the transient property of input type can not be decorated by @Static"
-                            )
-                        }
-                        if (!prop.hasTransientResolver) {
-                            throw MetaException(
-                                "Illegal property \"" +
-                                    prop +
-                                    "\", if a property is decorated by both @Transient and @Static," +
-                                    "its transient resolver must be specified"
-                            )
-                        }
-                    }
-                    this += staticProp.copy(isOptional = declaration.allOptional)
-                }
-            }
-        }
-
     constructor(
-        declaration: StaticDeclaration,
+        dtoType: DtoType<ImmutableType, ImmutableProp>,
         codeGenerator: CodeGenerator?,
-        file: KSFile?
-    ): this(declaration, codeGenerator, file, null, null)
+    ): this(dtoType, codeGenerator, null, null)
 
-    constructor(
-        declaration: StaticDeclaration,
-        innerClasName: String,
-        parent: StaticDeclarationGenerator
-    ): this(declaration, null, null, innerClasName, parent)
-
-    internal val typeBuilder: TypeSpec.Builder
+    val typeBuilder: TypeSpec.Builder
         get() = _typeBuilder ?: error("Type builder is not ready")
 
-    internal val isInput: Boolean
-        get() = parent?.isInput ?: declaration.topLevelName.endsWith("Input")
-
-    internal fun getClassName(vararg nestedNames: String): ClassName {
+    private fun getClassName(vararg nestedNames: String): ClassName {
             if (innerClassName !== null) {
                 val list: MutableList<String> = ArrayList()
                 collectNames(list)
                 list.addAll(nestedNames.toList())
                 return ClassName(
-                    declaration.immutableType.className.packageName,
+                    packageName(),
                     list[0],
                     *list.subList(1, list.size).toTypedArray()
                 )
             }
             return ClassName(
-                declaration.immutableType.className.packageName,
-                declaration.topLevelName,
+                packageName(),
+                dtoType.name!!,
                 *nestedNames
             )
         }
 
+    private fun packageName() =
+        dtoType
+            .baseType
+            .className
+            .packageName
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { "$it.dto" }
+            ?: "dto"
+
     fun generate(allFiles: List<KSFile>) {
-        if (codeGenerator != null && file !== null) {
+        if (codeGenerator != null) {
             codeGenerator.createNewFile(
                 Dependencies(false, *allFiles.toTypedArray()),
-                file.packageName.asString(),
-                declaration.topLevelName
+                packageName(),
+                dtoType.name!!
             ).use {
                 val fileSpec = FileSpec
                     .builder(
-                        file.packageName.asString(),
-                        declaration.topLevelName
+                        packageName(),
+                        dtoType.name!!
                     ).apply {
                         indent("    ")
                         val builder = TypeSpec
-                            .classBuilder(declaration.topLevelName)
+                            .classBuilder(dtoType.name!!)
                             .addModifiers(KModifier.DATA)
                         _typeBuilder = builder
                         try {
@@ -180,8 +114,8 @@ class StaticDeclarationGenerator private constructor(
     private fun addMembers(allFiles: List<KSFile>) {
 
         typeBuilder.addSuperinterface(
-            (if (isInput) INPUT_CLASS_NAME else DTO_CLASS_NAME).parameterizedBy(
-                immutableType.className
+            (if (dtoType.isInput) INPUT_CLASS_NAME else DTO_CLASS_NAME).parameterizedBy(
+                dtoType.baseType.className
             )
         )
 
@@ -193,13 +127,14 @@ class StaticDeclarationGenerator private constructor(
         addToEntity()
         addToEntityWithBase()
 
-        for (prop in props) {
-            val target = prop.target
-            if (target !== null && target.topLevelName.isEmpty()) {
-                StaticDeclarationGenerator(
-                    target,
-                    targetSimpleName(prop),
-                    this
+        for (prop in dtoType.props) {
+            val targetType = prop.targetType
+            if (targetType != null) {
+                DtoGenerator(
+                    targetType,
+                    null,
+                    this,
+                    targetSimpleName(prop)
                 ).generate(allFiles)
             }
         }
@@ -215,7 +150,7 @@ class StaticDeclarationGenerator private constructor(
                             .builder(
                                 "METADATA",
                                 DTO_METADATA_CLASS_NAME.parameterizedBy(
-                                    declaration.immutableType.className,
+                                    dtoType.baseType.className,
                                     getClassName()
                                 )
                             )
@@ -229,21 +164,21 @@ class StaticDeclarationGenerator private constructor(
                                         add(
                                             "%T<%T, %T>(\n",
                                             DTO_METADATA_CLASS_NAME,
-                                            declaration.immutableType.className, getClassName()
+                                            dtoType.baseType.className, getClassName()
                                         )
                                         indent()
-                                        add("%M(%T::class).by", NEW_FETCHER, declaration.immutableType.className)
+                                        add("%M(%T::class).by", NEW_FETCHER, dtoType.baseType.className)
                                         beginControlFlow("")
-                                        for (prop in props) {
-                                            if (!prop.immutableProp.isId) {
-                                                if (prop.target !== null) {
+                                        for (prop in dtoType.props) {
+                                            if (!prop.baseProp.isId) {
+                                                if (prop.targetType !== null) {
                                                     addStatement(
                                                         "%N(%T.METADATA.fetcher)",
-                                                        prop.immutableProp.name,
+                                                        prop.baseProp.name,
                                                         propElementName(prop)
                                                     )
                                                 } else {
-                                                    addStatement("%N()", prop.immutableProp.name)
+                                                    addStatement("%N()", prop.baseProp.name)
                                                 }
                                             }
                                         }
@@ -266,18 +201,18 @@ class StaticDeclarationGenerator private constructor(
 
     private fun addJsonConstructor() {
         val builder = FunSpec.constructorBuilder()
-        for (prop in props) {
+        for (prop in dtoType.props) {
             builder.addParameter(prop.name, propTypeName(prop))
         }
         typeBuilder.primaryConstructor(builder.build())
 
-        for (prop in props) {
+        for (prop in dtoType.props) {
             typeBuilder.addProperty(
                 PropertySpec
                     .builder(prop.name, propTypeName(prop))
                     .initializer(prop.name)
                     .apply {
-                        for (anno in prop.immutableProp.annotations { isCopyableAnnotation(it) }) {
+                        for (anno in prop.baseProp.annotations { isCopyableAnnotation(it) }) {
                             addAnnotation(anno.toAnnotationSpec())
                         }
                     }
@@ -290,78 +225,78 @@ class StaticDeclarationGenerator private constructor(
         typeBuilder.addFunction(
             FunSpec
                 .constructorBuilder()
-                .addParameter("base", immutableType.className)
+                .addParameter("base", dtoType.baseType.className)
                 .apply {
-                    callThisConstructor(props.map { prop ->
+                    callThisConstructor(dtoType.props.map { prop ->
                         CodeBlock
                             .builder()
                             .indent()
                             .add("\n")
                             .apply {
-                                val target = prop.target
+                                val targetType = prop.targetType
                                 when {
-                                    target !== null ->
-                                        if (prop.isNullable(isInput)) {
+                                    targetType !== null ->
+                                        if (prop.isNullable) {
                                             add(
                                                 "base.takeIf { (it as %T).__isLoaded(%L) }?.%N?.%N { %T(it) }",
                                                 IMMUTABLE_SPI_CLASS_NAME,
-                                                prop.immutableProp.id,
-                                                prop.immutableProp.name,
-                                                if (prop.immutableProp.isList) "map" else "let",
+                                                prop.baseProp.id,
+                                                prop.baseProp.name,
+                                                if (prop.baseProp.isList) "map" else "let",
                                                 propElementName(prop)
                                             )
                                         } else {
                                             add(
                                                 "base.%N%L%N { %T(it) }",
-                                                prop.immutableProp.name,
-                                                if (prop.isNullable(false)) "?." else ".",
-                                                if (prop.immutableProp.isList) "map" else "let",
+                                                prop.baseProp.name,
+                                                if (prop.baseProp.isNullable) "?." else ".",
+                                                if (prop.baseProp.isList) "map" else "let",
                                                 propElementName(prop)
                                             )
                                         }
                                     prop.isIdOnly ->
-                                        if (prop.isNullable(isInput)) {
+                                        if (prop.isNullable) {
                                             add(
                                                 "base.takeIf { (it as %T).__isLoaded(%L) }?.%N?.%L",
                                                 IMMUTABLE_SPI_CLASS_NAME,
-                                                prop.immutableProp.id,
-                                                prop.immutableProp.name,
-                                                if (prop.immutableProp.isList) {
-                                                    "map{ it.${prop.immutableProp.targetType!!.idProp!!.name} }"
+                                                prop.baseProp.id,
+                                                prop.baseProp.name,
+                                                if (prop.baseProp.isList) {
+                                                    "map{ it.${prop.baseProp.targetType!!.idProp!!.name} }"
                                                 } else {
-                                                    prop.immutableProp.targetType!!.idProp!!.name
+                                                    prop.baseProp.targetType!!.idProp!!.name
                                                 }
                                             )
                                         } else {
                                             add(
                                                 "base.%N%L%L",
-                                                prop.immutableProp.name,
-                                                if (prop.isNullable(false)) "?." else ".",
-                                                if (prop.immutableProp.isList) {
-                                                    "map{ it.${prop.immutableProp.targetType!!.idProp!!.name} }"
+                                                prop.baseProp.name,
+                                                if (prop.baseProp.isNullable) "?." else ".",
+                                                if (prop.baseProp.isList) {
+                                                    "map{ it.${prop.baseProp.targetType!!.idProp!!.name} }"
                                                 } else {
-                                                    prop.immutableProp.targetType!!.idProp!!.name
+                                                    prop.baseProp.targetType!!.idProp!!.name
                                                 }
                                             )
                                         }
                                     else ->
-                                        if (prop.isNullable(isInput)) {
+                                        if (prop.isNullable) {
                                             add(
                                                 "base.takeIf { (it as %T).__isLoaded(%L) }?.%N",
                                                 IMMUTABLE_SPI_CLASS_NAME,
-                                                prop.immutableProp.id,
-                                                prop.immutableProp.name
+                                                prop.baseProp.id,
+                                                prop.baseProp.name
                                             )
                                         } else {
                                             add(
                                                 "base%L%N",
-                                                if (prop.isNullable(false)) "?." else ".",
-                                                prop.immutableProp.name
+                                                if (prop.baseProp.isNullable) "?." else ".",
+                                                prop.baseProp.name
                                             )
                                         }
                                 }
-                                if (!prop.isNullable(true) && prop.isNullable(false)) {
-                                    add(" ?: error(%S)", "\"base.${prop.immutableProp.name}\" cannot be null")
+                                if (!prop.isNullable && prop.baseProp.isNullable) {
+                                    add(" ?: error(%S)", "\"base.${prop.baseProp.name}\" cannot be null")
                                 }
                             }
                             .unindent()
@@ -376,7 +311,7 @@ class StaticDeclarationGenerator private constructor(
         typeBuilder.addFunction(
             FunSpec
                 .builder("toEntity")
-                .returns(immutableType.className)
+                .returns(dtoType.baseType.className)
                 .addModifiers(KModifier.OVERRIDE)
                 .addStatement("return toEntity(null)")
                 .build()
@@ -387,20 +322,20 @@ class StaticDeclarationGenerator private constructor(
         typeBuilder.addFunction(
             FunSpec
                 .builder("toEntity")
-                .returns(immutableType.className)
+                .returns(dtoType.baseType.className)
                 .addModifiers(KModifier.OVERRIDE)
                 .addParameter(
                     ParameterSpec
                         .builder(
                             "base",
-                            immutableType.className.copy(nullable = true)
+                            dtoType.baseType.className.copy(nullable = true)
                         )
                         .build()
                 )
                 .beginControlFlow(
                     "return %M(%T::class).%M(base) ",
                     NEW,
-                    immutableType.className,
+                    dtoType.baseType.className,
                     newBy()
                 )
                 .apply {
@@ -409,11 +344,11 @@ class StaticDeclarationGenerator private constructor(
                         if (innerClassName !== null && innerClassName.isNotEmpty()) {
                             innerClassName
                         } else {
-                            declaration.topLevelName
+                            dtoType.name!!
                         }
                     )
-                    for (prop in props) {
-                        if (prop.isNullable(isInput) && !prop.immutableProp.isNullable) {
+                    for (prop in dtoType.props) {
+                        if (prop.isNullable && !prop.baseProp.isNullable) {
                             beginControlFlow("if (that.%N !== null)", prop.name)
                             addAssignment(prop)
                             endControlFlow()
@@ -427,56 +362,56 @@ class StaticDeclarationGenerator private constructor(
         )
     }
 
-    private fun FunSpec.Builder.addAssignment(prop: StaticProp) {
-        val target = prop.target
+    private fun FunSpec.Builder.addAssignment(prop: DtoProp<ImmutableType, ImmutableProp>) {
+        val targetType = prop.targetType
         when {
-            target !== null ->
-                if (prop.immutableProp.isList) {
+            targetType !== null ->
+                if (prop.baseProp.isList) {
                     addStatement(
                         "this.%N = that.%N%Lmap { it.toEntity() }",
-                        prop.immutableProp.name,
+                        prop.baseProp.name,
                         prop.name,
-                        if (prop.isNullable(isInput)) "?." else "."
+                        if (prop.isNullable) "?." else "."
                     )
                 } else {
                     addStatement(
                         "this.%N = that.%N%LtoEntity()",
-                        prop.immutableProp.name,
+                        prop.baseProp.name,
                         prop.name,
-                        if (prop.isNullable(isInput)) "?." else "."
+                        if (prop.isNullable) "?." else "."
                     )
                 }
             prop.isIdOnly -> {
                 beginControlFlow(
                     "this.%N = that.%N%L%N",
-                    prop.immutableProp.name,
+                    prop.baseProp.name,
                     prop.name,
-                    if (prop.isNullable(isInput)) "?." else ".",
-                    if (prop.immutableProp.isNullable) "let" else "map"
+                    if (prop.isNullable) "?." else ".",
+                    if (prop.baseProp.isNullable) "let" else "map"
                 )
                 beginControlFlow(
                     "%M(%T::class).%M",
                     NEW,
-                    prop.immutableProp.targetType!!.className,
-                    newBy(prop.immutableProp.targetType)
+                    prop.baseProp.targetType!!.className,
+                    newBy(prop.baseProp.targetType)
                 )
-                addStatement("this.%N = it", prop.immutableProp.targetType!!.idProp!!.name)
+                addStatement("this.%N = it", prop.baseProp.targetType!!.idProp!!.name)
                 endControlFlow()
                 endControlFlow()
             }
             else ->
-                addStatement("this.%N = that.%N", prop.immutableProp.name, prop.name)
+                addStatement("this.%N = that.%N", prop.baseProp.name, prop.name)
         }
     }
 
-    private fun propTypeName(prop: StaticProp): TypeName {
+    private fun propTypeName(prop: DtoProp<ImmutableType, ImmutableProp>): TypeName {
         val elementTypeName: TypeName = propElementName(prop)
-        return if (prop.immutableProp.isList) {
+        return if (prop.baseProp.isList) {
             LIST_CLASS_NAME.parameterizedBy(elementTypeName)
         } else {
             elementTypeName
         }.let {
-            if (prop.isNullable(isInput)) {
+            if (prop.isNullable) {
                 it.copy(nullable = true)
             } else {
                 it
@@ -484,34 +419,34 @@ class StaticDeclarationGenerator private constructor(
         }
     }
 
-    private fun propElementName(prop: StaticProp): TypeName {
-        val target = prop.target
-        if (target !== null) {
-            if (target.topLevelName.isEmpty()) {
+    private fun propElementName(prop: DtoProp<ImmutableType, ImmutableProp>): TypeName {
+        val targetType = prop.targetType
+        if (targetType !== null) {
+            if (targetType.name === null) {
                 val list: MutableList<String> = ArrayList()
                 collectNames(list)
                 list.add(targetSimpleName(prop))
                 return ClassName(
-                    immutableType.className.packageName,
+                    packageName(),
                     list[0],
                     *list.subList(1, list.size).toTypedArray()
                 )
             }
             return ClassName(
-                target.immutableType.className.packageName,
-                target.topLevelName
+                packageName(),
+                targetType.name!!
             )
         }
         return if (prop.isIdOnly) {
-                prop.immutableProp.targetType!!.idProp!!.targetTypeName(overrideNullable = false)
+                prop.baseProp.targetType!!.idProp!!.targetTypeName(overrideNullable = false)
             } else {
-                prop.immutableProp.targetTypeName(overrideNullable = false)
+                prop.baseProp.targetTypeName(overrideNullable = false)
             }
     }
 
     private fun collectNames(list: MutableList<String>) {
         if (parent == null) {
-            list.add(declaration.topLevelName)
+            list.add(dtoType.name!!)
         } else if (innerClassName !== null){
             parent.collectNames(list)
             list.add(innerClassName)
@@ -519,13 +454,13 @@ class StaticDeclarationGenerator private constructor(
     }
 
     private fun newBy(type: ImmutableType? = null): MemberName =
-        MemberName((type ?: immutableType).className.packageName, "by")
+        MemberName((type ?: dtoType.baseType).className.packageName, "by")
 
     companion object {
         @JvmStatic
-        private fun targetSimpleName(prop: StaticProp): String {
-            val target = prop.target ?: throw IllegalArgumentException("prop is not association")
-            return target.topLevelName.ifEmpty { "TargetOf_" + prop.name }
+        private fun targetSimpleName(prop: DtoProp<ImmutableType, ImmutableProp>): String {
+            prop.targetType ?: throw IllegalArgumentException("prop is not association")
+            return "TargetOf_${prop.name}"
         }
 
         @JvmStatic

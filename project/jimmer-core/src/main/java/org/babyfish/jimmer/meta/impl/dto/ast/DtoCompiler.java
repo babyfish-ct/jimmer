@@ -307,15 +307,37 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
                                 "\" is required"
                 );
             }
+            boolean recursive = ctx.recursive != null;
+            if (recursive) {
+                T targetType = getTargetType(baseProp);
+                if (targetType == null) {
+                    throw new DtoAstException(
+                            ctx.recursive.getLine(),
+                            "The property \"" +
+                                    baseProp.getName() +
+                                    "\" cannot be recursive because it is not association"
+                    );
+                }
+                if (targetType != baseType) {
+                    throw new DtoAstException(
+                            ctx.recursive.getLine(),
+                            "The property \"" +
+                                    baseProp.getName() +
+                                    "\" cannot be recursive because does not returns the declaring type \"" +
+                                    baseType.getQualifiedName() +
+                                    "\""
+                    );
+                }
+            }
             propMap.put(
                     baseProp.getName(),
-                    new DtoProp<T, P>(
+                    new DtoProp<>(
                             baseProp,
                             alias,
                             targetDtoType,
-                            ctx.recursive != null,
+                            recursive,
                             idOnly,
-                            ctx.recursive != null
+                            recursive
                     )
             );
             String finalName = alias != null ? alias : baseProp.getName();

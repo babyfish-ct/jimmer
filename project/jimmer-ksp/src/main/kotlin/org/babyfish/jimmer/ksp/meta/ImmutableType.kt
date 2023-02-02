@@ -9,18 +9,17 @@ import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.FETCHER_DSL
 import org.babyfish.jimmer.ksp.generator.parseValidationMessages
-import org.babyfish.jimmer.pojo.*
+import org.babyfish.jimmer.meta.impl.dto.ast.spi.BaseType
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.Id
 import org.babyfish.jimmer.sql.MappedSuperclass
-import java.util.regex.Pattern
 import kotlin.reflect.KClass
 
 class ImmutableType(
     ctx: Context,
     private val classDeclaration: KSClassDeclaration
-) {
+) : BaseType {
     val simpleName: String = classDeclaration.simpleName.asString()
 
     val className: ClassName = classDeclaration.className()
@@ -55,7 +54,13 @@ class ImmutableType(
         annotationType
     }
 
-    val isEntity: Boolean = classDeclaration.annotation(Entity::class) !== null
+    override val name: String
+        get() = classDeclaration.simpleName!!.asString()
+
+    override val qualifiedName: String
+        get() = classDeclaration.qualifiedName!!.asString()
+
+    override val isEntity: Boolean = classDeclaration.annotation(Entity::class) !== null
 
     val isMappedSuperclass: Boolean = classDeclaration.annotation(MappedSuperclass::class) != null
 
@@ -194,112 +199,6 @@ class ImmutableType(
     val validationMessages: Map<ClassName, String> =
         parseValidationMessages(classDeclaration)
 
-    val declaredStaticDeclarationMap: Map<String, StaticDeclaration> =
-        classDeclaration
-            .annotations(StaticType::class)
-            .map {
-                StaticDeclaration(
-                    immutableType = this,
-                    alias = it.get<String>("alias")?.takeIf { it.isNotEmpty() } ?:
-                        throw MetaException(
-                            "Illegal type \"${classDeclaration.fullName}\", " +
-                                "the `alias` of the annotation " +
-                                "@${StaticType::class.qualifiedName} must be specified"
-                        ),
-                    topLevelName = (it["topLevelName"] ?: "")
-                        .also { name ->
-                              if (name.isNotEmpty()) {
-                                  for (suffix in ILLEGAL_STATIC_SUFFIX) {
-                                      if (name.endsWith(suffix)) {
-                                          throw MetaException(
-                                              "Illegal type \"${classDeclaration.fullName}\", " +
-                                                  "it is decorated by @${StaticType::class.qualifiedName}," +
-                                                  "the value \"${name}\" of annotation argument \"topLevelName\"" +
-                                                  " is illegal, it cannot end \"$suffix\""
-                                          )
-                                      }
-                                  }
-                                  if (!STATIC_TYPE_PATTERN.matcher(name).matches()) {
-                                      throw MetaException(
-                                          "Illegal type \"${classDeclaration.fullName}\", " +
-                                              "it is decorated by @${StaticType::class.qualifiedName}," +
-                                              "the value \"${name}\" of annotation argument \"topLevelName\"" +
-                                              " is illegal, it must match the regexp \"${STATIC_TYPE_PATTERN.pattern()}\""
-                                      )
-                                  }
-                              }
-                        },
-                    allOptional = it["allOptional"] ?: false
-                )
-            }
-            .let {
-                val map = mutableMapOf<String, StaticDeclaration>()
-                for (staticDeclaration in it) {
-                    if (map.put(staticDeclaration.alias, staticDeclaration) !== null) {
-                        throw MetaException(
-                            "Illegal type \"${classDeclaration.fullName}\", " +
-                                "it is decorated by @${StaticType::class.qualifiedName}," +
-                                "the value \"${staticDeclaration.alias}\" of annotation argument \"alias\"" +
-                                " is illegal, the static type with the same alias has already been defined" +
-                                "by another @${StaticType::class.qualifiedName}\""
-                        )
-                    }
-                }
-                map
-            }
-
-    val staticDeclarationMap: Map<String, StaticDeclaration> =
-        if (superType == null) {
-            declaredStaticDeclarationMap
-        } else {
-            val staticMap = superType.staticDeclarationMap.toMutableMap()
-            for (staticDeclaration in declaredStaticDeclarationMap.values) {
-                if (staticMap.put(staticDeclaration.alias, staticDeclaration) !== null) {
-                    throw MetaException(
-                        "Illegal type \"${classDeclaration.fullName}\", " +
-                            "it is decorated by @${StaticType::class.qualifiedName}," +
-                            "the value \"${staticDeclaration.alias}\" of annotation argument \"alias\"" +
-                            " is illegal, the static type with the same alias has already been defined" +
-                            "in super types\""
-                    )
-                }
-            }
-            staticMap
-        }
-
-    fun autoScalarStrategy(alias: String): AutoScalarStrategy =
-        autoScalarStrategyMap[alias]
-            ?: alias.takeIf { it.isNotEmpty() }?.let { autoScalarStrategyMap[""] }
-            ?: AutoScalarStrategy.ALL
-
-    private val autoScalarStrategyMap: Map<String, AutoScalarStrategy> =
-        mutableMapOf<String, AutoScalarStrategy>().apply {
-            for (rule in classDeclaration.annotations(AutoScalarRule::class)) {
-                val alias: String = rule["alias"]!!
-                put(alias, autoScalarStrategy(rule["value"])!!)?.let {
-                    conflictAutoScalarStrategy(alias)
-                }
-            }
-            for (type in classDeclaration.annotations(StaticType::class)) {
-                val alias: String = type["alias"]!!
-                put(alias, autoScalarStrategy(type["autoScalarStrategy"])!!)?.let {
-                    conflictAutoScalarStrategy(alias)
-                }
-            }
-        }
-
-    private fun conflictAutoScalarStrategy(alias: String): Nothing =
-        throw MetaException(
-            "Illegal type \"${classDeclaration.fullName}\", " +
-                "the auto scalar strategy of the alias \"${alias}\" cannot be configured multiple times"
-        )
-
-    internal fun resolve() {
-        for (prop in declaredProperties.values) {
-            prop.resolve()
-        }
-    }
-
     override fun toString(): String =
         classDeclaration.fullName
 
@@ -308,23 +207,5 @@ class ImmutableType(
         @JvmStatic
         private val SQL_ANNOTATION_TYPES =
             setOf(Entity::class, MappedSuperclass::class, Embeddable::class)
-
-        @JvmStatic
-        private val ILLEGAL_STATIC_SUFFIX = arrayOf(
-            "Draft", "Fetcher", "Props", "Table", "TableEx"
-        )
-
-        @JvmStatic
-        private val STATIC_TYPE_PATTERN =
-            Pattern.compile("[A-Za-z_$][A-Za-z_$0-9]*")
-
-        @JvmStatic
-        private fun autoScalarStrategy(ksType: KSType?): AutoScalarStrategy? =
-            when (ksType?.declaration?.simpleName?.asString()) {
-                "DECLARED" -> AutoScalarStrategy.DECLARED
-                "NONE" -> AutoScalarStrategy.NONE
-                "ALL" -> AutoScalarStrategy.ALL
-                else -> null
-            }
     }
 }

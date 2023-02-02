@@ -11,19 +11,11 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import java.util.*;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class ImmutableType implements BaseType {
 
     public static final String PROP_EXPRESSION_SUFFIX = "PropExpression";
-
-    private static final String[] ILLEGAL_STATIC_SUFFIX = new String[] {
-            "Draft", "Fetcher", "Props", "Table", "TableEx"
-    };
-
-    private static final Pattern STATIC_TYPE_PATTERN =
-            Pattern.compile("[A-Za-z_$][A-Za-z_$0-9]*");
 
     private final TypeElement typeElement;
 
