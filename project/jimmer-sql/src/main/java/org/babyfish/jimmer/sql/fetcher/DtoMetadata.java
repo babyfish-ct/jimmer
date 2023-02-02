@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.fetcher;
 
 import org.apache.commons.lang3.reflect.TypeUtils;
-import org.babyfish.jimmer.Dto;
+import org.babyfish.jimmer.Static;
 import org.babyfish.jimmer.impl.util.StaticCache;
 
 import java.lang.reflect.Field;
@@ -15,7 +15,7 @@ import java.util.function.Function;
 
 public final class DtoMetadata<E, S> {
 
-    private static final StaticCache<Class<Dto<?>>, DtoMetadata<?, ?>> cache =
+    private static final StaticCache<Class<Static<?>>, DtoMetadata<?, ?>> cache =
             new StaticCache<>(DtoMetadata::create, false);
 
     private final Fetcher<E> fetcher;
@@ -57,27 +57,27 @@ public final class DtoMetadata<E, S> {
     }
 
     @SuppressWarnings("unchecked")
-    public static <E, S extends Dto<E>> DtoMetadata<E, S> of(Class<S> staticType) {
-        return (DtoMetadata<E, S>) cache.get((Class<Dto<?>>)staticType);
+    public static <E, S extends Static<E>> DtoMetadata<E, S> of(Class<S> staticType) {
+        return (DtoMetadata<E, S>) cache.get((Class<Static<?>>)staticType);
     }
 
-    public static DtoMetadata<?, ?> create(Class<Dto<?>> staticType) {
-        if (!Dto.class.isAssignableFrom(staticType)) {
+    public static DtoMetadata<?, ?> create(Class<Static<?>> staticType) {
+        if (!Static.class.isAssignableFrom(staticType)) {
             throw new IllegalArgumentException(
                     "The type \"" +
                             staticType.getName() +
                             "\" does not inherit \"" +
-                            Dto.class.getName() +
+                            Static.class.getName() +
                             "\""
             );
         }
-        Iterator<Type> itr = TypeUtils.getTypeArguments(staticType, Dto.class).values().iterator();
+        Iterator<Type> itr = TypeUtils.getTypeArguments(staticType, Static.class).values().iterator();
         if (!itr.hasNext()) {
             throw new IllegalArgumentException(
                     "The type \"" +
                             staticType.getName() +
                             "\" does not specify the generic parameter of \"" +
-                            Dto.class.getName() +
+                            Static.class.getName() +
                             "\""
             );
         }
@@ -87,7 +87,7 @@ public final class DtoMetadata<E, S> {
                     "The type \"" +
                             staticType.getName() +
                             "\"illegal, the generic parameter of \"" +
-                            Dto.class.getName() +
+                            Static.class.getName() +
                             "\" must be interface"
             );
         }

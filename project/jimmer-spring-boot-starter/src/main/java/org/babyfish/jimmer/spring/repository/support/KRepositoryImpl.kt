@@ -3,7 +3,7 @@ package org.babyfish.jimmer.spring.repository.support
 import org.babyfish.jimmer.ImmutableObjects
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.Input
-import org.babyfish.jimmer.Dto
+import org.babyfish.jimmer.Static
 import org.babyfish.jimmer.spring.repository.*
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.fetcher.Fetcher
@@ -62,8 +62,8 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             sql.entities.findById(entityType, id)
         }
 
-    override fun <S : Dto<E>> findStaticNullable(staticType: KClass<S>, id: ID): S? =
-        sql.entities.findStaticById(staticType, id)
+    override fun <S : Static<E>> findNullableStaticObject(staticType: KClass<S>, id: ID): S? =
+        sql.entities.findStaticObjectById(staticType, id)
 
     override fun findByIds(ids: Iterable<ID>, fetcher: Fetcher<E>?): List<E> =
         if (fetcher !== null) {
@@ -72,8 +72,8 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             sql.entities.findByIds(entityType, Utils.toCollection(ids))
         }
 
-    override fun <S : Dto<E>> findStaticByIds(staticType: KClass<S>, ids: Iterable<ID>): List<S> =
-        sql.entities.findStaticByIds(staticType, Utils.toCollection(ids))
+    override fun <S : Static<E>> findStaticObjectsByIds(staticType: KClass<S>, ids: Iterable<ID>): List<S> =
+        sql.entities.findStaticObjectsByIds(staticType, Utils.toCollection(ids))
 
     override fun findMapByIds(ids: Iterable<ID>, fetcher: Fetcher<E>?): Map<ID, E> =
         if (fetcher !== null) {
@@ -82,8 +82,8 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             sql.entities.findMapByIds(entityType, Utils.toCollection(ids))
         }
 
-    override fun <S : Dto<E>> findStaticMapByIds(staticType: KClass<S>, ids: Iterable<ID>): Map<ID, S> =
-        sql.entities.findStaticMapByIds(staticType, Utils.toCollection(ids))
+    override fun <S : Static<E>> findStaticObjectMapByIds(staticType: KClass<S>, ids: Iterable<ID>): Map<ID, S> =
+        sql.entities.findStaticObjectMapByIds(staticType, Utils.toCollection(ids))
 
     override fun findAll(fetcher: Fetcher<E>?, block: (SortDsl<E>.() -> Unit)?): List<E> =
         if (fetcher !== null) {
@@ -92,8 +92,8 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             sql.entities.findAll(entityType, block)
         }
 
-    override fun <S : Dto<E>> findAllStatic(staticType: KClass<S>, block: (SortDsl<E>.() -> Unit)?): List<S> =
-        sql.entities.findAllStatic(staticType, block)
+    override fun <S : Static<E>> findAllStaticObjects(staticType: KClass<S>, block: (SortDsl<E>.() -> Unit)?): List<S> =
+        sql.entities.findAllStaticObjects(staticType, block)
 
     override fun findAll(fetcher: Fetcher<E>?, sort: Sort): List<E> =
         if (fetcher !== null) {
@@ -102,8 +102,8 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             sql.entities.findAll(entityType, sort.toSortDslBlock(immutableType))
         }
 
-    override fun <S : Dto<E>> findAllStatic(staticType: KClass<S>, sort: Sort): List<S> =
-        sql.entities.findAllStatic(staticType, sort.toSortDslBlock(immutableType))
+    override fun <S : Static<E>> findAllStaticObjects(staticType: KClass<S>, sort: Sort): List<S> =
+        sql.entities.findAllStaticObjects(staticType, sort.toSortDslBlock(immutableType))
 
     override fun findAll(
         pageIndex: Int,
@@ -119,7 +119,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
                 }
             )
 
-    override fun <S : Dto<E>> findAllStatic(
+    override fun <S : Static<E>> findAllStaticObjects(
         staticType: KClass<S>,
         pageIndex: Int,
         pageSize: Int,
@@ -142,7 +142,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
                 }
             )
 
-    override fun <S : Dto<E>> findAllStatic(
+    override fun <S : Static<E>> findAllStaticObjects(
         staticType: KClass<S>,
         pageIndex: Int,
         pageSize: Int,
@@ -168,7 +168,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
                 }
             )
 
-    override fun <S : Dto<E>> findAllStatic(staticType: KClass<S>, pageable: Pageable): Page<S> =
+    override fun <S : Static<E>> findAllStaticObjects(staticType: KClass<S>, pageable: Pageable): Page<S> =
         pager(pageable)
             .execute(
                 sql.createQuery(entityType) {

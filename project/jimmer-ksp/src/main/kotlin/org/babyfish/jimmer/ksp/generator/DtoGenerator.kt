@@ -114,7 +114,7 @@ class DtoGenerator private constructor(
     private fun addMembers(allFiles: List<KSFile>) {
 
         typeBuilder.addSuperinterface(
-            (if (dtoType.isInput) INPUT_CLASS_NAME else DTO_CLASS_NAME).parameterizedBy(
+            (if (dtoType.isInput) INPUT_CLASS_NAME else STATIC_CLASS_NAME).parameterizedBy(
                 dtoType.baseType.className
             )
         )

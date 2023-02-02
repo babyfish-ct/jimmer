@@ -1,8 +1,6 @@
 package org.babyfish.jimmer.spring.java.model;
 
 import org.babyfish.jimmer.client.Doc;
-import org.babyfish.jimmer.pojo.Static;
-import org.babyfish.jimmer.pojo.StaticType;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.ManyToMany;
@@ -13,7 +11,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-@StaticType(alias = "input", topLevelName = "BookInput")
 @Entity
 public interface Book {
 
@@ -29,11 +26,9 @@ public interface Book {
     @Doc("The bookstore to which the current book belongs, null is allowd")
     @ManyToOne
     @Nullable
-    @Static(idOnly = true, name = "storeId")
     BookStore store();
 
     @Doc("All authors involved in writing the work")
     @ManyToMany
-    @Static(idOnly = true, name = "authorIds")
     public List<Author> authors();
 }

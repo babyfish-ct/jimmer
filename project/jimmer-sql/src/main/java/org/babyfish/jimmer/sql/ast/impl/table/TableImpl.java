@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
-import org.babyfish.jimmer.Dto;
+import org.babyfish.jimmer.Static;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -395,7 +395,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     }
 
     @Override
-    public <S extends Dto<E>> Selection<S> fetch(Class<S> staticType) {
+    public <S extends Static<E>> Selection<S> fetch(Class<S> staticType) {
         DtoMetadata<E, S> metadata = DtoMetadata.of(staticType);
         Fetcher<E> fetcher = metadata.getFetcher();
         if (immutableType != fetcher.getImmutableType()) {
