@@ -53,7 +53,6 @@ public class DtoCompilerTest {
                         "--->--->name, " +
                         "--->--->edition, " +
                         "--->--->price, " +
-                        "--->--->tenant, " +
                         "--->--->id(store) as storeId, " +
                         "--->--->id(authors) as authorIds" +
                         "--->}, " +
@@ -61,7 +60,6 @@ public class DtoCompilerTest {
                         "--->--->@optional id, " +
                         "--->--->name, edition, " +
                         "--->--->price, " +
-                        "--->--->tenant, " +
                         "--->--->id(store) as storeId, " +
                         "--->--->id(authors) as authorIds, " +
                         "--->--->chapters: input{" +

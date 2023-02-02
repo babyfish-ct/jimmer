@@ -292,7 +292,7 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
             );
         }
 
-        private DtoProp<T, P> parse(DtoParser.NegativePropContext ctx) {
+        private void parse(DtoParser.NegativePropContext ctx) {
             P baseProp = getProps(baseType).get(ctx.Identifier().getText());
             if (baseProp == null) {
                 throw new DtoAstException(
@@ -304,7 +304,7 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
                                 "\""
                 );
             }
-            return new DtoProp<>(baseProp, true);
+            propMap.remove(baseProp.getName());
         }
     }
 
