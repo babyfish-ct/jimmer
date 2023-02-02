@@ -1,0 +1,5 @@
+input BookInput {
+    #allScalars
+    id(store)
+    id(authors) as authorIds
+}

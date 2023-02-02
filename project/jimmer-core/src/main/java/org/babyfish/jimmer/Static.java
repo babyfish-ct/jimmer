@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @param <E> The dynamic entity interface type
  */
-public interface Dto<E> {
+public interface Static<E> {
 
     @NotNull
     E toEntity();

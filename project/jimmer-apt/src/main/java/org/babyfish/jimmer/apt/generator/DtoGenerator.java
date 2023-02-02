@@ -76,7 +76,7 @@ public class DtoGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addSuperinterface(
                         ParameterizedTypeName.get(
-                                dtoType.isInput() ? Constants.INPUT_CLASS_NAME : Constants.DTO_CLASS_NAME,
+                                dtoType.isInput() ? Constants.INPUT_CLASS_NAME : Constants.STATIC_CLASS_NAME,
                                 dtoType.getBaseType().getClassName()
                         )
                 );

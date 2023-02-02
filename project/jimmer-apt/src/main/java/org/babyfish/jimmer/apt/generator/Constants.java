@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.DraftConsumer;
-import org.babyfish.jimmer.Dto;
+import org.babyfish.jimmer.Static;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -31,8 +31,8 @@ class Constants {
     public static final ClassName LIST_CLASS_NAME =
             ClassName.get(List.class);
 
-    public static final ClassName DTO_CLASS_NAME =
-            ClassName.get(Dto.class);
+    public static final ClassName STATIC_CLASS_NAME =
+            ClassName.get(Static.class);
 
     public static final ClassName INPUT_CLASS_NAME =
             ClassName.get(Input.class);

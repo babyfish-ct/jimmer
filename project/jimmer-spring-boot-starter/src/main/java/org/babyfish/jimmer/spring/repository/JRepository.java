@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.spring.repository;
 
-import org.babyfish.jimmer.Dto;
+import org.babyfish.jimmer.Static;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.spring.repository.support.Utils;
@@ -41,7 +41,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     E findNullable(ID id, Fetcher<E> fetcher);
 
-    <S extends Dto<E>> S findStaticNullable(Class<S> staticType, ID id);
+    <S extends Static<E>> S findNullableStaticObject(Class<S> staticType, ID id);
 
     @NotNull
     @Override
@@ -53,8 +53,8 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
         return Optional.ofNullable(findNullable(id, fetcher));
     }
 
-    default <S extends Dto<E>> Optional<S> findStaticById(Class<S> staticType, ID id) {
-        return Optional.ofNullable(findStaticNullable(staticType, id));
+    default <S extends Static<E>> Optional<S> findStaticObjectById(Class<S> staticType, ID id) {
+        return Optional.ofNullable(findNullableStaticObject(staticType, id));
     }
 
     @AliasFor("findAllById")
@@ -69,13 +69,13 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     List<E> findByIds(Iterable<ID> ids, Fetcher<E> fetcher);
 
-    <S extends Dto<E>> List<S> findStaticByIds(Class<S> staticType, Iterable<ID> ids);
+    <S extends Static<E>> List<S> findStaticObjectsByIds(Class<S> staticType, Iterable<ID> ids);
 
     Map<ID, E> findMapByIds(Iterable<ID> ids);
 
     Map<ID, E> findMapByIds(Iterable<ID> ids, Fetcher<E> fetcher);
 
-    <S extends Dto<E>> Map<ID, S> findStaticMapByIds(Class<S> staticType, Iterable<ID> ids);
+    <S extends Static<E>> Map<ID, S> findStaticObjectMapByIds(Class<S> staticType, Iterable<ID> ids);
 
     @NotNull
     @Override
@@ -87,7 +87,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     @SuppressWarnings("unchecked")
     List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... sortedProps);
 
-    <S extends Dto<E>> List<S> findAllStatic(Class<S> staticType, TypedProp.Scalar<?, ?> ... sortedProps);
+    <S extends Static<E>> List<S> findAllStaticObjects(Class<S> staticType, TypedProp.Scalar<?, ?> ... sortedProps);
 
     @NotNull
     @Override
@@ -95,7 +95,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     List<E> findAll(Fetcher<E> fetcher, Sort sort);
 
-    <S extends Dto<E>> List<S> findAllStatic(Class<S> staticType, Sort sort);
+    <S extends Static<E>> List<S> findAllStaticObjects(Class<S> staticType, Sort sort);
 
     Page<E> findAll(int pageIndex, int pageSize);
 
@@ -107,7 +107,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     @SuppressWarnings("unchecked")
     Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... sortedProps);
 
-    <S extends Dto<E>> Page<S> findAllStatic(
+    <S extends Static<E>> Page<S> findAllStaticObjects(
             Class<S> staticType,
             int pageIndex,
             int pageSize,
@@ -118,7 +118,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, Sort sort);
 
-    <S extends Dto<E>> Page<S> findAllStatic(
+    <S extends Static<E>> Page<S> findAllStaticObjects(
             Class<S> staticType,
             int pageIndex,
             int pageSize,
@@ -131,7 +131,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     
     Page<E> findAll(Pageable pageable, Fetcher<E> fetcher);
 
-    <S extends Dto<E>> Page<S> findAllStatic(Class<S> staticType, Pageable pageable);
+    <S extends Static<E>> Page<S> findAllStaticObjects(Class<S> staticType, Pageable pageable);
 
     @Override
     default boolean existsById(ID id) {

@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.table.spi;
 
-import org.babyfish.jimmer.Dto;
+import org.babyfish.jimmer.Static;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -273,7 +273,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
     }
 
     @Override
-    public <S extends Dto<E>> Selection<S> fetch(Class<S> staticType) {
+    public <S extends Static<E>> Selection<S> fetch(Class<S> staticType) {
         DtoMetadata<E, S> metadata = DtoMetadata.of(staticType);
         return new FetcherSelectionImpl<S>(this, metadata.getFetcher(), metadata.getConverter());
     }
