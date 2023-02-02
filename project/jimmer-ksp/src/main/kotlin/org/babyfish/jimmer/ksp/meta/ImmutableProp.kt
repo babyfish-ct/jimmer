@@ -11,8 +11,7 @@ import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
 import org.babyfish.jimmer.ksp.generator.parseValidationMessages
 import org.babyfish.jimmer.meta.ModelException
 import org.babyfish.jimmer.meta.impl.PropDescriptor
-import org.babyfish.jimmer.pojo.Static
-import org.babyfish.jimmer.pojo.Statics
+import org.babyfish.jimmer.meta.impl.dto.ast.spi.BaseProp
 import org.babyfish.jimmer.sql.*
 import kotlin.reflect.KClass
 
@@ -21,27 +20,27 @@ class ImmutableProp(
     val declaringType: ImmutableType,
     val id: Int,
     private val propDeclaration: KSPropertyDeclaration
-) {
+): BaseProp {
     init {
         if (propDeclaration.isMutable) {
             throw MetaException("Illegal property '${this}', this property of immutable interface must be readonly")
         }
     }
 
-    val name: String = propDeclaration.name
+    override val name: String = propDeclaration.name
 
     private val resolvedType: KSType = propDeclaration.type.resolve()
 
-    val isTransient: Boolean =
+    override val isTransient: Boolean =
         annotation(Transient::class) !== null
 
-    val hasTransientResolver: Boolean =
+    override fun hasTransientResolver(): Boolean =
         annotation(Transient::class)?.let {
             val resolveClassName = it.get<KSType>("value")?.toClassName()
             resolveClassName != UNIT
         } ?: false
 
-    val isList: Boolean =
+    override val isList: Boolean =
         (resolvedType.declaration as KSClassDeclaration).asStarProjectedType().let { starType ->
             when {
                 ctx.mapType.isAssignableFrom(starType) ->
@@ -72,7 +71,7 @@ class ImmutableProp(
 
     val primaryAnnotationType: Class<out Annotation>?
 
-    val isNullable: Boolean
+    override val isNullable: Boolean
 
     init {
         val descriptor = PropDescriptor
@@ -221,113 +220,6 @@ class ImmutableProp(
 
     val validationMessages: Map<ClassName, String> =
        parseValidationMessages(propDeclaration)
-
-    fun staticProp(alias: String): StaticProp? =
-        staticPropMap[alias] ?: staticPropMap[""]
-
-    private val staticPropMap: MutableMap<String, StaticProp> =
-        mutableListOf<KSAnnotation>()
-            .apply {
-                this += annotations(Static::class)
-                for (statics in annotations(Statics::class)) {
-                    this += statics["value"] ?: emptyList()
-                }
-            }
-            .map {
-                val staticProp = StaticProp(
-                    immutableProp = this,
-                    alias = it.get<String>("alias") ?: "",
-                    name = it.get<String>("name")?.takeIf { n -> n.isNotEmpty() } ?: name,
-                    isEnabled = it["enabled"] ?: true,
-                    isOptional = it["optional"] ?: false,
-                    isIdOnly = it["idOnly"] ?: false,
-                    targetAlias = it["targetAlias"] ?: ""
-                )
-                if (staticProp.isOptional && isNullable) {
-                    throw MetaException(
-                        "Illegal property \"" +
-                            this +
-                            "\", it is decorated by the annotation @Static " +
-                            "whose `optional` is true, it is not allowed for nullable property"
-                    )
-                }
-                if (staticProp.isIdOnly && !isAssociation(true)) {
-                    throw MetaException(
-                        "Illegal property \"" +
-                            this +
-                            "\", it is decorated by the annotation @Static " +
-                            "whose `idOnly` is true, it is not allowed " +
-                            "for non-orm-association property"
-                    )
-                }
-                staticProp
-            }
-            .let {
-                val map = mutableMapOf<String, StaticProp>()
-                for (prop in it) {
-                    if (map.put(prop.alias, prop) !== null) {
-                        throw MetaException(
-                            "Illegal prop \"this\", " +
-                                "it is decorated by @${Static::class.qualifiedName}," +
-                                "the value \"${prop.alias}\" of annotation argument \"alias\"" +
-                                " is illegal, the static type with the same alias has already been defined" +
-                                "by another @${Static::class.qualifiedName}\""
-                        )
-                    }
-                }
-                map
-            }
-
-    internal fun resolve() {
-        for (staticProp in staticPropMap.values) {
-            if (declaringType.isEntity &&
-                staticProp.alias.isNotEmpty() &&
-                !declaringType.staticDeclarationMap.containsKey(staticProp.alias)
-            ) {
-                throw MetaException(
-                    "Illegal property \"" +
-                        this +
-                        "\", it is decorated by the annotation @Static " +
-                        "whose `alias` is \"" +
-                        staticProp.alias +
-                        "\", but the declaring entity \"" +
-                        declaringType +
-                        "\" does not have a static type whose alias is \"" +
-                        staticProp.alias +
-                        "\""
-                )
-            }
-            if (isAssociation) {
-                if (!staticProp.isIdOnly) {
-                    val targetStaticType = targetType!!.staticDeclarationMap[staticProp.targetAlias]
-                    if (targetStaticType != null) {
-                        staticPropMap[staticProp.alias] = staticProp.copy(target = targetStaticType)
-                    } else if (staticProp.targetAlias.isEmpty()) {
-                        staticPropMap[staticProp.alias] = staticProp.copy(
-                            target = StaticDeclaration(
-                                targetType!!,
-                                "",
-                                "",
-                                false
-                            )
-                        )
-                    } else {
-                        throw MetaException("Illegal property \"" +
-                                this +
-                                "\", it is decorated by the annotation @Static " +
-                                "whose `targetAlias` is \"" +
-                                staticProp.targetAlias +
-                                "\", but the target entity \"" +
-                                targetType +
-                                "\" does not have a static type whose alias is \"" +
-                                staticProp +
-                                "\""
-                        )
-                    }
-                }
-            }
-        }
-    }
 
     override fun toString(): String =
         "${declaringType}.${propDeclaration.name}"

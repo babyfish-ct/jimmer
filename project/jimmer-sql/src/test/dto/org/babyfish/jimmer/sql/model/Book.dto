@@ -4,11 +4,12 @@ input BookInput {
     id(authors) as authorIds
 }
 
-input CompositeBookInput {
+input ComplexInput {
     #allScalars
-    id(store)
-    id(authors) as authorIds
-    chapters {
+    store {
+        #allScalars
+    }
+    authors {
         #allScalars
     }
 }

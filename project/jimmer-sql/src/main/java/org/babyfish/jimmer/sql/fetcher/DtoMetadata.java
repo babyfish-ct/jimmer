@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.fetcher;
 
 import org.apache.commons.lang3.reflect.TypeUtils;
-import org.babyfish.jimmer.Static;
+import org.babyfish.jimmer.Dto;
 import org.babyfish.jimmer.impl.util.StaticCache;
 
 import java.lang.reflect.Field;
@@ -13,16 +13,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-public final class StaticMetadata<E, S> {
+public final class DtoMetadata<E, S> {
 
-    private static final StaticCache<Class<Static<?>>, StaticMetadata<?, ?>> cache =
-            new StaticCache<>(StaticMetadata::create, false);
+    private static final StaticCache<Class<Dto<?>>, DtoMetadata<?, ?>> cache =
+            new StaticCache<>(DtoMetadata::create, false);
 
     private final Fetcher<E> fetcher;
 
     private final Function<E, S> converter;
 
-    public StaticMetadata(Fetcher<E> fetcher, Function<E, S> converter) {
+    public DtoMetadata(Fetcher<E> fetcher, Function<E, S> converter) {
         this.fetcher = Objects.requireNonNull(fetcher, "fetch cannot be null");
         this.converter = Objects.requireNonNull(converter, "converter cannot be null");
     }
@@ -44,7 +44,7 @@ public final class StaticMetadata<E, S> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        StaticMetadata<?, ?> that = (StaticMetadata<?, ?>) o;
+        DtoMetadata<?, ?> that = (DtoMetadata<?, ?>) o;
         return fetcher.equals(that.fetcher) && converter.equals(that.converter);
     }
 
@@ -57,27 +57,27 @@ public final class StaticMetadata<E, S> {
     }
 
     @SuppressWarnings("unchecked")
-    public static <E, S extends Static<E>> StaticMetadata<E, S> of(Class<S> staticType) {
-        return (StaticMetadata<E, S>) cache.get((Class<Static<?>>)staticType);
+    public static <E, S extends Dto<E>> DtoMetadata<E, S> of(Class<S> staticType) {
+        return (DtoMetadata<E, S>) cache.get((Class<Dto<?>>)staticType);
     }
 
-    public static StaticMetadata<?, ?> create(Class<Static<?>> staticType) {
-        if (!Static.class.isAssignableFrom(staticType)) {
+    public static DtoMetadata<?, ?> create(Class<Dto<?>> staticType) {
+        if (!Dto.class.isAssignableFrom(staticType)) {
             throw new IllegalArgumentException(
                     "The type \"" +
                             staticType.getName() +
                             "\" does not inherit \"" +
-                            Static.class.getName() +
+                            Dto.class.getName() +
                             "\""
             );
         }
-        Iterator<Type> itr = TypeUtils.getTypeArguments(staticType, Static.class).values().iterator();
+        Iterator<Type> itr = TypeUtils.getTypeArguments(staticType, Dto.class).values().iterator();
         if (!itr.hasNext()) {
             throw new IllegalArgumentException(
                     "The type \"" +
                             staticType.getName() +
                             "\" does not specify the generic parameter of \"" +
-                            Static.class.getName() +
+                            Dto.class.getName() +
                             "\""
             );
         }
@@ -87,7 +87,7 @@ public final class StaticMetadata<E, S> {
                     "The type \"" +
                             staticType.getName() +
                             "\"illegal, the generic parameter of \"" +
-                            Static.class.getName() +
+                            Dto.class.getName() +
                             "\" must be interface"
             );
         }
@@ -109,20 +109,20 @@ public final class StaticMetadata<E, S> {
                             "\" is illegal, there is not static final field \"METADATA\""
             );
         }
-        if (metadataField.getType() != StaticMetadata.class) {
+        if (metadataField.getType() != DtoMetadata.class) {
             throw new IllegalArgumentException(
                     "The type \"" +
                             staticType.getName() +
                             "\" is illegal, the type of \"" +
                             metadataField +
                             "\" must be \"" +
-                            StaticMetadata.class.getName() +
+                            DtoMetadata.class.getName() +
                             "\""
             );
         }
-        TypeVariable<?>[] typeParameters = StaticMetadata.class.getTypeParameters();
+        TypeVariable<?>[] typeParameters = DtoMetadata.class.getTypeParameters();
         Map<TypeVariable<?>, Type> typeArgumentMap =
-                TypeUtils.getTypeArguments(metadataField.getGenericType(), StaticMetadata.class);
+                TypeUtils.getTypeArguments(metadataField.getGenericType(), DtoMetadata.class);
         if (typeArgumentMap.get(typeParameters[0]) != entityType) {
             throw new IllegalArgumentException(
                     "The type \"" +
@@ -147,7 +147,7 @@ public final class StaticMetadata<E, S> {
         }
         metadataField.setAccessible(true);
         try {
-            return (StaticMetadata<?, ?>)metadataField.get(null);
+            return (DtoMetadata<?, ?>)metadataField.get(null);
         } catch (IllegalAccessException ex) {
             throw new AssertionError("Internal bug", ex);
         }

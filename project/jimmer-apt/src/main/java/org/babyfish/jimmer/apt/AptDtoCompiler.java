@@ -4,6 +4,7 @@ import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.meta.impl.dto.ast.DtoCompiler;
 import org.babyfish.jimmer.sql.Id;
+import org.babyfish.jimmer.sql.Key;
 
 import java.util.Map;
 
@@ -34,23 +35,13 @@ public class AptDtoCompiler extends DtoCompiler<ImmutableType, ImmutableProp> {
     }
 
     @Override
-    protected boolean isMappable(ImmutableProp baseProp) {
-        return !baseProp.isTransient() || baseProp.hasTransientResolver();
-    }
-
-    @Override
-    protected boolean isNullable(ImmutableProp baseProp) {
-        return baseProp.isNullable();
-    }
-
-    @Override
     protected boolean isId(ImmutableProp baseProp) {
         return baseProp.getAnnotation(Id.class) != null;
     }
 
     @Override
-    protected boolean isList(ImmutableProp baseProp) {
-        return baseProp.isList();
+    protected boolean isKey(ImmutableProp baseProp) {
+        return baseProp.getAnnotation(Key.class) != null;
     }
 
     @Override

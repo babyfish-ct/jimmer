@@ -180,7 +180,7 @@ class StaticDeclarationGenerator private constructor(
     private fun addMembers(allFiles: List<KSFile>) {
 
         typeBuilder.addSuperinterface(
-            (if (isInput) INPUT_CLASS_NAME else STATIC_CLASS_NAME).parameterizedBy(
+            (if (isInput) INPUT_CLASS_NAME else DTO_CLASS_NAME).parameterizedBy(
                 immutableType.className
             )
         )
@@ -214,7 +214,7 @@ class StaticDeclarationGenerator private constructor(
                         PropertySpec
                             .builder(
                                 "METADATA",
-                                STATIC_METADATA_CLASS_NAME.parameterizedBy(
+                                DTO_METADATA_CLASS_NAME.parameterizedBy(
                                     declaration.immutableType.className,
                                     getClassName()
                                 )
@@ -228,7 +228,7 @@ class StaticDeclarationGenerator private constructor(
                                         indent()
                                         add(
                                             "%T<%T, %T>(\n",
-                                            STATIC_METADATA_CLASS_NAME,
+                                            DTO_METADATA_CLASS_NAME,
                                             declaration.immutableType.className, getClassName()
                                         )
                                         indent()

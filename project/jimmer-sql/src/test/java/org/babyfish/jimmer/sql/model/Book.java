@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.sql.model;
 
-import org.babyfish.jimmer.pojo.Static;
-import org.babyfish.jimmer.pojo.StaticType;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 
@@ -12,14 +10,10 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@StaticType(alias = "default", topLevelName = "BookInput")
-@StaticType(alias = "complex", topLevelName = "CompositeBookInput")
-@StaticType(alias = "dto")
 public interface Book {
 
     @Id
     @GeneratedValue(generatorType = UUIDIdGenerator.class)
-    @Static(optional = true)
     UUID id();
 
     @Key
@@ -33,8 +27,6 @@ public interface Book {
 
     @Null
     @ManyToOne
-    @Static(alias = "default", name = "storeId", idOnly = true)
-    @Static(alias = "complex")
     BookStore store();
 
     @ManyToMany
@@ -43,8 +35,5 @@ public interface Book {
             joinColumnName = "BOOK_ID",
             inverseJoinColumnName = "AUTHOR_ID"
     )
-    @Static(alias = "default", name = "authorIds", idOnly = true)
-    @Static(alias = "complex")
-    @Static(alias = "dto")
     List<Author> authors();
 }

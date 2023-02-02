@@ -1,0 +1,9 @@
+BookStoreDto {
+    #allScalars
+    books {
+        #allScalars
+        authors {
+            #allScalars
+        }
+    }
+}

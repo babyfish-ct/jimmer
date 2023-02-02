@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
-import org.babyfish.jimmer.Static;
+import org.babyfish.jimmer.Dto;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -23,8 +23,8 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.cache.CacheLoader;
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.StaticMetadata;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.fetcher.impl.Fetchers;
 import org.babyfish.jimmer.sql.runtime.Converters;
@@ -310,7 +310,7 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E, S extends Static<E>> S findStaticById(Class<S> staticType, Object id) {
+    public <E, S extends Dto<E>> S findStaticById(Class<S> staticType, Object id) {
         List<S> list;
         if (con != null) {
             list = findStaticByIds(staticType, Collections.singleton(id), con);
@@ -323,7 +323,7 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E, S extends Static<E>> List<S> findStaticByIds(Class<S> staticType, Collection<?> ids) {
+    public <E, S extends Dto<E>> List<S> findStaticByIds(Class<S> staticType, Collection<?> ids) {
         if (con != null) {
             return findStaticByIds(staticType, ids, con);
         }
@@ -334,9 +334,9 @@ public class EntitiesImpl implements Entities {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <ID, E, S extends Static<E>> Map<ID, S> findStaticMapByIds(Class<S> staticType, Collection<ID> ids) {
-        StaticMetadata<E, S> staticMetadata = StaticMetadata.of(staticType);
-        Fetcher<E> fetcher = staticMetadata.getFetcher();
+    public <ID, E, S extends Dto<E>> Map<ID, S> findStaticMapByIds(Class<S> staticType, Collection<ID> ids) {
+        DtoMetadata<E, S> dtoMetadata = DtoMetadata.of(staticType);
+        Fetcher<E> fetcher = dtoMetadata.getFetcher();
         ImmutableProp idProp = ImmutableType.get(fetcher.getJavaClass()).getIdProp();
         return this.findStaticByIds(staticType, ids, con).stream().collect(
                 Collectors.toMap(
@@ -348,14 +348,14 @@ public class EntitiesImpl implements Entities {
         );
     }
 
-    private <E, S extends Static<E>> List<S> findStaticByIds(
+    private <E, S extends Dto<E>> List<S> findStaticByIds(
             Class<S> staticType,
             Collection<?> ids,
             Connection con
     ) {
-        StaticMetadata<E, S> staticMetadata = StaticMetadata.of(staticType);
-        Fetcher<E> fetcher = staticMetadata.getFetcher();
-        Function<E, S> converter = staticMetadata.getConverter();
+        DtoMetadata<E, S> dtoMetadata = DtoMetadata.of(staticType);
+        Fetcher<E> fetcher = dtoMetadata.getFetcher();
+        Function<E, S> converter = dtoMetadata.getConverter();
         List<E> entities = findByIds(fetcher, ids, con);
         List<S> staticObjects = new ArrayList<>(entities.size());
         for (E entity : entities) {
@@ -448,21 +448,21 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E, S extends Static<E>> List<S> findAllStatic(Class<S> staticType, TypedProp.Scalar<?, ?>... sortedProps) {
+    public <E, S extends Dto<E>> List<S> findAllStatic(Class<S> staticType, TypedProp.Scalar<?, ?>... sortedProps) {
         return findStatic(staticType, null, sortedProps);
     }
 
     @Override
-    public <E, S extends Static<E>> List<S> findStaticByExample(Class<S> staticType, Example<E> example, TypedProp.Scalar<?, ?>... sortedProps) {
+    public <E, S extends Dto<E>> List<S> findStaticByExample(Class<S> staticType, Example<E> example, TypedProp.Scalar<?, ?>... sortedProps) {
         return findStatic(staticType, (ExampleImpl<E>) example, sortedProps);
     }
 
-    private <E, S extends Static<E>> List<S> findStatic(
+    private <E, S extends Dto<E>> List<S> findStatic(
             Class<S> staticType,
             ExampleImpl<E> example,
             TypedProp.Scalar<?, ?>... sortedProps
     ) {
-        StaticMetadata<E, S> metadata = StaticMetadata.of(staticType);
+        DtoMetadata<E, S> metadata = DtoMetadata.of(staticType);
         Fetcher<E> fetcher = metadata.getFetcher();
         ImmutableType type = fetcher.getImmutableType();
         if (example != null && example.type() != type) {

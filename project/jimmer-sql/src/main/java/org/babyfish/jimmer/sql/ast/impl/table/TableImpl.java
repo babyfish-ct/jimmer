@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
-import org.babyfish.jimmer.Static;
+import org.babyfish.jimmer.Dto;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -14,8 +14,8 @@ import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.StaticMetadata;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -395,8 +395,8 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     }
 
     @Override
-    public <S extends Static<E>> Selection<S> fetch(Class<S> staticType) {
-        StaticMetadata<E, S> metadata = StaticMetadata.of(staticType);
+    public <S extends Dto<E>> Selection<S> fetch(Class<S> staticType) {
+        DtoMetadata<E, S> metadata = DtoMetadata.of(staticType);
         Fetcher<E> fetcher = metadata.getFetcher();
         if (immutableType != fetcher.getImmutableType()) {
             throw new IllegalArgumentException(

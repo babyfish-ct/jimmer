@@ -1,13 +1,11 @@
 package org.babyfish.jimmer.apt;
 
 import org.babyfish.jimmer.apt.generator.*;
+import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.apt.meta.MetaException;
-import org.babyfish.jimmer.apt.meta.StaticDeclaration;
 import org.babyfish.jimmer.meta.impl.dto.ast.DtoType;
 import org.babyfish.jimmer.meta.impl.dto.ast.DtoAstException;
-import org.babyfish.jimmer.meta.impl.dto.ast.spi.BaseProp;
-import org.babyfish.jimmer.meta.impl.dto.ast.spi.BaseType;
 import org.babyfish.jimmer.sql.Entity;
 
 import javax.annotation.processing.*;
@@ -98,65 +96,10 @@ public class ImmutableProcessor extends AbstractProcessor {
         }
 
         Map<TypeElement, ImmutableType> immutableTypeMap = parseImmutableTypes(roundEnv);
-        Map<ImmutableType, List<DtoType>> dtoMap = parseDtoMetas(immutableTypeMap.values());
-        if (!dtoMap.isEmpty()) {
-            throw new IllegalArgumentException(dtoMap.toString());
-        }
-        for (ImmutableType immutableType : immutableTypeMap.values()) {
-            new DraftGenerator(
-                    immutableType,
-                    filer
-            ).generate();
-            new PropsGenerator(
-                    typeUtils,
-                    immutableType,
-                    filer
-            ).generate();
-            messager.printMessage(Diagnostic.Kind.NOTE, "Immutable: " + immutableType.getQualifiedName());
-            if (immutableType.isEntity()) {
-                messager.printMessage(Diagnostic.Kind.NOTE, "Entity: " + immutableType.getQualifiedName());
-                new TableGenerator(
-                        typeUtils,
-                        immutableType,
-                        false,
-                        filer
-                ).generate();
-                new TableGenerator(
-                        typeUtils,
-                        immutableType,
-                        true,
-                        filer
-                ).generate();
-                new FetcherGenerator(
-                        typeUtils,
-                        immutableType,
-                        filer
-                ).generate();
-                for (StaticDeclaration declaration : immutableType.getStaticDeclarationMap().values()) {
-                    if (!declaration.getTopLevelName().isEmpty()) {
-                        new StaticDeclarationGenerator(
-                                declaration,
-                                filer
-                        ).generate();
-                    }
-                }
-            } else if (immutableType.isEmbeddable()) {
-                new PropExpressionGenerator(
-                        typeUtils,
-                        immutableType,
-                        filer
-                ).generate();
-            }
-        }
-        PackageCollector packageCollector = new PackageCollector();
-        for (Element element : roundEnv.getElementsAnnotatedWith(Entity.class)) {
-            packageCollector.accept((TypeElement) element);
-        }
-        new JimmerModuleGenerator(
-                packageCollector.toString(),
-                packageCollector.getTypeElements(),
-                filer
-        ).generate();
+        Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap =
+                parseDtoTypes(immutableTypeMap.values());
+        generateJimmerTypes(immutableTypeMap.values(), roundEnv);
+        generateDtoTypes(dtoTypeMap);
         return true;
     }
 
@@ -209,7 +152,9 @@ public class ImmutableProcessor extends AbstractProcessor {
         return map;
     }
 
-    private Map<ImmutableType, List<DtoType>> parseDtoMetas(Collection<ImmutableType> immutableTypes) {
+    private Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> parseDtoTypes(
+            Collection<ImmutableType> immutableTypes
+    ) {
         String path;
         try {
             path = filer.getResource(
@@ -231,7 +176,8 @@ public class ImmutableProcessor extends AbstractProcessor {
             collectActualDtoDir(file, actualDtoDirs);
             file = file.getParentFile();
         }
-        Map<ImmutableType, List<DtoType<BaseType, BaseProp>>> dtoMap = new HashMap<>();
+
+        Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoMap = new HashMap<>();
         for (ImmutableType immutableType : immutableTypes) {
             for (String actualDtoDir : actualDtoDirs) {
                 File dtoFile = new File(
@@ -241,28 +187,115 @@ public class ImmutableProcessor extends AbstractProcessor {
                                 ".dto"
                 );
                 if (dtoFile.exists()) {
-//                    List<DtoType> dtoTypes;
-//                    try (InputStream in = new FileInputStream(dtoFile)) {
-//                        dtoTypes = DtoType.parse(in);
-//                    } catch (DtoAstException ex) {
-//                        throw new MetaException(
-//                                "Failed to parse \"" +
-//                                        file.getAbsolutePath() +
-//                                        "\"",
-//                                ex
-//                        );
-//                    } catch (IOException ex) {
-//                        throw new MetaException(
-//                                "Failed to read \"" +
-//                                        file.getAbsolutePath() +
-//                                        "\""
-//                        );
-//                    }
-//                    dtoMap.put(immutableType, dtoTypes);
+                    List<DtoType<ImmutableType, ImmutableProp>> dtoTypes;
+                    try (InputStream in = new FileInputStream(dtoFile)) {
+                        dtoTypes = new AptDtoCompiler(immutableType).compile(in);
+                    } catch (DtoAstException ex) {
+                        throw new MetaException(
+                                "Failed to parse \"" +
+                                        dtoFile.getAbsolutePath() +
+                                        "\"",
+                                ex
+                        );
+                    } catch (IOException ex) {
+                        throw new MetaException(
+                                "Failed to read \"" +
+                                        dtoFile.getAbsolutePath() +
+                                        "\"",
+                                ex
+                        );
+                    }
+                    dtoMap.put(immutableType, dtoTypes);
                 }
             }
         }
-        return Collections.emptyMap();
+        for (ImmutableType type : immutableTypes) {
+            List<DtoType<ImmutableType, ImmutableProp>> dtoTypes = dtoMap.get(type);
+            if (dtoTypes != null) {
+                for (ImmutableType otherType : immutableTypes) {
+                    if (otherType != type && otherType.getPackageName().equals(type.getPackageName())) {
+                        List<DtoType<ImmutableType, ImmutableProp>> otherDtoTypes = dtoMap.get(otherType);
+                        if (otherDtoTypes != null) {
+                            for (DtoType<ImmutableType, ImmutableProp> dtoType : dtoTypes) {
+                                for (DtoType<ImmutableType, ImmutableProp> otherDtoType : otherDtoTypes) {
+                                    if (dtoType.getName().equals(otherDtoType.getName())) {
+                                        throw new MetaException(
+                                                "Conflict dto type name, the \"" +
+                                                        type.getQualifiedName() +
+                                                        "\" and \"" +
+                                                        otherType.getQualifiedName() +
+                                                        "\" are belong to same package, " +
+                                                        "but they have define a dto type named \"" +
+                                                        dtoType.getName() +
+                                                        "\""
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return dtoMap;
+    }
+
+    private void generateJimmerTypes(Collection<ImmutableType> immutableTypes, RoundEnvironment roundEnv) {
+        for (ImmutableType immutableType : immutableTypes) {
+            new DraftGenerator(
+                    immutableType,
+                    filer
+            ).generate();
+            new PropsGenerator(
+                    typeUtils,
+                    immutableType,
+                    filer
+            ).generate();
+            messager.printMessage(Diagnostic.Kind.NOTE, "Immutable: " + immutableType.getQualifiedName());
+            if (immutableType.isEntity()) {
+                messager.printMessage(Diagnostic.Kind.NOTE, "Entity: " + immutableType.getQualifiedName());
+                new TableGenerator(
+                        typeUtils,
+                        immutableType,
+                        false,
+                        filer
+                ).generate();
+                new TableGenerator(
+                        typeUtils,
+                        immutableType,
+                        true,
+                        filer
+                ).generate();
+                new FetcherGenerator(
+                        typeUtils,
+                        immutableType,
+                        filer
+                ).generate();
+            } else if (immutableType.isEmbeddable()) {
+                new PropExpressionGenerator(
+                        typeUtils,
+                        immutableType,
+                        filer
+                ).generate();
+            }
+        }
+        PackageCollector packageCollector = new PackageCollector();
+        for (Element element : roundEnv.getElementsAnnotatedWith(Entity.class)) {
+            packageCollector.accept((TypeElement) element);
+        }
+        new JimmerModuleGenerator(
+                packageCollector.toString(),
+                packageCollector.getTypeElements(),
+                filer
+        ).generate();
+    }
+
+    private void generateDtoTypes(Map<?, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap) {
+        for (List<DtoType<ImmutableType, ImmutableProp>> dtoTypes : dtoTypeMap.values()) {
+            for (DtoType<ImmutableType, ImmutableProp> dtoType : dtoTypes) {
+                new DtoGenerator(dtoType, filer).generate();
+            }
+        }
     }
 
     private void collectActualDtoDir(File baseFile, List<String> outputFiles) {

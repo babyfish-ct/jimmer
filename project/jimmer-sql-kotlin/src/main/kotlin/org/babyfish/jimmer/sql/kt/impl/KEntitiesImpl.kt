@@ -1,13 +1,13 @@
 package org.babyfish.jimmer.sql.kt.impl
 
-import org.babyfish.jimmer.Static
+import org.babyfish.jimmer.Dto
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.Entities
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.fetcher.Fetcher
-import org.babyfish.jimmer.sql.fetcher.StaticMetadata
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata
 import org.babyfish.jimmer.sql.kt.KEntities
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KBatchSaveResultImpl
@@ -120,29 +120,29 @@ internal class KEntitiesImpl(
         ).execute(entities.con)
     }
 
-    override fun <E : Any, S : Static<E>> findStaticById(staticType: KClass<S>, id: Any): S? =
+    override fun <E : Any, S : Dto<E>> findStaticById(staticType: KClass<S>, id: Any): S? =
         javaEntities.findStaticById(staticType.java, id)
 
-    override fun <E : Any, S : Static<E>> findStaticByIds(staticType: KClass<S>, ids: Collection<*>): List<S> =
+    override fun <E : Any, S : Dto<E>> findStaticByIds(staticType: KClass<S>, ids: Collection<*>): List<S> =
         javaEntities.findStaticByIds(staticType.java, ids)
 
-    override fun <E : Any, S : Static<E>> findAllStatic(staticType: KClass<S>, block: (SortDsl<E>.() -> Unit)?): List<S> =
+    override fun <E : Any, S : Dto<E>> findAllStatic(staticType: KClass<S>, block: (SortDsl<E>.() -> Unit)?): List<S> =
         findStatic(staticType, null, block)
 
-    override fun <E : Any, S : Static<E>> findStaticByExample(
+    override fun <E : Any, S : Dto<E>> findStaticByExample(
         staticType: KClass<S>,
         example: KExample<E>,
         block: (SortDsl<E>.() -> Unit)?
     ): List<S> =
         findStatic(staticType, example, block)
 
-    private fun <E: Any, S: Static<E>> findStatic(
+    private fun <E: Any, S: Dto<E>> findStatic(
         staticType: KClass<S>,
         example: KExample<E>?,
         block: (SortDsl<E>.() -> Unit)?
     ): List<S> {
-        val staticMetadata = StaticMetadata.of(staticType.java)
-        val type = staticMetadata.fetcher.immutableType
+        val dtoMetadata = DtoMetadata.of(staticType.java)
+        val type = dtoMetadata.fetcher.immutableType
         if (example !== null && example.type !== type) {
             throw IllegalArgumentException(
                 "The type \"${example.type}\" of example does not match the query type \"$type\""
@@ -162,7 +162,7 @@ internal class KEntitiesImpl(
         ).execute(entities.con)
     }
 
-    override fun <ID, E : Any, S : Static<E>> findStaticMapByIds(
+    override fun <ID, E : Any, S : Dto<E>> findStaticMapByIds(
         staticType: KClass<S>,
         ids: Collection<ID>
     ): Map<ID, S> =

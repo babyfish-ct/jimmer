@@ -46,7 +46,7 @@ public class FetcherGenerator {
             throw new GeneratorException(
                     String.format(
                             "Cannot generate fetcher class for '%s'",
-                            type.getName()
+                            type.getQualifiedName()
                     ),
                     ex
             );
