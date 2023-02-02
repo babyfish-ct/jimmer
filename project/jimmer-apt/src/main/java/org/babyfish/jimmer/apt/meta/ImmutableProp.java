@@ -6,6 +6,7 @@ import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
+import org.babyfish.jimmer.meta.impl.dto.ast.spi.BaseProp;
 import org.babyfish.jimmer.pojo.Static;
 import org.babyfish.jimmer.pojo.Statics;
 import org.babyfish.jimmer.sql.*;
@@ -17,7 +18,7 @@ import javax.lang.model.type.TypeMirror;
 import java.lang.annotation.Annotation;
 import java.util.*;
 
-public class ImmutableProp {
+public class ImmutableProp implements BaseProp {
 
     private final ImmutableType declaringType;
 
@@ -315,6 +316,7 @@ public class ImmutableProp {
         return id;
     }
 
+    @Override
     public String getName() {
         return name;
     }

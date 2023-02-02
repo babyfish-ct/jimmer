@@ -3,6 +3,7 @@ package org.babyfish.jimmer.apt.meta;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.meta.ModelException;
+import org.babyfish.jimmer.meta.impl.dto.ast.spi.BaseType;
 import org.babyfish.jimmer.pojo.*;
 import org.babyfish.jimmer.sql.*;
 
@@ -15,7 +16,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class ImmutableType {
+public class ImmutableType implements BaseType {
 
     public static final String PROP_EXPRESSION_SUFFIX = "PropExpression";
 
@@ -380,10 +381,12 @@ public class ImmutableType {
         return packageName;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getQualifiedName() {
         return qualifiedName;
     }
