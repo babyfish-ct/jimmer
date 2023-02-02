@@ -49,6 +49,10 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         return name;
     }
 
+    public List<DtoProp<T, P>> getProps() {
+        return props;
+    }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();

@@ -7,8 +7,6 @@ import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.meta.impl.dto.ast.spi.BaseProp;
-import org.babyfish.jimmer.pojo.Static;
-import org.babyfish.jimmer.pojo.Statics;
 import org.babyfish.jimmer.sql.*;
 
 import javax.lang.model.element.*;
@@ -62,11 +60,7 @@ public class ImmutableProp implements BaseProp {
 
     private final boolean isNullable;
 
-    private final boolean isInputNotNull;
-
     private final Map<ClassName, String> validationMessageMap;
-
-    private final Map<String, StaticProp> staticPropMap;
 
     private Annotation associationAnnotation;
 
@@ -230,31 +224,6 @@ public class ImmutableProp implements BaseProp {
             associationAnnotation = executableElement.getAnnotation(descriptor.getType().getAnnotationType());
         }
         isNullable = descriptor.isNullable();
-        ManyToOne manyToOne = getAnnotation(ManyToOne.class);
-        OneToOne oneToOne = getAnnotation(OneToOne.class);
-        if (manyToOne != null || oneToOne != null) {
-            isInputNotNull = manyToOne != null ? manyToOne.inputNotNull() : oneToOne.inputNotNull();
-            if (isInputNotNull && oneToOne != null && !oneToOne.mappedBy().isEmpty()) {
-                throw new MetaException(
-                        "Illegal property \"" +
-                                this +
-                                "\", the `inputNotNull` of annotation @" +
-                                (manyToOne != null ? "ManyToOne" : "OneToOne") +
-                                " is true but the `mappedBy` of that annotation is specified"
-                );
-            }
-            if (isInputNotNull && !isNullable) {
-                throw new MetaException(
-                        "Illegal property \"" +
-                                this +
-                                "\", the `inputNotNull` of annotation @" +
-                                (manyToOne != null ? "ManyToOne" : "OneToOne") +
-                                " is true but the property is not nullable"
-                );
-            }
-        } else {
-            isInputNotNull = false;
-        }
 
         elementTypeName = TypeName.get(elementType);
         if (isList) {
@@ -284,32 +253,6 @@ public class ImmutableProp implements BaseProp {
         }
 
         this.validationMessageMap = ValidationMessages.parseMessageMap(executableElement);
-
-        Map<String, StaticProp> staticPropMap = new HashMap<>();
-        Statics statics = getAnnotation(Statics.class);
-        if (statics != null) {
-            for (Static s : statics.value()) {
-                if (staticPropMap.put(s.alias(), staticProp(s)) != null) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", conflict alias \"" +
-                                    s.alias() +
-                                    "\" in several @Static annotations"
-                    );
-                }
-            }
-        } else {
-            Static s = getAnnotation(Static.class);
-            if (s != null) {
-                staticPropMap.put(s.alias(), staticProp(s));
-            }
-        }
-        this.staticPropMap = staticPropMap;
-    }
-
-    public ImmutableType getDeclaringType() {
-        return declaringType;
     }
 
     public int getId() {
@@ -387,10 +330,6 @@ public class ImmutableProp implements BaseProp {
         return isNullable;
     }
 
-    public boolean isInputNotNull() {
-        return isInputNotNull;
-    }
-
     public boolean isLoadedStateRequired() {
         return isNullable || typeName.isPrimitive();
     }
@@ -438,60 +377,6 @@ public class ImmutableProp implements BaseProp {
         return targetType;
     }
 
-    public StaticProp getStaticProp(String alias) {
-        StaticProp staticProp = staticPropMap.get(alias);
-        if (staticProp == null) {
-            staticProp = staticPropMap.get("");
-        }
-        return staticProp;
-    }
-
-    public void resolve(TypeUtils typeUtils, ImmutableType declaringType) {
-        for (StaticProp staticProp : staticPropMap.values()) {
-            if (declaringType.isEntity() && !staticProp.getAlias().isEmpty() && !declaringType.getStaticDeclarationMap().containsKey(staticProp.getAlias())) {
-                throw new MetaException(
-                        "Illegal property \"" +
-                                this +
-                                "\", it is decorated by the annotation @Static " +
-                                "whose `alias` is \"" +
-                                staticProp.getAlias() +
-                                "\", but the declaring entity \"" +
-                                declaringType.getQualifiedName() +
-                                "\" does not have a static type whose alias is \"" +
-                                staticProp.getAlias() +
-                                "\""
-                );
-            }
-            if (isAssociation) {
-                targetType = typeUtils.getImmutableType(elementType);
-                if (!staticProp.isIdOnly()) {
-                    StaticDeclaration targetStaticType = targetType.getStaticDeclarationMap().get(staticProp.getTargetAlias());
-                    if (targetStaticType != null) {
-                        staticPropMap.put(staticProp.getAlias(), staticProp.target(targetStaticType));
-                    } else if (staticProp.getTargetAlias().isEmpty()) {
-                        staticPropMap.put(
-                                staticProp.getAlias(),
-                                staticProp.target(new StaticDeclaration(targetType, "", "", false))
-                        );
-                    } else {
-                        throw new MetaException(
-                                "Illegal property \"" +
-                                        this +
-                                        "\", it is decorated by the annotation @Static " +
-                                        "whose `targetAlias` is \"" +
-                                        staticProp.getTargetAlias() +
-                                        "\", but the target entity \"" +
-                                        targetType.getQualifiedName() +
-                                        "\" does not have a static type whose alias is \"" +
-                                        staticProp.getTargetAlias() +
-                                        "\""
-                        );
-                    }
-                }
-            }
-        }
-    }
-
     @Override
     public String toString() {
         return declaringType.getTypeElement().getQualifiedName().toString() + '.' + name;
@@ -501,41 +386,9 @@ public class ImmutableProp implements BaseProp {
         return validationMessageMap;
     }
 
-    private StaticProp staticProp(Static s) {
-        if (s.optional() && isNullable) {
-            throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", it is decorated by the annotation @Static " +
-                            "whose `optional` is true, it is not allowed for nullable property"
-            );
+    public void resolve(TypeUtils typeUtils) {
+        if (isAssociation && targetType == null) {
+            targetType = typeUtils.getImmutableType(elementType);
         }
-        if (s.idOnly() && !isAssociation(true)) {
-            throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", it is decorated by the annotation @Static " +
-                            "whose `idOnly` is true, it is not allowed " +
-                            "for non-orm-association property"
-            );
-        }
-        if (!s.targetAlias().isEmpty() && !isAssociation) {
-            throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", it is decorated by the annotation @Static " +
-                            "whose `targetAlias` is not empty, it is not allowed " +
-                            "for non-association property"
-            );
-        }
-        return new StaticProp(
-                this,
-                s.alias(),
-                s.name().isEmpty() ? name : s.name(),
-                s.enabled(),
-                s.optional(),
-                s.idOnly(),
-                s.targetAlias()
-        );
     }
 }

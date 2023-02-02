@@ -4,26 +4,26 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeSpec;
-import org.babyfish.jimmer.apt.meta.StaticProp;
+import org.babyfish.jimmer.apt.meta.ImmutableProp;
+import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.meta.impl.dto.ast.DtoProp;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.lang.model.element.Modifier;
 import java.util.List;
 
-public class StaticDeclarationBuilderGenerator {
+public class DtoBuilderGenerator {
 
-    private final StaticDeclarationGenerator parent;
+    private final DtoGenerator parent;
 
-    private final List<StaticProp> props;
+    private final List<DtoProp<ImmutableType, ImmutableProp>> props;
 
     private TypeSpec.Builder typeBuilder;
 
-    public StaticDeclarationBuilderGenerator(
-            StaticDeclarationGenerator parent
-    ) {
+    public DtoBuilderGenerator(DtoGenerator parent) {
         this.parent = parent;
-        this.props = parent.getProps();
+        this.props = parent.getDtoType().getProps();
     }
 
     public void generate() {
@@ -35,17 +35,17 @@ public class StaticDeclarationBuilderGenerator {
     }
 
     private void addMembers() {
-        for (StaticProp prop : props) {
+        for (DtoProp<ImmutableType, ImmutableProp> prop : props) {
             addField(prop);
         }
         addConstructor();
-        for (StaticProp prop : props) {
+        for (DtoProp<ImmutableType, ImmutableProp> prop : props) {
             addSetter(prop);
         }
         addBuild();
     }
 
-    private void addField(StaticProp prop) {
+    private void addField(DtoProp<ImmutableType, ImmutableProp> prop) {
         FieldSpec.Builder builder = FieldSpec
                 .builder(
                         parent.getPropTypeName(prop),
@@ -67,24 +67,24 @@ public class StaticDeclarationBuilderGenerator {
                                 .build()
                 );
         builder.beginControlFlow("if (base != null)");
-        for (StaticProp prop : props) {
-            builder.addStatement("this.$L = base.$L()", prop.getName(), prop.getGetterName());
+        for (DtoProp<ImmutableType, ImmutableProp> prop : props) {
+            builder.addStatement("this.$L = base.$L()", prop.getName(), prop.getBaseProp().getGetterName());
         }
         builder.endControlFlow();
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addSetter(StaticProp prop) {
+    private void addSetter(DtoProp<ImmutableType, ImmutableProp> prop) {
 
         MethodSpec.Builder builder = MethodSpec
-                .methodBuilder(prop.getSetterName())
+                .methodBuilder(prop.getBaseProp().getSetterName())
                 .addModifiers(Modifier.PUBLIC)
                 .returns(parent.getClassName("Builder"))
                 .addAnnotation(NotNull.class)
                 .addParameter(
                         ParameterSpec
                                 .builder(parent.getPropTypeName(prop), prop.getName())
-                                .addAnnotation(prop.isNullable(parent.isInput()) ? Nullable.class : NotNull.class)
+                                .addAnnotation(prop.isNullable() ? Nullable.class : NotNull.class)
                                 .build()
                 )
                 .addStatement("this.$L = $L", prop.getName(), prop.getName())
@@ -98,8 +98,8 @@ public class StaticDeclarationBuilderGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .returns(parent.getClassName())
                 .addAnnotation(NotNull.class);
-        for (StaticProp prop : props) {
-            if (!prop.isNullable(parent.isInput()) && !prop.isIdOnly() && !prop.getImmutableProp().getTypeName().isPrimitive()) {
+        for (DtoProp<ImmutableType, ImmutableProp> prop : props) {
+            if (!prop.isNullable() && !prop.isIdOnly() && !prop.getBaseProp().getTypeName().isPrimitive()) {
                 builder
                         .beginControlFlow("if ($L == null)", prop.getName())
                         .addStatement(
@@ -107,7 +107,7 @@ public class StaticDeclarationBuilderGenerator {
                                 "Property \"" + prop.getName() + "\" has not been set"
                         )
                         .endControlFlow();
-            } else if (!prop.isNullable(parent.isInput()) && prop.isIdOnly() && !prop.getImmutableProp().getTargetType().getIdProp().getTypeName().isPrimitive()) {
+            } else if (!prop.isNullable() && prop.isIdOnly() && !prop.getBaseProp().getTargetType().getIdProp().getTypeName().isPrimitive()) {
                 builder
                         .beginControlFlow("if ($L == null)", prop.getName())
                         .addStatement(
@@ -119,7 +119,7 @@ public class StaticDeclarationBuilderGenerator {
         }
         builder.addCode("return new $T(\n$>", parent.getClassName());
         boolean addComma = false;
-        for (StaticProp prop : props) {
+        for (DtoProp<ImmutableType, ImmutableProp> prop : props) {
             if (addComma) {
                 builder.addCode(",\n");
             } else {

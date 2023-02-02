@@ -2,14 +2,13 @@ package org.babyfish.jimmer.sql.fetcher;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
-import org.babyfish.jimmer.sql.model.BookInput;
-import org.babyfish.jimmer.sql.model.BookStoreDto;
 import org.babyfish.jimmer.sql.model.BookStoreTable;
 import org.babyfish.jimmer.sql.model.BookTable;
-import org.junit.jupiter.api.Assertions;
+import org.babyfish.jimmer.sql.model.dto.BookInput;
+import org.babyfish.jimmer.sql.model.dto.BookStoreDto;
 import org.junit.jupiter.api.Test;
 
-public class StaticFetcherTest extends AbstractQueryTest {
+public class DtoFetcherTest extends AbstractQueryTest {
 
     @Test
     public void testBookStoreDto() {

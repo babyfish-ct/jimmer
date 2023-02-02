@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.table.impl
 
-import org.babyfish.jimmer.Static
+import org.babyfish.jimmer.Dto
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.JoinType
@@ -53,7 +53,7 @@ internal class KNullableTableExImpl<E: Any>(
         javaTable.fetch(fetcher)
 
     @Suppress("UNCHECKED_CAST")
-    override fun <S : Static<E>> fetch(staticType: KClass<S>): Selection<E?> =
+    override fun <S : Dto<E>> fetch(staticType: KClass<S>): Selection<E?> =
         javaTable.fetch(staticType.java) as Selection<E?>
 
     override fun asTableEx(): KNullableTableEx<E> =

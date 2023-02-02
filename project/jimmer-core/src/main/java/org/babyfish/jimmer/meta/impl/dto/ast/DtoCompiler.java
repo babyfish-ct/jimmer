@@ -52,8 +52,22 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
     }
 
     private List<DtoType<T, P>> parse(DtoParser parser) {
-        DtoTypeBuilder compileContext = new DtoTypeBuilder(baseType, false);
-        return parser.dto().dtoTypes.stream().map(compileContext::parse).collect(Collectors.toList());
+        List<DtoParser.DtoTypeContext> dtoTypes = parser.dto().dtoTypes;
+        int size = dtoTypes.size();
+        for (int i = 0; i < size - 1; i++) {
+            for (int ii = i + 1; ii < size; ii++) {
+                if (dtoTypes.get(i).name.getText().equals(dtoTypes.get(ii).getText())) {
+                    throw new DtoAstException(
+                            dtoTypes.get(ii).name.getLine(),
+                            "Duplicate dto type name \"" + dtoTypes.get(ii).getText() + "\""
+                    );
+                }
+            }
+        }
+        return dtoTypes
+                .stream()
+                .map(it -> new DtoTypeBuilder(baseType, false).parse(it))
+                .collect(Collectors.toList());
     }
 
     protected abstract boolean isEntity(T baseType);
@@ -64,13 +78,9 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
 
     protected abstract Map<String, P> getProps(T baseType);
 
-    protected abstract boolean isMappable(P baseProp);
-
-    protected abstract boolean isNullable(P baseProp);
-
     protected abstract boolean isId(P baseProp);
 
-    protected abstract boolean isList(P baseProp);
+    protected abstract boolean isKey(P baseProp);
 
     protected abstract T getTargetType(P baseProp);
 
@@ -78,12 +88,19 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
 
         private final T baseType;
 
+        private final boolean hasKey;
+
         private boolean isInput;
 
+        // Key: Original prop name
         private final Map<String, DtoProp<T, P>> propMap = new LinkedHashMap<>();
+
+        // Key: New prop name
+        private final Set<String> finalPropNames = new HashSet<>();
 
         private DtoTypeBuilder(T baseType, boolean isInput) {
             this.baseType = baseType;
+            this.hasKey = getProps(baseType).values().stream().anyMatch(DtoCompiler.this::isKey);
             this.isInput = isInput;
         }
 
@@ -157,35 +174,37 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
             }
             if (explicitBaseTypes == null) {
                 for (P baseProp : getProps(baseType).values()) {
-                    if (isMappable(baseProp) && getTargetType(baseProp) == null) {
+                    if (!baseProp.isTransient() && getTargetType(baseProp) == null) {
                         propMap.put(
                                 baseProp.getName(),
                                 new DtoProp<>(
                                         baseProp,
                                         null,
                                         null,
-                                        isInput && isId(baseProp),
+                                        isInput && isId(baseProp) && hasKey,
                                         false,
                                         false
                                 )
                         );
+                        finalPropNames.add(baseProp.getName());
                     }
                 }
             } else {
                 for (T baseType : explicitBaseTypes) {
                     for (P baseProp : getDeclaredProps(baseType).values()) {
-                        if (isMappable(baseProp) && getTargetType(baseProp) == null) {
+                        if (!baseProp.isTransient() && getTargetType(baseProp) == null) {
                             propMap.put(
                                     baseProp.getName(),
                                     new DtoProp<>(
                                             baseProp,
                                             null,
                                             null,
-                                            isInput && isId(baseProp),
+                                            isInput && isId(baseProp) && hasKey,
                                             false,
                                             false
                                     )
                             );
+                            finalPropNames.add(baseProp.getName());
                         }
                     }
                 }
@@ -230,6 +249,15 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
                                 "\""
                 );
             }
+            if (baseProp.isTransient() && !baseProp.hasTransientResolver()) {
+                throw new DtoAstException(
+                        ctx.prop.getLine(),
+                        "The property \"" +
+                                baseProp.getName() +
+                                "\" cannot be declared in dto because it is transient " +
+                                "but has no transient resolver"
+                );
+            }
             if (idOnly && getTargetType(baseProp) == null) {
                 throw new DtoAstException(
                         ctx.func.getLine(),
@@ -244,7 +272,7 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
             } else if (idOnly) {
                 alias = baseProp.getName() + "Id";
             }
-            if (idOnly && isList(baseProp) && alias == null) {
+            if (idOnly && baseProp.isList() && alias == null) {
                 throw new DtoAstException(
                         ctx.func.getLine(),
                         "The property \"" +
@@ -290,6 +318,20 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
                             ctx.recursive != null
                     )
             );
+            String finalName = alias != null ? alias : baseProp.getName();
+            Token reportErrorToken = ctx.alias != null ?
+                    ctx.alias :
+                    ctx.func != null ?
+                            ctx.func :
+                            ctx.prop;
+            if (!finalPropNames.add(finalName)) {
+                throw new DtoAstException(
+                        reportErrorToken.getLine(),
+                        "The duplicate property alias \"" +
+                                finalName +
+                                "\""
+                );
+            }
         }
 
         private void parse(DtoParser.NegativePropContext ctx) {
@@ -304,7 +346,10 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
                                 "\""
                 );
             }
-            propMap.remove(baseProp.getName());
+            DtoProp<T, P> prop = propMap.remove(baseProp.getName());
+            if (prop != null) {
+                finalPropNames.remove(prop.getName());
+            }
         }
     }
 

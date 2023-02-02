@@ -8,8 +8,6 @@ public class DtoProp<T extends BaseType, P extends BaseProp> {
 
     private final P baseProp;
 
-    private final boolean negative;
-
     @Nullable
     private final String alias;
 
@@ -32,29 +30,22 @@ public class DtoProp<T extends BaseType, P extends BaseProp> {
     ) {
         this.baseProp = baseProp;
         this.alias = alias;
-        this.negative = false;
         this.targetType = targetType;
         this.optional = optional;
         this.idOnly = idOnly;
         this.recursive = recursive;
     }
 
-    DtoProp(P baseProp, boolean negative) {
-        this.baseProp = baseProp;
-        this.negative = negative;
-        this.targetType = null;
-        this.alias = null;
-        this.optional = false;
-        this.idOnly = false;
-        this.recursive = false;
-    }
-
-    public boolean isNegative() {
-        return negative;
-    }
-
     public P getBaseProp() {
         return baseProp;
+    }
+
+    public String getName() {
+        return alias != null ? alias : baseProp.getName();
+    }
+
+    public boolean isNullable() {
+        return optional || baseProp.isNullable();
     }
 
     public boolean isIdOnly() {

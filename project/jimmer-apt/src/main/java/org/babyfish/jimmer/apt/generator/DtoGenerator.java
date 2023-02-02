@@ -2,16 +2,19 @@ package org.babyfish.jimmer.apt.generator;
 
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.GeneratorException;
-import org.babyfish.jimmer.apt.meta.*;
-import org.babyfish.jimmer.pojo.AutoScalarStrategy;
+import org.babyfish.jimmer.apt.meta.ImmutableProp;
+import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.meta.impl.dto.ast.DtoProp;
+import org.babyfish.jimmer.meta.impl.dto.ast.DtoType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Id;
-import org.babyfish.jimmer.sql.Key;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.processing.Filer;
-import javax.lang.model.element.*;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
 import javax.validation.constraints.Null;
 import java.io.IOException;
 import java.lang.annotation.ElementType;
@@ -19,131 +22,51 @@ import java.lang.annotation.Target;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class StaticDeclarationGenerator {
+public class DtoGenerator {
 
     private static final String[] EMPTY_STR_ARR = new String[0];
 
-    private final StaticDeclaration declaration;
+    private final DtoType<ImmutableType, ImmutableProp> dtoType;
 
     private final Filer filer;
 
-    private final List<StaticProp> props;
+    private final DtoGenerator parent;
 
     private final String innerClassName;
 
-    private final StaticDeclarationGenerator parent;
-
     private TypeSpec.Builder typeBuilder;
 
-    public StaticDeclarationGenerator(StaticDeclaration declaration, Filer filer) {
-        this(declaration, filer, null, null);
-    }
-
-    public StaticDeclarationGenerator(
-            StaticDeclaration declaration,
-            String innerClassName,
-            StaticDeclarationGenerator parent
+    public DtoGenerator(
+            DtoType<ImmutableType, ImmutableProp> dtoType,
+            Filer filer
     ) {
-        this(declaration, null, innerClassName, parent);
+        this(dtoType, filer, null, null);
     }
 
-    private StaticDeclarationGenerator(
-            StaticDeclaration declaration,
+    private DtoGenerator(
+            DtoType<ImmutableType, ImmutableProp> dtoType,
             Filer filer,
-            String innerClassName,
-            StaticDeclarationGenerator parent
+            DtoGenerator parent,
+            String innerClassName
     ) {
-        this.declaration = declaration;
+        if ((filer == null) == (parent == null)) {
+            throw new IllegalArgumentException("The nullity values of `filer` and `parent` cannot be same");
+        }
+        if ((parent == null) != (innerClassName == null)) {
+            throw new IllegalArgumentException("The nullity values of `parentBuilder` and `innerClassName` cannot be same");
+        }
+        this.dtoType = dtoType;
         this.filer = filer;
-        this.innerClassName = innerClassName;
         this.parent = parent;
-
-        Set<ImmutableProp> possibleAutoScalars = new HashSet<>();
-        for (ImmutableType type = declaration.getImmutableType(); type != null; type = type.getSuperType()) {
-            AutoScalarStrategy strategy = type.getAutoScalarStrategy(declaration.getAlias());
-            if (strategy == AutoScalarStrategy.NONE) {
-                break;
-            }
-            for (ImmutableProp prop : type.getDeclaredProps().values()) {
-                if (!prop.isAssociation(true) && !prop.isTransient()) {
-                    possibleAutoScalars.add(prop);
-                }
-            }
-            if (strategy == AutoScalarStrategy.DECLARED) {
-                break;
-            }
-        }
-
-        List<StaticProp> props = new ArrayList<>();
-        String alias = declaration.getAlias();
-        boolean hasKey = declaration
-                .getImmutableType()
-                .getProps()
-                .values()
-                .stream()
-                .anyMatch(it -> it.getAnnotation(Key.class) != null);
-        for (ImmutableProp prop : declaration.getImmutableType().getProps().values()) {
-            StaticProp staticProp = prop.getStaticProp(alias);
-            if (staticProp == null) {
-                if (possibleAutoScalars.contains(prop)) {
-                    staticProp = new StaticProp(prop, alias, prop.getName(), true, declaration.isAllOptional(), false, "");
-                    if (!staticProp.isOptional() && prop.getAnnotation(Id.class) != null && hasKey) {
-                        staticProp = staticProp.optional(true);
-                    }
-                    props.add(staticProp);
-                }
-            } else if (staticProp.isEnabled()) {
-                if (prop.isTransient()) {
-                    if (isInput()) {
-                        throw new MetaException(
-                                "Illegal property \"" +
-                                        prop +
-                                        "\", the transient property of input type can not be decorated by @Static"
-                        );
-                    }
-                    if (!prop.hasTransientResolver()) {
-                        throw new MetaException(
-                                "Illegal property \"" +
-                                        prop +
-                                        "\", if a property is decorated by both @Transient and @Static," +
-                                        "its transient resolver must be specified"
-                        );
-                    }
-                }
-                props.add(staticProp.optional(declaration.isAllOptional()));
-            }
-        }
-        this.props = Collections.unmodifiableList(props);
+        this.innerClassName = innerClassName;
     }
 
-    public List<StaticProp> getProps() {
-        return props;
+    public DtoType<ImmutableType, ImmutableProp> getDtoType() {
+        return dtoType;
     }
 
     public TypeSpec.Builder getTypeBuilder() {
         return typeBuilder;
-    }
-
-    public String getSimpleName() {
-        return innerClassName != null ? innerClassName : declaration.getTopLevelName();
-    }
-
-    public ClassName getClassName(String ... nestedNames) {
-        if (innerClassName != null) {
-            List<String> list = new ArrayList<>();
-            collectNames(list);
-            list.addAll(Arrays.asList(nestedNames));
-            return ClassName.get(
-                    declaration.getImmutableType().getPackageName(),
-                    list.get(0),
-                    list.subList(1, list.size()).toArray(EMPTY_STR_ARR)
-            );
-        }
-        return ClassName.get(
-                declaration.getImmutableType().getPackageName(),
-                declaration.getTopLevelName(),
-                nestedNames
-        );
     }
 
     public void generate() {
@@ -153,8 +76,8 @@ public class StaticDeclarationGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addSuperinterface(
                         ParameterizedTypeName.get(
-                                isInput() ? Constants.INPUT_CLASS_NAME : Constants.STATIC_CLASS_NAME,
-                                declaration.getImmutableType().getClassName()
+                                dtoType.isInput() ? Constants.INPUT_CLASS_NAME : Constants.DTO_CLASS_NAME,
+                                dtoType.getBaseType().getClassName()
                         )
                 );
         if (innerClassName != null) {
@@ -169,7 +92,7 @@ public class StaticDeclarationGenerator {
             try {
                 JavaFile
                         .builder(
-                                declaration.getImmutableType().getPackageName(),
+                                getPackageName(),
                                 typeBuilder.build()
                         )
                         .indent("    ")
@@ -178,8 +101,9 @@ public class StaticDeclarationGenerator {
             } catch (IOException ex) {
                 throw new GeneratorException(
                         String.format(
-                                "Cannot generate static type for '%s'",
-                                declaration.getTopLevelName()
+                                "Cannot generate dto type '%s' for '%s'",
+                                dtoType.getName(),
+                                dtoType.getBaseType().getQualifiedName()
                         ),
                         ex
                 );
@@ -187,32 +111,62 @@ public class StaticDeclarationGenerator {
         }
     }
 
+    public String getPackageName() {
+        if (dtoType.getBaseType().getPackageName().isEmpty()) {
+            return "dto";
+        }
+        return dtoType.getBaseType().getPackageName() + ".dto";
+    }
+
+    public String getSimpleName() {
+        return innerClassName != null ? innerClassName : dtoType.getName();
+    }
+
+    public ClassName getClassName(String ... nestedNames) {
+        if (innerClassName != null) {
+            List<String> list = new ArrayList<>();
+            collectNames(list);
+            list.addAll(Arrays.asList(nestedNames));
+            return ClassName.get(
+                    getPackageName(),
+                    list.get(0),
+                    list.subList(1, list.size()).toArray(EMPTY_STR_ARR)
+            );
+        }
+        return ClassName.get(
+                getPackageName(),
+                dtoType.getName(),
+                nestedNames
+        );
+    }
+
     private void addMembers() {
 
         addMetadata();
 
-        for (StaticProp prop : props) {
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
             addField(prop);
         }
         addJsonConstructor();
         addConverterConstructor();
         addNewBuilder(false);
         addNewBuilder(true);
-        for (StaticProp prop : props) {
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
             addGetter(prop);
         }
         addToEntity();
         addToEntityWithBase();
         addToString();
 
-        new StaticDeclarationBuilderGenerator(this).generate();
+        new DtoBuilderGenerator(this).generate();
 
-        for (StaticProp prop : props) {
-            if (prop.getTarget() != null && prop.getTarget().getTopLevelName().isEmpty()) {
-                new StaticDeclarationGenerator(
-                        prop.getTarget(),
-                        targetSimpleName(prop),
-                        this
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
+            if (prop.getTargetType() != null && prop.getTargetType().getName() == null) {
+                new DtoGenerator(
+                        prop.getTargetType(),
+                        null,
+                        this,
+                        targetSimpleName(prop)
                 ).generate();
             }
         }
@@ -222,8 +176,8 @@ public class StaticDeclarationGenerator {
         FieldSpec.Builder builder = FieldSpec
                 .builder(
                         ParameterizedTypeName.get(
-                                Constants.STATIC_METADATA_CLASS_NAME,
-                                declaration.getImmutableType().getClassName(),
+                                Constants.DTO_METADATA_CLASS_NAME,
+                                dtoType.getBaseType().getClassName(),
                                 getClassName()
                         ),
                         "METADATA"
@@ -235,19 +189,19 @@ public class StaticDeclarationGenerator {
                 .add("\n")
                 .add(
                         "new $T<$T, $T>(\n",
-                        Constants.STATIC_METADATA_CLASS_NAME,
-                        declaration.getImmutableType().getClassName(),
+                        Constants.DTO_METADATA_CLASS_NAME,
+                        dtoType.getBaseType().getClassName(),
                         getClassName()
                 )
                 .indent()
-                .add("$T.$L", declaration.getImmutableType().getFetcherClassName(), "$")
+                .add("$T.$L", dtoType.getBaseType().getFetcherClassName(), "$")
                 .indent();
-        for (StaticProp prop : props) {
-            if (prop.getImmutableProp().getAnnotation(Id.class) == null) {
-                if (prop.getTarget() != null) {
-                    cb.add("\n.$N($T.METADATA.getFetcher())", prop.getImmutableProp().getName(), getPropElementName(prop));
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
+            if (prop.getBaseProp().getAnnotation(Id.class) == null) {
+                if (prop.getTargetType() != null) {
+                    cb.add("\n.$N($T.METADATA.getFetcher())", prop.getBaseProp().getName(), getPropElementName(prop));
                 } else {
-                    cb.add("\n.$N()", prop.getImmutableProp().getName());
+                    cb.add("\n.$N()", prop.getBaseProp().getName());
                 }
             }
         }
@@ -262,19 +216,19 @@ public class StaticDeclarationGenerator {
         typeBuilder.addField(builder.build());
     }
 
-    private void addField(StaticProp prop) {
+    private void addField(DtoProp<ImmutableType, ImmutableProp> prop) {
         FieldSpec.Builder builder = FieldSpec
                 .builder(
                         getPropTypeName(prop),
                         prop.getName()
                 )
                 .addModifiers(Modifier.PRIVATE, Modifier.FINAL);
-        if (prop.isNullable(isInput())) {
+        if (prop.isNullable()) {
             builder.addAnnotation(Nullable.class).addAnnotation(Null.class);
         } else {
             builder.addAnnotation(NotNull.class).addAnnotation(javax.validation.constraints.NotNull.class);
         }
-        for (AnnotationMirror annotationMirror : prop.getImmutableProp().getAnnotations()) {
+        for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {
             if (isCopyableAnnotation(annotationMirror, false)) {
                 builder.addAnnotation(AnnotationSpec.get(annotationMirror));
             }
@@ -308,7 +262,7 @@ public class StaticDeclarationGenerator {
                 .constructorBuilder()
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Constants.JSON_CREATOR_CLASS_NAME);
-        for (StaticProp prop : props) {
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
             ParameterSpec.Builder parameterBuilder = ParameterSpec
                     .builder(
                             getPropTypeName(prop),
@@ -318,7 +272,7 @@ public class StaticDeclarationGenerator {
                     AnnotationSpec
                             .builder(Constants.JSON_PROPERTY_CLASS_NAME)
                             .addMember("value", "$S", prop.getName());
-            if (prop.isNullable(isInput())) {
+            if (prop.isNullable()) {
                 parameterBuilder.addAnnotation(Nullable.class).addAnnotation(Null.class);
             } else {
                 parameterBuilder.addAnnotation(NotNull.class).addAnnotation(javax.validation.constraints.NotNull.class);
@@ -327,8 +281,8 @@ public class StaticDeclarationGenerator {
             parameterBuilder.addAnnotation(jsonPropertySpecBuilder.build());
             builder.addParameter(parameterBuilder.build());
         }
-        for (StaticProp prop : props) {
-            if (prop.isNullable(isInput()) || prop.getImmutableProp().getTypeName().isPrimitive()) {
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
+            if (prop.isNullable() || prop.getBaseProp().getTypeName().isPrimitive()) {
                 builder.addStatement("this.$L = $L", prop.getName(), prop.getName());
             } else {
                 builder.addStatement(
@@ -349,108 +303,108 @@ public class StaticDeclarationGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(
                         ParameterSpec
-                                .builder(declaration.getImmutableType().getClassName(), "base")
+                                .builder(dtoType.getBaseType().getClassName(), "base")
                                 .addAnnotation(NotNull.class)
                                 .build()
                 );
         builder.addStatement("$T spi = ($T)base", ImmutableSpi.class, ImmutableSpi.class);
-        for (StaticProp prop : props) {
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
             if (prop.isIdOnly()) {
-                if (prop.getImmutableProp().isList()) {
-                    if (prop.isNullable(isInput())) {
+                if (prop.getBaseProp().isList()) {
+                    if (prop.isNullable()) {
                         builder.addStatement(
                                 "this.$L = spi.__isLoaded($L) ? base.$L().stream().map($T::$L).collect($T.toList()) : $L",
                                 prop.getName(),
-                                prop.getImmutableProp().getId(),
-                                prop.getImmutableProp().getGetterName(),
-                                prop.getImmutableProp().getTargetType().getClassName(),
-                                prop.getImmutableProp().getTargetType().getIdProp().getName(),
+                                prop.getBaseProp().getId(),
+                                prop.getBaseProp().getGetterName(),
+                                prop.getBaseProp().getTargetType().getClassName(),
+                                prop.getBaseProp().getTargetType().getIdProp().getName(),
                                 Collectors.class,
-                                prop.getDefaultValue()
+                                defaultValue(prop)
                         );
-                    } else if (prop.isNullable(false)) {
+                    } else if (prop.getBaseProp().isNullable()) {
                         builder.addStatement(
                                 "this.$L = $T.requireNonNull(base.$L(), $S).stream().map($T::$L).collect($T.toList())",
                                 Objects.class,
                                 prop.getName(),
-                                "\"`base." + prop.getImmutableProp().getGetterName() + "()` cannot be null\"",
-                                prop.getImmutableProp().getGetterName(),
-                                prop.getImmutableProp().getTargetType().getClassName(),
-                                prop.getImmutableProp().getTargetType().getIdProp().getName(),
+                                "\"`base." + prop.getBaseProp().getGetterName() + "()` cannot be null\"",
+                                prop.getBaseProp().getGetterName(),
+                                prop.getBaseProp().getTargetType().getClassName(),
+                                prop.getBaseProp().getTargetType().getIdProp().getName(),
                                 Collectors.class
                         );
                     } else {
                         builder.addStatement(
                                 "this.$L = base.$L().stream().map($T::$L).collect($T.toList())",
                                 prop.getName(),
-                                prop.getImmutableProp().getGetterName(),
-                                prop.getImmutableProp().getTargetType().getClassName(),
-                                prop.getImmutableProp().getTargetType().getIdProp().getName(),
+                                prop.getBaseProp().getGetterName(),
+                                prop.getBaseProp().getTargetType().getClassName(),
+                                prop.getBaseProp().getTargetType().getIdProp().getName(),
                                 Collectors.class
                         );
                     }
                 } else {
-                    if (prop.isNullable(isInput())) {
+                    if (prop.isNullable()) {
                         builder.addStatement(
                                 "$T _tmp_$L = spi.__isLoaded($L) ? base.$L() : null",
-                                prop.getImmutableProp().getTypeName(),
-                                prop.getImmutableProp().getName(),
-                                prop.getImmutableProp().getId(),
-                                prop.getImmutableProp().getGetterName()
+                                prop.getBaseProp().getTypeName(),
+                                prop.getBaseProp().getName(),
+                                prop.getBaseProp().getId(),
+                                prop.getBaseProp().getGetterName()
                         );
-                    } else if (prop.isNullable(false)) {
+                    } else if (prop.getBaseProp().isNullable()) {
                         builder.addStatement(
                                 "$T _tmp_$L = $T.requireNonNull(base.$L(), $S)",
-                                prop.getImmutableProp().getTypeName(),
-                                prop.getImmutableProp().getName(),
+                                prop.getBaseProp().getTypeName(),
+                                prop.getBaseProp().getName(),
                                 Objects.class,
-                                prop.getImmutableProp().getGetterName(),
-                                "\"`base." + prop.getImmutableProp().getGetterName() + "()` cannot be null\""
+                                prop.getBaseProp().getGetterName(),
+                                "\"`base." + prop.getBaseProp().getGetterName() + "()` cannot be null\""
                         );
                     } else {
                         builder.addStatement(
                                 "$T _tmp_$L = base.$L()",
-                                prop.getImmutableProp().getTypeName(),
-                                prop.getImmutableProp().getName(),
-                                prop.getImmutableProp().getGetterName()
+                                prop.getBaseProp().getTypeName(),
+                                prop.getBaseProp().getName(),
+                                prop.getBaseProp().getGetterName()
                         );
                     }
-                    if (prop.isNullable(isInput())) {
+                    if (prop.isNullable()) {
                         builder.addStatement(
                                 "this.$L = _tmp_$L != null ? _tmp_$L.$L() : null",
                                 prop.getName(),
-                                prop.getImmutableProp().getName(),
-                                prop.getImmutableProp().getName(),
-                                prop.getImmutableProp().getTargetType().getIdProp().getGetterName()
+                                prop.getBaseProp().getName(),
+                                prop.getBaseProp().getName(),
+                                prop.getBaseProp().getTargetType().getIdProp().getGetterName()
                         );
                     } else {
                         builder.addStatement(
                                 "this.$L = _tmp_$L.$L()",
                                 prop.getName(),
-                                prop.getImmutableProp().getName(),
-                                prop.getImmutableProp().getTargetType().getIdProp().getGetterName()
+                                prop.getBaseProp().getName(),
+                                prop.getBaseProp().getTargetType().getIdProp().getGetterName()
                         );
                     }
                 }
-            } else if (prop.getTarget() != null) {
-                if (prop.getImmutableProp().isList()) {
-                    if (prop.isNullable(isInput())) {
+            } else if (prop.getTargetType() != null) {
+                if (prop.getBaseProp().isList()) {
+                    if (prop.isNullable()) {
                         builder.addStatement(
                                 "this.$L = spi.__isLoaded($L) ? base.$L().stream().map($T::new).collect($T.toList()) : $L",
                                 prop.getName(),
-                                prop.getImmutableProp().getId(),
-                                prop.getImmutableProp().getGetterName(),
+                                prop.getBaseProp().getId(),
+                                prop.getBaseProp().getGetterName(),
                                 getPropElementName(prop),
                                 Collectors.class,
-                                prop.getDefaultValue()
+                                defaultValue(prop)
                         );
-                    } else if (prop.isNullable(false)) {
+                    } else if (prop.getBaseProp().isNullable()) {
                         builder.addStatement(
                                 "this.$L = $T.requireNonNull(base.$L(), $S).stream().map($T::new).collect($T.toList())",
                                 prop.getName(),
                                 Objects.class,
-                                prop.getImmutableProp().getGetterName(),
-                                "\"`base." + prop.getImmutableProp().getGetterName() + "()` cannot be null\"",
+                                prop.getBaseProp().getGetterName(),
+                                "\"`base." + prop.getBaseProp().getGetterName() + "()` cannot be null\"",
                                 getPropElementName(prop),
                                 Collectors.class
                         );
@@ -458,68 +412,68 @@ public class StaticDeclarationGenerator {
                         builder.addStatement(
                                 "this.$L = base.$L().stream().map($T::new).collect($T.toList())",
                                 prop.getName(),
-                                prop.getImmutableProp().getGetterName(),
+                                prop.getBaseProp().getGetterName(),
                                 getPropElementName(prop),
                                 Collectors.class
                         );
                     }
                 } else {
-                    if (prop.isNullable(isInput())) {
+                    if (prop.isNullable()) {
                         builder.addStatement(
                                 "$T _tmp_$L = spi.__isLoaded($L) ? base.$L() : null",
-                                prop.getImmutableProp().getTypeName(),
-                                prop.getImmutableProp().getName(),
-                                prop.getImmutableProp().getId(),
-                                prop.getImmutableProp().getGetterName()
+                                prop.getBaseProp().getTypeName(),
+                                prop.getBaseProp().getName(),
+                                prop.getBaseProp().getId(),
+                                prop.getBaseProp().getGetterName()
                         );
-                    } else if (prop.isNullable(false)) {
+                    } else if (prop.getBaseProp().isNullable()) {
                         builder.addStatement(
                                 "$T _tmp_$L = $T.requireNonNull(base.$L(), $L)",
-                                prop.getImmutableProp().getTypeName(),
-                                prop.getImmutableProp().getName(),
+                                prop.getBaseProp().getTypeName(),
+                                prop.getBaseProp().getName(),
                                 Objects.class,
-                                prop.getImmutableProp().getGetterName(),
-                                "\"`base." + prop.getImmutableProp().getGetterName() + "()` cannot be null\""
+                                prop.getBaseProp().getGetterName(),
+                                "\"`base." + prop.getBaseProp().getGetterName() + "()` cannot be null\""
                         );
                     } else {
                         builder.addStatement(
                                 "$T _tmp_$L = base.$L()",
-                                prop.getImmutableProp().getTypeName(),
-                                prop.getImmutableProp().getName(),
-                                prop.getImmutableProp().getGetterName()
+                                prop.getBaseProp().getTypeName(),
+                                prop.getBaseProp().getName(),
+                                prop.getBaseProp().getGetterName()
                         );
                     }
-                    if (prop.isNullable(isInput())) {
+                    if (prop.isNullable()) {
                         builder.addStatement(
                                 "this.$L = _tmp_$L != null ? new $T(_tmp_$L) : null",
                                 prop.getName(),
-                                prop.getImmutableProp().getName(),
+                                prop.getBaseProp().getName(),
                                 getPropElementName(prop),
-                                prop.getImmutableProp().getName()
+                                prop.getBaseProp().getName()
                         );
                     } else {
                         builder.addStatement(
                                 "this.$L = new $T(_tmp_$L)",
                                 prop.getName(),
                                 getPropElementName(prop),
-                                prop.getImmutableProp().getName()
+                                prop.getBaseProp().getName()
                         );
                     }
                 }
             } else {
-                if (prop.isNullable(isInput())) {
+                if (prop.isNullable()) {
                     builder.addStatement(
                             "this.$L = spi.__isLoaded($L) ? base.$L() : $L",
                             prop.getName(),
-                            prop.getImmutableProp().getId(),
-                            prop.getImmutableProp().getGetterName(),
-                            prop.getDefaultValue()
+                            prop.getBaseProp().getId(),
+                            prop.getBaseProp().getGetterName(),
+                            defaultValue(prop)
                     );
                 } else {
                     builder.addStatement(
                             "this.$L = base.$L()",
                             prop.getName(),
-                            prop.getImmutableProp().getGetterName()
+                            prop.getBaseProp().getGetterName()
                     );
                 }
             }
@@ -527,17 +481,17 @@ public class StaticDeclarationGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addGetter(StaticProp prop) {
+    private void addGetter(DtoProp<ImmutableType, ImmutableProp> prop) {
         MethodSpec.Builder builder = MethodSpec
-                .methodBuilder(prop.getGetterName())
+                .methodBuilder(prop.getBaseProp().getGetterName())
                 .addModifiers(Modifier.PUBLIC)
                 .returns(getPropTypeName(prop));
-        if (prop.isNullable(isInput())) {
+        if (prop.isNullable()) {
             builder.addAnnotation(Nullable.class).addAnnotation(Null.class);
         } else {
             builder.addAnnotation(NotNull.class).addAnnotation(javax.validation.constraints.NotNull.class);
         }
-        for (AnnotationMirror annotationMirror : prop.getImmutableProp().getAnnotations()) {
+        for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {
             if (isCopyableAnnotation(annotationMirror, true)) {
                 builder.addAnnotation(AnnotationSpec.get(annotationMirror));
             }
@@ -550,7 +504,7 @@ public class StaticDeclarationGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("toEntity")
                 .addModifiers(Modifier.PUBLIC)
-                .returns(declaration.getImmutableType().getClassName())
+                .returns(dtoType.getBaseType().getClassName())
                 .addStatement("return toEntity(null)")
                 .addAnnotation(Override.class);
         typeBuilder.addMethod(builder.build());
@@ -564,30 +518,30 @@ public class StaticDeclarationGenerator {
                 .addParameter(
                         ParameterSpec
                                 .builder(
-                                        declaration.getImmutableType().getClassName(),
+                                        dtoType.getBaseType().getClassName(),
                                         "base"
                                 )
                                 .addAnnotation(Nullable.class)
                                 .build()
                 )
-                .returns(declaration.getImmutableType().getClassName());
+                .returns(dtoType.getBaseType().getClassName());
         builder.addCode(
                 "return $T.$L.produce(base, draft -> {$>\n",
-                declaration.getImmutableType().getDraftClassName(),
+                dtoType.getBaseType().getDraftClassName(),
                 "$"
         );
-        for (StaticProp prop : props) {
-            if (prop.isNullable(isInput()) && (prop.getImmutableProp().isAssociation(false) || !prop.getImmutableProp().isNullable())) {
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
+            if (prop.isNullable() && (prop.getBaseProp().isAssociation(false) || !prop.getBaseProp().isNullable())) {
                 builder.beginControlFlow("if ($L != null)", prop.getName());
                 addAssignment(prop, builder);
-                if (prop.getImmutableProp().isAssociation(true) &&
-                        !prop.getImmutableProp().isList() &&
-                        prop.getImmutableProp().isNullable()) {
+                if (prop.getBaseProp().isAssociation(true) &&
+                        !prop.getBaseProp().isList() &&
+                        prop.getBaseProp().isNullable()) {
                     builder.nextControlFlow("else");
                     builder.addStatement(
                             "draft.$L(($T)null)",
-                            prop.getImmutableProp().getSetterName(),
-                            prop.getImmutableProp().getTargetType().getClassName()
+                            prop.getBaseProp().getSetterName(),
+                            prop.getBaseProp().getTargetType().getClassName()
                     );
                 }
                 builder.endControlFlow();
@@ -599,8 +553,8 @@ public class StaticDeclarationGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addAssignment(StaticProp prop, MethodSpec.Builder builder) {
-        ImmutableProp immutableProp = prop.getImmutableProp();
+    private void addAssignment(DtoProp<ImmutableType, ImmutableProp> prop, MethodSpec.Builder builder) {
+        ImmutableProp immutableProp = prop.getBaseProp();
         if (prop.isIdOnly()) {
             if (immutableProp.isList()) {
                 builder.beginControlFlow("if ($L.isEmpty())", prop.getName());
@@ -631,7 +585,7 @@ public class StaticDeclarationGenerator {
                         prop.getName()
                 );
             }
-        } else if (prop.getTarget() != null) {
+        } else if (prop.getTargetType() != null) {
             if (immutableProp.isList()) {
                 builder.beginControlFlow("if ($L.isEmpty())", prop.getName());
                 builder.addStatement(
@@ -660,7 +614,7 @@ public class StaticDeclarationGenerator {
                 );
             }
         } else {
-            builder.addStatement("draft.$L($L)", prop.getImmutableProp().getSetterName(), prop.getName());
+            builder.addStatement("draft.$L($L)", prop.getBaseProp().getSetterName(), prop.getName());
         }
     }
 
@@ -676,7 +630,7 @@ public class StaticDeclarationGenerator {
         builder.addCode("return new StringBuilder()\n$>");
         builder.addCode(".append($S)\n", String.join(".", list) + '{');
         boolean addComma = false;
-        for (StaticProp prop : props) {
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
             if (addComma) {
                 builder.addCode(".append($S)\n", ", ");
             } else {
@@ -689,9 +643,9 @@ public class StaticDeclarationGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    public TypeName getPropTypeName(StaticProp prop) {
+    public TypeName getPropTypeName(DtoProp<ImmutableType, ImmutableProp> prop) {
         TypeName elementTypeName = getPropElementName(prop);
-        return prop.getImmutableProp().isList() ?
+        return prop.getBaseProp().isList() ?
                 ParameterizedTypeName.get(
                         Constants.LIST_CLASS_NAME,
                         elementTypeName.isPrimitive() ?
@@ -701,53 +655,49 @@ public class StaticDeclarationGenerator {
                 elementTypeName;
     }
 
-    public TypeName getPropElementName(StaticProp prop) {
-        StaticDeclaration target = prop.getTarget();
-        if (target != null) {
-            if (target.getTopLevelName().isEmpty()) {
+    public TypeName getPropElementName(DtoProp<ImmutableType, ImmutableProp> prop) {
+        DtoType<ImmutableType, ImmutableProp> targetType = prop.getTargetType();
+        if (targetType != null) {
+            if (targetType.getName() == null) {
                 List<String> list = new ArrayList<>();
                 collectNames(list);
                 list.add(targetSimpleName(prop));
                 return ClassName.get(
-                        declaration.getImmutableType().getPackageName(),
+                        getPackageName(),
                         list.get(0),
                         list.subList(1, list.size()).toArray(EMPTY_STR_ARR)
                 );
             }
             return ClassName.get(
-                    target.getImmutableType().getPackageName(),
-                    target.getTopLevelName()
+                    getPackageName(),
+                    targetType.getName()
             );
         }
         TypeName typeName = prop.isIdOnly() ?
-                prop.getImmutableProp().getTargetType().getIdProp().getTypeName() :
-                prop.getImmutableProp().getTypeName();
-        if (typeName.isPrimitive() && prop.isNullable(isInput())) {
+                prop.getBaseProp().getTargetType().getIdProp().getTypeName() :
+                prop.getBaseProp().getTypeName();
+        if (typeName.isPrimitive() && prop.isNullable()) {
             return typeName.box();
         }
         return typeName;
     }
 
-    public boolean isInput() {
-        return parent != null ? parent.isInput() : declaration.getTopLevelName().endsWith("Input");
-    }
-
     private void collectNames(List<String> list) {
         if (parent == null) {
-            list.add(declaration.getTopLevelName());
+            list.add(dtoType.getName());
         } else {
             parent.collectNames(list);
             list.add(innerClassName);
         }
     }
 
-    private static String targetSimpleName(StaticProp prop) {
-        StaticDeclaration target = prop.getTarget();
-        if (target == null) {
+    private static String targetSimpleName(DtoProp<ImmutableType, ImmutableProp> prop) {
+        DtoType<ImmutableType, ImmutableProp> targetType = prop.getTargetType();
+        if (targetType == null) {
             throw new IllegalArgumentException("prop is not association");
         }
-        if (!target.getTopLevelName().isEmpty()) {
-            return target.getTopLevelName();
+        if (targetType.getName() != null) {
+            return targetType.getName();
         }
         return "TargetOf_" + prop.getName();
     }
@@ -767,5 +717,19 @@ public class StaticDeclarationGenerator {
             }
         }
         return false;
+    }
+
+    private static String defaultValue(DtoProp<?, ImmutableProp> prop) {
+        TypeName typeName = prop.getBaseProp().getTypeName();
+        if (typeName.isPrimitive()) {
+            if (typeName.equals(TypeName.BOOLEAN)) {
+                return "false";
+            }
+            if (typeName.equals(TypeName.CHAR)) {
+                return "'\0'";
+            }
+            return "0";
+        }
+        return "null";
     }
 }

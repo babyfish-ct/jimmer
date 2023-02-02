@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.spring.repository.support;
 
+import org.babyfish.jimmer.Dto;
 import org.babyfish.jimmer.ImmutableObjects;
-import org.babyfish.jimmer.Static;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.spring.repository.JRepository;
@@ -16,7 +16,7 @@ import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.StaticMetadata;
+import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.GenericTypeResolver;
@@ -102,7 +102,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     }
 
     @Override
-    public <S extends Static<E>> S findStaticNullable(Class<S> staticType, ID id) {
+    public <S extends Dto<E>> S findStaticNullable(Class<S> staticType, ID id) {
         return sqlClient.getEntities().findStaticById(staticType, id);
     }
 
@@ -120,7 +120,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     }
 
     @Override
-    public <S extends Static<E>> List<S> findStaticByIds(Class<S> staticType, Iterable<ID> ids) {
+    public <S extends Dto<E>> List<S> findStaticByIds(Class<S> staticType, Iterable<ID> ids) {
         return null;
     }
 
@@ -138,7 +138,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     }
 
     @Override
-    public <S extends Static<E>> Map<ID, S> findStaticMapByIds(Class<S> staticType, Iterable<ID> ids) {
+    public <S extends Dto<E>> Map<ID, S> findStaticMapByIds(Class<S> staticType, Iterable<ID> ids) {
         return sqlClient.getEntities().findStaticMapByIds(staticType, Utils.toCollection(ids));
     }
 
@@ -162,7 +162,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     }
 
     @Override
-    public <S extends Static<E>> List<S> findAllStatic(Class<S> staticType, TypedProp.Scalar<?, ?>... sortedProps) {
+    public <S extends Dto<E>> List<S> findAllStatic(Class<S> staticType, TypedProp.Scalar<?, ?>... sortedProps) {
         return sqlClient.getEntities().findAllStatic(staticType, sortedProps);
     }
 
@@ -181,7 +181,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     }
 
     @Override
-    public <S extends Static<E>> List<S> findAllStatic(Class<S> staticType, Sort sort) {
+    public <S extends Dto<E>> List<S> findAllStatic(Class<S> staticType, Sort sort) {
         return sqlClient.getEntities().findAllStatic(staticType, SpringOrders.toTypedProps(entityType, sort));
     }
 
@@ -206,7 +206,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     }
 
     @Override
-    public <S extends Static<E>> Page<S> findAllStatic(Class<S> staticType, int pageIndex, int pageSize, TypedProp.Scalar<?, ?>... sortedProps) {
+    public <S extends Dto<E>> Page<S> findAllStatic(Class<S> staticType, int pageIndex, int pageSize, TypedProp.Scalar<?, ?>... sortedProps) {
         return pager(pageIndex, pageSize).execute(createStaticQuery(staticType, sortedProps));
     }
 
@@ -221,7 +221,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     }
 
     @Override
-    public <S extends Static<E>> Page<S> findAllStatic(Class<S> staticType, int pageIndex, int pageSize, Sort sort) {
+    public <S extends Dto<E>> Page<S> findAllStatic(Class<S> staticType, int pageIndex, int pageSize, Sort sort) {
         return findAllStatic(staticType, PageRequest.of(pageIndex, pageSize, sort));
     }
 
@@ -239,12 +239,12 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     }
 
     @Override
-    public <S extends Static<E>> Page<S> findAllStatic(Class<S> staticType, Pageable pageable) {
+    public <S extends Dto<E>> Page<S> findAllStatic(Class<S> staticType, Pageable pageable) {
         return pager(pageable).execute(
                 createStaticQuery(
                         staticType,
                         SpringOrders.toTypedProps(
-                                StaticMetadata.of(staticType).getFetcher().getImmutableType().getJavaClass(),
+                                DtoMetadata.of(staticType).getFetcher().getImmutableType().getJavaClass(),
                                 pageable.getSort()
                         )
                 )
@@ -333,7 +333,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         return query.select(fetcher != null ? table.fetch(fetcher) : table);
     }
 
-    private <S extends Static<E>> ConfigurableRootQuery<?, S> createStaticQuery(
+    private <S extends Dto<E>> ConfigurableRootQuery<?, S> createStaticQuery(
             Class<S> staticType,
             TypedProp.Scalar<?, ?>[] sortedProps
     ) {

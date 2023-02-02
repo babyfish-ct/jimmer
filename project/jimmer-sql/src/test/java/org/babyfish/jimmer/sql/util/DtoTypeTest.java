@@ -3,15 +3,14 @@ package org.babyfish.jimmer.sql.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.babyfish.jimmer.sql.model.inheritance.TheAdministratorInput;
-import org.babyfish.jimmer.sql.model.inheritance.TheRoleInput;
+import org.babyfish.jimmer.sql.model.inheritance.dto.TheAdministratorInput;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
 
-public class StaticTypeTest {
+public class DtoTypeTest {
 
     @Test
     public void test() throws JsonProcessingException {
@@ -22,13 +21,13 @@ public class StaticTypeTest {
                 .setName("AdminName")
                 .setRoles(
                         Arrays.asList(
-                                TheRoleInput
+                                TheAdministratorInput.TargetOf_roles
                                         .newBuilder()
                                         .setCreatedTime(LocalDateTime.of(2023, 1, 12, 16, 49, 27))
                                         .setModifiedTime(LocalDateTime.of(2023, 1, 12, 17, 34, 9))
                                         .setName("RoleName-1")
                                         .build(),
-                                TheRoleInput
+                                TheAdministratorInput.TargetOf_roles
                                         .newBuilder()
                                         .setCreatedTime(LocalDateTime.of(2023, 1, 12, 16, 49, 27))
                                         .setModifiedTime(LocalDateTime.of(2023, 1, 12, 17, 34, 9))

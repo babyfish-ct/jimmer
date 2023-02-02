@@ -109,6 +109,11 @@ public class DtoCompilerTest {
         public String getQualifiedName() {
             return qualifiedName;
         }
+
+        @Override
+        public boolean isEntity() {
+            return true;
+        }
     }
 
     private static class BasePropImpl implements BaseProp {
@@ -117,21 +122,29 @@ public class DtoCompilerTest {
 
         private final Supplier<BaseType> targetTypeSupplier;
 
+        private final boolean isNullable;
+
         private final boolean isList;
 
         BasePropImpl(String name) {
-            this(name, null, false);
+            this(name, null, false, false);
         }
 
-        BasePropImpl(String name, Supplier<BaseType> targetTypeSupplier, boolean isList) {
+        BasePropImpl(String name, Supplier<BaseType> targetTypeSupplier, boolean isNullable, boolean isList) {
             this.name = name;
             this.targetTypeSupplier = targetTypeSupplier;
+            this.isNullable = isNullable;
             this.isList = isList;
         }
 
         @Override
         public String getName() {
             return name;
+        }
+
+        @Override
+        public boolean isNullable() {
+            return false;
         }
 
         public BaseType getTargetType() {
@@ -147,6 +160,16 @@ public class DtoCompilerTest {
 
         public boolean isList() {
             return isList;
+        }
+
+        @Override
+        public boolean isTransient() {
+            return false;
+        }
+
+        @Override
+        public boolean hasTransientResolver() {
+            return false;
         }
 
         @Override
@@ -166,9 +189,9 @@ public class DtoCompilerTest {
                 new BasePropImpl("edition"),
                 new BasePropImpl("price"),
                 new BasePropImpl("tenant"),
-                new BasePropImpl("store", () -> TYPE_MAP.get("BookStore"), false),
-                new BasePropImpl("authors", () -> TYPE_MAP.get("Author"), true),
-                new BasePropImpl("chapters", () -> TYPE_MAP.get("Chapter"), true)
+                new BasePropImpl("store", () -> TYPE_MAP.get("BookStore"), true, false),
+                new BasePropImpl("authors", () -> TYPE_MAP.get("Author"), false, true),
+                new BasePropImpl("chapters", () -> TYPE_MAP.get("Chapter"), false, true)
         );
 
         private static final BaseTypeImpl BOOK_STORE_TYPE = new BaseTypeImpl(
@@ -176,7 +199,7 @@ public class DtoCompilerTest {
                 new BasePropImpl("id"),
                 new BasePropImpl("name"),
                 new BasePropImpl("website"),
-                new BasePropImpl("books", () -> TYPE_MAP.get("Book"), true)
+                new BasePropImpl("books", () -> TYPE_MAP.get("Book"), false, true)
         );
 
         private static final BaseTypeImpl AUTHOR_TYPE = new BaseTypeImpl(
@@ -185,7 +208,7 @@ public class DtoCompilerTest {
                 new BasePropImpl("firstName"),
                 new BasePropImpl("lastName"),
                 new BasePropImpl("gender"),
-                new BasePropImpl("books", () -> TYPE_MAP.get("Author"), true)
+                new BasePropImpl("books", () -> TYPE_MAP.get("Author"), false, true)
         );
 
         private static final BaseTypeImpl CHAPTER_TYPE = new BaseTypeImpl(
@@ -193,7 +216,7 @@ public class DtoCompilerTest {
                 new BasePropImpl("id"),
                 new BasePropImpl("index"),
                 new BasePropImpl("title"),
-                new BasePropImpl("book", () -> TYPE_MAP.get("Author"), false)
+                new BasePropImpl("book", () -> TYPE_MAP.get("Author"), false, false)
         );
 
         protected BookDtoCompiler() {
@@ -221,23 +244,13 @@ public class DtoCompilerTest {
         }
 
         @Override
-        protected boolean isMappable(BaseProp baseProp) {
-            return true;
-        }
-
-        @Override
-        protected boolean isNullable(BaseProp baseProp) {
-            return baseProp != BOOK_TYPE.propMap.get("store");
-        }
-
-        @Override
         protected boolean isId(BaseProp baseProp) {
             return baseProp.getName().equals("id");
         }
 
         @Override
-        protected boolean isList(BaseProp baseProp) {
-            return ((BasePropImpl) baseProp).isList();
+        protected boolean isKey(BaseProp baseProp) {
+            return true;
         }
 
         @Override
