@@ -58,7 +58,8 @@ public class DtoCompilerTest {
                         "--->}, " +
                         "--->input CompositeBookInput{" +
                         "--->--->@optional id, " +
-                        "--->--->name, edition, " +
+                        "--->--->name, " +
+                        "--->--->edition, " +
                         "--->--->price, " +
                         "--->--->id(store) as storeId, " +
                         "--->--->id(authors) as authorIds, " +
