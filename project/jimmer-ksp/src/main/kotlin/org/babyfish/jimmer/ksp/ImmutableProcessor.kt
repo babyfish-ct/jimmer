@@ -147,12 +147,12 @@ class ImmutableProcessor(
                             }
                         } catch (ex: DtoAstException) {
                             throw MetaException(
-                                "Failed to parse \"${dtoFile.absolutePath}\"",
+                                "Failed to parse \"${dtoFile.absolutePath}\": ${ex.message}",
                                 ex
                             )
                         } catch (ex: IOException) {
                             throw MetaException(
-                                "Failed to parse \"${dtoFile.absolutePath}\"",
+                                "Failed to parse \"${dtoFile.absolutePath}\": ${ex.message}",
                                 ex
                             )
                         }

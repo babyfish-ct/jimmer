@@ -94,7 +94,8 @@ public class ImmutableProp implements BaseProp {
             );
         }
 
-        if (getterName.startsWith("is") &&
+        if (returnType.getKind() == TypeKind.BOOLEAN &&
+                getterName.startsWith("is") &&
                 getterName.length() > 2 &&
                 Character.isUpperCase(getterName.charAt(2))) {
             name =

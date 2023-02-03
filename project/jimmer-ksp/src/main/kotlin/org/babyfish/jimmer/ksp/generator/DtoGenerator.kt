@@ -129,7 +129,7 @@ class DtoGenerator private constructor(
 
         for (prop in dtoType.props) {
             val targetType = prop.targetType
-            if (targetType != null) {
+            if (targetType != null && prop.isNewTarget) {
                 DtoGenerator(
                     targetType,
                     null,
@@ -172,11 +172,20 @@ class DtoGenerator private constructor(
                                         for (prop in dtoType.props) {
                                             if (!prop.baseProp.isId) {
                                                 if (prop.targetType !== null) {
-                                                    addStatement(
-                                                        "%N(%T.METADATA.fetcher)",
-                                                        prop.baseProp.name,
-                                                        propElementName(prop)
-                                                    )
+                                                    if (prop.isNewTarget) {
+                                                        add(
+                                                            "%N(%T.METADATA.fetcher)",
+                                                            prop.baseProp.name,
+                                                            propElementName(prop)
+                                                        )
+                                                        if (prop.isRecursive) {
+                                                            beginControlFlow("")
+                                                            addStatement("recursive()")
+                                                            endControlFlow()
+                                                        } else {
+                                                            add("\n")
+                                                        }
+                                                    }
                                                 } else {
                                                     addStatement("%N()", prop.baseProp.name)
                                                 }
@@ -371,14 +380,14 @@ class DtoGenerator private constructor(
                         "this.%N = that.%N%Lmap { it.toEntity() }",
                         prop.baseProp.name,
                         prop.name,
-                        if (prop.isNullable) "?." else "."
+                        if (prop.baseProp.isNullable) "?." else "."
                     )
                 } else {
                     addStatement(
                         "this.%N = that.%N%LtoEntity()",
                         prop.baseProp.name,
                         prop.name,
-                        if (prop.isNullable) "?." else "."
+                        if (prop.baseProp.isNullable) "?." else "."
                     )
                 }
             prop.isIdOnly -> {
@@ -386,7 +395,7 @@ class DtoGenerator private constructor(
                     "this.%N = that.%N%L%N",
                     prop.baseProp.name,
                     prop.name,
-                    if (prop.isNullable) "?." else ".",
+                    if (prop.baseProp.isNullable) "?." else ".",
                     if (prop.baseProp.isNullable) "let" else "map"
                 )
                 beginControlFlow(
@@ -425,7 +434,9 @@ class DtoGenerator private constructor(
             if (targetType.name === null) {
                 val list: MutableList<String> = ArrayList()
                 collectNames(list)
-                list.add(targetSimpleName(prop))
+                if (prop.isNewTarget) {
+                    list.add(targetSimpleName(prop))
+                }
                 return ClassName(
                     packageName(),
                     list[0],

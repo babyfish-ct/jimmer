@@ -4,6 +4,7 @@ import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.impl.util.PropName;
 import org.babyfish.jimmer.meta.impl.dto.ast.DtoProp;
 import org.babyfish.jimmer.meta.impl.dto.ast.DtoType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -161,7 +162,7 @@ public class DtoGenerator {
         new DtoBuilderGenerator(this).generate();
 
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
-            if (prop.getTargetType() != null && prop.getTargetType().getName() == null) {
+            if (prop.isNewTarget() && prop.getTargetType() != null && prop.getTargetType().getName() == null) {
                 new DtoGenerator(
                         prop.getTargetType(),
                         null,
@@ -199,7 +200,13 @@ public class DtoGenerator {
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
             if (prop.getBaseProp().getAnnotation(Id.class) == null) {
                 if (prop.getTargetType() != null) {
-                    cb.add("\n.$N($T.METADATA.getFetcher())", prop.getBaseProp().getName(), getPropElementName(prop));
+                    if (prop.isNewTarget()) {
+                        cb.add("\n.$N($T.METADATA.getFetcher()", prop.getBaseProp().getName(), getPropElementName(prop));
+                        if (prop.isRecursive()) {
+                            cb.add(", $T::recursive", Constants.RECURSIVE_FIELD_CONFIG_CLASS_NAME);
+                        }
+                        cb.add(")");
+                    }
                 } else {
                     cb.add("\n.$N()", prop.getBaseProp().getName());
                 }
@@ -307,7 +314,9 @@ public class DtoGenerator {
                                 .addAnnotation(NotNull.class)
                                 .build()
                 );
-        builder.addStatement("$T spi = ($T)base", ImmutableSpi.class, ImmutableSpi.class);
+        if (dtoType.getProps().stream().anyMatch(DtoProp::isNullable)) {
+            builder.addStatement("$T spi = ($T)base", ImmutableSpi.class, ImmutableSpi.class);
+        }
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
             if (prop.isIdOnly()) {
                 if (prop.getBaseProp().isList()) {
@@ -483,7 +492,7 @@ public class DtoGenerator {
 
     private void addGetter(DtoProp<ImmutableType, ImmutableProp> prop) {
         MethodSpec.Builder builder = MethodSpec
-                .methodBuilder(prop.getBaseProp().getGetterName())
+                .methodBuilder(dtoGetterName(prop))
                 .addModifiers(Modifier.PUBLIC)
                 .returns(getPropTypeName(prop));
         if (prop.isNullable()) {
@@ -661,7 +670,9 @@ public class DtoGenerator {
             if (targetType.getName() == null) {
                 List<String> list = new ArrayList<>();
                 collectNames(list);
-                list.add(targetSimpleName(prop));
+                if (prop.isNewTarget()) {
+                    list.add(targetSimpleName(prop));
+                }
                 return ClassName.get(
                         getPackageName(),
                         list.get(0),
@@ -731,5 +742,14 @@ public class DtoGenerator {
             return "0";
         }
         return "null";
+    }
+
+    static String dtoGetterName(DtoProp<ImmutableType, ImmutableProp> prop) {
+        String name = prop.getName();
+        name = Character.toUpperCase(name.charAt(0)) + name.substring(1);
+        if (prop.getBaseProp().getTypeName().equals(TypeName.BOOLEAN)) {
+            return "is" + name;
+        }
+        return "get" + name;
     }
 }

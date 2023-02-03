@@ -1,3 +1,18 @@
+SimpleBook {
+    id
+    name
+}
+
+ComplexBook {
+    #allScalars
+    store {
+        #allScalars
+    }
+    authors {
+        #allScalars
+    }
+}
+
 input BookInput {
     #allScalars
     id(store)

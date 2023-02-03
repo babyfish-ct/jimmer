@@ -275,7 +275,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
     @Override
     public <S extends Static<E>> Selection<S> fetch(Class<S> staticType) {
         DtoMetadata<E, S> metadata = DtoMetadata.of(staticType);
-        return new FetcherSelectionImpl<S>(this, metadata.getFetcher(), metadata.getConverter());
+        return new FetcherSelectionImpl<>(this, metadata.getFetcher(), metadata.getConverter());
     }
 
     @Override
