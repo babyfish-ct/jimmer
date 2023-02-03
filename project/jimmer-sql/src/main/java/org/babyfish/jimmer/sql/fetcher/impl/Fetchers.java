@@ -32,9 +32,11 @@ public class Fetchers {
         for (int i = 0; i < selections.size(); i++) {
             Selection<?> selection = selections.get(i);
             if (selection instanceof FetcherSelection<?>) {
-                Fetcher<?> fetcher = ((FetcherSelection<?>)selection).getFetcher();
+                FetcherSelection<?> fetcherSelection = (FetcherSelection<?>) selection;
+                Fetcher<?> fetcher = fetcherSelection.getFetcher();
                 if (!fetcher.isSimpleFetcher() ||
-                    hasReferenceFilter(fetcher.getImmutableType(), sqlClient)) {
+                    hasReferenceFilter(fetcher.getImmutableType(), sqlClient) ||
+                    fetcherSelection.getConverter() != null) {
                     columnMap.put(i, new ArrayList<>());
                 }
             }
@@ -53,20 +55,23 @@ public class Fetchers {
 
         for (Map.Entry<Integer, List<Object>> e : columnMap.entrySet()) {
             int columnIndex = e.getKey();
-            List<Object> columnValues = e.getValue();
+            List<Object> fetchedList = e.getValue();
             FetcherSelection<?> selection = (FetcherSelection<?>) selections.get(columnIndex);
-            List<Object> fetchedList = Internal.produceList(
-                    selection.getFetcher().getImmutableType(),
-                    columnValues,
-                    values -> {
-                        fetch(
-                                sqlClient,
-                                con,
-                                selection.getFetcher(),
-                                (List<DraftSpi>)values
-                        );
-                    }
-            );
+            Fetcher<?> fetcher = selection.getFetcher();
+            if (!fetcher.isSimpleFetcher() || hasReferenceFilter(fetcher.getImmutableType(), sqlClient)) {
+                fetchedList = Internal.produceList(
+                        selection.getFetcher().getImmutableType(),
+                        fetchedList,
+                        values -> {
+                            fetch(
+                                    sqlClient,
+                                    con,
+                                    selection.getFetcher(),
+                                    (List<DraftSpi>) values
+                            );
+                        }
+                );
+            }
             Function<Object, Object> converter = (Function<Object, Object>) selection.getConverter();
             if (converter != null) {
                 List<Object> list = new ArrayList<>(fetchedList.size());

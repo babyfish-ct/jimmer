@@ -7,6 +7,7 @@ import com.squareup.javapoet.TypeSpec;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.meta.impl.dto.ast.DtoProp;
+import org.babyfish.jimmer.meta.impl.dto.ast.DtoProp;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -68,7 +69,7 @@ public class DtoBuilderGenerator {
                 );
         builder.beginControlFlow("if (base != null)");
         for (DtoProp<ImmutableType, ImmutableProp> prop : props) {
-            builder.addStatement("this.$L = base.$L()", prop.getName(), prop.getBaseProp().getGetterName());
+            builder.addStatement("this.$L = base.$L()", prop.getName(), DtoGenerator.dtoGetterName(prop));
         }
         builder.endControlFlow();
         typeBuilder.addMethod(builder.build());

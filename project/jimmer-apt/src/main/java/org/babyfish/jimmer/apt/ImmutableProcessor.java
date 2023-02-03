@@ -4,7 +4,6 @@ import org.babyfish.jimmer.apt.generator.*;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.apt.meta.MetaException;
-import org.babyfish.jimmer.meta.impl.dto.ast.DtoProp;
 import org.babyfish.jimmer.meta.impl.dto.ast.DtoType;
 import org.babyfish.jimmer.meta.impl.dto.ast.DtoAstException;
 import org.babyfish.jimmer.sql.Entity;
@@ -194,14 +193,16 @@ public class ImmutableProcessor extends AbstractProcessor {
                         throw new MetaException(
                                 "Failed to parse \"" +
                                         dtoFile.getAbsolutePath() +
-                                        "\"",
+                                        "\": " +
+                                        ex.getMessage(),
                                 ex
                         );
                     } catch (IOException ex) {
                         throw new MetaException(
                                 "Failed to read \"" +
                                         dtoFile.getAbsolutePath() +
-                                        "\"",
+                                        "\": " +
+                                        ex.getMessage(),
                                 ex
                         );
                     }

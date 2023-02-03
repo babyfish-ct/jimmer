@@ -1,0 +1,6 @@
+TreeDto {
+    #allScalars
+    childNodes {
+        #allScalars
+    }*
+}

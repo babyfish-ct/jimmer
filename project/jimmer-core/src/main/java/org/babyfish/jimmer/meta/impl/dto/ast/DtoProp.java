@@ -4,86 +4,23 @@ import org.babyfish.jimmer.meta.impl.dto.ast.spi.BaseProp;
 import org.babyfish.jimmer.meta.impl.dto.ast.spi.BaseType;
 import org.jetbrains.annotations.Nullable;
 
-public class DtoProp<T extends BaseType, P extends BaseProp> {
+public interface DtoProp<T extends BaseType, P extends BaseProp> {
 
-    private final P baseProp;
+    P getBaseProp();
 
-    @Nullable
-    private final String alias;
+    String getName();
 
-    @Nullable
-    private final DtoType<T, P> targetType;
+    boolean isNullable();
 
-    private final boolean optional;
-
-    private final boolean idOnly;
-
-    private final boolean recursive;
-
-    DtoProp(
-            P baseProp,
-            @Nullable String alias,
-            @Nullable DtoType<T, P> targetType,
-            boolean optional,
-            boolean idOnly,
-            boolean recursive
-    ) {
-        this.baseProp = baseProp;
-        this.alias = alias;
-        this.targetType = targetType;
-        this.optional = optional;
-        this.idOnly = idOnly;
-        this.recursive = recursive;
-    }
-
-    public P getBaseProp() {
-        return baseProp;
-    }
-
-    public String getName() {
-        return alias != null ? alias : baseProp.getName();
-    }
-
-    public boolean isNullable() {
-        return optional || baseProp.isNullable();
-    }
-
-    public boolean isIdOnly() {
-        return idOnly;
-    }
+    boolean isIdOnly();
 
     @Nullable
-    public String getAlias() {
-        return alias;
-    }
+    String getAlias();
 
     @Nullable
-    public DtoType<T, P> getTargetType() {
-        return targetType;
-    }
+    DtoType<T, P> getTargetType();
 
-    public boolean isRecursive() {
-        return recursive;
-    }
+    boolean isRecursive();
 
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        if (optional) {
-            builder.append("@optional ");
-        }
-        if (idOnly) {
-            builder.append("id(").append(baseProp.getName()).append(')');
-        } else {
-            builder.append(baseProp.getName());
-        }
-        if (alias != null) {
-            builder.append(" as ").append(alias);
-        }
-        if (targetType != null) {
-            builder.append(": ");
-            builder.append(targetType);
-        }
-        return builder.toString();
-    }
+    boolean isNewTarget();
 }

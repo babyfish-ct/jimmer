@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.spring.kotlin
 
-import org.babyfish.jimmer.sql.Column
-import org.babyfish.jimmer.sql.Entity
-import org.babyfish.jimmer.sql.Id
-import org.babyfish.jimmer.sql.ManyToOne
+import org.babyfish.jimmer.sql.*
 
 @Entity
 interface TreeNode {
@@ -16,4 +13,7 @@ interface TreeNode {
 
     @ManyToOne
     val parent: TreeNode?
+
+    @OneToMany(mappedBy = "parent")
+    val childNodes: List<TreeNode>
 }

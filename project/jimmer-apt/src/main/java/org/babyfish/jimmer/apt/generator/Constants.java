@@ -158,6 +158,12 @@ class Constants {
                     "Fetcher"
             );
 
+    public static final ClassName RECURSIVE_FIELD_CONFIG_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher",
+                    "RecursiveFieldConfig"
+            );
+
     public static final ClassName FETCHER_IMPL_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher.impl",
@@ -174,12 +180,6 @@ class Constants {
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher",
                     "ListFieldConfig"
-            );
-
-    public static final ClassName RECURSIVE_FIELD_CONFIG_CLASS_NAME =
-            ClassName.get(
-                    "org.babyfish.jimmer.sql.fetcher",
-                    "RecursiveFieldConfig"
             );
 
     public static final ClassName RECURSIVE_LIST_FIELD_CONFIG_CLASS_NAME =

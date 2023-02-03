@@ -33,7 +33,7 @@ class QueryParser {
         this.type = type;
     }
 
-    public Query parse(Source source) {
+    public Query parse(Source source, boolean allowProjection) {
         int orderByIndex = source.indexOf("OrderBy");
         Source beforeOrderByCourse;
         Source orderBySource;
@@ -45,37 +45,36 @@ class QueryParser {
             orderBySource = source.subSource(orderByIndex + 7);
         }
         int byIndex = beforeOrderByCourse.indexOf("By");
-        if (byIndex == -1 && orderByIndex == -1) {
-            throw new IllegalArgumentException("Expect `By` or `OrderBy`");
-        }
-        Source actionSource;
-        Source predicateSource;
-        if (byIndex == -1) {
-            actionSource = beforeOrderByCourse;
-            predicateSource = null;
-        } else {
-            actionSource = beforeOrderByCourse.subSource(0, byIndex);
-            predicateSource = beforeOrderByCourse.subSource(byIndex + 2);
-        }
-        Source selectedSource = parseAction(actionSource);
-        if (orderByIndex > 0 && action != Query.Action.FIND) {
-            throw new IllegalArgumentException("Illegal method name \"" + source.subSource(orderByIndex) + "\"");
-        }
-        if (!selectedSource.isEmpty()) {
-            if (action != Query.Action.FIND) {
-                throw new IllegalArgumentException("Illegal method name \"" + selectedSource + "\"");
+        if (byIndex != -1 || orderByIndex != -1) {
+            Source actionSource;
+            Source predicateSource;
+            if (byIndex == -1) {
+                actionSource = beforeOrderByCourse;
+                predicateSource = null;
+            } else {
+                actionSource = beforeOrderByCourse.subSource(0, byIndex);
+                predicateSource = beforeOrderByCourse.subSource(byIndex + 2);
             }
-            List<Source> selectedSources = parseLimit(selectedSource);
-            selectedSource = parseDistinct(selectedSources);
-            if (selectedSource != null) {
-                selectedPath = new PathParser(ctx, distinct).parse(selectedSource, type);
+            Source selectedSource = parseAction(actionSource);
+            if (orderByIndex > 0 && action != Query.Action.FIND) {
+                throw new IllegalArgumentException("Illegal method name \"" + source.subSource(orderByIndex) + "\"");
             }
-        }
-        if (predicateSource != null) {
-            parsePredicates(predicateSource);
-        }
-        if (orderBySource != null) {
-            parseOrders(orderBySource);
+            if (!selectedSource.isEmpty()) {
+                if (action != Query.Action.FIND) {
+                    throw new IllegalArgumentException("Illegal method name \"" + selectedSource + "\"");
+                }
+                List<Source> selectedSources = parseLimit(selectedSource);
+                selectedSource = parseDistinct(selectedSources);
+                if (selectedSource != null && allowProjection) {
+                    selectedPath = new PathParser(ctx, distinct).parse(selectedSource, type);
+                }
+            }
+            if (predicateSource != null) {
+                parsePredicates(predicateSource);
+            }
+            if (orderBySource != null) {
+                parseOrders(orderBySource);
+            }
         }
         return new Query(action, limit, distinct, selectedPath, predicate, Collections.unmodifiableList(orders));
     }

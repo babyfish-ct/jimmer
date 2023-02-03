@@ -4,8 +4,11 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.model.BookStoreTable;
 import org.babyfish.jimmer.sql.model.BookTable;
+import org.babyfish.jimmer.sql.model.TreeNodeTable;
 import org.babyfish.jimmer.sql.model.dto.BookInput;
 import org.babyfish.jimmer.sql.model.dto.BookStoreDto;
+import org.babyfish.jimmer.sql.model.dto.TreeDto;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class DtoFetcherTest extends AbstractQueryTest {
@@ -126,6 +129,184 @@ public class DtoFetcherTest extends AbstractQueryTest {
                         );
                     });
                 }
+        );
+    }
+
+    @Test
+    public void testTreeDto() {
+        TreeNodeTable table = TreeNodeTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.parent().isNull())
+                        .select(table.fetch(TreeDto.class)),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME " +
+                                    "from TREE_NODE as tb_1_ " +
+                                    "where tb_1_.PARENT_ID is null"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_1_.NODE_ID, tb_1_.NAME from TREE_NODE as tb_1_ where tb_1_.PARENT_ID = ? order by tb_1_.NODE_ID asc"
+                    );
+                    ctx.statement(2).sql(
+                            "select tb_1_.PARENT_ID, tb_1_.NODE_ID, tb_1_.NAME from TREE_NODE as tb_1_ where tb_1_.PARENT_ID in (?, ?) order by tb_1_.NODE_ID asc"
+                    );
+                    ctx.statement(3).sql(
+                            "select tb_1_.PARENT_ID, tb_1_.NODE_ID, tb_1_.NAME from TREE_NODE as tb_1_ where tb_1_.PARENT_ID in (?, ?, ?, ?) order by tb_1_.NODE_ID asc"
+                    );
+                    ctx.statement(4).sql(
+                            "select tb_1_.PARENT_ID, tb_1_.NODE_ID, tb_1_.NAME from TREE_NODE as tb_1_ where tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?) order by tb_1_.NODE_ID asc"
+                    );
+                    ctx.statement(5).sql(
+                            "select tb_1_.PARENT_ID, tb_1_.NODE_ID, tb_1_.NAME from TREE_NODE as tb_1_ where tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?) order by tb_1_.NODE_ID asc"
+                    );
+                    ctx.rows(dtoList -> {
+                        assertContent(
+                                "[" +
+                                        "--->TreeDto{" +
+                                        "--->--->id=1, " +
+                                        "--->--->name=Home, " +
+                                        "--->--->childNodes=[" +
+                                        "--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->id=2, " +
+                                        "--->--->--->--->name=Food, " +
+                                        "--->--->--->--->childNodes=[" +
+                                        "--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->id=3, " +
+                                        "--->--->--->--->--->--->name=Drinks, " +
+                                        "--->--->--->--->--->--->childNodes=[" +
+                                        "--->--->--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->--->--->id=4, " +
+                                        "--->--->--->--->--->--->--->--->name=Coca Cola, " +
+                                        "--->--->--->--->--->--->--->--->childNodes=[]" +
+                                        "--->--->--->--->--->--->--->}, " +
+                                        "--->--->--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->--->--->id=5, " +
+                                        "--->--->--->--->--->--->--->--->name=Fanta, " +
+                                        "--->--->--->--->--->--->--->--->childNodes=[]" +
+                                        "--->--->--->--->--->--->--->}" +
+                                        "--->--->--->--->--->--->]" +
+                                        "--->--->--->--->--->}, " +
+                                        "--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->id=6, " +
+                                        "--->--->--->--->--->--->name=Bread, " +
+                                        "--->--->--->--->--->--->childNodes=[" +
+                                        "--->--->--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->--->--->id=7, " +
+                                        "--->--->--->--->--->--->--->--->name=Baguette, " +
+                                        "--->--->--->--->--->--->--->--->childNodes=[]" +
+                                        "--->--->--->--->--->--->--->}, " +
+                                        "--->--->--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->--->--->id=8, " +
+                                        "--->--->--->--->--->--->--->--->name=Ciabatta, " +
+                                        "--->--->--->--->--->--->--->--->childNodes=[]" +
+                                        "--->--->--->--->--->--->--->}" +
+                                        "--->--->--->--->--->--->]" +
+                                        "--->--->--->--->--->}" +
+                                        "--->--->--->--->]" +
+                                        "--->--->--->}, " +
+                                        "--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->id=9, " +
+                                        "--->--->--->--->name=Clothing, " +
+                                        "--->--->--->--->childNodes=[" +
+                                        "--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->id=10, " +
+                                        "--->--->--->--->--->--->name=Woman, " +
+                                        "--->--->--->--->--->--->childNodes=[" +
+                                        "--->--->--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->--->--->id=11, " +
+                                        "--->--->--->--->--->--->--->--->name=Casual wear, " +
+                                        "--->--->--->--->--->--->--->--->childNodes=[" +
+                                        "--->--->--->--->--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->--->--->--->--->id=12, " +
+                                        "--->--->--->--->--->--->--->--->--->--->name=Dress, " +
+                                        "--->--->--->--->--->--->--->--->--->--->childNodes=[]" +
+                                        "--->--->--->--->--->--->--->--->--->}, " +
+                                        "--->--->--->--->--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->--->--->--->--->id=13, " +
+                                        "--->--->--->--->--->--->--->--->--->--->name=Miniskirt, " +
+                                        "--->--->--->--->--->--->--->--->--->--->childNodes=[]" +
+                                        "--->--->--->--->--->--->--->--->--->}, " +
+                                        "--->--->--->--->--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->--->--->--->--->id=14, " +
+                                        "--->--->--->--->--->--->--->--->--->--->name=Jeans, " +
+                                        "--->--->--->--->--->--->--->--->--->--->childNodes=[]" +
+                                        "--->--->--->--->--->--->--->--->--->}" +
+                                        "--->--->--->--->--->--->--->--->]" +
+                                        "--->--->--->--->--->--->--->}, " +
+                                        "--->--->--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->--->--->id=15, " +
+                                        "--->--->--->--->--->--->--->--->name=Formal wear, " +
+                                        "--->--->--->--->--->--->--->--->childNodes=[" +
+                                        "--->--->--->--->--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->--->--->--->--->id=16, " +
+                                        "--->--->--->--->--->--->--->--->--->--->name=Suit, " +
+                                        "--->--->--->--->--->--->--->--->--->--->childNodes=[]" +
+                                        "--->--->--->--->--->--->--->--->--->}, " +
+                                        "--->--->--->--->--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->--->--->--->--->id=17, " +
+                                        "--->--->--->--->--->--->--->--->--->--->name=Shirt, " +
+                                        "--->--->--->--->--->--->--->--->--->--->childNodes=[]" +
+                                        "--->--->--->--->--->--->--->--->--->}" +
+                                        "--->--->--->--->--->--->--->--->]" +
+                                        "--->--->--->--->--->--->--->}" +
+                                        "--->--->--->--->--->--->]" +
+                                        "--->--->--->--->--->}, " +
+                                        "--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->id=18, " +
+                                        "--->--->--->--->--->--->name=Man, " +
+                                        "--->--->--->--->--->--->childNodes=[" +
+                                        "--->--->--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->--->--->id=19, " +
+                                        "--->--->--->--->--->--->--->--->name=Casual wear, " +
+                                        "--->--->--->--->--->--->--->--->childNodes=[" +
+                                        "--->--->--->--->--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->--->--->--->--->id=20, " +
+                                        "--->--->--->--->--->--->--->--->--->--->name=Jacket, " +
+                                        "--->--->--->--->--->--->--->--->--->--->childNodes=[]" +
+                                        "--->--->--->--->--->--->--->--->--->}, " +
+                                        "--->--->--->--->--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->--->--->--->--->id=21, " +
+                                        "--->--->--->--->--->--->--->--->--->--->name=Jeans, " +
+                                        "--->--->--->--->--->--->--->--->--->--->childNodes=[]" +
+                                        "--->--->--->--->--->--->--->--->--->}" +
+                                        "--->--->--->--->--->--->--->--->]" +
+                                        "--->--->--->--->--->--->--->}, " +
+                                        "--->--->--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->--->--->id=22, " +
+                                        "--->--->--->--->--->--->--->--->name=Formal wear, " +
+                                        "--->--->--->--->--->--->--->--->childNodes=[" +
+                                        "--->--->--->--->--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->--->--->--->--->id=23, " +
+                                        "--->--->--->--->--->--->--->--->--->--->name=Suit, " +
+                                        "--->--->--->--->--->--->--->--->--->--->childNodes=[]" +
+                                        "--->--->--->--->--->--->--->--->--->}, " +
+                                        "--->--->--->--->--->--->--->--->--->TreeDto.TargetOf_childNodes{" +
+                                        "--->--->--->--->--->--->--->--->--->--->id=24, " +
+                                        "--->--->--->--->--->--->--->--->--->--->name=Shirt, " +
+                                        "--->--->--->--->--->--->--->--->--->--->childNodes=[]" +
+                                        "--->--->--->--->--->--->--->--->--->}" +
+                                        "--->--->--->--->--->--->--->--->]" +
+                                        "--->--->--->--->--->--->--->}" +
+                                        "--->--->--->--->--->--->]" +
+                                        "--->--->--->--->--->}" +
+                                        "--->--->--->--->]" +
+                                        "--->--->--->}" +
+                                        "--->--->]" +
+                                        "--->}" +
+                                        "]",
+                                dtoList.toString()
+                        );
+                    });
+                }
+        );
+    }
+
+    private static void assertContent(String json, Object o) {
+        Assertions.assertEquals(
+                json.replace("--->", ""),
+                o.toString()
         );
     }
 }
