@@ -15,7 +15,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
+import org.babyfish.jimmer.sql.fetcher.StaticMetadata;
 
 import java.util.function.Function;
 
@@ -274,7 +274,7 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
     @Override
     public <S extends Static<E>> Selection<S> fetch(Class<S> staticType) {
-        DtoMetadata<E, S> metadata = DtoMetadata.of(staticType);
+        StaticMetadata<E, S> metadata = StaticMetadata.of(staticType);
         return new FetcherSelectionImpl<>(this, metadata.getFetcher(), metadata.getConverter());
     }
 

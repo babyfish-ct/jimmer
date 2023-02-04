@@ -149,7 +149,7 @@ class DtoGenerator private constructor(
                         PropertySpec
                             .builder(
                                 "METADATA",
-                                DTO_METADATA_CLASS_NAME.parameterizedBy(
+                                STATIC_METADATA_CLASS_NAME.parameterizedBy(
                                     dtoType.baseType.className,
                                     getClassName()
                                 )
@@ -163,7 +163,7 @@ class DtoGenerator private constructor(
                                         indent()
                                         add(
                                             "%T<%T, %T>(\n",
-                                            DTO_METADATA_CLASS_NAME,
+                                            STATIC_METADATA_CLASS_NAME,
                                             dtoType.baseType.className, getClassName()
                                         )
                                         indent()

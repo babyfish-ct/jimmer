@@ -13,16 +13,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-public final class DtoMetadata<E, S> {
+public final class StaticMetadata<E, S> {
 
-    private static final StaticCache<Class<Static<?>>, DtoMetadata<?, ?>> cache =
-            new StaticCache<>(DtoMetadata::create, false);
+    private static final StaticCache<Class<Static<?>>, StaticMetadata<?, ?>> cache =
+            new StaticCache<>(StaticMetadata::create, false);
 
     private final Fetcher<E> fetcher;
 
     private final Function<E, S> converter;
 
-    public DtoMetadata(Fetcher<E> fetcher, Function<E, S> converter) {
+    public StaticMetadata(Fetcher<E> fetcher, Function<E, S> converter) {
         this.fetcher = Objects.requireNonNull(fetcher, "fetch cannot be null");
         this.converter = Objects.requireNonNull(converter, "converter cannot be null");
     }
@@ -44,7 +44,7 @@ public final class DtoMetadata<E, S> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DtoMetadata<?, ?> that = (DtoMetadata<?, ?>) o;
+        StaticMetadata<?, ?> that = (StaticMetadata<?, ?>) o;
         return fetcher.equals(that.fetcher) && converter.equals(that.converter);
     }
 
@@ -57,11 +57,11 @@ public final class DtoMetadata<E, S> {
     }
 
     @SuppressWarnings("unchecked")
-    public static <E, S extends Static<E>> DtoMetadata<E, S> of(Class<S> staticType) {
-        return (DtoMetadata<E, S>) cache.get((Class<Static<?>>)staticType);
+    public static <E, S extends Static<E>> StaticMetadata<E, S> of(Class<S> staticType) {
+        return (StaticMetadata<E, S>) cache.get((Class<Static<?>>)staticType);
     }
 
-    public static DtoMetadata<?, ?> create(Class<Static<?>> staticType) {
+    public static StaticMetadata<?, ?> create(Class<Static<?>> staticType) {
         if (!Static.class.isAssignableFrom(staticType)) {
             throw new IllegalArgumentException(
                     "The type \"" +
@@ -109,20 +109,20 @@ public final class DtoMetadata<E, S> {
                             "\" is illegal, there is not static final field \"METADATA\""
             );
         }
-        if (metadataField.getType() != DtoMetadata.class) {
+        if (metadataField.getType() != StaticMetadata.class) {
             throw new IllegalArgumentException(
                     "The type \"" +
                             staticType.getName() +
                             "\" is illegal, the type of \"" +
                             metadataField +
                             "\" must be \"" +
-                            DtoMetadata.class.getName() +
+                            StaticMetadata.class.getName() +
                             "\""
             );
         }
-        TypeVariable<?>[] typeParameters = DtoMetadata.class.getTypeParameters();
+        TypeVariable<?>[] typeParameters = StaticMetadata.class.getTypeParameters();
         Map<TypeVariable<?>, Type> typeArgumentMap =
-                TypeUtils.getTypeArguments(metadataField.getGenericType(), DtoMetadata.class);
+                TypeUtils.getTypeArguments(metadataField.getGenericType(), StaticMetadata.class);
         if (typeArgumentMap.get(typeParameters[0]) != entityType) {
             throw new IllegalArgumentException(
                     "The type \"" +
@@ -147,7 +147,7 @@ public final class DtoMetadata<E, S> {
         }
         metadataField.setAccessible(true);
         try {
-            return (DtoMetadata<?, ?>)metadataField.get(null);
+            return (StaticMetadata<?, ?>)metadataField.get(null);
         } catch (IllegalAccessException ex) {
             throw new AssertionError("Internal bug", ex);
         }

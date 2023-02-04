@@ -16,7 +16,7 @@ import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
+import org.babyfish.jimmer.sql.fetcher.StaticMetadata;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.GenericTypeResolver;
@@ -244,7 +244,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
                 createStaticQuery(
                         staticType,
                         SpringOrders.toTypedProps(
-                                DtoMetadata.of(staticType).getFetcher().getImmutableType().getJavaClass(),
+                                StaticMetadata.of(staticType).getFetcher().getImmutableType().getJavaClass(),
                                 pageable.getSort()
                         )
                 )

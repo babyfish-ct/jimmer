@@ -38,6 +38,7 @@ dependencies {
 
 tasks.withType(JavaCompile::class) {
     options.compilerArgs.add("-Ajimmer.dtoDirs=src/test/dto")
+    inputs.files("src/test/dto")
 }
 
 tasks.getByName<Test>("test") {

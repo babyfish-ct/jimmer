@@ -4,7 +4,6 @@ import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
-import org.babyfish.jimmer.impl.util.PropName;
 import org.babyfish.jimmer.meta.impl.dto.ast.DtoProp;
 import org.babyfish.jimmer.meta.impl.dto.ast.DtoType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -177,7 +176,7 @@ public class DtoGenerator {
         FieldSpec.Builder builder = FieldSpec
                 .builder(
                         ParameterizedTypeName.get(
-                                Constants.DTO_METADATA_CLASS_NAME,
+                                Constants.STATIC_METADATA_CLASS_NAME,
                                 dtoType.getBaseType().getClassName(),
                                 getClassName()
                         ),
@@ -190,7 +189,7 @@ public class DtoGenerator {
                 .add("\n")
                 .add(
                         "new $T<$T, $T>(\n",
-                        Constants.DTO_METADATA_CLASS_NAME,
+                        Constants.STATIC_METADATA_CLASS_NAME,
                         dtoType.getBaseType().getClassName(),
                         getClassName()
                 )
