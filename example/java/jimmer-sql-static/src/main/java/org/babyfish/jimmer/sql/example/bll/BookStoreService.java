@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.example.bll;
 
-import org.babyfish.jimmer.sql.example.dal.BookRepository;
 import org.babyfish.jimmer.sql.example.dal.BookStoreRepository;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.example.model.dto.BookStoreInput;
@@ -19,14 +18,8 @@ public class BookStoreService {
 
     private final BookStoreRepository bookStoreRepository;
 
-    private final BookRepository bookRepository;
-
-    public BookStoreService(
-            BookStoreRepository bookStoreRepository,
-            BookRepository bookRepository
-    ) {
+    public BookStoreService(BookStoreRepository bookStoreRepository) {
         this.bookStoreRepository = bookStoreRepository;
-        this.bookRepository = bookRepository;
     }
 
     @GetMapping("/simpleList")

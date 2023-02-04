@@ -15,6 +15,7 @@ import java.util.List;
 
 @RestController
 @Transactional
+@RequestMapping("/tree")
 public class TreeService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TreeService.class);
@@ -28,12 +29,12 @@ public class TreeService {
         this.objectMapper = objectMapper;
     }
 
-    @GetMapping("/rootTrees")
+    @GetMapping("/roots/recursive")
     public List<RecursiveTree> findRootTrees(@RequestParam(required = false) String rootName) {
         return treeNodeRepository.findByParentIsNullAndName(rootName, RecursiveTree.class);
     }
 
-    @PutMapping("/tree")
+    @PutMapping("/root/recursive")
     public TreeNode saveTree(@RequestBody RecursiveTreeInput input) {
 
         TreeNode rootNode = input.toEntity();
