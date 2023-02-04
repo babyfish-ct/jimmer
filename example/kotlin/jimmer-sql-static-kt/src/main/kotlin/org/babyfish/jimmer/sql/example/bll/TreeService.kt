@@ -22,7 +22,7 @@ class TreeService(
     ): List<RecursiveTree> =
         treeNodeRepository.findByParentIsNullAndName(rootName, RecursiveTree::class)
 
-    @PutMapping
+    @PutMapping("/root/recursive")
     fun saveTree(
         @RequestBody input: RecursiveTreeInput
     ): TreeNode {
@@ -36,7 +36,7 @@ class TreeService(
         return treeNodeRepository.save(rootNode)
     }
 
-    @DeleteMapping("{id}")
+    @DeleteMapping("/{id}")
     fun deleteTree(@PathVariable id: Long) {
         treeNodeRepository.deleteById(id)
     }
