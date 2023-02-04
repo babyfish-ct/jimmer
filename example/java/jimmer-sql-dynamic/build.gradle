@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'org.babyfish.jimmer.example.sql'
-version '0.6.28-0.7-preview'
+version '0.6.29-0.7-preview'
 
 repositories {
     mavenCentral()
@@ -13,8 +13,8 @@ repositories {
 
 dependencies {
 
-    implementation 'org.babyfish.jimmer:jimmer-spring-boot-starter:0.6.28-0.7-preview'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.28-0.7-preview'
+    implementation 'org.babyfish.jimmer:jimmer-spring-boot-starter:0.6.29-0.7-preview'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.29-0.7-preview'
 
     implementation 'org.springframework.kafka:spring-kafka:2.9.0'
     implementation 'org.springdoc:springdoc-openapi-ui:1.6.13'
@@ -23,6 +23,10 @@ dependencies {
     runtimeOnly 'mysql:mysql-connector-java:8.0.30'
     runtimeOnly 'io.lettuce:lettuce-core:6.2.0.RELEASE'
 }
+
+// Even without any code changes, modifying the dto file
+// should cause the annotation processor to be triggered
+compileJava.inputs.files("src/main/dto")
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8

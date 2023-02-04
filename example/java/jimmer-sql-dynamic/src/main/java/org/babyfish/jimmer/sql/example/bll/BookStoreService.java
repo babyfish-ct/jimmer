@@ -56,57 +56,6 @@ public class BookStoreService {
         );
     }
 
-    /*
-     * In some cases, simple combination of different data have to be returned,
-     * which cannot be achieved based on associated properties.
-     *
-     * For example, here we need each bookstore and its newest book,
-     * not all its books: `BookStore.books`.
-     *
-     * This is a WEAK association at the business level.
-     *
-     * You can use ordinary object to assemble different entity objects
-     * that are not strongly associated.
-     *
-     * You can use multiple `@FetchBy` annotations even if your return type
-     * has multiple generic parameters, or even nested generic types.
-     * This is why `@FetchBy` decorates generic parameters but not return types.
-     */
-    @GetMapping("/listWithNewestBook")
-    public List<
-            Tuple2<
-                    @FetchBy("SIMPLE_FETCHER") BookStore,
-                    @FetchBy(value = "NEWEST_BOOK_FETCHER", nullable = true) Book
-            >
-    > findStoresWithNewestBook() {
-
-        List<BookStore> stores = bookStoreRepository.findAll(SIMPLE_FETCHER);
-
-        // BookStoreId -> BookId
-        Map<Long, Long> newestBookIdMap = stores.isEmpty() ?
-                Collections.emptyMap() :
-                bookRepository.findNewestBookIdsByStoreIds(
-                        stores.stream().map(BookStore::id).collect(Collectors.toList())
-                );
-
-        // BookId -> Book
-        Map<Long, Book> bookMap = newestBookIdMap.isEmpty() ?
-                Collections.emptyMap() :
-                bookRepository.findMapByIds(
-                        newestBookIdMap.values(),
-                        NEWEST_BOOK_FETCHER
-                );
-
-        return stores
-                .stream()
-                .map(store -> {
-                    Long newestBookId = newestBookIdMap.get(store.id());
-                    Book newestBook = bookMap.get(newestBookId);
-                    return new Tuple2<>(store, newestBook);
-                })
-                .collect(Collectors.toList());
-    }
-
     private static final Fetcher<BookStore> SIMPLE_FETCHER =
             BookStoreFetcher.$.name();
 
@@ -125,15 +74,6 @@ public class BookStoreService {
                                             AuthorFetcher.$
                                                     .allScalarFields()
                                     )
-                    );
-
-    private static final Fetcher<Book> NEWEST_BOOK_FETCHER =
-            BookFetcher.$
-                    .allScalarFields()
-                    .tenant(false)
-                    .authors(
-                            AuthorFetcher.$
-                                    .allScalarFields()
                     );
 
     @PutMapping

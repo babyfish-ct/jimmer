@@ -1,0 +1,13 @@
+input RecursiveTreeInput {
+
+    /*
+     * Here, the macro `allScalars` has parameters, that means only the
+     * scalar properties of the `Book` interface itself can be mapped automatically,
+     * excluding the scalar properties of the super interfaces.
+     */
+    #allScalars(TreeNode)
+
+    childNodes {
+        #allScalars(TreeNode)
+    }* // `*` means recursive
+}
