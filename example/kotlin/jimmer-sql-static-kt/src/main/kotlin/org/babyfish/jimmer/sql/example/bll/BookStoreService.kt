@@ -38,7 +38,7 @@ class BookStoreService(
     fun saveBookStore(@RequestBody input: BookStoreInput): BookStore =
         bookStoreRepository.save(input)
 
-    @DeleteMapping("{id}")
+    @DeleteMapping("/{id}")
     fun deleteBookStore(@PathVariable id: Long) {
         bookStoreRepository.deleteById(id)
     }

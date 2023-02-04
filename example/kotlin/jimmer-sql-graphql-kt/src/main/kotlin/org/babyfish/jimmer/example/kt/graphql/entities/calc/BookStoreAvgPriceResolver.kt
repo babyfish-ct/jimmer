@@ -1,5 +1,6 @@
-package org.babyfish.jimmer.example.kt.graphql.entities
+package org.babyfish.jimmer.example.kt.graphql.entities.calc
 
+import org.babyfish.jimmer.example.kt.graphql.entities.*
 import org.babyfish.jimmer.lang.Ref
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.KTransientResolver
