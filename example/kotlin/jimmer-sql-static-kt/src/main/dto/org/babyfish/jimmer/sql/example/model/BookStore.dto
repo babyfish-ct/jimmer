@@ -2,7 +2,7 @@
  * Jimmer is good at solving the troubles caused by the DTO explosion problem to the actual project.
  * In jimmer, DTO is cheap.
  *
- * - For input DTOs used by mutation operations, never use dynamic entitiy type directly as
+ * - For input DTOs used by mutation operations, never use dynamic entity type directly as
  *   `@ResponseBody` parameter, because it allows users to store arbitrarily complex data structures
  *   so that security will be broken. You should always declare the input DTO here, and jimmer will
  *   automatically generate the relevant Java/Kotlin code and let you save it with only one line of code.

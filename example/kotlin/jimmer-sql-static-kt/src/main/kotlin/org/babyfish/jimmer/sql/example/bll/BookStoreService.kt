@@ -28,11 +28,9 @@ class BookStoreService(
             asc(BookStore::name)
         }
 
-    @GetMapping("/complexList")
-    fun findComplexStores(): List<ComplexBookStore> =
-        bookStoreRepository.findAllStaticObjects(ComplexBookStore::class) {
-            asc(BookStore::name)
-        }
+    @GetMapping("/{id}")
+    fun findComplexStore(@PathVariable id: Long): ComplexBookStore? =
+        bookStoreRepository.findNullableStaticObject(ComplexBookStore::class, id)
 
     @PutMapping
     fun saveBookStore(@RequestBody input: BookStoreInput): BookStore =

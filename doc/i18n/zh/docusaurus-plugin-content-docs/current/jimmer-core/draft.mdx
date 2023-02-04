@@ -63,10 +63,10 @@ interface TreeNode {
 ```groovy title="build.gradle"
 dependencies {
 
-    implementation 'org.babyfish.jimmer:jimmer-core:0.6.23'
+    implementation 'org.babyfish.jimmer:jimmer-core:0.6.32-0.7-preview'
 
     // highlight-next-line
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.23'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.32-0.7-preview'
     // This annotation processor generates source code
     // for INTERFACEs marked by
     // `@org.babyfish.jimmer.Immutable` or
@@ -84,9 +84,9 @@ plugins {
 }
 dependencies {
 
-    implementation("org.babyfish.jimmer:jimmer-core-kotlin:0.6.23")
+    implementation("org.babyfish.jimmer:jimmer-core-kotlin:0.6.32-0.7-preview")
     // highlight-next-line
-    ksp("org.babyfish.jimmer:jimmer-ksp:0.6.23")
+    ksp("org.babyfish.jimmer:jimmer-ksp:0.6.32-0.7-preview")
     // The ksp plugin generates source code
     // for INTERFACEs marked by
     // `@org.babyfish.jimmer.Immutable` or

@@ -42,12 +42,11 @@ public class BookStoreService {
         );
     }
 
-    @GetMapping("/complexList")
-    public List<@FetchBy("COMPLEX_FETCHER") BookStore> findComplexStores() {
-        return bookStoreRepository.findAll(
-                COMPLEX_FETCHER,
-                BookStoreProps.NAME
-        );
+    @GetMapping("/{id}")
+    public @FetchBy("COMPLEX_FETCHER") BookStore findComplexStore(
+            @PathVariable("id") long id
+    ) {
+        return bookStoreRepository.findNullable(id, COMPLEX_FETCHER);
     }
 
     private static final Fetcher<BookStore> SIMPLE_FETCHER =
