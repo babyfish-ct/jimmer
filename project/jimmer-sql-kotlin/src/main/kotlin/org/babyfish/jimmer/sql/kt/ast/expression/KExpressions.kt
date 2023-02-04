@@ -33,24 +33,30 @@ fun <T: Any> KNonNullExpression<T>.asNullable(): KNullableExpression<T> =
 
 
 
-fun and(vararg predicates: KNonNullExpression<Boolean>): KNonNullExpression<Boolean> =
+fun and(vararg predicates: KNonNullExpression<Boolean>?): KNonNullExpression<Boolean>? =
     if (predicates.size == 1) {
         predicates[0]
     } else {
-        AndPredicate(predicates.map { it.toKtPredicateImpl() })
+        predicates
+            .mapNotNull { it?.toKtPredicateImpl() }
+            .takeIf { it.isNotEmpty() }
+            ?.let { AndPredicate(it) }
     }
 
-fun or(vararg predicates: KNonNullExpression<Boolean>): KNonNullExpression<Boolean> =
+fun or(vararg predicates: KNonNullExpression<Boolean>?): KNonNullExpression<Boolean>? =
     if (predicates.size == 1) {
         predicates[0]
     } else {
-        OrPredicate(predicates.map { it.toKtPredicateImpl() })
+        predicates
+            .mapNotNull { it?.toKtPredicateImpl() }
+            .takeIf { it.isNotEmpty() }
+            ?.let { OrPredicate(it) }
     }
+
+
 
 fun KNonNullExpression<Boolean>.not(): KNonNullExpression<Boolean> =
-    toKtPredicateImpl().not()
-
-
+    this.toKtPredicateImpl().not()
 
 fun KExpression<*>.isNull(): KNonNullExpression<Boolean> =
     IsNullPredicate(this)

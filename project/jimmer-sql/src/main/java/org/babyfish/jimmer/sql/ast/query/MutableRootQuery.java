@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.query.selectable.RootSelectable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 public interface MutableRootQuery<T extends Table<?>> extends MutableQuery, RootSelectable<T> {
@@ -35,15 +36,16 @@ public interface MutableRootQuery<T extends Table<?>> extends MutableQuery, Root
     @OldChain
     @SuppressWarnings("unchecked")
     @Override
-    default MutableRootQuery<T> orderBy(Expression<?>... expressions) {
-        return (MutableRootQuery<T>) MutableQuery.super.orderBy(expressions);
-    }
+    MutableRootQuery<T> orderBy(Expression<?>... expressions);
 
     @OldChain
     @SuppressWarnings("unchecked")
     @Override
     default MutableRootQuery<T> orderByIf(boolean condition, Expression<?>... expressions) {
-        return (MutableRootQuery<T>) MutableQuery.super.orderByIf(condition, expressions);
+        if (condition) {
+            orderBy(expressions);
+        }
+        return this;
     }
 
     @OldChain
@@ -54,7 +56,23 @@ public interface MutableRootQuery<T extends Table<?>> extends MutableQuery, Root
     @SuppressWarnings("unchecked")
     @Override
     default MutableRootQuery<T> orderByIf(boolean condition, Order... orders) {
-        return (MutableRootQuery<T>) MutableQuery.super.orderByIf(condition, orders);
+        if (condition) {
+            orderBy(orders);
+        }
+        return this;
+    }
+
+    @OldChain
+    @Override
+    MutableRootQuery<T> orderBy(List<Order> orders);
+
+    @OldChain
+    @Override
+    default MutableRootQuery<T> orderByIf(boolean condition, List<Order> orders) {
+        if (condition) {
+            orderBy(orders);
+        }
+        return this;
     }
 
     @Override

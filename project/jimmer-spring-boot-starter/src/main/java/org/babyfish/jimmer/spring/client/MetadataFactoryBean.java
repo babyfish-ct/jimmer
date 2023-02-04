@@ -88,7 +88,7 @@ public class MetadataFactoryBean implements FactoryBean<Metadata> {
                                     return null;
                                 }
                                 return new Tuple2<>(
-                                        text(requestParam.value(), requestParam.name(), javaParameter.getName()),
+                                        notEmpty(requestParam.value(), requestParam.name(), javaParameter.getName()),
                                         !requestParam.required()
                                 );
                             }
@@ -100,7 +100,7 @@ public class MetadataFactoryBean implements FactoryBean<Metadata> {
                                 if (pathVariable == null) {
                                     return null;
                                 }
-                                return text(pathVariable.value(), pathVariable.name(), javaParameter.getName());
+                                return notEmpty(pathVariable.value(), pathVariable.name(), javaParameter.getName());
                             }
 
                             @Override
@@ -123,10 +123,10 @@ public class MetadataFactoryBean implements FactoryBean<Metadata> {
                 return path;
             }
         }
-        return null;
+        return "";
     }
 
-    private static String text(String a, String b, String c) {
+    private static String notEmpty(String a, String b, String c) {
         if (!a.isEmpty()) {
             return a;
         }

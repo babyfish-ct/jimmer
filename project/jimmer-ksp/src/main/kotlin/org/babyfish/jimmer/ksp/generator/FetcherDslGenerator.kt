@@ -163,7 +163,7 @@ class FetcherDslGenerator(
                         addParameter(
                             "childFetcher",
                             FETCHER_CLASS_NAME.parameterizedBy(
-                                prop.targetTypeName()
+                                prop.targetTypeName(overrideNullable = false)
                             )
                         )
                         addParameter(cfgBlockParameter)

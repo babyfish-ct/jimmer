@@ -51,6 +51,12 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     }
 }
 
+tasks.withType(JavaCompile::class) {
+    options.compilerArgs.add("-Ajimmer.dtoDirs=src/test/dto")
+    inputs.files("src/test/dto")
+}
+
 ksp {
     arg("jimmer.source.excludes", "org.babyfish.jimmer.spring.java")
+    arg("jimmer.dtoDirs", "src/test/dto")
 }

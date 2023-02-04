@@ -96,16 +96,27 @@ public abstract class AbstractMutableQueryImpl
     @Override
     public AbstractMutableQueryImpl orderBy(Expression<?> ... expressions) {
         validateMutable();
-        return (AbstractMutableQueryImpl)MutableQuery.super.orderBy(expressions);
+        Order[] orders = new Order[expressions.length];
+        for (int i = orders.length - 1; i >= 0; --i) {
+            Expression<?> expression = expressions[i];
+            if (expression != null) {
+                orders[i] = new Order(expression, OrderMode.ASC, NullOrderMode.UNSPECIFIED);
+            }
+        }
+        return orderBy(orders);
     }
 
     @Override
     public AbstractMutableQueryImpl orderByIf(boolean condition, Expression<?>... expressions) {
-        return (AbstractMutableQueryImpl) MutableQuery.super.orderByIf(condition, expressions);
+        if (condition) {
+            orderBy(expressions);
+        }
+        return this;
     }
 
     @Override
     public AbstractMutableQueryImpl orderBy(Order... orders) {
+        validateMutable();
         for (Order order : orders) {
             if (order != null) {
                 this.orders.add(order);
@@ -116,7 +127,31 @@ public abstract class AbstractMutableQueryImpl
 
     @Override
     public AbstractMutableQueryImpl orderByIf(boolean condition, Order... orders) {
-        return (AbstractMutableQueryImpl) MutableQuery.super.orderByIf(condition, orders);
+        if (condition) {
+            orderBy(orders);
+        }
+        return this;
+    }
+
+    @OldChain
+    @Override
+    public AbstractMutableQueryImpl orderBy(List<Order> orders) {
+        validateMutable();
+        for (Order order : orders) {
+            if (order != null) {
+                this.orders.add(order);
+            }
+        }
+        return this;
+    }
+
+    @OldChain
+    @Override
+    public AbstractMutableQueryImpl orderByIf(boolean condition, List<Order> orders) {
+        if (condition) {
+            orderBy(orders);
+        }
+        return this;
     }
 
     @Override
@@ -217,8 +252,10 @@ public abstract class AbstractMutableQueryImpl
                 switch (order.getNullOrderMode()) {
                     case NULLS_FIRST:
                         builder.sql(" nulls first");
+                        break;
                     case NULLS_LAST:
                         builder.sql(" nulls last");
+                        break;
                 }
                 separator = ", ";
             }

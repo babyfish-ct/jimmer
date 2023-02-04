@@ -1,10 +1,15 @@
 package org.babyfish.jimmer.apt;
 
+import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.generator.*;
+import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.apt.meta.MetaException;
-import org.babyfish.jimmer.apt.meta.StaticDeclaration;
+import org.babyfish.jimmer.dto.compiler.DtoAstException;
+import org.babyfish.jimmer.dto.compiler.DtoType;
+import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
+import org.babyfish.jimmer.sql.MappedSuperclass;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -13,6 +18,11 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
+import javax.tools.StandardLocation;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -37,17 +47,39 @@ public class ImmutableProcessor extends AbstractProcessor {
 
     private boolean processed;
 
+    private Set<String> dtoDirs;
+
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
         messager = processingEnv.getMessager();
         String includes = processingEnv.getOptions().get("jimmer.source.includes");
         String excludes = processingEnv.getOptions().get("jimmer.source.excludes");
+        String dtoDirs = processingEnv.getOptions().get("jimmer.dtoDirs");
         if (includes != null && !includes.isEmpty()) {
             this.includes = includes.trim().split("\\s*,\\s*");
         }
         if (excludes != null && !excludes.isEmpty()) {
             this.excludes = excludes.trim().split("\\s*,\\s*");
+        }
+        if (dtoDirs != null && !dtoDirs.isEmpty()) {
+            Set<String> dirs = new LinkedHashSet<>();
+            for (String path : dtoDirs.trim().split("\\*[,:;]\\s*")) {
+                if (path.startsWith("/")) {
+                    path = path.substring(1);
+                }
+                if (path.endsWith("/")) {
+                    path = path.substring(0, path.length() - 1);
+                }
+                if (!path.isEmpty()) {
+                    dirs.add(path);
+                }
+            }
+            this.dtoDirs = dirs;
+        } else {
+            Set<String> dirs = new LinkedHashSet<>();
+            dirs.add("src/main/dto");
+            this.dtoDirs = dirs;
         }
         typeUtils = new TypeUtils(
                 processingEnv.getElementUtils(),
@@ -67,10 +99,36 @@ public class ImmutableProcessor extends AbstractProcessor {
             return true;
         }
 
-        List<TypeElement> typeElements = new ArrayList<>();
-        Map<String, ImmutableType> simpleNameMap = new HashMap<>();
-        Map<String, ImmutableType> staticSimpleNameMap = new HashMap<>();
-        for (Element element : roundEnv.getRootElements()) {
+        if (roundEnv.getRootElements().isEmpty()) {
+            throw new IllegalArgumentException("Empty annotation processor task");
+        }
+
+        Map<TypeElement, ImmutableType> immutableTypeMap = parseImmutableTypes(roundEnv);
+        Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap =
+                parseDtoTypes(immutableTypeMap.values());
+        generateJimmerTypes(
+                roundEnv
+                        .getRootElements()
+                        .stream()
+                        .filter(it -> it instanceof TypeElement)
+                        .map(immutableTypeMap::get)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList()),
+                roundEnv
+        );
+        generateDtoTypes(dtoTypeMap);
+        return true;
+    }
+
+    private Map<TypeElement, ImmutableType> parseImmutableTypes(RoundEnvironment roundEnv) {
+        Map<TypeElement, ImmutableType> map = new HashMap<>();
+        Set<Element> elements = new HashSet<>();
+        elements.addAll(roundEnv.getElementsAnnotatedWith(Immutable.class));
+        elements.addAll(roundEnv.getElementsAnnotatedWith(Entity.class));
+        elements.addAll(roundEnv.getElementsAnnotatedWith(MappedSuperclass.class));
+        elements.addAll(roundEnv.getElementsAnnotatedWith(Embeddable.class));
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, elements.toString());
+        for (Element element : elements) {
             if (element instanceof TypeElement) {
                 TypeElement typeElement = (TypeElement) element;
                 String qualifiedName = typeElement.getQualifiedName().toString();
@@ -107,56 +165,103 @@ public class ImmutableProcessor extends AbstractProcessor {
                         );
                     }
                     ImmutableType immutableType = typeUtils.getImmutableType(typeElement);
-                    typeElements.add(typeElement);
-                    simpleNameMap.put(typeElement.getSimpleName().toString(), immutableType);
+                    map.put(typeElement, immutableType);
                 }
             }
         }
-        for (TypeElement typeElement : typeElements) {
+        for (TypeElement typeElement : map.keySet()) {
             typeUtils.getImmutableType(typeElement).resolve(typeUtils);
         }
-        for (TypeElement typeElement : typeElements) {
-            ImmutableType immutableType = typeUtils.getImmutableType(typeElement);
+        return map;
+    }
+
+    private Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> parseDtoTypes(
+            Collection<ImmutableType> immutableTypes
+    ) {
+        String path;
+        try {
+            path = filer.getResource(
+                    StandardLocation.CLASS_OUTPUT,
+                    "",
+                    "dummy.txt"
+            ).toUri().toString();
+        } catch (IOException ex) {
+            throw new MetaException("Failed to guess base project dir", ex);
+        }
+        if (path.startsWith("file://")) {
+            path = path.substring(7);
+        }
+        path = path.substring(0, path.lastIndexOf('/'));
+        File file = new File(path);
+        List<String> actualDtoDirs = new ArrayList<>();
+        while (file != null) {
+            collectActualDtoDir(file, actualDtoDirs);
+            file = file.getParentFile();
+        }
+
+        Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoMap = new HashMap<>();
+        for (ImmutableType immutableType : immutableTypes) {
             if (immutableType.isEntity()) {
-                for (StaticDeclaration declaration : immutableType.getStaticDeclarationMap().values()) {
-                    String topLevelName = declaration.getTopLevelName();
-                    if (!topLevelName.isEmpty()) {
-                        ImmutableType conflictImmutableType = simpleNameMap.get(topLevelName);
-                        if (conflictImmutableType != null) {
+                for (String actualDtoDir : actualDtoDirs) {
+                    File dtoFile = new File(
+                            actualDtoDir +
+                                    '/' +
+                                    immutableType.getQualifiedName().replace('.', '/') +
+                                    ".dto"
+                    );
+                    if (dtoFile.exists()) {
+                        List<DtoType<ImmutableType, ImmutableProp>> dtoTypes;
+                        try (InputStream in = new FileInputStream(dtoFile)) {
+                            dtoTypes = new AptDtoCompiler(immutableType).compile(in);
+                        } catch (DtoAstException ex) {
                             throw new MetaException(
-                                    "Illegal type \"" +
-                                            immutableType.getQualifiedName() +
-                                            "\", it declares static type \"" +
-                                            topLevelName +
-                                            "\", this simple name is conflict with the immutable type \"" +
-                                            conflictImmutableType.getQualifiedName() +
-                                            "\""
+                                    "Failed to parse \"" +
+                                            dtoFile.getAbsolutePath() +
+                                            "\": " +
+                                            ex.getMessage(),
+                                    ex
+                            );
+                        } catch (IOException ex) {
+                            throw new MetaException(
+                                    "Failed to read \"" +
+                                            dtoFile.getAbsolutePath() +
+                                            "\": " +
+                                            ex.getMessage(),
+                                    ex
                             );
                         }
-                        conflictImmutableType =
-                                staticSimpleNameMap.put(topLevelName, immutableType);
-                        if (conflictImmutableType != null) {
+                        dtoMap.put(immutableType, dtoTypes);
+                    }
+                }
+            }
+        }
+        for (Map.Entry<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> e : dtoMap.entrySet()) {
+            ImmutableType type = e.getKey();
+            for (DtoType<ImmutableType, ImmutableProp> dtoType : e.getValue()) {
+                for (Map.Entry<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> otherEntry : dtoMap.entrySet()) {
+                    ImmutableType otherType = otherEntry.getKey();
+                    for (DtoType<ImmutableType, ImmutableProp> otherDtoType : otherEntry.getValue()) {
+                        if (type != otherType && Objects.equals(dtoType.getName(), otherDtoType.getName())) {
                             throw new MetaException(
-                                    "Duplicated static type \"" +
-                                            topLevelName +
-                                            "\" declared in \"" +
-                                            immutableType.getQualifiedName() +
-                                            "\"" +
-                                            (
-                                                    conflictImmutableType != immutableType ?
-                                                            "and \"" +
-                                                                    conflictImmutableType.getQualifiedName() +
-                                                                    "\"" :
-                                                            ""
-                                            )
+                                    "Conflict dto type name, the \"" +
+                                            type.getQualifiedName() +
+                                            "\" and \"" +
+                                            otherType.getQualifiedName() +
+                                            "\" are belong to same package, " +
+                                            "but they have define a dto type named \"" +
+                                            dtoType.getName() +
+                                            "\""
                             );
                         }
                     }
                 }
             }
         }
-        for (TypeElement typeElement : typeElements) {
-            ImmutableType immutableType = typeUtils.getImmutableType(typeElement);
+        return dtoMap;
+    }
+
+    private void generateJimmerTypes(Collection<ImmutableType> immutableTypes, RoundEnvironment roundEnv) {
+        for (ImmutableType immutableType : immutableTypes) {
             new DraftGenerator(
                     immutableType,
                     filer
@@ -186,14 +291,6 @@ public class ImmutableProcessor extends AbstractProcessor {
                         immutableType,
                         filer
                 ).generate();
-                for (StaticDeclaration declaration : immutableType.getStaticDeclarationMap().values()) {
-                    if (!declaration.getTopLevelName().isEmpty()) {
-                        new StaticDeclarationGenerator(
-                                declaration,
-                                filer
-                        ).generate();
-                    }
-                }
             } else if (immutableType.isEmbeddable()) {
                 new PropExpressionGenerator(
                         typeUtils,
@@ -202,7 +299,6 @@ public class ImmutableProcessor extends AbstractProcessor {
                 ).generate();
             }
         }
-        messager.printMessage(Diagnostic.Kind.NOTE, "JimmerModule");
         PackageCollector packageCollector = new PackageCollector();
         for (Element element : roundEnv.getElementsAnnotatedWith(Entity.class)) {
             packageCollector.accept((TypeElement) element);
@@ -212,7 +308,34 @@ public class ImmutableProcessor extends AbstractProcessor {
                 packageCollector.getTypeElements(),
                 filer
         ).generate();
-        return true;
+    }
+
+    private void generateDtoTypes(Map<?, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap) {
+        for (List<DtoType<ImmutableType, ImmutableProp>> dtoTypes : dtoTypeMap.values()) {
+            for (DtoType<ImmutableType, ImmutableProp> dtoType : dtoTypes) {
+                new DtoGenerator(dtoType, filer).generate();
+            }
+        }
+    }
+
+    private void collectActualDtoDir(File baseFile, List<String> outputFiles) {
+        for (String dtoDir : dtoDirs) {
+            File subFile = baseFile;
+            for (String part : dtoDir.split("/")) {
+                subFile = new File(subFile, part);
+                if (!subFile.isDirectory()) {
+                    subFile = null;
+                    break;
+                }
+            }
+            if (subFile != null) {
+                String path = subFile.getAbsolutePath();
+                if (path.endsWith("/")) {
+                    path = path.substring(0, path.length() - 1);
+                }
+                outputFiles.add(path);
+            }
+        }
     }
 
     private static class PackageCollector {
@@ -223,7 +346,7 @@ public class ImmutableProcessor extends AbstractProcessor {
 
         private String str;
 
-        private List<TypeElement> typeElements = new ArrayList<>();
+        private final List<TypeElement> typeElements = new ArrayList<>();
 
         public void accept(TypeElement typeElement) {
             typeElements.add(typeElement);

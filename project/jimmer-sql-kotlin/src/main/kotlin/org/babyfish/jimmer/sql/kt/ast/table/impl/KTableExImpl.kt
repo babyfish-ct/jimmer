@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.table.impl
 
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
+import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
@@ -15,8 +16,8 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 internal abstract class KTableExImpl<E: Any>(
-    val javaTable: TableImplementor<E>
-): Ast, KTableEx<E>, TableSelection by(javaTable) {
+    override val javaTable: TableImplementor<E>
+): Ast, KTableEx<E>, KTableImplementor<E>, TableSelection by(javaTable) {
 
     override fun <X : Any> outerJoin(prop: String): KNullableTableEx<X> =
         KNullableTableExImpl(javaTable.join(prop, JoinType.LEFT))

@@ -5,10 +5,8 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.TypeUtils;
+import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
-import org.babyfish.jimmer.pojo.AutoScalarStrategy;
-import org.babyfish.jimmer.pojo.Static;
-import org.babyfish.jimmer.pojo.Statics;
 import org.babyfish.jimmer.sql.*;
 
 import javax.lang.model.element.*;
@@ -18,7 +16,7 @@ import javax.lang.model.type.TypeMirror;
 import java.lang.annotation.Annotation;
 import java.util.*;
 
-public class ImmutableProp {
+public class ImmutableProp implements BaseProp {
 
     private final ImmutableType declaringType;
 
@@ -52,6 +50,8 @@ public class ImmutableProp {
 
     private final boolean isTransient;
 
+    private final boolean hasTransientResolver;
+
     private final boolean isList;
 
     private final boolean isAssociation;
@@ -60,11 +60,7 @@ public class ImmutableProp {
 
     private final boolean isNullable;
 
-    private final boolean isInputNotNull;
-
     private final Map<ClassName, String> validationMessageMap;
-
-    private final Map<String, StaticProp> staticPropMap;
 
     private Annotation associationAnnotation;
 
@@ -98,7 +94,8 @@ public class ImmutableProp {
             );
         }
 
-        if (getterName.startsWith("is") &&
+        if (returnType.getKind() == TypeKind.BOOLEAN &&
+                getterName.startsWith("is") &&
                 getterName.length() > 2 &&
                 Character.isUpperCase(getterName.charAt(2))) {
             name =
@@ -168,6 +165,24 @@ public class ImmutableProp {
 
         Transient trans = executableElement.getAnnotation(Transient.class);
         isTransient = trans != null;
+        boolean hasResolver = false;
+        if (isTransient) {
+            for (AnnotationMirror mirror : executableElement.getAnnotationMirrors()) {
+                if (((TypeElement) mirror.getAnnotationType().asElement())
+                        .getQualifiedName()
+                        .toString()
+                        .equals(Transient.class.getName())) {
+                    for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e : mirror.getElementValues().entrySet()) {
+                        if (e.getKey().getSimpleName().contentEquals("value")) {
+                            hasResolver = !e.getValue().toString().equals("void");
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        hasTransientResolver = hasResolver;
+
         isAssociation = typeUtils.isImmutable(elementType);
         isEntityAssociation = typeUtils.isEntity(elementType);
         if (isList && typeUtils.isEmbeddable(elementType)) {
@@ -210,31 +225,6 @@ public class ImmutableProp {
             associationAnnotation = executableElement.getAnnotation(descriptor.getType().getAnnotationType());
         }
         isNullable = descriptor.isNullable();
-        ManyToOne manyToOne = getAnnotation(ManyToOne.class);
-        OneToOne oneToOne = getAnnotation(OneToOne.class);
-        if (manyToOne != null || oneToOne != null) {
-            isInputNotNull = manyToOne != null ? manyToOne.inputNotNull() : oneToOne.inputNotNull();
-            if (isInputNotNull && oneToOne != null && !oneToOne.mappedBy().isEmpty()) {
-                throw new MetaException(
-                        "Illegal property \"" +
-                                this +
-                                "\", the `inputNotNull` of annotation @" +
-                                (manyToOne != null ? "ManyToOne" : "OneToOne") +
-                                " is true but the `mappedBy` of that annotation is specified"
-                );
-            }
-            if (isInputNotNull && !isNullable) {
-                throw new MetaException(
-                        "Illegal property \"" +
-                                this +
-                                "\", the `inputNotNull` of annotation @" +
-                                (manyToOne != null ? "ManyToOne" : "OneToOne") +
-                                " is true but the property is not nullable"
-                );
-            }
-        } else {
-            isInputNotNull = false;
-        }
 
         elementTypeName = TypeName.get(elementType);
         if (isList) {
@@ -264,38 +254,13 @@ public class ImmutableProp {
         }
 
         this.validationMessageMap = ValidationMessages.parseMessageMap(executableElement);
-
-        Map<String, StaticProp> staticPropMap = new HashMap<>();
-        Statics statics = getAnnotation(Statics.class);
-        if (statics != null) {
-            for (Static s : statics.value()) {
-                if (staticPropMap.put(s.alias(), staticProp(s)) != null) {
-                    throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", conflict alias \"" +
-                                    s.alias() +
-                                    "\" in several @Static annotations"
-                    );
-                }
-            }
-        } else {
-            Static s = getAnnotation(Static.class);
-            if (s != null) {
-                staticPropMap.put(s.alias(), staticProp(s));
-            }
-        }
-        this.staticPropMap = staticPropMap;
-    }
-
-    public ImmutableType getDeclaringType() {
-        return declaringType;
     }
 
     public int getId() {
         return id;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -350,6 +315,10 @@ public class ImmutableProp {
         return isTransient;
     }
 
+    public boolean hasTransientResolver() {
+        return hasTransientResolver;
+    }
+
     public boolean isList() {
         return isList;
     }
@@ -360,10 +329,6 @@ public class ImmutableProp {
 
     public boolean isNullable() {
         return isNullable;
-    }
-
-    public boolean isInputNotNull() {
-        return isInputNotNull;
     }
 
     public boolean isLoadedStateRequired() {
@@ -413,60 +378,6 @@ public class ImmutableProp {
         return targetType;
     }
 
-    public StaticProp getStaticProp(String alias) {
-        StaticProp staticProp = staticPropMap.get(alias);
-        if (staticProp == null) {
-            staticProp = staticPropMap.get("");
-        }
-        return staticProp;
-    }
-
-    public void resolve(TypeUtils typeUtils, ImmutableType declaringType) {
-        for (StaticProp staticProp : staticPropMap.values()) {
-            if (declaringType.isEntity() && !staticProp.getAlias().isEmpty() && !declaringType.getStaticDeclarationMap().containsKey(staticProp.getAlias())) {
-                throw new MetaException(
-                        "Illegal property \"" +
-                                this +
-                                "\", it is decorated by the annotation @Static " +
-                                "whose `alias` is \"" +
-                                staticProp.getAlias() +
-                                "\", but the declaring entity \"" +
-                                declaringType.getQualifiedName() +
-                                "\" does not have a static type whose alias is \"" +
-                                staticProp.getAlias() +
-                                "\""
-                );
-            }
-            if (isAssociation) {
-                targetType = typeUtils.getImmutableType(elementType);
-                if (!staticProp.isIdOnly()) {
-                    StaticDeclaration targetStaticType = targetType.getStaticDeclarationMap().get(staticProp.getTargetAlias());
-                    if (targetStaticType != null) {
-                        staticPropMap.put(staticProp.getAlias(), staticProp.target(targetStaticType));
-                    } else if (staticProp.getTargetAlias().isEmpty()) {
-                        staticPropMap.put(
-                                staticProp.getAlias(),
-                                staticProp.target(new StaticDeclaration(targetType, "", "", AutoScalarStrategy.ALL, false))
-                        );
-                    } else {
-                        throw new MetaException(
-                                "Illegal property \"" +
-                                        this +
-                                        "\", it is decorated by the annotation @Static " +
-                                        "whose `targetAlias` is \"" +
-                                        staticProp.getTargetAlias() +
-                                        "\", but the target entity \"" +
-                                        targetType.getQualifiedName() +
-                                        "\" does not have a static type whose alias is \"" +
-                                        staticProp.getTargetAlias() +
-                                        "\""
-                        );
-                    }
-                }
-            }
-        }
-    }
-
     @Override
     public String toString() {
         return declaringType.getTypeElement().getQualifiedName().toString() + '.' + name;
@@ -476,49 +387,9 @@ public class ImmutableProp {
         return validationMessageMap;
     }
 
-    private StaticProp staticProp(Static s) {
-        if (isTransient) {
-            throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", it is decorated by both @Static and @Transient, " +
-                            "this is not allowed"
-            );
+    public void resolve(TypeUtils typeUtils) {
+        if (isAssociation && targetType == null) {
+            targetType = typeUtils.getImmutableType(elementType);
         }
-        if (s.optional() && isNullable) {
-            throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", it is decorated by the annotation @Static " +
-                            "whose `optional` is true, it is not allowed for nullable property"
-            );
-        }
-        if (s.idOnly() && !isAssociation(true)) {
-            throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", it is decorated by the annotation @Static " +
-                            "whose `idOnly` is true, it is not allowed " +
-                            "for non-orm-association property"
-            );
-        }
-        if (!s.targetAlias().isEmpty() && !isAssociation) {
-            throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", it is decorated by the annotation @Static " +
-                            "whose `targetAlias` is not empty, it is not allowed " +
-                            "for non-association property"
-            );
-        }
-        return new StaticProp(
-                this,
-                s.alias(),
-                s.name().isEmpty() ? name : s.name(),
-                s.enabled(),
-                s.optional(),
-                s.idOnly(),
-                s.targetAlias()
-        );
     }
 }

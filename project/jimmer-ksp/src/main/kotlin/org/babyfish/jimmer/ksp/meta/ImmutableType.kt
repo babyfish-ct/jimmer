@@ -5,25 +5,21 @@ import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.isAbstract
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.ClassName
+import org.babyfish.jimmer.dto.compiler.spi.BaseType
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.FETCHER_DSL
 import org.babyfish.jimmer.ksp.generator.parseValidationMessages
-import org.babyfish.jimmer.pojo.AutoScalarStrategy
-import org.babyfish.jimmer.pojo.StaticType
-import org.babyfish.jimmer.pojo.StaticTypes
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.Id
 import org.babyfish.jimmer.sql.MappedSuperclass
-import java.util.regex.Pattern
 import kotlin.reflect.KClass
-import kotlin.reflect.full.superclasses
 
 class ImmutableType(
     ctx: Context,
     private val classDeclaration: KSClassDeclaration
-) {
+) : BaseType {
     val simpleName: String = classDeclaration.simpleName.asString()
 
     val className: ClassName = classDeclaration.className()
@@ -58,7 +54,13 @@ class ImmutableType(
         annotationType
     }
 
-    val isEntity: Boolean = classDeclaration.annotation(Entity::class) !== null
+    override val name: String
+        get() = classDeclaration.simpleName!!.asString()
+
+    override val qualifiedName: String
+        get() = classDeclaration.qualifiedName!!.asString()
+
+    override val isEntity: Boolean = classDeclaration.annotation(Entity::class) !== null
 
     val isMappedSuperclass: Boolean = classDeclaration.annotation(MappedSuperclass::class) != null
 
@@ -197,95 +199,6 @@ class ImmutableType(
     val validationMessages: Map<ClassName, String> =
         parseValidationMessages(classDeclaration)
 
-    val declaredStaticDeclarationMap: Map<String, StaticDeclaration> =
-        mutableListOf<KSAnnotation>()
-            .apply {
-                this += classDeclaration.annotations(StaticType::class)
-                for (staticTypes in classDeclaration.annotations(StaticTypes::class)) {
-                    this += staticTypes["value"] ?: emptyList<KSAnnotation>()
-                }
-            }
-            .map {
-                StaticDeclaration(
-                    immutableType = this,
-                    alias = it.get<String>("alias")?.takeIf { it.isNotEmpty() } ?:
-                        throw MetaException(
-                            "Illegal type \"${classDeclaration.fullName}\", " +
-                                "the `alias` of the annotation " +
-                                "@${StaticType::class.qualifiedName} must be specified"
-                        ),
-                    topLevelName = (it["topLevelName"] ?: "")
-                        .also { name ->
-                              if (name.isNotEmpty()) {
-                                  for (suffix in ILLEGAL_STATIC_SUFFIX) {
-                                      if (name.endsWith(suffix)) {
-                                          throw MetaException(
-                                              "Illegal type \"${classDeclaration.fullName}\", " +
-                                                  "it is decorated by @${StaticType::class.qualifiedName}," +
-                                                  "the value \"${name}\" of annotation argument \"topLevelName\"" +
-                                                  " is illegal, it cannot end \"$suffix\""
-                                          )
-                                      }
-                                  }
-                                  if (!STATIC_TYPE_PATTERN.matcher(name).matches()) {
-                                      throw MetaException(
-                                          "Illegal type \"${classDeclaration.fullName}\", " +
-                                              "it is decorated by @${StaticType::class.qualifiedName}," +
-                                              "the value \"${name}\" of annotation argument \"topLevelName\"" +
-                                              " is illegal, it must match the regexp \"${STATIC_TYPE_PATTERN.pattern()}\""
-                                      )
-                                  }
-                              }
-                        },
-                    autoScalarStrategy = when (it.get<KSType>("autoScalarStrategy")?.declaration?.simpleName?.asString()) {
-                        "DECLARED" -> AutoScalarStrategy.DECLARED
-                        "NONE" -> AutoScalarStrategy.NONE
-                        else -> AutoScalarStrategy.ALL
-                    },
-                    allOptional = it["allOptional"] ?: false
-                )
-            }
-            .let {
-                val map = mutableMapOf<String, StaticDeclaration>()
-                for (staticDeclaration in it) {
-                    if (map.put(staticDeclaration.alias, staticDeclaration) !== null) {
-                        throw MetaException(
-                            "Illegal type \"${classDeclaration.fullName}\", " +
-                                "it is decorated by @${StaticType::class.qualifiedName}," +
-                                "the value \"${staticDeclaration.alias}\" of annotation argument \"alias\"" +
-                                " is illegal, the static type with the same alias has already been defined" +
-                                "by another @${StaticType::class.qualifiedName}\""
-                        )
-                    }
-                }
-                map
-            }
-
-    val staticDeclarationMap: Map<String, StaticDeclaration> =
-        if (superType == null) {
-            declaredStaticDeclarationMap
-        } else {
-            val staticMap = superType.staticDeclarationMap.toMutableMap()
-            for (staticDeclaration in declaredStaticDeclarationMap.values) {
-                if (staticMap.put(staticDeclaration.alias, staticDeclaration) !== null) {
-                    throw MetaException(
-                        "Illegal type \"${classDeclaration.fullName}\", " +
-                            "it is decorated by @${StaticType::class.qualifiedName}," +
-                            "the value \"${staticDeclaration.alias}\" of annotation argument \"alias\"" +
-                            " is illegal, the static type with the same alias has already been defined" +
-                            "in super types\""
-                    )
-                }
-            }
-            staticMap
-        }
-
-    internal fun resolve() {
-        for (prop in declaredProperties.values) {
-            prop.resolve()
-        }
-    }
-
     override fun toString(): String =
         classDeclaration.fullName
 
@@ -294,14 +207,5 @@ class ImmutableType(
         @JvmStatic
         private val SQL_ANNOTATION_TYPES =
             setOf(Entity::class, MappedSuperclass::class, Embeddable::class)
-
-        @JvmStatic
-        private val ILLEGAL_STATIC_SUFFIX = arrayOf(
-            "Draft", "Fetcher", "Props", "Table", "TableEx"
-        )
-
-        @JvmStatic
-        private val STATIC_TYPE_PATTERN =
-            Pattern.compile("[A-Za-z_$][A-Za-z_$0-9]*")
     }
 }

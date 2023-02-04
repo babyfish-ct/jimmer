@@ -48,5 +48,6 @@ interface Constants {
             Type.getDescriptor(Pageable.class) +
             Type.getDescriptor(Sort.class) +
             Type.getDescriptor(Fetcher.class) +
+            Type.getDescriptor(Class.class) +
             "[Ljava/lang/Object;)Ljava/lang/Object;";
 }

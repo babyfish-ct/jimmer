@@ -11,10 +11,7 @@ import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.fetcher.FieldFilterArgs;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Supplier;
 
 public class FieldFilterArgsImpl<T extends Table<?>> implements FieldFilterArgs<T> {
@@ -107,6 +104,15 @@ public class FieldFilterArgsImpl<T extends Table<?>> implements FieldFilterArgs<
     public Sortable orderBy(Order ... orders) {
         if (!sorted) {
             sorted = Arrays.stream(orders).anyMatch(Objects::nonNull);
+        }
+        return query.orderBy(orders);
+    }
+
+    @Override
+    @OldChain
+    public Sortable orderBy(List<Order> orders) {
+        if (!sorted) {
+            sorted = orders.stream().anyMatch(Objects::nonNull);
         }
         return query.orderBy(orders);
     }

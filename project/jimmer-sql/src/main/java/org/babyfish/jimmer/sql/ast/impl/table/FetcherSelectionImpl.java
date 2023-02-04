@@ -12,20 +12,36 @@ import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
-public class FetcherSelectionImpl<E> implements FetcherSelection<E>, Ast {
+import java.util.function.Function;
 
-    private final Table<E> table;
+public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
 
-    private final Fetcher<E> fetcher;
+    private final Table<?> table;
 
-    public FetcherSelectionImpl(Table<E> table, Fetcher<E> fetcher) {
+    private final Fetcher<?> fetcher;
+
+    private final Function<?, T> converter;
+
+    public FetcherSelectionImpl(Table<T> table, Fetcher<T> fetcher) {
         this.table = table;
         this.fetcher = fetcher;
+        this.converter = null;
+    }
+
+    public FetcherSelectionImpl(Table<?> table, Fetcher<?> fetcher, Function<?, T> converter) {
+        this.table = table;
+        this.fetcher = fetcher;
+        this.converter = converter;
     }
 
     @Override
-    public Fetcher<E> getFetcher() {
+    public Fetcher<?> getFetcher() {
         return fetcher;
+    }
+
+    @Override
+    public Function<?, T> getConverter() {
+        return converter;
     }
 
     @Override
