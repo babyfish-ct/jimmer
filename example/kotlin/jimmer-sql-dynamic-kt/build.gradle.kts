@@ -47,7 +47,7 @@ tasks.withType<KotlinCompile> {
 		jvmTarget = "1.8"
 
 		// Even without any code changes, modifying the dto file
-		// should cause the annotation processor to be triggered
+		// should cause the KSP to be triggered
 		inputs.files("src/main/dto")
 	}
 }

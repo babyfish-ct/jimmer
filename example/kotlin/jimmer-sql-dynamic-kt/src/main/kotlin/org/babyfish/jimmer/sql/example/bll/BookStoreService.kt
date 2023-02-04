@@ -14,8 +14,7 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/bookStore")
 @Transactional
 class BookStoreService(
-    private val bookStoreRepository: BookStoreRepository,
-    private val bookRepository: BookRepository
+    private val bookStoreRepository: BookStoreRepository
 ) {
 
     @GetMapping("/simpleList")

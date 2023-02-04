@@ -4,7 +4,12 @@ plugins {
     antlr
 }
 
-group = "org.babyfish.jimmer"
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+    withSourcesJar()
+    withJavadocJar()
+}
 
 repositories {
     mavenCentral()
@@ -19,4 +24,8 @@ dependencies {
 
 tasks.getByName<Test>("test") {
     useJUnitPlatform()
+}
+
+tasks.withType<Javadoc>{
+    options.encoding = "UTF-8"
 }
