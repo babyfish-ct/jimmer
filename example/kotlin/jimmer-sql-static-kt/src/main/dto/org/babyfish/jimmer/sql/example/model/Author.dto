@@ -1,0 +1,40 @@
+// -------- Output DTOs --------
+
+SimpleAuthor {
+    id
+    firstName
+    lastName
+}
+
+DefaultAuthor {
+    #allScalars
+}
+
+ComplexAuthor {
+
+    #allScalars
+
+    books {
+
+        #allScalars
+
+        -tenant
+
+        store {
+            #allScalars
+            avgPrice
+        }
+    }
+}
+
+// -------- Input DTOs --------
+
+input AuthorInput {
+
+    /*
+     * Here, the macro `allScalars` has parameters, that means only the
+     * scalar properties of the `Author` interface itself can be mapped automatically,
+     * excluding the scalar properties of the super interfaces.
+     */
+    #allScalars(Author)
+}

@@ -1,11 +1,10 @@
-package org.babyfish.jimmer.sql.example.dal.calc;
+package org.babyfish.jimmer.sql.example.model.calc;
 
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.example.model.*;
-import org.babyfish.jimmer.sql.filter.CacheableFilter;
 
 import java.math.BigDecimal;
 import java.sql.Connection;

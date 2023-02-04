@@ -12,7 +12,7 @@ import org.babyfish.jimmer.sql.kt.ast.table.impl.KTableImplementor
 import org.springframework.data.domain.Sort
 
 fun KMutableQuery<*>.orderBy(sort: Sort?) {
-    orderBy(*SpringOrders.toOrders((this as KTableImplementor<*>).javaTable, sort))
+    orderBy(*SpringOrders.toOrders((table as KTableImplementor<*>).javaTable, sort))
 }
 
 fun <E: Any> KMutableQuery<*>.orderBy(block: (SortDsl<E>.() -> Unit)?) {

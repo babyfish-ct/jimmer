@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.example.model;
 
 import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.example.dal.calc.BookStoreAvgPriceResolver;
+import org.babyfish.jimmer.sql.example.model.calc.BookStoreAvgPriceResolver;
 import org.babyfish.jimmer.sql.example.model.common.BaseEntity;
 
 import javax.validation.constraints.Null;
