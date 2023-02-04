@@ -29,7 +29,6 @@ class TreeService(
 
     @PutMapping("/root/recursive")
     fun saveTree(
-        @RequestParam rootName: String,
         @RequestBody input: RecursiveTreeInput
     ): TreeNode {
         val treeNode = new(TreeNode::class).by(

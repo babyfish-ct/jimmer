@@ -29,7 +29,7 @@ public class TreeService {
         this.treeNodeRepository = treeNodeRepository;
     }
 
-    @GetMapping("/root/recursive")
+    @GetMapping("/roots/recursive")
     public List<@FetchBy("RECURSIVE_FETCHER") TreeNode> findRootTrees(
             @RequestParam(required = false) String rootName,
             @RequestParam(required = false) String noRecursiveNames
@@ -40,7 +40,7 @@ public class TreeService {
         );
     }
 
-    @PutMapping
+    @PutMapping("/root/recursive")
     public TreeNode saveTree(@RequestBody RecursiveTreeInput input) {
         TreeNode rootNode = TreeNodeDraft.$.produce(
 
