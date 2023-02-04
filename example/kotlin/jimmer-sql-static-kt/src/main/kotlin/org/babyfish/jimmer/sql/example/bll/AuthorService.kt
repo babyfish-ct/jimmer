@@ -41,20 +41,11 @@ class AuthorService(
             DefaultAuthor::class
         )
 
-    @GetMapping("/complexList")
-    fun findComplexAuthors(
-        @RequestParam(defaultValue = "firstName asc, lastName asc") sortCode: String,
-        @RequestParam firstName: String?,
-        @RequestParam lastName: String?,
-        @RequestParam gender: Gender?
-    ): List<ComplexAuthor> =
-        authorRepository.findByFirstNameAndLastNameAndGender(
-            SortUtils.toSort(sortCode),
-            firstName,
-            lastName,
-            gender,
-            ComplexAuthor::class
-        )
+    @GetMapping("/{id}")
+    fun findComplexAuthor(
+        @PathVariable id: Long
+    ): ComplexAuthor? =
+        authorRepository.findNullableStaticObject(ComplexAuthor::class, id)
 
     @PutMapping
     fun saveAuthor(@RequestBody input: AuthorInput): Author =

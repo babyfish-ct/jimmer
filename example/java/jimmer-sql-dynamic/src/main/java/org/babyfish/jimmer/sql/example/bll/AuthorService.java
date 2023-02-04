@@ -43,20 +43,11 @@ public class AuthorService {
         );
     }
 
-    @GetMapping("/complexList")
-    public List<@FetchBy("COMPLEX_FETCHER") Author> findComplexAuthors(
-            @RequestParam(defaultValue = "firstName asc, lastName asc") String sortCode,
-            @RequestParam(required = false) String firstName,
-            @RequestParam(required = false) String lastName,
-            @RequestParam(required = false) Gender gender
+    @GetMapping("/{id}")
+    public @FetchBy("COMPLEX_FETCHER") Author findComplexAuthor(
+            @PathVariable("id") long id
     ) {
-        return authorRepository.findByFirstNameAndLastNameAndGender(
-                SortUtils.toSort(sortCode),
-                firstName,
-                lastName,
-                gender,
-                COMPLEX_FETCHER
-        );
+        return authorRepository.findNullable(id, COMPLEX_FETCHER);
     }
 
     private static final Fetcher<Author> SIMPLE_FETCHER =

@@ -44,23 +44,11 @@ class BookService(
             DEFAULT_FETCHER
         )
 
-    @GetMapping("/complexList")
-    fun findComplexBooks(
-        @RequestParam(defaultValue = "0") pageIndex: Int,
-        @RequestParam(defaultValue = "5") pageSize: Int,
-        // The `sortCode` also support implicit join, like `store.name asc`
-        @RequestParam(defaultValue = "name asc, edition desc") sortCode: String,
-        @RequestParam name: String?,
-        @RequestParam storeName: String?,
-        @RequestParam authorName: String?,
-    ): Page<@FetchBy("COMPLEX_FETCHER") Book> =
-        bookRepository.findBooks(
-            PageRequest.of(pageIndex, pageSize, SortUtils.toSort(sortCode)),
-            name,
-            storeName,
-            authorName,
-            COMPLEX_FETCHER
-        )
+    @GetMapping("/{id}")
+    fun findComplexBook(
+        @PathVariable id: Long,
+    ): @FetchBy("COMPLEX_FETCHER") Book? =
+        bookRepository.findNullable(id, COMPLEX_FETCHER)
 
     @PutMapping
     fun saveBook(@RequestBody input: BookInput): Book =

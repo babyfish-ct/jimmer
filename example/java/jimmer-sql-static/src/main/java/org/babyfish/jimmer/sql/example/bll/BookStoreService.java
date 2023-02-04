@@ -38,12 +38,9 @@ public class BookStoreService {
         );
     }
 
-    @GetMapping("/complexList")
-    public List<ComplexBookStore> findComplexStores() {
-        return bookStoreRepository.findAllStaticObjects(
-                ComplexBookStore.class,
-                BookStoreProps.NAME
-        );
+    @GetMapping("/{id}")
+    public ComplexBookStore findComplexStore(@PathVariable("id") long id) {
+        return bookStoreRepository.findNullableStaticObject(ComplexBookStore.class, id);
     }
 
     @PutMapping

@@ -46,23 +46,9 @@ public class BookService {
         );
     }
 
-    @GetMapping("/complexList")
-    public Page<ComplexBook> findComplexBooks(
-            @RequestParam(defaultValue = "0") int pageIndex,
-            @RequestParam(defaultValue = "5") int pageSize,
-            // The `sortCode` also support implicit join, like `store.name asc`
-            @RequestParam(defaultValue = "name asc, edition desc") String sortCode,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String storeName,
-            @RequestParam(required = false) String authorName
-    ) {
-        return bookRepository.findBooks(
-                PageRequest.of(pageIndex, pageSize, SortUtils.toSort(sortCode)),
-                name,
-                storeName,
-                authorName,
-                ComplexBook.class
-        );
+    @GetMapping("/{id}")
+    public ComplexBook findComplexBook(@PathVariable("id") long id) {
+        return bookRepository.findNullableStaticObject(ComplexBook.class, id);
     }
 
     @PutMapping

@@ -41,20 +41,9 @@ public class AuthorService {
         );
     }
 
-    @GetMapping("/complexList")
-    public List<ComplexAuthor> findComplexAuthors(
-            @RequestParam(defaultValue = "firstName asc, lastName asc") String sortCode,
-            @RequestParam(required = false) String firstName,
-            @RequestParam(required = false) String lastName,
-            @RequestParam(required = false) Gender gender
-    ) {
-        return authorRepository.findByFirstNameAndLastNameAndGender(
-                SortUtils.toSort(sortCode),
-                firstName,
-                lastName,
-                gender,
-                ComplexAuthor.class
-        );
+    @GetMapping("/{id}")
+    public ComplexAuthor findComplexAuthor(@PathVariable("id") long id) {
+        return authorRepository.findNullableStaticObject(ComplexAuthor.class, id);
     }
 
     @PutMapping

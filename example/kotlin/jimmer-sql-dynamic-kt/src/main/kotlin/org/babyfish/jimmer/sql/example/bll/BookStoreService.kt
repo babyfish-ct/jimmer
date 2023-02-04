@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.example.bll
 
 import org.babyfish.jimmer.client.FetchBy
-import org.babyfish.jimmer.sql.example.dal.BookRepository
 import org.babyfish.jimmer.sql.example.dal.BookStoreRepository
 import org.babyfish.jimmer.sql.example.model.BookStore
 import org.babyfish.jimmer.sql.example.model.by
@@ -29,11 +28,11 @@ class BookStoreService(
             asc(BookStore::name)
         }
 
-    @GetMapping("/complexList")
-    fun findComplexStores(): List<@FetchBy("COMPLEX_FETCHER") BookStore> =
-        bookStoreRepository.findAll(COMPLEX_FETCHER) {
-            asc(BookStore::name)
-        }
+    @GetMapping("/{id}")
+    fun findComplexStore(
+        @PathVariable id: Long
+    ): @FetchBy("COMPLEX_FETCHER") BookStore? =
+        bookStoreRepository.findNullable(id, COMPLEX_FETCHER)
 
     @PutMapping
     fun saveBookStore(@RequestBody input: BookStoreInput): BookStore =

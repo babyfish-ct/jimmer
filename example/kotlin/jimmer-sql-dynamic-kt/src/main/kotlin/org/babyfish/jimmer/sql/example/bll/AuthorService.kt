@@ -41,20 +41,11 @@ class AuthorService(
             DEFAULT_FETCHER
         )
 
-    @GetMapping("/complexList")
-    fun findComplexAuthors(
-        @RequestParam(defaultValue = "firstName asc, lastName asc") sortCode: String,
-        @RequestParam firstName: String?,
-        @RequestParam lastName: String?,
-        @RequestParam gender: Gender?
-    ): List<@FetchBy("COMPLEX_FETCHER") Author> =
-        authorRepository.findByFirstNameAndLastNameAndGender(
-            SortUtils.toSort(sortCode),
-            firstName,
-            lastName,
-            gender,
-            COMPLEX_FETCHER
-        )
+    @GetMapping("/{id}")
+    fun findComplexAuthor(
+        @PathVariable id: Long
+    ): @FetchBy("COMPLEX_FETCHER") Author? =
+        authorRepository.findNullable(id, COMPLEX_FETCHER)
 
     @PutMapping
     fun saveAuthor(@RequestBody input: AuthorInput): Author =
