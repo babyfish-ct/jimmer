@@ -37,10 +37,10 @@ class Constants {
     public static final ClassName INPUT_CLASS_NAME =
             ClassName.get(Input.class);
 
-    public static final ClassName DTO_METADATA_CLASS_NAME =
+    public static final ClassName STATIC_METADATA_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher",
-                    "DtoMetadata"
+                    "StaticMetadata"
             );
 
     public static final ClassName DRAFT_CONTEXT_CLASS_NAME =

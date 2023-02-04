@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.Entities
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.table.Table
-import org.babyfish.jimmer.sql.fetcher.DtoMetadata
+import org.babyfish.jimmer.sql.fetcher.StaticMetadata
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KEntities
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
@@ -141,8 +141,8 @@ internal class KEntitiesImpl(
         example: KExample<E>?,
         block: (SortDsl<E>.() -> Unit)?
     ): List<S> {
-        val dtoMetadata = DtoMetadata.of(staticType.java)
-        val type = dtoMetadata.fetcher.immutableType
+        val staticMetadata = StaticMetadata.of(staticType.java)
+        val type = staticMetadata.fetcher.immutableType
         if (example !== null && example.type !== type) {
             throw IllegalArgumentException(
                 "The type \"${example.type}\" of example does not match the query type \"$type\""

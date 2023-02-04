@@ -1,12 +1,15 @@
 package org.babyfish.jimmer.apt;
 
+import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.generator.*;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.apt.meta.MetaException;
 import org.babyfish.jimmer.meta.impl.dto.ast.DtoType;
 import org.babyfish.jimmer.meta.impl.dto.ast.DtoAstException;
+import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
+import org.babyfish.jimmer.sql.MappedSuperclass;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -22,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @SupportedAnnotationTypes({
         "org.babyfish.jimmer.Immutable",
@@ -95,17 +99,36 @@ public class ImmutableProcessor extends AbstractProcessor {
             return true;
         }
 
+        if (roundEnv.getRootElements().isEmpty()) {
+            throw new IllegalArgumentException("Empty annotation processor task");
+        }
+
         Map<TypeElement, ImmutableType> immutableTypeMap = parseImmutableTypes(roundEnv);
         Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap =
                 parseDtoTypes(immutableTypeMap.values());
-        generateJimmerTypes(immutableTypeMap.values(), roundEnv);
+        generateJimmerTypes(
+                roundEnv
+                        .getRootElements()
+                        .stream()
+                        .filter(it -> it instanceof TypeElement)
+                        .map(immutableTypeMap::get)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList()),
+                roundEnv
+        );
         generateDtoTypes(dtoTypeMap);
         return true;
     }
 
     private Map<TypeElement, ImmutableType> parseImmutableTypes(RoundEnvironment roundEnv) {
         Map<TypeElement, ImmutableType> map = new HashMap<>();
-        for (Element element : roundEnv.getRootElements()) {
+        Set<Element> elements = new HashSet<>();
+        elements.addAll(roundEnv.getElementsAnnotatedWith(Immutable.class));
+        elements.addAll(roundEnv.getElementsAnnotatedWith(Entity.class));
+        elements.addAll(roundEnv.getElementsAnnotatedWith(MappedSuperclass.class));
+        elements.addAll(roundEnv.getElementsAnnotatedWith(Embeddable.class));
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, elements.toString());
+        for (Element element : elements) {
             if (element instanceof TypeElement) {
                 TypeElement typeElement = (TypeElement) element;
                 String qualifiedName = typeElement.getQualifiedName().toString();
@@ -178,35 +201,37 @@ public class ImmutableProcessor extends AbstractProcessor {
 
         Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoMap = new HashMap<>();
         for (ImmutableType immutableType : immutableTypes) {
-            for (String actualDtoDir : actualDtoDirs) {
-                File dtoFile = new File(
-                        actualDtoDir +
-                                '/' +
-                                immutableType.getQualifiedName().replace('.', '/') +
-                                ".dto"
-                );
-                if (dtoFile.exists()) {
-                    List<DtoType<ImmutableType, ImmutableProp>> dtoTypes;
-                    try (InputStream in = new FileInputStream(dtoFile)) {
-                        dtoTypes = new AptDtoCompiler(immutableType).compile(in);
-                    } catch (DtoAstException ex) {
-                        throw new MetaException(
-                                "Failed to parse \"" +
-                                        dtoFile.getAbsolutePath() +
-                                        "\": " +
-                                        ex.getMessage(),
-                                ex
-                        );
-                    } catch (IOException ex) {
-                        throw new MetaException(
-                                "Failed to read \"" +
-                                        dtoFile.getAbsolutePath() +
-                                        "\": " +
-                                        ex.getMessage(),
-                                ex
-                        );
+            if (immutableType.isEntity()) {
+                for (String actualDtoDir : actualDtoDirs) {
+                    File dtoFile = new File(
+                            actualDtoDir +
+                                    '/' +
+                                    immutableType.getQualifiedName().replace('.', '/') +
+                                    ".dto"
+                    );
+                    if (dtoFile.exists()) {
+                        List<DtoType<ImmutableType, ImmutableProp>> dtoTypes;
+                        try (InputStream in = new FileInputStream(dtoFile)) {
+                            dtoTypes = new AptDtoCompiler(immutableType).compile(in);
+                        } catch (DtoAstException ex) {
+                            throw new MetaException(
+                                    "Failed to parse \"" +
+                                            dtoFile.getAbsolutePath() +
+                                            "\": " +
+                                            ex.getMessage(),
+                                    ex
+                            );
+                        } catch (IOException ex) {
+                            throw new MetaException(
+                                    "Failed to read \"" +
+                                            dtoFile.getAbsolutePath() +
+                                            "\": " +
+                                            ex.getMessage(),
+                                    ex
+                            );
+                        }
+                        dtoMap.put(immutableType, dtoTypes);
                     }
-                    dtoMap.put(immutableType, dtoTypes);
                 }
             }
         }

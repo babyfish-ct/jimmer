@@ -23,7 +23,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.cache.CacheLoader;
-import org.babyfish.jimmer.sql.fetcher.DtoMetadata;
+import org.babyfish.jimmer.sql.fetcher.StaticMetadata;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.fetcher.impl.Fetchers;
@@ -335,8 +335,8 @@ public class EntitiesImpl implements Entities {
     @SuppressWarnings("unchecked")
     @Override
     public <ID, E, S extends Static<E>> Map<ID, S> findStaticObjectMapByIds(Class<S> staticType, Collection<ID> ids) {
-        DtoMetadata<E, S> dtoMetadata = DtoMetadata.of(staticType);
-        Fetcher<E> fetcher = dtoMetadata.getFetcher();
+        StaticMetadata<E, S> staticMetadata = StaticMetadata.of(staticType);
+        Fetcher<E> fetcher = staticMetadata.getFetcher();
         ImmutableProp idProp = ImmutableType.get(fetcher.getJavaClass()).getIdProp();
         return this.findStaticObjectsByIds(staticType, ids, con).stream().collect(
                 Collectors.toMap(
@@ -353,9 +353,9 @@ public class EntitiesImpl implements Entities {
             Collection<?> ids,
             Connection con
     ) {
-        DtoMetadata<E, S> dtoMetadata = DtoMetadata.of(staticType);
-        Fetcher<E> fetcher = dtoMetadata.getFetcher();
-        Function<E, S> converter = dtoMetadata.getConverter();
+        StaticMetadata<E, S> staticMetadata = StaticMetadata.of(staticType);
+        Fetcher<E> fetcher = staticMetadata.getFetcher();
+        Function<E, S> converter = staticMetadata.getConverter();
         List<E> entities = findByIds(fetcher, ids, con);
         List<S> dtoList = new ArrayList<>(entities.size());
         for (E entity : entities) {
@@ -462,7 +462,7 @@ public class EntitiesImpl implements Entities {
             ExampleImpl<E> example,
             TypedProp.Scalar<?, ?>... sortedProps
     ) {
-        DtoMetadata<E, S> metadata = DtoMetadata.of(staticType);
+        StaticMetadata<E, S> metadata = StaticMetadata.of(staticType);
         Fetcher<E> fetcher = metadata.getFetcher();
         ImmutableType type = fetcher.getImmutableType();
         if (example != null && example.type() != type) {
