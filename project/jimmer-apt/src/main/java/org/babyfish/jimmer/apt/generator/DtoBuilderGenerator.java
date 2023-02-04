@@ -6,8 +6,7 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeSpec;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
-import org.babyfish.jimmer.meta.impl.dto.ast.DtoProp;
-import org.babyfish.jimmer.meta.impl.dto.ast.DtoProp;
+import org.babyfish.jimmer.dto.compiler.DtoProp;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

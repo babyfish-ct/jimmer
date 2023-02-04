@@ -5,11 +5,11 @@ import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.isAbstract
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.ClassName
+import org.babyfish.jimmer.dto.compiler.spi.BaseType
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.FETCHER_DSL
 import org.babyfish.jimmer.ksp.generator.parseValidationMessages
-import org.babyfish.jimmer.meta.impl.dto.ast.spi.BaseType
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.Id

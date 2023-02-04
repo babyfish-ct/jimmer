@@ -2,7 +2,7 @@ package org.babyfish.jimmer.apt;
 
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
-import org.babyfish.jimmer.meta.impl.dto.ast.DtoCompiler;
+import org.babyfish.jimmer.dto.compiler.DtoCompiler;
 import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.Key;
 

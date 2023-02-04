@@ -5,8 +5,8 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.TypeUtils;
+import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
-import org.babyfish.jimmer.meta.impl.dto.ast.spi.BaseProp;
 import org.babyfish.jimmer.sql.*;
 
 import javax.lang.model.element.*;

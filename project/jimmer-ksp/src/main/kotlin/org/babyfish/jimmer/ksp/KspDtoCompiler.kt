@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.ksp
 
+import org.babyfish.jimmer.dto.compiler.DtoCompiler
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
-import org.babyfish.jimmer.meta.impl.dto.ast.DtoCompiler
 
 class KspDtoCompiler(
     private val immutableType: ImmutableType
