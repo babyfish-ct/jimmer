@@ -8,11 +8,11 @@ import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
+import org.babyfish.jimmer.dto.compiler.DtoProp
+import org.babyfish.jimmer.dto.compiler.DtoType
 import org.babyfish.jimmer.ksp.annotation
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.meta.*
-import org.babyfish.jimmer.meta.impl.dto.ast.DtoProp
-import org.babyfish.jimmer.meta.impl.dto.ast.DtoType
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
 import java.io.OutputStreamWriter

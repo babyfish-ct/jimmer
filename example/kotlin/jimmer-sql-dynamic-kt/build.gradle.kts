@@ -45,6 +45,10 @@ tasks.withType<KotlinCompile> {
 	kotlinOptions {
 		freeCompilerArgs = listOf("-Xjsr305=strict")
 		jvmTarget = "1.8"
+
+		// Even without any code changes, modifying the dto file
+		// should cause the annotation processor to be triggered
+		inputs.files("src/main/dto")
 	}
 }
 

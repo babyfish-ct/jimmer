@@ -5,13 +5,13 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toClassName
 import org.babyfish.jimmer.Immutable
+import org.babyfish.jimmer.dto.compiler.spi.BaseProp
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
 import org.babyfish.jimmer.ksp.generator.parseValidationMessages
 import org.babyfish.jimmer.meta.ModelException
 import org.babyfish.jimmer.meta.impl.PropDescriptor
-import org.babyfish.jimmer.meta.impl.dto.ast.spi.BaseProp
 import org.babyfish.jimmer.sql.*
 import kotlin.reflect.KClass
 

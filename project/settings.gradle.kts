@@ -1,4 +1,5 @@
 rootProject.name = "jimmer"
+include("jimmer-dto-compiler")
 include("jimmer-core")
 include("jimmer-apt")
 include("jimmer-sql")

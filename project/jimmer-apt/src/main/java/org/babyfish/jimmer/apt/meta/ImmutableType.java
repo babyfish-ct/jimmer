@@ -2,8 +2,8 @@ package org.babyfish.jimmer.apt.meta;
 
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.apt.TypeUtils;
+import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 import org.babyfish.jimmer.meta.ModelException;
-import org.babyfish.jimmer.meta.impl.dto.ast.spi.BaseType;
 import org.babyfish.jimmer.sql.*;
 
 import javax.lang.model.element.*;
