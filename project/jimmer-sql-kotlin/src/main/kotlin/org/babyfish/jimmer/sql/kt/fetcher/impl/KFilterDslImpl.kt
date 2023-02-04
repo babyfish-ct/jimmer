@@ -42,6 +42,14 @@ internal class KFilterDslImpl<E: Any>(
         javaQuery.orderByIf(condition, *orders)
     }
 
+    override fun orderBy(orders: List<Order?>) {
+        javaQuery.orderBy(orders)
+    }
+
+    override fun orderByIf(condition: Boolean, orders: List<Order?>) {
+        javaQuery.orderByIf(condition, orders)
+    }
+
     override val subQueries: KSubQueries<E> by lazy {
         KSubQueriesImpl(javaQuery)
     }

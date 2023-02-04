@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.repository.bytecode;
 
+import kotlin.reflect.KClass;
 import org.babyfish.jimmer.impl.asm.MethodVisitor;
 import org.babyfish.jimmer.impl.asm.Opcodes;
 import org.babyfish.jimmer.impl.asm.Type;
@@ -92,8 +93,25 @@ public abstract class MethodCodeWriter implements Constants {
             mv.visitInsn(Opcodes.ACONST_NULL);
         }
 
-        if (queryMethod.getFetcherIndex() != -1) {
-            mv.visitVarInsn(Opcodes.ALOAD, slots.get(queryMethod.getFetcherIndex()));
+        if (queryMethod.getFetcherParamIndex() != -1) {
+            mv.visitVarInsn(Opcodes.ALOAD, slots.get(queryMethod.getFetcherParamIndex()));
+        } else {
+            mv.visitInsn(Opcodes.ACONST_NULL);
+        }
+
+        if (queryMethod.getStaticTypeParamIndex() != -1) {
+            mv.visitVarInsn(Opcodes.ALOAD, slots.get(queryMethod.getStaticTypeParamIndex()));
+            if (method.getParameterTypes()[queryMethod.getStaticTypeParamIndex()] == KClass.class) {
+                mv.visitMethodInsn(
+                        Opcodes.INVOKESTATIC,
+                        "kotlin/jvm/JvmClassMappingKt",
+                        "getJavaClass",
+                        "(Lkotlin/reflect/KClass;)Ljava/lang/Class;",
+                        false
+                );
+            }
+        } else if (queryMethod.getStaticType() != null) {
+            mv.visitLdcInsn(Type.getType(queryMethod.getStaticType()));
         } else {
             mv.visitInsn(Opcodes.ACONST_NULL);
         }
@@ -126,7 +144,7 @@ public abstract class MethodCodeWriter implements Constants {
                 QUERY_EXECUTORS_METHOD_DESCRIPTOR,
                 false
         );
-        visitUnbox(method.getReturnType(), true);
+        visitUnbox(method.getReturnType());
         if (method.getReturnType() == void.class) {
             mv.visitInsn(Opcodes.POP);
         }
@@ -312,11 +330,9 @@ public abstract class MethodCodeWriter implements Constants {
         }
     }
 
-    private void visitUnbox(Class<?> type, boolean autoCast) {
+    private void visitUnbox(Class<?> type) {
         if (type == boolean.class) {
-            if (autoCast) {
-                mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Boolean");
-            }
+            mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Boolean");
             mv.visitMethodInsn(
                     Opcodes.INVOKEVIRTUAL,
                     "java/lang/Boolean",
@@ -325,9 +341,7 @@ public abstract class MethodCodeWriter implements Constants {
                     false
             );
         } else if (type == char.class) {
-            if (autoCast) {
-                mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Character");
-            }
+            mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Character");
             mv.visitMethodInsn(
                     Opcodes.INVOKEVIRTUAL,
                     "java/lang/Character",
@@ -336,9 +350,7 @@ public abstract class MethodCodeWriter implements Constants {
                     false
             );
         } else if (type == byte.class) {
-            if (autoCast) {
-                mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Byte");
-            }
+            mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Byte");
             mv.visitMethodInsn(
                     Opcodes.INVOKEVIRTUAL,
                     "java/lang/Byte",
@@ -347,9 +359,7 @@ public abstract class MethodCodeWriter implements Constants {
                     false
             );
         } else if (type == short.class) {
-            if (autoCast) {
-                mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Short");
-            }
+            mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Short");
             mv.visitMethodInsn(
                     Opcodes.INVOKEVIRTUAL,
                     "java/lang/Short",
@@ -358,9 +368,7 @@ public abstract class MethodCodeWriter implements Constants {
                     false
             );
         } else if (type == int.class) {
-            if (autoCast) {
-                mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Integer");
-            }
+            mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Integer");
             mv.visitMethodInsn(
                     Opcodes.INVOKEVIRTUAL,
                     "java/lang/Integer",
@@ -369,9 +377,7 @@ public abstract class MethodCodeWriter implements Constants {
                     false
             );
         } else if (type == long.class) {
-            if (autoCast) {
-                mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Long");
-            }
+            mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Long");
             mv.visitMethodInsn(
                     Opcodes.INVOKEVIRTUAL,
                     "java/lang/Long",
@@ -380,9 +386,7 @@ public abstract class MethodCodeWriter implements Constants {
                     false
             );
         } else if (type == float.class) {
-            if (autoCast) {
-                mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Float");
-            }
+            mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Float");
             mv.visitMethodInsn(
                     Opcodes.INVOKEVIRTUAL,
                     "java/lang/Float",
@@ -391,9 +395,7 @@ public abstract class MethodCodeWriter implements Constants {
                     false
             );
         } else if (type == double.class) {
-            if (autoCast) {
-                mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Double");
-            }
+            mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Double");
             mv.visitMethodInsn(
                     Opcodes.INVOKEVIRTUAL,
                     "java/lang/Double",
@@ -402,9 +404,7 @@ public abstract class MethodCodeWriter implements Constants {
                     false
             );
         } else {
-            if (autoCast) {
-                mv.visitTypeInsn(Opcodes.CHECKCAST, Type.getInternalName(type));
-            }
+            mv.visitTypeInsn(Opcodes.CHECKCAST, Type.getInternalName(type));
         }
     }
 

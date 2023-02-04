@@ -1,13 +1,11 @@
 package org.babyfish.jimmer.sql.model.embedded;
 
-import org.babyfish.jimmer.pojo.StaticType;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.PropOverride;
 import org.jetbrains.annotations.Nullable;
 
 @Entity
-@StaticType(alias = "default", topLevelName = "TransformInput")
 public interface Transform {
 
     @Id

@@ -19,7 +19,14 @@ public class Query {
 
     private final List<Order> orders;
 
-    public Query(Action action, int limit, boolean distinct, Path selectedPath, Predicate predicate, List<Order> orders) {
+    public Query(
+            Action action,
+            int limit,
+            boolean distinct,
+            Path selectedPath,
+            Predicate predicate,
+            List<Order> orders
+    ) {
         this.action = action;
         this.limit = limit;
         this.distinct = distinct;
@@ -74,7 +81,11 @@ public class Query {
     }
 
     public static Query of(Context ctx, Source source, ImmutableType type) {
-        return new QueryParser(ctx, type).parse(source);
+        return new QueryParser(ctx, type).parse(source, true);
+    }
+
+    public static Query of(Context ctx, Source source, ImmutableType type, boolean allowProjection) {
+        return new QueryParser(ctx, type).parse(source, allowProjection);
     }
 
     public enum Action {

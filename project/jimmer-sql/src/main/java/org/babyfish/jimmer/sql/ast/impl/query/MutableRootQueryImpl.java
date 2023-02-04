@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.function.Supplier;
 
 public class MutableRootQueryImpl<T extends Table<?>>
@@ -270,6 +271,18 @@ public class MutableRootQueryImpl<T extends Table<?>>
     @SuppressWarnings("unchecked")
     @Override
     public MutableRootQueryImpl<T> orderByIf(boolean condition, Order... orders) {
+        return (MutableRootQueryImpl<T>)super.orderByIf(condition, orders);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public MutableRootQueryImpl<T> orderBy(List<Order> orders) {
+        return (MutableRootQueryImpl<T>)super.orderBy(orders);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public MutableRootQueryImpl<T> orderByIf(boolean condition, List<Order> orders) {
         return (MutableRootQueryImpl<T>)super.orderByIf(condition, orders);
     }
 

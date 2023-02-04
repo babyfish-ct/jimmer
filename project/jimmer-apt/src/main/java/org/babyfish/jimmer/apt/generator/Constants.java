@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.DraftConsumer;
+import org.babyfish.jimmer.Static;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -30,8 +31,17 @@ class Constants {
     public static final ClassName LIST_CLASS_NAME =
             ClassName.get(List.class);
 
+    public static final ClassName STATIC_CLASS_NAME =
+            ClassName.get(Static.class);
+
     public static final ClassName INPUT_CLASS_NAME =
             ClassName.get(Input.class);
+
+    public static final ClassName STATIC_METADATA_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher",
+                    "StaticMetadata"
+            );
 
     public static final ClassName DRAFT_CONTEXT_CLASS_NAME =
             ClassName.get(DraftContext.class);
@@ -148,6 +158,12 @@ class Constants {
                     "Fetcher"
             );
 
+    public static final ClassName RECURSIVE_FIELD_CONFIG_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher",
+                    "RecursiveFieldConfig"
+            );
+
     public static final ClassName FETCHER_IMPL_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher.impl",
@@ -164,12 +180,6 @@ class Constants {
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher",
                     "ListFieldConfig"
-            );
-
-    public static final ClassName RECURSIVE_FIELD_CONFIG_CLASS_NAME =
-            ClassName.get(
-                    "org.babyfish.jimmer.sql.fetcher",
-                    "RecursiveFieldConfig"
             );
 
     public static final ClassName RECURSIVE_LIST_FIELD_CONFIG_CLASS_NAME =

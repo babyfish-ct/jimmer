@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.query.selectable.SubSelectable;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 public interface MutableSubQuery extends MutableQuery, SubSelectable {
@@ -33,14 +34,15 @@ public interface MutableSubQuery extends MutableQuery, SubSelectable {
 
     @OldChain
     @Override
-    default MutableSubQuery orderBy(Expression<?> ... expressions) {
-        return (MutableSubQuery) MutableQuery.super.orderBy(expressions);
-    }
+    MutableSubQuery orderBy(Expression<?> ... expressions);
 
     @OldChain
     @Override
     default MutableSubQuery orderByIf(boolean condition, Expression<?>... expressions) {
-        return (MutableSubQuery) MutableQuery.super.orderByIf(condition, expressions);
+        if (condition) {
+            orderBy(expressions);
+        }
+        return this;
     }
 
     @OldChain
@@ -50,7 +52,23 @@ public interface MutableSubQuery extends MutableQuery, SubSelectable {
     @OldChain
     @Override
     default MutableSubQuery orderByIf(boolean condition, Order... orders) {
-        return (MutableSubQuery) MutableQuery.super.orderByIf(condition, orders);
+        if (condition) {
+            orderBy(orders);
+        }
+        return this;
+    }
+
+    @OldChain
+    @Override
+    MutableSubQuery orderBy(List<Order> orders);
+
+    @OldChain
+    @Override
+    default MutableSubQuery orderByIf(boolean condition, List<Order> orders) {
+        if (condition) {
+            orderBy(orders);
+        }
+        return this;
     }
 
     @OldChain

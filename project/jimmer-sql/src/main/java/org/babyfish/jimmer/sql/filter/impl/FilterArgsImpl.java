@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
@@ -71,6 +72,15 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     public Sortable orderBy(Order... orders) {
         if (!sorted) {
             sorted = Arrays.stream(orders).anyMatch(Objects::nonNull);
+        }
+        return sortable.orderBy(orders);
+    }
+
+    @Override
+    @OldChain
+    public Sortable orderBy(List<Order> orders) {
+        if (!sorted) {
+            sorted = orders.stream().anyMatch(Objects::nonNull);
         }
         return sortable.orderBy(orders);
     }

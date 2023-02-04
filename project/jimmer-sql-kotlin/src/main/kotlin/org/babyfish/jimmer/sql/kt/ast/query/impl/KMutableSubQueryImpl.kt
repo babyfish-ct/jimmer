@@ -50,6 +50,14 @@ internal class KMutableSubQueryImpl<P: Any, E: Any>(
         javaSubQuery.orderByIf(condition, *orders)
     }
 
+    override fun orderBy(orders: List<Order?>) {
+        javaSubQuery.orderBy(orders)
+    }
+
+    override fun orderByIf(condition: Boolean, orders: List<Order?>) {
+        javaSubQuery.orderByIf(condition, orders)
+    }
+
     override fun groupBy(vararg expressions: KExpression<*>) {
         javaSubQuery.groupBy(*expressions.map { it as Expression<*>}.toTypedArray())
     }

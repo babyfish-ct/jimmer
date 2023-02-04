@@ -5,6 +5,7 @@ import org.babyfish.jimmer.spring.cfg.JimmerProperties
 import org.babyfish.jimmer.spring.cfg.SqlClientConfig
 import org.babyfish.jimmer.spring.datasource.DataSources
 import org.babyfish.jimmer.spring.datasource.TxCallback
+import org.babyfish.jimmer.spring.kotlin.dto.TreeDto
 import org.babyfish.jimmer.spring.repository.EnableJimmerRepositories
 import org.babyfish.jimmer.sql.runtime.*
 import org.junit.jupiter.api.Assertions
@@ -146,6 +147,32 @@ open class SpringKotlinTest : AbstractTest() {
                 "and tb_1_.NAME = ? " +
                 "order by tb_1_.NODE_ID asc"
         )
+    }
+
+    @Test
+    fun testRootTreeDtoList() {
+        val rootTrees = treeNodeRepository.findTreesByParentIsNull(TreeDto::class)
+        assertSQLs(
+            "select tb_1_.NODE_ID, tb_1_.NAME " +
+                "from TREE_NODE as tb_1_ " +
+                "where tb_1_.PARENT_ID is null",
+            "select tb_1_.NODE_ID, tb_1_.NAME " +
+                "from TREE_NODE as tb_1_ " +
+                "where tb_1_.PARENT_ID = ?",
+            "select tb_1_.PARENT_ID, tb_1_.NODE_ID, tb_1_.NAME " +
+                "from TREE_NODE as tb_1_ " +
+                "where tb_1_.PARENT_ID in (?, ?)",
+            "select tb_1_.PARENT_ID, tb_1_.NODE_ID, tb_1_.NAME " +
+                "from TREE_NODE as tb_1_ " +
+                "where tb_1_.PARENT_ID in (?, ?, ?, ?)",
+            "select tb_1_.PARENT_ID, tb_1_.NODE_ID, tb_1_.NAME " +
+                "from TREE_NODE as tb_1_ " +
+                "where tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?)",
+            "select tb_1_.PARENT_ID, tb_1_.NODE_ID, tb_1_.NAME " +
+                "from TREE_NODE as tb_1_ " +
+                "where tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        )
+        Assertions.assertTrue(rootTrees[0].childNodes!![0]::class.simpleName == "TargetOf_childNodes")
     }
 
     companion object {

@@ -45,6 +45,14 @@ internal class KMutableRootQueryImpl<E: Any>(
         javaQuery.orderByIf(condition, *orders)
     }
 
+    override fun orderBy(orders: List<Order?>) {
+        javaQuery.orderBy(orders)
+    }
+
+    override fun orderByIf(condition: Boolean, orders: List<Order?>) {
+        javaQuery.orderByIf(condition, orders)
+    }
+
     @Suppress("UNCHECKED_CAST")
     override fun groupBy(vararg expressions: KExpression<*>) {
         javaQuery.groupBy(*expressions.map { it as Expression<*>}.toTypedArray())

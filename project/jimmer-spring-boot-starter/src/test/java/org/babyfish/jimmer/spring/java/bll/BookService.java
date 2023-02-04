@@ -3,6 +3,7 @@ package org.babyfish.jimmer.spring.java.bll;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.spring.java.dal.BookRepository;
 import org.babyfish.jimmer.spring.java.model.*;
+import org.babyfish.jimmer.spring.java.model.dto.BookInput;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;

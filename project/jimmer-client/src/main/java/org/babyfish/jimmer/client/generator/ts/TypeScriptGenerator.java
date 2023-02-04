@@ -116,7 +116,8 @@ public class TypeScriptGenerator implements Generator {
                 .addTypeFile(ExecutorWriter.FILE)
                 .addTypeFile(DynamicWriter.FILE)
                 .addTypeFile(RequestOfWriter.FILE)
-                .addTypeFile(ResponseOfWriter.FILE);
+                .addTypeFile(ResponseOfWriter.FILE)
+                .addTypeFile(ElementOfWriter.FILE);
         for (Index index : indexMap.values()) {
             writeIndex(ctx, index, zipOut);
         }
