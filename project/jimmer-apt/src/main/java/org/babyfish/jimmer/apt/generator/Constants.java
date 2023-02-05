@@ -13,6 +13,7 @@ import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.impl.validation.Validator;
 
+import java.beans.ConstructorProperties;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -27,6 +28,9 @@ class Constants {
 
     public static final ClassName JSON_IGNORE_CLASS_NAME =
             ClassName.get(JsonIgnore.class);
+
+    public static final ClassName CONSTRUCTOR_PROPERTIES_CLASS_NAME =
+            ClassName.get(ConstructorProperties.class);
 
     public static final ClassName LIST_CLASS_NAME =
             ClassName.get(List.class);

@@ -48,10 +48,10 @@ class KTypeScriptTest {
         ServiceWriter(ctx, service).flush()
         val code = out.toString()
         Assertions.assertEquals(
-            "import type { KBook } from '../model/entities';\n" +
-                "import type { KPage, Tuple2, KBookInput } from '../model/static';\n" +
-                "import type { KBookDto, KAuthorDto } from '../model/dto';\n" +
-                "import type { Executor, Dynamic } from '../';\n" +
+            "import type { Dynamic, Executor } from '../';\n" +
+                "import type { KAuthorDto, KBookDto } from '../model/dto';\n" +
+                "import type { KBook } from '../model/entities';\n" +
+                "import type { KBookInput, KPage, Tuple2 } from '../model/static';\n" +
                 "\n" +
                 "/**\n" +
                 " * BookService interface\n" +
@@ -173,7 +173,7 @@ class KTypeScriptTest {
         TypeDefinitionWriter(ctx, bookStoreType).flush()
         val code = out.toString()
         Assertions.assertEquals(
-            "import type { KCoordinate, KBook } from './';\n" +
+            "import type { KBook, KCoordinate } from './';\n" +
                 "\n" +
                 "export interface KBookStore {\n" +
                 "    \n" +
@@ -184,7 +184,7 @@ class KTypeScriptTest {
                 "    readonly coordinate: KCoordinate;\n" +
                 "    \n" +
                 "    readonly books: ReadonlyArray<KBook>;\n" +
-                "}",
+                "}\n",
             code
         )
     }
@@ -197,7 +197,7 @@ class KTypeScriptTest {
         TypeDefinitionWriter(ctx, bookType).flush()
         val code = out.toString()
         Assertions.assertEquals(
-            "import type { KBookStore, KAuthor } from './';\n" +
+            "import type { KAuthor, KBookStore } from './';\n" +
                 "\n" +
                 "export interface KBook {\n" +
                 "    \n" +
@@ -212,7 +212,7 @@ class KTypeScriptTest {
                 "    readonly store?: KBookStore;\n" +
                 "    \n" +
                 "    readonly authors: ReadonlyArray<KAuthor>;\n" +
-                "}",
+                "}\n",
             code
         )
     }
@@ -225,8 +225,8 @@ class KTypeScriptTest {
         TypeDefinitionWriter(ctx, authorType).flush()
         val code = out.toString()
         Assertions.assertEquals(
-            "import type { KBook } from './';\n" +
-                "import type { KGender } from '../enums';\n" +
+            "import type { KGender } from '../enums';\n" +
+                "import type { KBook } from './';\n" +
                 "\n" +
                 "export interface KAuthor {\n" +
                 "    \n" +
@@ -239,7 +239,7 @@ class KTypeScriptTest {
                 "    readonly gender?: KGender;\n" +
                 "    \n" +
                 "    readonly books: ReadonlyArray<KBook>;\n" +
-                "}",
+                "}\n",
             code
         )
     }
@@ -251,8 +251,8 @@ class KTypeScriptTest {
         DtoWriter(ctx, KBook::class.java).flush()
         val code = out.toString()
         Assertions.assertEquals(
-            "import type { KGender } from '../enums';\n" +
-                "import type { KCoordinate } from '../entities';\n" +
+            "import type { KCoordinate } from '../entities';\n" +
+                "import type { KGender } from '../enums';\n" +
                 "\n" +
                 "export type KBookDto = {\n" +
                 "    'KBookService/SIMPLE_FETCHER': {\n" +
@@ -288,8 +288,8 @@ class KTypeScriptTest {
         DtoWriter(ctx, KAuthor::class.java).flush()
         val code = out.toString()
         Assertions.assertEquals(
-            "import type { KGender } from '../enums';\n" +
-                "import type { KCoordinate } from '../entities';\n" +
+            "import type { KCoordinate } from '../entities';\n" +
+                "import type { KGender } from '../enums';\n" +
                 "\n" +
                 "export type KAuthorDto = {\n" +
                 "    'KBookService/AUTHOR_FETCHER': {\n" +
@@ -353,7 +353,7 @@ class KTypeScriptTest {
                 "    readonly price: number;\n" +
                 "    \n" +
                 "    readonly storeId?: number;\n" +
-                "}",
+                "}\n",
             code
         )
     }
@@ -373,7 +373,7 @@ class KTypeScriptTest {
                 "    readonly totalPageCount: number;\n" +
                 "    \n" +
                 "    readonly totalRowCount: number;\n" +
-                "}",
+                "}\n",
             code
         )
     }

@@ -20,15 +20,19 @@ public class TypeDefinitionWriter extends JavaCodeWriter<JavaContext> {
     protected void write() {
         if (type instanceof ObjectType) {
             document(((ObjectType)type).getDocument());
-            writeObjectType();
+            writeObjectType((ObjectType) type);
         } else {
             writeEnumType();
         }
     }
 
-    private void writeObjectType() {
-        ObjectType objectType = (ObjectType) type;
-        code("\npublic class ").code(getFile().getName());
+    private void writeObjectType(ObjectType objectType) {
+        code("\npublic class ")
+                .code(
+                        objectType instanceof StaticObjectType ?
+                                objectType.getJavaType().getSimpleName() :
+                                file.getName()
+                );
         if (objectType instanceof StaticObjectType) {
             StaticObjectType staticObjectType = (StaticObjectType) objectType;
             TypeVariable<? extends Class<?>>[] typeParameters = staticObjectType.getJavaType().getTypeParameters();
@@ -48,6 +52,12 @@ public class TypeDefinitionWriter extends JavaCodeWriter<JavaContext> {
             }
             for (Property prop : objectType.getProperties().values()) {
                 writeProperty(prop, objectType instanceof ImmutableObjectType);
+            }
+            if (objectType instanceof StaticObjectType) {
+                for (StaticObjectType nestedType : ((StaticObjectType) objectType).getNestedTypes()) {
+                    code("\n");
+                    writeObjectType(nestedType);
+                }
             }
         });
         code('\n');

@@ -601,26 +601,14 @@ public class SpringJavaTest extends AbstractTest {
     public void testDownloadTypescript() throws Exception {
         mvc.perform(get("/my-ts.zip"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith("application/zip"))
-                .andExpect(result -> {
-                    byte[] arr = result.getResponse().getContentAsByteArray();
-                    FileOutputStream out = new FileOutputStream("/Users/chentao/tmp/ts.zip");
-                    out.write(arr);
-                    out.close();
-                });
+                .andExpect(content().contentTypeCompatibleWith("application/zip"));
     }
 
     @Test
     public void testDownloadJavaFeign() throws Exception {
         mvc.perform(get("/my-java.zip"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith("application/zip"))
-                .andExpect(result -> {
-                    byte[] arr = result.getResponse().getContentAsByteArray();
-                    FileOutputStream out = new FileOutputStream("/Users/chentao/tmp/feign.zip");
-                    out.write(arr);
-                    out.close();
-                });
+                .andExpect(content().contentTypeCompatibleWith("application/zip"));
     }
 
     private static void assertTransactionEvents(String ... events) {

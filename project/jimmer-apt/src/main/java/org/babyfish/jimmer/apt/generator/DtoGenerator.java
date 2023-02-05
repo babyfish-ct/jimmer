@@ -149,6 +149,7 @@ public class DtoGenerator {
         }
         addJsonConstructor();
         addConverterConstructor();
+        addOf();
         addNewBuilder(false);
         addNewBuilder(true);
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
@@ -242,6 +243,21 @@ public class DtoGenerator {
         typeBuilder.addField(builder.build());
     }
 
+    private void addOf() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("of")
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                .addParameter(
+                        ParameterSpec
+                                .builder(dtoType.getBaseType().getClassName(), "base")
+                                .addAnnotation(NotNull.class)
+                                .build()
+                )
+                .returns(getClassName())
+                .addCode("return new $T(base);", getClassName());
+        typeBuilder.addMethod(builder.build());
+    }
+
     private void addNewBuilder(boolean withBase) {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("newBuilder")
@@ -267,7 +283,29 @@ public class DtoGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
                 .addModifiers(Modifier.PUBLIC)
-                .addAnnotation(Constants.JSON_CREATOR_CLASS_NAME);
+                .addAnnotation(Constants.JSON_CREATOR_CLASS_NAME)
+                .addAnnotation(
+                        AnnotationSpec
+                                .builder(Constants.CONSTRUCTOR_PROPERTIES_CLASS_NAME)
+                                .addMember(
+                                        "value",
+                                        CodeBlock.join(
+                                                Arrays.asList(
+                                                        CodeBlock.of("{"),
+                                                        CodeBlock.join(
+                                                                dtoType.getProps()
+                                                                        .stream()
+                                                                        .map(prop -> CodeBlock.of("$S", prop.getName()))
+                                                                        .collect(Collectors.toList()),
+                                                                ", "
+                                                        ),
+                                                        CodeBlock.of("}")
+                                                ),
+                                                ""
+                                        )
+                                )
+                                .build()
+                );
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
             ParameterSpec.Builder parameterBuilder = ParameterSpec
                     .builder(
@@ -306,7 +344,7 @@ public class DtoGenerator {
     private void addConverterConstructor() {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
-                .addModifiers(Modifier.PUBLIC)
+                .addComment("This constructor is not public so that the `@Argument` of spring-graphql can work, please use `of`")
                 .addParameter(
                         ParameterSpec
                                 .builder(dtoType.getBaseType().getClassName(), "base")
