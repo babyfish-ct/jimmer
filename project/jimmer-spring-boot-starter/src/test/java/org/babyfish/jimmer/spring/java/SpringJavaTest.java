@@ -55,6 +55,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;
 
 import javax.sql.DataSource;
+import java.io.FileOutputStream;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -600,14 +601,26 @@ public class SpringJavaTest extends AbstractTest {
     public void testDownloadTypescript() throws Exception {
         mvc.perform(get("/my-ts.zip"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith("application/zip"));
+                .andExpect(content().contentTypeCompatibleWith("application/zip"))
+                .andExpect(result -> {
+                    byte[] arr = result.getResponse().getContentAsByteArray();
+                    FileOutputStream out = new FileOutputStream("/Users/chentao/tmp/ts.zip");
+                    out.write(arr);
+                    out.close();
+                });
     }
 
     @Test
     public void testDownloadJavaFeign() throws Exception {
         mvc.perform(get("/my-java.zip"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith("application/zip"));
+                .andExpect(content().contentTypeCompatibleWith("application/zip"))
+                .andExpect(result -> {
+                    byte[] arr = result.getResponse().getContentAsByteArray();
+                    FileOutputStream out = new FileOutputStream("/Users/chentao/tmp/feign.zip");
+                    out.write(arr);
+                    out.close();
+                });
     }
 
     private static void assertTransactionEvents(String ... events) {

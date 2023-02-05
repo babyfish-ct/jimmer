@@ -89,7 +89,7 @@ export const BookList:FC = memo(() => {
             headerName: 'Actions', 
             type: 'actions',
             getActions: params => [
-                <GridActionsCellItem icon={<EditIcon/>} label="Edit" onClick={() => onEdit(params.row)} disabled={tenant === undefined}/>,
+                <GridActionsCellItem icon={<EditIcon/>} label="Edit" onClick={() => onEdit(params.row)}/>,
                 <GridActionsCellItem icon={<DeleteIcon/>} label="Delete" onClick={e => onDelete(params.row, e)}/>
             ]
         }

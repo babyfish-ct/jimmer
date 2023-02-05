@@ -34,25 +34,12 @@ export class AuthorService {
         return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<AuthorDto['AuthorService/DEFAULT_FETCHER']>
     }
     
-    async findComplexAuthors(options: AuthorServiceOptions['findComplexAuthors']): Promise<
-        ReadonlyArray<AuthorDto['AuthorService/COMPLEX_FETCHER']>
+    async findComplexAuthor(options: AuthorServiceOptions['findComplexAuthor']): Promise<
+        AuthorDto['AuthorService/COMPLEX_FETCHER'] | undefined
     > {
-        let uri = '/author/complexList';
-        uri += '?sortCode=';
-        uri += encodeURIComponent(options.sortCode);
-        if (options.firstName !== undefined && options.firstName !== null) {
-            uri += '&firstName=';
-            uri += encodeURIComponent(options.firstName);
-        }
-        if (options.lastName !== undefined && options.lastName !== null) {
-            uri += '&lastName=';
-            uri += encodeURIComponent(options.lastName);
-        }
-        if (options.gender !== undefined && options.gender !== null) {
-            uri += '&gender=';
-            uri += encodeURIComponent(options.gender);
-        }
-        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<AuthorDto['AuthorService/COMPLEX_FETCHER']>
+        let uri = '/author/';
+        uri += encodeURIComponent(options.id);
+        return (await this.executor({uri, method: 'GET'})) as AuthorDto['AuthorService/COMPLEX_FETCHER'] | undefined
     }
     
     async findSimpleAuthors(): Promise<
@@ -78,12 +65,7 @@ export type AuthorServiceOptions = {
         readonly lastName?: string, 
         readonly gender?: Gender
     },
-    'findComplexAuthors': {
-        readonly sortCode: string, 
-        readonly firstName?: string, 
-        readonly lastName?: string, 
-        readonly gender?: Gender
-    },
+    'findComplexAuthor': {readonly id: number},
     'findSimpleAuthors': {},
     'saveAuthor': {}
 }

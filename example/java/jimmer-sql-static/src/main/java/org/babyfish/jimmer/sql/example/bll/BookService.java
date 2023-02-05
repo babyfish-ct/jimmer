@@ -4,6 +4,7 @@ import org.babyfish.jimmer.spring.model.SortUtils;
 import org.babyfish.jimmer.sql.example.dal.BookRepository;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.example.model.dto.*;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +48,7 @@ public class BookService {
     }
 
     @GetMapping("/{id}")
+    @Nullable
     public ComplexBook findComplexBook(@PathVariable("id") long id) {
         return bookRepository.findNullableStaticObject(ComplexBook.class, id);
     }

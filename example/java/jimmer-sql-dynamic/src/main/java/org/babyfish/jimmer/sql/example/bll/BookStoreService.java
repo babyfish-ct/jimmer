@@ -7,13 +7,11 @@ import org.babyfish.jimmer.sql.example.dal.BookStoreRepository;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.example.model.dto.BookStoreInput;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/bookStore")
@@ -43,6 +41,7 @@ public class BookStoreService {
     }
 
     @GetMapping("/{id}")
+    @Nullable
     public @FetchBy("COMPLEX_FETCHER") BookStore findComplexStore(
             @PathVariable("id") long id
     ) {

@@ -51,7 +51,7 @@ public class JTypeScriptTest {
         String code = out.toString();
         Assertions.assertEquals(
                 "import type { Book } from '../model/entities';\n" +
-                        "import type { Page, Tuple2, BookInput } from '../model/static';\n" +
+                        "import type { Page, Tuple2, StaticBook, BookInput } from '../model/static';\n" +
                         "import type { BookDto, AuthorDto } from '../model/dto';\n" +
                         "import type { Executor, Dynamic } from '../';\n" +
                         "\n" +
@@ -139,6 +139,13 @@ public class JTypeScriptTest {
                         "    > {\n" +
                         "        let uri = '/java/book';\n" +
                         "        return (await this.executor({uri, method: 'PUT', body: options.body})) as Dynamic<Book>\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    async staticBook(options: {readonly id: number}): Promise<\n" +
+                        "        StaticBook\n" +
+                        "    > {\n" +
+                        "        let uri = '/java/staticBook';\n" +
+                        "        return (await this.executor({uri, method: 'GET'})) as StaticBook\n" +
                         "    }\n" +
                         "    \n" +
                         "    async version(): Promise<number> {\n" +

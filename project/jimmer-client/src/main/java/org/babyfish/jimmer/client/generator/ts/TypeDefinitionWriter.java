@@ -20,15 +20,15 @@ public class TypeDefinitionWriter extends TsCodeWriter {
     protected void write() {
         if (type instanceof ObjectType) {
             document(((ObjectType)type).getDocument());
-            writeObjectType();
+            writeObjectType((ObjectType) type, "");
         } else {
             writeEnumType();
         }
     }
 
-    private void writeObjectType() {
-        ObjectType objectType = (ObjectType) type;
-        code("export interface ").code(getFile().getName());
+    private void writeObjectType(ObjectType objectType, String prefix) {
+        String simpleName = objectType.getJavaType().getSimpleName();
+        code("export interface ").code(prefix + simpleName);
         if (objectType instanceof StaticObjectType) {
             StaticObjectType staticObjectType = (StaticObjectType) objectType;
             TypeVariable<? extends Class<?>>[] typeParameters = staticObjectType.getJavaType().getTypeParameters();
@@ -55,6 +55,15 @@ public class TypeDefinitionWriter extends TsCodeWriter {
                 code(';');
             }
         });
+        code("\n");
+        if (objectType instanceof StaticObjectType) {
+            StaticObjectType staticObjectType = (StaticObjectType) objectType;
+            String newPrefix = simpleName + ctx.nestedTypeSeparator();
+            for (StaticObjectType nestedObjectType : staticObjectType.getNestedTypes()) {
+                code("\n");
+                writeObjectType(nestedObjectType, newPrefix);
+            }
+        }
     }
 
     private void writeEnumType() {

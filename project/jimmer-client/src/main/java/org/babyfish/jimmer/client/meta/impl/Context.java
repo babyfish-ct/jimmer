@@ -458,7 +458,7 @@ class Context {
     private StaticObjectType objectType(KClass<?> type, List<Type> typeArguments) {
         StaticObjectType staticType = staticObjectTypeMap.get(new StaticObjectType.Key(JvmClassMappingKt.getJavaClass(type), typeArguments));
         if (staticType == null) {
-            staticType = StaticObjectTypeImpl.create(this, type, typeArguments);
+            staticType = StaticObjectTypeImpl.create(this, JvmClassMappingKt.getJavaClass(type), typeArguments);
         }
         return staticType;
     }

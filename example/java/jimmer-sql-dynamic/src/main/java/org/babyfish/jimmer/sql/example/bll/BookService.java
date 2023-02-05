@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.example.model.dto.BookInput;
 import org.babyfish.jimmer.sql.example.model.dto.CompositeBookInput;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +51,7 @@ public class BookService {
     }
 
     @GetMapping("/{id}")
+    @Nullable
     public @FetchBy("COMPLEX_FETCHER") Book findComplexBook(
             @PathVariable("id") long id
     ) {
