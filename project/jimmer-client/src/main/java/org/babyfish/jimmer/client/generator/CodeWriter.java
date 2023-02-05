@@ -105,7 +105,7 @@ public abstract class CodeWriter<C extends Context> {
         } else {
             File file = ctx.getFile(type);
             if (file != null) {
-                importFile(file);
+                importFile(file, nestedNames);
                 if (type instanceof ImmutableObjectType &&
                         rawImmutableAsDynamic() &&
                         ((ImmutableObjectType)type).getCategory() == ImmutableObjectType.Category.RAW) {

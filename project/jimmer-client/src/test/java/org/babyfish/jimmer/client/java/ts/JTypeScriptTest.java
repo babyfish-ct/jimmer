@@ -50,10 +50,10 @@ public class JTypeScriptTest {
         new ServiceWriter(ctx, service).flush();
         String code = out.toString();
         Assertions.assertEquals(
-                "import type { Book } from '../model/entities';\n" +
-                        "import type { Page, Tuple2, StaticBook, BookInput } from '../model/static';\n" +
-                        "import type { BookDto, AuthorDto } from '../model/dto';\n" +
-                        "import type { Executor, Dynamic } from '../';\n" +
+                "import type { Dynamic, Executor } from '../';\n" +
+                        "import type { AuthorDto, BookDto } from '../model/dto';\n" +
+                        "import type { Book } from '../model/entities';\n" +
+                        "import type { BookInput, Page, StaticBook, Tuple2 } from '../model/static';\n" +
                         "\n" +
                         "/**\n" +
                         " * BookService interface\n" +
@@ -115,6 +115,13 @@ public class JTypeScriptTest {
                         "        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<BookDto['BookService/SIMPLE_FETCHER']>\n" +
                         "    }\n" +
                         "    \n" +
+                        "    async findStaticBook(options: BookServiceOptions['findStaticBook']): Promise<\n" +
+                        "        StaticBook\n" +
+                        "    > {\n" +
+                        "        let uri = '/java/staticBook';\n" +
+                        "        return (await this.executor({uri, method: 'GET'})) as StaticBook\n" +
+                        "    }\n" +
+                        "    \n" +
                         "    async findTuples(options: BookServiceOptions['findTuples']): Promise<\n" +
                         "        Page<Tuple2<BookDto['BookService/COMPLEX_FETCHER'], AuthorDto['BookService/AUTHOR_FETCHER'] | undefined>>\n" +
                         "    > {\n" +
@@ -141,13 +148,6 @@ public class JTypeScriptTest {
                         "        return (await this.executor({uri, method: 'PUT', body: options.body})) as Dynamic<Book>\n" +
                         "    }\n" +
                         "    \n" +
-                        "    async staticBook(options: {readonly id: number}): Promise<\n" +
-                        "        StaticBook\n" +
-                        "    > {\n" +
-                        "        let uri = '/java/staticBook';\n" +
-                        "        return (await this.executor({uri, method: 'GET'})) as StaticBook\n" +
-                        "    }\n" +
-                        "    \n" +
                         "    async version(): Promise<number> {\n" +
                         "        let uri = '/java/version';\n" +
                         "        return (await this.executor({uri, method: 'GET'})) as number\n" +
@@ -164,6 +164,7 @@ public class JTypeScriptTest {
                         "        readonly maxPrice?: number\n" +
                         "    },\n" +
                         "    'findSimpleBooks': {},\n" +
+                        "    'findStaticBook': {readonly id: number},\n" +
                         "    'findTuples': {\n" +
                         "        \n" +
                         "        /**\n" +
@@ -192,10 +193,10 @@ public class JTypeScriptTest {
         new ServiceWriter(ctx, service).flush();
         String code = out.toString();
         Assertions.assertEquals(
-                "import type { Book } from '../model/entities';\n" +
-                        "import type { Page, Tuple2, BookInput } from '../model/static';\n" +
+                "import type { Dynamic, Executor } from '../';\n" +
+                        "import type { Book } from '../model/entities';\n" +
                         "import type { Gender } from '../model/enums';\n" +
-                        "import type { Executor, Dynamic } from '../';\n" +
+                        "import type { BookInput, Page, StaticBook, Tuple2 } from '../model/static';\n" +
                         "\n" +
                         "/**\n" +
                         " * BookService interface\n" +
@@ -311,6 +312,13 @@ public class JTypeScriptTest {
                         "            readonly id: number, \n" +
                         "            readonly name: string\n" +
                         "        }>\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    async findStaticBook(options: {readonly id: number}): Promise<\n" +
+                        "        StaticBook\n" +
+                        "    > {\n" +
+                        "        let uri = '/java/staticBook';\n" +
+                        "        return (await this.executor({uri, method: 'GET'})) as StaticBook\n" +
                         "    }\n" +
                         "    \n" +
                         "    async findTuples(options: {\n" +
@@ -454,8 +462,8 @@ public class JTypeScriptTest {
         new ServiceWriter(ctx, service).flush();
         String code = out.toString();
         Assertions.assertEquals(
-                "import type { AuthorDto } from '../model/dto';\n" +
-                        "import type { Executor } from '../';\n" +
+                "import type { Executor } from '../';\n" +
+                        "import type { AuthorDto } from '../model/dto';\n" +
                         "\n" +
                         "export class AuthorService {\n" +
                         "    \n" +
@@ -506,7 +514,7 @@ public class JTypeScriptTest {
                         "     * All books available in this bookstore\n" +
                         "     */\n" +
                         "    readonly books: ReadonlyArray<Book>;\n" +
-                        "}",
+                        "}\n",
                 code
         );
     }
@@ -519,7 +527,7 @@ public class JTypeScriptTest {
         new TypeDefinitionWriter(ctx, bookType).flush();
         String code = out.toString();
         Assertions.assertEquals(
-                "import type { BookStore, Author } from './';\n" +
+                "import type { Author, BookStore } from './';\n" +
                         "\n" +
                         "export interface Book {\n" +
                         "    \n" +
@@ -540,7 +548,7 @@ public class JTypeScriptTest {
                         "     * All authors involved in writing the work\n" +
                         "     */\n" +
                         "    readonly authors: ReadonlyArray<Author>;\n" +
-                        "}",
+                        "}\n",
                 code
         );
     }
@@ -553,8 +561,8 @@ public class JTypeScriptTest {
         new TypeDefinitionWriter(ctx, authorType).flush();
         String code = out.toString();
         Assertions.assertEquals(
-                "import type { Book } from './';\n" +
-                        "import type { Gender } from '../enums';\n" +
+                "import type { Gender } from '../enums';\n" +
+                        "import type { Book } from './';\n" +
                         "\n" +
                         "export interface Author {\n" +
                         "    \n" +
@@ -570,7 +578,7 @@ public class JTypeScriptTest {
                         "     * All the books i have written\n" +
                         "     */\n" +
                         "    readonly books: ReadonlyArray<Book>;\n" +
-                        "}",
+                        "}\n",
                 code
         );
     }
@@ -686,7 +694,7 @@ public class JTypeScriptTest {
                         "     * Null is allowed\n" +
                         "     */\n" +
                         "    readonly storeId?: number;\n" +
-                        "}",
+                        "}\n",
                 code
         );
     }
@@ -706,7 +714,7 @@ public class JTypeScriptTest {
                         "    readonly totalPageCount: number;\n" +
                         "    \n" +
                         "    readonly totalRowCount: number;\n" +
-                        "}",
+                        "}\n",
                 code
         );
     }
@@ -724,7 +732,7 @@ public class JTypeScriptTest {
                         "    readonly _1: T1;\n" +
                         "    \n" +
                         "    readonly _2: T2;\n" +
-                        "}",
+                        "}\n",
                 code
         );
     }

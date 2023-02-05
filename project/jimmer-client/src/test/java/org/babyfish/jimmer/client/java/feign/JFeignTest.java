@@ -34,6 +34,7 @@ public class JFeignTest {
                         "import com.myapp.model.entities.Dynamic_Book;\n" +
                         "import com.myapp.model.simple.BookInput;\n" +
                         "import com.myapp.model.simple.Page;\n" +
+                        "import com.myapp.model.simple.StaticBook;\n" +
                         "import com.myapp.model.simple.Tuple2;\n" +
                         "import java.math.BigDecimal;\n" +
                         "import java.util.List;\n" +
@@ -80,6 +81,9 @@ public class JFeignTest {
                         "    \n" +
                         "    @GetMapping(\"/java/books/simple\")\n" +
                         "    List<BookDto.BookService_SIMPLE_FETCHER> findSimpleBooks();\n" +
+                        "    \n" +
+                        "    @GetMapping(\"/java/staticBook\")\n" +
+                        "    StaticBook findStaticBook(@PathVariable(\"id\") long id);\n" +
                         "    \n" +
                         "    @GetMapping(\"/java/tuples\")\n" +
                         "    Page<Tuple2<BookDto.BookService_COMPLEX_FETCHER, AuthorDto.BookService_AUTHOR_FETCHER>> findTuples(\n" +

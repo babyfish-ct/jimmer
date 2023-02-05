@@ -21,9 +21,9 @@ public abstract class TsCodeWriter extends CodeWriter<TsContext> {
 
     private static final Pattern SLASH_PATTERN = Pattern.compile("/");
 
-    private final Map<String, Set<String>> importMap = new HashMap<>();
+    private final Map<String, Set<String>> importMap = new TreeMap<>();
 
-    private final Map<String, Set<String>> importDataMap = new HashMap<>();
+    private final Map<String, Set<String>> importDataMap = new TreeMap<>();
 
     protected TsCodeWriter(TsContext ctx, File file) {
         super(ctx, file);
@@ -74,7 +74,7 @@ public abstract class TsCodeWriter extends CodeWriter<TsContext> {
             }
         }
         (treatAsData ? importDataMap : importMap)
-                .computeIfAbsent(path, it -> new LinkedHashSet<>())
+                .computeIfAbsent(path, it -> new TreeSet<>())
                 .add(realName);
     }
 
