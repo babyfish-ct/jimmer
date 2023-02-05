@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.client.meta.impl;
 
-import kotlin.jvm.JvmClassMappingKt;
 import kotlin.reflect.KClass;
 import kotlin.reflect.KProperty1;
 import kotlin.reflect.KType;
@@ -17,9 +16,9 @@ import java.util.*;
 
 public class StaticObjectTypeImpl implements StaticObjectType {
 
-    private final Class<?> javaType;
+    private final StaticObjectTypeImpl declaringObjectType;
 
-    private final KClass<?> kotlinType;
+    private final Class<?> javaType;
 
     private final List<Type> typeArguments;
 
@@ -27,22 +26,23 @@ public class StaticObjectTypeImpl implements StaticObjectType {
 
     private final Document document;
 
-    StaticObjectTypeImpl(Class<?> javaType, List<Type> typeArguments) {
+    private final NavigableMap<String, StaticObjectType> usedNestedJavaTypes = new TreeMap<>();
+
+    StaticObjectTypeImpl(StaticObjectTypeImpl declaringObjectType, Class<?> javaType, List<Type> typeArguments) {
+        this.declaringObjectType = declaringObjectType;
         this.javaType = javaType;
-        this.kotlinType = null;
         this.typeArguments = typeArguments != null ?
                 Collections.unmodifiableList(typeArguments) :
                 Collections.emptyList();
         this.document = DocumentImpl.of(javaType);
+        if (declaringObjectType != null && (typeArguments == null || typeArguments.isEmpty())) {
+            declaringObjectType.usedNestedJavaTypes.put(javaType.getSimpleName(), this);
+        }
     }
 
-    StaticObjectTypeImpl(KClass<?> kotlinType, List<Type> typeArguments) {
-        this.javaType = JvmClassMappingKt.getJavaClass(kotlinType);
-        this.kotlinType = kotlinType;
-        this.typeArguments = typeArguments != null ?
-                Collections.unmodifiableList(typeArguments) :
-                Collections.emptyList();
-        this.document = DocumentImpl.of(javaType);
+    @Override
+    public StaticObjectTypeImpl getDeclaringObjectType() {
+        return declaringObjectType;
     }
 
     @Override
@@ -53,6 +53,11 @@ public class StaticObjectTypeImpl implements StaticObjectType {
     @Override
     public List<Type> getTypeArguments() {
         return typeArguments;
+    }
+
+    @Override
+    public Collection<StaticObjectType> getNestedTypes() {
+        return Collections.unmodifiableCollection(usedNestedJavaTypes.values());
     }
 
     @Override
@@ -96,30 +101,28 @@ public class StaticObjectTypeImpl implements StaticObjectType {
             return impl;
         }
 
-        impl = new StaticObjectTypeImpl(javaType, typeArguments);
+        StaticObjectType declaringObjectType = null;
+        Class<?> declaringType = javaType.getDeclaringClass();
+        if (declaringType != null) {
+            if (!Modifier.isPublic(javaType.getModifiers()) || !Modifier.isStatic(javaType.getModifiers())) {
+                throw new IllegalDocMetaException(
+                        "Cannot generate documentation for \"" +
+                                javaType.getName() +
+                                "\", it is nested class but is not public and static"
+                );
+            }
+            declaringObjectType = create(ctx, declaringType, Collections.emptyList());
+        }
+
+        impl = new StaticObjectTypeImpl((StaticObjectTypeImpl) declaringObjectType, javaType, typeArguments);
         ctx.addStaticObjectType(impl);
+
+        if (declaringObjectType != null && typeArguments != null && !typeArguments.isEmpty()) {
+            create(ctx, javaType, null);
+        }
 
         NavigableMap<String, Property> props = new TreeMap<>();
         collectProps(ctx, javaType, props);
-        impl.props = Collections.unmodifiableNavigableMap(props);
-        return impl;
-    }
-
-    static StaticObjectType create(Context ctx, KClass<?> kotlinType, List<Type> typeArguments) {
-
-        StaticObjectTypeImpl impl = (StaticObjectTypeImpl) ctx.getStaticObjectType(
-                JvmClassMappingKt.getJavaClass(kotlinType),
-                typeArguments
-        );
-        if (impl != null) {
-            return impl;
-        }
-
-        impl = new StaticObjectTypeImpl(kotlinType, typeArguments);
-        ctx.addStaticObjectType(impl);
-
-        NavigableMap<String, Property> props = new TreeMap<>();
-        collectProps(ctx, kotlinType, props);
         impl.props = Collections.unmodifiableNavigableMap(props);
         return impl;
     }

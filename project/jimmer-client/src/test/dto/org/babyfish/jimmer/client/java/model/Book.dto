@@ -1,0 +1,8 @@
+StaticBook {
+    #allScalars
+    authors {
+        id
+        firstName
+        lastName
+    }
+}

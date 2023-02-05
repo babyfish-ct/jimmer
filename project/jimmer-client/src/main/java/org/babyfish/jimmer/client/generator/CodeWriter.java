@@ -5,6 +5,8 @@ import org.babyfish.jimmer.client.meta.*;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public abstract class CodeWriter<C extends Context> {
@@ -65,19 +67,31 @@ public abstract class CodeWriter<C extends Context> {
     }
 
     public final CodeWriter<C> importFile(File file) {
-        return importFile(file, false);
+        return importFile(file, false, null);
+    }
+
+    public final CodeWriter<C> importFile(File file, List<String> nestedNames) {
+        return importFile(file, false, nestedNames);
     }
 
     public final CodeWriter<C> importFile(File file, boolean treatAsData) {
+        return importFile(file, treatAsData, null);
+    }
+
+    public final CodeWriter<C> importFile(File file, boolean treatAsData, List<String> nestedNames) {
         if (file != null && !file.equals(this.file)) {
-            onImport(file, treatAsData);
+            onImport(file, treatAsData, nestedNames);
         }
         return this;
     }
 
-    protected abstract void onImport(File file, boolean treatAsData);
+    protected abstract void onImport(File file, boolean treatAsData, List<String> nestedNames);
 
     public final CodeWriter<C> typeRef(Type type) {
+        return typeRef(type, null);
+    }
+
+    public final CodeWriter<C> typeRef(Type type, List<String> nestedNames) {
         if (type instanceof UnresolvedTypeVariable) {
             code(((UnresolvedTypeVariable)type).getName());
         } else if (type instanceof SimpleType) {
@@ -103,6 +117,23 @@ public abstract class CodeWriter<C extends Context> {
                 }
             } else if (type instanceof ImmutableObjectType) {
                 writeDtoTypeRef((ImmutableObjectType) type);
+            } else if (type instanceof StaticObjectType && (nestedNames == null || nestedNames.isEmpty())) {
+                StaticObjectType staticObjectType = (StaticObjectType) type;
+                List<String> simpleNames = new ArrayList<>();
+                while (staticObjectType.getDeclaringObjectType() != null) {
+                    simpleNames.add(staticObjectType.getJavaType().getSimpleName());
+                    staticObjectType = staticObjectType.getDeclaringObjectType();
+                }
+                if (!simpleNames.isEmpty()) {
+                    Collections.reverse(simpleNames);
+                    return typeRef(staticObjectType, simpleNames);
+                }
+            }
+        }
+        if (nestedNames != null) {
+            String sp = ctx.nestedTypeSeparator();
+            for (String nestedName : nestedNames) {
+                code(sp).code(nestedName);
             }
         }
         return this;

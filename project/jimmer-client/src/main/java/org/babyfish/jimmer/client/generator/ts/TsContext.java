@@ -17,4 +17,9 @@ public class TsContext extends Context {
     public boolean isAnonymous() {
         return anonymous;
     }
+
+    @Override
+    protected String nestedTypeSeparator() {
+        return "_";
+    }
 }

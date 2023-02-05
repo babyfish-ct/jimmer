@@ -4,6 +4,7 @@ import org.babyfish.jimmer.spring.model.SortUtils;
 import org.babyfish.jimmer.sql.example.dal.AuthorRepository;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.example.model.dto.*;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,6 +43,7 @@ public class AuthorService {
     }
 
     @GetMapping("/{id}")
+    @Nullable
     public ComplexAuthor findComplexAuthor(@PathVariable("id") long id) {
         return authorRepository.findNullableStaticObject(ComplexAuthor.class, id);
     }

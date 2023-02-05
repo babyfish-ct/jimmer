@@ -30,6 +30,11 @@ tasks.getByName<Test>("test") {
     useJUnitPlatform()
 }
 
+tasks.withType(JavaCompile::class) {
+    options.compilerArgs.add("-Ajimmer.dtoDirs=src/test/dto")
+    inputs.files("src/test/dto")
+}
+
 ksp {
     arg("jimmer.source.excludes", "org.babyfish.jimmer.client.java.model.")
 }

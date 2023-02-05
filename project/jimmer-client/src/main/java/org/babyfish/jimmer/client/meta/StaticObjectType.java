@@ -1,12 +1,17 @@
 package org.babyfish.jimmer.client.meta;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 public interface StaticObjectType extends ObjectType {
 
+    StaticObjectType getDeclaringObjectType();
+
     List<Type> getTypeArguments();
+
+    Collection<StaticObjectType> getNestedTypes();
 
     @Override
     default boolean hasDefinition() {

@@ -38,29 +38,12 @@ export class BookService {
         return (await this.executor({uri, method: 'GET'})) as Page<BookDto['BookService/DEFAULT_FETCHER']>
     }
     
-    async findComplexBooks(options: BookServiceOptions['findComplexBooks']): Promise<
-        Page<BookDto['BookService/COMPLEX_FETCHER']>
+    async findComplexBook(options: BookServiceOptions['findComplexBook']): Promise<
+        BookDto['BookService/COMPLEX_FETCHER'] | undefined
     > {
-        let uri = '/book/complexList';
-        uri += '?pageIndex=';
-        uri += encodeURIComponent(options.pageIndex);
-        uri += '&pageSize=';
-        uri += encodeURIComponent(options.pageSize);
-        uri += '&sortCode=';
-        uri += encodeURIComponent(options.sortCode);
-        if (options.name !== undefined && options.name !== null) {
-            uri += '&name=';
-            uri += encodeURIComponent(options.name);
-        }
-        if (options.storeName !== undefined && options.storeName !== null) {
-            uri += '&storeName=';
-            uri += encodeURIComponent(options.storeName);
-        }
-        if (options.authorName !== undefined && options.authorName !== null) {
-            uri += '&authorName=';
-            uri += encodeURIComponent(options.authorName);
-        }
-        return (await this.executor({uri, method: 'GET'})) as Page<BookDto['BookService/COMPLEX_FETCHER']>
+        let uri = '/book/';
+        uri += encodeURIComponent(options.id);
+        return (await this.executor({uri, method: 'GET'})) as BookDto['BookService/COMPLEX_FETCHER'] | undefined
     }
     
     async findSimpleBooks(): Promise<
@@ -95,14 +78,7 @@ export type BookServiceOptions = {
         readonly storeName?: string, 
         readonly authorName?: string
     },
-    'findComplexBooks': {
-        readonly pageIndex: number, 
-        readonly pageSize: number, 
-        readonly sortCode: string, 
-        readonly name?: string, 
-        readonly storeName?: string, 
-        readonly authorName?: string
-    },
+    'findComplexBook': {readonly id: number},
     'findSimpleBooks': {},
     'saveBook': {readonly body: BookInput},
     'saveCompositeBook': {readonly body: CompositeBookInput}

@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.example.dal.AuthorRepository;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.example.model.dto.AuthorInput;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,6 +45,7 @@ public class AuthorService {
     }
 
     @GetMapping("/{id}")
+    @Nullable
     public @FetchBy("COMPLEX_FETCHER") Author findComplexAuthor(
             @PathVariable("id") long id
     ) {

@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.example.model.dto.BookStoreInput;
 import org.babyfish.jimmer.sql.example.model.dto.ComplexBookStore;
 import org.babyfish.jimmer.sql.example.model.dto.DefaultBookStore;
 import org.babyfish.jimmer.sql.example.model.dto.SimpleBookStore;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,6 +40,7 @@ public class BookStoreService {
     }
 
     @GetMapping("/{id}")
+    @Nullable
     public ComplexBookStore findComplexStore(@PathVariable("id") long id) {
         return bookStoreRepository.findNullableStaticObject(ComplexBookStore.class, id);
     }

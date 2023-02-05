@@ -5,6 +5,8 @@ export type SimpleBook = ElementOf<ResponseOf<typeof api.bookService.findSimpleB
 
 export type BookRow = ElementOf<ResponseOf<typeof api.bookService.findBooks>["content"]>;
 
+export type ComplexBook = Exclude<ResponseOf<typeof api.bookService.findComplexBook>, undefined>;
+
 export type BookInput = RequestOf<typeof api.bookService.saveBook>["body"];
 
 export function toBookInput(book: BookRow): BookInput {

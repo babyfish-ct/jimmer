@@ -24,7 +24,7 @@ public abstract class JavaCodeWriter<C extends JavaContext> extends CodeWriter<C
     }
 
     @Override
-    public void onImport(File file, boolean treatAsData) {
+    public void onImport(File file, boolean treatAsData, /* no use for java */ List<String> nestedNames) {
         if (!file.getDir().equals(this.file.getDir())) {
             StringBuilder builder = new StringBuilder();
             if (!ctx.getBasePackage().isEmpty()) {

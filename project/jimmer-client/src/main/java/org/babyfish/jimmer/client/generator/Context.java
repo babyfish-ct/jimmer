@@ -94,7 +94,7 @@ public class Context {
 
         fetchByOwnerNamespace = impl.fetchByOwnerNamespace;
 
-        dtoPrefixNamespace = new Namespace<>(clazz -> clazz.getSimpleName() + "Dto");
+        dtoPrefixNamespace = new Namespace<>(clazz -> staticTypeName(clazz) + "Dto");
     }
 
     public OutputStream getOutputStream() {
@@ -175,18 +175,28 @@ public class Context {
         return type.getJavaType().getSimpleName();
     }
 
+    private String staticTypeName(Class<?> type) {
+        Class<?> declaringClass = type.getDeclaringClass();
+        if (declaringClass == null) {
+            return type.getSimpleName();
+        }
+        return staticTypeName(declaringClass) + nestedTypeSeparator() + type.getSimpleName();
+    }
+
     protected String staticDirName() {
         return "model/static";
+    }
+
+    protected String nestedTypeSeparator() {
+        return ".";
     }
 
     private class VisitorImpl implements Visitor {
 
         private String serviceName;
 
-        private String operationName;
-
         final Namespace<Service> serviceNamespace = new Namespace<>(
-                service -> service.getJavaType().getSimpleName()
+                service -> staticTypeName(service.getJavaType())
         );
 
         final Namespace<Operation> operationNamespace = new Namespace<>(
@@ -203,9 +213,9 @@ public class Context {
                         return dynamicTypeName((ImmutableObjectType)type);
                     } else if (type instanceof StaticObjectType) {
                         Class<?> javaType = ((StaticObjectType)type).getJavaType();
-                        return javaType.getSimpleName();
+                        return staticTypeName(javaType);
                     } else if (type instanceof EnumType) {
-                        return ((EnumType)type).getJavaType().getSimpleName();
+                        return staticTypeName(((EnumType)type).getJavaType());
                     }
                     return null;
                 }
@@ -233,7 +243,7 @@ public class Context {
                 typeNamespace
         );
 
-        final Namespace<Class<?>> fetchByOwnerNamespace = new Namespace<>(Class::getSimpleName);
+        final Namespace<Class<?>> fetchByOwnerNamespace = new Namespace<>(Context.this::staticTypeName);
 
         private final Map<Class<?>, List<ImmutableObjectType>> dtoMap = new HashMap<>();
 
@@ -251,12 +261,7 @@ public class Context {
 
         @Override
         public void visitingOperation(Operation operation) {
-            operationName = operationNamespace.get(operation);
-        }
-
-        @Override
-        public void visitedOperation(Operation operation) {
-            operationName = null;
+            operationNamespace.get(operation);
         }
 
         @Override
@@ -275,6 +280,9 @@ public class Context {
 
         @Override
         public void visitStaticObjectType(StaticObjectType staticObjectType) {
+            if (staticObjectType.getDeclaringObjectType() != null) {
+                staticObjectType = staticObjectType.getDeclaringObjectType();
+            }
             typeFileManager.add(staticObjectType);
         }
 

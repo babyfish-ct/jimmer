@@ -1,6 +1,6 @@
 import type { BookStore } from '../model/entities';
-import type { Tuple2, BookStoreInput } from '../model/static';
-import type { BookStoreDto, BookDto } from '../model/dto';
+import type { BookStoreInput } from '../model/static';
+import type { BookStoreDto } from '../model/dto';
 import type { Executor, Dynamic } from '../';
 
 export class BookStoreService {
@@ -13,11 +13,12 @@ export class BookStoreService {
         return (await this.executor({uri, method: 'DELETE'})) as void
     }
     
-    async findComplexStores(): Promise<
-        ReadonlyArray<BookStoreDto['BookStoreService/COMPLEX_FETCHER']>
+    async findComplexStore(options: BookStoreServiceOptions['findComplexStore']): Promise<
+        BookStoreDto['BookStoreService/COMPLEX_FETCHER'] | undefined
     > {
-        let uri = '/bookStore/complexList';
-        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<BookStoreDto['BookStoreService/COMPLEX_FETCHER']>
+        let uri = '/bookStore/';
+        uri += encodeURIComponent(options.id);
+        return (await this.executor({uri, method: 'GET'})) as BookStoreDto['BookStoreService/COMPLEX_FETCHER'] | undefined
     }
     
     async findSimpleStores(): Promise<
@@ -34,13 +35,6 @@ export class BookStoreService {
         return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<BookStoreDto['BookStoreService/DEFAULT_FETCHER']>
     }
     
-    async findStoresWithNewestBook(): Promise<
-        ReadonlyArray<Tuple2<BookStoreDto['BookStoreService/SIMPLE_FETCHER'], BookDto['BookStoreService/NEWEST_BOOK_FETCHER'] | undefined>>
-    > {
-        let uri = '/bookStore/listWithNewestBook';
-        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<Tuple2<BookStoreDto['BookStoreService/SIMPLE_FETCHER'], BookDto['BookStoreService/NEWEST_BOOK_FETCHER'] | undefined>>
-    }
-    
     async saveBookStore(options: BookStoreServiceOptions['saveBookStore']): Promise<
         Dynamic<BookStore>
     > {
@@ -51,9 +45,8 @@ export class BookStoreService {
 
 export type BookStoreServiceOptions = {
     'deleteBookStore': {readonly id: number},
-    'findComplexStores': {},
+    'findComplexStore': {readonly id: number},
     'findSimpleStores': {},
     'findStores': {},
-    'findStoresWithNewestBook': {},
     'saveBookStore': {readonly body: BookStoreInput}
 }

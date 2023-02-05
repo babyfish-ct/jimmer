@@ -62,8 +62,6 @@ class ImmutableType(
 
     override val isEntity: Boolean = classDeclaration.annotation(Entity::class) !== null
 
-    val isMappedSuperclass: Boolean = classDeclaration.annotation(MappedSuperclass::class) != null
-
     val superType: ImmutableType? =
         classDeclaration
             .superTypes
