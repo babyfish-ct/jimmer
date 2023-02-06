@@ -117,7 +117,8 @@ public class ImmutableProcessor extends AbstractProcessor {
         generateDtoTypes(dtoTypeMap);
 
         List<TypeElement> errorElements = getErrorFamilies(roundEnv);
-        
+        generateErrorType(errorElements);
+
         return true;
     }
 
@@ -191,6 +192,8 @@ public class ImmutableProcessor extends AbstractProcessor {
         }
         if (path.startsWith("file://")) {
             path = path.substring(7);
+        } else if (path.startsWith("file:/")) {
+            path = path.substring(6);
         }
         path = path.substring(0, path.lastIndexOf('/'));
         File file = new File(path);
@@ -334,6 +337,12 @@ public class ImmutableProcessor extends AbstractProcessor {
             for (DtoType<ImmutableType, ImmutableProp> dtoType : dtoTypes) {
                 new DtoGenerator(dtoType, filer).generate();
             }
+        }
+    }
+
+    private void generateErrorType(List<TypeElement> typeElements) {
+        for (TypeElement typeElement : typeElements) {
+            new ErrorGenerator(typeElement, filer).generate();
         }
     }
 

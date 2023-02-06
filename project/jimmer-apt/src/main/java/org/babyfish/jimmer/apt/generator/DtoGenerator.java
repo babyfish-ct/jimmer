@@ -684,7 +684,7 @@ public class DtoGenerator {
             }
             builder.addCode(".append($S).append('=').append($L)\n", prop.getName(), prop.getName());
         }
-        builder.addCode(".append('}')\n").addCode(".toString();\n");
+        builder.addCode(".append('}')\n").addCode(".toString();$<\n");
 
         typeBuilder.addMethod(builder.build());
     }

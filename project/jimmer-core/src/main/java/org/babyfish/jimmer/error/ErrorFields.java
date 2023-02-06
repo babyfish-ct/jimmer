@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface ErrorCode {
+public @interface ErrorFields {
 
-    ErrorField[] fields() default {};
+    ErrorField[] value() default {};
 }
