@@ -14,8 +14,7 @@ import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.impl.validation.Validator;
 
 import java.beans.ConstructorProperties;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 
 class Constants {
@@ -32,8 +31,23 @@ class Constants {
     public static final ClassName CONSTRUCTOR_PROPERTIES_CLASS_NAME =
             ClassName.get(ConstructorProperties.class);
 
+    public static final ClassName OBJECT_CLASS_NAME =
+            ClassName.get(Object.class);
+
+    public static final ClassName STRING_CLASS_NAME =
+            ClassName.get(String.class);
+
     public static final ClassName LIST_CLASS_NAME =
             ClassName.get(List.class);
+
+    public static final ClassName MAP_CLASS_NAME =
+            ClassName.get(Map.class);
+
+    public static final ClassName COLLECTIONS_CLASS_NAME =
+            ClassName.get(Collections.class);
+
+    public static final ClassName LINKED_HASH_MAP_CLASS_NAME =
+            ClassName.get(LinkedHashMap.class);
 
     public static final ClassName STATIC_CLASS_NAME =
             ClassName.get(Static.class);

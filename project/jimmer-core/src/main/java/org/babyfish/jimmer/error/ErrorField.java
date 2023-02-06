@@ -1,8 +1,10 @@
 package org.babyfish.jimmer.error;
 
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
-@Target({})
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+@Repeatable(ErrorFields.class)
 public @interface ErrorField {
 
     String name();
@@ -11,5 +13,5 @@ public @interface ErrorField {
 
     boolean nullable() default false;
 
-    boolean isList() default false;
+    boolean list() default false;
 }

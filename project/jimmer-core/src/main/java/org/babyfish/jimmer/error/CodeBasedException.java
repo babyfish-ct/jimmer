@@ -6,18 +6,22 @@ import java.util.Map;
 
 public abstract class CodeBasedException extends RuntimeException {
 
+    protected CodeBasedException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
     @NotNull
     public abstract Enum<?> getCode();
 
     @NotNull
-    public abstract Map<String, Object> getErrorFields();
+    public abstract Map<String, Object> getFields();
 
     public ExportedError getExportedError() {
         Enum<?> code = getCode();
         return new ExportedError(
                 familyName(code.getClass().getSimpleName()),
                 code.name(),
-                getErrorFields()
+                getFields()
         );
     }
 

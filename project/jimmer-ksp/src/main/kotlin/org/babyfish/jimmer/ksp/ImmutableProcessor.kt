@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.ksp
 
+import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.isPrivate
 import com.google.devtools.ksp.isProtected
 import com.google.devtools.ksp.processing.Resolver
@@ -11,6 +12,7 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import org.babyfish.jimmer.dto.compiler.DtoAstException
 import org.babyfish.jimmer.dto.compiler.DtoType
+import org.babyfish.jimmer.error.ErrorFamily
 import org.babyfish.jimmer.ksp.generator.*
 import org.babyfish.jimmer.ksp.meta.Context
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
@@ -181,6 +183,20 @@ class ImmutableProcessor(
         }
         return dtoMap
     }
+
+    private fun findErrorTypes(resolver: Resolver): List<KSClassDeclaration> =
+        resolver
+            .getAllFiles()
+            .flatMap { file ->
+                file
+                    .declarations
+                    .filterIsInstance<KSClassDeclaration>()
+                    .filter{
+                        it.classKind == ClassKind.ENUM_CLASS &&
+                            it.annotation(ErrorFamily::class) != null
+                    }
+            }
+            .toList()
 
     private fun generateJimmerTypes(
         resolver: Resolver,
