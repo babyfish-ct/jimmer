@@ -179,10 +179,10 @@ class DraftImplGenerator(
                                 .builder()
                                 .apply {
                                     ValidationGenerator(prop, this).generate()
-                                    addStatement("val __modified = %L", MODIFIED)
+                                    addStatement("val __tmpModified = %L", MODIFIED)
                                     if (prop.isList || prop.isScalarList) {
                                         addStatement(
-                                            "__modified.%L = %T.of(__modified.%L, %L)",
+                                            "__tmpModified.%L = %T.of(__tmpModified.%L, %L)",
                                             prop.valueFieldName,
                                             NON_SHARED_LIST_CLASS_NAME,
                                             prop.valueFieldName,
@@ -190,13 +190,13 @@ class DraftImplGenerator(
                                         )
                                     } else {
                                         addStatement(
-                                            "__modified.%L = %L",
+                                            "__tmpModified.%L = %L",
                                             prop.valueFieldName,
                                             prop.name
                                         )
                                     }
                                     prop.loadedFieldName?.let {
-                                        addStatement("__modified.%L = true", it)
+                                        addStatement("__tmpModified.%L = true", it)
                                     }
                                 }
                                 .build()
@@ -359,9 +359,9 @@ class DraftImplGenerator(
                             addStatement("__resolving = true")
                             beginControlFlow("try")
                             addStatement("val base = __base")
-                            addStatement("var modified = __modified")
+                            addStatement("var __tmpModified = __modified")
                             if (type.properties.values.any { it.isList || it.isReference }) {
-                                beginControlFlow("if (modified === null)")
+                                beginControlFlow("if (__tmpModified === null)")
                                 for (prop in type.properties.values) {
                                     if (prop.isList || prop.isReference) {
                                         beginControlFlow("if (__isLoaded(%L))", prop.id)
@@ -385,12 +385,12 @@ class DraftImplGenerator(
                                         endControlFlow()
                                     }
                                 }
-                                addStatement("modified = __modified")
+                                addStatement("__tmpModified = __modified")
                                 nextControlFlow("else")
                                 for (prop in type.properties.values) {
                                     if (prop.isList) {
                                         addStatement(
-                                            "modified.%L = %T.of(modified.%L, __ctx.%L(modified.%L))",
+                                            "__tmpModified.%L = %T.of(__tmpModified.%L, __ctx.%L(__tmpModified.%L))",
                                             prop.valueFieldName,
                                             NON_SHARED_LIST_CLASS_NAME,
                                             prop.valueFieldName,
@@ -399,7 +399,7 @@ class DraftImplGenerator(
                                         )
                                     } else if (prop.isReference) {
                                         addStatement(
-                                            "modified.%L = __ctx.%L(modified.%L)",
+                                            "__tmpModified.%L = __ctx.%L(__tmpModified.%L)",
                                             prop.valueFieldName,
                                             "resolveObject",
                                             prop.valueFieldName
@@ -409,15 +409,15 @@ class DraftImplGenerator(
                                 endControlFlow()
                             }
                             beginControlFlow(
-                                "if (modified === null || %T.equals(base, modified, true))",
+                                "if (__tmpModified === null || %T.equals(base, __tmpModified, true))",
                                 IMMUTABLE_SPI_CLASS_NAME
                             )
                             addStatement("return base")
                             endControlFlow()
                             for ((className, _) in type.validationMessages) {
-                                addStatement("%L.validate(modified)", validatorFieldName(className))
+                                addStatement("%L.validate(__tmpModified)", validatorFieldName(className))
                             }
-                            addStatement("return modified")
+                            addStatement("return __tmpModified")
                             nextControlFlow("finally")
                             addStatement("__resolving = false")
                             endControlFlow()

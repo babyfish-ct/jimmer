@@ -364,20 +364,20 @@ public class DraftImplGenerator {
 
         new ValidationGenerator(prop, prop.getName(), builder).generate();
 
-        builder.addStatement("$T modified = $L()", type.getImplClassName(), DRAFT_FIELD_MODIFIED);
+        builder.addStatement("$T __tmpModified = $L()", type.getImplClassName(), DRAFT_FIELD_MODIFIED);
         if (prop.isList()) {
             builder.addStatement(
-                    "modified.$L = $T.of(modified.$L, $L)",
+                    "__tmpModified.$L = $T.of(__tmpModified.$L, $L)",
                     prop.getName(),
                     NonSharedList.class,
                     prop.getName(),
                     prop.getName()
             );
         } else {
-            builder.addStatement("modified.$L = $L", prop.getName(), prop.getName());
+            builder.addStatement("__tmpModified.$L = $L", prop.getName(), prop.getName());
         }
         if (prop.isLoadedStateRequired()) {
-            builder.addStatement("modified.$L = true", prop.getLoadedStateName());
+            builder.addStatement("__tmpModified.$L = true", prop.getLoadedStateName());
         }
         builder.addStatement("return this");
         typeBuilder.addMethod(builder.build());
@@ -475,7 +475,7 @@ public class DraftImplGenerator {
                 "Illegal property " +
                         (argType == int.class ? "name" : "id") +
                         ": \"",
-                        "\""
+                "\""
         );
         builder.endControlFlow();
         typeBuilder.addMethod(builder.build());
@@ -511,7 +511,7 @@ public class DraftImplGenerator {
                 "Illegal property " +
                         (argType == int.class ? "name" : "id") +
                         ": \"",
-                        "\""
+                "\""
         );
         builder.endControlFlow();
         typeBuilder.addMethod(builder.build());
@@ -554,10 +554,10 @@ public class DraftImplGenerator {
     private void addResolveCode(MethodSpec.Builder builder) {
         builder
                 .addStatement("Implementor base = $L", DRAFT_FIELD_BASE)
-                .addStatement("Impl modified = $L", DRAFT_FIELD_MODIFIED);
+                .addStatement("Impl __tmpModified = $L", DRAFT_FIELD_MODIFIED);
 
         if (type.getProps().values().stream().anyMatch(it -> it.isAssociation(false) || it.isList())) {
-            builder.beginControlFlow("if (modified == null)");
+            builder.beginControlFlow("if (__tmpModified == null)");
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.isAssociation(false) || prop.isList()) {
                     builder.beginControlFlow("if (base.__isLoaded($L))", prop.getId());
@@ -585,14 +585,14 @@ public class DraftImplGenerator {
                     builder.endControlFlow();
                 }
             }
-            builder.addStatement("modified = $L", DRAFT_FIELD_MODIFIED);
+            builder.addStatement("__tmpModified = $L", DRAFT_FIELD_MODIFIED);
             builder.endControlFlow();
 
             builder.beginControlFlow("else");
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.isList()) {
                     builder.addStatement(
-                            "modified.$L = $T.of(modified.$L, $L.$L(modified.$L))",
+                            "__tmpModified.$L = $T.of(__tmpModified.$L, $L.$L(__tmpModified.$L))",
                             prop.getName(),
                             NonSharedList.class,
                             prop.getName(),
@@ -602,7 +602,7 @@ public class DraftImplGenerator {
                     );
                 } else if (prop.isAssociation(false)) {
                     builder.addStatement(
-                            "modified.$L = $L.$L(modified.$L)",
+                            "__tmpModified.$L = $L.$L(__tmpModified.$L)",
                             prop.getName(),
                             DRAFT_FIELD_CTX,
                             "resolveObject",
@@ -615,15 +615,15 @@ public class DraftImplGenerator {
 
         builder
                 .beginControlFlow(
-                        "if (modified == null || $T.equals(base, modified, true))",
+                        "if (__tmpModified == null || $T.equals(base, __tmpModified, true))",
                         ImmutableSpi.class
                 )
                 .addStatement("return base")
                 .endControlFlow();
         for (Map.Entry<ClassName, String> e : type.getValidationMessageMap().entrySet()) {
-            builder.addStatement("$L.validate(modified)", Constants.validatorFieldName(e.getKey()));
+            builder.addStatement("$L.validate(__tmpModified)", Constants.validatorFieldName(e.getKey()));
         }
-        builder.addStatement("return modified");
+        builder.addStatement("return __tmpModified");
     }
 
     private void addModified() {
@@ -631,12 +631,12 @@ public class DraftImplGenerator {
                 .methodBuilder(DRAFT_FIELD_MODIFIED)
                 .addModifiers(Modifier.PRIVATE)
                 .returns(type.getImplClassName())
-                .addStatement("$T modified = $L", type.getImplClassName(), DRAFT_FIELD_MODIFIED)
-                .beginControlFlow("if (modified == null)")
-                .addStatement("modified = $L.clone()", DRAFT_FIELD_BASE)
-                .addStatement("$L = modified", DRAFT_FIELD_MODIFIED)
+                .addStatement("$T __tmpModified = $L", type.getImplClassName(), DRAFT_FIELD_MODIFIED)
+                .beginControlFlow("if (__tmpModified == null)")
+                .addStatement("__tmpModified = $L.clone()", DRAFT_FIELD_BASE)
+                .addStatement("$L = __tmpModified", DRAFT_FIELD_MODIFIED)
                 .endControlFlow()
-                .addStatement("return modified");
+                .addStatement("return __tmpModified");
         typeBuilder.addMethod(builder.build());
     }
 

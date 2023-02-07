@@ -2,6 +2,7 @@ package org.babyfish.jimmer.client.java.ts;
 
 import org.babyfish.jimmer.client.generator.ts.*;
 import org.babyfish.jimmer.client.java.model.*;
+import org.babyfish.jimmer.client.java.model.dto.ComplexBookStore;
 import org.babyfish.jimmer.client.java.service.AuthorService;
 import org.babyfish.jimmer.client.java.service.BookService;
 import org.babyfish.jimmer.client.meta.*;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Collections;
 
 public class JTypeScriptTest {
 
@@ -25,7 +27,7 @@ public class JTypeScriptTest {
         Assertions.assertEquals(
                 "import type { Executor } from './';\n" +
                         "\n" +
-                        "import { AuthorService, BookService } from './services';\n" +
+                        "import { AuthorService, BookService, BookStoreService } from './services';\n" +
                         "\n" +
                         "export class Api {\n" +
                         "    \n" +
@@ -33,9 +35,12 @@ public class JTypeScriptTest {
                         "    \n" +
                         "    readonly bookService: BookService;\n" +
                         "    \n" +
+                        "    readonly bookStoreService: BookStoreService;\n" +
+                        "    \n" +
                         "    constructor(executor: Executor) {\n" +
                         "        this.authorService = new AuthorService(executor);\n" +
                         "        this.bookService = new BookService(executor);\n" +
+                        "        this.bookStoreService = new BookStoreService(executor);\n" +
                         "    }\n" +
                         "}",
                 code
@@ -694,6 +699,54 @@ public class JTypeScriptTest {
                         "     * Null is allowed\n" +
                         "     */\n" +
                         "    readonly storeId?: number;\n" +
+                        "}\n",
+                code
+        );
+    }
+
+    @Test
+    public void testStaticDto() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        TsContext ctx = createContext(out);
+        StaticObjectType complexBookStoreType = Constants.JAVA_METADATA.getStaticTypes().get(
+                new StaticObjectType.Key(ComplexBookStore.class, Collections.emptyList())
+        );
+        new TypeDefinitionWriter(ctx, complexBookStoreType).flush();
+        String code = out.toString();
+        Assertions.assertEquals(
+                "import type { Gender } from '../enums';\n" +
+                        "\n" +
+                        "export interface ComplexBookStore {\n" +
+                        "    \n" +
+                        "    readonly books: ReadonlyArray<ComplexBookStore_TargetOf_books>;\n" +
+                        "    \n" +
+                        "    readonly id: number;\n" +
+                        "    \n" +
+                        "    readonly name: string;\n" +
+                        "}\n" +
+                        "\n" +
+                        "export interface ComplexBookStore_TargetOf_books {\n" +
+                        "    \n" +
+                        "    readonly authors: ReadonlyArray<ComplexBookStore_TargetOf_books_TargetOf_authors>;\n" +
+                        "    \n" +
+                        "    readonly edition: number;\n" +
+                        "    \n" +
+                        "    readonly id: number;\n" +
+                        "    \n" +
+                        "    readonly name: string;\n" +
+                        "    \n" +
+                        "    readonly price: number;\n" +
+                        "}\n" +
+                        "\n" +
+                        "export interface ComplexBookStore_TargetOf_books_TargetOf_authors {\n" +
+                        "    \n" +
+                        "    readonly firstName: string;\n" +
+                        "    \n" +
+                        "    readonly gender: Gender;\n" +
+                        "    \n" +
+                        "    readonly id: number;\n" +
+                        "    \n" +
+                        "    readonly lastName: string;\n" +
                         "}\n",
                 code
         );

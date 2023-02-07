@@ -1,0 +1,11 @@
+ComplexBookStore {
+
+    #allScalars
+
+    books {
+        #allScalars
+        authors {
+            #allScalars
+        }
+    }
+}

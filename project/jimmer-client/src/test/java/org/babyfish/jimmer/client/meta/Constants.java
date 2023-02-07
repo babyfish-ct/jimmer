@@ -2,6 +2,7 @@ package org.babyfish.jimmer.client.meta;
 
 import org.babyfish.jimmer.client.java.service.AuthorService;
 import org.babyfish.jimmer.client.java.service.BookService;
+import org.babyfish.jimmer.client.java.service.BookStoreService;
 import org.babyfish.jimmer.client.kotlin.service.KBookService;
 import org.babyfish.jimmer.client.kotlin.service.KBookStoreService;
 import org.babyfish.jimmer.client.meta.common.*;
@@ -57,6 +58,7 @@ public class Constants {
     public final static Metadata JAVA_METADATA = Metadata.newBuilder()
             .addServiceType(BookService.class)
             .addServiceType(AuthorService.class)
+            .addServiceType(BookStoreService.class)
             .setOperationParser(
                     OPERATION_PARSER
             )

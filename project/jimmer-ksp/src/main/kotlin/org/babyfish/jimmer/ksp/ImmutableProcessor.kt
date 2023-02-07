@@ -75,6 +75,10 @@ class ImmutableProcessor(
         val dtoTypeMap = findDtoTypeMap(ctx, classDeclarationMultiMap)
         generateJimmerTypes(resolver, ctx, classDeclarationMultiMap)
         generateDtoTypes(resolver, dtoTypeMap)
+
+        val errorDeclarations = findErrorTypes(resolver)
+        generateErrorTypes(resolver, errorDeclarations)
+
         return classDeclarationMultiMap.values.flatten()
     }
 
@@ -248,6 +252,13 @@ class ImmutableProcessor(
             for (dtoType in dtoTypes) {
                 DtoGenerator(dtoType, environment.codeGenerator).generate(allFiles)
             }
+        }
+    }
+
+    private fun generateErrorTypes(resolver: Resolver, declarations: List<KSClassDeclaration>) {
+        val allFiles = resolver.getAllFiles().toList()
+        for (declaration in declarations) {
+            ErrorGenerator(declaration, environment.codeGenerator).generate(allFiles)
         }
     }
 

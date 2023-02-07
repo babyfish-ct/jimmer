@@ -27,8 +27,8 @@ public class TypeDefinitionWriter extends TsCodeWriter {
     }
 
     private void writeObjectType(ObjectType objectType, String prefix) {
-        String simpleName = objectType.getJavaType().getSimpleName();
-        code("export interface ").code(prefix + simpleName);
+        String simpleName = prefix  + objectType.getJavaType().getSimpleName();
+        code("export interface ").code(simpleName);
         if (objectType instanceof StaticObjectType) {
             StaticObjectType staticObjectType = (StaticObjectType) objectType;
             TypeVariable<? extends Class<?>>[] typeParameters = staticObjectType.getJavaType().getTypeParameters();
