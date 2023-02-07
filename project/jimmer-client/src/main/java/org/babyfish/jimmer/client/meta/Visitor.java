@@ -26,7 +26,9 @@ public interface Visitor {
 
     default void visitMapType(MapType mapType) {}
 
-    default void visitStaticObjectType(StaticObjectType staticObjectType) {}
+    default boolean visitStaticObjectType(StaticObjectType staticObjectType) {
+        return false;
+    }
 
     default void visitImmutableObjectType(ImmutableObjectType immutableObjectType) {}
 

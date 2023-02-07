@@ -79,9 +79,10 @@ public class StaticObjectTypeImpl implements StaticObjectType {
     @Override
     public void accept(Visitor visitor) {
         if (visitor.isTypeVisitable(this)) {
-            visitor.visitStaticObjectType(this);
-            for (Property prop : props.values()) {
-                prop.getType().accept(visitor);
+            if (visitor.visitStaticObjectType(this)) {
+                for (Property prop : props.values()) {
+                    prop.getType().accept(visitor);
+                }
             }
         }
     }
@@ -143,7 +144,7 @@ public class StaticObjectTypeImpl implements StaticObjectType {
             }
         } else {
             for (Method method : javaType.getDeclaredMethods()) {
-                if (method.getParameters().length != 0 || method.getReturnType() == void.class) {
+                if (Modifier.isStatic(method.getModifiers()) || method.getParameters().length != 0 || method.getReturnType() == void.class) {
                     continue;
                 }
                 String prefix = null;

@@ -4,3 +4,10 @@ TreeDto {
         #allScalars
     }*
 }
+
+input TreeInput {
+    #allScalars
+    childNodes {
+        #allScalars
+    }*
+}

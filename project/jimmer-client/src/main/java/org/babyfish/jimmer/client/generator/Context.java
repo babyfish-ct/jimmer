@@ -281,13 +281,15 @@ public class Context {
         }
 
         @Override
-        public void visitStaticObjectType(StaticObjectType staticObjectType) {
+        public boolean visitStaticObjectType(StaticObjectType staticObjectType) {
             if (visitedStaticTypes.add(staticObjectType)) {
                 if (staticObjectType.getDeclaringObjectType() != null) {
                     staticObjectType = staticObjectType.getDeclaringObjectType();
                 }
                 typeFileManager.add(staticObjectType);
+                return true;
             }
+            return false;
         }
 
         @Override
