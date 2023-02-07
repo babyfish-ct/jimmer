@@ -193,6 +193,8 @@ public class Context {
 
     private class VisitorImpl implements Visitor {
 
+        private Set<StaticObjectType> visitedStaticTypes = new HashSet<>();
+
         private String serviceName;
 
         final Namespace<Service> serviceNamespace = new Namespace<>(
@@ -280,10 +282,12 @@ public class Context {
 
         @Override
         public void visitStaticObjectType(StaticObjectType staticObjectType) {
-            if (staticObjectType.getDeclaringObjectType() != null) {
-                staticObjectType = staticObjectType.getDeclaringObjectType();
+            if (visitedStaticTypes.add(staticObjectType)) {
+                if (staticObjectType.getDeclaringObjectType() != null) {
+                    staticObjectType = staticObjectType.getDeclaringObjectType();
+                }
+                typeFileManager.add(staticObjectType);
             }
-            typeFileManager.add(staticObjectType);
         }
 
         @Override
