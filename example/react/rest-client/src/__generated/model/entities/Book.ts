@@ -1,4 +1,4 @@
-import type { BookStore, Author, Chapter } from './';
+import type { Author, BookStore, Chapter } from './';
 
 export interface Book {
     
