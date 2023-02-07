@@ -1,5 +1,5 @@
-import type { Book } from './';
 import type { Gender } from '../enums';
+import type { Book } from './';
 
 export interface Author {
     

@@ -1,7 +1,7 @@
+import type { Dynamic, Executor } from '../';
+import type { AuthorDto } from '../model/dto';
 import type { Author } from '../model/entities';
 import type { Gender } from '../model/enums';
-import type { AuthorDto } from '../model/dto';
-import type { Executor, Dynamic } from '../';
 
 export class AuthorService {
     

@@ -1,7 +1,7 @@
+import type { Dynamic, Executor } from '../';
+import type { BookStoreDto } from '../model/dto';
 import type { BookStore } from '../model/entities';
 import type { BookStoreInput } from '../model/static';
-import type { BookStoreDto } from '../model/dto';
-import type { Executor, Dynamic } from '../';
 
 export class BookStoreService {
     

@@ -1,7 +1,7 @@
+import type { Dynamic, Executor } from '../';
+import type { TreeNodeDto } from '../model/dto';
 import type { TreeNode } from '../model/entities';
 import type { RecursiveTreeInput } from '../model/static';
-import type { TreeNodeDto } from '../model/dto';
-import type { Executor, Dynamic } from '../';
 
 export class TreeService {
     

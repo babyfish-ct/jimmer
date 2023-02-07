@@ -1,10 +1,8 @@
-import type { TargetOf_chapters } from './';
-
 export interface CompositeBookInput {
     
     readonly authorIds: ReadonlyArray<number>;
     
-    readonly chapters: ReadonlyArray<TargetOf_chapters>;
+    readonly chapters: ReadonlyArray<CompositeBookInput_TargetOf_chapters>;
     
     readonly edition: number;
     
@@ -15,4 +13,13 @@ export interface CompositeBookInput {
     readonly price: number;
     
     readonly storeId?: number;
+}
+
+export interface CompositeBookInput_TargetOf_chapters {
+    
+    readonly id?: number;
+    
+    readonly index: number;
+    
+    readonly title: string;
 }

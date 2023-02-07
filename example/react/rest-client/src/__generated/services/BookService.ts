@@ -1,7 +1,7 @@
-import type { Book } from '../model/entities';
-import type { Page, BookInput, CompositeBookInput } from '../model/static';
+import type { Dynamic, Executor } from '../';
 import type { BookDto } from '../model/dto';
-import type { Executor, Dynamic } from '../';
+import type { Book } from '../model/entities';
+import type { BookInput, CompositeBookInput, Page } from '../model/static';
 
 export class BookService {
     
