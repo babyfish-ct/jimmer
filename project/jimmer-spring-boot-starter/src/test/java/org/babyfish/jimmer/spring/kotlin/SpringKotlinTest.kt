@@ -1,8 +1,12 @@
 package org.babyfish.jimmer.spring.kotlin
 
+import org.babyfish.jimmer.client.meta.Metadata
 import org.babyfish.jimmer.spring.AbstractTest
 import org.babyfish.jimmer.spring.cfg.JimmerProperties
+import org.babyfish.jimmer.spring.cfg.MetadataCondition
 import org.babyfish.jimmer.spring.cfg.SqlClientConfig
+import org.babyfish.jimmer.spring.client.MetadataFactoryBean
+import org.babyfish.jimmer.spring.client.TypeScriptController
 import org.babyfish.jimmer.spring.datasource.DataSources
 import org.babyfish.jimmer.spring.datasource.TxCallback
 import org.babyfish.jimmer.spring.kotlin.dto.TreeDto
@@ -15,12 +19,21 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.SpringBootConfiguration
 import org.springframework.boot.autoconfigure.AutoConfigurationPackage
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.data.domain.Sort
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers
+import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import org.springframework.web.context.WebApplicationContext
 import java.sql.Connection
 import java.sql.PreparedStatement
 import javax.sql.DataSource
@@ -81,6 +94,29 @@ open class SpringKotlinTest : AbstractTest() {
                 }
             }
         }
+
+        @Bean
+        open fun treeService(repository: TreeNodeRepository): TreeService =
+            TreeService(repository)
+
+        @Bean
+        open fun mockMvc(ctx: WebApplicationContext): MockMvc {
+            return MockMvcBuilders.webAppContextSetup(ctx).build()
+        }
+
+        @ConditionalOnProperty("jimmer.client.ts.path")
+        @ConditionalOnMissingBean(TypeScriptController::class)
+        @Bean
+        open fun typeScriptController(metadata: Metadata, properties: JimmerProperties): TypeScriptController {
+            return TypeScriptController(metadata, properties)
+        }
+
+        @Conditional(MetadataCondition::class)
+        @ConditionalOnMissingBean(Metadata::class)
+        @Bean
+        open fun metadataFactoryBean(ctx: ApplicationContext): MetadataFactoryBean {
+            return MetadataFactoryBean(ctx)
+        }
     }
 
     @Autowired
@@ -88,6 +124,9 @@ open class SpringKotlinTest : AbstractTest() {
 
     @Autowired
     private lateinit var treeNodeRepository: TreeNodeRepository
+
+    @Autowired
+    private lateinit var mvc: MockMvc
 
     @Test
     fun testProperties() {
@@ -173,6 +212,14 @@ open class SpringKotlinTest : AbstractTest() {
                 "where tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
         Assertions.assertTrue(rootTrees[0].childNodes!![0]::class.simpleName == "TargetOf_childNodes")
+    }
+
+    @Test
+    @Throws(Exception::class)
+    open fun testDownloadTypescript() {
+        mvc.perform(MockMvcRequestBuilders.get("/my-ts.zip"))
+            .andExpect(MockMvcResultMatchers.status().isOk)
+            .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith("application/zip"))
     }
 
     companion object {

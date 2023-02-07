@@ -144,13 +144,14 @@ class JetBrainsMetadata {
 
     private static class Nullity {
 
-        private final Map<Member, AccessibleObject> accessibleObjectMap = new HashMap<>();
-
         final Set<AccessibleObject> nullableMembers = new HashSet<>();
 
         final Map<AccessibleObject, Set<Integer>> nullableParameterIndices = new HashMap<>();
 
         Nullity(Class<?> clazz) {
+            if (clazz.isPrimitive() || BOX_TYPES.contains(clazz)) {
+                return;
+            }
             Map<Member, AccessibleObject> accessibleObjectMap = new HashMap<>();
             for (Field field : clazz.getDeclaredFields()) {
                 accessibleObjectMap.put(new Member(field.getName(), Type.getDescriptor(field.getType())), field);
