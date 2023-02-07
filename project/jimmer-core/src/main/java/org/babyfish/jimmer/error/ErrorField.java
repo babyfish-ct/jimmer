@@ -11,7 +11,7 @@ public @interface ErrorField {
 
     Class<?> type();
 
-    boolean nullable() default false;
-
     boolean list() default false;
+
+    boolean nullable() default false;
 }

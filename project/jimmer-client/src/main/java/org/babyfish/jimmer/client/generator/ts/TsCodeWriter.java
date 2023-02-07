@@ -65,17 +65,17 @@ public abstract class TsCodeWriter extends CodeWriter<TsContext> {
             builder.append('/').append(paths[i]);
         }
         String path = builder.toString();
-        String realName = file.getName();
+        StringBuilder realName = new StringBuilder(file.getName());
         if (nestedNames != null) {
             String sp = ctx.nestedTypeSeparator();
             for (String nestedName : nestedNames) {
-                realName += sp;
-                realName += nestedName;
+                realName.append(sp);
+                realName.append(nestedName);
             }
         }
         (treatAsData ? importDataMap : importMap)
                 .computeIfAbsent(path, it -> new TreeSet<>())
-                .add(realName);
+                .add(realName.toString());
     }
 
     @Override

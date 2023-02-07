@@ -5,7 +5,6 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.error.CodeBasedException;
 import org.babyfish.jimmer.error.ErrorField;
 import org.babyfish.jimmer.error.ErrorFields;
-import org.babyfish.jimmer.impl.asm.Type;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -52,7 +51,11 @@ public class ErrorGenerator {
                 Arrays.copyOfRange(simpleNames, 1, simpleNames.length)
         );
         String exceptionName = String.join("_", simpleNames);
-        if (exceptionName.endsWith("_Error")) {
+        if (exceptionName.endsWith("_ErrorCode")) {
+            exceptionName = exceptionName.substring(0, exceptionName.length() - 10) + "Exception";
+        } else if (exceptionName.endsWith("ErrorCode")) {
+            exceptionName = exceptionName.substring(0, exceptionName.length() - 9) + "Exception";
+        } else if (exceptionName.endsWith("_Error")) {
             exceptionName = exceptionName.substring(0, exceptionName.length() - 6) + "Exception";
         } else if (exceptionName.endsWith("Error")) {
             exceptionName = exceptionName.substring(0, exceptionName.length() - 5) + "Exception";

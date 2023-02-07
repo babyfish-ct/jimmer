@@ -8,7 +8,7 @@ public enum BusinessError {
 
     UNAUTHORIZED,
 
-    @ErrorField(name = "userName", type = String.class, nullable = true)
+    @ErrorField(name = "userNames", type = String.class, list = true, nullable = true)
     ILLEGAL_USER_NAME,
 
     @ErrorField(name = "x", type = int.class)
