@@ -3,11 +3,9 @@
 
 # A revolutionary ORM framework for both java and kotlin.
 
-<div style="font-size: 20px">
-CRUD for single table is very simple, isn't it?
-
-Now, jimmer tells you that CRUD for arbitrarily complex data structures can be very simple too!
-</div>
+> CRUD for single table is very simple, isn't it?
+> 
+> Now, jimmer tells you that CRUD for arbitrarily complex data structures can be very simple too!
 
 ## 1. Documentation
 
