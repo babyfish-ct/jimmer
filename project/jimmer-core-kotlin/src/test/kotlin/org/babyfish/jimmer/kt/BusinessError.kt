@@ -8,8 +8,8 @@ enum class BusinessError {
 
     UNAUTHORIZED,
 
-    @ErrorField(name = "userNames", type = String::class, list = true, nullable = true)
-    ILLEGAL_USER_NAME,
+    @ErrorField(name = "pathNodes", type = String::class, list = true, nullable = true)
+    ILLEGAL_PATH_NODES,
 
     @ErrorField(name = "x", type = Int::class)
     @ErrorField(name = "y", type = Int::class)

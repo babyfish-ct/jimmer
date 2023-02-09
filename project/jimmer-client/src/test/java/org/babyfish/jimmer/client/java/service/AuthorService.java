@@ -26,9 +26,11 @@ public interface AuthorService {
                             )
             );
 
+    @BusinessThrows({BusinessError.GLOBAL_TENANT_REQUIRED, BusinessError.OUT_OF_RANGE})
     @GetMapping("/author/simple/{id}")
     @FetchBy("SIMPLE_FETCHER") @Nullable Author findSimpleAuthor(@PathVariable("id") long id);
 
+    @BusinessThrows({BusinessError.OUT_OF_RANGE, BusinessError.ILLEGAL_PATH_NODES})
     @GetMapping("/author/complex/{id}")
     @FetchBy("COMPLEX_FETCHER") @Nullable Author findComplexAuthor(@PathVariable("id") long id);
 }
