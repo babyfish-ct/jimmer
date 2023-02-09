@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "1.7.10"
+    kotlin("kapt") version "1.7.10"
     id("com.google.devtools.ksp") version "1.7.10-1.0.6"
     id("org.jetbrains.dokka") version "1.6.10"
 }
@@ -15,6 +16,9 @@ dependencies {
 
     testAnnotationProcessor(project(":jimmer-apt"))
     testImplementation(kotlin("test"))
+
+    testImplementation("org.mapstruct:mapstruct:1.5.3.Final")
+    kaptTest("org.mapstruct:mapstruct-processor:1.5.3.Final")
 
     kspTest(project(":jimmer-ksp"))
     dokkaHtmlPlugin("org.jetbrains.dokka:dokka-base:1.6.0")

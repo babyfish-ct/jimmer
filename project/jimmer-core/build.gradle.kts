@@ -22,11 +22,17 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3")
     implementation("org.apache.commons:commons-lang3:3.12.0")
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.7.10")
+    compileOnly("org.mapstruct:mapstruct:1.5.3.Final")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
+    testImplementation("org.mapstruct:mapstruct:1.5.3.Final")
+    testImplementation("org.projectlombok:lombok:1.18.26")
+    testAnnotationProcessor("org.mapstruct:mapstruct-processor:1.5.3.Final")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
     testAnnotationProcessor(project(":jimmer-apt"))
+    testAnnotationProcessor("org.mapstruct:mapstruct-processor:1.5.3.Final")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.26")
 }
 
 tasks.withType(JavaCompile::class) {

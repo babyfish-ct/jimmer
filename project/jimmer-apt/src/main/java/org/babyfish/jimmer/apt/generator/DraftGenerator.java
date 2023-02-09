@@ -130,7 +130,7 @@ public class DraftGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(
                         prop.isList() ?
-                                prop.getAdderByName() :
+                                prop.getAdderByName():
                                 prop.getSetterName()
                 )
                 .addAnnotation(OldChain.class)
