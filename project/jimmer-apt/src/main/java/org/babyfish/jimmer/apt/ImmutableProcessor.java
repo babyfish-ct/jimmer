@@ -1,16 +1,10 @@
 package org.babyfish.jimmer.apt;
 
-import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.generator.*;
-import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.apt.meta.MetaException;
-import org.babyfish.jimmer.dto.compiler.DtoAstException;
-import org.babyfish.jimmer.dto.compiler.DtoType;
 import org.babyfish.jimmer.error.ErrorFamily;
-import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
-import org.babyfish.jimmer.sql.MappedSuperclass;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -19,11 +13,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
-import javax.tools.StandardLocation;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -102,8 +92,6 @@ public class ImmutableProcessor extends AbstractProcessor {
         }
 
         Map<TypeElement, ImmutableType> immutableTypeMap = parseImmutableTypes(roundEnv);
-        Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap =
-                parseDtoTypes(immutableTypeMap.values());
         generateJimmerTypes(
                 roundEnv
                         .getRootElements()
@@ -114,7 +102,6 @@ public class ImmutableProcessor extends AbstractProcessor {
                         .collect(Collectors.toList()),
                 roundEnv
         );
-        generateDtoTypes(dtoTypeMap);
 
         List<TypeElement> errorElements = getErrorFamilies(roundEnv);
         generateErrorType(errorElements);
@@ -124,41 +111,10 @@ public class ImmutableProcessor extends AbstractProcessor {
 
     private Map<TypeElement, ImmutableType> parseImmutableTypes(RoundEnvironment roundEnv) {
         Map<TypeElement, ImmutableType> map = new HashMap<>();
-        Set<Element> elements = new HashSet<>();
-        elements.addAll(roundEnv.getElementsAnnotatedWith(Immutable.class));
-        elements.addAll(roundEnv.getElementsAnnotatedWith(Entity.class));
-        elements.addAll(roundEnv.getElementsAnnotatedWith(MappedSuperclass.class));
-        elements.addAll(roundEnv.getElementsAnnotatedWith(Embeddable.class));
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, elements.toString());
-        for (Element element : elements) {
+        for (Element element : roundEnv.getRootElements()) {
             if (element instanceof TypeElement) {
                 TypeElement typeElement = (TypeElement) element;
-                String qualifiedName = typeElement.getQualifiedName().toString();
-                if (includes != null) {
-                    boolean matched = false;
-                    for (String include : includes) {
-                        if (qualifiedName.startsWith(include)) {
-                            matched = true;
-                            break;
-                        }
-                    }
-                    if (!matched) {
-                        continue;
-                    }
-                }
-                if (excludes != null) {
-                    boolean matched = false;
-                    for (String exclude : excludes) {
-                        if (qualifiedName.startsWith(exclude)) {
-                            matched = true;
-                            break;
-                        }
-                    }
-                    if (matched) {
-                        continue;
-                    }
-                }
-                if (typeUtils.isImmutable(typeElement)) {
+                if (typeUtils.isImmutable(typeElement) && include(typeElement)) {
                     if (typeElement.getKind() != ElementKind.INTERFACE) {
                         throw new MetaException(
                                 "Illegal class \"" +
@@ -171,115 +127,47 @@ public class ImmutableProcessor extends AbstractProcessor {
                 }
             }
         }
-        for (TypeElement typeElement : map.keySet()) {
-            typeUtils.getImmutableType(typeElement).resolve(typeUtils);
-        }
         return map;
-    }
-
-    private Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> parseDtoTypes(
-            Collection<ImmutableType> immutableTypes
-    ) {
-        String path;
-        try {
-            path = filer.getResource(
-                    StandardLocation.CLASS_OUTPUT,
-                    "",
-                    "dummy.txt"
-            ).toUri().toString();
-        } catch (IOException ex) {
-            throw new MetaException("Failed to guess base project dir", ex);
-        }
-        if (path.startsWith("file://")) {
-            path = path.substring(7);
-        } else if (path.startsWith("file:/")) {
-            path = path.substring(6);
-        }
-        path = path.substring(0, path.lastIndexOf('/'));
-        File file = new File(path);
-        List<String> actualDtoDirs = new ArrayList<>();
-        while (file != null) {
-            collectActualDtoDir(file, actualDtoDirs);
-            file = file.getParentFile();
-        }
-
-        Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoMap = new HashMap<>();
-        for (ImmutableType immutableType : immutableTypes) {
-            if (immutableType.isEntity()) {
-                for (String actualDtoDir : actualDtoDirs) {
-                    File dtoFile = new File(
-                            actualDtoDir +
-                                    '/' +
-                                    immutableType.getQualifiedName().replace('.', '/') +
-                                    ".dto"
-                    );
-                    if (dtoFile.exists()) {
-                        List<DtoType<ImmutableType, ImmutableProp>> dtoTypes;
-                        try (InputStream in = new FileInputStream(dtoFile)) {
-                            dtoTypes = new AptDtoCompiler(immutableType).compile(in);
-                        } catch (DtoAstException ex) {
-                            throw new MetaException(
-                                    "Failed to parse \"" +
-                                            dtoFile.getAbsolutePath() +
-                                            "\": " +
-                                            ex.getMessage(),
-                                    ex
-                            );
-                        } catch (IOException ex) {
-                            throw new MetaException(
-                                    "Failed to read \"" +
-                                            dtoFile.getAbsolutePath() +
-                                            "\": " +
-                                            ex.getMessage(),
-                                    ex
-                            );
-                        }
-                        dtoMap.put(immutableType, dtoTypes);
-                    }
-                }
-            }
-        }
-        for (Map.Entry<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> e : dtoMap.entrySet()) {
-            ImmutableType type = e.getKey();
-            for (DtoType<ImmutableType, ImmutableProp> dtoType : e.getValue()) {
-                for (Map.Entry<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> otherEntry : dtoMap.entrySet()) {
-                    ImmutableType otherType = otherEntry.getKey();
-                    for (DtoType<ImmutableType, ImmutableProp> otherDtoType : otherEntry.getValue()) {
-                        if (type != otherType && Objects.equals(dtoType.getName(), otherDtoType.getName())) {
-                            throw new MetaException(
-                                    "Conflict dto type name, the \"" +
-                                            type.getQualifiedName() +
-                                            "\" and \"" +
-                                            otherType.getQualifiedName() +
-                                            "\" are belong to same package, " +
-                                            "but they have define a dto type named \"" +
-                                            dtoType.getName() +
-                                            "\""
-                            );
-                        }
-                    }
-                }
-            }
-        }
-        return dtoMap;
     }
 
     private List<TypeElement> getErrorFamilies(RoundEnvironment roundEnv) {
         List<TypeElement> typeElements = new ArrayList<>();
         for (Element element : roundEnv.getRootElements()) {
-            if (element.getAnnotation(ErrorFamily.class) != null) {
-                if (element.getKind() != ElementKind.ENUM) {
-                    throw new MetaException(
-                            "Illegal type \"" +
-                                    element +
-                                    "\", only enum can be decorated by @" +
-                                    ErrorFamily.class.getName()
-                    );
+            if (element instanceof TypeElement && include((TypeElement) element)) {
+                if (element.getAnnotation(ErrorFamily.class) != null) {
+                    if (element.getKind() != ElementKind.ENUM) {
+                        throw new MetaException(
+                                "Illegal type \"" +
+                                        element +
+                                        "\", only enum can be decorated by @" +
+                                        ErrorFamily.class.getName()
+                        );
+                    }
+                    typeElements.add((TypeElement) element);
                 }
-                typeElements.add((TypeElement) element);
             }
         }
         return typeElements;
+    }
+
+    private boolean include(TypeElement typeElement) {
+        String qualifiedName = typeElement.getQualifiedName().toString();
+        if (includes != null) {
+            boolean matched = false;
+            for (String include : includes) {
+                if (qualifiedName.startsWith(include)) {
+                    return true;
+                }
+            }
+        }
+        if (excludes != null) {
+            for (String exclude : excludes) {
+                if (qualifiedName.startsWith(exclude)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private void generateJimmerTypes(Collection<ImmutableType> immutableTypes, RoundEnvironment roundEnv) {
@@ -330,14 +218,6 @@ public class ImmutableProcessor extends AbstractProcessor {
                 packageCollector.getTypeElements(),
                 filer
         ).generate();
-    }
-
-    private void generateDtoTypes(Map<?, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap) {
-        for (List<DtoType<ImmutableType, ImmutableProp>> dtoTypes : dtoTypeMap.values()) {
-            for (DtoType<ImmutableType, ImmutableProp> dtoType : dtoTypes) {
-                new DtoGenerator(dtoType, filer).generate();
-            }
-        }
     }
 
     private void generateErrorType(List<TypeElement> typeElements) {

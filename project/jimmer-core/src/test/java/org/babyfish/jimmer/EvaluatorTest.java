@@ -19,7 +19,7 @@ public class EvaluatorTest {
             draft
                     .setName("Book")
                     .setPrice(27)
-                    .setStore(store -> {
+                    .applyStore(store -> {
                         store
                                 .setName("manning")
                                 .setWebsite("http://www.manning.com")

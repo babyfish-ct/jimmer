@@ -143,7 +143,7 @@ public class FindTest extends AbstractQueryTest {
     @Test
     public void testFindByExampleAndFetcher() {
         Book book = BookDraft.$.produce(draft -> {
-            draft.setStore(store -> store.setId(Constants.manningId));
+            draft.applyStore(store -> store.setId(Constants.manningId));
         });
         connectAndExpect(con -> {
             return getSqlClient().getEntities().forConnection(con)

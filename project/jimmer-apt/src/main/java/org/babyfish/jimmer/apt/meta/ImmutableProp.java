@@ -5,7 +5,6 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.TypeUtils;
-import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.sql.*;
 
@@ -16,7 +15,7 @@ import javax.lang.model.type.TypeMirror;
 import java.lang.annotation.Annotation;
 import java.util.*;
 
-public class ImmutableProp implements BaseProp {
+public class ImmutableProp {
 
     private final ImmutableType declaringType;
 
@@ -29,6 +28,8 @@ public class ImmutableProp implements BaseProp {
     private final String getterName;
 
     private final String setterName;
+
+    private final String applierName;
 
     private final String adderByName;
 
@@ -63,8 +64,6 @@ public class ImmutableProp implements BaseProp {
     private final Map<ClassName, String> validationMessageMap;
 
     private Annotation associationAnnotation;
-
-    private ImmutableType targetType;
 
     public ImmutableProp(
             TypeUtils typeUtils,
@@ -102,6 +101,7 @@ public class ImmutableProp implements BaseProp {
                     getterName.substring(2, 3).toLowerCase() +
                     getterName.substring(3);
             setterName = "set" + getterName.substring(2);
+            applierName = "apply" + getterName.substring(2);
             adderByName = "addInto" + getterName.substring(2);
             beanStyle = true;
         } else if (getterName.startsWith("get") &&
@@ -111,6 +111,7 @@ public class ImmutableProp implements BaseProp {
                     getterName.substring(3, 4).toLowerCase() +
                             getterName.substring(4);
             setterName = "set" + getterName.substring(3);
+            applierName = "apply" + getterName.substring(3);
             adderByName = "addInto" + getterName.substring(3);
             beanStyle = true;
         } else {
@@ -119,6 +120,10 @@ public class ImmutableProp implements BaseProp {
                     "set" +
                     getterName.substring(0, 1).toUpperCase() +
                     getterName.substring(1);
+            applierName =
+                    "apply" +
+                            getterName.substring(0, 1).toUpperCase() +
+                            getterName.substring(1);
             adderByName =
                     "addInto" +
                     getterName.substring(0, 1).toUpperCase() +
@@ -260,7 +265,6 @@ public class ImmutableProp implements BaseProp {
         return id;
     }
 
-    @Override
     public String getName() {
         return name;
     }
@@ -269,6 +273,10 @@ public class ImmutableProp implements BaseProp {
 
     public String getSetterName() {
         return setterName;
+    }
+
+    public String getApplierName() {
+        return applierName;
     }
 
     public String getAdderByName() {
@@ -374,10 +382,6 @@ public class ImmutableProp implements BaseProp {
         return associationAnnotation;
     }
 
-    public ImmutableType getTargetType() {
-        return targetType;
-    }
-
     @Override
     public String toString() {
         return declaringType.getTypeElement().getQualifiedName().toString() + '.' + name;
@@ -385,11 +389,5 @@ public class ImmutableProp implements BaseProp {
 
     public Map<ClassName, String> getValidationMessageMap() {
         return validationMessageMap;
-    }
-
-    public void resolve(TypeUtils typeUtils) {
-        if (isAssociation && targetType == null) {
-            targetType = typeUtils.getImmutableType(elementType);
-        }
     }
 }

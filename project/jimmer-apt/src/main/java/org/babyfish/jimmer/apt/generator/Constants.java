@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.DraftConsumer;
-import org.babyfish.jimmer.Static;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -48,9 +47,6 @@ class Constants {
 
     public static final ClassName LINKED_HASH_MAP_CLASS_NAME =
             ClassName.get(LinkedHashMap.class);
-
-    public static final ClassName STATIC_CLASS_NAME =
-            ClassName.get(Static.class);
 
     public static final ClassName INPUT_CLASS_NAME =
             ClassName.get(Input.class);

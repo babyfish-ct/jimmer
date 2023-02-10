@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
-import org.babyfish.jimmer.Static;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -14,7 +13,6 @@ import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
-import org.babyfish.jimmer.sql.fetcher.StaticMetadata;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
@@ -392,22 +390,6 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             );
         }
         return new FetcherSelectionImpl<>(this, fetcher);
-    }
-
-    @Override
-    public <S extends Static<E>> Selection<S> fetch(Class<S> staticType) {
-        StaticMetadata<E, S> metadata = StaticMetadata.of(staticType);
-        Fetcher<E> fetcher = metadata.getFetcher();
-        if (immutableType != fetcher.getImmutableType()) {
-            throw new IllegalArgumentException(
-                    "Illegal fetcher type, current table is \"" +
-                            this +
-                            "\" but the fetcher type is \"" +
-                            fetcher.getImmutableType() +
-                            "\""
-            );
-        }
-        return new FetcherSelectionImpl<S>(this, fetcher, metadata.getConverter());
     }
 
     @Override

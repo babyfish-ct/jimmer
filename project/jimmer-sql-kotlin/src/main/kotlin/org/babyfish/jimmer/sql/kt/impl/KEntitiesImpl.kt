@@ -1,12 +1,10 @@
 package org.babyfish.jimmer.sql.kt.impl
 
-import org.babyfish.jimmer.Static
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.Entities
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.table.Table
-import org.babyfish.jimmer.sql.fetcher.StaticMetadata
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KEntities
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
@@ -119,54 +117,6 @@ internal class KEntitiesImpl(
             }
         ).execute(entities.con)
     }
-
-    override fun <E : Any, S : Static<E>> findStaticObjectById(staticType: KClass<S>, id: Any): S? =
-        javaEntities.findStaticObjectById(staticType.java, id)
-
-    override fun <E : Any, S : Static<E>> findStaticObjectsByIds(staticType: KClass<S>, ids: Collection<*>): List<S> =
-        javaEntities.findStaticObjectsByIds(staticType.java, ids)
-
-    override fun <E : Any, S : Static<E>> findAllStaticObjects(staticType: KClass<S>, block: (SortDsl<E>.() -> Unit)?): List<S> =
-        findStaticObjects(staticType, null, block)
-
-    override fun <E : Any, S : Static<E>> findStaticObjectsByExample(
-        staticType: KClass<S>,
-        example: KExample<E>,
-        block: (SortDsl<E>.() -> Unit)?
-    ): List<S> =
-        findStaticObjects(staticType, example, block)
-
-    private fun <E: Any, S: Static<E>> findStaticObjects(
-        staticType: KClass<S>,
-        example: KExample<E>?,
-        block: (SortDsl<E>.() -> Unit)?
-    ): List<S> {
-        val staticMetadata = StaticMetadata.of(staticType.java)
-        val type = staticMetadata.fetcher.immutableType
-        if (example !== null && example.type !== type) {
-            throw IllegalArgumentException(
-                "The type \"${example.type}\" of example does not match the query type \"$type\""
-            )
-        }
-        val entities = javaEntities as EntitiesImpl
-        val query = MutableRootQueryImpl<Table<E>>(entities.sqlClient, type, ExecutionPurpose.QUERY, false)
-        val table = query.getTable<Table<E>>()
-        example?.applyTo(query)
-        if (block !== null) {
-            val dsl = SortDsl<E>()
-            dsl.block()
-            dsl.applyTo(query)
-        }
-        return query.select(
-            table.fetch(staticType.java)
-        ).execute(entities.con)
-    }
-
-    override fun <ID, E : Any, S : Static<E>> findStaticObjectMapByIds(
-        staticType: KClass<S>,
-        ids: Collection<ID>
-    ): Map<ID, S> =
-        javaEntities.findStaticObjectMapByIds(staticType.java, ids)
 
     override fun <E : Any> save(
         entity: E,

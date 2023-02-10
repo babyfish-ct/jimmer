@@ -22,7 +22,7 @@ public class Entities {
                     BookDraft.$.produce(book ->
                             book
                                     .setId(learningGraphQLId1)
-                                    .setStore(store -> store.setId(oreillyId))
+                                    .applyStore(store -> store.setId(oreillyId))
                     ),
                     BookDraft.$.produce(book ->
                             book.setId(learningGraphQLId2)
@@ -30,7 +30,7 @@ public class Entities {
                     BookDraft.$.produce(book ->
                             book
                                     .setId(graphQLInActionId1)
-                                    .setStore(store -> store.setId(manningId))
+                                    .applyStore(store -> store.setId(manningId))
                     ),
                     BookDraft.$.produce(book ->
                             book.setId(graphQLInActionId2)

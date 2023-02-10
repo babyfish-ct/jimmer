@@ -9,7 +9,6 @@ import org.babyfish.jimmer.spring.client.MetadataFactoryBean
 import org.babyfish.jimmer.spring.client.TypeScriptController
 import org.babyfish.jimmer.spring.datasource.DataSources
 import org.babyfish.jimmer.spring.datasource.TxCallback
-import org.babyfish.jimmer.spring.kotlin.dto.TreeDto
 import org.babyfish.jimmer.spring.repository.EnableJimmerRepositories
 import org.babyfish.jimmer.sql.runtime.*
 import org.junit.jupiter.api.Assertions
@@ -94,10 +93,6 @@ open class SpringKotlinTest : AbstractTest() {
                 }
             }
         }
-
-        @Bean
-        open fun treeService(repository: TreeNodeRepository): TreeService =
-            TreeService(repository)
 
         @Bean
         open fun mockMvc(ctx: WebApplicationContext): MockMvc {
@@ -189,33 +184,6 @@ open class SpringKotlinTest : AbstractTest() {
     }
 
     @Test
-    fun testRootTreeDtoList() {
-        val rootTrees = treeNodeRepository.findTreesByParentIsNull(TreeDto::class)
-        assertSQLs(
-            "select tb_1_.NODE_ID, tb_1_.NAME " +
-                "from TREE_NODE as tb_1_ " +
-                "where tb_1_.PARENT_ID is null",
-            "select tb_1_.NODE_ID, tb_1_.NAME " +
-                "from TREE_NODE as tb_1_ " +
-                "where tb_1_.PARENT_ID = ?",
-            "select tb_1_.PARENT_ID, tb_1_.NODE_ID, tb_1_.NAME " +
-                "from TREE_NODE as tb_1_ " +
-                "where tb_1_.PARENT_ID in (?, ?)",
-            "select tb_1_.PARENT_ID, tb_1_.NODE_ID, tb_1_.NAME " +
-                "from TREE_NODE as tb_1_ " +
-                "where tb_1_.PARENT_ID in (?, ?, ?, ?)",
-            "select tb_1_.PARENT_ID, tb_1_.NODE_ID, tb_1_.NAME " +
-                "from TREE_NODE as tb_1_ " +
-                "where tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?)",
-            "select tb_1_.PARENT_ID, tb_1_.NODE_ID, tb_1_.NAME " +
-                "from TREE_NODE as tb_1_ " +
-                "where tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        )
-        Assertions.assertTrue(rootTrees[0].childNodes!![0]::class.simpleName == "TargetOf_childNodes")
-    }
-
-    @Test
-    @Throws(Exception::class)
     open fun testDownloadTypescript() {
         mvc.perform(MockMvcRequestBuilders.get("/my-ts.zip"))
             .andExpect(MockMvcResultMatchers.status().isOk)

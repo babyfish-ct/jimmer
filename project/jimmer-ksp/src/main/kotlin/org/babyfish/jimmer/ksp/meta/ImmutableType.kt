@@ -5,7 +5,6 @@ import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.isAbstract
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.ClassName
-import org.babyfish.jimmer.dto.compiler.spi.BaseType
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.FETCHER_DSL
@@ -19,7 +18,7 @@ import kotlin.reflect.KClass
 class ImmutableType(
     ctx: Context,
     private val classDeclaration: KSClassDeclaration
-) : BaseType {
+) {
     val simpleName: String = classDeclaration.simpleName.asString()
 
     val className: ClassName = classDeclaration.className()
@@ -54,13 +53,13 @@ class ImmutableType(
         annotationType
     }
 
-    override val name: String
+    val name: String
         get() = classDeclaration.simpleName!!.asString()
 
-    override val qualifiedName: String
+    val qualifiedName: String
         get() = classDeclaration.qualifiedName!!.asString()
 
-    override val isEntity: Boolean = classDeclaration.annotation(Entity::class) !== null
+    val isEntity: Boolean = classDeclaration.annotation(Entity::class) !== null
 
     val superType: ImmutableType? =
         classDeclaration

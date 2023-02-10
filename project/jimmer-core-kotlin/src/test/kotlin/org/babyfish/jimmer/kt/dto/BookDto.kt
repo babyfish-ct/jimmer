@@ -1,16 +1,11 @@
 package org.babyfish.jimmer.kt.dto
 
 import org.babyfish.jimmer.kt.model.*
-import org.babyfish.jimmer.mapstruct.JimmerMapperConfig
-import org.babyfish.jimmer.mapstruct.byDto
-import org.mapstruct.BeanMapping
-import org.mapstruct.Mapper
-import org.mapstruct.MappingTarget
-import org.mapstruct.ReportingPolicy
+import org.mapstruct.*
 import org.mapstruct.factory.Mappers
 
 data class BookDto(
-    val name: String,
+    val name: String?,
     val edition: String,
     val price: String,
     val store: TargetOfStore?,
@@ -33,24 +28,15 @@ data class BookDto(
         private val MAPPER = Mappers.getMapper(BookDtoMapper::class.java)
     }
 
-    @Mapper(config = JimmerMapperConfig::class)
-    abstract class BookDtoMapper {
+    @Mapper
+    interface BookDtoMapper {
 
-        abstract fun fillBookDraft(dto: BookDto, @MappingTarget draft: BookDraft)
-
-        fun toBook(dto: BookDto): Book =
-            byDto(dto, this::fillBookDraft)
+        fun toBook(dto: BookDto): Book
 
         @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
-        abstract fun fillBookStoreDraft(dto: TargetOfStore, @MappingTarget draft: BookStoreDraft)
-
-        fun toBookStore(dto: TargetOfStore): BookStore =
-            byDto(dto, this::fillBookStoreDraft)
+        fun toBookStore(dto: TargetOfStore): BookStore
 
         @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
-        abstract fun fillAuthorDraft(dto: TargetOfAuthors, @MappingTarget draft: AuthorDraft)
-
-        fun toAuthor(dto: TargetOfAuthors): Author =
-            byDto(dto, this::fillAuthorDraft)
+        fun toAuthor(dto: TargetOfAuthors): Author
     }
 }

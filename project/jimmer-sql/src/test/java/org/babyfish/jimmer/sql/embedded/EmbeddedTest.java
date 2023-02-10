@@ -124,8 +124,8 @@ public class EmbeddedTest extends AbstractQueryTest {
         TransformTable transform = TransformTable.$;
         Rect rect = RectDraft.$.produce(draft ->
                 draft
-                        .setLeftTop(leftTop -> leftTop.setX(100).setY(120))
-                        .setRightBottom(leftTop -> leftTop.setX(400).setY(320))
+                        .applyLeftTop(leftTop -> leftTop.setX(100).setY(120))
+                        .applyRightBottom(leftTop -> leftTop.setX(400).setY(320))
         );
         executeAndExpect(
                 getSqlClient()

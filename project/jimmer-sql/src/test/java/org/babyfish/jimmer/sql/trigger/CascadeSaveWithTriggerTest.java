@@ -1602,7 +1602,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                 }).getEntities().saveCommand(
                         AdministratorDraft.$.produce(draft -> {
                             draft.setName("a_5");
-                            draft.setMetadata(metadata -> {
+                            draft.applyMetadata(metadata -> {
                                 metadata.setName("am_5");
                                 metadata.setEmail("email_5");
                                 metadata.setWebsite("website_5");
@@ -1732,7 +1732,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                 }).getEntities().saveCommand(
                         AdministratorDraft.$.produce(draft -> {
                             draft.setName("a_4");
-                            draft.setMetadata(metadata -> {
+                            draft.applyMetadata(metadata -> {
                                 metadata.setName("am_4");
                                 metadata.setEmail("email_4+");
                                 metadata.setWebsite("website_4+");

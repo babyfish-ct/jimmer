@@ -99,7 +99,7 @@ public class TriggersTest {
                     book
                             .setId(graphQLInActionId3)
                             .setName("GraphQL in Action")
-                            .setStore(store -> store.setId(manningId));
+                            .applyStore(store -> store.setId(manningId));
                 }),
                 null
         );
@@ -152,7 +152,7 @@ public class TriggersTest {
                     book
                             .setId(graphQLInActionId3)
                             .setName("GraphQL in Action")
-                            .setStore(store -> store.setId(manningId));
+                            .applyStore(store -> store.setId(manningId));
                 }),
                 null,
                 null
@@ -206,13 +206,13 @@ public class TriggersTest {
                     book
                             .setId(graphQLInActionId3)
                             .setName("GraphQL in Action")
-                            .setStore(store -> store.setId(manningId));
+                            .applyStore(store -> store.setId(manningId));
                 }),
                 BookDraft.$.produce(book -> {
                     book
                             .setId(graphQLInActionId3)
                             .setName("GraphQL in Action3")
-                            .setStore(store -> store.setId(oreillyId));
+                            .applyStore(store -> store.setId(oreillyId));
                 }),
                 null
         );

@@ -34,9 +34,7 @@ public class Fetchers {
             if (selection instanceof FetcherSelection<?>) {
                 FetcherSelection<?> fetcherSelection = (FetcherSelection<?>) selection;
                 Fetcher<?> fetcher = fetcherSelection.getFetcher();
-                if (!fetcher.isSimpleFetcher() ||
-                    hasReferenceFilter(fetcher.getImmutableType(), sqlClient) ||
-                    fetcherSelection.getConverter() != null) {
+                if (!fetcher.isSimpleFetcher() || hasReferenceFilter(fetcher.getImmutableType(), sqlClient)) {
                     columnMap.put(i, new ArrayList<>());
                 }
             }
@@ -71,14 +69,6 @@ public class Fetchers {
                             );
                         }
                 );
-            }
-            Function<Object, Object> converter = (Function<Object, Object>) selection.getConverter();
-            if (converter != null) {
-                List<Object> list = new ArrayList<>(fetchedList.size());
-                for (Object fetched : fetchedList) {
-                    list.add(converter.apply(fetched));
-                }
-                fetchedList = list;
             }
             e.setValue(fetchedList);
         }

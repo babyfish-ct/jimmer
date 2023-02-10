@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.spring.repository.support;
 
-import org.babyfish.jimmer.Static;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -14,7 +13,6 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.OrderMode;
-import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
@@ -39,7 +37,6 @@ public class QueryExecutors {
             Pageable pageable,
             Sort sort,
             Fetcher<?> fetcher,
-            Class<?> staticType,
             Object[] args
     ) {
         Query queryData = queryMethod.getQuery();
@@ -65,11 +62,6 @@ public class QueryExecutors {
                         }
                         if (fetcher != null) {
                             return q.select(((Table<Object>)table).fetch((Fetcher<Object>) fetcher));
-                        }
-                        if (staticType != null) {
-                            return (ConfigurableRootQuery<Table<?>, Object>) (ConfigurableRootQuery<?, ?>)q.select(
-                                    ((Table<Object>)table).fetch((Class<Static<Object>>)staticType)
-                            );
                         }
                         if (queryData.getSelectedPath() != null) {
                             return q.select((Expression<Object>) astSelection(table, queryData.getSelectedPath(), false));

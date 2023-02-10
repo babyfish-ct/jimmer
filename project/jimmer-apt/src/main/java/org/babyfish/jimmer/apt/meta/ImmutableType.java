@@ -2,7 +2,6 @@ package org.babyfish.jimmer.apt.meta;
 
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.apt.TypeUtils;
-import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.*;
 
@@ -13,7 +12,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class ImmutableType implements BaseType {
+public class ImmutableType {
 
     public static final String PROP_EXPRESSION_SUFFIX = "PropExpression";
 
@@ -56,6 +55,8 @@ public class ImmutableType implements BaseType {
     private final ClassName implClassName;
 
     private final ClassName draftImplClassName;
+
+    private final ClassName mapStructClassName;
 
     private final ClassName tableClassName;
 
@@ -290,6 +291,7 @@ public class ImmutableType implements BaseType {
         implementorClassName = toClassName(name -> name + "Draft", "Producer", "Implementor");
         implClassName = toClassName(name -> name + "Draft", "Producer", "Impl");
         draftImplClassName = toClassName(name -> name + "Draft", "Producer", "DraftImpl");
+        mapStructClassName = toClassName(name -> name + "Draft", "MapStruct");
         tableClassName = toClassName(name -> name + "Table");
         tableExClassName = toClassName(name -> name + "TableEx");
         fetcherClassName = toClassName(name -> name + "Fetcher");
@@ -319,12 +321,10 @@ public class ImmutableType implements BaseType {
         return packageName;
     }
 
-    @Override
     public String getName() {
         return name;
     }
 
-    @Override
     public String getQualifiedName() {
         return qualifiedName;
     }
@@ -418,6 +418,10 @@ public class ImmutableType implements BaseType {
         return draftImplClassName;
     }
 
+    public ClassName getMapStructClassName() {
+        return mapStructClassName;
+    }
+
     public ClassName getTableClassName() {
         return tableClassName;
     }
@@ -451,11 +455,5 @@ public class ImmutableType implements BaseType {
 
     public Map<ClassName, String> getValidationMessageMap() {
         return validationMessageMap;
-    }
-
-    public void resolve(TypeUtils typeUtils) {
-        for (ImmutableProp prop : declaredProps.values()) {
-            prop.resolve(typeUtils);
-        }
     }
 }

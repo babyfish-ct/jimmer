@@ -3,13 +3,9 @@ package org.babyfish.jimmer.spring.java.bll;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.spring.java.dal.BookRepository;
 import org.babyfish.jimmer.spring.java.model.*;
-import org.babyfish.jimmer.spring.java.model.dto.BookInput;
-import org.babyfish.jimmer.spring.java.model.dto.ComplexBook;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 public class BookService {
@@ -72,16 +68,6 @@ public class BookService {
                 authorName,
                 COMPLEX_FETCHER
         );
-    }
-
-    @GetMapping("/staticComplexBooks")
-    public List<ComplexBook> findStaticComplexBook(@RequestParam("name") String name) {
-        return bookRepository.findComplexBooksByNameOrderByEditionDesc(name, ComplexBook.class);
-    }
-
-    @PutMapping("/book")
-    public Book save(@RequestBody BookInput input) {
-        return bookRepository.save(input);
     }
 
     private static final Fetcher<Book> SIMPLE_FETCHER =

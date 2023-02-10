@@ -236,7 +236,7 @@ public class InheritanceMutationWithTriggerTest extends AbstractTriggerTest {
                 sqlClient.getEntities().saveCommand(
                         PermissionDraft.$.produce(permission -> {
                             permission.setName("Permission")
-                                    .setRole(role -> role.setName("role"));
+                                    .applyRole(role -> role.setName("role"));
                         })
                 ).configure(it -> it.setAutoAttachingAll()),
                 ctx -> {

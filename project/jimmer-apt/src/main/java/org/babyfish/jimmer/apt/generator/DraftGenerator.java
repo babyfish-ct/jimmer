@@ -74,6 +74,7 @@ public class DraftGenerator {
             addUtilMethod(prop, true);
         }
         new ProducerGenerator(type).generate(typeBuilder);
+        new MapStructGenerator(type).generate(typeBuilder);
     }
 
     private void add$() {
@@ -131,7 +132,7 @@ public class DraftGenerator {
                 .methodBuilder(
                         prop.isList() ?
                                 prop.getAdderByName():
-                                prop.getSetterName()
+                                prop.getApplierName()
                 )
                 .addAnnotation(OldChain.class)
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)

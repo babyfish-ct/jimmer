@@ -2,7 +2,6 @@ package org.babyfish.jimmer.client.java.ts;
 
 import org.babyfish.jimmer.client.generator.ts.*;
 import org.babyfish.jimmer.client.java.model.*;
-import org.babyfish.jimmer.client.java.model.dto.ComplexBookStore;
 import org.babyfish.jimmer.client.java.service.AuthorService;
 import org.babyfish.jimmer.client.java.service.BookService;
 import org.babyfish.jimmer.client.meta.*;
@@ -27,7 +26,7 @@ public class JTypeScriptTest {
         Assertions.assertEquals(
                 "import type { Executor } from './';\n" +
                         "\n" +
-                        "import { AuthorService, BookService, BookStoreService } from './services';\n" +
+                        "import { AuthorService, BookService } from './services';\n" +
                         "\n" +
                         "export class Api {\n" +
                         "    \n" +
@@ -35,12 +34,9 @@ public class JTypeScriptTest {
                         "    \n" +
                         "    readonly bookService: BookService;\n" +
                         "    \n" +
-                        "    readonly bookStoreService: BookStoreService;\n" +
-                        "    \n" +
                         "    constructor(executor: Executor) {\n" +
                         "        this.authorService = new AuthorService(executor);\n" +
                         "        this.bookService = new BookService(executor);\n" +
-                        "        this.bookStoreService = new BookStoreService(executor);\n" +
                         "    }\n" +
                         "}",
                 code
@@ -58,7 +54,7 @@ public class JTypeScriptTest {
                 "import type { Dynamic, Executor } from '../';\n" +
                         "import type { AuthorDto, BookDto } from '../model/dto';\n" +
                         "import type { Book } from '../model/entities';\n" +
-                        "import type { BookInput, Page, StaticBook, Tuple2 } from '../model/static';\n" +
+                        "import type { BookInput, Page, Tuple2 } from '../model/static';\n" +
                         "\n" +
                         "/**\n" +
                         " * BookService interface\n" +
@@ -120,13 +116,6 @@ public class JTypeScriptTest {
                         "        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<BookDto['BookService/SIMPLE_FETCHER']>\n" +
                         "    }\n" +
                         "    \n" +
-                        "    async findStaticBook(options: BookServiceOptions['findStaticBook']): Promise<\n" +
-                        "        StaticBook\n" +
-                        "    > {\n" +
-                        "        let uri = '/java/staticBook';\n" +
-                        "        return (await this.executor({uri, method: 'GET'})) as StaticBook\n" +
-                        "    }\n" +
-                        "    \n" +
                         "    async findTuples(options: BookServiceOptions['findTuples']): Promise<\n" +
                         "        Page<Tuple2<BookDto['BookService/COMPLEX_FETCHER'], AuthorDto['BookService/AUTHOR_FETCHER'] | undefined>>\n" +
                         "    > {\n" +
@@ -169,7 +158,6 @@ public class JTypeScriptTest {
                         "        readonly maxPrice?: number\n" +
                         "    },\n" +
                         "    'findSimpleBooks': {},\n" +
-                        "    'findStaticBook': {readonly id: number},\n" +
                         "    'findTuples': {\n" +
                         "        \n" +
                         "        /**\n" +
@@ -201,7 +189,7 @@ public class JTypeScriptTest {
                 "import type { Dynamic, Executor } from '../';\n" +
                         "import type { Book } from '../model/entities';\n" +
                         "import type { Gender } from '../model/enums';\n" +
-                        "import type { BookInput, Page, StaticBook, Tuple2 } from '../model/static';\n" +
+                        "import type { BookInput, Page, Tuple2 } from '../model/static';\n" +
                         "\n" +
                         "/**\n" +
                         " * BookService interface\n" +
@@ -317,13 +305,6 @@ public class JTypeScriptTest {
                         "            readonly id: number, \n" +
                         "            readonly name: string\n" +
                         "        }>\n" +
-                        "    }\n" +
-                        "    \n" +
-                        "    async findStaticBook(options: {readonly id: number}): Promise<\n" +
-                        "        StaticBook\n" +
-                        "    > {\n" +
-                        "        let uri = '/java/staticBook';\n" +
-                        "        return (await this.executor({uri, method: 'GET'})) as StaticBook\n" +
                         "    }\n" +
                         "    \n" +
                         "    async findTuples(options: {\n" +
@@ -699,54 +680,6 @@ public class JTypeScriptTest {
                         "     * Null is allowed\n" +
                         "     */\n" +
                         "    readonly storeId?: number;\n" +
-                        "}\n",
-                code
-        );
-    }
-
-    @Test
-    public void testStaticDto() throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        TsContext ctx = createContext(out);
-        StaticObjectType complexBookStoreType = Constants.JAVA_METADATA.getStaticTypes().get(
-                new StaticObjectType.Key(ComplexBookStore.class, Collections.emptyList())
-        );
-        new TypeDefinitionWriter(ctx, complexBookStoreType).flush();
-        String code = out.toString();
-        Assertions.assertEquals(
-                "import type { Gender } from '../enums';\n" +
-                        "\n" +
-                        "export interface ComplexBookStore {\n" +
-                        "    \n" +
-                        "    readonly books: ReadonlyArray<ComplexBookStore_TargetOf_books>;\n" +
-                        "    \n" +
-                        "    readonly id: number;\n" +
-                        "    \n" +
-                        "    readonly name: string;\n" +
-                        "}\n" +
-                        "\n" +
-                        "export interface ComplexBookStore_TargetOf_books {\n" +
-                        "    \n" +
-                        "    readonly authors: ReadonlyArray<ComplexBookStore_TargetOf_books_TargetOf_authors>;\n" +
-                        "    \n" +
-                        "    readonly edition: number;\n" +
-                        "    \n" +
-                        "    readonly id: number;\n" +
-                        "    \n" +
-                        "    readonly name: string;\n" +
-                        "    \n" +
-                        "    readonly price: number;\n" +
-                        "}\n" +
-                        "\n" +
-                        "export interface ComplexBookStore_TargetOf_books_TargetOf_authors {\n" +
-                        "    \n" +
-                        "    readonly firstName: string;\n" +
-                        "    \n" +
-                        "    readonly gender: Gender;\n" +
-                        "    \n" +
-                        "    readonly id: number;\n" +
-                        "    \n" +
-                        "    readonly lastName: string;\n" +
                         "}\n",
                 code
         );

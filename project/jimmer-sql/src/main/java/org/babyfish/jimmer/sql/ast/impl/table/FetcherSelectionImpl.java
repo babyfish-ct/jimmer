@@ -20,28 +20,14 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
 
     private final Fetcher<?> fetcher;
 
-    private final Function<?, T> converter;
-
     public FetcherSelectionImpl(Table<T> table, Fetcher<T> fetcher) {
         this.table = table;
         this.fetcher = fetcher;
-        this.converter = null;
-    }
-
-    public FetcherSelectionImpl(Table<?> table, Fetcher<?> fetcher, Function<?, T> converter) {
-        this.table = table;
-        this.fetcher = fetcher;
-        this.converter = converter;
     }
 
     @Override
     public Fetcher<?> getFetcher() {
         return fetcher;
-    }
-
-    @Override
-    public Function<?, T> getConverter() {
-        return converter;
     }
 
     @Override
