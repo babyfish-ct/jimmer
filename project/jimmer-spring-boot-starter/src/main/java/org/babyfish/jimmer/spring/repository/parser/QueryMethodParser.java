@@ -1,12 +1,9 @@
 package org.babyfish.jimmer.spring.repository.parser;
 
 import kotlin.reflect.KClass;
-import kotlin.reflect.KClasses;
-import org.babyfish.jimmer.Static;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.checkerframework.checker.units.qual.C;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -37,10 +34,6 @@ class QueryMethodParser {
 
     private final int fetcherParamIndex;
 
-    private Class<?> staticType;
-
-    private final int staticTypeParamIndex;
-
     private int paramIndex = -1;
 
     private int logicParamIndex = -1;
@@ -54,11 +47,6 @@ class QueryMethodParser {
         this.pageableParamIndex = implicitParameterIndex(Pageable.class);
         this.sortParamIndex = implicitParameterIndex(Sort.class);
         this.fetcherParamIndex = implicitParameterIndex(Fetcher.class);
-        int stpIndex = implicitParameterIndex(Class.class);
-        if (stpIndex == -1) {
-            stpIndex = implicitParameterIndex(KClass.class);
-        }
-        this.staticTypeParamIndex = stpIndex;
         if (pageableParamIndex != -1 && sortParamIndex != -1) {
             throw new IllegalArgumentException(
                     "Cannot have parameters of type \"" +
@@ -95,16 +83,6 @@ class QueryMethodParser {
             actualElementType = ((ParameterizedType) actualElementType).getActualTypeArguments()[0];
         }
         boolean isObjectQuery = actualElementType == type.getJavaClass();
-        if (!isObjectQuery && actualElementType instanceof Class<?>) {
-            isObjectQuery = Static.class.isAssignableFrom((Class<?>) actualElementType);
-        }
-        if (!isObjectQuery && actualElementType instanceof TypeVariable<?>) {
-            Type boundType = ((TypeVariable<?>)actualElementType).getBounds()[0];
-            if (boundType instanceof ParameterizedType) {
-                boundType = ((ParameterizedType)boundType).getRawType();
-            }
-            isObjectQuery = boundType instanceof Class<?> && Static.class.isAssignableFrom((Class<?>) boundType);
-        }
         Query query = Query.of(ctx, new Source(method.getName()), type, !isObjectQuery);
         if (query.getPredicate() != null) {
             query = new Query(query, resolve(query.getPredicate()));
@@ -167,56 +145,6 @@ class QueryMethodParser {
                                     "\""
                     );
                 }
-            } else {
-                ReturnedElementType returnedElementType = returnedElementType(actualElementType, entityType);
-                if (returnedElementType == null) {
-                    throw new IllegalArgumentException(
-                            "The returned element type must be \"" +
-                                    entityType.getName() +
-                                    "\", a class implements \"" +
-                                    Static.class.getName() +
-                                    "<" +
-                                    entityType.getName() +
-                                    ">\" or a method level type variable extends \"" +
-                                    Static.class.getName() +
-                                    "<" +
-                                    entityType.getName() +
-                                    ">\""
-                    );
-                }
-                this.staticType = returnedElementType.staticType;
-            }
-            if (query.getSelectedPath() == null && actualElementType instanceof TypeVariable<?>) {
-                if (staticTypeParamIndex == -1) {
-                    throw new IllegalArgumentException(
-                            "A parameter whose type is \"Class<" +
-                                    ((TypeVariable<?>)actualElementType).getName() +
-                                    ">\" or \"KClass<" +
-                                    ((TypeVariable<?>)actualElementType).getName() +
-                                    ">\" is required"
-                    );
-                }
-                Type type = method.getGenericParameterTypes()[staticTypeParamIndex];
-                boolean valid = false;
-                if (type instanceof ParameterizedType) {
-                    Type typeArgument = ((ParameterizedType) type).getActualTypeArguments()[0];
-                    if (typeArgument == actualElementType) {
-                        valid = true;
-                    }
-                }
-                if (!valid) {
-                    throw new IllegalArgumentException(
-                            "The type argument of parameters[" +
-                                    staticTypeParamIndex +
-                                    "] must be the type variable \"" +
-                                    ((TypeVariable<?>)actualElementType).getName() +
-                                    "\""
-                    );
-                }
-            } else if (staticTypeParamIndex != -1) {
-                throw new IllegalArgumentException(
-                        "The parameters[" + staticTypeParamIndex + "] is illegal"
-                );
             }
         } else if (query.getAction() == Query.Action.EXISTS) {
             if (method.getReturnType() != boolean.class) {
@@ -251,9 +179,6 @@ class QueryMethodParser {
                 );
             }
         }
-        if (staticTypeParamIndex != -1 && query.getAction() != Query.Action.FIND) {
-            throw new IllegalArgumentException("The method must be query method when there is a static type parameter");
-        }
         if (pageableParamIndex != -1 && query.getAction() != Query.Action.FIND) {
             throw new IllegalArgumentException("The method must be query method when there is a pageable parameter");
         }
@@ -264,40 +189,10 @@ class QueryMethodParser {
         return new QueryMethod(
                 method,
                 query,
-                staticType,
                 pageableParamIndex,
                 sortParamIndex,
-                fetcherParamIndex,
-                staticTypeParamIndex
+                fetcherParamIndex
         );
-    }
-
-    private ReturnedElementType returnedElementType(Type type, Class<?> entityType) {
-        if (type instanceof Class<?>) {
-            Class<?> clazz = (Class<?>) type;
-            if (clazz == entityType) {
-                return new ReturnedElementType(null);
-            } else if (Static.class.isAssignableFrom(clazz)) {
-                Type[] typeArguments = GenericTypeResolver.resolveTypeArguments(clazz, Static.class);
-                if (typeArguments != null && typeArguments[0] == entityType) {
-                    return new ReturnedElementType(clazz);
-                }
-            }
-        } else if (type instanceof TypeVariable<?>) {
-            TypeVariable<?> typeVariable = (TypeVariable<?>) type;
-            if (typeVariable.getGenericDeclaration() == method) {
-                Type boundType = typeVariable.getBounds()[0];
-                if (boundType instanceof ParameterizedType) {
-                    ParameterizedType parameterizedBoundType = (ParameterizedType) boundType;
-                    if (parameterizedBoundType.getRawType() == Static.class) {
-                        if (parameterizedBoundType.getActualTypeArguments()[0] == entityType) {
-                            return new ReturnedElementType(null);
-                        }
-                    }
-                }
-            }
-        }
-        return null;
     }
 
     private Predicate resolve(Predicate predicate) {
@@ -489,15 +384,6 @@ class QueryMethodParser {
                     "index=" + index +
                     ", logicIndex=" + logicIndex +
                     '}';
-        }
-    }
-
-    static class ReturnedElementType {
-
-        final Class<?> staticType;
-
-        ReturnedElementType(Class<?> staticType) {
-            this.staticType = staticType;
         }
     }
 }

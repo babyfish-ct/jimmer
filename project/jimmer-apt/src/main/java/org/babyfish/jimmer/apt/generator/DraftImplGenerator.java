@@ -387,7 +387,7 @@ public class DraftImplGenerator {
         if (!prop.isAssociation(false)) {
             return;
         }
-        String methodName = prop.isList() ? prop.getAdderByName() : prop.getSetterName();
+        String methodName = prop.isList() ? prop.getAdderByName() : prop.getApplierName();
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(methodName)
                 .addModifiers(Modifier.PUBLIC)

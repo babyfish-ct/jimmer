@@ -5,7 +5,6 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toClassName
 import org.babyfish.jimmer.Immutable
-import org.babyfish.jimmer.dto.compiler.spi.BaseProp
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
@@ -20,27 +19,27 @@ class ImmutableProp(
     val declaringType: ImmutableType,
     val id: Int,
     private val propDeclaration: KSPropertyDeclaration
-): BaseProp {
+) {
     init {
         if (propDeclaration.isMutable) {
             throw MetaException("Illegal property '${this}', this property of immutable interface must be readonly")
         }
     }
 
-    override val name: String = propDeclaration.name
+    val name: String = propDeclaration.name
 
     private val resolvedType: KSType = propDeclaration.type.resolve()
 
-    override val isTransient: Boolean =
+    val isTransient: Boolean =
         annotation(Transient::class) !== null
 
-    override fun hasTransientResolver(): Boolean =
+    fun hasTransientResolver(): Boolean =
         annotation(Transient::class)?.let {
             val resolveClassName = it.get<KSType>("value")?.toClassName()
             resolveClassName != UNIT
         } ?: false
 
-    override val isList: Boolean =
+    val isList: Boolean =
         (resolvedType.declaration as KSClassDeclaration).asStarProjectedType().let { starType ->
             when {
                 ctx.mapType.isAssignableFrom(starType) ->
@@ -71,7 +70,7 @@ class ImmutableProp(
 
     val primaryAnnotationType: Class<out Annotation>?
 
-    override val isNullable: Boolean
+    val isNullable: Boolean
 
     init {
         val descriptor = PropDescriptor

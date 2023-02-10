@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.spring.java.dal;
 
-import org.babyfish.jimmer.Static;
-import org.babyfish.jimmer.spring.java.model.dto.SimpleBook;
 import org.babyfish.jimmer.spring.repository.JRepository;
 import org.babyfish.jimmer.spring.java.model.*;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -73,8 +71,4 @@ public interface BookRepository extends JRepository<Book, Long> {
                         .select(table.fetch(fetcher))
         );
     }
-
-    List<SimpleBook> findSimpleBooksByName(String name);
-
-    <S extends Static<Book>> List<S> findComplexBooksByNameOrderByEditionDesc(String name, Class<S> staticType);
 }

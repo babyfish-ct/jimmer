@@ -31,12 +31,11 @@ tasks.getByName<Test>("test") {
 }
 
 tasks.withType(JavaCompile::class) {
-    options.compilerArgs.add("-Ajimmer.dtoDirs=src/test/dto")
-    inputs.files("src/test/dto")
+    options.compilerArgs.add("-Ajimmer.source.includes=org.babyfish.jimmer.client.java.")
 }
 
 ksp {
-    arg("jimmer.source.excludes", "org.babyfish.jimmer.client.java.model.")
+    arg("jimmer.source.includes", "org.babyfish.jimmer.client.kotlin.")
 }
 
 kotlin {

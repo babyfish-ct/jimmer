@@ -70,7 +70,7 @@ public class EntityEventTest {
                 BookDraft.$.produce(book -> {
                     book
                             .setId(graphQLInActionId3)
-                            .setStore(store -> store.setId(manningId));
+                            .applyStore(store -> store.setId(manningId));
                 }),
                 null,
                 null,
@@ -106,7 +106,7 @@ public class EntityEventTest {
                 BookDraft.$.produce(book -> {
                     book
                             .setId(graphQLInActionId3)
-                            .setStore(store -> store.setId(manningId));
+                            .applyStore(store -> store.setId(manningId));
                 }),
                 null,
                 null
@@ -123,12 +123,12 @@ public class EntityEventTest {
                 BookDraft.$.produce(book -> {
                     book
                             .setId(graphQLInActionId3)
-                            .setStore(store -> store.setId(manningId));
+                            .applyStore(store -> store.setId(manningId));
                 }),
                 BookDraft.$.produce(book -> {
                     book
                             .setId(graphQLInActionId3)
-                            .setStore(store -> store.setId(manningId));
+                            .applyStore(store -> store.setId(manningId));
                 }),
                 null,
                 null
@@ -167,12 +167,12 @@ public class EntityEventTest {
                 BookDraft.$.produce(book -> {
                     book
                             .setId(graphQLInActionId3)
-                            .setStore(store -> store.setId(manningId));
+                            .applyStore(store -> store.setId(manningId));
                 }),
                 BookDraft.$.produce(book -> {
                     book
                             .setId(graphQLInActionId3)
-                            .setStore(store -> store.setId(oreillyId));
+                            .applyStore(store -> store.setId(oreillyId));
                 }),
                 null,
                 null
@@ -188,7 +188,7 @@ public class EntityEventTest {
                 BookDraft.$.produce(book -> {
                     book
                             .setId(graphQLInActionId3)
-                            .setStore(store -> store.setId(manningId));
+                            .applyStore(store -> store.setId(manningId));
                 }),
                 BookDraft.$.produce(book -> {
                     book
@@ -214,7 +214,7 @@ public class EntityEventTest {
                 BookDraft.$.produce(book -> {
                     book
                             .setId(graphQLInActionId3)
-                            .setStore(store -> store.setId(oreillyId));
+                            .applyStore(store -> store.setId(oreillyId));
                 }),
                 null,
                 null

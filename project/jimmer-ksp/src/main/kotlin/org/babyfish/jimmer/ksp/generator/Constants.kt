@@ -24,13 +24,6 @@ internal const val FETCHER = "Fetcher"
 internal const val FETCHER_DSL = "FetcherDsl"
 
 internal val CLONEABLE_CLASS_NAME = Cloneable::class.asClassName()
-internal val LIST_CLASS_NAME = List::class.asClassName()
-internal val STATIC_CLASS_NAME = Static::class.asClassName()
-internal val INPUT_CLASS_NAME = Input::class.asClassName()
-internal val STATIC_METADATA_CLASS_NAME = ClassName(
-    "org.babyfish.jimmer.sql.fetcher",
-    "StaticMetadata"
-)
 internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()
 internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
 internal val INTERNAL_TYPE_CLASS_NAME = Internal::class.asClassName()

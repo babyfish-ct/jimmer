@@ -14,8 +14,6 @@ import org.babyfish.jimmer.spring.java.dal.BookRepository;
 import org.babyfish.jimmer.spring.datasource.DataSources;
 import org.babyfish.jimmer.spring.datasource.TxCallback;
 import org.babyfish.jimmer.spring.java.model.*;
-import org.babyfish.jimmer.spring.java.model.dto.ComplexBook;
-import org.babyfish.jimmer.spring.java.model.dto.SimpleBook;
 import org.babyfish.jimmer.spring.model.SortUtils;
 import org.babyfish.jimmer.spring.repository.EnableJimmerRepositories;
 import org.babyfish.jimmer.spring.repository.config.JimmerRepositoryConfigExtension;
@@ -493,107 +491,6 @@ public class SpringJavaTest extends AbstractTest {
         bookRepository.findDistinctPriceByPriceBetween(new BigDecimal(40), new BigDecimal(50));
         assertSQLs(
                 "select distinct tb_1_.PRICE from BOOK as tb_1_ where tb_1_.PRICE between ? and ?"
-        );
-    }
-
-    @Test
-    public void testKnownDtoType() {
-        List<SimpleBook> books = bookRepository.findSimpleBooksByName("GraphQL in Action");
-        assertSQLs(
-                "select tb_1_.ID, tb_1_.NAME from BOOK as tb_1_ where tb_1_.NAME = ?"
-        );
-        assertJson(
-                "[" +
-                        "--->SimpleBook{" +
-                        "--->--->id=a62f7aa3-9490-4612-98b5-98aae0e77120, " +
-                        "--->--->name=GraphQL in Action" +
-                        "}, SimpleBook{" +
-                        "--->--->id=e37a8344-73bb-4b23-ba76-82eac11f03e6, " +
-                        "--->--->name=GraphQL in Action" +
-                        "--->}, SimpleBook{" +
-                        "--->--->id=780bdf07-05af-48bf-9be9-f8c65236fecc, " +
-                        "--->--->name=GraphQL in Action" +
-                        "}" +
-                        "]",
-                books
-        );
-    }
-
-    @Test
-    public void testUnknownDtoType() {
-        List<ComplexBook> books = bookRepository.findComplexBooksByNameOrderByEditionDesc(
-                "GraphQL in Action",
-                ComplexBook.class
-        );
-        assertSQLs(
-                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                        "from BOOK as tb_1_ " +
-                        "where tb_1_.NAME = ? " +
-                        "order by tb_1_.EDITION desc",
-                "select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_ where tb_1_.ID = ?",
-                "select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                        "from AUTHOR as tb_1_ " +
-                        "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
-                        "where tb_2_.BOOK_ID in (?, ?, ?)"
-        );
-        assertJson(
-                "[" +
-                        "--->ComplexBook{" +
-                        "--->--->id=780bdf07-05af-48bf-9be9-f8c65236fecc, " +
-                        "--->--->name=GraphQL in Action, " +
-                        "--->--->edition=3, " +
-                        "--->--->price=80.00, " +
-                        "--->--->store=ComplexBook.TargetOf_store{" +
-                        "--->--->--->id=2fa3955e-3e83-49b9-902e-0465c109c779, " +
-                        "--->--->--->name=MANNING" +
-                        "--->--->}, " +
-                        "--->--->authors=[" +
-                        "--->--->--->ComplexBook.TargetOf_authors{" +
-                        "--->--->--->--->id=eb4963fd-5223-43e8-b06b-81e6172ee7ae, " +
-                        "--->--->--->--->firstName=Samer, " +
-                        "--->--->--->--->lastName=Buna, " +
-                        "--->--->--->--->gender=MALE" +
-                        "--->--->--->}" +
-                        "--->--->]" +
-                        "--->}, " +
-                        "--->ComplexBook{" +
-                        "--->--->id=e37a8344-73bb-4b23-ba76-82eac11f03e6, " +
-                        "--->--->name=GraphQL in Action, " +
-                        "--->--->edition=2, " +
-                        "--->--->price=81.00, " +
-                        "--->--->store=ComplexBook.TargetOf_store{" +
-                        "--->--->--->id=2fa3955e-3e83-49b9-902e-0465c109c779, " +
-                        "--->--->--->name=MANNING" +
-                        "--->--->}, " +
-                        "--->--->authors=[" +
-                        "--->--->--->ComplexBook.TargetOf_authors{" +
-                        "--->--->--->--->id=eb4963fd-5223-43e8-b06b-81e6172ee7ae, " +
-                        "--->--->--->--->firstName=Samer, " +
-                        "--->--->--->--->lastName=Buna, " +
-                        "--->--->--->--->gender=MALE" +
-                        "--->--->--->}" +
-                        "--->--->]" +
-                        "--->}, " +
-                        "--->ComplexBook{" +
-                        "--->--->id=a62f7aa3-9490-4612-98b5-98aae0e77120, " +
-                        "--->--->name=GraphQL in Action, " +
-                        "--->--->edition=1, " +
-                        "--->--->price=80.00, " +
-                        "--->--->store=ComplexBook.TargetOf_store{" +
-                        "--->--->--->id=2fa3955e-3e83-49b9-902e-0465c109c779, " +
-                        "--->--->--->name=MANNING" +
-                        "--->--->}, " +
-                        "--->--->authors=[" +
-                        "--->--->--->ComplexBook.TargetOf_authors{" +
-                        "--->--->--->--->id=eb4963fd-5223-43e8-b06b-81e6172ee7ae, " +
-                        "--->--->--->--->firstName=Samer, " +
-                        "--->--->--->--->lastName=Buna, " +
-                        "--->--->--->--->gender=MALE" +
-                        "--->--->--->}" +
-                        "--->--->]" +
-                        "--->}" +
-                        "]",
-                books
         );
     }
 

@@ -1,9 +1,8 @@
 package org.babyfish.jimmer.dto;
 
 import lombok.Data;
-import org.babyfish.jimmer.mapstruct.ImmutableFactory;
-import org.babyfish.jimmer.mapstruct.JimmerMapperConfig;
 import org.babyfish.jimmer.model.*;
+import org.jetbrains.annotations.Nullable;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
@@ -14,6 +13,7 @@ public class BookDto {
 
     private static final BookDtoMapper MAPPER = Mappers.getMapper(BookDtoMapper.class);
 
+    @Nullable
     private final String name;
 
     private final String edition;
@@ -38,27 +38,15 @@ public class BookDto {
         return MAPPER.toBook(this);
     }
 
-    @Mapper(config = JimmerMapperConfig.class)
+    @Mapper
     interface BookDtoMapper {
 
-        void fillBookDraft(BookDto dto, @MappingTarget BookDraft draft);
-
-        default Book toBook(BookDto dto) {
-            return ImmutableFactory.byDto(dto, Book.class, this::fillBookDraft);
-        }
+        Book toBook(BookDto dto);
 
         @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
-        void fillBookStoreDraft(TargetOf_store dto, @MappingTarget BookStoreDraft draft);
-
-        default BookStore toBookStore(TargetOf_store dto) {
-            return ImmutableFactory.byDto(dto, BookStore.class, this::fillBookStoreDraft);
-        }
+        BookStore toBookStore(TargetOf_store dto);
 
         @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
-        void fillAuthorDraft(TargetOf_authors dto, @MappingTarget AuthorDraft draft);
-
-        default Author toAuthor(TargetOf_authors dto) {
-            return ImmutableFactory.byDto(dto, Author.class, this::fillAuthorDraft);
-        }
+        Author toAuthor(TargetOf_authors dto);
     }
 }

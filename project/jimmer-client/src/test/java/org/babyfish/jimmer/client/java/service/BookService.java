@@ -6,7 +6,6 @@ import org.babyfish.jimmer.client.java.model.Author;
 import org.babyfish.jimmer.client.java.model.Book;
 import org.babyfish.jimmer.client.java.model.BookInput;
 import org.babyfish.jimmer.client.java.model.Page;
-import org.babyfish.jimmer.client.java.model.dto.StaticBook;
 import org.babyfish.jimmer.client.meta.Operation;
 import org.babyfish.jimmer.client.meta.common.*;
 import org.babyfish.jimmer.client.java.model.*;
@@ -82,7 +81,4 @@ public interface BookService {
 
     @RequestMapping("version")
     int version();
-
-    @GetMapping("/staticBook")
-    StaticBook findStaticBook(@PathVariable("id") long id);
 }

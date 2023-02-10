@@ -17,16 +17,16 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                         .saveCommand(
                                 OrderDraft.$.produce(order -> {
                                     order
-                                            .setId(id -> id.setX("001").setY("001"))
+                                            .applyId(id -> id.setX("001").setY("001"))
                                             .setName("new-order-1")
                                             .addIntoOrderItems(item ->
                                                     item
-                                                            .setId(id -> id.setA(1).setB(1).setC(1))
+                                                            .applyId(id -> id.setA(1).setB(1).setC(1))
                                                             .setName("order-item-1-1")
                                             )
                                             .addIntoOrderItems(item ->
                                                     item
-                                                            .setId(id -> id.setA(1).setB(1).setC(3))
+                                                            .applyId(id -> id.setA(1).setB(1).setC(3))
                                                             .setName("order-item-1-3")
                                             );
                                 }),
@@ -198,16 +198,16 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                         .saveCommand(
                                 OrderDraft.$.produce(order -> {
                                     order
-                                            .setId(id -> id.setX("001").setY("001"))
+                                            .applyId(id -> id.setX("001").setY("001"))
                                             .setName("new-order-1")
                                             .addIntoOrderItems(item ->
                                                     item
-                                                            .setId(id -> id.setA(1).setB(1).setC(1))
+                                                            .applyId(id -> id.setA(1).setB(1).setC(1))
                                                             .setName("order-item-1-1")
                                             )
                                             .addIntoOrderItems(item ->
                                                     item
-                                                            .setId(id -> id.setA(1).setB(1).setC(3))
+                                                            .applyId(id -> id.setA(1).setB(1).setC(3))
                                                             .setName("order-item-1-3")
                                             );
                                 }),
@@ -441,7 +441,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                         item
                                                 .setId(OrderItemIdDraft.$.produce(id -> id.setA(1).setB(1).setC(1)))
                                                 .setName("order-item-1-1")
-                                                .setOrder(order ->
+                                                .applyOrder(order ->
                                                         order
                                                                 .setId(OrderIdDraft.$.produce(id -> id.setX("001").setY("002")))
                                                                 .setName("order-2")
@@ -737,10 +737,10 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                         .saveCommand(
                                 ProductDraft.$.produce(product ->
                                         product
-                                                .setId(id -> id.setAlpha("00A").setBeta("00A"))
+                                                .applyId(id -> id.setAlpha("00A").setBeta("00A"))
                                                 .setName("Car")
                                                 .addIntoOrderItems(item ->
-                                                        item.setId(id -> id.setA(1).setB(2).setC(1))
+                                                        item.applyId(id -> id.setA(1).setB(2).setC(1))
                                                 )
                                 ),
                                 true

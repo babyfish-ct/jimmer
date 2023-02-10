@@ -121,10 +121,10 @@ public class MutateCacheTest extends AbstractQueryTest {
         );
         lambdaClient.getTriggers().fireEntityTableChange(
                 BookDraft.$.produce(book -> {
-                    book.setId(graphQLInActionId3).setStore(store -> store.setId(UUID.fromString("00000000-0000-0000-0000-000000000000")));
+                    book.setId(graphQLInActionId3).applyStore(store -> store.setId(UUID.fromString("00000000-0000-0000-0000-000000000000")));
                 }),
                 BookDraft.$.produce(book -> {
-                    book.setId(graphQLInActionId3).setStore(store -> store.setId(oreillyId));
+                    book.setId(graphQLInActionId3).applyStore(store -> store.setId(oreillyId));
                 }),
                 null
         );
@@ -495,7 +495,7 @@ public class MutateCacheTest extends AbstractQueryTest {
         );
         lambdaClient.getTriggers().fireEntityTableChange(
                 TreeNodeDraft.$.produce(treeNode -> {
-                    treeNode.setParent(parent -> {
+                    treeNode.applyParent(parent -> {
                         parent.setId(1L);
                     });
                 }),

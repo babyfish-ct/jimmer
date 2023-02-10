@@ -99,23 +99,6 @@ public abstract class MethodCodeWriter implements Constants {
             mv.visitInsn(Opcodes.ACONST_NULL);
         }
 
-        if (queryMethod.getStaticTypeParamIndex() != -1) {
-            mv.visitVarInsn(Opcodes.ALOAD, slots.get(queryMethod.getStaticTypeParamIndex()));
-            if (method.getParameterTypes()[queryMethod.getStaticTypeParamIndex()] == KClass.class) {
-                mv.visitMethodInsn(
-                        Opcodes.INVOKESTATIC,
-                        "kotlin/jvm/JvmClassMappingKt",
-                        "getJavaClass",
-                        "(Lkotlin/reflect/KClass;)Ljava/lang/Class;",
-                        false
-                );
-            }
-        } else if (queryMethod.getStaticType() != null) {
-            mv.visitLdcInsn(Type.getType(queryMethod.getStaticType()));
-        } else {
-            mv.visitInsn(Opcodes.ACONST_NULL);
-        }
-
         List<PropPredicate> ps = new ArrayList<>();
         collectPropPredicate(queryMethod.getQuery().getPredicate(), ps);
         mv.visitLdcInsn(argCount(ps));

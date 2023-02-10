@@ -77,6 +77,7 @@ class DraftGenerator(
                         addFun(prop)
                     }
                     ProducerGenerator(type, this).generate()
+                    MapStructGenerator(type, this).generate()
                 }
                 .build()
         )

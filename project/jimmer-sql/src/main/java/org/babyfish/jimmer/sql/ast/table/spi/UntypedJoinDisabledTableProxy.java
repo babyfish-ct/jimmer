@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.table.spi;
 
-import org.babyfish.jimmer.Static;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -111,11 +110,6 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     @Override
     public Selection<E> fetch(Fetcher<E> fetcher) {
         return table.fetch(fetcher);
-    }
-
-    @Override
-    public <S extends Static<E>> Selection<S> fetch(Class<S> staticType) {
-        return table.fetch(staticType);
     }
 
     @Override
