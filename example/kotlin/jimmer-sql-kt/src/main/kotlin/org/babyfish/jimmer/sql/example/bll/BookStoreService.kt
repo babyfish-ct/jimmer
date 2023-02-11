@@ -4,7 +4,7 @@ import org.babyfish.jimmer.client.FetchBy
 import org.babyfish.jimmer.sql.example.dal.BookStoreRepository
 import org.babyfish.jimmer.sql.example.model.BookStore
 import org.babyfish.jimmer.sql.example.model.by
-import org.babyfish.jimmer.sql.example.model.dto.BookStoreInput
+import org.babyfish.jimmer.sql.example.model.input.BookStoreInput
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*

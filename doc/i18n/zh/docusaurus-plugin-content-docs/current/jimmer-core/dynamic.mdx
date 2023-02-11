@@ -213,7 +213,7 @@ TreeNode treeNode = TreeNodeDraft.$
     .produce(current ->
         current
             .setName("Current Node")
-            .setParent(parent ->
+            .applyParent(parent ->
                     parent.setName("Parent Node")
             )
             .addIntoChildNodes(child ->

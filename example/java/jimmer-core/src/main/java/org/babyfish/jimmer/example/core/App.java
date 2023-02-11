@@ -24,7 +24,7 @@ public class App {
          */
         Book book = BookDraft.$.produce(b -> {
             b.setName("book");
-            b.setStore(s -> {
+            b.applyStore(s -> {
                 s.setName("store");
             });
             b.addIntoAuthors(a -> {

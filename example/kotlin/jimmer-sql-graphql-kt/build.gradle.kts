@@ -4,12 +4,13 @@ plugins {
 	id("org.springframework.boot") version "2.7.0"
 	id("io.spring.dependency-management") version "1.0.12.RELEASE"
 	kotlin("jvm") version "1.6.21"
+	kotlin("kapt") version "1.6.21"
 	kotlin("plugin.spring") version "1.6.21"
 	id("com.google.devtools.ksp") version "1.7.10-1.0.6"
 }
 
 group = "org.babyfish.jimmer.example.kt"
-version = "0.6.32-0.7-preview"
+version = "0.6.37-0.7-preview"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
@@ -18,8 +19,11 @@ repositories {
 
 dependencies {
 
-	implementation("org.babyfish.jimmer:jimmer-spring-boot-starter:0.6.32-0.7-preview")
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.6.32-0.7-preview")
+	implementation("org.babyfish.jimmer:jimmer-spring-boot-starter:0.6.37-0.7-preview")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.6.37-0.7-preview")
+
+	implementation("org.mapstruct:mapstruct:1.5.3.Final")
+	kapt("org.babyfish.jimmer:jimmer-mapstruct-apt:0.6.37-0.7-preview")
 
 	implementation("org.springframework.boot:spring-boot-starter-graphql")
 
@@ -52,10 +56,6 @@ tasks.withType<KotlinCompile> {
 	kotlinOptions {
 		freeCompilerArgs = listOf("-Xjsr305=strict")
 		jvmTarget = "1.8"
-
-		// Even without any code changes, modifying the dto file
-		// should cause the KSP to be triggered
-		inputs.files("src/main/dto")
 	}
 }
 

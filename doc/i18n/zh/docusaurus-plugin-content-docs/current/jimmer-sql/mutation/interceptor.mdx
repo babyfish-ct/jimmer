@@ -218,7 +218,7 @@ Book book = BookDraft.$.produce(draft -> {
     draft.setName("SQL in Action");
     draft.setEdition(1);
     draft.setPrice(new BigDecimal("59"));
-    draft.setStore(store -> store.setId(2L));
+    draft.applyStore(store -> store.setId(2L));
 });
 sqlClient.getEntities().save(book);
 ```

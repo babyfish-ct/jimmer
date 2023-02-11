@@ -418,7 +418,7 @@ Book toBeSaved = BookDraft.$.produce(book -> {
         .setName("Algorithms")
         .setEdition(4)
         .setPrice(new BigDecimal("53.99"))
-        .setStore(store -> {
+        .applyStore(store -> {
             store.setId(7883L);
         })
         .addIntoAuthors(author -> {
@@ -480,7 +480,7 @@ Book toBeSaved = BookDraft.$.produce(book -> {
         .setName("Algorithms")
         .setEdition(4)
         .setPrice(new BigDecimal("53.99"))
-        .setStore(store -> {
+        .applyStore(store -> {
             store.setName("O'REILLY");
         })
         .addIntoAuthors(author -> {

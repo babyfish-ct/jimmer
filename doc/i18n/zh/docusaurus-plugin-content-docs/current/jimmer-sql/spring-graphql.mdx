@@ -491,8 +491,8 @@ public class BookInput {
                 book.setId(id);
             }
             if (storeId != null) {
-                book.setStore(
-                    store -> store.setId(storeId)
+                book.applyStore(store -> 
+                    store.setId(storeId)
                 );
             }
             book
@@ -500,8 +500,8 @@ public class BookInput {
                 .setEdition(edition)
                 .setPrice(price);
             for (Long authorId : authorIds) {
-                book.addIntoAuthors(
-                    author -> author.setId(authorId)
+                book.addIntoAuthors(author -> 
+                    author.setId(authorId)
                 );
             }
         });

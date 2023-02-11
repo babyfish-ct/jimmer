@@ -3,7 +3,7 @@ package org.babyfish.jimmer.example.kt.graphql.bll
 import org.babyfish.jimmer.example.kt.graphql.dal.AuthorRepository
 import org.babyfish.jimmer.example.kt.graphql.entities.Author
 import org.babyfish.jimmer.example.kt.graphql.entities.Book
-import org.babyfish.jimmer.example.kt.graphql.entities.dto.AuthorInput
+import org.babyfish.jimmer.example.kt.graphql.entities.input.AuthorInput
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.BatchMapping
 import org.springframework.graphql.data.method.annotation.MutationMapping

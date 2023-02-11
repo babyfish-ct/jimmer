@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.example.dal.TreeNodeRepository
 import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.example.model.TreeNode
 import org.babyfish.jimmer.sql.example.model.by
-import org.babyfish.jimmer.sql.example.model.dto.RecursiveTreeInput
+import org.babyfish.jimmer.sql.example.model.input.RecursiveTreeInput
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.slf4j.LoggerFactory
 import org.springframework.transaction.annotation.Transactional
