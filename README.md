@@ -1,8 +1,11 @@
 
 [![logo](logo.png)](https://babyfish-ct.github.io/jimmer/)
 
-A revolutionary ORM framework for both java and kotlin.
+# A revolutionary ORM framework for both java and kotlin.
 
+> CRUD for single table is very simple, isn't it?
+> 
+> Now, jimmer tells you that CRUD for arbitrarily complex data structures can be very simple too!
 
 ## 1. Documentation
 
