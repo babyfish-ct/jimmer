@@ -11,27 +11,4 @@ import java.lang.annotation.*;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface Immutable {
-
-    /**
-     * <p>
-     *     Default nullity of members of current annotated interface.
-     * </p>
-     *
-     * <p>
-     *     The immutable interface can define multiple properties,
-     *     and jimmer will try its best to determine whether each property is nullable.
-     * </p>
-     *
-     * <p>
-     *     If it cannot determine whether a property is nullable,
-     *     it will refer to this value.
-     * </p>
-     */
-    Nullity value() default Nullity.NON_NULL;
-
-    enum Nullity {
-        NON_NULL,
-        NULLABLE
-    }
-}
+public @interface Immutable {}

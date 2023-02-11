@@ -20,10 +20,6 @@ import java.util.*;
 
 class JetBrainsMetadata {
 
-    private static final String JETBRAINS_NULLABLE_DESC = Type.getDescriptor(Nullable.class);
-
-    private static final String SPRING_NULLABLE = "org.springframework.lang.Nullable";
-
     private static final Set<Class<?>> BOX_TYPES = new HashSet<>(
             Arrays.asList(
                     Boolean.class,
@@ -122,11 +118,9 @@ class JetBrainsMetadata {
         if (BOX_TYPES.contains(type)) {
             return true;
         }
-        if (member.isAnnotationPresent(Null.class)) {
-            return true;
-        }
         for (Annotation annotation : member.getAnnotations()) {
-            if (annotation.annotationType().getName().equals(SPRING_NULLABLE)) {
+            String simpleName = annotation.annotationType().getSimpleName();
+            if (simpleName.equals("Null") || simpleName.equals("Nullable")) {
                 return true;
             }
         }
@@ -201,7 +195,7 @@ class JetBrainsMetadata {
 
             @Override
             public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
-                if (descriptor.equals(JETBRAINS_NULLABLE_DESC)) {
+                if (descriptor.endsWith("/Nullable;")) {
                     nullableMembers.add(field);
                 }
                 return null;
@@ -219,7 +213,7 @@ class JetBrainsMetadata {
 
             @Override
             public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
-                if (descriptor.equals(JETBRAINS_NULLABLE_DESC)) {
+                if (descriptor.endsWith("/Nullable;")) {
                     nullableMembers.add(method);
                 }
                 return null;
@@ -227,7 +221,7 @@ class JetBrainsMetadata {
 
             @Override
             public AnnotationVisitor visitParameterAnnotation(int parameter, String descriptor, boolean visible) {
-                if (descriptor.equals(JETBRAINS_NULLABLE_DESC)) {
+                if (descriptor.endsWith("/Nullable;")) {
                     nullableParameterIndices
                             .computeIfAbsent(method, it -> new HashSet<>())
                             .add(parameter);

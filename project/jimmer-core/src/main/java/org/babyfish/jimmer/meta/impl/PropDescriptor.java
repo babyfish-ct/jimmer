@@ -62,7 +62,6 @@ public class PropDescriptor {
                 elementAnnotationType,
                 isList,
                 kotlinNullable,
-                immutable != null && immutable.value() == Immutable.Nullity.NULLABLE,
                 exceptionCreator
         );
     }
@@ -113,18 +112,6 @@ public class PropDescriptor {
 
         private static final Map<String, Class<? extends Annotation>> ANNOTATION_MAP;
 
-        private static final String VALIDATION_NULL = "javax.validation.constraints.Null";
-
-        private static final String VALIDATION_NOT_NULL = "javax.validation.constraints.NotNull";
-
-        private static final String JETBRAINS_NULLABLE = "org.jetbrains.annotations.Nullable";
-
-        private static final String JETBRAINS_NOT_NULL = "org.jetbrains.annotations.NotNull";
-
-        private static final String SPRINGFRAMEWORK_NULLABLE = "org.springframework.lang.Nullable";
-
-        private static final String SPRINGFRAMEWORK_NON_NULL = "org.springframework.lang.NonNull";
-
         private static final Set<Class<? extends Annotation>> VALUE_ANNOTATION_TYPES =
                 setOf(Entity.class, MappedSuperclass.class, Embeddable.class);
 
@@ -148,8 +135,6 @@ public class PropDescriptor {
 
         private final Boolean kotlinNullable;
 
-        private final boolean defaultNullable;
-
         private final Function<String, RuntimeException> exceptionCreator;
 
         private Set<Class<? extends Annotation>> annotationTypes;
@@ -170,7 +155,6 @@ public class PropDescriptor {
                 Class<? extends Annotation> elementAnnotationType,
                 boolean isList,
                 Boolean kotlinNullable,
-                boolean defaultNullable,
                 Function<String, RuntimeException> exceptionCreator
         ) {
             this.typeText = typeText;
@@ -180,7 +164,6 @@ public class PropDescriptor {
             this.elementAnnotationType = elementAnnotationType;
             this.isList = isList;
             this.kotlinNullable = kotlinNullable;
-            this.defaultNullable = defaultNullable;
             this.exceptionCreator = exceptionCreator;
         }
 
@@ -267,16 +250,10 @@ public class PropDescriptor {
         }
 
         private void addAsNullityAnnotation(String annotationTypeName) {
-            switch (annotationTypeName) {
-                case VALIDATION_NULL:
-                case JETBRAINS_NULLABLE:
-                case SPRINGFRAMEWORK_NULLABLE:
-                    addNullityAnnotation(annotationTypeName, true);
-                    break;
-                case VALIDATION_NOT_NULL:
-                case JETBRAINS_NOT_NULL:
-                case SPRINGFRAMEWORK_NON_NULL:
-                    addNullityAnnotation(annotationTypeName, false);
+            if (annotationTypeName.endsWith(".Null") || annotationTypeName.endsWith(".Nullable")) {
+                addNullityAnnotation(annotationTypeName, true);
+            } else if (annotationTypeName.endsWith(".NotNull") || annotationTypeName.endsWith(".NonNull")) {
+                addNullityAnnotation(annotationTypeName, false);
             }
         }
 
@@ -477,9 +454,7 @@ public class PropDescriptor {
         private boolean determineNullable(Type type) {
             boolean specifiedNullable = kotlinNullable != null ?
                     kotlinNullable :
-                    annotationNullity != null ?
-                            annotationNullity.isNullable :
-                            defaultNullable;
+                    annotationNullity != null && annotationNullity.isNullable;
             switch (type) {
                 case ID:
                 case VERSION:

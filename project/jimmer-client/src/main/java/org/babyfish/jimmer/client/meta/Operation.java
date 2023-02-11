@@ -4,7 +4,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Map;
 
 public interface Operation extends Node {
 
@@ -21,6 +20,8 @@ public interface Operation extends Node {
     List<Parameter> getParameters();
 
     Type getType();
+
+    List<EnumBasedError> getErrors();
 
     @Nullable
     Document getDocument();
