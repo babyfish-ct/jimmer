@@ -275,6 +275,33 @@ class Context {
         throw new AssertionError("Internal bug: unexpected annotated type " + annotatedType);
     }
 
+    public Type parseErrorFieldType(Class<?> javaClass) {
+        if (javaClass.isEnum()) {
+            EnumType enumType = enumTypeMap.get(javaClass);
+            if (enumType == null) {
+                enumType = new EnumTypeImpl(javaClass);
+                enumTypeMap.put(javaClass, enumType);
+            }
+            return enumType;
+        }
+        SimpleType simpleType = SimpleTypeImpl.get(javaClass);
+        if (simpleType != null) {
+            return simpleType;
+        }
+        if (Collection.class.isAssignableFrom(javaClass) ||
+                Map.class.isAssignableFrom(javaClass)) {
+            throw new IllegalDocMetaException(
+                    "The error field type cannot be collection or map"
+            );
+        }
+        if (javaClass.getTypeParameters().length != 0) {
+            throw new IllegalDocMetaException(
+                    "The error field type cannot be generic type"
+            );
+        }
+        return objectType(javaClass, null);
+    }
+
     public Map<Class<?>, StaticObjectType> getGenericTypes() {
         Set<Class<?>> classes =
                 staticObjectTypeMap

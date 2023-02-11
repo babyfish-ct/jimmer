@@ -21,13 +21,9 @@ class ValidationGenerator(
 ) {
     fun generate() {
         val nullityAnnotations = prop.annotations {
-            val fullName = it.fullName
-            fullName == "javax.validation.constraints.NotNull" ||
-                fullName == "org.jetbrains.annotations.NotNull" ||
-                fullName == "org.springframework.lang.NonNull" ||
-                fullName == "javax.validation.constraints.Null" ||
-                fullName == "org.jetbrains.annotations.Nullable" ||
-                fullName == "org.springframework.lang.Nullable"
+            val shortName = it.shortName.asString()
+            shortName == "NotNull" || shortName == "NonNull" ||
+                shortName == "Nullable" || shortName == "Null"
         }
         if (nullityAnnotations.isNotEmpty()) {
             throw MetaException(

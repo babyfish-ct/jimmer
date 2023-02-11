@@ -44,6 +44,65 @@ public class JTypeScriptTest {
     }
 
     @Test
+    public void testModuleErrors() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        TsContext ctx = createContext(out);
+        new ModuleErrorsWriter(ctx).flush();
+        String code = out.toString();
+        Assertions.assertEquals(
+                "export type AllErrors = \n" +
+                        "    {\n" +
+                        "        readonly family: \"BusinessError\",\n" +
+                        "        readonly code: \"GLOBAL_TENANT_REQUIRED\"\n" +
+                        "    } | \n" +
+                        "    {\n" +
+                        "        readonly family: \"BusinessError\",\n" +
+                        "        readonly code: \"ILLEGAL_PATH_NODES\",\n" +
+                        "        readonly \"pathNodes\": string\n" +
+                        "    } | \n" +
+                        "    {\n" +
+                        "        readonly family: \"BusinessError\",\n" +
+                        "        readonly code: \"OUT_OF_RANGE\",\n" +
+                        "        readonly \"min\": number,\n" +
+                        "        readonly \"max\": number\n" +
+                        "    }\n" +
+                        ";\n" +
+                        "\n" +
+                        "export type ApiErrors = {\n" +
+                        "    \"authorService\": {\n" +
+                        "        \"findComplexAuthor\": AllErrors & (\n" +
+                        "            {\n" +
+                        "                readonly family: 'BusinessError',\n" +
+                        "                readonly code: 'OUT_OF_RANGE',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | \n" +
+                        "            {\n" +
+                        "                readonly family: 'BusinessError',\n" +
+                        "                readonly code: 'ILLEGAL_PATH_NODES',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            }\n" +
+                        "        ),\n" +
+                        "        \"findSimpleAuthor\": AllErrors & (\n" +
+                        "            {\n" +
+                        "                readonly family: 'BusinessError',\n" +
+                        "                readonly code: 'GLOBAL_TENANT_REQUIRED',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | \n" +
+                        "            {\n" +
+                        "                readonly family: 'BusinessError',\n" +
+                        "                readonly code: 'OUT_OF_RANGE',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            }\n" +
+                        "        )\n" +
+                        "    },\n" +
+                        "    \"bookService\": {\n" +
+                        "    }\n" +
+                        "};\n",
+                code
+        );
+    }
+
+    @Test
     public void testBookService() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         TsContext ctx = createContext(out);

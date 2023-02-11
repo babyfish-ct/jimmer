@@ -52,7 +52,7 @@ public class TypeScriptGenerator implements Generator {
             ZipOutputStream zipOut = new ZipOutputStream(out);
             generate0(new TsContext(metadata, zipOut, moduleName, indent, anonymous), zipOut);
             zipOut.finish();
-        } catch (IOException | RuntimeException | Error ex) {
+        } catch (IOException | RuntimeException | java.lang.Error ex) {
             throw new GeneratorException(ex);
         }
     }
@@ -61,6 +61,10 @@ public class TypeScriptGenerator implements Generator {
 
         zipOut.putNextEntry(new ZipEntry(ctx.getModuleFile() + ".ts"));
         new ModuleWriter(ctx).flush();
+        zipOut.closeEntry();
+
+        zipOut.putNextEntry(new ZipEntry(ctx.getModuleErrorsFile() + ".ts"));
+        new ModuleErrorsWriter(ctx).flush();
         zipOut.closeEntry();
 
         zipOut.putNextEntry(new ZipEntry(ExecutorWriter.FILE + ".ts"));
@@ -113,6 +117,7 @@ public class TypeScriptGenerator implements Generator {
 
         indexMap.computeIfAbsent("", Index::new)
                 .addObjectFile(ctx.getModuleFile())
+                .addTypeFile(ctx.getModuleErrorsFile())
                 .addTypeFile(ExecutorWriter.FILE)
                 .addTypeFile(DynamicWriter.FILE)
                 .addTypeFile(RequestOfWriter.FILE)

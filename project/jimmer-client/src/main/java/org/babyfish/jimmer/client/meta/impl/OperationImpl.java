@@ -2,6 +2,7 @@ package org.babyfish.jimmer.client.meta.impl;
 
 import org.babyfish.jimmer.client.IllegalDocMetaException;
 import org.babyfish.jimmer.client.meta.*;
+import org.babyfish.jimmer.client.meta.EnumBasedError;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,6 +21,8 @@ class OperationImpl implements Operation {
 
     private final Type type;
 
+    private final List<EnumBasedError> errors;
+
     private final Document document;
 
     List<Parameter> parameters;
@@ -29,13 +32,15 @@ class OperationImpl implements Operation {
             Method rawMethod,
             String uri,
             HttpMethod method,
-            Type type
+            Type type,
+            List<EnumBasedError> errors
     ) {
         this.declaringService = declaringService;
         this.rawMethod = rawMethod;
         this.uri = uri;
         this.httpMethod = method;
         this.type = type;
+        this.errors = errors;
         this.document = DocumentImpl.of(rawMethod);
     }
 
@@ -72,6 +77,11 @@ class OperationImpl implements Operation {
     @Override
     public Type getType() {
         return type;
+    }
+
+    @Override
+    public List<EnumBasedError> getErrors() {
+        return errors;
     }
 
     @Nullable
@@ -144,7 +154,14 @@ class OperationImpl implements Operation {
         if (jetBrainsMetadata.isNullable(rawMethod)) {
             type = NullableTypeImpl.of(type);
         }
-        OperationImpl operation = new OperationImpl(declaringService, rawMethod, uri, httpMethod, type);
+        OperationImpl operation = new OperationImpl(
+                declaringService,
+                rawMethod,
+                uri,
+                httpMethod,
+                type,
+                new Throws(ctx).getErrors(rawMethod)
+        );
         int index = 0;
         List<Parameter> list = new ArrayList<>();
         for (java.lang.reflect.Parameter rawParameter : rawMethod.getParameters()) {

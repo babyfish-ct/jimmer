@@ -29,6 +29,8 @@ public class Context {
 
     private final File moduleFile;
 
+    private final File moduleErrorsFile;
+
     private final String indent;
 
     private final Map<Class<?>, List<ImmutableObjectType>> dtoMap;
@@ -48,6 +50,7 @@ public class Context {
     public Context(Metadata metadata, OutputStream out, String moduleName, int indent) {
         this.out = out;
         this.moduleFile = new File("", moduleName);
+        this.moduleErrorsFile = new File("", moduleName + "Errors");
         if (indent < 2) {
             throw new IllegalArgumentException("indent cannot be less than 2");
         }
@@ -103,6 +106,10 @@ public class Context {
 
     public File getModuleFile() {
         return moduleFile;
+    }
+
+    public File getModuleErrorsFile() {
+        return moduleErrorsFile;
     }
 
     public String getIndent() {
