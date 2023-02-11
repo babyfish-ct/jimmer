@@ -724,16 +724,16 @@ SimpleSaveResult<Book> result = sqlClient
                 .setEdition(1)
                 .setPrice(new BigDecimal("44.99"))
                 // highlight-next-line
-                .setStore(
-                    store -> store.setId(2L)
+                .applyStore(store -> 
+                    store.setId(2L)
                 )
                 // highlight-next-line
-                .addIntoAuthors(
-                    author -> author.setId(2L)
+                .addIntoAuthors(author -> 
+                    author.setId(2L)
                 )
                 // highlight-next-line
-                .addIntoAuthors(
-                    author -> author.setId(3L)
+                .addIntoAuthors(author -> 
+                    author.setId(3L)
                 );
         })
     );
@@ -1068,7 +1068,7 @@ sqlClient
                 .setName("SpringBoot in Action")
                 .setEdition(1)
                 .setPrice(new BigDecimal("44.99"))
-                .setStore(store ->
+                .applyStore(store ->
                     store
                         .setName("MANNING")
                         .setWebsite("http://www.manning.com")

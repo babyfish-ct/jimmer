@@ -207,7 +207,7 @@ val bookMap = sqlClient.entities
 
 ```java
 TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
-    draft.setParent((TreeNode) null);
+    draft.setParent(null);
     draft.setName("Hello");
 });
 List<TreeNode> treeNodes = sqlClient.getEntities()
@@ -267,7 +267,7 @@ order by tb_1_.NAME asc
 
 ```java
 TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
-    draft.setParent((TreeNode) null);
+    draft.setParent(null);
     draft.setName("Hello");
 });
 List<TreeNode> treeNodes = sqlClient.getEntities()
@@ -321,7 +321,7 @@ order by tb_1_.NAME asc
 
 ```java
 TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
-    draft.setParent((TreeNode) null);
+    draft.setParent(null);
     draft.setName("Hello");
 });
 List<TreeNode> treeNodes = sqlClient.getEntities()

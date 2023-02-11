@@ -29,8 +29,8 @@ jimmer-sql内容相对较多，后续文章会逐步讲解。本文对其部分�
 ```groovy title="build.gradle"
 depdencies {
     
-    implementation 'org.babyfish.jimmer:jimmer-sql:0.6.35-0.7-preview'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.35-0.7-preview'
+    implementation 'org.babyfish.jimmer:jimmer-sql:0.6.37-0.7-preview'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.37-0.7-preview'
 
     runtimeOnly 'com.h2database:h2:2.1.212'
 }
@@ -44,7 +44,7 @@ depdencies {
     <dependency>
         <groupId>org.babyfish.jimmer</groupId>
         <artifactId>jimmer-sql</artifactId>
-        <version>0.6.35-0.7-preview</version>
+        <version>0.6.37-0.7-preview</version>
     </dependency>
     <dependency>
         <groupId>com.h2database</groupId>
@@ -65,7 +65,7 @@ depdencies {
                     <path>
                         <groupId>org.babyfish.jimmer</groupId>
                         <artifactId>jimmer-apt</artifactId>
-                        <version>0.6.35-0.7-preview</version>
+                        <version>0.6.37-0.7-preview</version>
                     </path>
                 </annotationProcessorPaths>
             </configuration>
@@ -87,10 +87,10 @@ plugins {
 depdencies {
     
     // 第二步: 添加jimmer-sql-kotlin
-    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.6.35-0.7-preview")
+    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.6.37-0.7-preview")
 
     // 第三步: 应用ksp插件
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.6.35-0.7-preview")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.6.37-0.7-preview")
 
     runtimeOnly("com.h2database:h2:2.1.212")
 
@@ -116,7 +116,7 @@ kotlin {
     <dependency>
         <groupId>org.babyfish.jimmer</groupId>
         <artifactId>jimmer-sql-kotlin</artifactId>
-        <version>0.6.35-0.7-preview</version>
+        <version>0.6.37-0.7-preview</version>
     </dependency>
     <dependency>
         <groupId>com.h2database</groupId>
@@ -165,7 +165,7 @@ kotlin {
                 <dependency>
                     <groupId>org.babyfish.jimmer</groupId>
                     <artifactId>jimmer-ksp</artifactId>
-                    <version>0.6.35-0.7-preview</version>
+                    <version>0.6.37-0.7-preview</version>
                 </dependency>
             </dependencies>
         </plugin>
@@ -1234,7 +1234,7 @@ SimpleSaveResult<Book> result = sqlClient
             book.setName("BookName")
                 .setEdition(1)
                 .setPrice(new BigDecimal(50))
-                .setStore(store -> 
+                .applyStore(store -> 
                     store.setName("StoreName")
                 )
                 .addIntoAuthors(author -> {

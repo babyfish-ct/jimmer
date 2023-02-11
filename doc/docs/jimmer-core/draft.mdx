@@ -63,10 +63,10 @@ Due to the existence of Annotation Processor/KSP plugin in the gradle configurat
 ```groovy title="build.gradle"
 dependencies {
 
-    implementation 'org.babyfish.jimmer:jimmer-core:0.6.35-0.7-preview'
+    implementation 'org.babyfish.jimmer:jimmer-core:0.6.37-0.7-preview'
 
     // highlight-next-line
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.35-0.7-preview'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.37-0.7-preview'
     // This annotation processor generates source code
     // for INTERFACEs marked by
     // `@org.babyfish.jimmer.Immutable` or
@@ -84,9 +84,9 @@ plugins {
 }
 dependencies {
 
-    implementation("org.babyfish.jimmer:jimmer-core-kotlin:0.6.35-0.7-preview")
+    implementation("org.babyfish.jimmer:jimmer-core-kotlin:0.6.37-0.7-preview")
     // highlight-next-line
-    ksp("org.babyfish.jimmer:jimmer-ksp:0.6.35-0.7-preview")
+    ksp("org.babyfish.jimmer:jimmer-ksp:0.6.37-0.7-preview")
     // The ksp plugin generates source code
     // for INTERFACEs marked by
     // `@org.babyfish.jimmer.Immutable` or
@@ -134,10 +134,10 @@ public interface TreeNodeDraft extends TreeNode, Draft {
     TreeNodeDraft setParent(TreeNode parent);
 
     @OldChain
-    TreeNodeDraft setParent(DraftConsumer<TreeNodeDraft> block);
+    TreeNodeDraft applyParent(DraftConsumer<TreeNodeDraft> block);
 
     @OldChain
-    TreeNodeDraft setParent(TreeNode base, DraftConsumer<TreeNodeDraft> block);
+    TreeNodeDraft applyParent(TreeNode base, DraftConsumer<TreeNodeDraft> block);
 
 
 
@@ -538,7 +538,7 @@ var treeNode = new(TreeNode::class).by {
 </TabItem>
 </Tabs>
 
-### Added lambda based `setParent`
+### Added lambda based `applyParent`
 
 :::info
 This feature is only available for Java. 
@@ -550,12 +550,12 @@ The kotlin code is concise enough, and is not needed to simplify the code by thi
 public interface TreeNodeDraft extends TreeNode, Draft {
 
     @OldChain
-    TreeNodeDraft setParent(
+    TreeNodeDraft applyParent(
         DraftConsumer<TreeNodeDraft> block
     );
 
     @OldChain
-    TreeNodeDraft setParent(
+    TreeNodeDraft applyParent(
         TreeNode base, 
         DraftConsumer<TreeNodeDraft> block
     );
@@ -582,7 +582,7 @@ These two setters are used for simplified code. Since the usage of the two metho
     ```java
     TreeNode oldTreeNode = TreeNodeDraft.$
         .produce(draft -> {
-            draft.setParent(daddyDraft -> {
+            draft.applyParent(daddyDraft -> {
                 daddyDraft.setName("Daddy")
             })
         });

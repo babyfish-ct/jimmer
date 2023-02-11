@@ -207,7 +207,7 @@ Since Jimmer objects are dynamic, Jimmer's QBE queries are very flexible.
 
 ```java
 TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
-    draft.setParent((TreeNode) null);
+    draft.setParent(null);
     draft.setName("Hello");
 });
 List<TreeNode> treeNodes = sqlClient.getEntities()
@@ -267,7 +267,7 @@ By default, non-null properties of example object will generate `=`, however, we
 
 ```java
 TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
-    draft.setParent((TreeNode) null);
+    draft.setParent(null);
     draft.setName("Hello");
 });
 List<TreeNode> treeNodes = sqlClient.getEntities()
@@ -321,7 +321,7 @@ order by tb_1_.NAME asc
 
 ```java
 TreeNode treeNode = TreeNodeDraft.$.produce(draft -> {
-    draft.setParent((TreeNode) null);
+    draft.setParent(null);
     draft.setName("Hello");
 });
 List<TreeNode> treeNodes = sqlClient.getEntities()
