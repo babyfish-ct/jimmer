@@ -503,12 +503,7 @@ public class SpringJavaTest extends AbstractTest {
     public void testDownloadTypescript() throws Exception {
         mvc.perform(get("/my-ts.zip"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith("application/zip"))
-                .andDo(p -> {
-                    try (OutputStream out = new FileOutputStream("/Users/chentao/tmp/new-ts.zip")) {
-                        out.write(p.getResponse().getContentAsByteArray());
-                    }
-                });
+                .andExpect(content().contentTypeCompatibleWith("application/zip"));
     }
 
     @Test
