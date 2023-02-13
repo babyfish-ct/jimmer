@@ -152,35 +152,35 @@ public class JTypeScriptTest {
                         "        _value = options.name;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'name'\n" +
+                        "            _uri += '=name'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.storeName;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'storeName'\n" +
+                        "            _uri += '=storeName'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.authorName;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'authorName'\n" +
+                        "            _uri += '=authorName'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.minPrice;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'minPrice'\n" +
+                        "            _uri += '=minPrice'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.maxPrice;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'maxPrice'\n" +
+                        "            _uri += '=maxPrice'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
@@ -196,35 +196,35 @@ public class JTypeScriptTest {
                         "        _value = options.arguments.authorNames?.join(',');\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'authorNames'\n" +
+                        "            _uri += '=authorNames'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.arguments.maxPrice;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'maxPrice'\n" +
+                        "            _uri += '=maxPrice'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.arguments.minPrice;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'minPrice'\n" +
+                        "            _uri += '=minPrice'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.arguments.name;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'name'\n" +
+                        "            _uri += '=name'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.arguments.storeName;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'storeName'\n" +
+                        "            _uri += '=storeName'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
@@ -247,21 +247,21 @@ public class JTypeScriptTest {
                         "        _value = options.name;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'name'\n" +
+                        "            _uri += '=name'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.pageIndex;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'pageIndex'\n" +
+                        "            _uri += '=pageIndex'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.pageSize;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'pageSize'\n" +
+                        "            _uri += '=pageSize'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
@@ -390,35 +390,35 @@ public class JTypeScriptTest {
                         "        _value = options.name;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'name'\n" +
+                        "            _uri += '=name'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.storeName;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'storeName'\n" +
+                        "            _uri += '=storeName'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.authorName;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'authorName'\n" +
+                        "            _uri += '=authorName'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.minPrice;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'minPrice'\n" +
+                        "            _uri += '=minPrice'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.maxPrice;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'maxPrice'\n" +
+                        "            _uri += '=maxPrice'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
@@ -478,35 +478,35 @@ public class JTypeScriptTest {
                         "        _value = options.arguments.authorNames?.join(',');\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'authorNames'\n" +
+                        "            _uri += '=authorNames'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.arguments.maxPrice;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'maxPrice'\n" +
+                        "            _uri += '=maxPrice'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.arguments.minPrice;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'minPrice'\n" +
+                        "            _uri += '=minPrice'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.arguments.name;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'name'\n" +
+                        "            _uri += '=name'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.arguments.storeName;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'storeName'\n" +
+                        "            _uri += '=storeName'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
@@ -612,21 +612,21 @@ public class JTypeScriptTest {
                         "        _value = options.name;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'name'\n" +
+                        "            _uri += '=name'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.pageIndex;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'pageIndex'\n" +
+                        "            _uri += '=pageIndex'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        _value = options.pageSize;\n" +
                         "        if (_value !== undefined && _value !== null) {\n" +
                         "            _uri += _separator\n" +
-                        "            _uri += 'pageSize'\n" +
+                        "            _uri += '=pageSize'\n" +
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +

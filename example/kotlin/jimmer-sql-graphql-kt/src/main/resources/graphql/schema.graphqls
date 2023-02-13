@@ -75,7 +75,7 @@ input BookInput {
     price: BigDecimal!
     storeId: Long
     authorIds: [Long!]!
-    chapters: [BookInput_Chapter!]!
+    chapters: [String!]!
 }
 
 input AuthorInput {
@@ -83,12 +83,6 @@ input AuthorInput {
     firstName: String!
     lastName: String!
     gender: Gender!
-}
-
-input BookInput_Chapter {
-    id: Long
-    index: Int!
-    title: String!
 }
 
 enum Gender { MALE, FEMALE }

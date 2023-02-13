@@ -3,6 +3,7 @@ package org.babyfish.jimmer.example.kt.graphql.bll
 import org.babyfish.jimmer.example.kt.graphql.dal.BookRepository
 import org.babyfish.jimmer.example.kt.graphql.entities.*
 import org.babyfish.jimmer.example.kt.graphql.entities.input.BookInput
+import org.babyfish.jimmer.kt.new
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.BatchMapping
 import org.springframework.graphql.data.method.annotation.MutationMapping
@@ -53,7 +54,13 @@ class BookService(
     @MutationMapping
     @Transactional
     fun saveBook(@Argument input: BookInput): Book =
-        bookRepository.save(input)
+        bookRepository.save(
+            new(Book::class).by(input.toEntity()) {
+                for (i in chapters.indices) {
+                    chapters()[i].index = i
+                }
+            }
+        )
 
     @MutationMapping
     @Transactional

@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.example.bll;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.spring.model.SortUtils;
 import org.babyfish.jimmer.sql.example.bll.error.BusinessErrorCode;
-import org.babyfish.jimmer.sql.example.bll.error.BusinessException;
 import org.babyfish.jimmer.sql.example.bll.error.BusinessThrows;
 import org.babyfish.jimmer.sql.example.dal.BookRepository;
 import org.babyfish.jimmer.sql.example.model.*;
@@ -105,7 +104,14 @@ public class BookService {
 
     @PutMapping("/withChapters")
     public Book saveCompositeBook(@RequestBody CompositeBookInput input) {
-        return bookRepository.save(input);
+        return bookRepository.save(
+                BookDraft.$.produce(input.toEntity(), draft -> {
+                    int size = draft.chapters().size();
+                    for (int i = 0; i < size; i++) {
+                        draft.chapters(true).get(i).setIndex(i);
+                    }
+                })
+        );
     }
 
     @DeleteMapping("/{id}")

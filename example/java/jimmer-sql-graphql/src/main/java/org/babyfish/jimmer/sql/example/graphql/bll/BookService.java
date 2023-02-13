@@ -57,7 +57,14 @@ public class BookService {
     @MutationMapping
     @Transactional
     public Book saveBook(@Argument BookInput input) {
-        return bookRepository.save(input);
+        return bookRepository.save(
+                BookDraft.$.produce(input.toEntity(), draft -> {
+                    int size = draft.chapters().size();
+                    for (int i = 0; i < size; i++) {
+                        draft.chapters(true).get(i).setIndex(i);
+                    }
+                })
+        );
     }
 
     @MutationMapping

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.example.bll
 
 import org.babyfish.jimmer.client.FetchBy
+import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.example.dal.BookRepository
 import org.babyfish.jimmer.sql.example.model.*
 import org.babyfish.jimmer.spring.model.SortUtils
@@ -56,7 +57,13 @@ class BookService(
 
     @PutMapping("/withChapters")
     fun saveBook(@RequestBody input: CompositeBookInput): Book =
-        bookRepository.save(input)
+        bookRepository.save(
+            new(Book::class).by(input.toEntity()) {
+                for (i in chapters.indices) {
+                    chapters()[i].index = i
+                }
+            }
+        )
 
     @DeleteMapping("/{id}")
     fun deleteBook(@PathVariable id: Long) {

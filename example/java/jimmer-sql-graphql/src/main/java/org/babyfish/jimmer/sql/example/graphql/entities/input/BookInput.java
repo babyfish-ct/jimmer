@@ -36,17 +36,11 @@ public class BookInput implements Input<Book> {
 
     private List<Long> authorIds;
 
-    private List<TargetOfChapters> chapters;
+    private List<String> chapters;
 
     @Override
     public Book toEntity() {
         return CONVERTER.toBook(this);
-    }
-
-    @Data
-    public static class TargetOfChapters {
-        private int index;
-        private String title;
     }
 
     @Mapper
@@ -57,15 +51,16 @@ public class BookInput implements Input<Book> {
         @Mapping(target = "authors", source = "authorIds")
         Book toBook(BookInput input);
 
-        default BookStore toBookStore(long id) {
-            return ImmutableObjects.makeIdOnly(BookStore.class, id);
-        }
+        @BeanMapping(ignoreByDefault = true)
+        @Mapping(target = "id", source = ".")
+        BookStore toBookStore(Long id);
 
-        default Author toAuthor(long id) {
-            return ImmutableObjects.makeIdOnly(Author.class, id);
-        }
+        @BeanMapping(ignoreByDefault = true)
+        @Mapping(target = "id", source = ".")
+        Author toAuthor(Long id);
 
-        @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
-        Chapter toChapter(TargetOfChapters input);
+        @BeanMapping(ignoreByDefault = true)
+        @Mapping(target = "title", source = ".")
+        Chapter toChapter(String title);
     }
 }

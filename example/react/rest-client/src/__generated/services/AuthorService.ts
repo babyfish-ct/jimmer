@@ -2,58 +2,91 @@ import type { Dynamic, Executor } from '../';
 import type { AuthorDto } from '../model/dto';
 import type { Author } from '../model/entities';
 import type { Gender } from '../model/enums';
+import type { AuthorInput } from '../model/static';
 
 export class AuthorService {
     
     constructor(private executor: Executor) {}
     
     async deleteAuthor(options: AuthorServiceOptions['deleteAuthor']): Promise<void> {
-        let uri = '/author/';
-        uri += encodeURIComponent(options.id);
-        return (await this.executor({uri, method: 'DELETE'})) as void
+        let _uri = '/author/';
+        _uri += encodeURIComponent(options.id);
+        return (await this.executor({uri: _uri, method: 'DELETE'})) as void
     }
     
     async findAuthors(options: AuthorServiceOptions['findAuthors']): Promise<
         ReadonlyArray<AuthorDto['AuthorService/DEFAULT_FETCHER']>
     > {
-        let uri = '/author/list';
-        uri += '?sortCode=';
-        uri += encodeURIComponent(options.sortCode);
-        if (options.firstName !== undefined && options.firstName !== null) {
-            uri += '&firstName=';
-            uri += encodeURIComponent(options.firstName);
+        let _uri = '/author/list';
+        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';
+        let _value: any = undefined;
+        _value = options.sortCode;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'sortCode'
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
         }
-        if (options.lastName !== undefined && options.lastName !== null) {
-            uri += '&lastName=';
-            uri += encodeURIComponent(options.lastName);
+        _value = options.firstName;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'firstName'
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
         }
-        if (options.gender !== undefined && options.gender !== null) {
-            uri += '&gender=';
-            uri += encodeURIComponent(options.gender);
+        _value = options.lastName;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'lastName'
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
         }
-        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<AuthorDto['AuthorService/DEFAULT_FETCHER']>
+        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<AuthorDto['AuthorService/DEFAULT_FETCHER']>
     }
     
     async findComplexAuthor(options: AuthorServiceOptions['findComplexAuthor']): Promise<
         AuthorDto['AuthorService/COMPLEX_FETCHER'] | undefined
     > {
-        let uri = '/author/';
-        uri += encodeURIComponent(options.id);
-        return (await this.executor({uri, method: 'GET'})) as AuthorDto['AuthorService/COMPLEX_FETCHER'] | undefined
+        let _uri = '/author/';
+        _uri += encodeURIComponent(options.id);
+        return (await this.executor({uri: _uri, method: 'GET'})) as AuthorDto['AuthorService/COMPLEX_FETCHER'] | undefined
     }
     
     async findSimpleAuthors(): Promise<
         ReadonlyArray<AuthorDto['AuthorService/SIMPLE_FETCHER']>
     > {
-        let uri = '/author/simpleList';
-        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<AuthorDto['AuthorService/SIMPLE_FETCHER']>
+        let _uri = '/author/simpleList';
+        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<AuthorDto['AuthorService/SIMPLE_FETCHER']>
     }
     
-    async saveAuthor(): Promise<
+    async saveAuthor(options: AuthorServiceOptions['saveAuthor']): Promise<
         Dynamic<Author>
     > {
-        let uri = '/author/';
-        return (await this.executor({uri, method: 'PUT'})) as Dynamic<Author>
+        let _uri = '/author/';
+        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';
+        let _value: any = undefined;
+        _value = options.input.firstName;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'firstName'
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
+        _value = options.input.id;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'id'
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
+        _value = options.input.lastName;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'lastName'
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
+        return (await this.executor({uri: _uri, method: 'PUT'})) as Dynamic<Author>
     }
 }
 
@@ -67,5 +100,5 @@ export type AuthorServiceOptions = {
     },
     'findComplexAuthor': {readonly id: number},
     'findSimpleAuthors': {},
-    'saveAuthor': {}
+    'saveAuthor': {readonly input: AuthorInput}
 }
