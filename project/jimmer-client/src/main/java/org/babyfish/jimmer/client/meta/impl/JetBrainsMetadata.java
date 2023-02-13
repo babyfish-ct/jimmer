@@ -153,34 +153,37 @@ class JetBrainsMetadata {
             for (Method method : clazz.getDeclaredMethods()) {
                 accessibleObjectMap.put(new Member(method.getName(), Type.getMethodDescriptor(method)), method);
             }
-            try (InputStream inputStream = clazz.getClassLoader().getResourceAsStream(clazz.getName().replace('.', '/') + ".class")) {
-                ClassReader reader = new ClassReader(inputStream);
-                reader.accept(
-                        new ClassVisitor(Opcodes.ASM9, null) {
+            ClassLoader loader = clazz.getClassLoader();
+            if (loader != null) {
+                try (InputStream inputStream = loader.getResourceAsStream(clazz.getName().replace('.', '/') + ".class")) {
+                    ClassReader reader = new ClassReader(inputStream);
+                    reader.accept(
+                            new ClassVisitor(Opcodes.ASM9, null) {
 
-                            @Override
-                            public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
-                                return (access & Opcodes.ACC_STATIC) == 0 ?
-                                        new FieldVisitorImpl(accessibleObjectMap.get(new Member(name, descriptor))) :
-                                        null;
-                            }
+                                @Override
+                                public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
+                                    return (access & Opcodes.ACC_STATIC) == 0 ?
+                                            new FieldVisitorImpl(accessibleObjectMap.get(new Member(name, descriptor))) :
+                                            null;
+                                }
 
-                            @Override
-                            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-                                return (access & Opcodes.ACC_STATIC) == 0 ?
-                                        new MethodVisitorImpl(accessibleObjectMap.get(new Member(name, descriptor))) :
-                                        null;
-                            }
-                        },
-                        ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG
-                );
-            } catch (IOException ex) {
-                throw new IllegalDocMetaException(
-                        "Failed to parse the jetbrains nullity for class \"" +
-                                clazz.getName() +
-                                "\"",
-                        ex
-                );
+                                @Override
+                                public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                                    return (access & Opcodes.ACC_STATIC) == 0 ?
+                                            new MethodVisitorImpl(accessibleObjectMap.get(new Member(name, descriptor))) :
+                                            null;
+                                }
+                            },
+                            ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG
+                    );
+                } catch (IOException ex) {
+                    throw new IllegalDocMetaException(
+                            "Failed to parse the jetbrains nullity for class \"" +
+                                    clazz.getName() +
+                                    "\"",
+                            ex
+                    );
+                }
             }
         }
 

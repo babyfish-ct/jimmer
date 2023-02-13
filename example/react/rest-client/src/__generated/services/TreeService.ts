@@ -17,18 +17,9 @@ export class TreeService {
         ReadonlyArray<TreeNodeDto['TreeService/RECURSIVE_FETCHER']>
     > {
         let uri = '/tree/roots/recursive';
-        let separator = '?';
         if (options?.rootName !== undefined && options.rootName !== null) {
-            uri += separator;
-            uri += 'rootName=';
+            uri += '?rootName=';
             uri += encodeURIComponent(options.rootName);
-            separator = '&';
-        }
-        if (options?.noRecursiveNames !== undefined && options.noRecursiveNames !== null) {
-            uri += separator;
-            uri += 'noRecursiveNames=';
-            uri += encodeURIComponent(options.noRecursiveNames);
-            separator = '&';
         }
         return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<TreeNodeDto['TreeService/RECURSIVE_FETCHER']>
     }
@@ -43,6 +34,6 @@ export class TreeService {
 
 export type TreeServiceOptions = {
     'deleteTree': {readonly id: number},
-    'findRootTrees': {readonly rootName?: string, readonly noRecursiveNames?: string},
+    'findRootTrees': {readonly rootName?: string},
     'saveTree': {readonly body: RecursiveTreeInput}
 }

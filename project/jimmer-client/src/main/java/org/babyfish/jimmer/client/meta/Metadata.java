@@ -72,6 +72,10 @@ public interface Metadata {
     interface OperationParser {
 
         Tuple2<String, Operation.HttpMethod> http(AnnotatedElement typeOfMethod);
+
+        default String[] getParameterNames(Method method) {
+            return null;
+        }
     }
 
     interface ParameterParser {
@@ -83,9 +87,5 @@ public interface Metadata {
         String pathVariableName(Parameter javaParameter);
 
         boolean isRequestBody(Parameter javaParameter);
-
-        default boolean isOptional(Parameter javaParameter) {
-            return false;
-        }
     }
 }

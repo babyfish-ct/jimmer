@@ -33,6 +33,7 @@ public class JFeignTest {
                         "import com.myapp.model.dto.BookDto;\n" +
                         "import com.myapp.model.entities.Dynamic_Book;\n" +
                         "import com.myapp.model.simple.BookInput;\n" +
+                        "import com.myapp.model.simple.FindBookArguments;\n" +
                         "import com.myapp.model.simple.Page;\n" +
                         "import com.myapp.model.simple.Tuple2;\n" +
                         "import java.math.BigDecimal;\n" +
@@ -77,6 +78,9 @@ public class JFeignTest {
                         "        @RequestParam(name = \"minPrice\", required = false) BigDecimal minPrice, \n" +
                         "        @RequestParam(name = \"maxPrice\", required = false) BigDecimal maxPrice\n" +
                         "    );\n" +
+                        "    \n" +
+                        "    @GetMapping(\"/java/books/complex2\")\n" +
+                        "    List<BookDto.BookService_COMPLEX_FETCHER> findComplexBooksByArguments(FindBookArguments arguments);\n" +
                         "    \n" +
                         "    @GetMapping(\"/java/books/simple\")\n" +
                         "    List<BookDto.BookService_SIMPLE_FETCHER> findSimpleBooks();\n" +

@@ -2,6 +2,9 @@ package org.babyfish.jimmer.sql.example.bll;
 
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.spring.model.SortUtils;
+import org.babyfish.jimmer.sql.example.bll.error.BusinessErrorCode;
+import org.babyfish.jimmer.sql.example.bll.error.BusinessException;
+import org.babyfish.jimmer.sql.example.bll.error.BusinessThrows;
 import org.babyfish.jimmer.sql.example.dal.BookRepository;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.example.model.input.BookInput;
@@ -13,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -94,6 +98,7 @@ public class BookService {
                     );
 
     @PutMapping
+    @BusinessThrows({BusinessErrorCode.GLOBAL_TENANT_REQUIRED})
     public Book saveBook(@RequestBody BookInput input) {
         return bookRepository.save(input);
     }

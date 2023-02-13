@@ -200,6 +200,10 @@ class Context {
                 }
                 return enumType;
             }
+            if (javaClass.isArray()) {
+                Type componentType = objectType(javaClass.getComponentType(), null);
+                return new ArrayTypeImpl(componentType);
+            }
             SimpleType simpleType = SimpleTypeImpl.get(javaClass);
             if (simpleType != null) {
                 return simpleType;
@@ -379,6 +383,10 @@ class Context {
                     enumTypeMap.put(javaClass, enumType);
                 }
                 return enumType;
+            }
+            if (javaClass.isArray()) {
+                Type componentType = objectType(javaClass.getComponentType(), null);
+                return new ArrayTypeImpl(componentType);
             }
             SimpleType simpleType = SimpleTypeImpl.get(javaClass);
             if (simpleType != null) {

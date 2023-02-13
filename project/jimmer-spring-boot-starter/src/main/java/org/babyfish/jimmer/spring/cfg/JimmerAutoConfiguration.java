@@ -8,6 +8,7 @@ import org.babyfish.jimmer.spring.client.TypeScriptController;
 import org.babyfish.jimmer.spring.repository.config.JimmerRepositoriesRegistrar;
 import org.babyfish.jimmer.spring.repository.config.JimmerRepositoryConfigExtension;
 import org.babyfish.jimmer.spring.repository.support.JimmerRepositoryFactoryBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -18,6 +19,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.ParameterNameDiscoverer;
 
 @AutoConfiguration(after = { DataSourceAutoConfiguration.class })
 @ConditionalOnProperty(
@@ -61,8 +63,11 @@ public class JimmerAutoConfiguration {
     @Conditional(MetadataCondition.class)
     @ConditionalOnMissingBean(Metadata.class)
     @Bean
-    public MetadataFactoryBean metadataFactoryBean(ApplicationContext ctx) throws Exception {
-        return new MetadataFactoryBean(ctx);
+    public MetadataFactoryBean metadataFactoryBean(
+            ApplicationContext ctx,
+            @Autowired(required = false) ParameterNameDiscoverer parameterNameDiscoverer
+    ) {
+        return new MetadataFactoryBean(ctx, parameterNameDiscoverer);
     }
 }
 

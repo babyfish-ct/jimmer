@@ -163,12 +163,17 @@ class OperationImpl implements Operation {
                 new Throws(ctx).getErrors(rawMethod)
         );
         int index = 0;
+        String[] parameterNames = ctx.getOperationParser().getParameterNames(rawMethod);
         List<Parameter> list = new ArrayList<>();
-        for (java.lang.reflect.Parameter rawParameter : rawMethod.getParameters()) {
+        java.lang.reflect.Parameter[] rawParameters = rawMethod.getParameters();
+        for (int i = 0; i < rawParameters.length; i++) {
             Parameter parameter = ParameterImpl.create(
                     ctx,
                     operation,
-                    rawParameter,
+                    rawParameters[i],
+                    parameterNames != null && parameterNames.length != 0 ?
+                            parameterNames[i] :
+                            null,
                     index++
             );
             if (parameter != null) {

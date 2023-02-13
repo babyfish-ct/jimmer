@@ -113,7 +113,7 @@ public class JTypeScriptTest {
                 "import type { Dynamic, Executor } from '../';\n" +
                         "import type { AuthorDto, BookDto } from '../model/dto';\n" +
                         "import type { Book } from '../model/entities';\n" +
-                        "import type { BookInput, Page, Tuple2 } from '../model/static';\n" +
+                        "import type { BookInput, FindBookArguments, Page, Tuple2 } from '../model/static';\n" +
                         "\n" +
                         "/**\n" +
                         " * BookService interface\n" +
@@ -123,9 +123,9 @@ public class JTypeScriptTest {
                         "    constructor(private executor: Executor) {}\n" +
                         "    \n" +
                         "    async deleteBook(options: BookServiceOptions['deleteBook']): Promise<number> {\n" +
-                        "        let uri = '/java/book/';\n" +
-                        "        uri += encodeURIComponent(options.id);\n" +
-                        "        return (await this.executor({uri, method: 'DELETE'})) as number\n" +
+                        "        let _uri = '/java/book/';\n" +
+                        "        _uri += encodeURIComponent(options.id);\n" +
+                        "        return (await this.executor({uri: _uri, method: 'DELETE'})) as number\n" +
                         "    }\n" +
                         "    \n" +
                         "    /**\n" +
@@ -146,64 +146,138 @@ public class JTypeScriptTest {
                         "    async findComplexBooks(options: BookServiceOptions['findComplexBooks']): Promise<\n" +
                         "        ReadonlyArray<BookDto['BookService/COMPLEX_FETCHER']>\n" +
                         "    > {\n" +
-                        "        let uri = '/java/books/complex';\n" +
-                        "        uri += '?name=';\n" +
-                        "        uri += encodeURIComponent(options.name);\n" +
-                        "        if (options.storeName !== undefined && options.storeName !== null) {\n" +
-                        "            uri += '&storeName=';\n" +
-                        "            uri += encodeURIComponent(options.storeName);\n" +
+                        "        let _uri = '/java/books/complex';\n" +
+                        "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
+                        "        let _value: any = undefined;\n" +
+                        "        _value = options.name;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'name'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
                         "        }\n" +
-                        "        if (options.authorName !== undefined && options.authorName !== null) {\n" +
-                        "            uri += '&authorName=';\n" +
-                        "            uri += encodeURIComponent(options.authorName);\n" +
+                        "        _value = options.storeName;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'storeName'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
                         "        }\n" +
-                        "        if (options.minPrice !== undefined && options.minPrice !== null) {\n" +
-                        "            uri += '&minPrice=';\n" +
-                        "            uri += encodeURIComponent(options.minPrice);\n" +
+                        "        _value = options.authorName;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'authorName'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
                         "        }\n" +
-                        "        if (options.maxPrice !== undefined && options.maxPrice !== null) {\n" +
-                        "            uri += '&maxPrice=';\n" +
-                        "            uri += encodeURIComponent(options.maxPrice);\n" +
+                        "        _value = options.minPrice;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'minPrice'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
                         "        }\n" +
-                        "        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<BookDto['BookService/COMPLEX_FETCHER']>\n" +
+                        "        _value = options.maxPrice;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'maxPrice'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<BookDto['BookService/COMPLEX_FETCHER']>\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    async findComplexBooksByArguments(options: BookServiceOptions['findComplexBooksByArguments']): Promise<\n" +
+                        "        ReadonlyArray<BookDto['BookService/COMPLEX_FETCHER']>\n" +
+                        "    > {\n" +
+                        "        let _uri = '/java/books/complex2';\n" +
+                        "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
+                        "        let _value: any = undefined;\n" +
+                        "        _value = options.arguments.authorNames?.join(',');\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'authorNames'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        _value = options.arguments.maxPrice;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'maxPrice'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        _value = options.arguments.minPrice;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'minPrice'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        _value = options.arguments.name;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'name'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        _value = options.arguments.storeName;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'storeName'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<BookDto['BookService/COMPLEX_FETCHER']>\n" +
                         "    }\n" +
                         "    \n" +
                         "    async findSimpleBooks(): Promise<\n" +
                         "        ReadonlyArray<BookDto['BookService/SIMPLE_FETCHER']>\n" +
                         "    > {\n" +
-                        "        let uri = '/java/books/simple';\n" +
-                        "        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<BookDto['BookService/SIMPLE_FETCHER']>\n" +
+                        "        let _uri = '/java/books/simple';\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<BookDto['BookService/SIMPLE_FETCHER']>\n" +
                         "    }\n" +
                         "    \n" +
                         "    async findTuples(options: BookServiceOptions['findTuples']): Promise<\n" +
                         "        Page<Tuple2<BookDto['BookService/COMPLEX_FETCHER'], AuthorDto['BookService/AUTHOR_FETCHER'] | undefined>>\n" +
                         "    > {\n" +
-                        "        let uri = '/java/tuples';\n" +
-                        "        let separator = '?';\n" +
-                        "        if (options.name !== undefined && options.name !== null) {\n" +
-                        "            uri += separator;\n" +
-                        "            uri += 'name=';\n" +
-                        "            uri += encodeURIComponent(options.name);\n" +
-                        "            separator = '&';\n" +
+                        "        let _uri = '/java/tuples';\n" +
+                        "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
+                        "        let _value: any = undefined;\n" +
+                        "        _value = options.name;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'name'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
                         "        }\n" +
-                        "        uri += separator;\n" +
-                        "        uri += 'pageIndex=';\n" +
-                        "        uri += encodeURIComponent(options.pageIndex);\n" +
-                        "        uri += '&pageSize=';\n" +
-                        "        uri += encodeURIComponent(options.pageSize);\n" +
-                        "        return (await this.executor({uri, method: 'GET'})) as Page<Tuple2<BookDto['BookService/COMPLEX_FETCHER'], AuthorDto['BookService/AUTHOR_FETCHER'] | undefined>>\n" +
+                        "        _value = options.pageIndex;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'pageIndex'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        _value = options.pageSize;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'pageSize'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Page<Tuple2<BookDto['BookService/COMPLEX_FETCHER'], AuthorDto['BookService/AUTHOR_FETCHER'] | undefined>>\n" +
                         "    }\n" +
                         "    \n" +
                         "    async saveBooks(options: BookServiceOptions['saveBooks']): Promise<\n" +
                         "        Dynamic<Book>\n" +
                         "    > {\n" +
-                        "        let uri = '/java/book';\n" +
-                        "        return (await this.executor({uri, method: 'PUT', body: options.body})) as Dynamic<Book>\n" +
+                        "        let _uri = '/java/book';\n" +
+                        "        return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Dynamic<Book>\n" +
                         "    }\n" +
                         "    \n" +
                         "    async version(): Promise<number> {\n" +
-                        "        let uri = '/java/version';\n" +
-                        "        return (await this.executor({uri, method: 'GET'})) as number\n" +
+                        "        let _uri = '/java/version';\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as number\n" +
                         "    }\n" +
                         "}\n" +
                         "\n" +
@@ -216,6 +290,7 @@ public class JTypeScriptTest {
                         "        readonly minPrice?: number, \n" +
                         "        readonly maxPrice?: number\n" +
                         "    },\n" +
+                        "    'findComplexBooksByArguments': {readonly arguments: FindBookArguments},\n" +
                         "    'findSimpleBooks': {},\n" +
                         "    'findTuples': {\n" +
                         "        \n" +
@@ -248,7 +323,7 @@ public class JTypeScriptTest {
                 "import type { Dynamic, Executor } from '../';\n" +
                         "import type { Book } from '../model/entities';\n" +
                         "import type { Gender } from '../model/enums';\n" +
-                        "import type { BookInput, Page, Tuple2 } from '../model/static';\n" +
+                        "import type { BookInput, FindBookArguments, Page, Tuple2 } from '../model/static';\n" +
                         "\n" +
                         "/**\n" +
                         " * BookService interface\n" +
@@ -258,9 +333,9 @@ public class JTypeScriptTest {
                         "    constructor(private executor: Executor) {}\n" +
                         "    \n" +
                         "    async deleteBook(options: {readonly id: number}): Promise<number> {\n" +
-                        "        let uri = '/java/book/';\n" +
-                        "        uri += encodeURIComponent(options.id);\n" +
-                        "        return (await this.executor({uri, method: 'DELETE'})) as number\n" +
+                        "        let _uri = '/java/book/';\n" +
+                        "        _uri += encodeURIComponent(options.id);\n" +
+                        "        return (await this.executor({uri: _uri, method: 'DELETE'})) as number\n" +
                         "    }\n" +
                         "    \n" +
                         "    /**\n" +
@@ -309,26 +384,133 @@ public class JTypeScriptTest {
                         "            }>\n" +
                         "        }>\n" +
                         "    > {\n" +
-                        "        let uri = '/java/books/complex';\n" +
-                        "        uri += '?name=';\n" +
-                        "        uri += encodeURIComponent(options.name);\n" +
-                        "        if (options.storeName !== undefined && options.storeName !== null) {\n" +
-                        "            uri += '&storeName=';\n" +
-                        "            uri += encodeURIComponent(options.storeName);\n" +
+                        "        let _uri = '/java/books/complex';\n" +
+                        "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
+                        "        let _value: any = undefined;\n" +
+                        "        _value = options.name;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'name'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
                         "        }\n" +
-                        "        if (options.authorName !== undefined && options.authorName !== null) {\n" +
-                        "            uri += '&authorName=';\n" +
-                        "            uri += encodeURIComponent(options.authorName);\n" +
+                        "        _value = options.storeName;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'storeName'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
                         "        }\n" +
-                        "        if (options.minPrice !== undefined && options.minPrice !== null) {\n" +
-                        "            uri += '&minPrice=';\n" +
-                        "            uri += encodeURIComponent(options.minPrice);\n" +
+                        "        _value = options.authorName;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'authorName'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
                         "        }\n" +
-                        "        if (options.maxPrice !== undefined && options.maxPrice !== null) {\n" +
-                        "            uri += '&maxPrice=';\n" +
-                        "            uri += encodeURIComponent(options.maxPrice);\n" +
+                        "        _value = options.minPrice;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'minPrice'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
                         "        }\n" +
-                        "        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<{\n" +
+                        "        _value = options.maxPrice;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'maxPrice'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<{\n" +
+                        "            readonly id: number, \n" +
+                        "            readonly name: string, \n" +
+                        "            readonly edition: number, \n" +
+                        "            readonly price: number, \n" +
+                        "            \n" +
+                        "            /**\n" +
+                        "             * The bookstore to which the current book belongs, null is allowd\n" +
+                        "             */\n" +
+                        "            readonly store?: {\n" +
+                        "                readonly id: number, \n" +
+                        "                readonly name: string\n" +
+                        "            }, \n" +
+                        "            \n" +
+                        "            /**\n" +
+                        "             * All authors involved in writing the work\n" +
+                        "             */\n" +
+                        "            readonly authors: ReadonlyArray<{\n" +
+                        "                readonly id: number, \n" +
+                        "                readonly firstName: string, \n" +
+                        "                readonly lastName: string\n" +
+                        "            }>\n" +
+                        "        }>\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    async findComplexBooksByArguments(options: {readonly arguments: FindBookArguments}): Promise<\n" +
+                        "        ReadonlyArray<{\n" +
+                        "            readonly id: number, \n" +
+                        "            readonly name: string, \n" +
+                        "            readonly edition: number, \n" +
+                        "            readonly price: number, \n" +
+                        "            \n" +
+                        "            /**\n" +
+                        "             * The bookstore to which the current book belongs, null is allowd\n" +
+                        "             */\n" +
+                        "            readonly store?: {\n" +
+                        "                readonly id: number, \n" +
+                        "                readonly name: string\n" +
+                        "            }, \n" +
+                        "            \n" +
+                        "            /**\n" +
+                        "             * All authors involved in writing the work\n" +
+                        "             */\n" +
+                        "            readonly authors: ReadonlyArray<{\n" +
+                        "                readonly id: number, \n" +
+                        "                readonly firstName: string, \n" +
+                        "                readonly lastName: string\n" +
+                        "            }>\n" +
+                        "        }>\n" +
+                        "    > {\n" +
+                        "        let _uri = '/java/books/complex2';\n" +
+                        "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
+                        "        let _value: any = undefined;\n" +
+                        "        _value = options.arguments.authorNames?.join(',');\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'authorNames'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        _value = options.arguments.maxPrice;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'maxPrice'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        _value = options.arguments.minPrice;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'minPrice'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        _value = options.arguments.name;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'name'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        _value = options.arguments.storeName;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'storeName'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<{\n" +
                         "            readonly id: number, \n" +
                         "            readonly name: string, \n" +
                         "            readonly edition: number, \n" +
@@ -359,8 +541,8 @@ public class JTypeScriptTest {
                         "            readonly name: string\n" +
                         "        }>\n" +
                         "    > {\n" +
-                        "        let uri = '/java/books/simple';\n" +
-                        "        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<{\n" +
+                        "        let _uri = '/java/books/simple';\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<{\n" +
                         "            readonly id: number, \n" +
                         "            readonly name: string\n" +
                         "        }>\n" +
@@ -424,20 +606,31 @@ public class JTypeScriptTest {
                         "            }>\n" +
                         "        } | undefined>>\n" +
                         "    > {\n" +
-                        "        let uri = '/java/tuples';\n" +
-                        "        let separator = '?';\n" +
-                        "        if (options.name !== undefined && options.name !== null) {\n" +
-                        "            uri += separator;\n" +
-                        "            uri += 'name=';\n" +
-                        "            uri += encodeURIComponent(options.name);\n" +
-                        "            separator = '&';\n" +
+                        "        let _uri = '/java/tuples';\n" +
+                        "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
+                        "        let _value: any = undefined;\n" +
+                        "        _value = options.name;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'name'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
                         "        }\n" +
-                        "        uri += separator;\n" +
-                        "        uri += 'pageIndex=';\n" +
-                        "        uri += encodeURIComponent(options.pageIndex);\n" +
-                        "        uri += '&pageSize=';\n" +
-                        "        uri += encodeURIComponent(options.pageSize);\n" +
-                        "        return (await this.executor({uri, method: 'GET'})) as Page<Tuple2<{\n" +
+                        "        _value = options.pageIndex;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'pageIndex'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        _value = options.pageSize;\n" +
+                        "        if (_value !== undefined && _value !== null) {\n" +
+                        "            _uri += _separator\n" +
+                        "            _uri += 'pageSize'\n" +
+                        "            _uri += encodeURIComponent(_value);\n" +
+                        "            _separator = '&';\n" +
+                        "        }\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Page<Tuple2<{\n" +
                         "            readonly id: number, \n" +
                         "            readonly name: string, \n" +
                         "            readonly edition: number, \n" +
@@ -486,13 +679,13 @@ public class JTypeScriptTest {
                         "    async saveBooks(options: {readonly body: BookInput}): Promise<\n" +
                         "        Dynamic<Book>\n" +
                         "    > {\n" +
-                        "        let uri = '/java/book';\n" +
-                        "        return (await this.executor({uri, method: 'PUT', body: options.body})) as Dynamic<Book>\n" +
+                        "        let _uri = '/java/book';\n" +
+                        "        return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Dynamic<Book>\n" +
                         "    }\n" +
                         "    \n" +
                         "    async version(): Promise<number> {\n" +
-                        "        let uri = '/java/version';\n" +
-                        "        return (await this.executor({uri, method: 'GET'})) as number\n" +
+                        "        let _uri = '/java/version';\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as number\n" +
                         "    }\n" +
                         "}",
                 code
@@ -517,17 +710,17 @@ public class JTypeScriptTest {
                         "    async findComplexAuthor(options: AuthorServiceOptions['findComplexAuthor']): Promise<\n" +
                         "        AuthorDto['AuthorService/COMPLEX_FETCHER'] | undefined\n" +
                         "    > {\n" +
-                        "        let uri = '/author/complex/';\n" +
-                        "        uri += encodeURIComponent(options.id);\n" +
-                        "        return (await this.executor({uri, method: 'GET'})) as AuthorDto['AuthorService/COMPLEX_FETCHER'] | undefined\n" +
+                        "        let _uri = '/author/complex/';\n" +
+                        "        _uri += encodeURIComponent(options.id);\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as AuthorDto['AuthorService/COMPLEX_FETCHER'] | undefined\n" +
                         "    }\n" +
                         "    \n" +
                         "    async findSimpleAuthor(options: AuthorServiceOptions['findSimpleAuthor']): Promise<\n" +
                         "        AuthorDto['AuthorService/SIMPLE_FETCHER'] | undefined\n" +
                         "    > {\n" +
-                        "        let uri = '/author/simple/';\n" +
-                        "        uri += encodeURIComponent(options.id);\n" +
-                        "        return (await this.executor({uri, method: 'GET'})) as AuthorDto['AuthorService/SIMPLE_FETCHER'] | undefined\n" +
+                        "        let _uri = '/author/simple/';\n" +
+                        "        _uri += encodeURIComponent(options.id);\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as AuthorDto['AuthorService/SIMPLE_FETCHER'] | undefined\n" +
                         "    }\n" +
                         "}\n" +
                         "\n" +

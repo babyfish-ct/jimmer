@@ -1,4 +1,5 @@
 export { Api } from './Api';
+export type { ApiErrors } from './ApiErrors';
 export type { Executor } from './Executor';
 export type { Dynamic } from './Dynamic';
 export type { RequestOf } from './RequestOf';
