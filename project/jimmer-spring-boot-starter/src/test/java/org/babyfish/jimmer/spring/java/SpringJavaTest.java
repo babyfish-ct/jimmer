@@ -36,6 +36,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -54,6 +55,7 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;
 
 import javax.sql.DataSource;
 import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -185,8 +187,11 @@ public class SpringJavaTest extends AbstractTest {
         @Conditional(MetadataCondition.class)
         @ConditionalOnMissingBean(Metadata.class)
         @Bean
-        public MetadataFactoryBean metadataFactoryBean(ApplicationContext ctx) throws Exception {
-            return new MetadataFactoryBean(ctx);
+        public MetadataFactoryBean metadataFactoryBean(
+                ApplicationContext ctx,
+                @Autowired(required = false) ParameterNameDiscoverer parameterNameDiscoverer
+        ) {
+            return new MetadataFactoryBean(ctx, parameterNameDiscoverer);
         }
     }
 
@@ -498,7 +503,12 @@ public class SpringJavaTest extends AbstractTest {
     public void testDownloadTypescript() throws Exception {
         mvc.perform(get("/my-ts.zip"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith("application/zip"));
+                .andExpect(content().contentTypeCompatibleWith("application/zip"))
+                .andDo(p -> {
+                    try (OutputStream out = new FileOutputStream("/Users/chentao/tmp/new-ts.zip")) {
+                        out.write(p.getResponse().getContentAsByteArray());
+                    }
+                });
     }
 
     @Test

@@ -3,9 +3,12 @@ package org.babyfish.jimmer.client.generator.ts;
 import org.babyfish.jimmer.client.IllegalDocMetaException;
 import org.babyfish.jimmer.client.generator.ts.simple.ExecutorWriter;
 import org.babyfish.jimmer.client.meta.*;
+import org.babyfish.jimmer.meta.ImmutableType;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -120,75 +123,94 @@ public class ServiceWriter extends TsCodeWriter {
         List<UriPart> parts = UriPart.parts(operation.getUri());
         if (parts.get(0).variable) {
             Parameter parameter = pathVariableParameter(operation, parts.get(0).text);
-            code("let uri = encodeURIComponent(options.")
+            code("let _uri = encodeURIComponent(options.")
                     .code(parameter.getName())
                     .codeIf(parameter.getType() instanceof ArrayType, ".join(',')")
                     .code(");\n");
         } else {
-            code("let uri = '").code(parts.get(0).text).code("';\n");
+            code("let _uri = '").code(parts.get(0).text).code("';\n");
         }
         for (int i = 1; i < parts.size(); i++) {
             if (parts.get(i).variable) {
                 Parameter parameter = pathVariableParameter(operation, parts.get(i).text);
-                code("uri += encodeURIComponent(options.")
+                code("_uri += encodeURIComponent(options.")
                         .code(parameter.getName())
                         .codeIf(parameter.getType() instanceof ArrayType, ".join(',')")
                         .code(");\n");
             } else {
-                code("uri += '").code(parts.get(i).text).code("';\n");
+                code("_uri += '").code(parts.get(i).text).code("';\n");
             }
         }
 
-        List<Parameter> urlParameters = operation
-                .getParameters()
-                .stream()
-                .filter(it -> it.getRequestParam() != null)
-                .collect(Collectors.toList());
-        if (!urlParameters.isEmpty()) {
-            boolean hasParamStart = operation.getUri().indexOf('?') != -1;
-            boolean dynamicSeparator = !hasParamStart &&
-                    urlParameters.get(0).getType() instanceof NullableType &&
-                    urlParameters.size() > 1;
-            String sp;
-            if (dynamicSeparator) {
-                code("let separator = '?';\n");
-                sp = "separator";
-            } else {
-                sp = hasParamStart ? "&" : "?";
-            }
-            for (Parameter parameter : operation.getParameters()) {
-                if (parameter.getRequestParam() != null) {
-                    final String finalSp = sp;
-                    final boolean finalDynamic = dynamicSeparator;
-                    Runnable addUrlParameter = () -> {
-                        if (finalDynamic) {
-                            code("uri += ").code(finalSp).code(";\n");
-                            code("uri += '").code(parameter.getRequestParam()).code("=';\n");
-                        } else {
-                            code("uri += '").code(finalSp).code(parameter.getRequestParam()).code("=';\n");
+        Map<String, PathBuilder> pathBuilderMap = new LinkedHashMap<>();
+        for (Parameter parameter : operation.getParameters()) {
+            if (parameter.getPathVariable() == null && parameter.getRequestParam() == null && !parameter.isRequestBody()) {
+                PathBuilder builder = new PathBuilder(optionsOptional);
+                builder.dot().append(parameter.getName());
+                Type type = parameter.getType();
+                if (type instanceof NullableType) {
+                    builder.nullable();
+                    type = ((NullableType)type).getTargetType();
+                }
+                if (type instanceof ArrayType) {
+                    builder.dot().append("join(',')");
+                    pathBuilderMap.put(parameter.getName(), builder);
+                } else if (type instanceof SimpleType) {
+                    pathBuilderMap.put(parameter.getName(), builder);
+                } else if (type instanceof ObjectType) {
+                    for (Property prop : ((ObjectType)type).getProperties().values()) {
+                        PathBuilder newBuilder = new PathBuilder(builder);
+                        newBuilder.dot().append(prop.getName());
+                        Type newType = prop.getType();
+                        if (newType instanceof NullableType) {
+                            newBuilder.nullable();
+                            newType = ((NullableType)newType).getTargetType();
                         }
-                        code("uri += encodeURIComponent(options." + parameter.getName() + ");\n");
-                        if (finalDynamic && parameter.getType() instanceof NullableType) {
-                            code("separator = '&';\n");
+                        if (newType instanceof ArrayType) {
+                            newBuilder.dot().append("join(',')");
+                            pathBuilderMap.put(prop.getName(), newBuilder);
+                        } else if (newType instanceof SimpleType) {
+                            pathBuilderMap.put(prop.getName(), newBuilder);
                         }
-                    };
-                    if (parameter.getType() instanceof NullableType) {
-                        code("if (options").codeIf(optionsOptional, '?').code(".")
-                                .code(parameter.getName()).code(" !== undefined && options.")
-                                .code(parameter.getName()).code(" !== null) ");
-                        scope(ScopeType.OBJECT, "", true, addUrlParameter);
-                        code('\n');
-                    } else {
-                        addUrlParameter.run();
-                        dynamicSeparator = false;
-                    }
-                    if (!dynamicSeparator) {
-                        sp = "&";
                     }
                 }
             }
         }
-        code("return (await this.executor({uri, method: '")
+        for (Parameter parameter : operation.getParameters()) {
+            if (parameter.getRequestParam() != null) {
+                PathBuilder builder = new PathBuilder(optionsOptional);
+                builder.dot().append(parameter.getName());
+                Type type = parameter.getType();
+                if (type instanceof NullableType) {
+                    builder.nullable();
+                    type = ((NullableType)type).getTargetType();
+                }
+                if (type instanceof ArrayType) {
+                    builder.dot().append("join(',')");
+                    pathBuilderMap.put(parameter.getName(), builder);
+                } else if (type instanceof SimpleType) {
+                    pathBuilderMap.put(parameter.getName(), builder);
+                }
+            }
+        }
+
+        if (!pathBuilderMap.isEmpty()) {
+            code("let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n");
+            code("let _value: any = undefined;\n");
+            for (Map.Entry<String, PathBuilder> e : pathBuilderMap.entrySet()) {
+                PathBuilder builder = e.getValue();
+                code("_value = options").code(builder.toString()).code(";\n");
+                code("if (_value !== undefined && _value !== null) ");
+                scope(ScopeType.OBJECT, "", true, () -> {
+                    code("_uri += _separator\n");
+                    code("_uri += '").code(e.getKey()).code("'\n");
+                    code("_uri += encodeURIComponent(_value);\n");
+                    code("_separator = '&';\n");
+                });
+                code("\n");
+            }
+        }
+        code("return (await this.executor({uri: _uri, method: '")
                 .code(operation.getHttpMethod().name())
                 .code("'");
         for (Parameter parameter : operation.getParameters()) {
@@ -250,6 +272,54 @@ public class ServiceWriter extends TsCodeWriter {
                 uriParts.add(new UriPart(uri.substring(pos, uri.length()), false));
             }
             return uriParts;
+        }
+    }
+
+    private static class PathBuilder {
+
+        private final StringBuilder builder;
+
+        private boolean nullable;
+
+        PathBuilder(boolean nullable) {
+            this.builder = new StringBuilder();
+            this.nullable = nullable;
+        }
+
+        PathBuilder(PathBuilder base) {
+            this.builder = new StringBuilder(base.builder);
+            this.nullable = base.nullable;
+        }
+
+        public PathBuilder nullable() {
+            this.nullable = true;
+            return this;
+        }
+
+        public PathBuilder dot() {
+            if (nullable) {
+                builder.append("?.");
+            } else {
+                builder.append('.');
+            }
+            return this;
+        }
+
+        public PathBuilder append(String text) {
+            int size = text.length();
+            for (int i = 0; i < size; i++) {
+                char c = text.charAt(i);
+                if (nullable && c == '.') {
+                    builder.append("?.");
+                } else {
+                    builder.append(c);
+                }
+            }
+            return this;
+        }
+
+        public String toString() {
+            return builder.toString();
         }
     }
 }

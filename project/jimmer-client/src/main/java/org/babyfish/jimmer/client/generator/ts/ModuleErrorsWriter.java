@@ -39,15 +39,19 @@ public class ModuleErrorsWriter extends TsCodeWriter {
     }
 
     private void writeAllErrors() {
-        code("export type AllErrors = ");
-        scope(ScopeType.BLANK, " | ", true, () -> {
-            for (Map.Entry<String, Set<EnumBasedError>> e : errorMap.entrySet()) {
-                for (EnumBasedError error : e.getValue()) {
-                    separator();
-                    writeError(error);
+        if (this.errorMap.isEmpty()) {
+            code("export type AllErrors = {}");
+        } else {
+            code("export type AllErrors = ");
+            scope(ScopeType.BLANK, " | ", true, () -> {
+                for (Map.Entry<String, Set<EnumBasedError>> e : errorMap.entrySet()) {
+                    for (EnumBasedError error : e.getValue()) {
+                        separator();
+                        writeError(error);
+                    }
                 }
-            }
-        });
+            });
+        }
         code(";\n");
     }
 

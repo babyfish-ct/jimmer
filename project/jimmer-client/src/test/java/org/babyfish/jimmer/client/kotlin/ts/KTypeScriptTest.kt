@@ -61,9 +61,9 @@ class KTypeScriptTest {
                 "    constructor(private executor: Executor) {}\n" +
                 "    \n" +
                 "    async deleteBook(options: KBookServiceOptions['deleteBook']): Promise<number> {\n" +
-                "        let uri = '/book/';\n" +
-                "        uri += encodeURIComponent(options.id);\n" +
-                "        return (await this.executor({uri, method: 'DELETE'})) as number\n" +
+                "        let _uri = '/book/';\n" +
+                "        _uri += encodeURIComponent(options.id);\n" +
+                "        return (await this.executor({uri: _uri, method: 'DELETE'})) as number\n" +
                 "    }\n" +
                 "    \n" +
                 "    /**\n" +
@@ -84,55 +84,89 @@ class KTypeScriptTest {
                 "    async findComplexBooks(options: KBookServiceOptions['findComplexBooks']): Promise<\n" +
                 "        ReadonlyArray<KBookDto['KBookService/COMPLEX_FETCHER']>\n" +
                 "    > {\n" +
-                "        let uri = '/books/complex';\n" +
-                "        uri += '?name=';\n" +
-                "        uri += encodeURIComponent(options.name);\n" +
-                "        if (options.storeName !== undefined && options.storeName !== null) {\n" +
-                "            uri += '&storeName=';\n" +
-                "            uri += encodeURIComponent(options.storeName);\n" +
+                "        let _uri = '/books/complex';\n" +
+                "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
+                "        let _value: any = undefined;\n" +
+                "        _value = options.name;\n" +
+                "        if (_value !== undefined && _value !== null) {\n" +
+                "            _uri += _separator\n" +
+                "            _uri += 'name'\n" +
+                "            _uri += encodeURIComponent(_value);\n" +
+                "            _separator = '&';\n" +
                 "        }\n" +
-                "        if (options.authorName !== undefined && options.authorName !== null) {\n" +
-                "            uri += '&authorName=';\n" +
-                "            uri += encodeURIComponent(options.authorName);\n" +
+                "        _value = options.storeName;\n" +
+                "        if (_value !== undefined && _value !== null) {\n" +
+                "            _uri += _separator\n" +
+                "            _uri += 'storeName'\n" +
+                "            _uri += encodeURIComponent(_value);\n" +
+                "            _separator = '&';\n" +
                 "        }\n" +
-                "        if (options.minPrice !== undefined && options.minPrice !== null) {\n" +
-                "            uri += '&minPrice=';\n" +
-                "            uri += encodeURIComponent(options.minPrice);\n" +
+                "        _value = options.authorName;\n" +
+                "        if (_value !== undefined && _value !== null) {\n" +
+                "            _uri += _separator\n" +
+                "            _uri += 'authorName'\n" +
+                "            _uri += encodeURIComponent(_value);\n" +
+                "            _separator = '&';\n" +
                 "        }\n" +
-                "        if (options.maxPrice !== undefined && options.maxPrice !== null) {\n" +
-                "            uri += '&maxPrice=';\n" +
-                "            uri += encodeURIComponent(options.maxPrice);\n" +
+                "        _value = options.minPrice;\n" +
+                "        if (_value !== undefined && _value !== null) {\n" +
+                "            _uri += _separator\n" +
+                "            _uri += 'minPrice'\n" +
+                "            _uri += encodeURIComponent(_value);\n" +
+                "            _separator = '&';\n" +
                 "        }\n" +
-                "        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<KBookDto['KBookService/COMPLEX_FETCHER']>\n" +
+                "        _value = options.maxPrice;\n" +
+                "        if (_value !== undefined && _value !== null) {\n" +
+                "            _uri += _separator\n" +
+                "            _uri += 'maxPrice'\n" +
+                "            _uri += encodeURIComponent(_value);\n" +
+                "            _separator = '&';\n" +
+                "        }\n" +
+                "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<KBookDto['KBookService/COMPLEX_FETCHER']>\n" +
                 "    }\n" +
                 "    \n" +
                 "    async findSimpleBooks(): Promise<\n" +
                 "        ReadonlyArray<KBookDto['KBookService/SIMPLE_FETCHER']>\n" +
                 "    > {\n" +
-                "        let uri = '/books/simple';\n" +
-                "        return (await this.executor({uri, method: 'GET'})) as ReadonlyArray<KBookDto['KBookService/SIMPLE_FETCHER']>\n" +
+                "        let _uri = '/books/simple';\n" +
+                "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<KBookDto['KBookService/SIMPLE_FETCHER']>\n" +
                 "    }\n" +
                 "    \n" +
                 "    async findTuples(options: KBookServiceOptions['findTuples']): Promise<\n" +
                 "        KPage<Tuple2<KBookDto['KBookService/COMPLEX_FETCHER'], KAuthorDto['KBookService/AUTHOR_FETCHER']>>\n" +
                 "    > {\n" +
-                "        let uri = '/tuples';\n" +
-                "        uri += '?name=';\n" +
-                "        uri += encodeURIComponent(options.name);\n" +
-                "        if (options.pageIndex !== undefined && options.pageIndex !== null) {\n" +
-                "            uri += '&pageIndex=';\n" +
-                "            uri += encodeURIComponent(options.pageIndex);\n" +
+                "        let _uri = '/tuples';\n" +
+                "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
+                "        let _value: any = undefined;\n" +
+                "        _value = options.name;\n" +
+                "        if (_value !== undefined && _value !== null) {\n" +
+                "            _uri += _separator\n" +
+                "            _uri += 'name'\n" +
+                "            _uri += encodeURIComponent(_value);\n" +
+                "            _separator = '&';\n" +
                 "        }\n" +
-                "        uri += '&pageSize=';\n" +
-                "        uri += encodeURIComponent(options.pageSize);\n" +
-                "        return (await this.executor({uri, method: 'GET'})) as KPage<Tuple2<KBookDto['KBookService/COMPLEX_FETCHER'], KAuthorDto['KBookService/AUTHOR_FETCHER']>>\n" +
+                "        _value = options.pageIndex;\n" +
+                "        if (_value !== undefined && _value !== null) {\n" +
+                "            _uri += _separator\n" +
+                "            _uri += 'pageIndex'\n" +
+                "            _uri += encodeURIComponent(_value);\n" +
+                "            _separator = '&';\n" +
+                "        }\n" +
+                "        _value = options.pageSize;\n" +
+                "        if (_value !== undefined && _value !== null) {\n" +
+                "            _uri += _separator\n" +
+                "            _uri += 'pageSize'\n" +
+                "            _uri += encodeURIComponent(_value);\n" +
+                "            _separator = '&';\n" +
+                "        }\n" +
+                "        return (await this.executor({uri: _uri, method: 'GET'})) as KPage<Tuple2<KBookDto['KBookService/COMPLEX_FETCHER'], KAuthorDto['KBookService/AUTHOR_FETCHER']>>\n" +
                 "    }\n" +
                 "    \n" +
                 "    async saveBooks(options: KBookServiceOptions['saveBooks']): Promise<\n" +
                 "        Dynamic<KBook> | undefined\n" +
                 "    > {\n" +
-                "        let uri = '/book';\n" +
-                "        return (await this.executor({uri, method: 'PUT', body: options.body})) as Dynamic<KBook> | undefined\n" +
+                "        let _uri = '/book';\n" +
+                "        return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Dynamic<KBook> | undefined\n" +
                 "    }\n" +
                 "}\n" +
                 "\n" +

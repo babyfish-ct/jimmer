@@ -23,24 +23,23 @@ public class TypeScriptGenerator implements Generator {
     private final boolean anonymous;
 
     public TypeScriptGenerator() {
-        this.moduleName = "Api";
-        this.indent = 4;
-        this.anonymous = false;
+        this("Api", 4, false);
     }
 
     public TypeScriptGenerator(String moduleName) {
-        this.moduleName = moduleName;
-        this.indent = 4;
-        this.anonymous = false;
+        this(moduleName, 4, false);
     }
 
     public TypeScriptGenerator(String moduleName, int indent) {
-        this.moduleName = moduleName;
-        this.indent = indent;
-        this.anonymous = false;
+        this(moduleName, indent, false);
     }
 
     public TypeScriptGenerator(String moduleName, int indent, boolean anonymous) {
+        if (moduleName == null || moduleName.isEmpty()) {
+            moduleName = "Api";
+        } else if ("All".equals(moduleName)) {
+            throw new IllegalArgumentException("modueName cannot be `All`");
+        }
         this.moduleName = moduleName;
         this.indent = indent;
         this.anonymous = anonymous;
@@ -150,13 +149,23 @@ public class TypeScriptGenerator implements Generator {
             }
         }
         for (File file : index.typeFiles) {
-            writer.write(
-                    "export type { " +
-                            file.getName() +
-                            " } from './" +
-                            file.getName() +
-                            "';\n"
-            );
+            if (file == ctx.getModuleErrorsFile()) {
+                writer.write(
+                        "export type { " +
+                                file.getName() +
+                                ", AllErrors } from './" +
+                                file.getName() +
+                                "';\n"
+                );
+            } else {
+                writer.write(
+                        "export type { " +
+                                file.getName() +
+                                " } from './" +
+                                file.getName() +
+                                "';\n"
+                );
+            }
         }
         writer.flush();
         zipOut.closeEntry();

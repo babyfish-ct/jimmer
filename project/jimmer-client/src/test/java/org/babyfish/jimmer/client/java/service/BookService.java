@@ -61,6 +61,11 @@ public interface BookService {
             @RequestParam(value = "maxPrice", required = false) BigDecimal maxPrice
     );
 
+    @GetMapping("/books/complex2")
+    List<@FetchBy("COMPLEX_FETCHER") Book> findComplexBooksByArguments(
+            FindBookArguments arguments
+    );
+
     @GetMapping("/tuples")
     Page<
                 Tuple2<

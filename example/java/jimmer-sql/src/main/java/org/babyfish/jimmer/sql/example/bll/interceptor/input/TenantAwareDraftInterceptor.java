@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.example.bll.interceptor.input;
 
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DraftInterceptor;
+import org.babyfish.jimmer.sql.example.bll.error.BusinessException;
 import org.babyfish.jimmer.sql.example.bll.interceptor.TenantProvider;
 import org.babyfish.jimmer.sql.example.model.common.TenantAwareDraft;
 import org.babyfish.jimmer.sql.example.model.common.TenantAwareProps;
@@ -25,7 +26,7 @@ public class TenantAwareDraftInterceptor implements DraftInterceptor<TenantAware
         if (!ImmutableObjects.isLoaded(draft, TenantAwareProps.TENANT)) {
             String tenant = tenantProvider.get();
             if (tenant == null) {
-                throw new IllegalStateException(
+                throw BusinessException.globalTenantRequired(
                         "Global tenant must be specified when the tenant of saved object is not specified"
                 );
             }

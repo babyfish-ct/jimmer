@@ -20,18 +20,22 @@ class ParameterImpl implements Parameter {
 
     private final String pathVariable;
 
+    private final boolean body;
+
     private final Type type;
 
     private final Document document;
 
-    private String name;
+    private final String name;
 
     ParameterImpl(
             Operation declaringOperation,
             java.lang.reflect.Parameter rawParameter,
+            String parameterName,
             int originalIndex,
             String requestParam,
             String pathVariable,
+            boolean body,
             Type type
     ) {
         this.declaringOperation = declaringOperation;
@@ -39,8 +43,20 @@ class ParameterImpl implements Parameter {
         this.originalIndex = originalIndex;
         this.requestParam = requestParam;
         this.pathVariable = pathVariable;
+        this.body = body;
         this.type = type;
         this.document = DocumentImpl.of(rawParameter);
+        if (this.requestParam != null) {
+            name = this.requestParam;
+        } else if (this.pathVariable != null) {
+            name = this.pathVariable;
+        } else if (this.body) {
+            name = "body";
+        } else if (parameterName != null) {
+            name = parameterName;
+        } else {
+            name = rawParameter.getName();
+        }
     }
 
     @Override
@@ -50,17 +66,6 @@ class ParameterImpl implements Parameter {
 
     @Override
     public String getName() {
-        String name = this.name;
-        if (name == null) {
-            if (this.requestParam != null) {
-                name = this.requestParam;
-            } else if (this.pathVariable != null) {
-                name = this.pathVariable;
-            } else {
-                name = "body";
-            }
-            this.name = name;
-        }
         return name;
     }
 
@@ -86,7 +91,7 @@ class ParameterImpl implements Parameter {
 
     @Override
     public boolean isRequestBody() {
-        return requestParam == null && pathVariable == null;
+        return body;
     }
 
     @Nullable
@@ -111,17 +116,21 @@ class ParameterImpl implements Parameter {
             Context ctx,
             Operation declaringOperation,
             java.lang.reflect.Parameter rawParameter,
+            String parameterName,
             int index
     ) {
         Metadata.ParameterParser parameterParser = ctx.getParameterParser();
         JetBrainsMetadata jetBrainsMetadata = ctx.getJetBrainsMetadata(declaringOperation.getRawMethod().getDeclaringClass());
         boolean isNullable = jetBrainsMetadata.isNullable(declaringOperation.getRawMethod(), index);
+        if (parameterName == null) {
+            parameterName = rawParameter.getName();
+        }
 
         Tuple2<String, Boolean> tuple = parameterParser.requestParamNameAndNullable(rawParameter);
         String requestParam = tuple != null ? tuple.get_1() : null;
         if (requestParam != null) {
             if (requestParam.isEmpty()) {
-                requestParam = rawParameter.getName();
+                requestParam = parameterName;
             }
             Type type = ctx
                     .locate(new ParameterLocation(declaringOperation, index, rawParameter.getName()))
@@ -132,19 +141,19 @@ class ParameterImpl implements Parameter {
             if (tuple.get_2()) {
                 type = NullableTypeImpl.of(type);
             }
-            return new ParameterImpl(declaringOperation, rawParameter, index, requestParam, null, type);
+            return new ParameterImpl(declaringOperation, rawParameter, parameterName, index, requestParam, null, false, type);
         }
 
         String pathVariable = parameterParser.pathVariableName(rawParameter);
         if (pathVariable != null) {
             if (pathVariable.isEmpty()) {
-                pathVariable = rawParameter.getName();
+                pathVariable = parameterName;
             }
             Type type = ctx
                     .locate(new ParameterLocation(declaringOperation, index, rawParameter.getName()))
                     .parseType(rawParameter.getAnnotatedType());
             // Need not `Utils.wrap` because path variable should be considered as non-null in client side
-            return new ParameterImpl(declaringOperation, rawParameter, index, null, pathVariable, type);
+            return new ParameterImpl(declaringOperation, rawParameter, parameterName, index, null, pathVariable, false, type);
         }
 
         if (parameterParser.isRequestBody(rawParameter)) {
@@ -154,10 +163,16 @@ class ParameterImpl implements Parameter {
             if (isNullable) {
                 type = NullableTypeImpl.of(type);
             }
-            return new ParameterImpl(declaringOperation, rawParameter, index, null, null, type);
+            return new ParameterImpl(declaringOperation, rawParameter, parameterName, index, null, null, true, type);
         }
 
-        return null;
+        Type type = ctx
+                .locate(new ParameterLocation(declaringOperation, index, rawParameter.getName()))
+                .parseType(rawParameter.getAnnotatedType());
+        if (isNullable) {
+            type = NullableTypeImpl.of(type);
+        }
+        return new ParameterImpl(declaringOperation, rawParameter, parameterName, index, null, null, false, type);
     }
 
     private static class ParameterLocation implements Location {

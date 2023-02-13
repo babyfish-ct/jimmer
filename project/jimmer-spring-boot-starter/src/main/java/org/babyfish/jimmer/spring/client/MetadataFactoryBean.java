@@ -8,8 +8,11 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.DefaultParameterNameDiscoverer;
+import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.web.bind.annotation.*;
 
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
@@ -19,8 +22,17 @@ public class MetadataFactoryBean implements FactoryBean<Metadata> {
 
     private final ApplicationContext ctx;
 
-    public MetadataFactoryBean(ApplicationContext ctx) {
+    private final ParameterNameDiscoverer parameterNameDiscoverer;
+
+    public MetadataFactoryBean(
+            ApplicationContext ctx,
+            ParameterNameDiscoverer parameterNameDiscoverer
+    ) {
         this.ctx = ctx;
+        this.parameterNameDiscoverer =
+                parameterNameDiscoverer != null ?
+                        parameterNameDiscoverer :
+                        new DefaultParameterNameDiscoverer();
     }
 
     @Override
@@ -29,7 +41,7 @@ public class MetadataFactoryBean implements FactoryBean<Metadata> {
     }
 
     @Override
-    public Metadata getObject() throws Exception {
+    public Metadata getObject() {
         List<String> packageNames = AutoConfigurationPackages.get(ctx);
         List<Class<?>> serviceTypes = new ArrayList<>();
         for (Object bean : ctx.getBeansWithAnnotation(RestController.class).values()) {
@@ -48,34 +60,42 @@ public class MetadataFactoryBean implements FactoryBean<Metadata> {
                 .newBuilder()
                 .addServiceTypes(serviceTypes)
                 .setOperationParser(
-                        annotatedElement -> {
-                            if (annotatedElement instanceof Method) {
-                                GetMapping getMapping = annotatedElement.getAnnotation(GetMapping.class);
-                                if (getMapping != null) {
-                                    return new Tuple2<>(text(getMapping.value(), getMapping.path()), Operation.HttpMethod.GET);
+                        new Metadata.OperationParser() {
+                            @Override
+                            public Tuple2<String, Operation.HttpMethod> http(AnnotatedElement annotatedElement) {
+                                if (annotatedElement instanceof Method) {
+                                    GetMapping getMapping = annotatedElement.getAnnotation(GetMapping.class);
+                                    if (getMapping != null) {
+                                        return new Tuple2<>(text(getMapping.value(), getMapping.path()), Operation.HttpMethod.GET);
+                                    }
+                                    PostMapping postMapping = annotatedElement.getAnnotation(PostMapping.class);
+                                    if (postMapping != null) {
+                                        return new Tuple2<>(text(postMapping.value(), postMapping.path()), Operation.HttpMethod.POST);
+                                    }
+                                    PutMapping putMapping = annotatedElement.getAnnotation(PutMapping.class);
+                                    if (putMapping != null) {
+                                        return new Tuple2<>(text(putMapping.value(), putMapping.path()), Operation.HttpMethod.PUT);
+                                    }
+                                    DeleteMapping deleteMapping = annotatedElement.getAnnotation(DeleteMapping.class);
+                                    if (deleteMapping != null) {
+                                        return new Tuple2<>(text(deleteMapping.value(), deleteMapping.path()), Operation.HttpMethod.DELETE);
+                                    }
                                 }
-                                PostMapping postMapping = annotatedElement.getAnnotation(PostMapping.class);
-                                if (postMapping != null) {
-                                    return new Tuple2<>(text(postMapping.value(), postMapping.path()), Operation.HttpMethod.POST);
+                                RequestMapping requestMapping = annotatedElement.getAnnotation(RequestMapping.class);
+                                if (requestMapping != null) {
+                                    return new Tuple2<>(text(requestMapping.value(), requestMapping.path()),
+                                            requestMapping.method().length != 0 ?
+                                                    Operation.HttpMethod.valueOf(requestMapping.method()[0].name()) :
+                                                    null
+                                    );
                                 }
-                                PutMapping putMapping = annotatedElement.getAnnotation(PutMapping.class);
-                                if (putMapping != null) {
-                                    return new Tuple2<>(text(putMapping.value(), putMapping.path()), Operation.HttpMethod.PUT);
-                                }
-                                DeleteMapping deleteMapping = annotatedElement.getAnnotation(DeleteMapping.class);
-                                if (deleteMapping != null) {
-                                    return new Tuple2<>(text(deleteMapping.value(), deleteMapping.path()), Operation.HttpMethod.DELETE);
-                                }
+                                return null;
                             }
-                            RequestMapping requestMapping = annotatedElement.getAnnotation(RequestMapping.class);
-                            if (requestMapping != null) {
-                                return new Tuple2<>(text(requestMapping.value(), requestMapping.path()),
-                                        requestMapping.method().length != 0 ?
-                                                Operation.HttpMethod.valueOf(requestMapping.method()[0].name()) :
-                                                null
-                                );
+
+                            @Override
+                            public String[] getParameterNames(Method method) {
+                                return parameterNameDiscoverer.getParameterNames(method);
                             }
-                            return null;
                         }
                 )
                 .setParameterParser(
@@ -87,10 +107,7 @@ public class MetadataFactoryBean implements FactoryBean<Metadata> {
                                 if (requestParam == null) {
                                     return null;
                                 }
-                                return new Tuple2<>(
-                                        notEmpty(requestParam.value(), requestParam.name(), javaParameter.getName()),
-                                        !requestParam.required()
-                                );
+                                return new Tuple2<>(notEmpty(requestParam.value(), requestParam.name()), !requestParam.required());
                             }
 
                             @Nullable
@@ -100,7 +117,7 @@ public class MetadataFactoryBean implements FactoryBean<Metadata> {
                                 if (pathVariable == null) {
                                     return null;
                                 }
-                                return notEmpty(pathVariable.value(), pathVariable.name(), javaParameter.getName());
+                                return notEmpty(pathVariable.value(), pathVariable.name());
                             }
 
                             @Override
@@ -126,13 +143,13 @@ public class MetadataFactoryBean implements FactoryBean<Metadata> {
         return "";
     }
 
-    private static String notEmpty(String a, String b, String c) {
+    private static String notEmpty(String a, String b) {
         if (!a.isEmpty()) {
             return a;
         }
         if (!b.isEmpty()) {
             return b;
         }
-        return c;
+        return "";
     }
 }

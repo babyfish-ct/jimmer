@@ -27,6 +27,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+import org.springframework.core.ParameterNameDiscoverer
 import org.springframework.data.domain.Sort
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
@@ -109,8 +110,11 @@ open class SpringKotlinTest : AbstractTest() {
         @Conditional(MetadataCondition::class)
         @ConditionalOnMissingBean(Metadata::class)
         @Bean
-        open fun metadataFactoryBean(ctx: ApplicationContext): MetadataFactoryBean {
-            return MetadataFactoryBean(ctx)
+        open fun metadataFactoryBean(
+            ctx: ApplicationContext,
+            @Autowired(required = false) parameterNameDiscoverer: ParameterNameDiscoverer?
+        ): MetadataFactoryBean {
+            return MetadataFactoryBean(ctx, parameterNameDiscoverer)
         }
     }
 
