@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.*
 interface Chapter : BaseEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long
 
     @Key

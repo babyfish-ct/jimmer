@@ -31,11 +31,11 @@ data class BookInput(
         @Mapping(target = "authors", source = "authorIds")
         fun toBook(input: BookInput): Book
 
-        @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        @BeanMapping(ignoreByDefault = true)
         @Mapping(target = "id", source = ".")
         fun toBookStore(id: Long?): BookStore
 
-        @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        @BeanMapping(ignoreByDefault = true)
         @Mapping(target = "id", source = ".")
         fun toAuthor(id: Long?): Author
     }

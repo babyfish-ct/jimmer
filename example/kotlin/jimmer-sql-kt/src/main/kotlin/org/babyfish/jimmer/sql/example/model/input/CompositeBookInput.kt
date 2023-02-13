@@ -19,16 +19,11 @@ data class CompositeBookInput(
     val price: BigDecimal,
     val storeId: Long?,
     val authorIds: List<Long>,
-    val chapters: List<TargetOfChapters>
+    val chapters: List<String>
 ): Input<Book> {
 
     override fun toEntity(): Book =
         CONVERTER.toBook(this)
-
-    data class TargetOfChapters(
-        val index: Int,
-        val title: String
-    )
 
     @Mapper
     internal interface Converter {
@@ -38,16 +33,17 @@ data class CompositeBookInput(
         @Mapping(target = "authors", source = "authorIds")
         fun toBook(input: CompositeBookInput): Book
 
-        @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        @BeanMapping(ignoreByDefault = true)
         @Mapping(target = "id", source = ".")
         fun toBookStore(id: Long?): BookStore
 
-        @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        @BeanMapping(ignoreByDefault = true)
         @Mapping(target = "id", source = ".")
         fun toAuthor(id: Long?): Author
 
-        @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
-        fun toChapter(input: TargetOfChapters): Chapter
+        @BeanMapping(ignoreByDefault = true)
+        @Mapping(target = "title", source = ".")
+        fun toChapter(title: String): Chapter
     }
 
     companion object {

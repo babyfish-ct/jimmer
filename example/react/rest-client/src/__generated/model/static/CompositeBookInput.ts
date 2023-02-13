@@ -2,7 +2,7 @@ export interface CompositeBookInput {
     
     readonly authorIds: ReadonlyArray<number>;
     
-    readonly chapters: ReadonlyArray<CompositeBookInput_TargetOfChapters>;
+    readonly chapters: ReadonlyArray<string>;
     
     readonly edition: number;
     
@@ -13,11 +13,4 @@ export interface CompositeBookInput {
     readonly price: number;
     
     readonly storeId?: number;
-}
-
-export interface CompositeBookInput_TargetOfChapters {
-    
-    readonly index: number;
-    
-    readonly title: string;
 }

@@ -48,12 +48,12 @@ public class BookInput implements Input<Book> {
         @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
         Book toBook(BookInput input);
 
-        default BookStore toBookStore(long id) {
-            return ImmutableObjects.makeIdOnly(BookStore.class, id);
-        }
+        @BeanMapping(ignoreByDefault = true)
+        @Mapping(target = "id", source = ".")
+        BookStore toBookStore(Long id);
 
-        default Author toAuthor(long id) {
-            return ImmutableObjects.makeIdOnly(Author.class, id);
-        }
+        @BeanMapping(ignoreByDefault = true)
+        @Mapping(target = "id", source = ".")
+        Author toAuthor(Long id);
     }
 }

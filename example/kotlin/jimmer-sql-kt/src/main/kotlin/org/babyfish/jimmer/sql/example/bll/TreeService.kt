@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.example.bll
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.babyfish.jimmer.client.FetchBy
 import org.babyfish.jimmer.sql.example.dal.TreeNodeRepository
 import org.babyfish.jimmer.kt.new
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/tree")
 @Transactional
 class TreeService(
-    private val objectMapper: ObjectMapper,
     private val treeNodeRepository: TreeNodeRepository
 ) {
 
