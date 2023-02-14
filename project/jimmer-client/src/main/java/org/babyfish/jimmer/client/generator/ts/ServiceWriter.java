@@ -203,7 +203,7 @@ public class ServiceWriter extends TsCodeWriter {
                 code("if (_value !== undefined && _value !== null) ");
                 scope(ScopeType.OBJECT, "", true, () -> {
                     code("_uri += _separator\n");
-                    code("_uri += '").code("=" + e.getKey()).code("'\n");
+                    code("_uri += '").code(e.getKey() + "=").code("'\n");
                     code("_uri += encodeURIComponent(_value);\n");
                     code("_separator = '&';\n");
                 });

@@ -22,7 +22,7 @@ export class TreeService {
         _value = options?.rootName;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
-            _uri += 'rootName'
+            _uri += '=rootName'
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
