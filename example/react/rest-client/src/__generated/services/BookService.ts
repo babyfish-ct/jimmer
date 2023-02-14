@@ -22,42 +22,42 @@ export class BookService {
         _value = options.pageIndex;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
-            _uri += 'pageIndex'
+            _uri += '=pageIndex'
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
         _value = options.pageSize;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
-            _uri += 'pageSize'
+            _uri += '=pageSize'
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
         _value = options.sortCode;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
-            _uri += 'sortCode'
+            _uri += '=sortCode'
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
         _value = options.name;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
-            _uri += 'name'
+            _uri += '=name'
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
         _value = options.storeName;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
-            _uri += 'storeName'
+            _uri += '=storeName'
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
         _value = options.authorName;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
-            _uri += 'authorName'
+            _uri += '=authorName'
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }

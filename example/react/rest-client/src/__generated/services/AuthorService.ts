@@ -23,21 +23,21 @@ export class AuthorService {
         _value = options.sortCode;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
-            _uri += 'sortCode'
+            _uri += '=sortCode'
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
         _value = options.firstName;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
-            _uri += 'firstName'
+            _uri += '=firstName'
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
         _value = options.lastName;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
-            _uri += 'lastName'
+            _uri += '=lastName'
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
@@ -68,21 +68,21 @@ export class AuthorService {
         _value = options.input.firstName;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
-            _uri += 'firstName'
+            _uri += '=firstName'
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
         _value = options.input.id;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
-            _uri += 'id'
+            _uri += '=id'
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
         _value = options.input.lastName;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
-            _uri += 'lastName'
+            _uri += '=lastName'
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
