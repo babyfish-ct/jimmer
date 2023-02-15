@@ -26,5 +26,5 @@ interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
     fun withoutSortingAndPaging(): KConfigurableRootQuery<E, R>
 
     @NewChain
-    fun forUpdate(): KConfigurableRootQuery<E, R>
+    fun forUpdate(forUpdate: Boolean = true): KConfigurableRootQuery<E, R>
 }

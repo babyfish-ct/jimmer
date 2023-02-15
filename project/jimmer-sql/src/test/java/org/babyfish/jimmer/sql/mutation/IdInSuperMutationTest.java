@@ -16,7 +16,7 @@ public class IdInSuperMutationTest extends AbstractMutationTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select tb_1_.ID, tb_1_.NAME from ANIMAL as tb_1_ where tb_1_.NAME = ? for update");
+                        it.sql("select tb_1_.ID, tb_1_.NAME from ANIMAL as tb_1_ where tb_1_.NAME = ?");
                     });
                     ctx.statement(it -> {
                         it.sql("insert into ANIMAL(ID, NAME) values(?, ?)");

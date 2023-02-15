@@ -73,8 +73,7 @@ public class InheritanceMutationWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                         "from ROLE as tb_1_ " +
-                                        "where tb_1_.NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ?"
                         );
                     });
                     ctx.statement(it -> {
@@ -88,8 +87,7 @@ public class InheritanceMutationWithTriggerTest extends AbstractTriggerTest {
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, " +
                                         "tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
                                         "from PERMISSION as tb_1_ " +
-                                        "where tb_1_.NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ?"
                         );
                     });
                     ctx.statement(it -> {
@@ -103,8 +101,7 @@ public class InheritanceMutationWithTriggerTest extends AbstractTriggerTest {
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, " +
                                         "tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
                                         "from PERMISSION as tb_1_ " +
-                                        "where tb_1_.NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ?"
                         );
                     });
                     ctx.statement(it -> {
@@ -243,8 +240,7 @@ public class InheritanceMutationWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
-                                        "from ROLE as tb_1_ where tb_1_.NAME = ? " +
-                                        "for update"
+                                        "from ROLE as tb_1_ where tb_1_.NAME = ?"
                         );
                     });
                     ctx.statement(it -> {
@@ -258,8 +254,7 @@ public class InheritanceMutationWithTriggerTest extends AbstractTriggerTest {
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, " +
                                         "tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
                                         "from PERMISSION as tb_1_ " +
-                                        "where tb_1_.NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ?"
                         );
                     });
                     ctx.statement(it -> {

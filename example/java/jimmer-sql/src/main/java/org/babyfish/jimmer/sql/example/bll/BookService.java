@@ -103,6 +103,7 @@ public class BookService {
     }
 
     @PutMapping("/withChapters")
+    @BusinessThrows({BusinessErrorCode.GLOBAL_TENANT_REQUIRED})
     public Book saveCompositeBook(@RequestBody CompositeBookInput input) {
         return bookRepository.save(
                 BookDraft.$.produce(input.toEntity(), draft -> {

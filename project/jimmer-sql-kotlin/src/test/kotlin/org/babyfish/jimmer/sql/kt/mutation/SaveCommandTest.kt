@@ -28,8 +28,7 @@ class SaveCommandTest : AbstractMutationTest() {
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION 
                         |from BOOK as tb_1_ 
                         |where tb_1_.NAME = ? 
-                        |and tb_1_.EDITION = ? 
-                        |for update""".trimMargin()
+                        |and tb_1_.EDITION = ?""".trimMargin()
                 )
                 variables("GraphQL in Action+", 4)
             }
@@ -77,8 +76,7 @@ class SaveCommandTest : AbstractMutationTest() {
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION 
                         |from BOOK as tb_1_ 
                         |where tb_1_.NAME = ? 
-                        |and tb_1_.EDITION = ? 
-                        |for update""".trimMargin()
+                        |and tb_1_.EDITION = ?""".trimMargin()
                 )
                 variables("GraphQL in Action", 3)
             }
@@ -172,8 +170,7 @@ class SaveCommandTest : AbstractMutationTest() {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME 
                         |from BOOK_STORE as tb_1_ 
-                        |where tb_1_.NAME = ? 
-                        |for update""".trimMargin()
+                        |where tb_1_.NAME = ?""".trimMargin()
                 )
                 variables("TURING")
             }
@@ -191,8 +188,7 @@ class SaveCommandTest : AbstractMutationTest() {
                         |where 
                         |--->tb_1_.NAME = ? 
                         |and 
-                        |--->tb_1_.EDITION = ? 
-                        |for update""".trimMargin()
+                        |--->tb_1_.EDITION = ?""".trimMargin()
                 )
                 variables("GraphQL in Action", 3)
             }
@@ -210,8 +206,7 @@ class SaveCommandTest : AbstractMutationTest() {
                         |where 
                         |--->tb_1_.FIRST_NAME = ? 
                         |and 
-                        |--->tb_1_.LAST_NAME = ? 
-                        |for update""".trimMargin()
+                        |--->tb_1_.LAST_NAME = ?""".trimMargin()
                 )
                 variables("Kate", "Green")
             }
@@ -230,8 +225,7 @@ class SaveCommandTest : AbstractMutationTest() {
                         |where 
                         |--->tb_1_.FIRST_NAME = ? 
                         |and 
-                        |--->tb_1_.LAST_NAME = ? 
-                        |for update""".trimMargin()
+                        |--->tb_1_.LAST_NAME = ?""".trimMargin()
                 )
                 variables("Tom", "King")
             }

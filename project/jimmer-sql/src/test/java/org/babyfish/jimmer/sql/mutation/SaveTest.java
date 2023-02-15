@@ -36,8 +36,7 @@ public class SaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                        "from BOOK_STORE as tb_1_ where tb_1_.ID = ? " +
-                                        "for update"
+                                        "from BOOK_STORE as tb_1_ where tb_1_.ID = ?"
                         );
                         it.variables(newId);
                     });
@@ -70,8 +69,7 @@ public class SaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                        "from BOOK_STORE as tb_1_ where tb_1_.ID = ? " +
-                                        "for update"
+                                        "from BOOK_STORE as tb_1_ where tb_1_.ID = ?"
                         );
                         it.variables(oreillyId);
                     });
@@ -157,8 +155,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from BOOK_STORE as tb_1_ " +
-                                        "where tb_1_.NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ?"
                         );
                         it.variables("TURING");
                     });
@@ -191,8 +188,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from BOOK_STORE as tb_1_ " +
-                                        "where tb_1_.NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ?"
                         );
                         it.variables("O'REILLY");
                     });
@@ -233,8 +229,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                         "from BOOK as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("Kotlin in Action", 1);
                     });
@@ -278,8 +273,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                         "from BOOK as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("Learning GraphQL", 3);
                     });
@@ -328,8 +322,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from BOOK_STORE as tb_1_ " +
-                                        "where tb_1_.NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ?"
                         );
                         it.variables("TURING");
                     });
@@ -388,8 +381,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from BOOK_STORE as tb_1_ " +
-                                        "where tb_1_.NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ?"
                         );
                         it.variables("O'REILLY");
                     });
@@ -452,8 +444,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                 "from BOOK as tb_1_ " +
                                 "where tb_1_.NAME = ? " +
-                                "and tb_1_.EDITION = ? " +
-                                "for update");
+                                "and tb_1_.EDITION = ?");
                         it.variables("Kotlin in Action", 1);
                     });
                     ctx.statement(it -> {
@@ -508,8 +499,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                 "from BOOK as tb_1_ " +
                                 "where tb_1_.NAME = ? " +
-                                "and tb_1_.EDITION = ? " +
-                                "for update");
+                                "and tb_1_.EDITION = ?");
                         it.variables("Learning GraphQL", 3);
                     });
                     ctx.statement(it -> {
@@ -571,8 +561,7 @@ public class SaveTest extends AbstractMutationTest {
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
                                         "from AUTHOR as tb_1_ " +
                                         "where tb_1_.FIRST_NAME = ? and " +
-                                        "tb_1_.LAST_NAME = ? " +
-                                        "for update"
+                                        "tb_1_.LAST_NAME = ?"
                         );
                         it.variables("Jim", "Green");
                     });
@@ -630,8 +619,7 @@ public class SaveTest extends AbstractMutationTest {
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
                                         "from AUTHOR as tb_1_ " +
                                         "where tb_1_.FIRST_NAME = ? and " +
-                                        "tb_1_.LAST_NAME = ? " +
-                                        "for update"
+                                        "tb_1_.LAST_NAME = ?"
                         );
                         it.variables("Eve", "Procello");
                     });
@@ -684,8 +672,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from BOOK_STORE as tb_1_ " +
-                                        "where tb_1_.NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ?"
                         );
                     });
                     ctx.statement(it -> {
@@ -733,8 +720,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                         "from TREE_NODE as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null " +
-                                        "for update");
+                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null");
                         it.variables("batch-node-1");
                     });
                     ctx.statement(it -> {
@@ -745,8 +731,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                         "from TREE_NODE as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null " +
-                                        "for update");
+                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null");
                         it.variables("batch-node-2");
                     });
                     ctx.statement(it -> {
@@ -757,8 +742,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                         "from TREE_NODE as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null " +
-                                        "for update");
+                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null");
                         it.variables("batch-node-3");
                     });
                     ctx.statement(it -> {

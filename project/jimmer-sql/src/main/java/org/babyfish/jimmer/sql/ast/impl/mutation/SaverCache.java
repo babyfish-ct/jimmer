@@ -10,7 +10,7 @@ class SaverCache extends MutationCache {
     private AbstractEntitySaveCommandImpl.Data data;
 
     public SaverCache(AbstractEntitySaveCommandImpl.Data data) {
-        super(data.getSqlClient());
+        super(data.getSqlClient(), data.isPessimisticLockRequired());
         this.data = data;
     }
 

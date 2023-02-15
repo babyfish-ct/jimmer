@@ -18,14 +18,17 @@ class MutationCache {
 
     private final JSqlClient sqlClientWithoutCache;
 
+    private final boolean pessimisticLockRequired;
+
     private final Map<TypedId, ImmutableSpi> idObjMap = new HashMap<>();
 
     private final Map<TypedKey, ImmutableSpi> keyObjMap = new HashMap<>();
 
     private final IdentityHashMap<Object, Object> savedMap = new IdentityHashMap<>();
 
-    public MutationCache(JSqlClient sqlClient) {
+    public MutationCache(JSqlClient sqlClient, boolean pessimisticLockRequired) {
         this.sqlClientWithoutCache = sqlClient.caches(CacheDisableConfig::disableAll);
+        this.pessimisticLockRequired = pessimisticLockRequired;
     }
 
     public ImmutableSpi find(ImmutableSpi example) {
@@ -64,7 +67,7 @@ class MutationCache {
                         Queries.createQuery(sqlClientWithoutCache, type, ExecutionPurpose.MUTATE, true, (q, t) -> {
                             q.where(t.<Expression<Object>>get(idPropName).in(missedIds));
                             return q.select(t);
-                        }).forUpdate().execute(con);
+                        }).forUpdate(pessimisticLockRequired).execute(con);
                 return ctx.resolveList(spiList);
             });
             for (ImmutableSpi row : rows) {
@@ -128,5 +131,9 @@ class MutationCache {
 
     protected Set<ImmutableProp> keyProps(ImmutableType type) {
         return Collections.emptySet();
+    }
+
+    public boolean isPessimisticLockRequired() {
+        return pessimisticLockRequired;
     }
 }

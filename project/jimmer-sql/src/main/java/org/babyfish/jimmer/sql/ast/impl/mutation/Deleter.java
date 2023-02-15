@@ -141,6 +141,7 @@ public class Deleter {
                                 data.getSqlClient(),
                                 con,
                                 mappedByProp,
+                                false,
                                 cache,
                                 trigger
                         );

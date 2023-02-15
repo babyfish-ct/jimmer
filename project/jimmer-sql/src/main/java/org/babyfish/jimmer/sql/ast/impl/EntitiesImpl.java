@@ -297,7 +297,7 @@ public class EntitiesImpl implements Entities {
                 }
         );
         if (forUpdate) {
-            query = query.forUpdate();
+            query = query.forUpdate(true);
         }
         return query.execute(con);
     }

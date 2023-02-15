@@ -101,7 +101,7 @@ public class DeleteCommandImpl implements DeleteCommand {
         Deleter deleter = new Deleter(
                 data,
                 con,
-                binLogOnly ? null : new MutationCache(sqlClient),
+                binLogOnly ? null : new MutationCache(sqlClient, false),
                 binLogOnly ? null : new MutationTrigger(),
                 new HashMap<>()
         );

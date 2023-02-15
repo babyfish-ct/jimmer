@@ -59,6 +59,12 @@ public interface AbstractEntitySaveCommand {
                 ImmutableProp prop,
                 DissociateAction dissociateAction
         );
+
+        default Cfg setPessimisticLock() {
+            return setPessimisticLock(true);
+        }
+
+        Cfg setPessimisticLock(boolean pessimisticLock);
     }
 
     interface KeyPropCfg<T> {

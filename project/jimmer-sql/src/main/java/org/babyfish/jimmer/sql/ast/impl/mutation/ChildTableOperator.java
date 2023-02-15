@@ -34,6 +34,8 @@ class ChildTableOperator {
 
     private final Reader<Object> pkReader;
 
+    private final boolean pessimisticLockRequired;
+
     private final MutationCache cache;
 
     private final MutationTrigger trigger;
@@ -43,6 +45,7 @@ class ChildTableOperator {
             JSqlClient sqlClient,
             Connection con,
             ImmutableProp parentProp,
+            boolean pessimisticLockRequired,
             MutationCache cache,
             MutationTrigger trigger
     ) {
@@ -52,6 +55,7 @@ class ChildTableOperator {
         this.fkDefinition = parentProp.getStorage();
         this.pkDefinition = parentProp.getDeclaringType().getIdProp().getStorage();
         this.pkReader = (Reader<Object>) sqlClient.getReader(parentProp.getDeclaringType().getIdProp());
+        this.pessimisticLockRequired = pessimisticLockRequired;
         if (trigger != null) {
             this.cache = cache;
             this.trigger = trigger;
@@ -257,7 +261,9 @@ class ChildTableOperator {
                 .sql(" from ")
                 .sql(parentProp.getDeclaringType().getTableName());
         addDetachConditions(builder, Collections.singleton(parentId), retainedChildIds);
-        builder.sql(" for update");
+        if (pessimisticLockRequired) {
+            builder.sql(" for update");
+        }
 
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(

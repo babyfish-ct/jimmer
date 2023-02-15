@@ -43,7 +43,9 @@ class TypedKey {
                 throw new ExecutionException(
                         "Requires key properties configuration for \"" +
                                 type +
-                                "\", because there are some objects without id need to be handled"
+                                "\", In an idempotent save command, " +
+                                "if the saved object does not have id, " +
+                                "its key property must be specified."
                 );
             }
             return null;

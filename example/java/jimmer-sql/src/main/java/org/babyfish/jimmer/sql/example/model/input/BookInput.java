@@ -30,7 +30,6 @@ public class BookInput implements Input<Book> {
 
     private BigDecimal price;
 
-    @Nullable
     private Long storeId;
 
     private List<Long> authorIds;
