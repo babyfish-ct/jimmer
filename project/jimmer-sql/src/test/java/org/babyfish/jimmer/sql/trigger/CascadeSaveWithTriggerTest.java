@@ -42,8 +42,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                        "from BOOK_STORE as tb_1_ where tb_1_.NAME = ? " +
-                                        "for update"
+                                        "from BOOK_STORE as tb_1_ where tb_1_.NAME = ?"
                         );
                         it.variables("TURING");
                     });
@@ -56,8 +55,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK as tb_1_ " +
                                         "where tb_1_.NAME = ? " +
-                                        "and tb_1_.EDITION = ? " +
-                                        "for update"
+                                        "and tb_1_.EDITION = ?"
                         );
                         it.variables("Kotlin in Action", 1);
                     });
@@ -149,8 +147,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
                                         "from BOOK_STORE as tb_1_ " +
-                                        "where tb_1_.ID = ? " +
-                                        "for update"
+                                        "where tb_1_.ID = ?"
                         );
                         it.variables(oreillyId);
                     });
@@ -165,8 +162,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ where tb_1_.ID = ? " +
-                                        "for update"
+                                        "from BOOK as tb_1_ where tb_1_.ID = ?"
                         );
                         it.variables(learningGraphQLId1);
                     });
@@ -262,8 +258,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
                                         "from BOOK_STORE as tb_1_ " +
-                                        "where tb_1_.NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ?"
                         );
                         it.variables("TURING");
                     });
@@ -275,8 +270,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("SQL Cookbook", 1);
                     });
@@ -288,8 +282,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("Learning SQL", 1);
                     });
@@ -428,8 +421,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
                                         "from BOOK_STORE as tb_1_ " +
-                                        "where tb_1_.NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ?"
                         );
                         it.variables("O'REILLY");
                     });
@@ -441,8 +433,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("Learning GraphQL", 3);
                     });
@@ -454,8 +445,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("GraphQL in Action", 3);
                     });
@@ -895,8 +885,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("Kotlin in Action", 1);
                     });
@@ -908,8 +897,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
                                         "from AUTHOR as tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
                         );
                         it.variables("Andrey", "Breslav");
                     });
@@ -921,8 +909,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
                                         "from AUTHOR as tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
                         );
                         it.variables("Pierre-Yves", "Saumont");
                     });
@@ -1048,8 +1035,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("Learning GraphQL", 3);
                     });
@@ -1061,8 +1047,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
                                         "from AUTHOR as tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
                         );
                         it.variables("Dan", "Vanderkam");
                     });
@@ -1074,8 +1059,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
                                         "from AUTHOR as tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
                         );
                         it.variables("Boris", "Cherny");
                     });
@@ -1260,8 +1244,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
                                         "from AUTHOR as tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
                         );
                         it.variables("Jim", "Green");
                     });
@@ -1273,8 +1256,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("Learning SQL", 1);
                     });
@@ -1288,8 +1270,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("SQL Cookbook", 1);
                     });
@@ -1413,8 +1394,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
                                         "from AUTHOR as tb_1_ " +
-                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
                         );
                         it.variables("Eve", "Procello");
                     });
@@ -1426,8 +1406,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("Learning GraphQL", 3);
                     });
@@ -1439,8 +1418,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("GraphQL in Action", 3);
                     });
@@ -1614,8 +1592,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                         "from ADMINISTRATOR as tb_1_ " +
-                                        "where tb_1_.NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ?"
                         );
                         it.variables("a_5");
                     });
@@ -1632,8 +1609,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                         "tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, " +
                                         "tb_1_.MODIFIED_TIME, tb_1_.EMAIL, tb_1_.WEBSITE, tb_1_.ADMINISTRATOR_ID " +
                                         "from ADMINISTRATOR_METADATA as tb_1_ " +
-                                        "where tb_1_.NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ?"
                         );
                         it.variables("am_5");
                     });
@@ -1745,8 +1721,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                 "select tb_1_.ID, tb_1_.NAME, " +
                                         "tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                         "from ADMINISTRATOR as tb_1_ " +
-                                        "where tb_1_.NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ?"
                         );
                         it.variables("a_4");
                     });
@@ -1764,8 +1739,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                         "tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, " +
                                         "tb_1_.EMAIL, tb_1_.WEBSITE, tb_1_.ADMINISTRATOR_ID " +
                                         "from ADMINISTRATOR_METADATA as tb_1_ " +
-                                        "where tb_1_.NAME = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ?"
                         );
                         it.variables("am_4");
                     });
@@ -1781,8 +1755,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select ID " +
                                         "from ADMINISTRATOR_METADATA " +
-                                        "where ADMINISTRATOR_ID = ? and ID not in (?) " +
-                                        "for update"
+                                        "where ADMINISTRATOR_ID = ? and ID not in (?)"
                         );
                         it.variables(4L, 40L);
                     });
@@ -1887,8 +1860,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                         "from TREE_NODE as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null " +
-                                        "for update"
+                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null"
                         );
                         it.variables("Parent");
                     });
@@ -1900,8 +1872,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                         "from TREE_NODE as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ?"
                         );
                         it.variables("Child-1", 100L);
                     });
@@ -1913,8 +1884,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                         "from TREE_NODE as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ?"
                         );
                         it.variables("Child-2", 100L);
                     });
@@ -2051,8 +2021,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                        "from BOOK_STORE as tb_1_ where tb_1_.ID = ? " +
-                                        "for update"
+                                        "from BOOK_STORE as tb_1_ where tb_1_.ID = ?"
                         );
                     });
                     ctx.statement(it -> {
@@ -2064,8 +2033,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                     });
                     ctx.statement(it -> {
@@ -2078,8 +2046,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                         "from BOOK as tb_1_ " +
-                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ? " +
-                                        "for update"
+                                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                     });
                     ctx.statement(it -> {

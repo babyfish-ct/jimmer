@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
@@ -11,7 +10,6 @@ import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
-import org.babyfish.jimmer.sql.ast.table.Table;
 
 import java.sql.Connection;
 import java.util.*;
@@ -66,6 +64,8 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         private Map<ImmutableProp, DissociateAction> dissociateActionMap;
 
+        private boolean pessimisticLock;
+
         Data(JSqlClient sqlClient) {
             this.sqlClient = sqlClient;
             this.triggers = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY ?
@@ -75,6 +75,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.keyPropMultiMap = new LinkedHashMap<>();
             this.autoAttachingSet = new LinkedHashSet<>();
             this.dissociateActionMap = new LinkedHashMap<>();
+            this.pessimisticLock = false;
         }
 
         Data(Data base) {
@@ -85,6 +86,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.autoAttachingAll = base.autoAttachingAll;
             this.autoAttachingSet = new LinkedHashSet<>(base.autoAttachingSet);
             this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
+            this.pessimisticLock = base.pessimisticLock;
         }
 
         public JSqlClient getSqlClient() {
@@ -118,6 +120,10 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         Map<ImmutableProp, DissociateAction> dissociateActionMap() {
             return dissociateActionMap;
+        }
+
+        boolean isPessimisticLockRequired() {
+            return pessimisticLock;
         }
 
         @Override
@@ -196,6 +202,12 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                 );
             }
             dissociateActionMap.put(prop, dissociateAction);
+            return this;
+        }
+
+        @Override
+        public Cfg setPessimisticLock(boolean pessimisticLock) {
+            this.pessimisticLock = pessimisticLock;
             return this;
         }
 

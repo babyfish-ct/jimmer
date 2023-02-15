@@ -60,7 +60,8 @@ class Saver {
             Connection con,
             SaverCache cache,
             boolean triggerSubmitImmediately,
-            Map<AffectedTable, Integer> affectedRowCountMap) {
+            Map<AffectedTable, Integer> affectedRowCountMap
+    ) {
         this.data = data;
         this.con = con;
         this.cache = cache;
@@ -133,6 +134,7 @@ class Saver {
                             data.getSqlClient(),
                             con,
                             mappedBy,
+                            data.isPessimisticLockRequired(),
                             cache,
                             trigger
                     );
@@ -617,7 +619,7 @@ class Saver {
                                 IdAndKeyFetchers.getFetcher(type)
                         )
                 );
-            }).forUpdate().execute(con);
+            }).forUpdate(data.isPessimisticLockRequired()).execute(con);
             return ctx.resolveList(list);
         });
 

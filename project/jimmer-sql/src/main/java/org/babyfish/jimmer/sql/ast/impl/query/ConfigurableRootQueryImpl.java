@@ -116,11 +116,11 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     }
 
     @Override
-    public ConfigurableRootQuery<T, R> forUpdate() {
-        TypedQueryData data = getData();
-        if (data.isForUpdate()) {
+    public ConfigurableRootQuery<T, R> forUpdate(boolean forUpdate) {
+        if (!forUpdate) {
             return this;
         }
+        TypedQueryData data = getData();
         return new ConfigurableRootQueryImpl<>(
                 data.forUpdate(),
                 getBaseQuery()

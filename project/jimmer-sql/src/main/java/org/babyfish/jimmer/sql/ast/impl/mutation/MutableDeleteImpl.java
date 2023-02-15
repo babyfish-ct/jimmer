@@ -145,7 +145,7 @@ public class MutableDeleteImpl
                     .execute(con);
             int idPropId = table.getImmutableType().getIdProp().getId();
             ids = new ArrayList<>(rows.size());
-            cache = new MutationCache(sqlClient);
+            cache = new MutationCache(sqlClient, false);
             for (ImmutableSpi row : rows) {
                 cache.save(row, false);
                 ids.add(row.__get(idPropId));

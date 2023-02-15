@@ -39,8 +39,7 @@ public class CommandTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ORDER_X, tb_1_.ORDER_Y " +
                                         "from ORDER_ as tb_1_ " +
-                                        "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) = (?, ?) " +
-                                        "for update"
+                                        "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) = (?, ?)"
                         );
                         it.variables("001", "001");
                     });
@@ -55,8 +54,7 @@ public class CommandTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C " +
                                         "from ORDER_ITEM as tb_1_ " +
-                                        "where (tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C) = (?, ?, ?) " +
-                                        "for update"
+                                        "where (tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C) = (?, ?, ?)"
                         );
                         it.variables(1, 1, 1);
                     });
@@ -72,8 +70,7 @@ public class CommandTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C " +
                                         "from ORDER_ITEM as tb_1_ " +
-                                        "where (tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C) = (?, ?, ?) " +
-                                        "for update"
+                                        "where (tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C) = (?, ?, ?)"
                         );
                         it.variables(1, 1, 3);
                     });
@@ -136,7 +133,7 @@ public class CommandTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ORDER_X, tb_1_.ORDER_Y " +
                                         "from ORDER_ as tb_1_ " +
-                                        "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) = (?, ?) for update"
+                                        "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) = (?, ?)"
                         );
                         it.variables("001", "001");
                     });
@@ -151,8 +148,7 @@ public class CommandTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C " +
                                         "from ORDER_ITEM as tb_1_ " +
-                                        "where (tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C) = (?, ?, ?) " +
-                                        "for update"
+                                        "where (tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C) = (?, ?, ?)"
                         );
                         it.variables(1, 1, 1);
                     });
@@ -168,8 +164,7 @@ public class CommandTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C " +
                                         "from ORDER_ITEM as tb_1_ " +
-                                        "where (tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C) = (?, ?, ?) " +
-                                        "for update"
+                                        "where (tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C) = (?, ?, ?)"
                         );
                         it.variables(1, 1, 3);
                     });
@@ -187,8 +182,7 @@ public class CommandTest extends AbstractMutationTest {
                         it.sql(
                                 "select ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C from ORDER_ITEM " +
                                         "where (FK_ORDER_X, FK_ORDER_Y) = (?, ?) and " +
-                                        "(ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C) not in ((?, ?, ?), (?, ?, ?)) " +
-                                        "for update"
+                                        "(ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C) not in ((?, ?, ?), (?, ?, ?))"
                         );
                         it.variables("001", "001", 1, 1, 1, 1, 1, 3);
                     });
@@ -233,7 +227,7 @@ public class CommandTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ORDER_X, tb_1_.ORDER_Y from ORDER_ as tb_1_ " +
-                                        "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) = (?, ?) for update"
+                                        "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) = (?, ?)"
                         );
                         it.variables("001", "002");
                     });
@@ -248,8 +242,7 @@ public class CommandTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C " +
                                         "from ORDER_ITEM as tb_1_ " +
-                                        "where (tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C) = (?, ?, ?) " +
-                                        "for update"
+                                        "where (tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C) = (?, ?, ?)"
                         );
                         it.variables(1, 1, 1);
                     });
@@ -293,8 +286,7 @@ public class CommandTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C " +
                                         "from ORDER_ITEM as tb_1_ " +
-                                        "where (tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C) = (?, ?, ?) " +
-                                        "for update"
+                                        "where (tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C) = (?, ?, ?)"
                         );
                         it.variables(1, 1, 1);
                     });
@@ -309,8 +301,7 @@ public class CommandTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA " +
                                         "from PRODUCT as tb_1_ " +
-                                        "where (tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA) = (?, ?) " +
-                                        "for update"
+                                        "where (tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA) = (?, ?)"
                         );
                         it.variables("00A", "00B");
                     });
@@ -325,8 +316,7 @@ public class CommandTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA " +
                                         "from PRODUCT as tb_1_ " +
-                                        "where (tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA) = (?, ?) " +
-                                        "for update"
+                                        "where (tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA) = (?, ?)"
                         );
                         it.variables("00A", "00C");
                     });
@@ -403,8 +393,7 @@ public class CommandTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA " +
                                         "from PRODUCT as tb_1_ " +
-                                        "where (tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA) = (?, ?) " +
-                                        "for update"
+                                        "where (tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA) = (?, ?)"
                         );
                         it.variables("00A", "00A");
                     });

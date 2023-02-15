@@ -36,8 +36,8 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
     override fun withoutSortingAndPaging(): KConfigurableRootQuery<E, R> =
         KConfigurableRootQueryImpl(javaQuery.withoutSortingAndPaging())
 
-    override fun forUpdate(): KConfigurableRootQuery<E, R> =
-        KConfigurableRootQueryImpl(javaQuery.forUpdate())
+    override fun forUpdate(forUpdate: Boolean): KConfigurableRootQuery<E, R> =
+        KConfigurableRootQueryImpl(javaQuery.forUpdate(forUpdate))
 
     override val javaOrders: List<Order>
         get() = (javaQuery as ConfigurableRootQueryImplementor<*, *>).orders

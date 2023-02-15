@@ -223,8 +223,7 @@ public class StatementWithTriggerTest extends AbstractTriggerTest {
                                         "from ORDER_ITEM as tb_1_ " +
                                         "where (" +
                                         "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C" +
-                                        ") in ((?, ?, ?), (?, ?, ?)) " +
-                                        "for update"
+                                        ") in ((?, ?, ?), (?, ?, ?))"
                         );
                         it.variables(1, 1, 1, 1, 1, 2);
                     });
