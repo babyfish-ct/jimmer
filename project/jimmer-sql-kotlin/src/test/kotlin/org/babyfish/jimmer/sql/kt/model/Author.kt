@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.model
 
+import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.sql.*
 import javax.validation.constraints.NotBlank
 
@@ -15,8 +16,12 @@ interface Author {
     @Key
     val lastName: @NotBlank String
 
+    @Formula(dependencies = ["firstName", "lastName"])
     val fullName: String
         get() = "$firstName $lastName"
+
+    @Formula(sql = "concat(FIRST_NAME, ' ', LAST_NAME)")
+    val fullName2: String
 
     val gender: Gender
 

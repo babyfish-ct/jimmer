@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -85,6 +86,16 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     @Override
     public Predicate eq(Table<E> other) {
         return table.eq(other);
+    }
+
+    @Override
+    public Predicate eq(E example) {
+        return table.eq(example);
+    }
+
+    @Override
+    public Predicate eq(Example<E> example) {
+        return table.eq(example);
     }
 
     @Override

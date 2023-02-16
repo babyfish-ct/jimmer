@@ -103,7 +103,7 @@ internal class KEntitiesImpl(
         val entities = javaEntities as EntitiesImpl
         val query = MutableRootQueryImpl<Table<E>>(entities.sqlClient, type, ExecutionPurpose.QUERY, false)
         val table = query.getTable<Table<E>>()
-        example?.applyTo(query)
+        query.where(example?.toPredicate(query.getTable()))
         if (block !== null) {
             val dsl = SortDsl<E>()
             dsl.block()

@@ -257,4 +257,32 @@ public class SimpleTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testJavaFormula() {
+        AuthorTable table = AuthorTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(eveId))
+                        .select(
+                                table.fetch(
+                                        AuthorFetcher.$.fullName()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql("select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME from AUTHOR as tb_1_ where tb_1_.ID = ?");
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
+                                    "--->--->\"firstName\":\"Eve\"," +
+                                    "--->--->\"lastName\":\"Procello\"," +
+                                    "--->--->\"fullName\":\"Eve Procello\"" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
+    }
 }

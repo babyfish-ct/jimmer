@@ -16,6 +16,15 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * A real project should be a three-tier architecture consisting
+ * of repository, service, and controller.
+ *
+ * This demo has no business logic, its purpose is only to tell users
+ * how to use jimmer with the <b>least</b> code. Therefore, this demo
+ * does not follow this convention, and let services be directly
+ * decorated by `@RestController`, not `@Service`.
+ */
 @RestController
 @Transactional
 @RequestMapping("/tree")

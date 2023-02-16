@@ -16,7 +16,7 @@ import java.util.Map;
 public class Storages {
 
     static Storage of(ImmutableProp prop) {
-        if (prop.isTransient() || prop.getDeclaringType().isEmbeddable()) {
+        if (prop.isTransient() || prop.isFormula() || prop.getDeclaringType().isEmbeddable()) {
             return null;
         }
         Annotation annotation = prop.getAssociationAnnotation();

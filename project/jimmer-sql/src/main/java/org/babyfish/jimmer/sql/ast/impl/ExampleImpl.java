@@ -6,19 +6,21 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.LikeMode;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.StringExpression;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class ExampleImpl<E> implements Example<E> {
+
+    private final static Predicate[] EMPTY_PREDICATES = new Predicate[0];
 
     private final ImmutableSpi spi;
 
@@ -77,27 +79,35 @@ public class ExampleImpl<E> implements Example<E> {
         return spi.__type();
     }
 
-    void applyTo(MutableRootQueryImpl<?> query) {
+    public Predicate toPredicate(Table<?> table) {
         Map<ImmutableProp, ExampleImpl<?>> map = new HashMap<>();
         collect(map);
+        List<Predicate> predicates = new ArrayList<>();
         for (ImmutableProp prop : spi.__type().getProps().values()) {
             if (spi.__isLoaded(prop.getId())) {
-                Expression<Object> expr = expressionOf(query.getTable(), prop);
                 Object value = valueOf(spi, prop);
+                Expression<Object> expr = expressionOf(table, prop, value == null ? JoinType.LEFT : JoinType.INNER);
+                Predicate predicate;
                 if (value == null) {
-                    query.where(expr.isNull());
+                    predicate = expr.isNull();
                 } else {
                     ExampleImpl<?> impl = map.get(prop);
                     if (impl == null) {
-                        query.where(expr.eq(value));
+                        predicate = expr.eq(value);
                     } else if (impl.likeInsensitive) {
-                        query.where(((StringExpression)(Expression<?>)expr).ilike((String)value, impl.likeMode));
+                        predicate = ((StringExpression)(Expression<?>)expr).ilike((String)value, impl.likeMode);
                     } else {
-                        query.where(((StringExpression)(Expression<?>)expr).like((String)value, impl.likeMode));
+                        predicate = ((StringExpression)(Expression<?>)expr).like((String)value, impl.likeMode);
                     }
                 }
+                predicates.add(predicate);
             }
         }
+        return CompositePredicate.and(predicates.toArray(EMPTY_PREDICATES));
+    }
+
+    void applyTo(MutableRootQueryImpl<?> query) {
+        query.where(toPredicate(query.getTable()));
     }
 
     void collect(Map<ImmutableProp, ExampleImpl<?>> map) {
@@ -109,9 +119,9 @@ public class ExampleImpl<E> implements Example<E> {
         }
     }
 
-    private static Expression<Object> expressionOf(Table<?> table, ImmutableProp prop) {
+    private static Expression<Object> expressionOf(Table<?> table, ImmutableProp prop, JoinType joinType) {
         if (prop.isReference(TargetLevel.ENTITY)) {
-            Table<?> joinedExpr = table.join(prop.getName());
+            Table<?> joinedExpr = table.join(prop.getName(), joinType);
             return joinedExpr.get(prop.getTargetType().getIdProp().getName());
         }
         return table.get(prop.getName());

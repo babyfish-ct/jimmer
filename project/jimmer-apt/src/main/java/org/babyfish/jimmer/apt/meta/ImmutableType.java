@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.apt.meta;
 
 import com.squareup.javapoet.ClassName;
+import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.*;
@@ -15,6 +16,8 @@ import java.util.stream.Collectors;
 public class ImmutableType {
 
     public static final String PROP_EXPRESSION_SUFFIX = "PropExpression";
+
+    private static final String FORMULA_CLASS_NAME = Formula.class.getName();
 
     private final TypeElement typeElement;
 
@@ -145,10 +148,13 @@ public class ImmutableType {
         for (ExecutableElement executableElement : executableElements) {
             if (executableElement.isDefault()) {
                 for (AnnotationMirror am : executableElement.getAnnotationMirrors()) {
-                    if (((TypeElement)am.getAnnotationType().asElement()).getQualifiedName().toString().startsWith("org.babyfish.jimmer.")) {
+                    String qualifiedName = ((TypeElement)am.getAnnotationType().asElement()).getQualifiedName().toString();
+                    if (qualifiedName.startsWith("org.babyfish.jimmer.") && !qualifiedName.equals(FORMULA_CLASS_NAME)) {
                         throw new MetaException(
                                 "Illegal method \"" + executableElement + "\", it " +
-                                        "is default method so that it cannot be decorated by any jimmer annotations"
+                                        "is default method so that it cannot be decorated by " +
+                                        "any jimmer annotations except @" +
+                                        FORMULA_CLASS_NAME
                         );
                     }
                 }
@@ -161,7 +167,46 @@ public class ImmutableType {
             }
         }
         for (ExecutableElement executableElement : executableElements) {
-            if (!executableElement.isDefault() && executableElement.getAnnotation(Id.class) == null) {
+            if (executableElement.isDefault()) {
+                Formula formula = executableElement.getAnnotation(Formula.class);
+                if (formula != null) {
+                    if (!formula.sql().isEmpty()) {
+                        throw new ModelException(
+                                "The method \"" +
+                                        executableElement +
+                                        "\" is non-abstract and decorated by @" +
+                                        Formula.class.getName() +
+                                        ", non-abstract modifier means simple calculation property based on " +
+                                        "java expression so that the `sql` of that annotation cannot be specified"
+                        );
+                    }
+                    if (formula.dependencies().length == 0) {
+                        throw new ModelException(
+                                "The method \"" +
+                                        executableElement +
+                                        "\" is non-abstract and decorated by @" +
+                                        Formula.class.getName() +
+                                        ", non-abstract modifier means simple calculation property based on " +
+                                        "java expression so that the `dependencies` of that annotation must be specified"
+                        );
+                    }
+                    ImmutableProp prop = new ImmutableProp(typeUtils, this, executableElement, ++propIdSequence);
+                    map.put(prop.getName(), prop);
+                }
+            } else if (executableElement.getAnnotation(Id.class) == null) {
+                Formula formula = executableElement.getAnnotation(Formula.class);
+                if (formula != null) {
+                    if (formula.sql().isEmpty()) {
+                        throw new ModelException(
+                                "The method \"" +
+                                        executableElement +
+                                        "\" is abstract and decorated by @" +
+                                        Formula.class.getName() +
+                                        ", abstract modifier means simple calculation property based on " +
+                                        "SQL expression so that the `sql` of that annotation must be specified"
+                        );
+                    }
+                }
                 ImmutableProp prop = new ImmutableProp(typeUtils, this, executableElement, ++propIdSequence);
                 map.put(prop.getName(), prop);
             }

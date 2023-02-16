@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.model;
 
+import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 
@@ -22,9 +23,13 @@ public interface Author {
     @Key
     String lastName();
 
+    @Formula(dependencies = {"firstName", "lastName"})
     default String fullName() {
-        return firstName() + lastName();
+        return firstName() + ' ' + lastName();
     }
+
+    @Formula(sql = "contact(FIRST_NAME, ' ', LAST_NAME)")
+    String fullName2();
 
     Gender gender();
 

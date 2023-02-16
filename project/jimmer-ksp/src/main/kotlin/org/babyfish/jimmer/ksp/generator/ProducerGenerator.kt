@@ -2,6 +2,7 @@ package org.babyfish.jimmer.ksp.generator
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
 import org.babyfish.jimmer.sql.*
@@ -101,7 +102,7 @@ class ProducerGenerator(
                     prop.name,
                     prop.targetTypeName(overrideNullable = false)
                 )
-            prop.primaryAnnotationType !== null && prop.primaryAnnotationType != Transient::class.java ->
+            prop.primaryAnnotationType !== null && prop.primaryAnnotationType != Formula::class.java && prop.primaryAnnotationType != Transient::class.java ->
                 add(
                     ".add(%L, %S, %T::class.java, %T::class.java, %L)\n",
                     prop.id,

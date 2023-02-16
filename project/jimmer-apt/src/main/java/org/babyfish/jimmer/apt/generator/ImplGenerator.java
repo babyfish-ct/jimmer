@@ -50,16 +50,18 @@ public class ImplGenerator {
 
     private void addFields() {
         for (ImmutableProp prop : type.getProps().values()) {
-            FieldSpec.Builder valueBuilder = FieldSpec.builder(
-                    prop.isList() ?
-                            ParameterizedTypeName.get(
-                                    ClassName.get(NonSharedList.class),
-                                    prop.getElementTypeName()
-                            ) :
-                            TypeName.get(prop.getReturnType()),
-                    prop.getName()
-            );
-            typeBuilder.addField(valueBuilder.build());
+            if (!prop.isJavaFormula()) {
+                FieldSpec.Builder valueBuilder = FieldSpec.builder(
+                        prop.isList() ?
+                                ParameterizedTypeName.get(
+                                        ClassName.get(NonSharedList.class),
+                                        prop.getElementTypeName()
+                                ) :
+                                TypeName.get(prop.getReturnType()),
+                        prop.getName()
+                );
+                typeBuilder.addField(valueBuilder.build());
+            }
             if (prop.isLoadedStateRequired()) {
                 FieldSpec.Builder stateBuilder = FieldSpec.builder(
                         boolean.class,
@@ -79,7 +81,9 @@ public class ImplGenerator {
         if (prop.isBeanStyle()) {
             builder.addAnnotation(JSON_IGNORE_CLASS_NAME);
         }
-        if (prop.isLoadedStateRequired()) {
+        if (prop.isJavaFormula()) {
+            builder.beginControlFlow("if (!__isLoaded($S))", prop.getName());
+        } else if (prop.isLoadedStateRequired()) {
             builder.beginControlFlow("if (!$L)", prop.getLoadedStateName());
         } else {
             builder.beginControlFlow("if ($L == null)", prop.getName());
@@ -90,8 +94,12 @@ public class ImplGenerator {
                         type.getClassName(),
                         prop.getName()
                 )
-                .endControlFlow()
-                .addStatement("return $L", prop.getName());
+                .endControlFlow();
+        if (prop.isJavaFormula()) {
+            builder.addStatement("return super.$L()", prop.getName());
+        } else {
+            builder.addStatement("return $L", prop.getName());
+        }
         typeBuilder.addMethod(builder.build());
     }
 
@@ -120,7 +128,14 @@ public class ImplGenerator {
         builder.beginControlFlow("switch (prop)");
         for (ImmutableProp prop : type.getPropsOrderById()) {
             Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
-            if (prop.isLoadedStateRequired()) {
+            if (prop.isJavaFormula()) {
+                builder.addCode("case $L: return $L$>", arg, prop.getLoadedStateName());
+                for (String dependency : prop.getDependencies()) {
+                    builder.addCode(" && \n");
+                    builder.addCode("__isLoaded($S)", dependency);
+                }
+                builder.addStatement("$<");
+            } else if (prop.isLoadedStateRequired()) {
                 builder.addStatement("case $L: return $L", arg, prop.getLoadedStateName());
             } else {
                 builder.addStatement("case $L: return $L != null", arg, prop.getName());
@@ -147,6 +162,10 @@ public class ImplGenerator {
             builder.addAnnotation(Override.class);
         }
         for (ImmutableProp prop : type.getProps().values()) {
+            if (prop.isJavaFormula()) {
+                builder.addStatement("hash = 31 * hash + $T.hashCode($L)", Boolean.class, prop.getLoadedStateName());
+                continue;
+            }
             Class<?> boxType = prop.getBoxType();
             if (boxType != null) {
                 builder.beginControlFlow("if ($L)", prop.getLoadedStateName());
@@ -206,15 +225,26 @@ public class ImplGenerator {
                 .endControlFlow()
                 .addStatement("$T other = ($T)obj", type.getImplementorClassName(), type.getImplementorClassName());
         for (ImmutableProp prop : type.getProps().values()) {
+            if (prop.isJavaFormula()) {
+                builder
+                        .beginControlFlow(
+                                "if ($L != other.__isLoaded($L))",
+                                prop.getLoadedStateName(),
+                                prop.getId()
+                        )
+                        .addStatement("return false")
+                        .endControlFlow();
+                continue;
+            }
             if (prop.isLoadedStateRequired()) {
-                builder.addStatement("boolean __$LLoaded = $L", prop.getName(), prop.getLoadedStateName());
+                builder.addStatement("boolean __$L = $L", prop.getLoadedStateName(), prop.getLoadedStateName());
             } else {
-                builder.addStatement("boolean __$LLoaded = $L != null", prop.getName(), prop.getName());
+                builder.addStatement("boolean __$L = $L != null", prop.getLoadedStateName(true), prop.getName());
             }
             builder
                     .beginControlFlow(
-                            "if (__$LLoaded != other.__isLoaded($L))",
-                            prop.getName(),
+                            "if (__$L != other.__isLoaded($L))",
+                            prop.getLoadedStateName(true),
                             prop.getId()
                     )
                     .addStatement("return false")
@@ -222,15 +252,15 @@ public class ImplGenerator {
             if (shallow || prop.getReturnType() instanceof PrimitiveType) {
                 if (!shallow && prop.getAnnotation(Id.class) != null) {
                     builder
-                            .beginControlFlow("if (__$LLoaded)", prop.getName())
+                            .beginControlFlow("if (__$L)", prop.getLoadedStateName(true))
                             .addComment("If entity-id is loaded, return directly")
                             .addStatement("return $L == other.$L()", prop.getName(), prop.getGetterName())
                             .endControlFlow();
                 } else {
                     builder
                             .beginControlFlow(
-                                    "if (__$LLoaded && $L != other.$L())",
-                                    prop.getName(),
+                                    "if (__$L && $L != other.$L())",
+                                    prop.getLoadedStateName(true),
                                     prop.getName(),
                                     prop.getGetterName()
                             )
@@ -240,8 +270,8 @@ public class ImplGenerator {
             } else if (prop.getAnnotation(Id.class) != null) {
                 builder
                         .beginControlFlow(
-                                "if (__$LLoaded)",
-                                prop.getName()
+                                "if (__$L)",
+                                prop.getLoadedStateName(true)
                         )
                         .addComment("If entity-id is loaded, return directly")
                         .addStatement(
@@ -254,8 +284,8 @@ public class ImplGenerator {
             } else {
                 builder
                         .beginControlFlow(
-                                "if (__$LLoaded && !$T.equals($L, other.$L()))",
-                                prop.getName(),
+                                "if (__$L && !$T.equals($L, other.$L()))",
+                                prop.getLoadedStateName(true),
                                 Objects.class,
                                 prop.getName(),
                                 prop.getGetterName()

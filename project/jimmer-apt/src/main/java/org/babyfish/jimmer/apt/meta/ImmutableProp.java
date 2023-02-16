@@ -3,6 +3,7 @@ package org.babyfish.jimmer.apt.meta;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
+import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
@@ -29,6 +30,8 @@ public class ImmutableProp {
 
     private final String setterName;
 
+    private final String usingName;
+
     private final String applierName;
 
     private final String adderByName;
@@ -52,6 +55,10 @@ public class ImmutableProp {
     private final boolean isTransient;
 
     private final boolean hasTransientResolver;
+
+    private final boolean isJavaFormula;
+
+    private final Set<String> dependencies;
 
     private final boolean isList;
 
@@ -101,6 +108,7 @@ public class ImmutableProp {
                     getterName.substring(2, 3).toLowerCase() +
                     getterName.substring(3);
             setterName = "set" + getterName.substring(2);
+            usingName = "use" + getterName.substring(2);
             applierName = "apply" + getterName.substring(2);
             adderByName = "addInto" + getterName.substring(2);
             beanStyle = true;
@@ -111,23 +119,19 @@ public class ImmutableProp {
                     getterName.substring(3, 4).toLowerCase() +
                             getterName.substring(4);
             setterName = "set" + getterName.substring(3);
+            usingName = "use" + getterName.substring(3);
             applierName = "apply" + getterName.substring(3);
             adderByName = "addInto" + getterName.substring(3);
             beanStyle = true;
         } else {
             name = getterName;
-            setterName =
-                    "set" +
+            String suffix =
                     getterName.substring(0, 1).toUpperCase() +
                     getterName.substring(1);
-            applierName =
-                    "apply" +
-                            getterName.substring(0, 1).toUpperCase() +
-                            getterName.substring(1);
-            adderByName =
-                    "addInto" +
-                    getterName.substring(0, 1).toUpperCase() +
-                    getterName.substring(1);
+            setterName = "set" + suffix;
+            usingName = "use" +suffix;
+            applierName = "apply" + suffix;
+            adderByName = "addInto" + suffix;
             beanStyle = false;
         }
 
@@ -187,6 +191,12 @@ public class ImmutableProp {
             }
         }
         hasTransientResolver = hasResolver;
+
+        Formula formula = executableElement.getAnnotation(Formula.class);
+        isJavaFormula = formula != null && formula.sql().isEmpty();
+        dependencies = formula != null ?
+                Collections.unmodifiableSet(new LinkedHashSet<>(Arrays.asList(formula.dependencies()))) :
+                Collections.emptySet();
 
         isAssociation = typeUtils.isImmutable(elementType);
         isEntityAssociation = typeUtils.isEntity(elementType);
@@ -261,6 +271,10 @@ public class ImmutableProp {
         this.validationMessageMap = ValidationMessages.parseMessageMap(executableElement);
     }
 
+    public ImmutableType getDeclaringType() {
+        return declaringType;
+    }
+
     public int getId() {
         return id;
     }
@@ -275,6 +289,10 @@ public class ImmutableProp {
         return setterName;
     }
 
+    public String getUsingName() {
+        return usingName;
+    }
+
     public String getApplierName() {
         return applierName;
     }
@@ -286,7 +304,11 @@ public class ImmutableProp {
     public boolean isBeanStyle() { return beanStyle; }
 
     public String getLoadedStateName() {
-        if (!isLoadedStateRequired()) {
+        return getLoadedStateName(false);
+    }
+
+    public String getLoadedStateName(boolean force) {
+        if (!force && !isLoadedStateRequired()) {
             throw new IllegalStateException("The property \"" + this + "\" does not has loaded state");
         }
         return loadedStateName;
@@ -327,6 +349,14 @@ public class ImmutableProp {
         return hasTransientResolver;
     }
 
+    public boolean isJavaFormula() {
+        return isJavaFormula;
+    }
+
+    public Set<String> getDependencies() {
+        return dependencies;
+    }
+
     public boolean isList() {
         return isList;
     }
@@ -340,7 +370,7 @@ public class ImmutableProp {
     }
 
     public boolean isLoadedStateRequired() {
-        return isNullable || typeName.isPrimitive();
+        return isJavaFormula || isNullable || typeName.isPrimitive();
     }
     
     public Class<?> getBoxType() {

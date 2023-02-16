@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -72,7 +73,7 @@ public abstract class AssociationProp implements ImmutableProp {
 
     @Override
     public boolean isInputNotNull() {
-        return false;
+        return true;
     }
 
     @Override
@@ -88,6 +89,17 @@ public abstract class AssociationProp implements ImmutableProp {
     @Override
     public boolean hasTransientResolver() {
         return false;
+    }
+
+    @Override
+    public boolean isFormula() {
+        return false;
+    }
+
+    @Nullable
+    @Override
+    public String getFormulaSql() {
+        return null;
     }
 
     @Override
@@ -113,6 +125,11 @@ public abstract class AssociationProp implements ImmutableProp {
     @Override
     public ImmutableProp getOpposite() {
         return null;
+    }
+
+    @Override
+    public List<ImmutableProp> getDependencies() {
+        return Collections.emptyList();
     }
 
     @Override

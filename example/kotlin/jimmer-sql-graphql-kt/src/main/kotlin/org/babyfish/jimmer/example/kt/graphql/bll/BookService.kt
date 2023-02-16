@@ -11,6 +11,15 @@ import org.springframework.graphql.data.method.annotation.QueryMapping
 import org.springframework.stereotype.Controller
 import org.springframework.transaction.annotation.Transactional
 
+/**
+ * A real project should be a three-tier architecture consisting
+ * of repository, service, and controller.
+ *
+ * This demo has no business logic, its purpose is only to tell users
+ * how to use jimmer with the <b>least</b> code. Therefore, this demo
+ * does not follow this convention, and let services be directly
+ * decorated by `@Controller`, not `@Service`.
+ */
 @Controller
 class BookService(
     private val bookRepository: BookRepository
