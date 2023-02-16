@@ -17,6 +17,15 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A real project should be a three-tier architecture consisting
+ * of repository, service, and controller.
+ *
+ * This demo has no business logic, its purpose is only to tell users
+ * how to use jimmer with the <b>least</b> code. Therefore, this demo
+ * does not follow this convention, and let services be directly
+ * decorated by `@Controller`, not `@Service`.
+ */
 @Controller
 public class BookStoreService {
 

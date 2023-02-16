@@ -12,6 +12,15 @@ import org.springframework.stereotype.Controller
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 
+/**
+ * A real project should be a three-tier architecture consisting
+ * of repository, service, and controller.
+ *
+ * This demo has no business logic, its purpose is only to tell users
+ * how to use jimmer with the <b>least</b> code. Therefore, this demo
+ * does not follow this convention, and let services be directly
+ * decorated by `@Controller`, not `@Service`.
+ */
 @Controller
 class BookStoreService(
     private val bookStoreRepository: BookStoreRepository

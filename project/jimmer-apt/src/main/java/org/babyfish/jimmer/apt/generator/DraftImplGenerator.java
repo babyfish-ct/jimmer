@@ -45,11 +45,14 @@ public class DraftImplGenerator {
             addGetter(prop);
             addCreator(prop);
             addSetter(prop);
+            addUsing(prop);
             addUtilMethod(prop, false);
             addUtilMethod(prop, true);
         }
         addSet(int.class);
         addSet(String.class);
+        addUse(int.class);
+        addUse(String.class);
         addUnload(int.class);
         addUnload(String.class);
         addDraftContext();
@@ -354,7 +357,9 @@ public class DraftImplGenerator {
     }
 
     private void addSetter(ImmutableProp prop) {
-
+        if (prop.isJavaFormula()) {
+            return;
+        }
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getSetterName())
                 .addModifiers(Modifier.PUBLIC)
@@ -379,6 +384,20 @@ public class DraftImplGenerator {
         if (prop.isLoadedStateRequired()) {
             builder.addStatement("__tmpModified.$L = true", prop.getLoadedStateName());
         }
+        builder.addStatement("return this");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addUsing(ImmutableProp prop) {
+        if (!prop.isJavaFormula()) {
+            return;
+        }
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder(prop.getUsingName())
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .returns(type.getDraftClassName());
+        builder.addStatement("__modified().$L = true", prop.getLoadedStateName());
         builder.addStatement("return this");
         typeBuilder.addMethod(builder.build());
     }
@@ -449,7 +468,9 @@ public class DraftImplGenerator {
             if (castTo == null) {
                 castTo = prop.getTypeName();
             }
-            if (prop.getTypeName().isPrimitive()) {
+            if (prop.isJavaFormula()) {
+                builder.addStatement("case $L: break", arg);
+            } else if (prop.getTypeName().isPrimitive()) {
                 builder.addStatement(
                         "case $L: \n" +
                                 "if (value == null) throw new $T($S);\n" +
@@ -476,6 +497,36 @@ public class DraftImplGenerator {
                         (argType == int.class ? "name" : "id") +
                         ": \"",
                 "\""
+        );
+        builder.endControlFlow();
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addUse(Class<?> argType) {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("__use")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addParameter(argType, "prop");
+        builder.beginControlFlow("switch (prop)");
+        for (ImmutableProp prop : type.getPropsOrderById()) {
+            if (prop.isJavaFormula()) {
+                Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
+                builder.addStatement(
+                        "case $L: $L().$L = true;break",
+                        arg,
+                        DRAFT_FIELD_MODIFIED,
+                        prop.getLoadedStateName()
+                );
+            }
+        }
+        builder.addStatement(
+                "default: throw new IllegalArgumentException(\n$>$S + \nprop + \n$S + \n$S\n$<)",
+                "Illegal property " +
+                        (argType == int.class ? "name" : "id") +
+                        ": \"",
+                "\",it does not exists or is not non-abstract formula property",
+                "(Only non-abstract formula property can be used)"
         );
         builder.endControlFlow();
         typeBuilder.addMethod(builder.build());

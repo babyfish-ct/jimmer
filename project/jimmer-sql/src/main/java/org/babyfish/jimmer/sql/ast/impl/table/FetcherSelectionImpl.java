@@ -57,7 +57,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
 
     @Override
     public String toString() {
-        return "TableFetcherSelection{" +
+        return "FetcherSelectionImpl{" +
                 "fetcher=" + fetcher +
                 '}';
     }

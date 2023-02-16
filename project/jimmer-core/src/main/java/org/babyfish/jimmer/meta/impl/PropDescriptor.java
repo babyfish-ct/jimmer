@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.meta.impl;
 
+import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.sql.*;
 
@@ -71,6 +72,7 @@ public class PropDescriptor {
         TRANSIENT(Transient.class, false),
         ID(Id.class, false),
         VERSION(Version.class, false),
+        FORMULA(Formula.class, false),
         BASIC(null, false),
         ONE_TO_ONE(OneToOne.class, true),
         MANY_TO_ONE(ManyToOne.class, true),
@@ -510,6 +512,7 @@ public class PropDescriptor {
             typeMap.put(Transient.class, Type.TRANSIENT);
             typeMap.put(Id.class, Type.ID);
             typeMap.put(Version.class, Type.VERSION);
+            typeMap.put(Formula.class, Type.FORMULA);
             typeMap.put(OneToOne.class, Type.ONE_TO_ONE);
             typeMap.put(ManyToOne.class, Type.MANY_TO_ONE);
             typeMap.put(OneToMany.class, Type.ONE_TO_MANY);
@@ -518,6 +521,7 @@ public class PropDescriptor {
             families.put(Type.TRANSIENT, setOf());
             families.put(Type.ID, setOf(Column.class, PropOverrides.class, PropOverride.class));
             families.put(Type.VERSION, setOf(Column.class));
+            families.put(Type.FORMULA, setOf(Formula.class));
             families.put(Type.BASIC, setOf(Key.class, Column.class, PropOverrides.class, PropOverride.class));
             families.put(Type.ONE_TO_ONE, setOf(Key.class, OnDissociate.class, JoinColumns.class, JoinColumn.class, JoinTable.class));
             families.put(Type.MANY_TO_ONE, setOf(Key.class, OnDissociate.class, JoinColumns.class, JoinColumn.class, JoinTable.class));

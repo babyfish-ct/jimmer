@@ -4,6 +4,7 @@ import kotlin.reflect.KClass;
 import kotlin.reflect.KProperty1;
 import kotlin.reflect.full.KClasses;
 import org.apache.commons.lang3.reflect.TypeUtils;
+import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.meta.*;
@@ -11,10 +12,12 @@ import org.babyfish.jimmer.meta.spi.EntityPropImplementor;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.*;
 
@@ -46,6 +49,10 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     private final boolean hasTransientResolver;
 
+    private final boolean isFormula;
+
+    private final String formulaSql;
+
     private final DissociateAction dissociateAction;
 
     private final ImmutableProp base;
@@ -73,6 +80,8 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     private ImmutableProp opposite;
 
     private boolean oppositeResolved;
+
+    private List<ImmutableProp> dependencies;
 
     ImmutablePropImpl(
             ImmutableTypeImpl declaringType,
@@ -138,6 +147,15 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
             associationAnnotation = null;
         }
 
+        Formula formula = getAnnotation(Formula.class);
+        isFormula = formula != null;
+        if (formula != null && !formula.sql().isEmpty()) {
+            validateFormulaSql(formula.sql());
+            formulaSql = formula.sql();
+        } else {
+            formulaSql = null;
+        }
+
         ManyToOne manyToOne = getAnnotation(ManyToOne.class);
         OneToOne oneToOne = getAnnotation(OneToOne.class);
         inputNotNull = manyToOne != null ?
@@ -197,9 +215,47 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         this.javaGetter = base.javaGetter;
         this.associationAnnotation = base.associationAnnotation;
         this.isTransient = base.isTransient;
+        this.isFormula = base.isFormula;
+        this.formulaSql = base.formulaSql;
         this.hasTransientResolver = base.hasTransientResolver;
         this.dissociateAction = base.dissociateAction;
         this.base = base.base != null ? base.base : base;
+    }
+
+    private void validateFormulaSql(String sql) {
+        boolean inStr = false;
+        int parenthesesDepth = 0;
+        int size = sql.length();
+        for (int i = 0; i < size; i ++) {
+            char c = sql.charAt(i);
+            if (c == '\'') {
+                inStr = !inStr;
+            }
+            if (inStr) {
+                continue;
+            }
+            switch (c) {
+                case '(':
+                    parenthesesDepth++;
+                    break;
+                case ')':
+                    parenthesesDepth--;
+                    break;
+                case ',':
+                case ' ':
+                    if (parenthesesDepth == 0) {
+                        throw new ModelException(
+                                "Illegal property \"" +
+                                        this +
+                                        "\", unexpected charactor '" +
+                                        c +
+                                        "' the formula sql \"" +
+                                        sql +
+                                        "\""
+                        );
+                    }
+            }
+        }
     }
 
     @NotNull
@@ -357,6 +413,17 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     @Override
     public boolean hasTransientResolver() {
         return hasTransientResolver;
+    }
+
+    @Override
+    public boolean isFormula() {
+        return isFormula;
+    }
+
+    @Nullable
+    @Override
+    public String getFormulaSql() {
+        return formulaSql;
     }
 
     @Override
@@ -671,6 +738,83 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         }
         oppositeResolved = true;
         return opposite;
+    }
+
+    @Override
+    public List<ImmutableProp> getDependencies() {
+        return getDependenciesImpl(new LinkedList<>());
+    }
+
+    private List<ImmutableProp> getDependenciesImpl(LinkedList<ImmutableProp> stack) {
+        List<ImmutableProp> list = dependencies;
+        if (list == null) {
+            list = new ArrayList<>();
+            Formula formula = getAnnotation(Formula.class);
+            if (formula != null) {
+                String[] arr = formula.dependencies();
+                if (arr.length != 0) {
+                    Map<String, ImmutableProp> propMap = declaringType.getProps();
+                    stack.push(this);
+                    try {
+                        for (String name : arr) {
+                            ImmutableProp prop = propMap.get(name);
+                            if (prop == null) {
+                                throw new ModelException(
+                                        "Illegal property \"" +
+                                                this +
+                                                "\", its dependency property \"" +
+                                                declaringType +
+                                                '.' +
+                                                name +
+                                                "\" does not exists"
+                                );
+                            }
+                            if (stack.contains(prop)) {
+                                throw new ModelException(
+                                        "Illegal entity type \"" +
+                                                declaringType +
+                                                "\", dependency cycle has been found: " +
+                                                stack
+                                );
+                            }
+                            boolean isValid = prop.isFormula() || (
+                                    prop.getStorage() != null && !prop.isReference(TargetLevel.ENTITY)
+                            );
+                            if (!isValid) {
+                                throw new ModelException(
+                                        "Illegal property \"" +
+                                                this +
+                                                "\", its dependency property \"" +
+                                                prop +
+                                                "\" must be scalar property or another formula property"
+                                );
+                            }
+                            if (prop.isFormula()) {
+                                if (prop.getFormulaSql() != null) {
+                                    throw new ModelException(
+                                            "Illegal property \"" +
+                                                    this +
+                                                    "\", it is an abstract formula property based on SQL exception but " +
+                                                    "its dependency property \"" +
+                                                    prop +
+                                                    "\" is another formula property" +
+                                                    "(This is only allowed for non-abstract formula property " +
+                                                    "based on java/kotlin expression)"
+                                    );
+                                }
+                                // Deeper check to find dependency cycle
+                                ((ImmutablePropImpl)prop).getDependenciesImpl(stack);
+                            }
+                            list.add(prop);
+                        }
+                    } finally {
+                        stack.pop();
+                    }
+                }
+            }
+            dependencies = list;
+        }
+        return list;
     }
 
     ImmutableProp getBase() {

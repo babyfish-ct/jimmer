@@ -6,12 +6,12 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.meta.TargetLevel
 import org.babyfish.jimmer.runtime.ImmutableSpi
+import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.LikeMode
+import org.babyfish.jimmer.sql.ast.Predicate
 import org.babyfish.jimmer.sql.ast.StringExpression
-import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.table.Table
-import org.babyfish.jimmer.sql.meta.SingleColumn
 import org.babyfish.jimmer.sql.meta.Storage
 import kotlin.reflect.KProperty1
 
@@ -43,12 +43,18 @@ class KExample<E: Any> internal constructor(
     companion object {
 
         @JvmStatic
-        private fun expressionOf(table: Table<*>, prop: ImmutableProp): Expression<Any?> =
+        private fun expressionOf(table: Table<*>, prop: ImmutableProp, outer: Boolean): Expression<Any?> =
             if (prop.isReference(TargetLevel.ENTITY)) {
-                val joinedExpr = table.join<Table<*>>(prop.name)
-                joinedExpr.get(prop.targetType.idProp.name)
+                val joinedExpr =
+                    if (outer) {
+                        table.join<Table<*>>(prop.name, JoinType.LEFT)
+                    }
+                    else {
+                        table.join<Table<*>>(prop.name, JoinType.INNER)
+                    }
+                joinedExpr.get<Expression<Any?>>(prop.targetType.idProp.name)
             } else {
-                table.get(prop.name)
+                table.get<Expression<Any?>>(prop.name)
             }
 
         @JvmStatic
@@ -65,28 +71,26 @@ class KExample<E: Any> internal constructor(
     internal val type: ImmutableType
         get() = spi.__type()
 
-    internal fun applyTo(query: MutableRootQueryImpl<*>) {
-        val table = query.getTable<Table<*>>()
+    @Suppress("UNCHECKED_CAST")
+    internal fun toPredicate(table: Table<*>): Predicate? {
+        val predicates = mutableListOf<Predicate>()
         for (prop in spi.__type().props.values) {
             if (spi.__isLoaded(prop.id)) {
-                val expr = expressionOf(table, prop)
                 val value = valueOf(spi, prop)
-                if (value === null) {
-                    query.where(expr.isNull)
+                val expr = expressionOf(table, prop, value == null)
+                predicates += if (value === null) {
+                    expr.isNull
                 } else {
                     val likeOp = likeOpMap[prop]
                     when {
-                        likeOp == null -> query.where(expr.eq(value))
-                        likeOp.insensitive -> query.where(
-                            (expr as StringExpression).ilike(value as String, likeOp.mode)
-                        )
-                        else -> query.where(
-                            (expr as StringExpression).like(value as String, likeOp.mode)
-                        )
+                        likeOp == null -> expr.eq(value)
+                        likeOp.insensitive -> (expr as StringExpression).ilike(value as String, likeOp.mode)
+                        else -> (expr as StringExpression).like(value as String, likeOp.mode)
                     }
                 }
             }
         }
+        return Predicate.and(*predicates.toTypedArray())
     }
 
     @DslScope

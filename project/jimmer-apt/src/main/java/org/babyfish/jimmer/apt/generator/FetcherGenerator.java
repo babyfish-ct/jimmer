@@ -74,12 +74,14 @@ public class FetcherGenerator {
             addConstructor();
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.getAnnotation(Id.class) == null) {
-                    addProp(prop);
-                    addPropByBoolean(prop);
-                    if (prop.isAssociation(true)) {
-                        addAssociationProp(prop);
-                        if (!prop.isTransient()) {
-                            addAssociationPropByFieldConfig(prop);
+                    if (isFetchProp(prop)) {
+                        addProp(prop);
+                        addPropByBoolean(prop);
+                        if (prop.isAssociation(true)) {
+                            addAssociationProp(prop);
+                            if (!prop.isTransient()) {
+                                addAssociationPropByFieldConfig(prop);
+                            }
                         }
                     }
                 }
@@ -143,6 +145,13 @@ public class FetcherGenerator {
                         type.getClassName()
                 );
         typeBuilder.addMethod(builder.build());
+    }
+
+    private boolean isFetchProp(ImmutableProp prop) {
+        if (prop.isTransient()) {
+            return prop.hasTransientResolver();
+        }
+        return true;
     }
 
     private void addProp(ImmutableProp prop) {

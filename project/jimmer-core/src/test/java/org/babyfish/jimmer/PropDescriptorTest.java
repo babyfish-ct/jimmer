@@ -181,6 +181,26 @@ public class PropDescriptorTest {
     }
 
     @Test
+    public void testFormula() {
+        PropDescriptor family = PropDescriptor
+                .newBuilder(
+                        "Author",
+                        Entity.class,
+                        "fullName",
+                        "String",
+                        null,
+                        false,
+                        null,
+                        null,
+                        IllegalArgumentException::new
+                )
+                .add(Formula.class)
+                .build();
+        Assertions.assertEquals(PropDescriptor.Type.FORMULA, family.getType());
+        Assertions.assertTrue(family.isPresent(Formula.class));
+    }
+
+    @Test
     public void testBasic() {
         PropDescriptor family = PropDescriptor
                 .newBuilder(

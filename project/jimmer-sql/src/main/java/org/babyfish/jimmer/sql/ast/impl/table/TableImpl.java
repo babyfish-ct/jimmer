@@ -9,8 +9,9 @@ import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Selection;
-import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
+import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -19,9 +20,6 @@ import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
-import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -136,6 +134,16 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         }
         String idPropName = immutableType.getIdProp().getName();
         return this.<Expression<Object>>get(idPropName).eq(other.get(idPropName));
+    }
+
+    @Override
+    public Predicate eq(E example) {
+        return eq(Example.of(example));
+    }
+
+    @Override
+    public Predicate eq(Example<E> example) {
+        return ((ExampleImpl<E>)example).toPredicate(this);
     }
 
     @Override

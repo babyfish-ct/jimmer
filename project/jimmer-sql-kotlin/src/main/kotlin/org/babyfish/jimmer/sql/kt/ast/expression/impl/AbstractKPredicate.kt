@@ -21,7 +21,10 @@ internal abstract class AbstractKPredicate :
 
 internal fun KNonNullExpression<Boolean>.toJavaPredicate(): Predicate =
     if (this is Predicate) {
-        this
+        if (this is JavaPredicateWrapper)
+            javaPredicate
+        else
+            this
     } else {
         PredicateWrapper(this)
     }
@@ -49,4 +52,23 @@ internal class PredicateWrapper(
 
     override fun renderTo(builder: SqlBuilder) =
         (expr as Ast).renderTo(builder)
+}
+
+internal class JavaPredicateWrapper(
+    val javaPredicate: PredicateImplementor
+) : AbstractKPredicate() {
+
+    override fun not(): AbstractKPredicate =
+        JavaPredicateWrapper(javaPredicate.not() as PredicateImplementor)
+
+    override fun precedence(): Int =
+        javaPredicate.precedence()
+
+    override fun accept(visitor: AstVisitor) {
+        (javaPredicate as Ast).accept(visitor)
+    }
+
+    override fun renderTo(builder: SqlBuilder) {
+        (javaPredicate as Ast).renderTo(builder)
+    }
 }

@@ -35,6 +35,9 @@ public class MapStructGenerator {
     }
 
     private void addFields(ImmutableProp prop) {
+        if (prop.isJavaFormula()) {
+            return;
+        }
         if (prop.isLoadedStateRequired()) {
             typeBuilder.addField(
                     FieldSpec.builder(
@@ -52,6 +55,9 @@ public class MapStructGenerator {
     }
 
     private void addSetter(ImmutableProp prop) {
+        if (prop.isJavaFormula()) {
+            return;
+        }
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)
@@ -92,13 +98,15 @@ public class MapStructGenerator {
                 .returns(type.getClassName());
         builder.addCode("return $T.$L.produce(draft -> {$>\n", type.getDraftClassName(), "$");
         for (ImmutableProp prop : type.getProps().values()) {
-            if (prop.isLoadedStateRequired()) {
-                builder.beginControlFlow("if ($L)", prop.getLoadedStateName());
-            } else {
-                builder.beginControlFlow("if ($L != null)", prop.getName());
+            if (!prop.isJavaFormula()) {
+                if (prop.isLoadedStateRequired()) {
+                    builder.beginControlFlow("if ($L)", prop.getLoadedStateName());
+                } else {
+                    builder.beginControlFlow("if ($L != null)", prop.getName());
+                }
+                builder.addStatement("draft.$L($L)", prop.getSetterName(), prop.getName());
+                builder.endControlFlow();
             }
-            builder.addStatement("draft.$L($L)", prop.getSetterName(), prop.getName());
-            builder.endControlFlow();
         }
         builder.addCode("$<});\n");
         typeBuilder.addMethod(builder.build());
