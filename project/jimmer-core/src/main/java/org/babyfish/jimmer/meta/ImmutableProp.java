@@ -2,6 +2,7 @@ package org.babyfish.jimmer.meta;
 
 import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -56,7 +57,7 @@ public interface ImmutableProp {
     boolean isFormula();
 
     @Nullable
-    String getFormulaSql();
+    FormulaTemplate getFormulaTemplate();
 
     Converter<?> getConverter();
 

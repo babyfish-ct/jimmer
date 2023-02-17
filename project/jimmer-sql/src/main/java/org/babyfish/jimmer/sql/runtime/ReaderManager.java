@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.impl.util.StaticCache;
 
@@ -52,17 +53,22 @@ public class ReaderManager {
 
     @SuppressWarnings("unchecked")
     private Reader<?> createPropReader(ImmutableProp prop) {
+
         Storage storage = prop.getStorage();
-        if (!(storage instanceof ColumnDefinition)) {
-            return null;
+        if (storage instanceof ColumnDefinition) {
+            if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
+                return new EmbeddedReader(prop.getTargetType(), this);
+            }
+            if (prop.isReference(TargetLevel.ENTITY)) {
+                return new ReferenceReader(prop, this);
+            }
+            return scalarReader(prop.getElementClass());
         }
-        if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
-            return new EmbeddedReader(prop.getTargetType(), this);
+        FormulaTemplate template = prop.getFormulaTemplate();
+        if (template != null) {
+            return scalarReader(prop.getElementClass());
         }
-        if (prop.isReference(TargetLevel.ENTITY)) {
-            return new ReferenceReader(prop, this);
-        }
-        return scalarReader(prop.getElementClass());
+        return null;
     }
 
     private Reader<?> createTypeReader(ImmutableType immutableType) {

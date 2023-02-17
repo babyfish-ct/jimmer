@@ -52,7 +52,7 @@ class FetcherContext {
     @SuppressWarnings("unchecked")
     public void add(Fetcher<?> fetcher, DraftSpi draft) {
         for (Field field : fetcher.getFieldMap().values()) {
-            if (field.getProp().isFormula()) {
+            if (field.getProp().isFormula() && field.getProp().getFormulaTemplate() == null) {
                 draft.__use(field.getProp().getId());
                 return;
             }

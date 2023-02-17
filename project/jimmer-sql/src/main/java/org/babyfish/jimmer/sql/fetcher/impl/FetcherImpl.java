@@ -163,7 +163,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
                 if (field != null) {
                     orderedMap.put(name, field);
                     ImmutableProp prop = field.getProp();
-                    if (prop.isFormula() && prop.getFormulaSql() == null) {
+                    if (prop.isFormula() && prop.getFormulaTemplate() == null) {
                         nonAbstractFormulaFields.add(field);
                     }
                 }
@@ -183,7 +183,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
                                 null
                         );
                         orderedMap.put(dependencyProp.getName(), dependencyField);
-                        if (dependencyProp.isFormula() && dependencyProp.getFormulaSql() == null) {
+                        if (dependencyProp.isFormula() && dependencyProp.getFormulaTemplate() == null) {
                             nonAbstractFormulaFields.add(dependencyField);
                         }
                     }

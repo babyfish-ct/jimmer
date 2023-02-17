@@ -10,6 +10,7 @@ import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.spi.EntityPropImplementor;
 import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,7 +18,6 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.*;
 
@@ -51,7 +51,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     private final boolean isFormula;
 
-    private final String formulaSql;
+    private final FormulaTemplate formulaTemplate;
 
     private final DissociateAction dissociateAction;
 
@@ -150,10 +150,18 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         Formula formula = getAnnotation(Formula.class);
         isFormula = formula != null;
         if (formula != null && !formula.sql().isEmpty()) {
-            validateFormulaSql(formula.sql());
-            formulaSql = formula.sql();
+            try {
+                formulaTemplate = FormulaTemplate.of(formula.sql());
+            } catch (IllegalArgumentException ex) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                this +
+                                "\", the formula sql template: " +
+                                ex.getMessage()
+                );
+            }
         } else {
-            formulaSql = null;
+            formulaTemplate = null;
         }
 
         ManyToOne manyToOne = getAnnotation(ManyToOne.class);
@@ -216,46 +224,10 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         this.associationAnnotation = base.associationAnnotation;
         this.isTransient = base.isTransient;
         this.isFormula = base.isFormula;
-        this.formulaSql = base.formulaSql;
+        this.formulaTemplate = base.formulaTemplate;
         this.hasTransientResolver = base.hasTransientResolver;
         this.dissociateAction = base.dissociateAction;
         this.base = base.base != null ? base.base : base;
-    }
-
-    private void validateFormulaSql(String sql) {
-        boolean inStr = false;
-        int parenthesesDepth = 0;
-        int size = sql.length();
-        for (int i = 0; i < size; i ++) {
-            char c = sql.charAt(i);
-            if (c == '\'') {
-                inStr = !inStr;
-            }
-            if (inStr) {
-                continue;
-            }
-            switch (c) {
-                case '(':
-                    parenthesesDepth++;
-                    break;
-                case ')':
-                    parenthesesDepth--;
-                    break;
-                case ',':
-                case ' ':
-                    if (parenthesesDepth == 0) {
-                        throw new ModelException(
-                                "Illegal property \"" +
-                                        this +
-                                        "\", unexpected charactor '" +
-                                        c +
-                                        "' the formula sql \"" +
-                                        sql +
-                                        "\""
-                        );
-                    }
-            }
-        }
     }
 
     @NotNull
@@ -422,8 +394,8 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     @Nullable
     @Override
-    public String getFormulaSql() {
-        return formulaSql;
+    public FormulaTemplate getFormulaTemplate() {
+        return formulaTemplate;
     }
 
     @Override
@@ -790,7 +762,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
                                 );
                             }
                             if (prop.isFormula()) {
-                                if (prop.getFormulaSql() != null) {
+                                if (prop.getFormulaTemplate() != null) {
                                     throw new ModelException(
                                             "Illegal property \"" +
                                                     this +
