@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -224,6 +225,21 @@ public class FluentDMLTest extends AbstractMutationTest {
                     });
                     ctx.rowCount(6);
                 }
+        );
+    }
+
+    @Test
+    public void updateSqlFormulaFailed() {
+        AuthorTable table = AuthorTable.$;
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            getSqlClient()
+                    .createUpdate(table)
+                    .set(table.fullName2(), "Tim Cook")
+                    .where(table.fullName2().eq("Alex Banks"));
+        });
+        Assertions.assertEquals(
+                "The assigned prop expression must be mapped by database columns",
+                ex.getMessage()
         );
     }
 }
