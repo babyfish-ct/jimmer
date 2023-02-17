@@ -1,9 +1,11 @@
 package org.babyfish.jimmer.ksp.meta
 
+import com.google.devtools.ksp.isAbstract
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toClassName
+import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
@@ -38,6 +40,27 @@ class ImmutableProp(
             val resolveClassName = it.get<KSType>("value")?.toClassName()
             resolveClassName != UNIT
         } ?: false
+
+    val isKotlinFormula: Boolean =
+        annotation(Formula::class) != null && !propDeclaration.isAbstract()
+
+    val dependencies: List<String> =
+        annotation(Formula::class)?.get("dependencies") ?: emptyList()
+
+    val usingFunName: String? =
+        if (isKotlinFormula) {
+            val name = propDeclaration.name
+            if (resolvedType == ctx.resolver.builtIns.booleanType &&
+                name.length > 2 &&
+                name.startsWith("is") &&
+                name[2].isUpperCase()) {
+                "use${name.substring(2)}"
+            } else {
+                "use${name[0].uppercase()}${name.substring(1)}"
+            }
+        } else {
+            null
+        }
 
     val isList: Boolean =
         (resolvedType.declaration as KSClassDeclaration).asStarProjectedType().let { starType ->
@@ -202,7 +225,7 @@ class ImmutableProp(
     val valueFieldName: String = "__${name}Value"
 
     val loadedFieldName: String? =
-        if (isNullable || isPrimitive) {
+        if (isNullable || isPrimitive || isKotlinFormula) {
             "__${name}Loaded"
         } else {
             null

@@ -54,7 +54,11 @@ import java.lang.annotation.Target;
  *     Long getDepartmentId();
  * }
  *
- * Example3: Simple calculation based on SQL expression(jimmer-trigger is used)
+ * Example3: Simple calculation based on SQL expression(
+ * jimmer-trigger is used and you hope
+ * the event for formula property will be raised
+ * when events for dependency properties are raised)
+ *
  * {@code
  * public interface Employee {
  *
@@ -64,13 +68,19 @@ import java.lang.annotation.Target;
  *
  *     String lastName();
  *
- *     @Formula(sql = "concat(FIRST_NAME, LAST_NAME)", dependencies = {"firstName", "lastName"}})
+ *     @Formula(
+ *         sql = "concat(FIRST_NAME, LAST_NAME)",
+ *         dependencies = {"firstName", "lastName"}
+ *     )
  *     String fullName();
  *
  *     @ManyToOne
  *     Department department();
  *
- *     @Formula(sql = "DEPARTMENT_ID", dependencies = "department")
+ *     @Formula(
+ *         sql = "DEPARTMENT_ID",
+ *         dependencies = "department"
+ *     )
  *     Long getDepartmentId();
  * }
  *
@@ -86,18 +96,29 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface Formula {
 
-    /** When `sql` is specified,
+    /**
+     * When the decorated property is abstract,
      * <ul>
-     *     <li>it means the current property a simple calculated based on sql expression</li>
-     *     <li>it requires current property to be abstract</li>
-     *     <li>In this situation, the current property will be generated in both `Fetcher` and `Table`</li>
+     *     <li>It means the current property a simple calculation based on sql expression</li>
+     *     <li>The `sql` of this annotation is required</li>
+     *     <li>
+     *         In this situation, the current property will be generated in
+     *         not only `Draft` and `Fetcher` but also `Table`.
+     *         That means current formula property can be used by SQL-DSL
+     *     </li>
+     *     <li>In `Draft`, a function like `setXXX(Type value)` will generated</li>
      * </ul>
      *
-     * When `sql` is not specified,
+     * When the decorated property is non-abstract,
      * <ul>
-     *     <li>it means the current property a simple calculated based on java/kt expression</li>
-     *     <li>it requires current property to be non-abstract, and `dependencies` must be specified</li>
-     *     <li>In this situation, the current property will be generated in only `Fetcher`</li>
+     *     <li>It means the current property a simple calculation based on java/kotlin expression</li>
+     *     <li>The `sql` of the annotation cannot be specified, but `dependencies` must be specified</li>
+     *     <li>
+     *         In this situation, the current property will be generated in
+     *         not only `Draft` and `Fetcher`, but will not be generated in `Table`.
+     *         That means current formula property cannot be used by SQL-DSL
+     *     </li>
+     *     <li>In `Draft`, a function like `useXXX()` will generated</li>
      * </ul>
      */
     String sql() default "";
@@ -107,10 +128,23 @@ public @interface Formula {
      *
      * Only need to be specified when any of the following conditions are met
      * <ul>
-     *     <li>`sql` is NOT specified</li>
+     *     <li>The decorated property is non-abstract</li>
      *     <li>
      *         jimmer-trigger is used and
      *         you hope the events of the dependency fields can cause the event of current field.
+     *     </li>
+     * </ul>
+     *
+     * <ul>
+     *     <li>
+     *         For abstract formula property based on SQL expression,
+     *         `dependencies` are optional, and they can only be scalar properties
+     *     </li>
+     *     <li>
+     *         For non-abstract formula property based on java/kotlin expression,
+     *         `dependencies` are required, and they can be not only scalar properties
+     *         but also other formula properties.
+     *         That means the formula property dependencies can be recursive
      *     </li>
      * </ul>
      */

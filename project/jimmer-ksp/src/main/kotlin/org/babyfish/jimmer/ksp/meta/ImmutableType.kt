@@ -168,6 +168,7 @@ class ImmutableType(
                                             "kotlin expression so that the `dependencies` of that annotation must be specified"
                                     )
                                 }
+                                reorderedPropDeclarations += propDeclaration
                             }
                         }
                     }
