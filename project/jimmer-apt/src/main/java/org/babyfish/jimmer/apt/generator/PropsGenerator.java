@@ -176,7 +176,7 @@ public class PropsGenerator {
             boolean withImplementation,
             boolean ignoreOverride
     ) {
-        if (prop.isTransient()) {
+        if (prop.isTransient() || prop.isJavaFormula()) {
             return null;
         }
         if (withJoinType && !prop.isAssociation(true)) {

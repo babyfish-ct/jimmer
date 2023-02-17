@@ -226,4 +226,27 @@ public class FindTest extends AbstractQueryTest {
             ).variables("%x");
         });
     }
+
+    @Test
+    public void findBySqlCalculation() {
+        AuthorTable table = AuthorTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.fullName2().eq("Alex Banks"))
+                        .select(
+                                table.fetch(
+                                        AuthorFetcher.$.fullName2()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME) " +
+                                    "from AUTHOR as tb_1_ " +
+                                    "where concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME) = ?"
+                    );
+                    ctx.rows("[{\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\",\"fullName2\":\"Alex Banks\"}]");
+                }
+        );
+    }
 }

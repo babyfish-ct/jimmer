@@ -31,11 +31,6 @@ import java.util.function.Function;
 
 class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> implements TableImplementor<E> {
 
-    private static final String WEAK_JOIN_ERROR_MESSAGE =
-            "Table join is forbidden in the implementation of \"" +
-                    WeakJoin.class.getName() +
-                    "\"";
-
     private final AbstractMutableStatementImpl statement;
 
     private final ImmutableType immutableType;

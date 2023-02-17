@@ -65,7 +65,7 @@ public class PropExpressionImpl<T>
         if (prop.isAssociation(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException("prop '" + prop + "' cannot be association property");
         }
-        if (!(prop.getStorage() instanceof ColumnDefinition)) {
+        if (!(prop.getStorage() instanceof ColumnDefinition) && prop.getFormulaTemplate() == null) {
             throw new IllegalArgumentException("prop is not selectable");
         }
         this.table = table;
