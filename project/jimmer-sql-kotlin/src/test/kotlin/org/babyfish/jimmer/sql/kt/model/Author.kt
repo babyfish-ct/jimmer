@@ -20,7 +20,7 @@ interface Author {
     val fullName: String
         get() = "$firstName $lastName"
 
-    @Formula(sql = "concat(FIRST_NAME, ' ', LAST_NAME)")
+    @Formula(sql = "concat(%alias.FIRST_NAME, ' ', %alias.LAST_NAME)")
     val fullName2: String
 
     val gender: Gender

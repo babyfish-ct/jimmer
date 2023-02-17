@@ -21,10 +21,14 @@ class MapStructGenerator(
 
     private fun TypeSpec.Builder.addMembers() {
         for (prop in type.properties.values) {
-            addFields(prop)
+            if (!prop.isKotlinFormula) {
+                addFields(prop)
+            }
         }
         for (prop in type.properties.values) {
-            addSetter(prop)
+            if (!prop.isKotlinFormula) {
+                addSetter(prop)
+            }
         }
         addBuild()
     }
@@ -103,6 +107,9 @@ class MapStructGenerator(
                             indent()
                             addStatement("val that = this@%T", type.draftClassName("MapStruct"))
                             for (prop in type.properties.values) {
+                                if (prop.isKotlinFormula) {
+                                    continue
+                                }
                                 val loadName = prop.loadedFieldName
                                 if (loadName !== null) {
                                     beginControlFlow("if (that.%L)", loadName)

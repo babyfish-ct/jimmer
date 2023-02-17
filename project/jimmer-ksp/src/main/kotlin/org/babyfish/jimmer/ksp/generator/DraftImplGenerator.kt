@@ -37,12 +37,15 @@ class DraftImplGenerator(
                     addEqualsFuns()
                     for (prop in type.properties.values) {
                         addProp(prop)
+                        addPropUse(prop)
                         addPropFun(prop)
                     }
                     addUnloadFun(Int::class)
                     addUnloadFun(String::class)
                     addSetFun(Int::class)
                     addSetFun(String::class)
+                    addUseFun(Int::class)
+                    addUseFun(String::class)
                     addDraftContextFun()
                     addResolveFun()
                 }
@@ -148,7 +151,7 @@ class DraftImplGenerator(
         addProperty(
             PropertySpec
                 .builder(prop.name, prop.typeName(), KModifier.OVERRIDE)
-                .mutable()
+                .mutable(!prop.isKotlinFormula)
                 .getter(
                     FunSpec
                         .getterBuilder()
@@ -170,41 +173,57 @@ class DraftImplGenerator(
                         }
                         .build()
                 )
-                .setter(
-                    FunSpec
-                        .setterBuilder()
-                        .addParameter(prop.name, prop.typeName())
-                        .addCode(
-                            CodeBlock
-                                .builder()
-                                .apply {
-                                    ValidationGenerator(prop, this).generate()
-                                    addStatement("val __tmpModified = %L", MODIFIED)
-                                    if (prop.isList || prop.isScalarList) {
-                                        addStatement(
-                                            "__tmpModified.%L = %T.of(__tmpModified.%L, %L)",
-                                            prop.valueFieldName,
-                                            NON_SHARED_LIST_CLASS_NAME,
-                                            prop.valueFieldName,
-                                            prop.name
-                                        )
-                                    } else {
-                                        addStatement(
-                                            "__tmpModified.%L = %L",
-                                            prop.valueFieldName,
-                                            prop.name
-                                        )
-                                    }
-                                    prop.loadedFieldName?.let {
-                                        addStatement("__tmpModified.%L = true", it)
-                                    }
-                                }
+                .apply {
+                    if (!prop.isKotlinFormula) {
+                        setter(
+                            FunSpec
+                                .setterBuilder()
+                                .addParameter(prop.name, prop.typeName())
+                                .addCode(
+                                    CodeBlock
+                                        .builder()
+                                        .apply {
+                                            ValidationGenerator(prop, this).generate()
+                                            addStatement("val __tmpModified = %L", MODIFIED)
+                                            if (prop.isList || prop.isScalarList) {
+                                                addStatement(
+                                                    "__tmpModified.%L = %T.of(__tmpModified.%L, %L)",
+                                                    prop.valueFieldName,
+                                                    NON_SHARED_LIST_CLASS_NAME,
+                                                    prop.valueFieldName,
+                                                    prop.name
+                                                )
+                                            } else {
+                                                addStatement(
+                                                    "__tmpModified.%L = %L",
+                                                    prop.valueFieldName,
+                                                    prop.name
+                                                )
+                                            }
+                                            prop.loadedFieldName?.let {
+                                                addStatement("__tmpModified.%L = true", it)
+                                            }
+                                        }
+                                        .build()
+                                )
                                 .build()
                         )
-                        .build()
-                )
+                    }
+                }
                 .build()
         )
+    }
+
+    private fun TypeSpec.Builder.addPropUse(prop: ImmutableProp) {
+        prop.usingFunName?.let {
+            addFunction(
+                FunSpec
+                    .builder(it)
+                    .addModifiers(KModifier.OVERRIDE)
+                    .addStatement("%L.%L = true", MODIFIED, prop.loadedFieldName!!)
+                    .build()
+            )
+        }
     }
 
     private fun TypeSpec.Builder.addPropFun(prop: ImmutableProp) {
@@ -312,6 +331,9 @@ class DraftImplGenerator(
                         .apply {
                             beginControlFlow("when (prop)")
                             for (prop in type.propsOrderById) {
+                                if (prop.isKotlinFormula) {
+                                    continue
+                                }
                                 if (argType == Int::class) {
                                     add(prop.id.toString())
                                 } else {
@@ -324,6 +346,46 @@ class DraftImplGenerator(
                                 add("\n")
                             }
                             addElseBranchForProp(argType)
+                            endControlFlow()
+                        }
+                        .build()
+                )
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addUseFun(argType: KClass<*>) {
+        addFunction(
+            FunSpec
+                .builder("__use")
+                .addParameter("prop", if (argType == Int::class) INT else STRING)
+                .addModifiers(KModifier.OVERRIDE)
+                .addCode(
+                    CodeBlock
+                        .builder()
+                        .apply {
+                            beginControlFlow("when (prop)")
+                            for (prop in type.propsOrderById) {
+                                if (prop.isKotlinFormula) {
+                                    if (argType == Int::class) {
+                                        add(prop.id.toString())
+                                    } else {
+                                        add("%S", prop.name)
+                                    }
+                                    add(" -> %L.%L = true\n", MODIFIED, prop.loadedFieldName)
+                                }
+                            }
+                            add("else -> throw IllegalArgumentException(\n")
+                            indent()
+                            add("%S + \nprop + \n%S + \n%S",
+                                "Illegal property " +
+                                    (if (argType == String::class) "name" else "id") +
+                                    ": \"",
+                                "\",it does not exists or is not non-abstract formula property",
+                                "(Only non-abstract formula property can be used)"
+                            )
+                            unindent()
+                            add("\n)")
                             endControlFlow()
                         }
                         .build()

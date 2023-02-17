@@ -631,4 +631,55 @@ class FetcherTest : AbstractQueryTest() {
             )
         }
     }
+
+    @Test
+    fun testFetchKotlinFormula() {
+        executeAndExpect(
+            sqlClient.createQuery(Author::class) {
+                where(table.firstName eq "Alex")
+                select(
+                    table.fetchBy {
+                        fullName()
+                    }
+                )
+            }
+        ) {
+            statement(0).sql(
+                """select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME 
+                    |from AUTHOR as tb_1_ 
+                    |where tb_1_.FIRST_NAME = ?""".trimMargin()
+            )
+            rows(
+                """[
+                    |--->{
+                    |--->--->"id":2,
+                    |--->--->"fullName":"Alex Banks",
+                    |--->--->"firstName":"Alex",
+                    |--->--->"lastName":"Banks"
+                    |--->}
+                    |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testFetchSqlFormula() {
+        executeAndExpect(
+            sqlClient.createQuery(Author::class) {
+                where(table.firstName eq "Alex")
+                select(
+                    table.fetchBy {
+                        fullName2()
+                    }
+                )
+            }
+        ) {
+            statement(0).sql(
+                """select tb_1_.ID, concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME) 
+                    |from AUTHOR as tb_1_ 
+                    |where tb_1_.FIRST_NAME = ?""".trimMargin()
+            )
+            rows("[{\"id\":2,\"fullName2\":\"Alex Banks\"}]")
+        }
+    }
 }

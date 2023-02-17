@@ -10,6 +10,7 @@ import org.babyfish.jimmer.ksp.meta.Context
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
 import java.io.OutputStreamWriter
+import java.lang.IllegalArgumentException
 
 class DraftGenerator(
     private val codeGenerator: CodeGenerator,
@@ -90,9 +91,9 @@ class DraftGenerator(
                     prop.name,
                     prop.typeName()
                 )
+                .addModifiers(KModifier.OVERRIDE)
                 .apply {
-                    addModifiers(KModifier.OVERRIDE)
-                    mutable(true)
+                    mutable(!prop.isKotlinFormula)
                 }
                 .build()
         )
@@ -105,6 +106,14 @@ class DraftGenerator(
                     .builder(prop.name)
                     .addModifiers(KModifier.ABSTRACT)
                     .returns(prop.typeName(draft = true, overrideNullable = false))
+                    .build()
+            )
+        }
+        prop.usingFunName?.let { usingName ->
+            addFunction(
+                FunSpec
+                    .builder(usingName)
+                    .addModifiers(KModifier.ABSTRACT)
                     .build()
             )
         }

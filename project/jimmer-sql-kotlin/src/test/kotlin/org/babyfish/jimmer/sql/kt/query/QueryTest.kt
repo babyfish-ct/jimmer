@@ -314,6 +314,23 @@ class QueryTest : AbstractQueryTest() {
             )
         }
     }
+
+    @Test
+    fun testQueryBySqlFormula() {
+        executeAndExpect(
+            sqlClient.createQuery(Author::class) {
+                where(table.fullName2 eq "Alex Banks")
+                select(table)
+            }
+        ) {
+            statement(0).sql(
+                """select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER 
+                    |from AUTHOR as tb_1_ 
+                    |where concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME) = ?""".trimMargin()
+            )
+            rows("[{\"id\":2,\"firstName\":\"Alex\",\"lastName\":\"Banks\",\"gender\":\"MALE\"}]")
+        }
+    }
 }
 
 

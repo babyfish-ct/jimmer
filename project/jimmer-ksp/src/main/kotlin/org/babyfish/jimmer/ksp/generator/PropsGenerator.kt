@@ -81,7 +81,7 @@ class PropsGenerator(
         nonNullTable: Boolean,
         outerJoin: Boolean
     ) {
-        if (prop.isTransient) {
+        if (prop.isTransient || prop.isKotlinFormula) {
             return
         }
         if (outerJoin && !prop.isAssociation(true)) {
