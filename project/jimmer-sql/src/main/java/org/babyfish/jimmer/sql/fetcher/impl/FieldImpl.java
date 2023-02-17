@@ -125,6 +125,9 @@ class FieldImpl implements Field {
         if (prop.getStorage() instanceof ColumnDefinition) {
             return childFetcher == null || childFetcher.getFieldMap().size() == 1;
         }
+        if (prop.getFormulaTemplate() != null) {
+            return true;
+        }
         return false;
     }
 }

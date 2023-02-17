@@ -28,7 +28,7 @@ public interface Author {
         return firstName() + ' ' + lastName();
     }
 
-    @Formula(sql = "contact(FIRST_NAME, ' ', LAST_NAME)")
+    @Formula(sql = "concat(%alias.FIRST_NAME, ' ', %alias.LAST_NAME)")
     String fullName2();
 
     Gender gender();

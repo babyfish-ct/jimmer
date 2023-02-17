@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
@@ -709,8 +710,13 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                 return;
             }
         }
-        ColumnDefinition definition = optionalDefinition != null ? optionalDefinition : prop.getStorage();
-        builder.sql(withPrefix ? alias : null, definition);
+        FormulaTemplate template = prop.getFormulaTemplate();
+        if (template != null) {
+            builder.sql(template.toSql(alias));
+        } else {
+            ColumnDefinition definition = optionalDefinition != null ? optionalDefinition : prop.getStorage();
+            builder.sql(withPrefix ? alias : null, definition);
+        }
     }
 
     @Override

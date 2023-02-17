@@ -5,8 +5,8 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -96,9 +96,8 @@ public abstract class AssociationProp implements ImmutableProp {
         return false;
     }
 
-    @Nullable
     @Override
-    public String getFormulaSql() {
+    public FormulaTemplate getFormulaTemplate() {
         return null;
     }
 

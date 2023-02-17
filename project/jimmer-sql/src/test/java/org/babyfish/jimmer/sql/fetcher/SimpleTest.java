@@ -271,7 +271,11 @@ public class SimpleTest extends AbstractQueryTest {
                                 )
                         ),
                 ctx -> {
-                    ctx.sql("select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME from AUTHOR as tb_1_ where tb_1_.ID = ?");
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
+                                    "from AUTHOR as tb_1_ " +
+                                    "where tb_1_.ID = ?"
+                    );
                     ctx.rows(
                             "[" +
                                     "--->{" +
@@ -279,6 +283,35 @@ public class SimpleTest extends AbstractQueryTest {
                                     "--->--->\"firstName\":\"Eve\"," +
                                     "--->--->\"lastName\":\"Procello\"," +
                                     "--->--->\"fullName\":\"Eve Procello\"" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testSqlFormula() {
+        AuthorTable table = AuthorTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(eveId))
+                        .select(
+                                table.fetch(
+                                        AuthorFetcher.$.fullName2()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME) " +
+                                    "from AUTHOR as tb_1_ " +
+                                    "where tb_1_.ID = ?");
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
+                                    "--->--->\"fullName2\":\"Eve Procello\"" +
                                     "--->}" +
                                     "]"
                     );
