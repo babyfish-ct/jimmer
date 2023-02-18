@@ -49,12 +49,20 @@ public class BookStoreService {
         );
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id}/withAllBooks")
     @Nullable
-    public @FetchBy("COMPLEX_FETCHER") BookStore findComplexStore(
+    public @FetchBy("WITH_ALL_BOOKS_FETCHER") BookStore findComplexStoreWithAllBooks(
             @PathVariable("id") long id
     ) {
-        return bookStoreRepository.findNullable(id, COMPLEX_FETCHER);
+        return bookStoreRepository.findNullable(id, WITH_ALL_BOOKS_FETCHER);
+    }
+
+    @GetMapping("/{id}/withNewestBooks")
+    @Nullable
+    public @FetchBy("WITH_NEWEST_BOOKS_FETCHER") BookStore findComplexStoreWithNewestBooks(
+            @PathVariable("id") long id
+    ) {
+        return bookStoreRepository.findNullable(id, WITH_NEWEST_BOOKS_FETCHER);
     }
 
     private static final Fetcher<BookStore> SIMPLE_FETCHER =
@@ -63,11 +71,25 @@ public class BookStoreService {
     private static final Fetcher<BookStore> DEFAULT_FETCHER =
             BookStoreFetcher.$.allScalarFields();
 
-    private static final Fetcher<BookStore> COMPLEX_FETCHER =
+    private static final Fetcher<BookStore> WITH_ALL_BOOKS_FETCHER =
             BookStoreFetcher.$
                     .allScalarFields()
                     .avgPrice()
                     .books(
+                            BookFetcher.$
+                                    .allScalarFields()
+                                    .tenant(false)
+                                    .authors(
+                                            AuthorFetcher.$
+                                                    .allScalarFields()
+                                    )
+                    );
+
+    private static final Fetcher<BookStore> WITH_NEWEST_BOOKS_FETCHER =
+            BookStoreFetcher.$
+                    .allScalarFields()
+                    .avgPrice()
+                    .newestBooks(
                             BookFetcher.$
                                     .allScalarFields()
                                     .tenant(false)

@@ -4,8 +4,6 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.event.AssociationListener;
-import org.babyfish.jimmer.sql.event.EntityListener;
 
 import java.sql.Connection;
 
@@ -21,21 +19,29 @@ public interface Triggers {
         removeEntityListener(ImmutableType.get(entityType), (EntityListener<ImmutableSpi>) listener);
     }
 
-    void addEntityListener(ImmutableType immutableType, EntityListener<ImmutableSpi> listener);
+    void addEntityListener(ImmutableType immutableType, EntityListener<?> listener);
 
-    void removeEntityListener(ImmutableType immutableType, EntityListener<ImmutableSpi> listener);
+    void removeEntityListener(ImmutableType immutableType, EntityListener<?> listener);
+
+    void addEntityListener(EntityListener<?> listener);
+
+    void removeEntityListener(EntityListener<?> listener);
 
     default void addAssociationListener(TypedProp<?, ?> prop, AssociationListener listener) {
         addAssociationListener(prop.unwrap(), listener);
     }
 
-    void addAssociationListener(ImmutableProp prop, AssociationListener listener);
-
     default void removeAssociationListener(TypedProp<?, ?> prop, AssociationListener listener) {
         removeAssociationListener(prop.unwrap(), listener);
     }
 
+    void addAssociationListener(ImmutableProp prop, AssociationListener listener);
+
     void removeAssociationListener(ImmutableProp prop, AssociationListener listener);
+
+    void addAssociationListener(AssociationListener listener);
+
+    void removeAssociationListener(AssociationListener listener);
 
     default void fireEntityTableChange(Object oldRow, Object newRow, Connection con) {
         fireEntityTableChange(oldRow, newRow, con, null);

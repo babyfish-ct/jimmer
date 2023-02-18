@@ -9,13 +9,17 @@ import org.babyfish.jimmer.spring.repository.SpringTransientResolverProvider;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
+import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.filter.Filter;
+import org.babyfish.jimmer.sql.filter.Filters;
+import org.babyfish.jimmer.sql.kt.KCaches;
 import org.babyfish.jimmer.sql.kt.KSqlClient;
 import org.babyfish.jimmer.sql.kt.KSqlClientKt;
 import org.babyfish.jimmer.sql.kt.filter.KFilter;
+import org.babyfish.jimmer.sql.kt.filter.KFilters;
 import org.babyfish.jimmer.sql.kt.filter.impl.JavaFiltersKt;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.runtime.Executor;
@@ -142,6 +146,34 @@ public class SqlClientConfig {
         return sqlClient;
     }
 
+    @Bean(name = "jimmerCaches")
+    @ConditionalOnMissingBean({Caches.class, KCaches.class})
+    @ConditionalOnProperty(name = "jimmer.language", havingValue = "java", matchIfMissing = true)
+    public Caches caches(JSqlClient sqlClient) {
+        return sqlClient.getCaches();
+    }
+
+    @Bean(name = "jimmerCaches")
+    @ConditionalOnMissingBean({Caches.class, KCaches.class})
+    @ConditionalOnProperty(name = "jimmer.language", havingValue = "kotlin")
+    public KCaches caches(KSqlClient sqlClient) {
+        return sqlClient.getCaches();
+    }
+
+    @Bean(name = "jimmerFilters")
+    @ConditionalOnMissingBean({Filters.class, KFilters.class})
+    @ConditionalOnProperty(name = "jimmer.language", havingValue = "java", matchIfMissing = true)
+    public Filters filters(JSqlClient sqlClient) {
+        return sqlClient.getFilters();
+    }
+
+    @Bean(name = "jimmerFilters")
+    @ConditionalOnMissingBean({Filters.class, KFilters.class})
+    @ConditionalOnProperty(name = "jimmer.language", havingValue = "kotlin")
+    public KFilters filters(KSqlClient sqlClient) {
+        return sqlClient.getFilters();
+    }
+
     private static void preCreateSqlClient(
             JSqlClient.Builder builder,
             ApplicationContext ctx,
@@ -234,15 +266,9 @@ public class SqlClientConfig {
         Triggers[] triggersArr = sqlClient.getTriggerType() == TriggerType.BOTH ?
                 new Triggers[] { sqlClient.getTriggers(), sqlClient.getTriggers(true) } :
                 new Triggers[] { sqlClient.getTriggers() };
-        for (ImmutableType type : sqlClient.getEntityManager().getAllTypes()) {
-            for (Triggers triggers : triggersArr) {
-                triggers.addEntityListener(type, publisher::publishEvent);
-                for (ImmutableProp prop : type.getProps().values()) {
-                    if (prop.isAssociation(TargetLevel.PERSISTENT)) {
-                        triggers.addAssociationListener(prop, publisher::publishEvent);
-                    }
-                }
-            }
+        for (Triggers triggers : triggersArr) {
+            triggers.addEntityListener(publisher::publishEvent);
+            triggers.addAssociationListener(publisher::publishEvent);
         }
 
         for (JimmerInitializer initializer : initializers) {

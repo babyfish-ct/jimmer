@@ -46,7 +46,7 @@ public interface BookStoreRepository extends JRepository<BookStore, Long> {
                 )
                 .select(
                         table.id(),
-                        table.asTableEx().id()
+                        table.asTableEx().books().id()
                 )
                 .execute();
     }
