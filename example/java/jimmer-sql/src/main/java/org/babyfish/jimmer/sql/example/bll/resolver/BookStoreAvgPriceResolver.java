@@ -12,6 +12,8 @@ import org.babyfish.jimmer.sql.example.model.BookProps;
 import org.babyfish.jimmer.sql.example.model.BookStore;
 import org.babyfish.jimmer.sql.example.model.BookStoreProps;
 import org.babyfish.jimmer.sql.filter.Filters;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -40,9 +42,14 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     }
 
     // -----------------------------
-    // If the current calculated property does not use cache(
-    // that is, application will not be run by `application-cache.yml`),
-    // all the following code can be ignored.
+    // If you are a beginner, you can ignore all the following code.
+    //
+    // The following code is only used for cache mode(start the application
+    // by `application.yml`).
+    //
+    // Unlike the fully automatic cache consistency maintenance of
+    // ordinary associated property, if a calculated property uses cache,
+    // its consistency requires manual assistance.
     // -----------------------------
 
     @EventListener
@@ -50,9 +57,11 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
         if (e.getConnection() == null && e.getImmutableProp() == BookStoreProps.BOOKS.unwrap()) {
             // 1. Check whether the association `BookStore.books` is changed,
             //    this event can be caused by 2 cases:
-            //    i. The foreign key of book is changed.
-            //    ii. The `TenantFilter` is enabled and the tenant of book is changed.
-            caches()
+            //    i. The foreign key `Book.store.id` is changed.
+            //    ii. The `TenantFilter` is enabled and the `Book.tenant` is changed.
+
+            Caches caches = bookStoreRepository.sql().getCaches();
+            caches
                     .getPropertyCache(BookStoreProps.AVG_PRICE)
                     .delete(e.getSourceId());
         }
@@ -66,7 +75,8 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
             if (store != null) { // foreign key does not change.
                 // 2, Check whether `Book.price` is changed
                 if (e.getChangedFieldRef(BookProps.PRICE) != null) {
-                    caches()
+                    Caches caches = bookStoreRepository.sql().getCaches();
+                    caches
                             .getPropertyCache(BookStoreProps.AVG_PRICE)
                             .delete(store.id());
                 }
@@ -74,16 +84,10 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
         }
     }
 
+    // Contribute part of the secondary hash key to multiview-cache
     @Override
     public Ref<SortedMap<String, Object>> getParameterMapRef() {
-        return filters().getTargetParameterMapRef(BookStoreProps.BOOKS);
-    }
-
-    private Caches caches() {
-        return bookStoreRepository.sql().getCaches();
-    }
-
-    private Filters filters() {
-        return bookStoreRepository.sql().getFilters();
+        Filters filters = bookStoreRepository.sql().getFilters();
+        return filters.getTargetParameterMapRef(BookStoreProps.BOOKS);
     }
 }
