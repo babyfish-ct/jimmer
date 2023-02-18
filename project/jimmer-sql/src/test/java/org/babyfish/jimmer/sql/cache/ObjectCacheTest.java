@@ -7,6 +7,8 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
 import org.babyfish.jimmer.sql.model.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -47,6 +49,11 @@ public class ObjectCacheTest extends AbstractQueryTest {
                                 public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
                                     return new CacheImpl<>(prop);
                                 }
+
+                                @Override
+                                public Cache<?, ?> createResolverCache(@NotNull ImmutableProp prop) {
+                                    return new CacheImpl<>(prop);
+                                }
                             }
                     )
             );
@@ -54,7 +61,7 @@ public class ObjectCacheTest extends AbstractQueryTest {
     }
 
     @Test
-    public void test() {
+    public void testObject() {
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             connectAndExpect(
@@ -82,6 +89,35 @@ public class ObjectCacheTest extends AbstractQueryTest {
                                         "--->}" +
                                         "]"
                         );
+                    }
+            );
+        }
+    }
+
+    @Test
+    public void testCalculatedAssociation() {
+        BookStoreTable table = BookStoreTable.$;
+        for (int i = 0; i < 2; i++) {
+            boolean useSql = i == 0;
+            executeAndExpect(
+                    sqlClient
+                            .createQuery(table)
+                            .select(
+                                    table.fetch(
+                                            BookStoreFetcher.$
+                                                    .allScalarFields()
+                                                    .newestBooks(
+                                                            BookFetcher.$
+                                                                    .allScalarFields()
+                                                    )
+                                    )
+                            ),
+                    ctx -> {
+                        ctx.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION from BOOK_STORE as tb_1_");
+                        if (useSql) {
+                            ctx.statement(1).sql("select tb_1_.ID, tb_2_.ID from BOOK_STORE as tb_1_ inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID where (tb_2_.NAME, tb_2_.EDITION) in (select tb_3_.NAME, max(tb_3_.EDITION) from BOOK as tb_3_ where tb_3_.STORE_ID in (?, ?) group by tb_3_.NAME)");
+                            ctx.statement(2).sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID from BOOK as tb_1_ where tb_1_.ID in (?, ?, ?, ?)");
+                        }
                     }
             );
         }

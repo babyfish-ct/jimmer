@@ -261,7 +261,7 @@ public abstract class AbstractDataLoader {
                 (ids) -> {
                     TRANSIENT_RESOLVER_CON_LOCAL.set(con);
                     try {
-                        return translateResolvedMap(resolver.resolve(ids), sourceIds);
+                        return resolver.resolve(ids);
                     } finally {
                         TRANSIENT_RESOLVER_CON_LOCAL.remove();
                     }
@@ -275,7 +275,7 @@ public abstract class AbstractDataLoader {
         return Utils.joinCollectionAndMap(
                 sources,
                 this::toSourceId,
-                valueMap
+                translateResolvedMap(valueMap, sourceIds)
         );
     }
 

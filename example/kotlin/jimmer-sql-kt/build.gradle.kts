@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "org.babyfish.jimmer.example.kt"
-version = "0.6.40-0.7-preview"
+version = "0.6.42-0.7-preview"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
@@ -19,11 +19,11 @@ repositories {
 
 dependencies {
 
-	implementation("org.babyfish.jimmer:jimmer-spring-boot-starter:0.6.40-0.7-preview")
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.6.40-0.7-preview")
+	implementation("org.babyfish.jimmer:jimmer-spring-boot-starter:0.6.42-0.7-preview")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.6.42-0.7-preview")
 
 	implementation("org.mapstruct:mapstruct:1.5.3.Final")
-	kapt("org.babyfish.jimmer:jimmer-mapstruct-apt:0.6.40-0.7-preview")
+	kapt("org.babyfish.jimmer:jimmer-mapstruct-apt:0.6.43-0.7-preview")
 
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
