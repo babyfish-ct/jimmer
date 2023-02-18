@@ -27,7 +27,8 @@ type BookStore implements CommonEntity {
     name: String!
     website: String
     avgPrice: BigDecimal!
-    books(name: String): [Book!]!
+    books: [Book!]!
+    newestBooks: [Book!]!
     createdTime: LocalDateTime!
     modifiedTime: LocalDateTime!
 }
@@ -49,7 +50,7 @@ type Author implements CommonEntity {
     firstName: String!
     lastName: String!
     gender: Gender!
-    books(name: String): [Book!]!
+    books: [Book!]!
     createdTime: LocalDateTime!
     modifiedTime: LocalDateTime!
 }

@@ -102,7 +102,7 @@ public class AssociationEvent {
             throw new IllegalArgumentException("prop cannot be null");
         }
         if (!prop.isAssociation(TargetLevel.PERSISTENT)) {
-            throw new IllegalArgumentException("prop must be association");
+            throw new IllegalArgumentException("prop must be persistent association");
         }
         ImmutableProp idProp = prop.getDeclaringType().getIdProp();
         boolean validId = false;

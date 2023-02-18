@@ -25,7 +25,11 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
 
     FieldConfigImpl(ImmutableProp prop, FetcherImpl<?> childFetcher) {
         if (childFetcher != null && !prop.isAssociation(TargetLevel.ENTITY)) {
-            throw new IllegalArgumentException("'" + prop + "' is not entity association");
+            throw new IllegalArgumentException(
+                    "Child fetcher cannot be specified because'" +
+                            prop +
+                            "' is not entity association"
+            );
         }
         this.prop = prop;
         this.childFetcher = childFetcher;

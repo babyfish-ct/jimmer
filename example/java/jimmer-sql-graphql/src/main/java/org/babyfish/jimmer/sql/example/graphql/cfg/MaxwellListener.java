@@ -10,6 +10,10 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
+// -----------------------------
+// If you are a beginner, please ignore this class,
+// for non-cache mode, this class will never be used.
+// -----------------------------
 @ConditionalOnProperty("spring.redis.host")
 @Component
 public class MaxwellListener {
