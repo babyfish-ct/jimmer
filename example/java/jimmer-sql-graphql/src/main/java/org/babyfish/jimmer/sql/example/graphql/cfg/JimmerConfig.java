@@ -59,7 +59,7 @@ public class JimmerConfig {
                     .getClassLoader()
                     .getResourceAsStream("h2-database.sql");
             if (inputStream == null) {
-                throw new RuntimeException("no `h2-database.sql`");
+                throw new RuntimeException("No `h2-database.sql`");
             }
             try (Reader reader = new InputStreamReader(inputStream)) {
                 char[] buf = new char[1024];
