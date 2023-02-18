@@ -38,7 +38,7 @@ class PathParser {
     private boolean parse0(Source source, ImmutableType type) {
         List<ImmutableProp> props = ctx.getOrderedProps(type);
         for (ImmutableProp prop : props) {
-            if (!prop.isReferenceList(TargetLevel.ENTITY) || allowCollection) {
+            if (!prop.isReferenceList(TargetLevel.PERSISTENT) || allowCollection) {
                 if (parse0(source, prop)) {
                     return true;
                 }

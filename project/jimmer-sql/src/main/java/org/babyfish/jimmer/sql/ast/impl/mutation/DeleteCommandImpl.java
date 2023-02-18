@@ -159,7 +159,7 @@ public class DeleteCommandImpl implements DeleteCommand {
                 throw new IllegalStateException("The configuration is frozen");
             }
 
-            if (!prop.isReference(TargetLevel.ENTITY) || !(prop.getStorage() instanceof ColumnDefinition)) {
+            if (!prop.isReference(TargetLevel.PERSISTENT) || !(prop.getStorage() instanceof ColumnDefinition)) {
                 throw new IllegalArgumentException("'" + prop + "' must be an entity reference property bases on foreign key");
             }
             if (dissociateAction == DissociateAction.SET_NULL && !prop.isNullable()) {

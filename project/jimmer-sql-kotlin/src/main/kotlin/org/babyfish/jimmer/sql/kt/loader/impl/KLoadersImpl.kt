@@ -21,9 +21,9 @@ internal class KLoadersImpl(
     ): Map<S, T> =
         prop.toImmutableProp().let {
             when {
-                it.isReferenceList(TargetLevel.ENTITY) ->
+                it.isReferenceList(TargetLevel.PERSISTENT) ->
                     javaLoaders.list<S, T, Table<T>>(it).batchLoad(sources)
-                it.isReference(TargetLevel.ENTITY) ->
+                it.isReference(TargetLevel.PERSISTENT) ->
                     javaLoaders.reference<S, Any, Table<Any>>(it).batchLoad(sources)
                 else ->
                     javaLoaders.value<S, T>(it).batchLoad(sources)

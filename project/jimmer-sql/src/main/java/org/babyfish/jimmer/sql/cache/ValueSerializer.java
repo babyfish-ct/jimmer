@@ -64,7 +64,7 @@ public class ValueSerializer<T> {
             JavaType targetIdType = SimpleType.constructUnsafe(
                     targetIdProp.getElementClass()
             );
-            if (prop.isReferenceList(TargetLevel.ENTITY)) {
+            if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
                 this.valueType = CollectionType.construct(
                         List.class,
                         null,

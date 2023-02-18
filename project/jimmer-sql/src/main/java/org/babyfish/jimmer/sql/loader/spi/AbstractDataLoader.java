@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.query.SortableImplementor;
@@ -47,6 +48,8 @@ import java.util.stream.Collectors;
 public abstract class AbstractDataLoader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDataLoader.class);
+
+    private static final ThreadLocal<Connection> TRANSIENT_RESOLVER_CON_LOCAL = new ThreadLocal<>();
 
     /* For globalFilter is not null but not `Filter.Parameterized` */
     private static final SortedMap<String, Object> ILLEGAL_PARAMETERS =
@@ -85,7 +88,7 @@ public abstract class AbstractDataLoader {
             int limit,
             int offset
     ) {
-        if (!prop.isAssociation(TargetLevel.ENTITY) && !prop.hasTransientResolver()) {
+        if (!prop.isAssociation(TargetLevel.PERSISTENT) && !prop.hasTransientResolver()) {
             throw new IllegalArgumentException(
                     "\"" + prop + "\" is neither association nor transient with resolver"
             );
@@ -136,13 +139,13 @@ public abstract class AbstractDataLoader {
         this.prop = prop;
         this.sourceIdProp = prop.getDeclaringType().getIdProp();
         this.targetIdProp = prop.getTargetType() != null ? prop.getTargetType().getIdProp() : null;
-        if (prop.isAssociation(TargetLevel.ENTITY)) {
+        if (prop.isAssociation(TargetLevel.PERSISTENT)) {
             globalFiler = sqlClient.getFilters().getTargetFilter(prop);
         } else {
             globalFiler = null;
         }
         this.propFilter = (FieldFilter<Table<ImmutableSpi>>) propFilter;
-        if (prop.isReference(TargetLevel.ENTITY) && !prop.isNullable()) {
+        if (prop.isReference(TargetLevel.PERSISTENT) && !prop.isNullable()) {
             if (globalFiler != null) {
                 throw new ExecutionException(
                         "Cannot apply filter \"" +
@@ -162,14 +165,20 @@ public abstract class AbstractDataLoader {
         }
         this.limit = limit;
         this.offset = offset;
-        if (prop.isAssociation(TargetLevel.ENTITY)) {
+        if (prop.isAssociation(TargetLevel.PERSISTENT)) {
             this.resolver = null;
             this.fetcher = fetcher != null ?
                     (Fetcher<ImmutableSpi>) fetcher :
                     new FetcherImpl<>((Class<ImmutableSpi>) prop.getTargetType().getJavaClass());
         } else {
             this.resolver = sqlClient.getResolver(prop);
-            this.fetcher = null;
+            if (prop.isAssociation(TargetLevel.ENTITY)) {
+                this.fetcher = fetcher != null ?
+                        (Fetcher<ImmutableSpi>) fetcher :
+                        new FetcherImpl<>((Class<ImmutableSpi>) prop.getTargetType().getJavaClass());
+            } else {
+                this.fetcher = null;
+            }
         }
     }
 
@@ -187,7 +196,7 @@ public abstract class AbstractDataLoader {
         if (prop.getStorage() instanceof ColumnDefinition) {
             return (Map<ImmutableSpi, Object>)(Map<?, ?>) loadParents(sources);
         }
-        if (prop.isReferenceList(TargetLevel.ENTITY)) {
+        if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
             return (Map<ImmutableSpi, Object>)(Map<?, ?>) loadTargetMultiMap(sources);
         }
         return (Map<ImmutableSpi, Object>)(Map<?, ?>) loadTargetMap(sources);
@@ -232,17 +241,31 @@ public abstract class AbstractDataLoader {
         }
 
         if (!useCache) {
+            Map<Object, Object> resolvedMap;
+            TRANSIENT_RESOLVER_CON_LOCAL.set(con);
+            try {
+                resolvedMap = translateResolvedMap(resolver.resolve(sourceIds), sourceIds);
+            } finally {
+                TRANSIENT_RESOLVER_CON_LOCAL.remove();
+            }
             return Utils.joinCollectionAndMap(
                     sources,
                     this::toSourceId,
-                    resolver.resolve(sourceIds, con)
+                    resolvedMap
             );
         }
 
         CacheEnvironment<Object, Object> env = new CacheEnvironment<>(
                 sqlClient,
                 con,
-                (ids) -> resolver.resolve(ids, con),
+                (ids) -> {
+                    TRANSIENT_RESOLVER_CON_LOCAL.set(con);
+                    try {
+                        return translateResolvedMap(resolver.resolve(ids), sourceIds);
+                    } finally {
+                        TRANSIENT_RESOLVER_CON_LOCAL.remove();
+                    }
+                },
                 false
         );
         Map<Object, Object> valueMap =
@@ -673,10 +696,11 @@ public abstract class AbstractDataLoader {
         return target.__get(targetIdProp.getId());
     }
 
+
     @SuppressWarnings("unchecked")
     private List<ImmutableSpi> findTargets(Collection<Object> targetIds) {
         if (fetcher.getFieldMap().size() > 1) {
-            return sqlClient.getEntities().forConnection(con).findByIds(
+            return ((EntitiesImpl)sqlClient.getEntities()).forLoader().forConnection(con).findByIds(
                     fetcher,
                     targetIds
             );
@@ -746,5 +770,86 @@ public abstract class AbstractDataLoader {
             return false;
         }
         return true;
+    }
+
+    private Map<Object, Object> translateResolvedMap(Map<Object, Object> map, Collection<Object> keys) {
+        map = fetchResolvedMap(map);
+        Object defaultValue = resolver.getDefaultValue();
+        if (defaultValue == null && prop.isReferenceList(TargetLevel.OBJECT)) {
+            defaultValue = Collections.emptyList();
+        }
+        if (defaultValue != null) {
+            for (Object key : keys) {
+                if (map.get(key) == null) {
+                    map.putIfAbsent(key, defaultValue);
+                }
+            }
+        }
+        return map;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<Object, Object> fetchResolvedMap(Map<Object, Object> map) {
+        if (map.isEmpty() || !prop.isAssociation(TargetLevel.OBJECT) || !prop.getTargetType().isEntity()) {
+            return map;
+        }
+        Collection<Object> targetIds = new LinkedHashSet<>();
+        if (prop.isReferenceList(TargetLevel.OBJECT)) {
+            for (Object mapValue : map.values()) {
+                for (Object targetId : (Collection<Object>)mapValue) {
+                    if (targetId != null) {
+                        targetIds.add(targetId);
+                    }
+                }
+            }
+        } else {
+            for (Object targetId : map.values()) {
+                if (targetId != null) {
+                    targetIds.add(targetId);
+                }
+            }
+        }
+
+        List<ImmutableSpi> targets = findTargets(targetIds);
+        if (targets.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        Map<Object, ImmutableSpi> targetMap = new HashMap<>((targets.size() * 4 + 2) / 3);
+        int targetIdPropId = prop.getTargetType().getIdProp().getId();
+        for (ImmutableSpi target : targets) {
+            targetMap.put(target.__get(targetIdPropId), target);
+        }
+
+        Map<Object, Object> translatedMap = new LinkedHashMap<>((map.size() * 4 + 2) / 3);
+        if (prop.isReferenceList(TargetLevel.OBJECT)) {
+            for (Map.Entry<Object, Object> e : map.entrySet()) {
+                Collection<Object> subCollection = (Collection<Object>) e.getValue();
+                List<ImmutableSpi> targetList = new ArrayList<>(subCollection.size());
+                for (Object targetId : subCollection) {
+                    ImmutableSpi target = targetMap.get(targetId);
+                    if (target != null) {
+                        targetList.add(target);
+                    }
+                }
+                translatedMap.put(e.getKey(), targetList);
+            }
+        } else {
+            for (Map.Entry<Object, Object> e : map.entrySet()) {
+                ImmutableSpi target = targetMap.get(e.getValue());
+                if (target != null) {
+                    translatedMap.put(e.getKey(), target);
+                }
+            }
+        }
+        return translatedMap;
+    }
+
+    public static Connection transientResolverConnection() {
+        Connection con = TRANSIENT_RESOLVER_CON_LOCAL.get();
+        if (con == null) {
+            throw new IllegalStateException("The current thread is not resolving any transient property");
+        }
+        return con;
     }
 }

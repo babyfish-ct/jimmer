@@ -59,7 +59,7 @@ public class LoadersImpl implements Loaders {
     }
 
     public <SE, TE, TT extends Table<TE>> FilterableReferenceLoader<SE, TE, TT> reference(ImmutableProp prop) {
-        if (!prop.isReference(TargetLevel.ENTITY)) {
+        if (!prop.isReference(TargetLevel.PERSISTENT)) {
             throw new IllegalArgumentException(
                     "Cannot create reference loader for \"" + prop + "\", it is not entity reference association"
             );
@@ -68,7 +68,7 @@ public class LoadersImpl implements Loaders {
     }
 
     public <SE, TE, TT extends Table<TE>> FilterableListLoader<SE, TE, TT> list(ImmutableProp prop) {
-        if (!prop.isReferenceList(TargetLevel.ENTITY)) {
+        if (!prop.isReferenceList(TargetLevel.PERSISTENT)) {
             throw new IllegalArgumentException(
                     "Cannot create list loader for \"" + prop + "\", it is not entity list association"
             );

@@ -263,7 +263,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     public boolean isEmbedded(EmbeddedLevel level) {
         ImmutableType targetType = getTargetType();
         if (level.hasReference() &&
-                isReference(TargetLevel.ENTITY) &&
+                isReference(TargetLevel.PERSISTENT) &&
                 targetType.getIdProp().isEmbedded(EmbeddedLevel.SCALAR)
         ) {
             return true;
@@ -287,20 +287,27 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     @Override
     public boolean isAssociation(TargetLevel level) {
-        return this.category.isAssociation() &&
-                (level == TargetLevel.OBJECT || !isTransient && getTargetType().isEntity());
+        if (!this.category.isAssociation()) {
+            return false;
+        }
+        int ordinal = level.ordinal();
+        if (ordinal >= TargetLevel.ENTITY.ordinal() && !getTargetType().isEntity()) {
+            return false;
+        }
+        if (ordinal >= TargetLevel.PERSISTENT.ordinal() && isTransient) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean isReference(TargetLevel level) {
-        return this.category == ImmutablePropCategory.REFERENCE &&
-                (level == TargetLevel.OBJECT || !isTransient && getTargetType().isEntity());
+        return this.category == ImmutablePropCategory.REFERENCE && isAssociation(level);
     }
 
     @Override
     public boolean isReferenceList(TargetLevel level) {
-        return this.category == ImmutablePropCategory.REFERENCE_LIST &&
-                (level == TargetLevel.OBJECT || !isTransient && getTargetType().isEntity());
+        return this.category == ImmutablePropCategory.REFERENCE_LIST && isAssociation(level);
     }
 
     @Override
@@ -531,7 +538,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         List<OrderedItem> orderedItems = this.orderedItems;
         if (orderedItems == null) {
             OrderedProp[] orderedProps = null;
-            if (isReferenceList(TargetLevel.ENTITY)) {
+            if (isReferenceList(TargetLevel.PERSISTENT)) {
                 OneToMany oneToMany = getAnnotation(OneToMany.class);
                 if (oneToMany != null) {
                     orderedProps = oneToMany.orderedProps();
@@ -569,7 +576,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
                                         "\""
                         );
                     }
-                    if (!prop.isScalar(TargetLevel.ENTITY)) {
+                    if (!prop.isScalar(TargetLevel.PERSISTENT)) {
                         throw new ModelException(
                                 "Illegal property \"" +
                                         this +
@@ -592,7 +599,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         if (mappedByResolved) {
             return mappedBy;
         }
-        if (isAssociation(TargetLevel.ENTITY)) {
+        if (isAssociation(TargetLevel.PERSISTENT)) {
             validateDeclaringEntity("mappedBy");
             String mappedBy = "";
             OneToOne oneToOne = getAnnotation(OneToOne.class);
@@ -656,7 +663,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
                                     "\" is one-to-one property"
                     );
                 }
-                if (resolved.isReferenceList(TargetLevel.ENTITY) &&
+                if (resolved.isReferenceList(TargetLevel.PERSISTENT) &&
                         associationAnnotation.annotationType() != ManyToMany.class
                 ) {
                     throw new ModelException(
@@ -696,7 +703,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         if (oppositeResolved) {
             return opposite;
         }
-        if (isAssociation(TargetLevel.ENTITY)) {
+        if (isAssociation(TargetLevel.PERSISTENT)) {
             validateDeclaringEntity("opposite");
             opposite = getMappedBy();
             if (opposite == null) {
@@ -750,7 +757,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
                                 );
                             }
                             boolean isValid = prop.isFormula() || (
-                                    prop.getStorage() != null && !prop.isReference(TargetLevel.ENTITY)
+                                    prop.getStorage() != null && !prop.isReference(TargetLevel.PERSISTENT)
                             );
                             if (!isValid) {
                                 throw new ModelException(

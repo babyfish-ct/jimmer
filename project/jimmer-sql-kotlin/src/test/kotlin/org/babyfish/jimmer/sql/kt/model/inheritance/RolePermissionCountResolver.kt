@@ -21,7 +21,7 @@ class RolePermissionCountResolver(
         }
     }
 
-    override fun resolve(ids: Collection<Long>, con: Connection): Map<Long, Int> =
+    override fun resolve(ids: Collection<Long>): Map<Long, Int> =
         sqlClient
             .createQuery(Permission::class) {
                 where(table.role.id valueIn ids)
@@ -31,7 +31,7 @@ class RolePermissionCountResolver(
                     count(table)
                 )
             }
-            .execute(con)
+            .execute(KTransientResolver.currentConnection)
             .associateBy({
                 it._1
             }) {

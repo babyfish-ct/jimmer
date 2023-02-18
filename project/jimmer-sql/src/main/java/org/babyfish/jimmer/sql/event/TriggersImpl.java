@@ -111,7 +111,7 @@ public class TriggersImpl implements Triggers {
         }
         ImmutableType type = event.getImmutableType();
         for (ImmutableProp prop : type.getProps().values()) {
-            if (prop.getStorage() instanceof ColumnDefinition && prop.isAssociation(TargetLevel.ENTITY)) {
+            if (prop.getStorage() instanceof ColumnDefinition && prop.isAssociation(TargetLevel.PERSISTENT)) {
                 ChangedRef<Object> changedRef = event.getChangedFieldRef(prop);
                 if (changedRef != null) {
                     ChangedRef<Object> fkRef = changedRef.toIdRef();

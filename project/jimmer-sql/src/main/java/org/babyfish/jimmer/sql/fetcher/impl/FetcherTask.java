@@ -187,7 +187,7 @@ class FetcherTask {
         }
         int size = field.getBatchSize();
         if (size == 0) {
-            if (field.getProp().isReferenceList(TargetLevel.ENTITY)) {
+            if (field.getProp().isReferenceList(TargetLevel.PERSISTENT)) {
                 return sqlClient.getDefaultListBatchSize();
             }
             return sqlClient.getDefaultBatchSize();
@@ -196,7 +196,7 @@ class FetcherTask {
     }
 
     private void setDraftProp(DraftSpi draft, Object value) {
-        if (value == null && field.getProp().isReferenceList(TargetLevel.ENTITY)) {
+        if (value == null && field.getProp().isReferenceList(TargetLevel.PERSISTENT)) {
             draft.__set(field.getProp().getId(), Collections.emptyList());
         } else {
             draft.__set(field.getProp().getId(), value);

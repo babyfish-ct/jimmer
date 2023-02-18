@@ -71,7 +71,7 @@ class ValueParser {
             }
         } else {
             Object value;
-            if (entityProp.isAssociation(TargetLevel.ENTITY)) {
+            if (entityProp.isAssociation(TargetLevel.PERSISTENT)) {
                 ImmutableProp targetIdProp = entityProp.getTargetType().getIdProp();
                 Object valueId = ValueParser.parseSingleValue(
                         sqlClient,

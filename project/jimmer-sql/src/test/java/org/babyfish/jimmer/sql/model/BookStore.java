@@ -4,6 +4,11 @@ import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 
 import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.model.calc.BookStoreAvgPriceResolver;
+import org.babyfish.jimmer.sql.model.calc.BookStoreMostPopularAuthorResolver;
+import org.babyfish.jimmer.sql.model.calc.BookStoreNewestBooksResolver;
+import org.jetbrains.annotations.Nullable;
+
 import javax.validation.constraints.Null;
 import java.math.BigDecimal;
 import java.util.List;
@@ -25,9 +30,16 @@ public interface BookStore {
     @Version
     int version();
 
+    @OneToMany(mappedBy = "store")
+    List<Book> books();
+
     @Transient(BookStoreAvgPriceResolver.class)
     BigDecimal avgPrice();
 
-    @OneToMany(mappedBy = "store")
-    List<Book> books();
+    @Nullable
+    @Transient(BookStoreMostPopularAuthorResolver.class)
+    Author mostPopularAuthor();
+
+    @Transient(BookStoreNewestBooksResolver.class)
+    List<Book> newestBooks();
 }

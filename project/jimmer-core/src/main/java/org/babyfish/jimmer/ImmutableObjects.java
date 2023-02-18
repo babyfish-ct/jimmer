@@ -216,7 +216,7 @@ public class ImmutableObjects {
             ImmutableSpi spi = (ImmutableSpi) immutable;
             ImmutableType type = spi.__type();
             for (ImmutableProp prop : type.getProps().values()) {
-                if (prop.isAssociation(TargetLevel.ENTITY) && spi.__isLoaded(prop.getId())) {
+                if (prop.isAssociation(TargetLevel.PERSISTENT) && spi.__isLoaded(prop.getId())) {
                     if (prop.getStorage() instanceof ColumnDefinition) {
                         ImmutableSpi target = (ImmutableSpi) spi.__get(prop.getId());
                         if (target != null && !isIdOnly(target)) {
@@ -241,7 +241,7 @@ public class ImmutableObjects {
         return (T)Internal.produce(type, immutable, draft -> {
             for (ImmutableProp prop : type.getProps().values()) {
                 int propId = prop.getId();
-                if (prop.isAssociation(TargetLevel.ENTITY) && spi.__isLoaded(propId)) {
+                if (prop.isAssociation(TargetLevel.PERSISTENT) && spi.__isLoaded(propId)) {
                     if (prop.getStorage() instanceof ColumnDefinition) {
                         ImmutableSpi target = (ImmutableSpi) spi.__get(propId);
                         if (target != null) {

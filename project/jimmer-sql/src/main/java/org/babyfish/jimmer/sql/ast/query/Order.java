@@ -229,11 +229,11 @@ public class Order {
 
     public static Expression<?> orderedExpression(Props table, String path) {
         List<ImmutableProp> props = orderedPropChain(table.getImmutableType(), path);
-        boolean allNullable = props.stream().filter(it -> it.isReference(TargetLevel.ENTITY)).allMatch(ImmutableProp::isNullable);
+        boolean allNullable = props.stream().filter(it -> it.isReference(TargetLevel.PERSISTENT)).allMatch(ImmutableProp::isNullable);
         Props source = table;
         Expression<?> expr = null;
         for (ImmutableProp prop : props) {
-            if (prop.isReference(TargetLevel.ENTITY)) {
+            if (prop.isReference(TargetLevel.PERSISTENT)) {
                 source = source.join(prop.getName(), allNullable ? JoinType.LEFT : JoinType.INNER);
             } else if (expr != null) {
                 expr = ((PropExpression.Embedded<?>)expr).get(prop.getName());
@@ -289,7 +289,7 @@ public class Order {
                                 "\" is the last property of the path but it is not scalar"
                 );
             }
-            if (!restPath.isEmpty() && !prop.isReference(TargetLevel.ENTITY) && !prop.isEmbedded(EmbeddedLevel.BOTH)) {
+            if (!restPath.isEmpty() && !prop.isReference(TargetLevel.PERSISTENT) && !prop.isEmbedded(EmbeddedLevel.BOTH)) {
                 throw new IllegalArgumentException(
                         "Cannot resolve ordered property path \"" +
                                 path +

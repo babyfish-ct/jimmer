@@ -2,6 +2,7 @@ package org.babyfish.jimmer.spring.cfg;
 
 import kotlin.Unit;
 import org.babyfish.jimmer.spring.repository.SpringConnectionManager;
+import org.babyfish.jimmer.spring.repository.SpringTransientResolverProvider;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
@@ -19,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -35,9 +37,11 @@ public class SqlClientConfig {
     @ConditionalOnMissingBean({JSqlClient.class, KSqlClient.class})
     @ConditionalOnProperty(name = "jimmer.language", havingValue = "java", matchIfMissing = true)
     public JSqlClient javaSqlClient(
+            ApplicationContext ctx,
             JimmerProperties properties,
             @Autowired(required = false) DataSource dataSource,
             @Autowired(required = false) SpringConnectionManager connectionManager,
+            @Autowired(required = false) SpringTransientResolverProvider transientResolverProvider,
             @Autowired(required = false) EntityManager entityManager,
             @Autowired(required = false) Dialect dialect,
             @Autowired(required = false) Executor executor,
@@ -57,10 +61,12 @@ public class SqlClientConfig {
         }
         JSqlClient.Builder builder = JSqlClient.newBuilder();
         preCreateSqlClient(
+                ctx,
                 builder,
                 properties,
                 dataSource,
                 connectionManager,
+                transientResolverProvider,
                 entityManager,
                 dialect,
                 executor,
@@ -79,9 +85,11 @@ public class SqlClientConfig {
     @ConditionalOnMissingBean({JSqlClient.class, KSqlClient.class})
     @ConditionalOnProperty(name = "jimmer.language", havingValue = "kotlin")
     public KSqlClient kotlinSqlClient(
+            ApplicationContext ctx,
             JimmerProperties properties,
             @Autowired(required = false) DataSource dataSource,
             @Autowired(required = false) SpringConnectionManager connectionManager,
+            @Autowired(required = false) SpringTransientResolverProvider transientResolverProvider,
             @Autowired(required = false) EntityManager entityManager,
             @Autowired(required = false) Dialect dialect,
             @Autowired(required = false) Executor executor,
@@ -101,10 +109,12 @@ public class SqlClientConfig {
         }
         KSqlClient sqlClient = KSqlClientKt.newKSqlClient(dsl -> {
             preCreateSqlClient(
+                    ctx,
                     dsl.getJavaBuilder(),
                     properties,
                     dataSource,
                     connectionManager,
+                    transientResolverProvider,
                     entityManager,
                     dialect,
                     executor,
@@ -124,10 +134,12 @@ public class SqlClientConfig {
     }
 
     private static void preCreateSqlClient(
+            ApplicationContext ctx,
             JSqlClient.Builder builder,
             JimmerProperties properties,
             DataSource dataSource,
             SpringConnectionManager connectionManager,
+            SpringTransientResolverProvider transientResolverProvider,
             EntityManager entityManager,
             Dialect dialect,
             Executor executor,
@@ -141,6 +153,11 @@ public class SqlClientConfig {
             builder.setConnectionManager(connectionManager);
         } else if (dataSource != null) {
             builder.setConnectionManager(new SpringConnectionManager(dataSource));
+        }
+        if (transientResolverProvider != null) {
+            builder.setTransientResolverProvider(transientResolverProvider);
+        } else {
+            builder.setTransientResolverProvider(new SpringTransientResolverProvider(ctx));
         }
 
         if (entityManager != null) {

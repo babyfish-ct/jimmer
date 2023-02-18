@@ -120,7 +120,7 @@ public class ExampleImpl<E> implements Example<E> {
     }
 
     private static Expression<Object> expressionOf(Table<?> table, ImmutableProp prop, JoinType joinType) {
-        if (prop.isReference(TargetLevel.ENTITY)) {
+        if (prop.isReference(TargetLevel.PERSISTENT)) {
             Table<?> joinedExpr = table.join(prop.getName(), joinType);
             return joinedExpr.get(prop.getTargetType().getIdProp().getName());
         }
@@ -129,7 +129,7 @@ public class ExampleImpl<E> implements Example<E> {
 
     private static Object valueOf(ImmutableSpi spi, ImmutableProp prop) {
         Object value = spi.__get(prop.getId());
-        if (value != null && prop.isReference(TargetLevel.ENTITY)) {
+        if (value != null && prop.isReference(TargetLevel.PERSISTENT)) {
             return ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getId());
         }
         return value;

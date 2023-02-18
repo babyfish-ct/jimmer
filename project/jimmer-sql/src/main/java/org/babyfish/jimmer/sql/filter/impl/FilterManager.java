@@ -558,7 +558,7 @@ public class FilterManager implements Filters {
         for (Map.Entry<ImmutableProp, LocatedCache<?, ?>> entry : caches.getPropCacheMap().entrySet()) {
             ImmutableProp prop = entry.getKey();
             Cache<?, ?> cache = entry.getValue();
-            if (prop.isAssociation(TargetLevel.ENTITY)) {
+            if (prop.isAssociation(TargetLevel.PERSISTENT)) {
                 List<Filter<Props>> filters = allCacheableCache.get(prop.getTargetType());
                 if (!filters.isEmpty()) {
                     sqlClient.getTriggers().addEntityListener(prop.getTargetType(), e -> {
@@ -577,7 +577,7 @@ public class FilterManager implements Filters {
         if (!(sqlClient.getCaches().getPropertyCache(prop) instanceof Cache.Parameterized<?, ?>)) {
             return;
         }
-        if (prop.isReferenceList(TargetLevel.ENTITY)) {
+        if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
             ImmutableProp mappedBy = prop.getMappedBy();
             if (mappedBy != null && mappedBy.getStorage() instanceof ColumnDefinition) {
                 if (e.getUnchangedFieldRef(mappedBy) == null) {

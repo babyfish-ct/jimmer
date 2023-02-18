@@ -31,7 +31,7 @@ public class Path {
     }
 
     public boolean isScalar() {
-        return props.get(props.size() - 1).isScalar(TargetLevel.ENTITY);
+        return props.get(props.size() - 1).isScalar(TargetLevel.PERSISTENT);
     }
 
     public Class<?> getType() {

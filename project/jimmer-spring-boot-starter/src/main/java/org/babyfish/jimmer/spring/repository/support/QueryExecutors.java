@@ -276,7 +276,7 @@ public class QueryExecutors {
     private static Selection<?> astSelection(Table<?> table, Path path, boolean outerJoin) {
         PropExpression<?> propExpr = null;
         for (ImmutableProp prop : path.getProps()) {
-            if (prop.isAssociation(TargetLevel.ENTITY)) {
+            if (prop.isAssociation(TargetLevel.PERSISTENT)) {
                 table = table.join(prop.getName(), outerJoin ? JoinType.LEFT : JoinType.INNER);
             } else if (propExpr instanceof PropExpression.Embedded<?>) {
                 propExpr = ((PropExpression.Embedded<?>) propExpr).get(prop.getName());

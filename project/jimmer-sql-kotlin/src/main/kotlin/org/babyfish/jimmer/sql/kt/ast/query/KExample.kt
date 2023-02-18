@@ -44,7 +44,7 @@ class KExample<E: Any> internal constructor(
 
         @JvmStatic
         private fun expressionOf(table: Table<*>, prop: ImmutableProp, outer: Boolean): Expression<Any?> =
-            if (prop.isReference(TargetLevel.ENTITY)) {
+            if (prop.isReference(TargetLevel.PERSISTENT)) {
                 val joinedExpr =
                     if (outer) {
                         table.join<Table<*>>(prop.name, JoinType.LEFT)
@@ -60,7 +60,7 @@ class KExample<E: Any> internal constructor(
         @JvmStatic
         private fun valueOf(spi: ImmutableSpi, prop: ImmutableProp): Any? =
             spi.__get(prop.id)?.let {
-                if (prop.isReference(TargetLevel.ENTITY)) {
+                if (prop.isReference(TargetLevel.PERSISTENT)) {
                     (it as ImmutableSpi).__get(prop.targetType.idProp.name)
                 } else {
                     it

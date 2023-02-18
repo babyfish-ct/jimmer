@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
  * This annotation is required by simple calculation property.
  *
  * Example1: Simple calculation based on java/kt expression
- * {@code
+ * <pre>{@code
  * public interface Employee {
  *
  *     ... omit other properties...
@@ -32,10 +32,10 @@ import java.lang.annotation.Target;
  *     default Long getDepartmentId() {
  *         return department() != null ? department.getId() : null;
  *     }
- * }
+ * }}</pre>
  *
  * Example2: Simple calculation based on SQL expression(jimmer-trigger is not used)
- * {@code
+ * <pre>{@code
  * public interface Employee {
  *
  *     ... omit other properties...
@@ -52,14 +52,14 @@ import java.lang.annotation.Target;
  *
  *     @Formula(sql = "DEPARTMENT_ID")
  *     Long getDepartmentId();
- * }
+ * }}</pre>
  *
  * Example3: Simple calculation based on SQL expression(
  * jimmer-trigger is used and you hope
  * the event for formula property will be raised
  * when events for dependency properties are raised)
  *
- * {@code
+ * <pre>{@code
  * public interface Employee {
  *
  *     ... omit other properties...
@@ -82,14 +82,14 @@ import java.lang.annotation.Target;
  *         dependencies = "department"
  *     )
  *     Long getDepartmentId();
- * }
- *
- * </code></pre>
+ * }}</pre>
  *
  * For complex calculation, please view
  * {@link org.babyfish.jimmer.sql.Transient},
  * `org.babyfish.jimmer.sql.TransientResolver` of jimmer-sql and
  * `org.babyfish.jimmer.sql.kt.KTransientResolver` of jimmer-sql-kotlin
+ *
+ * @see org.babyfish.jimmer.sql.Transient
  */
 @Retention(RetentionPolicy.RUNTIME)
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
