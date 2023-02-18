@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.impl
 
+import org.babyfish.jimmer.Input
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.Entities
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl
@@ -136,6 +137,13 @@ internal class KEntitiesImpl(
             }
             .execute(con)
             .let { KSimpleSaveResultImpl(it) }
+
+    override fun <E : Any> save(
+        input: Input<E>,
+        con: Connection?,
+        block: (KSaveCommandDsl.() -> Unit)?
+    ): KSimpleSaveResult<E> =
+        save(input.toEntity(), con, block)
 
     override fun <E : Any> batchSave(
         entities: Collection<E>,

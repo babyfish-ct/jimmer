@@ -18,23 +18,23 @@ internal class KTriggersImpl(
         javaTriggers.addEntityListener(entityType.java, listener)
     }
 
-    override fun addEntityListener(immutableType: ImmutableType, listener: EntityListener<ImmutableSpi>) {
+    override fun addEntityListener(immutableType: ImmutableType?, listener: EntityListener<*>) {
         javaTriggers.addEntityListener(immutableType, listener)
+    }
+
+    override fun removeEntityListener(immutableType: ImmutableType?, listener: EntityListener<*>) {
+        javaTriggers.removeEntityListener(immutableType, listener)
     }
 
     override fun <E : Any> removeEntityListener(entityType: KClass<E>, listener: EntityListener<E>) {
         javaTriggers.removeEntityListener(entityType.java, listener)
     }
 
-    override fun removeEntityListener(immutableType: ImmutableType, listener: EntityListener<ImmutableSpi>) {
-        javaTriggers.removeEntityListener(immutableType, listener)
-    }
-
-    override fun addAssociationListener(prop: ImmutableProp, listener: AssociationListener) {
+    override fun addAssociationListener(prop: ImmutableProp?, listener: AssociationListener) {
         javaTriggers.addAssociationListener(prop, listener)
     }
 
-    override fun removeAssociationListener(prop: ImmutableProp, listener: AssociationListener) {
+    override fun removeAssociationListener(prop: ImmutableProp?, listener: AssociationListener) {
         javaTriggers.removeAssociationListener(prop, listener)
     }
 

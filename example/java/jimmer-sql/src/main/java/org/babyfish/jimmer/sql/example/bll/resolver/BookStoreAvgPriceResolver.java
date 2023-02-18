@@ -39,9 +39,15 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
                 );
     }
 
+    // -----------------------------
+    // If the current calculated property does not use cache(
+    // that is, application will not be run by `application-cache.yml`),
+    // all the following code can be ignored.
+    // -----------------------------
+
     @EventListener
     public void onAssociationChanged(AssociationEvent e) {
-        if (e.getImmutableProp() == BookStoreProps.BOOKS.unwrap()) {
+        if (e.getConnection() == null && e.getImmutableProp() == BookStoreProps.BOOKS.unwrap()) {
             // 1. Check whether the association `BookStore.books` is changed,
             //    this event can be caused by 2 cases:
             //    i. The foreign key of book is changed.
@@ -54,7 +60,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 
     @EventListener
     public void onEntityChanged(EntityEvent<?> e) {
-        if (e.getImmutableType().getJavaClass() == Book.class) {
+        if (e.getConnection() == null && e.getImmutableType().getJavaClass() == Book.class) {
             Ref<BookStore> storeRef = e.getUnchangedFieldRef(BookProps.STORE);
             BookStore store = storeRef != null ? storeRef.getValue() : null;
             if (store != null) { // foreign key does not change.

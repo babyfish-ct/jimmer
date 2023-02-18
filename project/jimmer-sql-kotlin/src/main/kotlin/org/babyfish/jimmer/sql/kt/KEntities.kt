@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt
 
+import org.babyfish.jimmer.Input
 import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
@@ -47,6 +48,12 @@ interface KEntities {
 
     fun <E: Any> save(
         entity: E,
+        con: Connection? = null,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KSimpleSaveResult<E>
+
+    fun <E: Any> save(
+        input: Input<E>,
         con: Connection? = null,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E>

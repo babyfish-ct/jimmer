@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql;
 
+import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.mutation.*;
@@ -80,6 +81,22 @@ public interface Entities {
             return command;
         }
         return command.configure(AbstractEntitySaveCommand.Cfg::setAutoAttachingAll);
+    }
+
+    default <E> SimpleSaveResult<E> save(Input<E> input) {
+        return save(input.toEntity());
+    }
+
+    default <E> SimpleSaveResult<E> save(Input<E> input, boolean autoAttachingAll) {
+        return save(input.toEntity(), autoAttachingAll);
+    }
+
+    default <E> SimpleEntitySaveCommand<E> saveCommand(Input<E> input) {
+        return saveCommand(input.toEntity());
+    }
+
+    default <E> SimpleEntitySaveCommand<E> saveCommand(Input<E> input, boolean autoAttachAll) {
+        return saveCommand(input.toEntity(), autoAttachAll);
     }
 
     default DeleteResult delete(Class<?> entityType, Object id) {

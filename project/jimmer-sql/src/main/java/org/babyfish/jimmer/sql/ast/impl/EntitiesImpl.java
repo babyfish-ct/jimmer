@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -400,11 +401,29 @@ public class EntitiesImpl implements Entities {
         if (entity instanceof Collection<?>) {
             throw new IllegalArgumentException("entity cannot be collection, do you want to call 'batchSaveCommand'?");
         }
-        return new SimpleEntitySaveCommandImpl<>(sqlClient, con, entity);
+        if (entity instanceof Input<?>) {
+            throw new IllegalArgumentException(
+                    "entity cannot be input, " +
+                            "please call another overloaded function whose parameter is input"
+            );
+        }
+        return new SimpleEntitySaveCommandImpl<>(
+                sqlClient,
+                con,
+                entity
+        );
     }
 
     @Override
     public <E> BatchEntitySaveCommand<E> batchSaveCommand(Collection<E> entities) {
+        for (E e : entities) {
+            if (e instanceof Input<?>) {
+                throw new IllegalArgumentException(
+                        "the collection cannot contains input, " +
+                                "please call another overloaded function whose parameter is input collection"
+                );
+            }
+        }
         return new BatchEntitySaveCommandImpl<>(sqlClient, con, entities);
     }
 
@@ -414,7 +433,10 @@ public class EntitiesImpl implements Entities {
             Object id
     ) {
         if (id instanceof Collection<?>) {
-            throw new IllegalArgumentException("id cannot be collection, do you want to call 'batchDeleteCommand'?");
+            throw new IllegalArgumentException("`id` cannot be collection, do you want to call 'batchDeleteCommand'?");
+        }
+        if ((id instanceof ImmutableSpi && ((ImmutableSpi)id).__type().isEntity()) || id instanceof Input<?>) {
+            throw new IllegalArgumentException("`id` must be simple type");
         }
         return batchDeleteCommand(entityType, Collections.singleton(id));
     }
@@ -424,6 +446,11 @@ public class EntitiesImpl implements Entities {
             Class<?> entityType,
             Collection<?> ids
     ) {
+        for (Object id : ids) {
+            if ((id instanceof ImmutableSpi && ((ImmutableSpi)id).__type().isEntity()) || id instanceof Input<?>) {
+                throw new IllegalArgumentException("All the elements of `ids` must be simple type");
+            }
+        }
         ImmutableType immutableType = ImmutableType.get(entityType);
         return new DeleteCommandImpl(sqlClient, con, immutableType, ids);
     }

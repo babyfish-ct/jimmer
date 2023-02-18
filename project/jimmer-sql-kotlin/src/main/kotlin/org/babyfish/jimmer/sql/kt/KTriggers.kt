@@ -3,8 +3,6 @@ package org.babyfish.jimmer.sql.kt
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
-import org.babyfish.jimmer.runtime.ImmutableSpi
-import org.babyfish.jimmer.sql.association.meta.AssociationType
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.event.AssociationListener
 import org.babyfish.jimmer.sql.event.EntityListener
@@ -18,9 +16,9 @@ interface KTriggers {
 
     fun <E: Any> removeEntityListener(entityType: KClass<E>, listener: EntityListener<E>)
 
-    fun addEntityListener(immutableType: ImmutableType, listener: EntityListener<ImmutableSpi>)
+    fun addEntityListener(immutableType: ImmutableType? = null, listener: EntityListener<*>)
 
-    fun removeEntityListener(immutableType: ImmutableType, listener: EntityListener<ImmutableSpi>)
+    fun removeEntityListener(immutableType: ImmutableType? = null, listener: EntityListener<*>)
 
     fun addAssociationListener(
         prop: KProperty1<*, *>,
@@ -36,9 +34,9 @@ interface KTriggers {
         removeAssociationListener(prop.toImmutableProp(), listener)
     }
 
-    fun addAssociationListener(prop: ImmutableProp, listener: AssociationListener)
+    fun addAssociationListener(prop: ImmutableProp? = null, listener: AssociationListener)
 
-    fun removeAssociationListener(prop: ImmutableProp, listener: AssociationListener)
+    fun removeAssociationListener(prop: ImmutableProp? = null, listener: AssociationListener)
 
     fun fireEntityTableChange(oldRow: Any, newRow: Any, con: Connection? = null, reason: Any? = null)
 
