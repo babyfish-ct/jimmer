@@ -4,7 +4,6 @@ import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.sql.JoinColumns;
 import org.babyfish.jimmer.sql.meta.*;
 
 import java.util.ArrayList;
@@ -23,7 +22,7 @@ public class PropChains {
         if (prop.isEmbedded(EmbeddedLevel.BOTH)) {
             MultipleJoinColumns multipleJoinColumns = null;
             List<ImmutableProp> baseChain;
-            if (prop.isReference(TargetLevel.ENTITY)) {
+            if (prop.isReference(TargetLevel.PERSISTENT)) {
                 Storage storage = prop.getStorage();
                 if (storage instanceof MultipleJoinColumns) {
                     multipleJoinColumns = (MultipleJoinColumns) storage;

@@ -58,12 +58,12 @@ public class CacheConfig {
                     }
                 }
                 for (ImmutableProp prop : type.getProps().values()) {
-                    if (prop.isAssociation(TargetLevel.ENTITY) || prop.hasTransientResolver()) {
+                    if (prop.isAssociation(TargetLevel.PERSISTENT) || prop.hasTransientResolver()) {
                         if (!propCacheMap.containsKey(prop)) {
                             Cache<?, ?> propCache =
                                     prop.hasTransientResolver() ?
                                             cacheFactory.createResolverCache(prop) : (
-                                            prop.isReferenceList(TargetLevel.ENTITY) ?
+                                            prop.isReferenceList(TargetLevel.PERSISTENT) ?
                                                     cacheFactory.createAssociatedIdListCache(prop) :
                                                     cacheFactory.createAssociatedIdCache(prop)
                                     );
@@ -106,7 +106,7 @@ public class CacheConfig {
             ImmutableProp prop,
             Cache<?, ?> cache
     ) {
-        if (!prop.isReference(TargetLevel.ENTITY)) {
+        if (!prop.isReference(TargetLevel.PERSISTENT)) {
             throw new IllegalArgumentException("The prop \"" + prop + "\" is not entity reference");
         }
         if (!prop.getDeclaringType().isEntity()) {
@@ -129,7 +129,7 @@ public class CacheConfig {
             ImmutableProp prop,
             Cache<?, List<?>> cache
     ) {
-        if (!prop.isReferenceList(TargetLevel.ENTITY)) {
+        if (!prop.isReferenceList(TargetLevel.PERSISTENT)) {
             throw new IllegalArgumentException("The prop \"" + prop + "\" is not entity list");
         }
         if (!prop.getDeclaringType().isEntity()) {
@@ -176,7 +176,7 @@ public class CacheConfig {
 
     Caches build(Triggers triggers) {
         for (ImmutableProp prop : propCacheMap.keySet()) {
-            if (prop.isAssociation(TargetLevel.ENTITY) && !objectCacheMap.containsKey(prop.getTargetType())) {
+            if (prop.isAssociation(TargetLevel.PERSISTENT) && !objectCacheMap.containsKey(prop.getTargetType())) {
                 throw new IllegalStateException(
                         "The cache for association property \"" +
                                 prop +

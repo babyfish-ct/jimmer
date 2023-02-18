@@ -39,7 +39,7 @@ class DataLoader extends AbstractDataLoader {
                 con,
                 null,
                 prop,
-                prop.isAssociation(TargetLevel.ENTITY) ?
+                prop.isAssociation(TargetLevel.PERSISTENT) ?
                         new FetcherImpl<>(prop.getTargetType().getJavaClass()).allTableFields() :
                         null,
                 filter,

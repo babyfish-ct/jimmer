@@ -85,7 +85,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
         this.limit = Integer.MAX_VALUE;
         this.offset = 0;
         this.recursionStrategy = null;
-        if (negative || !prop.isAssociation(TargetLevel.ENTITY)) {
+        if (negative || !prop.isAssociation(TargetLevel.PERSISTENT)) {
             this.childFetcher = null;
         } else {
             this.childFetcher = new FetcherImpl<>(prop.getTargetType().getJavaClass());
@@ -106,8 +106,8 @@ public class FetcherImpl<E> implements Fetcher<E> {
             FieldConfigImpl<?, Table<?>> loaderImpl = (FieldConfigImpl<?, Table<?>>) fieldConfig;
             this.filter = loaderImpl.getFilter();
             this.batchSize = loaderImpl.getBatchSize();
-            this.limit = prop.isReferenceList(TargetLevel.ENTITY) ? loaderImpl.getLimit() : Integer.MAX_VALUE;
-            this.offset = prop.isAssociation(TargetLevel.ENTITY) ? loaderImpl.getOffset() : 0;
+            this.limit = prop.isReferenceList(TargetLevel.PERSISTENT) ? loaderImpl.getLimit() : Integer.MAX_VALUE;
+            this.offset = prop.isAssociation(TargetLevel.PERSISTENT) ? loaderImpl.getOffset() : 0;
             this.recursionStrategy = loaderImpl.getRecursionStrategy();
             this.childFetcher = standardChildFetcher(loaderImpl);
         } else {
@@ -211,7 +211,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
     public Fetcher<E> allScalarFields() {
         FetcherImpl<E> fetcher = this;
         for (ImmutableProp prop : immutableType.getSelectableProps().values()) {
-            if (!prop.isAssociation(TargetLevel.ENTITY)) {
+            if (!prop.isAssociation(TargetLevel.PERSISTENT)) {
                 fetcher = fetcher.addImpl(prop, null);
             }
         }

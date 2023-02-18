@@ -41,14 +41,17 @@ public class EntitiesImpl implements Entities {
 
     private final Connection con;
 
+    private final ExecutionPurpose purpose;
+
     public EntitiesImpl(JSqlClient sqlClient) {
-        this(sqlClient, false, null);
+        this(sqlClient, false, null, ExecutionPurpose.QUERY);
     }
 
-    public EntitiesImpl(JSqlClient sqlClient, boolean forUpdate, Connection con) {
+    public EntitiesImpl(JSqlClient sqlClient, boolean forUpdate, Connection con, ExecutionPurpose purpose) {
         this.sqlClient = sqlClient;
         this.forUpdate = forUpdate;
         this.con = con;
+        this.purpose = purpose;
     }
 
     public JSqlClient getSqlClient() {
@@ -63,7 +66,7 @@ public class EntitiesImpl implements Entities {
         if (this.sqlClient == sqlClient) {
             return this;
         }
-        return new EntitiesImpl(sqlClient, forUpdate, con);
+        return new EntitiesImpl(sqlClient, forUpdate, con, purpose);
     }
 
     @Override
@@ -71,7 +74,7 @@ public class EntitiesImpl implements Entities {
         if (forUpdate) {
             return this;
         }
-        return new EntitiesImpl(sqlClient, true, con);
+        return new EntitiesImpl(sqlClient, true, con, purpose);
     }
 
     @Override
@@ -79,7 +82,14 @@ public class EntitiesImpl implements Entities {
         if (this.con == con) {
             return this;
         }
-        return new EntitiesImpl(sqlClient, forUpdate, con);
+        return new EntitiesImpl(sqlClient, forUpdate, con, purpose);
+    }
+
+    public Entities forLoader() {
+        if (purpose == ExecutionPurpose.LOADER) {
+            return this;
+        }
+        return new EntitiesImpl(sqlClient, forUpdate, con, ExecutionPurpose.LOADER);
     }
 
     @Override
@@ -286,7 +296,7 @@ public class EntitiesImpl implements Entities {
             return entities;
         }
         ConfigurableRootQuery<?, E> query = Queries.createQuery(
-                sqlClient, immutableType, ExecutionPurpose.QUERY, true, (q, table) -> {
+                sqlClient, immutableType, purpose, true, (q, table) -> {
                     Expression<Object> idProp = table.get(immutableType.getIdProp().getName());
                     if (distinctIds.size() == 1) {
                         q.where(idProp.eq(distinctIds.iterator().next()));

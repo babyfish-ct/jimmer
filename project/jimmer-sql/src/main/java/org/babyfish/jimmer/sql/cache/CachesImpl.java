@@ -6,7 +6,6 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.event.Triggers;
-import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -150,7 +149,7 @@ public class CachesImpl implements Caches {
                 (Cache<Object, Object>) cache,
                 prop
         );
-        if (prop.isAssociation(TargetLevel.ENTITY)) {
+        if (prop.isAssociation(TargetLevel.PERSISTENT)) {
             triggers.addAssociationListener(prop, e -> {
                 Object id = e.getSourceId();
                 if (operator != null) {

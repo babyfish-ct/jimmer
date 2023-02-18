@@ -244,7 +244,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     @Override
     public <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType, ImmutableType treatedAs) {
         ImmutableProp immutableProp = immutableType.getProp(prop);
-        if (!immutableProp.isAssociation(TargetLevel.ENTITY)) {
+        if (!immutableProp.isAssociation(TargetLevel.PERSISTENT)) {
             throw new IllegalArgumentException(
                     "\"" +
                             prop +
@@ -749,7 +749,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         } else {
             prop = joinProp;
         }
-        if (prop.isReferenceList(TargetLevel.ENTITY)) {
+        if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
             return TableRowCountDestructive.BREAK_REPEATABILITY;
         }
         if (prop.isNullable() && joinType != JoinType.LEFT) {

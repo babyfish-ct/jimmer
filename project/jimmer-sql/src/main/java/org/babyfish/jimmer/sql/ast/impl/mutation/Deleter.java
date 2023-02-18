@@ -132,7 +132,7 @@ public class Deleter {
             } else {
                 ImmutableProp mappedByProp = prop.getMappedBy();
                 if (mappedByProp != null &&
-                        mappedByProp.isReference(TargetLevel.ENTITY) &&
+                        mappedByProp.isReference(TargetLevel.PERSISTENT) &&
                         mappedByProp.getStorage() instanceof ColumnDefinition
                 ) {
                     DissociateAction dissociateAction = data.getDissociateAction(mappedByProp);

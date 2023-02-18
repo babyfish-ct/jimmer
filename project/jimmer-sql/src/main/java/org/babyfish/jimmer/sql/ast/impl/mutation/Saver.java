@@ -117,7 +117,7 @@ class Saver {
         ImmutableType currentType = currentDraftSpi.__type();
 
         for (ImmutableProp prop : currentType.getProps().values()) {
-            if (prop.isAssociation(TargetLevel.ENTITY) &&
+            if (prop.isAssociation(TargetLevel.PERSISTENT) &&
                     prop.getStorage() instanceof ColumnDefinition == forParent &&
                     currentDraftSpi.__isLoaded(prop.getId())
             ) {
@@ -361,7 +361,7 @@ class Saver {
             if (prop.getStorage() instanceof ColumnDefinition && draftSpi.__isLoaded(prop.getId())) {
                 props.add(prop);
                 Object value = draftSpi.__get(prop.getId());
-                if (value != null && prop.isReference(TargetLevel.ENTITY)) {
+                if (value != null && prop.isReference(TargetLevel.PERSISTENT)) {
                     value = ((ImmutableSpi) value).__get(prop.getTargetType().getIdProp().getId());
                 }
                 values.add(value);
@@ -471,7 +471,7 @@ class Saver {
                 } else if (!prop.isId() && !excludeProps.contains(prop)) {
                     updatedProps.add(prop);
                     Object value = draftSpi.__get(prop.getId());
-                    if (value != null && prop.isReference(TargetLevel.ENTITY)) {
+                    if (value != null && prop.isReference(TargetLevel.PERSISTENT)) {
                         value = ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getId());
                     }
                     updatedValues.add(value);
@@ -590,7 +590,7 @@ class Saver {
         List<ImmutableSpi> rows = Internal.requiresNewDraftContext(ctx -> {
             List<ImmutableSpi> list = Queries.createQuery(data.getSqlClient(), type, ExecutionPurpose.MUTATE, true, (q, table) -> {
                 for (ImmutableProp keyProp : actualKeyProps) {
-                    if (keyProp.isReference(TargetLevel.ENTITY)) {
+                    if (keyProp.isReference(TargetLevel.PERSISTENT)) {
                         ImmutableProp targetIdProp = keyProp.getTargetType().getIdProp();
                         Expression<Object> targetIdExpression =
                                 table

@@ -43,7 +43,7 @@ public class AbstractTriggerTest extends AbstractMutationTest {
             if (type.isEntity()) {
                 sqlClient.getTriggers(true).addEntityListener(type, e -> events.add(e.toString()));
                 for (ImmutableProp prop : type.getProps().values()) {
-                    if (prop.isAssociation(TargetLevel.ENTITY)) {
+                    if (prop.isAssociation(TargetLevel.PERSISTENT)) {
                         sqlClient.getTriggers(true).addAssociationListener(
                                 prop,
                                 e -> events.add(e.toString())

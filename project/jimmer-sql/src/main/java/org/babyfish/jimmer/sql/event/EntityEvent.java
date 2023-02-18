@@ -247,7 +247,7 @@ public class EntityEvent<E> {
 
     @SuppressWarnings("unchecked")
     private boolean valueEqual(ImmutableProp prop, Object a, Object b) {
-        if (!prop.isReference(TargetLevel.ENTITY)) {
+        if (!prop.isReference(TargetLevel.PERSISTENT)) {
             return Objects.equals(a, b);
         }
         if (a == b) {

@@ -682,4 +682,79 @@ class FetcherTest : AbstractQueryTest() {
             rows("[{\"id\":2,\"fullName2\":\"Alex Banks\"}]")
         }
     }
+
+    @Test
+    fun testByTransientAssociation() {
+        executeAndExpect(
+            sqlClient.createQuery(BookStore::class) {
+                select(table.fetchBy {
+                    allScalarFields()
+                    newestBook {
+                        allScalarFields()
+                    }
+                })
+            }
+        ) {
+            statement(0).sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
+                    |from BOOK_STORE as tb_1_""".trimMargin()
+            )
+            statement(1).sql(
+                """select tb_1_.ID, tb_2_.ID 
+                    |from BOOK_STORE as tb_1_ 
+                    |inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID 
+                    |where (tb_2_.NAME, tb_2_.EDITION) in (
+                    |--->select tb_3_.NAME, max(tb_3_.EDITION) 
+                    |--->from BOOK as tb_3_ 
+                    |--->where tb_3_.STORE_ID in (?, ?) 
+                    |--->group by tb_3_.NAME
+                    |)""".trimMargin()
+            )
+            statement(2).sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE 
+                    |from BOOK as tb_1_ 
+                    |where tb_1_.ID in (?, ?, ?, ?)""".trimMargin()
+            )
+            rows(
+                """[
+                    |--->{
+                    |--->--->"id":1,"name":"O'REILLY",
+                    |--->--->"version":0,
+                    |--->--->"website":null,
+                    |--->--->"newestBook":[
+                    |--->--->--->{
+                    |--->--->--->--->"id":3,
+                    |--->--->--->--->"name":"Learning GraphQL",
+                    |--->--->--->--->"edition":3,
+                    |--->--->--->--->"price":51.00
+                    |--->--->--->},{
+                    |--->--->--->--->"id":6,
+                    |--->--->--->--->"name":"Effective TypeScript",
+                    |--->--->--->--->"edition":3,
+                    |--->--->--->--->"price":88.00
+                    |--->--->--->},{
+                    |--->--->--->--->"id":9,
+                    |--->--->--->--->"name":"Programming TypeScript",
+                    |--->--->--->--->"edition":3,
+                    |--->--->--->--->"price":48.00
+                    |--->--->--->}
+                    |--->--->]
+                    |--->},{
+                    |--->--->"id":2,
+                    |--->--->"name":"MANNING",
+                    |--->--->"version":0,
+                    |--->--->"website":null,
+                    |--->--->"newestBook":[
+                    |--->--->--->{
+                    |--->--->--->--->"id":12,
+                    |--->--->--->--->"name":"GraphQL in Action",
+                    |--->--->--->--->"edition":3,
+                    |--->--->--->--->"price":80.00
+                    |--->--->--->}
+                    |--->--->]
+                    |--->}
+                    |]""".trimMargin()
+            )
+        }
+    }
 }

@@ -125,6 +125,8 @@ public interface JSqlClient extends SubQueryProvider {
 
     TransientResolver<?, ?> getResolver(ImmutableProp prop);
 
+    Class<? extends TransientResolverProvider> getResolverProviderClass();
+
     Filters getFilters();
 
     DraftInterceptor<?> getDraftInterceptor(ImmutableType type);
@@ -152,6 +154,9 @@ public interface JSqlClient extends SubQueryProvider {
 
         @OldChain
         Builder setExecutor(Executor executor);
+
+        @OldChain
+        Builder setTransientResolverProvider(TransientResolverProvider transientResolverProvider);
 
         @OldChain
         Builder setIdGenerator(IdGenerator idGenerator);

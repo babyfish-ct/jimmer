@@ -10,9 +10,11 @@ import org.babyfish.jimmer.spring.client.JavaFeignController;
 import org.babyfish.jimmer.spring.client.MetadataFactoryBean;
 import org.babyfish.jimmer.spring.java.bll.BookService;
 import org.babyfish.jimmer.spring.client.TypeScriptController;
+import org.babyfish.jimmer.spring.java.bll.resolver.BookStoreNewestBooksResolver;
 import org.babyfish.jimmer.spring.java.dal.BookRepository;
 import org.babyfish.jimmer.spring.datasource.DataSources;
 import org.babyfish.jimmer.spring.datasource.TxCallback;
+import org.babyfish.jimmer.spring.java.dal.BookStoreRepository;
 import org.babyfish.jimmer.spring.java.model.*;
 import org.babyfish.jimmer.spring.model.SortUtils;
 import org.babyfish.jimmer.spring.repository.EnableJimmerRepositories;
@@ -54,8 +56,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;
 
 import javax.sql.DataSource;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -166,6 +166,11 @@ public class SpringJavaTest extends AbstractTest {
         }
 
         @Bean
+        public BookStoreNewestBooksResolver bookStoreNewestBooksResolver(BookStoreRepository bookStoreRepository) {
+            return new BookStoreNewestBooksResolver(bookStoreRepository);
+        }
+
+        @Bean
         public MockMvc mockMvc(WebApplicationContext ctx) {
             return webAppContextSetup(ctx).build();
         }
@@ -197,6 +202,9 @@ public class SpringJavaTest extends AbstractTest {
 
     @Autowired
     private BookRepository bookRepository;
+
+    @Autowired
+    private BookStoreRepository bookStoreRepository;
 
     @Autowired
     private TransactionTemplate transactionTemplate;
@@ -500,6 +508,113 @@ public class SpringJavaTest extends AbstractTest {
     }
 
     @Test
+    public void testByCalculatedAssociation() {
+        List<BookStore> bookStores = bookStoreRepository.findAll(
+                BookStoreFetcher.$
+                        .allScalarFields()
+                        .newestBooks(
+                                BookFetcher.$
+                                        .allScalarFields()
+                                        .authors(
+                                                AuthorFetcher.$.allScalarFields()
+                                        )
+                        )
+        );
+        assertSQLs(
+                "select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_",
+                "select tb_1_.ID, tb_2_.ID " +
+                        "from BOOK_STORE as tb_1_ " +
+                        "inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                        "where (tb_2_.NAME, tb_2_.EDITION) in (" +
+                        "--->select tb_3_.NAME, max(tb_3_.EDITION) " +
+                        "--->from BOOK as tb_3_ " +
+                        "--->where tb_3_.STORE_ID in (?, ?) " +
+                        "--->group by tb_3_.NAME" +
+                        ")",
+                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE " +
+                        "from BOOK as tb_1_ " +
+                        "where tb_1_.ID in (?, ?, ?, ?)",
+                "select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                        "from AUTHOR as tb_1_ " +
+                        "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                        "where tb_2_.BOOK_ID in (?, ?, ?, ?)"
+        );
+        assertJson(
+                "[" +
+                        "--->{" +
+                        "--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                        "--->--->\"name\":\"O'REILLY\"," +
+                        "--->--->\"newestBooks\":[" +
+                        "--->--->--->{" +
+                        "--->--->--->--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                        "--->--->--->--->\"name\":\"Learning GraphQL\"," +
+                        "--->--->--->--->\"edition\":3," +
+                        "--->--->--->--->\"price\":51.00," +
+                        "--->--->--->--->\"authors\":[" +
+                        "--->--->--->--->--->{" +
+                        "--->--->--->--->--->--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
+                        "--->--->--->--->--->--->\"firstName\":\"Alex\"," +
+                        "--->--->--->--->--->--->\"lastName\":\"Banks\"," +
+                        "--->--->--->--->--->--->\"gender\":\"MALE\"" +
+                        "--->--->--->--->--->},{" +
+                        "--->--->--->--->--->--->\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
+                        "--->--->--->--->--->--->\"firstName\":\"Eve\"," +
+                        "--->--->--->--->--->--->\"lastName\":\"Procello\"," +
+                        "--->--->--->--->--->--->\"gender\":\"FEMALE\"" +
+                        "--->--->--->--->--->}" +
+                        "--->--->--->--->]" +
+                        "--->--->--->},{" +
+                        "--->--->--->--->\"id\":\"9eded40f-6d2e-41de-b4e7-33a28b11c8b6\"," +
+                        "--->--->--->--->\"name\":\"Effective TypeScript\"," +
+                        "--->--->--->--->\"edition\":3," +
+                        "--->--->--->--->\"price\":88.00,\"authors\":[" +
+                        "--->--->--->--->--->{" +
+                        "--->--->--->--->--->--->\"id\":\"c14665c8-c689-4ac7-b8cc-6f065b8d835d\"," +
+                        "--->--->--->--->--->--->\"firstName\":\"Dan\"," +
+                        "--->--->--->--->--->--->\"lastName\":\"Vanderkam\"," +
+                        "--->--->--->--->--->--->\"gender\":\"MALE\"" +
+                        "--->--->--->--->--->}" +
+                        "--->--->--->--->]" +
+                        "--->--->--->},{" +
+                        "--->--->--->--->\"id\":\"782b9a9d-eac8-41c4-9f2d-74a5d047f45a\"," +
+                        "--->--->--->--->\"name\":\"Programming TypeScript\"," +
+                        "--->--->--->--->\"edition\":3," +
+                        "--->--->--->--->\"price\":48.00,\"authors\":[" +
+                        "--->--->--->--->--->{" +
+                        "--->--->--->--->--->--->\"id\":\"718795ad-77c1-4fcf-994a-fec6a5a11f0f\"," +
+                        "--->--->--->--->--->--->\"firstName\":\"Boris\"," +
+                        "--->--->--->--->--->--->\"lastName\":\"Cherny\"," +
+                        "--->--->--->--->--->--->\"gender\":\"MALE\"" +
+                        "--->--->--->--->--->}" +
+                        "--->--->--->--->]" +
+                        "--->--->--->}" +
+                        "--->--->]" +
+                        "--->}, {" +
+                        "--->--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
+                        "--->--->\"name\":\"MANNING\"," +
+                        "--->--->\"newestBooks\":[" +
+                        "--->--->--->{" +
+                        "--->--->--->--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                        "--->--->--->--->\"name\":\"GraphQL in Action\"," +
+                        "--->--->--->--->\"edition\":3," +
+                        "--->--->--->--->\"price\":80.00," +
+                        "--->--->--->--->\"authors\":[" +
+                        "--->--->--->--->--->{" +
+                        "--->--->--->--->--->--->\"id\":\"eb4963fd-5223-43e8-b06b-81e6172ee7ae\"," +
+                        "--->--->--->--->--->--->\"firstName\":\"Samer\"," +
+                        "--->--->--->--->--->--->\"lastName\":\"Buna\"," +
+                        "--->--->--->--->--->--->\"gender\":\"MALE\"" +
+                        "--->--->--->--->--->}" +
+                        "--->--->--->--->]" +
+                        "--->--->--->}" +
+                        "--->--->]" +
+                        "--->}" +
+                        "]",
+                bookStores
+        );
+    }
+
+    @Test
     public void testDownloadTypescript() throws Exception {
         mvc.perform(get("/my-ts.zip"))
                 .andExpect(status().isOk())
@@ -524,7 +639,7 @@ public class SpringJavaTest extends AbstractTest {
     private static void assertSQLs(String ... statements) {
         try {
             for (int i = 0; i < Math.min(statements.length, SQL_STATEMENTS.size()); i++) {
-                Assertions.assertEquals(statements[i], SQL_STATEMENTS.get(i), "sql[" + i + ']');
+                Assertions.assertEquals(statements[i].replace("--->", ""), SQL_STATEMENTS.get(i), "sql[" + i + ']');
             }
             Assertions.assertEquals(statements.length, SQL_STATEMENTS.size(), "sql count");
         } finally {

@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.kt.model
 
 import org.babyfish.jimmer.sql.*
+import org.babyfish.jimmer.sql.kt.model.calc.BookStoreAvgPriceResolver
+import org.babyfish.jimmer.sql.kt.model.calc.BookStoreNewestBooksResolver
 import java.math.BigDecimal
 import javax.validation.constraints.NotBlank
 
@@ -23,4 +25,7 @@ interface BookStore {
 
     @OneToMany(mappedBy = "store")
     val books: List<Book>
+
+    @Transient(BookStoreNewestBooksResolver::class)
+    val newestBook: List<Book>
 }

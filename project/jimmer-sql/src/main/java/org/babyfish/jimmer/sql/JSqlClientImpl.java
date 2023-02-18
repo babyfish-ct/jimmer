@@ -131,10 +131,7 @@ class JSqlClientImpl implements JSqlClient {
         this.transactionTriggers = transactionTriggers;
         this.binLog = binLog;
         this.filterManager = filterManager;
-        this.transientResolverManager =
-                transientResolverManager != null ?
-                        transientResolverManager :
-                        createTransientResolverManager();
+        this.transientResolverManager = transientResolverManager;
         this.draftInterceptorManager = draftInterceptorManager;
     }
 
@@ -413,6 +410,11 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
+    public Class<? extends TransientResolverProvider> getResolverProviderClass() {
+        return transientResolverManager.getProviderClass();
+    }
+
+    @Override
     public Filters getFilters() {
         return filterManager;
     }
@@ -420,25 +422,6 @@ class JSqlClientImpl implements JSqlClient {
     @Override
     public DraftInterceptor<?> getDraftInterceptor(ImmutableType type) {
         return draftInterceptorManager.get(type);
-    }
-
-    private TransientResolverManager createTransientResolverManager() {
-        TransientResolverManager manager = new TransientResolverManager(this);
-        if (caches != null) { // Important, initialize necessary resolvers
-            for (ImmutableType type : ((CachesImpl)caches).getObjectCacheMap().keySet()) {
-                for (ImmutableProp prop : type.getProps().values()) {
-                    if (prop.hasTransientResolver()) {
-                        manager.get(prop);
-                    }
-                }
-            }
-            for (ImmutableProp prop : ((CachesImpl)caches).getPropCacheMap().keySet()) {
-                if (prop.hasTransientResolver()) {
-                    manager.get(prop);
-                }
-            }
-        }
-        return manager;
     }
 
     @Override
@@ -465,6 +448,8 @@ class JSqlClientImpl implements JSqlClient {
         private Dialect dialect;
 
         private Executor executor;
+
+        private TransientResolverProvider transientResolverProvider;
 
         private final Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap = new HashMap<>();
 
@@ -519,6 +504,12 @@ class JSqlClientImpl implements JSqlClient {
         @OldChain
         public JSqlClient.Builder setExecutor(Executor executor) {
             this.executor = executor;
+            return this;
+        }
+
+        @Override
+        public JSqlClient.Builder setTransientResolverProvider(TransientResolverProvider transientResolverProvider) {
+            this.transientResolverProvider = transientResolverProvider;
             return this;
         }
 
@@ -709,6 +700,12 @@ class JSqlClientImpl implements JSqlClient {
             } else {
                 binLog = null;
             }
+            TransientResolverManager transientResolverManager =
+                    new TransientResolverManager(
+                            transientResolverProvider != null ?
+                                    transientResolverProvider :
+                                    DefaultTransientResolverProvider.INSTANCE
+                    );
             JSqlClient sqlClient = new JSqlClientImpl(
                     connectionManager,
                     slaveConnectionManager,
@@ -725,11 +722,12 @@ class JSqlClientImpl implements JSqlClient {
                     transactionTriggers,
                     binLog,
                     filterManager,
-                    null,
+                    transientResolverManager,
                     new DraftInterceptorManager(interceptors)
             );
             filterManager.initialize(sqlClient);
             binLogParser.initialize(sqlClient, binLogObjectMapper);
+            transientResolverManager.initialize(sqlClient);
             return sqlClient;
         }
 

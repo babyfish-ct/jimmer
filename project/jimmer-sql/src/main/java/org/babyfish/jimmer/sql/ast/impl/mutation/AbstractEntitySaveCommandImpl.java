@@ -148,7 +148,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                         throw new IllegalArgumentException(
                                 "'" + prop + "' cannot be key property because it is version property"
                         );
-                    } else if (prop.isAssociation(TargetLevel.ENTITY) || !(prop.getStorage() instanceof ColumnDefinition)) {
+                    } else if (prop.isAssociation(TargetLevel.PERSISTENT) || !(prop.getStorage() instanceof ColumnDefinition)) {
                         throw new IllegalArgumentException(
                                 "'" + prop + "' cannot be key property because it is not a scalar property with storage"
                         );
@@ -188,7 +188,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         public Cfg setDissociateAction(ImmutableProp prop, DissociateAction dissociateAction) {
             validate();
 
-            if (!prop.isReference(TargetLevel.ENTITY) || !(prop.getStorage() instanceof ColumnDefinition)) {
+            if (!prop.isReference(TargetLevel.PERSISTENT) || !(prop.getStorage() instanceof ColumnDefinition)) {
                 throw new IllegalArgumentException("'" + prop + "' must be an reference property bases on foreign key");
             }
             if (dissociateAction == DissociateAction.SET_NULL && !prop.isNullable()) {

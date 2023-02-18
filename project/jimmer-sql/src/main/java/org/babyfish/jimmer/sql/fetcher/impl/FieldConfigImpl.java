@@ -33,7 +33,7 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
 
     @Override
     public RecursiveListFieldConfig<E, T> filter(FieldFilter<T> filter) {
-        if (filter != null && prop.isReference(TargetLevel.ENTITY) && !prop.isNullable()) {
+        if (filter != null && prop.isReference(TargetLevel.PERSISTENT) && !prop.isNullable()) {
             throw new IllegalArgumentException(
                     "Cannot set filter for non-null one-to-one/many-to-one property \"" + prop + "\""
             );
@@ -53,7 +53,7 @@ class FieldConfigImpl<E, T extends Table<E>> implements RecursiveListFieldConfig
 
     @Override
     public RecursiveListFieldConfig<E, T> limit(int limit, int offset) {
-        if (!prop.isReferenceList(TargetLevel.ENTITY)) {
+        if (!prop.isReferenceList(TargetLevel.PERSISTENT)) {
             throw new IllegalArgumentException(
                     "Cannot set limit because current property \"" +
                             prop +

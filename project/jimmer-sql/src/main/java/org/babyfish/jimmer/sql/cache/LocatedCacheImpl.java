@@ -26,7 +26,7 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
         if ((type == null) == (prop == null)) {
             throw new IllegalArgumentException("The nullity of type and prop must be different");
         }
-        if (prop != null && !prop.isAssociation(TargetLevel.ENTITY) && !prop.hasTransientResolver()) {
+        if (prop != null && !prop.isAssociation(TargetLevel.PERSISTENT) && !prop.hasTransientResolver()) {
             throw new IllegalArgumentException(
                     "The prop \"" + prop + "\" is neither entity association nor transient property with resolver"
             );

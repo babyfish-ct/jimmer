@@ -59,6 +59,10 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setExecutor(ExecutorImpl(block))
     }
 
+    fun setTransientResolverProvider(provider: TransientResolverProvider) {
+        javaBuilder.setTransientResolverProvider(provider)
+    }
+
     fun setIdGenerator(idGenerator: IdGenerator) {
         javaBuilder.setIdGenerator(idGenerator)
     }
