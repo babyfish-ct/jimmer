@@ -18,6 +18,10 @@ import org.springframework.data.redis.serializer.RedisSerializer
 import org.springframework.data.redis.serializer.StringRedisSerializer
 import java.time.Duration
 
+// -----------------------------
+// If you are a beginner, please ignore this class,
+// for non-cache mode, this class will never be used.
+// -----------------------------
 @ConditionalOnProperty("spring.redis.host")
 @Configuration
 class CacheConfig {
@@ -45,6 +49,23 @@ class CacheConfig {
         redisTemplate: RedisTemplate<String, ByteArray>,
         objectMapper: ObjectMapper
     ): CacheFactory =
+
+        // - CaffeineBinder & RedisValueBinder:
+        //     Single-view cache implementor, all users will see the same data.
+        //     If the cached data is affected by GlobalFilters, single-view cache
+        //     will be ignored automatically
+        //
+        // - RedisHashBinder:
+        //     Multi-view cache implementor, different users will se different data.
+        //     no matter
+        //
+        //     If all global filters that affect cached data are cache-friendly
+        //     (all implements CacheableFilter), multi-view cache will take effect;
+        //     otherwise (anyone does not implement CacheableFilter),
+        //     multi-view cache will be ignored.
+        //
+        //     Note: Once the multi-view cache takes affect, it will consume
+        //     a lot of cache space, please only use it for important data.
         object : CacheFactory {
 
             // Id -> Object

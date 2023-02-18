@@ -63,8 +63,10 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
             //    this event can be caused by 2 cases:
             //    i. The foreign key `Book.store.id` is changed.
             //    ii. The `TenantFilter` is enabled and the `Book.tenant` is changed.
-            caches()
-                    .getPropertyCache(BookStoreProps.AVG_PRICE)
+
+            Caches caches = bookStoreRepository.sql().getCaches();
+            caches
+                    .getPropertyCache(BookStoreProps.NEWEST_BOOKS)
                     .delete(e.getSourceId());
         }
     }
@@ -77,24 +79,19 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
             if (store != null) { // foreign key does not change.
                 // 2, Check whether `Book.edition` is changed
                 if (e.getChangedFieldRef(BookProps.EDITION) != null) {
-                    caches()
-                            .getPropertyCache(BookStoreProps.AVG_PRICE)
+                    Caches caches = bookStoreRepository.sql().getCaches();
+                    caches
+                            .getPropertyCache(BookStoreProps.NEWEST_BOOKS)
                             .delete(store.id());
                 }
             }
         }
     }
 
+    // Contribute part of the secondary hash key to multiview-cache
     @Override
     public Ref<SortedMap<String, Object>> getParameterMapRef() {
-        return filters().getTargetParameterMapRef(BookStoreProps.BOOKS);
-    }
-
-    private Caches caches() {
-        return bookStoreRepository.sql().getCaches();
-    }
-
-    private Filters filters() {
-        return bookStoreRepository.sql().getFilters();
+        Filters filters = bookStoreRepository.sql().getFilters();
+        return filters.getTargetParameterMapRef(BookStoreProps.BOOKS);
     }
 }
