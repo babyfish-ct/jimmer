@@ -12,19 +12,13 @@ import org.babyfish.jimmer.sql.ast.LikeMode
 import org.babyfish.jimmer.sql.ast.Predicate
 import org.babyfish.jimmer.sql.ast.StringExpression
 import org.babyfish.jimmer.sql.ast.table.Table
+import org.babyfish.jimmer.sql.meta.ColumnDefinition
 import org.babyfish.jimmer.sql.meta.Storage
 import kotlin.reflect.KProperty1
 
 fun <E: Any> example(obj: E, block: (KExample.Dsl<E>.() -> Unit)? = null): KExample<E> {
     if (obj !is ImmutableSpi) {
         throw IllegalArgumentException("obj is not immutable object")
-    }
-    for (prop in obj.__type().props.values) {
-        if (obj.__isLoaded(prop.id) && prop.getStorage<Storage>() == null) {
-            throw IllegalArgumentException(
-                "The property \"$prop\" of example cannot be loaded because it is not mapped by database columns"
-            )
-        }
     }
     val likeOpMap = if (block == null) {
         emptyMap()
@@ -75,7 +69,7 @@ class KExample<E: Any> internal constructor(
     internal fun toPredicate(table: Table<*>): Predicate? {
         val predicates = mutableListOf<Predicate>()
         for (prop in spi.__type().props.values) {
-            if (spi.__isLoaded(prop.id)) {
+            if (spi.__isLoaded(prop.id) && prop.getStorage<Storage>() is ColumnDefinition) {
                 val value = valueOf(spi, prop)
                 val expr = expressionOf(table, prop, value == null)
                 predicates += if (value === null) {

@@ -37,18 +37,6 @@ public class ExampleImpl<E> implements Example<E> {
             throw new IllegalArgumentException("example must be immutable instance");
         }
         this.spi = (ImmutableSpi) obj;
-        for (ImmutableProp prop : spi.__type().getProps().values()) {
-            if (spi.__isLoaded(prop.getId())) {
-                if (!(prop.getStorage() instanceof ColumnDefinition)) {
-                    throw new IllegalArgumentException(
-                            "The prop \"" +
-                                    prop +
-                                    "\" of example object cannot be loaded, " +
-                                    "example object does not accept properties not based on database columns"
-                    );
-                }
-            }
-        }
         this.prev = null;
         this.prop = null;
         this.likeInsensitive = false;
@@ -84,7 +72,7 @@ public class ExampleImpl<E> implements Example<E> {
         collect(map);
         List<Predicate> predicates = new ArrayList<>();
         for (ImmutableProp prop : spi.__type().getProps().values()) {
-            if (spi.__isLoaded(prop.getId())) {
+            if (spi.__isLoaded(prop.getId()) && prop.getStorage() instanceof ColumnDefinition) {
                 Object value = valueOf(spi, prop);
                 Expression<Object> expr = expressionOf(table, prop, value == null ? JoinType.LEFT : JoinType.INNER);
                 Predicate predicate;
