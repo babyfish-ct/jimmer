@@ -37,11 +37,17 @@ class BookStoreService(
             asc(BookStore::name)
         }
 
-    @GetMapping("/{id}")
-    fun findComplexStore(
+    @GetMapping("/{id}/withAllBooks")
+    fun findComplexStoreWithAllBooks(
         @PathVariable id: Long
-    ): @FetchBy("COMPLEX_FETCHER") BookStore? =
-        bookStoreRepository.findNullable(id, COMPLEX_FETCHER)
+    ): @FetchBy("WITH_ALL_BOOKS_FETCHER") BookStore? =
+        bookStoreRepository.findNullable(id, WITH_ALL_BOOKS_FETCHER)
+
+    @GetMapping("/{id}/withNewestBooks")
+    fun findComplexStoreWithNewestBooks(
+        @PathVariable id: Long
+    ): @FetchBy("WITH_NEWEST_BOOKS_FETCHER") BookStore? =
+        bookStoreRepository.findNullable(id, WITH_NEWEST_BOOKS_FETCHER)
 
     @PutMapping
     fun saveBookStore(@RequestBody input: BookStoreInput): BookStore =
@@ -62,10 +68,22 @@ class BookStoreService(
             allScalarFields()
         }
 
-        private val COMPLEX_FETCHER = newFetcher(BookStore::class).by {
+        private val WITH_ALL_BOOKS_FETCHER = newFetcher(BookStore::class).by {
             allScalarFields()
             avgPrice()
             books {
+                allScalarFields()
+                tenant(false)
+                authors {
+                    allScalarFields()
+                }
+            }
+        }
+
+        private val WITH_NEWEST_BOOKS_FETCHER = newFetcher(BookStore::class).by {
+            allScalarFields()
+            avgPrice()
+            newestBooks {
                 allScalarFields()
                 tenant(false)
                 authors {

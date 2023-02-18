@@ -56,7 +56,7 @@ public class ValueSerializer<T> {
         this.mapper = clonedMapper;
         if (prop == null) {
             this.valueType = SimpleType.constructUnsafe(type.getJavaClass());
-        } else if (prop.isAssociation(TargetLevel.OBJECT)) {
+        } else if (prop.isAssociation(TargetLevel.ENTITY)) {
             ImmutableProp targetIdProp = prop.getTargetType().getIdProp();
             if (targetIdProp == null) {
                 throw new IllegalArgumentException("Transient association property is not supported");
@@ -64,7 +64,7 @@ public class ValueSerializer<T> {
             JavaType targetIdType = SimpleType.constructUnsafe(
                     targetIdProp.getElementClass()
             );
-            if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
+            if (prop.isReferenceList(TargetLevel.OBJECT)) {
                 this.valueType = CollectionType.construct(
                         List.class,
                         null,
