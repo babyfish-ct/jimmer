@@ -3,6 +3,7 @@ package org.babyfish.jimmer.spring.cfg;
 import kotlin.Unit;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.spring.repository.SpringConnectionManager;
 import org.babyfish.jimmer.spring.repository.SpringTransientResolverProvider;
 import org.babyfish.jimmer.sql.DraftInterceptor;
@@ -237,7 +238,9 @@ public class SqlClientConfig {
             for (Triggers triggers : triggersArr) {
                 triggers.addEntityListener(type, publisher::publishEvent);
                 for (ImmutableProp prop : type.getProps().values()) {
-                    triggers.addAssociationListener(prop, publisher::publishEvent);
+                    if (prop.isAssociation(TargetLevel.PERSISTENT)) {
+                        triggers.addAssociationListener(prop, publisher::publishEvent);
+                    }
                 }
             }
         }
