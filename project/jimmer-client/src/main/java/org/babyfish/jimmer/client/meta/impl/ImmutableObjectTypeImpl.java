@@ -162,12 +162,12 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
         Map<String, Property> props = new LinkedHashMap<>();
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
-            if (prop.isAssociation(TargetLevel.PERSISTENT)) {
+            if (prop.isAssociation(TargetLevel.ENTITY)) {
                 Type type = fetch(ctx, prop.getTargetType(), field.getChildFetcher(), null);
                 if (prop.isNullable() && field.getRecursionStrategy() == null) {
                     type = NullableTypeImpl.of(type);
                 }
-                if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
+                if (prop.isReferenceList(TargetLevel.ENTITY)) {
                     type = new ArrayTypeImpl(type);
                 }
                 props.put(prop.getName(), new PropertyImpl(prop.getName(), type, DocumentImpl.of(prop)));
@@ -194,12 +194,12 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
         Map<String, Property> props = new LinkedHashMap<>();
         for (ImmutableProp prop : immutableType.getProps().values()) {
             if (immutableType.isEmbeddable() || prop.getStorage() != null) {
-                if (prop.isAssociation(TargetLevel.PERSISTENT)) {
+                if (prop.isAssociation(TargetLevel.ENTITY)) {
                     Type type = idOnly(ctx, prop.getTargetType());
                     if (prop.isNullable()) {
                         type = NullableTypeImpl.of(type);
                     }
-                    if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
+                    if (prop.isReferenceList(TargetLevel.ENTITY)) {
                         type = new ArrayTypeImpl(type);
                     }
                     props.put(prop.getName(), new PropertyImpl(prop.getName(), type, DocumentImpl.of(prop)));

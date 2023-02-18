@@ -107,7 +107,7 @@ public class CacheConfig {
             Cache<?, ?> cache
     ) {
         if (!prop.isReference(TargetLevel.PERSISTENT)) {
-            throw new IllegalArgumentException("The prop \"" + prop + "\" is not entity reference");
+            throw new IllegalArgumentException("The prop \"" + prop + "\" is not persistent entity reference");
         }
         if (!prop.getDeclaringType().isEntity()) {
             throw new IllegalArgumentException("The prop \"" + prop + "\" is not declared in entity");
@@ -130,7 +130,7 @@ public class CacheConfig {
             Cache<?, List<?>> cache
     ) {
         if (!prop.isReferenceList(TargetLevel.PERSISTENT)) {
-            throw new IllegalArgumentException("The prop \"" + prop + "\" is not entity list");
+            throw new IllegalArgumentException("The prop \"" + prop + "\" is not persistent entity list");
         }
         if (!prop.getDeclaringType().isEntity()) {
             throw new IllegalArgumentException("The prop \"" + prop + "\" is not declared in entity");
