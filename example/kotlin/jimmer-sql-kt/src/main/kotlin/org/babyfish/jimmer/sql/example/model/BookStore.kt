@@ -21,9 +21,28 @@ interface BookStore : BaseEntity {
     @OneToMany(mappedBy = "store")
     val books: List<Book>
 
+    // -----------------------------
+    //
+    // Everything below this line are calculated properties.
+    //
+    // The complex calculated properties are shown here.
+    // As for the simple calculated properties, you can view `Author.fullName`
+    // -----------------------------
+
     @Transient(BookStoreAvgPriceResolver::class)
     val avgPrice: BigDecimal
 
+    /*
+     * For example, if `BookStore.books` returns `[
+     *     {name: A, edition: 1}, {name: A, edition: 2}, {name: A, edition: 3},
+     *     {name: B, edition: 1}, {name: B, edition: 2}
+     * ]`, `BookStore.newestBooks` returns `[
+     *     {name: A, edition: 3}, {name: B, edition: 2}
+     * ]`
+     *
+     * It is worth noting that if the calculated property returns entity object
+     * or entity list, the shape can be controlled by the deeper child fetcher
+     */
     @Transient(BookStoreNewestBooksResolver::class)
     val newestBooks: List<Book>
 }
