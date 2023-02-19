@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.loader;
+package org.babyfish.jimmer.sql.loader.graphql;
 
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.ast.Executable;

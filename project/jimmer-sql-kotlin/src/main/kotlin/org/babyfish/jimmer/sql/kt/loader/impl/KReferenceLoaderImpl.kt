@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.kt.loader.impl
 
-import org.babyfish.jimmer.sql.loader.FilterableReferenceLoader
+import org.babyfish.jimmer.sql.loader.graphql.FilterableReferenceLoader
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.loader.KReferenceLoader
 import org.babyfish.jimmer.sql.kt.fetcher.KFieldFilterDsl

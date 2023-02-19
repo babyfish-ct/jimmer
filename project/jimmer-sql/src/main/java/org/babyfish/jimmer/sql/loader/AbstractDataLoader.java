@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.loader.spi;
+package org.babyfish.jimmer.sql.loader;
 
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;

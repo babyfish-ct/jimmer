@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.loader.impl
 
 import org.babyfish.jimmer.sql.kt.loader.KValueLoader
-import org.babyfish.jimmer.sql.loader.ValueLoader
+import org.babyfish.jimmer.sql.loader.graphql.ValueLoader
 import java.sql.Connection
 
 class KValueLoaderImpl<S: Any, V>(

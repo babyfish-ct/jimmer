@@ -1,10 +1,10 @@
-package org.babyfish.jimmer.sql.loader.impl;
+package org.babyfish.jimmer.sql.loader.graphql.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
-import org.babyfish.jimmer.sql.loader.ValueLoader;
+import org.babyfish.jimmer.sql.loader.graphql.ValueLoader;
 
 import java.sql.Connection;
 import java.util.Collection;

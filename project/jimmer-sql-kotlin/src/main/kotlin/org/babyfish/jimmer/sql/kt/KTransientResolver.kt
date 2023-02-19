@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.kt
 
 import org.babyfish.jimmer.lang.Ref
 import org.babyfish.jimmer.sql.TransientResolver
-import org.babyfish.jimmer.sql.loader.spi.AbstractDataLoader
+import org.babyfish.jimmer.sql.loader.AbstractDataLoader
 import java.sql.Connection
 import java.util.*
 
@@ -41,7 +41,8 @@ interface KTransientResolver<ID: Any, V> : TransientResolver<ID, V> {
 
         /**
          * The database connection should be used,
-         *  it can be ignored if the current resolver is injected and the spring-transaction is enabled.
+         *  it can be ignored if the current resolver is injected by spring
+         *  and the spring-transaction is enabled.
          * @return
          */
         @JvmStatic

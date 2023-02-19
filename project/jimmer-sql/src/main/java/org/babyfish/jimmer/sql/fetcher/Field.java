@@ -28,5 +28,10 @@ public interface Field {
 
     Fetcher<?> getChildFetcher();
 
+    /**
+     * Whether the property is a direct mapping to a database column(s)
+     * or a formula property based on `SQL` expression(Not java/kotlin expression).
+     * @return
+     */
     boolean isSimpleField();
 }

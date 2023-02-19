@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.lang.Ref;
-import org.babyfish.jimmer.sql.loader.spi.AbstractDataLoader;
+import org.babyfish.jimmer.sql.loader.AbstractDataLoader;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -50,7 +50,8 @@ public interface TransientResolver<ID, V> {
 
     /**
      * Get the database connection should be used,
-     * it can be ignored if the current resolver is injected and the spring-transaction is enabled.
+     * it can be ignored if the current resolver is injected by spring
+     * and the spring-transaction is enabled.
      * @return the database connection should be used, never return null.
      * @exception IllegalStateException cannot retrieve the current connection.
      */
