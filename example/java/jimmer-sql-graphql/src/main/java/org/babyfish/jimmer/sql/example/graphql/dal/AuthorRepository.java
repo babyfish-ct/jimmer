@@ -4,6 +4,7 @@ import org.babyfish.jimmer.spring.repository.JRepository;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.example.graphql.entities.Author;
 import org.babyfish.jimmer.sql.example.graphql.entities.AuthorTable;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 

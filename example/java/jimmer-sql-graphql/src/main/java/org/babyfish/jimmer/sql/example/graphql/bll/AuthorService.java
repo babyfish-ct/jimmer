@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.example.graphql.bll;
 
 import org.babyfish.jimmer.sql.example.graphql.dal.AuthorRepository;
 import org.babyfish.jimmer.sql.example.graphql.entities.Author;
+import org.babyfish.jimmer.sql.example.graphql.entities.AuthorFetcher;
 import org.babyfish.jimmer.sql.example.graphql.entities.AuthorProps;
 import org.babyfish.jimmer.sql.example.graphql.entities.Book;
 import org.babyfish.jimmer.sql.example.graphql.entities.input.AuthorInput;
