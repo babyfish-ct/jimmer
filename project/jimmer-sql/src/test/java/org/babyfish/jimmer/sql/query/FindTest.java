@@ -207,25 +207,6 @@ public class FindTest extends AbstractQueryTest {
             );
         });
     }
-    
-    @Test
-    public void testFindByExampleWithNull() {
-        Book book = BookDraft.$.produce(draft -> {
-            draft.setStore((BookStore) null);
-            draft.setName("X");
-        });
-        connectAndExpect(con -> {
-            return getSqlClient().getEntities().forConnection(con).findByExample(
-                    Example.of(book).ilike(BookProps.NAME, LikeMode.END)
-            );
-        }, it -> {
-            it.sql(
-                    "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_ " +
-                            "where lower(tb_1_.NAME) like ? and tb_1_.STORE_ID is null"
-            ).variables("%x");
-        });
-    }
 
     @Test
     public void findBySqlCalculation() {

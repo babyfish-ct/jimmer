@@ -1,11 +1,8 @@
-package org.babyfish.jimmer.sql.loader;
+package org.babyfish.jimmer.sql.loader.graphql;
 
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 
 /**

@@ -21,8 +21,6 @@ class TransientResolverManager {
 
     private JSqlClient sqlClient;
 
-    private boolean initializedForTrigger;
-
     private final StaticCache<ImmutableProp, TransientResolver<?, ?>> resolverCache =
             new StaticCache<>(this::createResolver, true);
 

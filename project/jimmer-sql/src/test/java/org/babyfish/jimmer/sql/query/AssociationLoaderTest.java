@@ -254,12 +254,14 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                                     "--->--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
                                     "--->--->\"firstName\":\"Alex\"," +
                                     "--->--->\"lastName\":\"Banks\"," +
+                                    "--->--->\"fullName\":\"Alex Banks\"," +
                                     "--->--->\"gender\":\"MALE\"" +
                                     "--->}," +
                                     "--->{" +
                                     "--->--->\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
                                     "--->--->\"firstName\":\"Eve\"," +
                                     "--->--->\"lastName\":\"Procello\"," +
+                                    "--->--->\"fullName\":\"Eve Procello\"," +
                                     "--->--->\"gender\":\"FEMALE\"" +
                                     "--->}" +
                                     "]"
@@ -308,12 +310,14 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                                             "--->--->\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\"," +
                                             "--->--->\"firstName\":\"Alex\"," +
                                             "--->--->\"lastName\":\"Banks\"," +
+                                            "--->--->\"fullName\":\"Alex Banks\"," +
                                             "--->--->\"gender\":\"MALE\"" +
                                             "--->}, " +
                                             "--->{" +
                                             "--->--->\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
                                             "--->--->\"firstName\":\"Eve\"," +
                                             "--->--->\"lastName\":\"Procello\"," +
+                                            "--->--->\"fullName\":\"Eve Procello\"," +
                                             "--->--->\"gender\":\"FEMALE\"" +
                                             "--->}" +
                                             "]",
@@ -327,6 +331,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                                             "--->--->\"id\":\"eb4963fd-5223-43e8-b06b-81e6172ee7ae\"," +
                                             "--->--->\"firstName\":\"Samer\"," +
                                             "--->--->\"lastName\":\"Buna\"," +
+                                            "--->--->\"fullName\":\"Samer Buna\"," +
                                             "--->--->\"gender\":\"MALE\"" +
                                             "--->}" +
                                             "]",

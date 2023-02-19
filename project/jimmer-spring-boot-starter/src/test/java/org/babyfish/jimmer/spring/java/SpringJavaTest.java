@@ -69,7 +69,9 @@ import java.util.List;
         "jimmer.client.java-feign.path=/my-java.zip",
         "jimmer.client.java-feign.base-package=com.myapp.feign",
         "jimmer.dialect=org.babyfish.jimmer.sql.dialect.H2Dialect",
-        "spring.application.name=java-client"
+        "spring.application.name=java-client",
+        "jimmer.clients.first.ts.path=/my-ts1.zip",
+        "jimmer.clients.seond.ts.path=/my-ts2.zip",
 })
 @SpringBootConfiguration
 @AutoConfigurationPackage

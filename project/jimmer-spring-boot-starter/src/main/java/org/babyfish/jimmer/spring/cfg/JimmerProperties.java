@@ -10,6 +10,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
 
 @ConstructorBinding
 @ConfigurationProperties("jimmer")
@@ -34,6 +35,8 @@ public class JimmerProperties {
     @NotNull
     private final Client client;
 
+    private final Map<String, Client> clients;
+
     public JimmerProperties(
             @Nullable String language,
             @Nullable String dialect,
@@ -41,7 +44,8 @@ public class JimmerProperties {
             @Nullable TriggerType triggerType,
             @Nullable Integer defaultBatchSize,
             @Nullable Integer defaultListBatchSize,
-            @Nullable Client client
+            @Nullable Client client,
+            @Nullable Map<String, Client> clients
     ) {
         if (language == null) {
             this.language = "java";
@@ -104,6 +108,7 @@ public class JimmerProperties {
         } else {
             this.client = client;
         }
+        this.clients = clients;
     }
 
     @NotNull
@@ -148,6 +153,7 @@ public class JimmerProperties {
                 ", defaultBatchSize=" + defaultBatchSize +
                 ", defaultListBatchSize=" + defaultListBatchSize +
                 ", client=" + client +
+                ", clients=" + clients +
                 '}';
     }
 

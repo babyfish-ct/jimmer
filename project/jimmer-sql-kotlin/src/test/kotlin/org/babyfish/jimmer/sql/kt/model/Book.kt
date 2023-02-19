@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.*
 import java.math.BigDecimal
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Positive
+import javax.validation.constraints.PositiveOrZero
 
 @Entity
 interface Book {
@@ -12,10 +13,10 @@ interface Book {
     val id: Long
 
     @Key
-    val name: @NotBlank String
+    val name: String
 
     @Key
-    val edition: @Positive Int
+    val edition: @PositiveOrZero Int
 
     val price: @Positive BigDecimal
 

@@ -1,35 +1,35 @@
-package org.babyfish.jimmer.sql.loader.impl;
+package org.babyfish.jimmer.sql.loader.graphql.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.loader.FilterableListLoader;
+import org.babyfish.jimmer.sql.loader.graphql.FilterableReferenceLoader;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
-import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
-class ListLoaderImpl<SE, TE, TT extends Table<TE>> implements FilterableListLoader<SE, TE, TT> {
+class ReferenceLoaderImpl<SE, TE, TT extends Table<TE>> implements FilterableReferenceLoader<SE, TE, TT> {
 
     private final JSqlClient sqlClient;
 
-    private Connection con;
+    private final Connection con;
 
     private final ImmutableProp prop;
 
     private final FieldFilter<?> filter;
 
-    public ListLoaderImpl(JSqlClient sqlClient, ImmutableProp prop) {
+    public ReferenceLoaderImpl(
+            JSqlClient sqlClient,
+            ImmutableProp prop
+    ) {
         this(sqlClient, null, prop, null);
     }
 
-    private ListLoaderImpl(
+    public ReferenceLoaderImpl(
             JSqlClient sqlClient,
             Connection con,
             ImmutableProp prop,
@@ -42,25 +42,30 @@ class ListLoaderImpl<SE, TE, TT extends Table<TE>> implements FilterableListLoad
     }
 
     @Override
-    public FilterableListLoader<SE, TE, TT> forConnection(Connection con) {
+    public FilterableReferenceLoader<SE, TE, TT> forConnection(Connection con) {
         if (this.con == con) {
             return this;
         }
-        return new ListLoaderImpl<>(sqlClient, con, prop, filter);
+        return new ReferenceLoaderImpl<>(sqlClient, con, prop, filter);
     }
 
     @Override
-    public FilterableListLoader<SE, TE, TT> forFilter(FieldFilter<TT> filter) {
+    public FilterableReferenceLoader<SE, TE, TT> forFilter(FieldFilter<TT> filter) {
         if (this.filter == filter) {
             return this;
         }
-        return new ListLoaderImpl<>(sqlClient, con, prop, filter);
+        if (!prop.isNullable() && filter != null) {
+            throw new IllegalArgumentException(
+                    "Cannot create filterable loader for \"" + prop + "\", " +
+                            "non-null association does not accept filter"
+            );
+        }
+        return new ReferenceLoaderImpl<>(sqlClient, con, prop, filter);
     }
 
-    @NotNull
-    @SuppressWarnings("unchecked")
     @Override
-    public Executable<List<TE>> loadCommand(@NotNull SE source, int limit, int offset) {
+    @SuppressWarnings("unchecked")
+    public Executable<TE> loadCommand(SE source) {
         if (source instanceof Collection<?>) {
             throw new IllegalArgumentException(
                     "source cannot be collection, do you want to call 'batchLoadCommand'?"
@@ -71,24 +76,23 @@ class ListLoaderImpl<SE, TE, TT extends Table<TE>> implements FilterableListLoad
                 con,
                 prop,
                 (FieldFilter<Table<ImmutableSpi>>) filter,
-                limit,
-                offset,
+                Integer.MAX_VALUE,
+                0,
                 (ImmutableSpi) source,
-                Collections.emptyList()
+                null
         );
     }
 
-    @NotNull
     @SuppressWarnings("unchecked")
     @Override
-    public Executable<Map<SE, List<TE>>> batchLoadCommand(@NotNull Collection<SE> sources) {
+    public Executable<Map<SE, TE>> batchLoadCommand(Collection<SE> sources) {
         return new BatchCommand<>(
                 sqlClient,
                 con,
                 prop,
                 (FieldFilter<Table<ImmutableSpi>>) filter,
                 (Collection<ImmutableSpi>) sources,
-                Collections.emptyList()
+                null
         );
     }
 }

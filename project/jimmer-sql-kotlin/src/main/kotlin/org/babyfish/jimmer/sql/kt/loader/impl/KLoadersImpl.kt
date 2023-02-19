@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.kt.loader.KListLoader
 import org.babyfish.jimmer.sql.kt.loader.KLoaders
 import org.babyfish.jimmer.sql.kt.loader.KReferenceLoader
 import org.babyfish.jimmer.sql.kt.loader.KValueLoader
-import org.babyfish.jimmer.sql.loader.impl.LoadersImpl
+import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl
 import kotlin.reflect.KProperty1
 
 internal class KLoadersImpl(

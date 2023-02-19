@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.kt.impl
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.*
-import org.babyfish.jimmer.sql.loader.impl.LoadersImpl
+import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
@@ -21,14 +21,8 @@ import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableRootQueryImpl
 import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilters
 import org.babyfish.jimmer.sql.kt.filter.impl.KFiltersImpl
-import org.babyfish.jimmer.sql.kt.loader.KListLoader
 import org.babyfish.jimmer.sql.kt.loader.KLoaders
-import org.babyfish.jimmer.sql.kt.loader.KReferenceLoader
-import org.babyfish.jimmer.sql.kt.loader.KValueLoader
-import org.babyfish.jimmer.sql.kt.loader.impl.KListLoaderImpl
 import org.babyfish.jimmer.sql.kt.loader.impl.KLoadersImpl
-import org.babyfish.jimmer.sql.kt.loader.impl.KReferenceLoaderImpl
-import org.babyfish.jimmer.sql.kt.loader.impl.KValueLoaderImpl
 import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose
 import java.sql.Connection

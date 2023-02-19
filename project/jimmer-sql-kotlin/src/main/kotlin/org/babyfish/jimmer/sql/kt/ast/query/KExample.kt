@@ -20,20 +20,27 @@ fun <E: Any> example(obj: E, block: (KExample.Dsl<E>.() -> Unit)? = null): KExam
     if (obj !is ImmutableSpi) {
         throw IllegalArgumentException("obj is not immutable object")
     }
-    val likeOpMap = if (block == null) {
-        emptyMap()
+    return if (block == null) {
+        KExample(obj, KExample.MatchMode.NOT_EMPTY, false, emptyMap())
     } else {
         val dsl = KExample.Dsl<E>()
         dsl.block()
-        dsl.likeOpMap
+        KExample(obj, dsl.matchMode, dsl.trim, dsl.propDataMap)
     }
-    return KExample(obj, likeOpMap)
 }
 
 class KExample<E: Any> internal constructor(
     private val spi: ImmutableSpi,
-    private val likeOpMap: Map<ImmutableProp, LikeOp>
+    private val matchMode: MatchMode,
+    private val trim: Boolean,
+    private val propDataMap: Map<ImmutableProp, PropData>
 ) {
+    enum class MatchMode {
+        NOT_EMPTY,
+        NOT_NULL,
+        NULLAbLE
+    }
+
     companion object {
 
         @JvmStatic
@@ -67,20 +74,40 @@ class KExample<E: Any> internal constructor(
 
     @Suppress("UNCHECKED_CAST")
     internal fun toPredicate(table: Table<*>): Predicate? {
-        val predicates = mutableListOf<Predicate>()
+        val predicates = mutableListOf<Predicate?>()
         for (prop in spi.__type().props.values) {
-            if (spi.__isLoaded(prop.id) && prop.getStorage<Storage>() is ColumnDefinition) {
+            if (spi.__isLoaded(prop.id) &&
+                (prop.getStorage<Storage>() is ColumnDefinition || prop.formulaTemplate != null)) {
                 val value = valueOf(spi, prop)
                 val expr = expressionOf(table, prop, value == null)
-                predicates += if (value === null) {
-                    expr.isNull
-                } else {
-                    val likeOp = likeOpMap[prop]
-                    when {
-                        likeOp == null -> expr.eq(value)
-                        likeOp.insensitive -> (expr as StringExpression).ilike(value as String, likeOp.mode)
-                        else -> (expr as StringExpression).like(value as String, likeOp.mode)
+                val data = propDataMap[prop]
+                val matchMode = data?.matchMode ?: matchMode
+                predicates += when {
+                    value === null ->
+                        if (matchMode == MatchMode.NULLAbLE) expr.isNull else null
+                    value is String -> {
+                        val str = if (data?.trim ?: trim) {
+                            value.trim()
+                        } else {
+                            value
+                        }
+                        val insensitive = data?.insensitive ?: false
+                        val likeMode = data?.likeMode ?: LikeMode.EXACT
+                        when {
+                            str.isEmpty() && matchMode == MatchMode.NOT_EMPTY -> null
+                            insensitive -> (expr as StringExpression).ilike(str, likeMode)
+                            likeMode != LikeMode.EXACT -> (expr as StringExpression).like(str, likeMode)
+                            else -> expr.eq(str)
+                        }
                     }
+                    value is Number ->
+                        if (value.toInt() == 0 && data?.ignoredZero ?: false) {
+                            null
+                        } else {
+                            expr.eq(value)
+                        }
+                    else ->
+                        expr.eq(value)
                 }
             }
         }
@@ -90,22 +117,75 @@ class KExample<E: Any> internal constructor(
     @DslScope
     class Dsl<E: Any> {
 
-        private val _likeOpMap = mutableMapOf<ImmutableProp, LikeOp>()
+        private var _matchMode: MatchMode = MatchMode.NOT_EMPTY
+
+        private var _trim: Boolean = false
+
+        private val _propDataMap = mutableMapOf<ImmutableProp, PropData>()
+
+        fun match(mode: MatchMode) {
+            _matchMode = mode
+        }
+
+        fun trim() {
+            _trim = true
+        }
+
+        fun match(prop: KProperty1<E, *>, mode: MatchMode) {
+            val immutableProp = prop.toImmutableProp()
+            val data = _propDataMap[immutableProp]
+                ?.copy(matchMode = mode)
+                ?: PropData(matchMode = mode)
+            _propDataMap[immutableProp] = data
+        }
+
+        fun trim(prop: KProperty1<E, String?>) {
+            val immutableProp = prop.toImmutableProp()
+            val data = _propDataMap[immutableProp]
+                ?.copy(trim = true)
+                ?: PropData(trim = true)
+            _propDataMap[immutableProp] = data
+        }
+
+        fun ignoreZero(prop: KProperty1<E, Number?>) {
+            val immutableProp = prop.toImmutableProp()
+            val data = _propDataMap[immutableProp]
+                ?.copy(ignoredZero = true)
+                ?: PropData(ignoredZero = true)
+            _propDataMap[immutableProp] = data
+        }
 
         fun like(prop: KProperty1<E, String?>, likeMode: LikeMode = LikeMode.ANYWHERE) {
-            _likeOpMap[prop.toImmutableProp()] = LikeOp(false, likeMode)
+            val immutableProp = prop.toImmutableProp()
+            val data = _propDataMap[immutableProp]
+                ?.copy(insensitive = false, likeMode = likeMode)
+                ?: PropData(insensitive = false, likeMode = likeMode)
+            _propDataMap[immutableProp] = data
         }
 
         fun ilike(prop: KProperty1<E, String?>, likeMode: LikeMode = LikeMode.ANYWHERE) {
-            _likeOpMap[prop.toImmutableProp()] = LikeOp(true, likeMode)
+            val immutableProp = prop.toImmutableProp()
+            val data = _propDataMap[immutableProp]
+                ?.copy(insensitive = true, likeMode = likeMode)
+                ?: PropData(insensitive = true, likeMode = likeMode)
+            _propDataMap[immutableProp] = data
         }
 
-        internal val likeOpMap: Map<ImmutableProp, LikeOp>
-            get() = _likeOpMap
+        internal val matchMode: MatchMode
+            get() = _matchMode
+
+        internal val trim: Boolean
+            get() = _trim
+
+        internal val propDataMap: Map<ImmutableProp, PropData>
+            get() = _propDataMap
     }
 
-    internal data class LikeOp(
-        val insensitive: Boolean,
-        val mode: LikeMode
+    internal data class PropData(
+        val matchMode: MatchMode? = null,
+        val trim: Boolean = false,
+        val ignoredZero: Boolean = false,
+        val insensitive: Boolean = false,
+        val likeMode: LikeMode = LikeMode.EXACT
     )
 }

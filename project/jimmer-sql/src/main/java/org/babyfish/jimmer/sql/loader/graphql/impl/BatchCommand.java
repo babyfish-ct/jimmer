@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.loader.impl;
+package org.babyfish.jimmer.sql.loader.graphql.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -8,9 +8,12 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 
 import java.sql.Connection;
-import java.util.Collections;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-class SingleCommand<T> implements Executable<T> {
+class BatchCommand<S, T> implements Executable<Map<S, T>> {
 
     private final JSqlClient sqlClient;
 
@@ -20,36 +23,28 @@ class SingleCommand<T> implements Executable<T> {
 
     private final FieldFilter<Table<ImmutableSpi>> filter;
 
-    private final int limit;
-
-    private final int offset;
-
-    private final ImmutableSpi source;
+    private final Collection<ImmutableSpi> sources;
 
     private final T defaultValue;
 
-    public SingleCommand(
+    public BatchCommand(
             JSqlClient sqlClient,
             Connection con,
             ImmutableProp prop,
             FieldFilter<Table<ImmutableSpi>> filter,
-            int limit,
-            int offset,
-            ImmutableSpi source,
+            Collection<ImmutableSpi> sources,
             T defaultValue
     ) {
         this.sqlClient = sqlClient;
         this.con = con;
         this.prop = prop;
         this.filter = filter;
-        this.limit = limit;
-        this.offset = offset;
-        this.source = source;
+        this.sources = sources;
         this.defaultValue = defaultValue;
     }
 
     @Override
-    public T execute() {
+    public Map<S, T> execute() {
         if (con != null) {
             return executeImpl(con);
         }
@@ -59,7 +54,7 @@ class SingleCommand<T> implements Executable<T> {
     }
 
     @Override
-    public T execute(Connection con) {
+    public Map<S, T> execute(Connection con) {
         if (con != null) {
             return executeImpl(con);
         }
@@ -72,15 +67,22 @@ class SingleCommand<T> implements Executable<T> {
     }
 
     @SuppressWarnings("unchecked")
-    private T executeImpl(Connection con) {
-        T result = (T) new DataLoader(
+    private Map<S, T> executeImpl(Connection con) {
+        Map<S, T> resultMap = (Map<S, T>) new DataLoader(
                 sqlClient,
                 con,
                 prop,
-                filter,
-                limit,
-                offset
-        ).load(Collections.singleton(source)).get(source);
-        return result != null ? result : defaultValue;
+                filter
+        ).load(sources);
+        if (defaultValue == null || resultMap.size() == sources.size()) {
+            return resultMap;
+        }
+        if (!(resultMap instanceof HashMap<?, ?>)) {
+            resultMap = new LinkedHashMap<>(resultMap); // toMutableMap
+        }
+        for (ImmutableSpi source : sources) {
+            resultMap.putIfAbsent((S) source, defaultValue);
+        }
+        return resultMap;
     }
 }
