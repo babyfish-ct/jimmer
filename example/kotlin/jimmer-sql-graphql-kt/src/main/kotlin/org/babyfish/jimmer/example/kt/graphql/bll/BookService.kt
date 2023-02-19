@@ -35,29 +35,6 @@ class BookService(
     ): List<Book> =
         bookRepository.find(name, storeName, authorName)
 
-    // --- Association ---
-
-    @BatchMapping
-    fun store(
-        // Must use `java.util.List` because Spring-GraphQL has a bug: #454
-        books: java.util.List<Book>
-    ): Map<Book, BookStore> =
-        bookRepository.graphql.load(Book::store, books)
-
-    @BatchMapping
-    fun authors(
-        // Must use `java.util.List` because Spring-GraphQL has a bug: #454
-        books: java.util.List<Book>
-    ): Map<Book, List<Author>> =
-        bookRepository.graphql.load(Book::authors, books)
-
-    @BatchMapping
-    fun chapters(
-        // Must use `java.util.List` because Spring-GraphQL has a bug: #454
-        books: java.util.List<Book>
-    ): Map<Book, List<Chapter>> =
-        bookRepository.graphql.load(Book::chapters, books)
-
     // --- Mutation ---
 
     @MutationMapping

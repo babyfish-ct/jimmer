@@ -2,6 +2,12 @@ package org.babyfish.jimmer.example.kt.graphql.cfg
 
 import graphql.scalars.ExtendedScalars
 import graphql.schema.*
+import graphql.schema.idl.RuntimeWiring
+import graphql.schema.idl.TypeRuntimeWiring
+import org.babyfish.jimmer.meta.ImmutableProp
+import org.babyfish.jimmer.meta.TargetLevel
+import org.babyfish.jimmer.runtime.ImmutableSpi
+import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.jetbrains.annotations.NotNull
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -37,11 +43,53 @@ class GraphQLConfig {
         .build()
 
     @Bean
-    fun runtimeWiringConfigurer(): RuntimeWiringConfigurer =
+    fun runtimeWiringConfigurer(entityManager: EntityManager): RuntimeWiringConfigurer =
         RuntimeWiringConfigurer {
             it
                 .scalar(ExtendedScalars.GraphQLLong)
                 .scalar(ExtendedScalars.GraphQLBigDecimal)
                 .scalar(GRAPHQL_LOCAL_DATE_TIME)
+            registerJimmerDataFetchers(it, entityManager)
         }
+
+    companion object {
+        private fun registerJimmerDataFetchers(
+            wiringBuilder: RuntimeWiring.Builder,
+            entityManager: EntityManager
+        ) {
+            for (type in entityManager.allTypes) {
+                if (type.isEntity) {
+                    val typeBuilder = TypeRuntimeWiring
+                        .newTypeWiring(type.javaClass.simpleName)
+                    for (prop in type.props.values) {
+                        if (prop.isAssociation(TargetLevel.ENTITY) || prop.hasTransientResolver()) {
+                            typeBuilder.dataFetcher(prop.name, JimmerComplexFetcher(prop))
+                        } else {
+                            typeBuilder.dataFetcher(prop.name, JimmerSimpleFetcher(prop.id))
+                        }
+                    }
+                    wiringBuilder.type(typeBuilder)
+                }
+            }
+        }
+    }
+
+    private class JimmerSimpleFetcher(
+        private val propId: Int
+    ) : DataFetcher<Any> {
+        override fun get(environment: DataFetchingEnvironment): Any {
+            val spi = environment.getSource<ImmutableSpi>()
+            return spi.__get(propId)
+        }
+    }
+
+    private class JimmerComplexFetcher(
+        private val prop: ImmutableProp
+    ) : DataFetcher<Any> {
+        override fun get(env: DataFetchingEnvironment): Any {
+            val dataLoader = env.dataLoaderRegistry.getDataLoader<Any, Any>(prop.toString())
+                ?: throw IllegalStateException("No DataLoader for key '$prop'")
+            return dataLoader.load(env.getSource())
+        }
+    }
 }

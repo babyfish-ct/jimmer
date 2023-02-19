@@ -8,9 +8,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
-/*
- * See JSqlClient.Builder.addDraftInterceptors()
- */
 @Component
 public class BaseEntityDraftInterceptor implements DraftInterceptor<BaseEntityDraft> {
 

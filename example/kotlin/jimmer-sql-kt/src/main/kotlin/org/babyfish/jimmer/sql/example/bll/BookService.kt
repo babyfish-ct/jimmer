@@ -5,6 +5,8 @@ import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.example.dal.BookRepository
 import org.babyfish.jimmer.sql.example.model.*
 import org.babyfish.jimmer.spring.model.SortUtils
+import org.babyfish.jimmer.sql.example.bll.error.BusinessErrorCode
+import org.babyfish.jimmer.sql.example.bll.error.BusinessThrows
 import org.babyfish.jimmer.sql.example.model.input.BookInput
 import org.babyfish.jimmer.sql.example.model.input.CompositeBookInput
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
@@ -60,10 +62,12 @@ class BookService(
     ): @FetchBy("COMPLEX_FETCHER") Book? =
         bookRepository.findNullable(id, COMPLEX_FETCHER)
 
+    @BusinessThrows([BusinessErrorCode.GLOBAL_TENANT_REQUIRED])
     @PutMapping
     fun saveBook(@RequestBody input: BookInput): Book =
         bookRepository.save(input)
 
+    @BusinessThrows([BusinessErrorCode.GLOBAL_TENANT_REQUIRED])
     @PutMapping("/withChapters")
     fun saveBook(@RequestBody input: CompositeBookInput): Book =
         bookRepository.save(

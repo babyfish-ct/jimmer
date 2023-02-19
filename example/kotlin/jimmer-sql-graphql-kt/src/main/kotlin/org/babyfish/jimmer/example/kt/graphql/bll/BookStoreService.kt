@@ -1,16 +1,13 @@
 package org.babyfish.jimmer.example.kt.graphql.bll
 
 import org.babyfish.jimmer.example.kt.graphql.dal.BookStoreRepository
-import org.babyfish.jimmer.example.kt.graphql.entities.Book
 import org.babyfish.jimmer.example.kt.graphql.entities.BookStore
 import org.babyfish.jimmer.example.kt.graphql.entities.input.BookStoreInput
 import org.springframework.graphql.data.method.annotation.Argument
-import org.springframework.graphql.data.method.annotation.BatchMapping
 import org.springframework.graphql.data.method.annotation.MutationMapping
 import org.springframework.graphql.data.method.annotation.QueryMapping
 import org.springframework.stereotype.Controller
 import org.springframework.transaction.annotation.Transactional
-import java.math.BigDecimal
 
 /**
  * A real project should be a three-tier architecture consisting
@@ -32,26 +29,8 @@ class BookStoreService(
     fun bookStores(
         @Argument name: String?
     ): List<BookStore> {
-        return bookStoreRepository.find(name)
+        return bookStoreRepository.findByNameLikeOrderByName(name)
     }
-
-    // --- Association ---
-
-    @BatchMapping
-    fun books(
-        // Must use `java.util.List` because Spring-GraphQL has a bug: #454
-        stores: java.util.List<BookStore>
-    ): Map<BookStore, List<Book>> =
-        bookStoreRepository.graphql.load(BookStore::books, stores)
-
-    // --- Calculation ---
-
-    @BatchMapping
-    fun avgPrice(
-        // Must use `java.util.List` because Spring-GraphQL has a bug: #454
-        stores: java.util.List<BookStore>
-    ): Map<BookStore, BigDecimal> =
-        bookStoreRepository.graphql.load(BookStore::avgPrice, stores)
 
     // --- Mutation ---
     @MutationMapping

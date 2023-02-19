@@ -7,9 +7,6 @@ import org.babyfish.jimmer.kt.isLoaded
 import org.babyfish.jimmer.sql.DraftInterceptor
 import org.springframework.stereotype.Component
 
-/*
- * see KSqlClientDsl.addDraftInterceptors
- */
 @Component
 class TenantAwareDraftInterceptor(
     private val tenantProvider: TenantProvider
