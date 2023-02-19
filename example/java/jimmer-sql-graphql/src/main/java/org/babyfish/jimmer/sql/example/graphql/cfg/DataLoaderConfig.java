@@ -24,7 +24,10 @@ public class DataLoaderConfig {
                             return Mono.just(
                                     sqlClient
                                             .getLoaders()
-                                            .reference(new TypedPropImpl.Reference<>(prop))
+                                            .reference(
+                                                    // Temporary solution, jimmer change graphql solution in next version
+                                                    new TypedPropImpl.Reference<>(prop)
+                                            )
                                             .batchLoad(sources)
                             );
                         });
@@ -33,7 +36,10 @@ public class DataLoaderConfig {
                             return Mono.just(
                                     (Map<Object, Object>) (Map<?, ?>)sqlClient
                                             .getLoaders()
-                                            .list(new TypedPropImpl.ReferenceList<>(prop))
+                                            .list(
+                                                    // Temporary solution, jimmer change graphql solution in next version
+                                                    new TypedPropImpl.ReferenceList<>(prop)
+                                            )
                                             .batchLoad(sources)
                             );
                         });
@@ -42,7 +48,10 @@ public class DataLoaderConfig {
                             return Mono.just(
                                     sqlClient
                                             .getLoaders()
-                                            .value(new TypedPropImpl.Scalar<>(prop))
+                                            .value(
+                                                    // Temporary solution, jimmer change graphql solution in next version
+                                                    new TypedPropImpl.Scalar<>(prop)
+                                            )
                                             .batchLoad(sources)
                             );
                         });

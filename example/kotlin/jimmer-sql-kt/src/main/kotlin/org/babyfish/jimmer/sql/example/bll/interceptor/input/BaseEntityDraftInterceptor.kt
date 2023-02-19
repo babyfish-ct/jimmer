@@ -7,9 +7,6 @@ import org.babyfish.jimmer.sql.example.model.common.BaseEntityDraft
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
-/*
- * see KSqlClientDsl.addDraftInterceptors
- */
 @Component
 class BaseEntityDraftInterceptor : DraftInterceptor<BaseEntityDraft> {
 
