@@ -44,25 +44,6 @@ public class BookStoreService {
         return bookStoreRepository.findByNameLikeOrderByName(name);
     }
 
-    // --- Association ---
-
-    @BatchMapping
-    public Map<BookStore, List<Book>> books(List<BookStore> stores) {
-        return bookStoreRepository.graphql().load(BookStoreProps.BOOKS, stores);
-    }
-
-    // --- Complex calculation ---
-
-    @BatchMapping
-    public Map<BookStore, BigDecimal> avgPrice(List<BookStore> stores) {
-        return bookStoreRepository.graphql().load(BookStoreProps.AVG_PRICE, stores);
-    }
-
-    @BatchMapping
-    public Map<BookStore, List<Book>> newestBooks(List<BookStore> stores) {
-        return bookStoreRepository.graphql().load(BookStoreProps.NEWEST_BOOKS, stores);
-    }
-
     // --- Mutation ---
 
     @MutationMapping

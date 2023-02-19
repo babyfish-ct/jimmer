@@ -44,23 +44,6 @@ public class BookService {
         return bookRepository.find(name, storeName, authorName);
     }
 
-    // --- Association ---
-
-    @BatchMapping
-    public Map<Book, BookStore> store(Collection<Book> books) {
-        return bookRepository.graphql().load(BookProps.STORE, books);
-    }
-
-    @BatchMapping
-    public Map<Book, List<Author>> authors(List<Book> books) {
-        return bookRepository.graphql().load(BookProps.AUTHORS, books);
-    }
-
-    @BatchMapping
-    public Map<Book, List<Chapter>> chapters(List<Book> books) {
-        return bookRepository.graphql().load(BookProps.CHAPTERS, books);
-    }
-
     // --- Mutation ---
 
     @MutationMapping

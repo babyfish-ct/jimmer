@@ -41,15 +41,6 @@ public class AuthorService {
         return authorRepository.findByName(name);
     }
 
-    // --- Association ---
-
-    @BatchMapping
-    public Map<Author, List<Book>> books(
-            List<Author> authors
-    ) {
-        return authorRepository.graphql().load(AuthorProps.BOOKS, authors);
-    }
-
     // --- Mutation ---
 
     @MutationMapping
