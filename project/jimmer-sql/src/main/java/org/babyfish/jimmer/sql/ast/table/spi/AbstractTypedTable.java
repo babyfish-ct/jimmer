@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.table.spi;
 
+import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -89,13 +90,18 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
     }
 
     @Override
+    public Predicate eq(Example<E> example) {
+        return ((ExampleImpl<E>) example).toPredicate(this);
+    }
+
+    @Override
     public Predicate eq(E example) {
         return eq(Example.of(example));
     }
 
     @Override
-    public Predicate eq(Example<E> example) {
-        return ((ExampleImpl<E>) example).toPredicate(this);
+    public Predicate eq(Input<E> input) {
+        return eq(Example.of(input));
     }
 
     @Override

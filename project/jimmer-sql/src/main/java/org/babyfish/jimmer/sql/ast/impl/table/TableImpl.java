@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
+import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -133,13 +134,18 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     }
 
     @Override
+    public Predicate eq(Example<E> example) {
+        return ((ExampleImpl<E>)example).toPredicate(this);
+    }
+
+    @Override
     public Predicate eq(E example) {
         return eq(Example.of(example));
     }
 
     @Override
-    public Predicate eq(Example<E> example) {
-        return ((ExampleImpl<E>)example).toPredicate(this);
+    public Predicate eq(Input<E> input) {
+        return eq(Example.of(input));
     }
 
     @Override

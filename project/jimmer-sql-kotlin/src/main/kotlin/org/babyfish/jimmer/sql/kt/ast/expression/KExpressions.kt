@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.expression
 
+import org.babyfish.jimmer.Input
 import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.LikeMode
 import org.babyfish.jimmer.sql.ast.Selection
@@ -112,6 +113,9 @@ infix fun <E: Any> KTable<E>.eq(right: KTable<E>): KNonNullExpression<Boolean> {
 }
 
 infix fun <E: Any> KTable<E>.eq(right: E): KNonNullExpression<Boolean> =
+    eq(example(right))
+
+infix fun <E: Any> KTable<E>.eq(right: Input<E>): KNonNullExpression<Boolean> =
     eq(example(right))
 
 infix fun <E: Any> KTable<E>.eq(right: KExample<E>): KNonNullExpression<Boolean> =

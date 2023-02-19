@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.query
 
+import org.babyfish.jimmer.Input
 import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
@@ -17,6 +18,12 @@ import org.babyfish.jimmer.sql.meta.Storage
 import kotlin.reflect.KProperty1
 
 fun <E: Any> example(obj: E, block: (KExample.Dsl<E>.() -> Unit)? = null): KExample<E> {
+    if (obj is Input<*>) {
+        throw IllegalArgumentException(
+            "entity cannot be input, " +
+                "please call another overloaded function whose parameter is input"
+        )
+    }
     if (obj !is ImmutableSpi) {
         throw IllegalArgumentException("obj is not immutable object")
     }
@@ -28,6 +35,9 @@ fun <E: Any> example(obj: E, block: (KExample.Dsl<E>.() -> Unit)? = null): KExam
         KExample(obj, dsl.matchMode, dsl.trim, dsl.propDataMap)
     }
 }
+
+fun <E: Any> example(input: Input<E>, block: (KExample.Dsl<E>.() -> Unit)? = null): KExample<E> =
+    example(input.toEntity(), block)
 
 class KExample<E: Any> internal constructor(
     private val spi: ImmutableSpi,
