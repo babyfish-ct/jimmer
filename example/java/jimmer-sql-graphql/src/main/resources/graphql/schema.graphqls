@@ -49,6 +49,7 @@ type Author implements CommonEntity {
     id: Long!
     firstName: String!
     lastName: String!
+    fullName: String
     gender: Gender!
     books: [Book!]!
     createdTime: LocalDateTime!
