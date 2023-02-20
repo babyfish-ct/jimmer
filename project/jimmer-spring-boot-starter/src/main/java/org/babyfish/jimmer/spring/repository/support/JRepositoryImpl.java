@@ -77,6 +77,11 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     }
 
     @Override
+    public ImmutableType type() {
+        return immutableType;
+    }
+
+    @Override
     public Pager pager(Pageable pageable) {
         return new PagerImpl(pageable.getPageNumber(), pageable.getPageSize());
     }

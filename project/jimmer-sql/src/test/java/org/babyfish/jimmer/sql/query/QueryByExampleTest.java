@@ -78,7 +78,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         });
         connectAndExpect(con -> {
             return getSqlClient().getEntities().forConnection(con).findByExample(
-                    Example.of(book2).match(Example.MatchMode.NULLAbLE)
+                    Example.of(book2).match(Example.MatchMode.NULLABLE)
             );
         }, it -> {
             it.sql(
@@ -189,7 +189,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         });
         connectAndExpect(con -> {
             return getSqlClient().getEntities().forConnection(con).findByExample(
-                    Example.of(book2).match(BookProps.STORE, Example.MatchMode.NULLAbLE)
+                    Example.of(book2).match(BookProps.STORE, Example.MatchMode.NULLABLE)
             );
         }, it -> {
             it.sql(

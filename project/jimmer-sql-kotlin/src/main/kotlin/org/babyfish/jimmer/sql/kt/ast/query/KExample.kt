@@ -48,7 +48,7 @@ class KExample<E: Any> internal constructor(
     enum class MatchMode {
         NOT_EMPTY,
         NOT_NULL,
-        NULLAbLE
+        NULLABLE
     }
 
     companion object {
@@ -94,7 +94,7 @@ class KExample<E: Any> internal constructor(
                 val matchMode = data?.matchMode ?: matchMode
                 predicates += when {
                     value === null ->
-                        if (matchMode == MatchMode.NULLAbLE) expr.isNull else null
+                        if (matchMode == MatchMode.NULLABLE) expr.isNull else null
                     value is String -> {
                         val str = if (data?.trim ?: trim) {
                             value.trim()

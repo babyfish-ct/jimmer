@@ -6,7 +6,6 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.table.Props;
 
-import java.util.Map;
 import java.util.SortedMap;
 
 public interface Filters {
@@ -78,4 +77,6 @@ public interface Filters {
      * </ul>
      */
     Ref<SortedMap<String, Object>> getTargetParameterMapRef(TypedProp.Association<?, ?> prop);
+
+    BuiltInFilters builtIns();
 }

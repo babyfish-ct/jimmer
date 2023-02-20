@@ -87,7 +87,7 @@ class QueryByExampleTest : AbstractQueryTest() {
                         store = null
                     }
                 ) {
-                    match(KExample.MatchMode.NULLAbLE)
+                    match(KExample.MatchMode.NULLABLE)
                 }
             )
         }) {
@@ -211,7 +211,7 @@ class QueryByExampleTest : AbstractQueryTest() {
                         store = null
                     }
                 ) {
-                    match(Book::store, KExample.MatchMode.NULLAbLE)
+                    match(Book::store, KExample.MatchMode.NULLABLE)
                 }
             )
         }) {

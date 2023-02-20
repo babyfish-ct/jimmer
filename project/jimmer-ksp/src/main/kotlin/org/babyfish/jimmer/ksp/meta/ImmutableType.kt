@@ -214,34 +214,6 @@ class ImmutableType(
         properties.values.sortedBy { it -> it.id }
     }
 
-    val idProp: ImmutableProp? = properties
-        .values
-        .filter { it.isId }
-        .let {
-            if (it.isEmpty() && isEntity) {
-                throw MetaException("No id property is declared in '$classDeclaration'")
-            }
-            if (it.size > 1) {
-                throw MetaException("Conflict id properties: $this$it")
-            }
-            it.firstOrNull()
-        }
-
-    val versionProp: ImmutableProp? = properties
-        .values
-        .filter { it.isId }
-        .let {
-            if (it.size > 1) {
-                throw MetaException("Conflict version properties: $this$it")
-            }
-            it.firstOrNull()
-        }
-        ?.also {
-            if (superType !== null && superType.isEntity && it.declaringType === this) {
-                throw MetaException("Version property '$this$it' is not declared in super type")
-            }
-        }
-
     val validationMessages: Map<ClassName, String> =
         parseValidationMessages(classDeclaration)
 

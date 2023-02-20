@@ -60,12 +60,6 @@ public class Utils {
                             "\""
             );
         }
-        if (sqlClient.getEntityManager() == null) {
-            throw new IllegalArgumentException(
-                    "The entity manager of of sql client must be specified, " +
-                            "please specify it by the constant in the generated source code."
-            );
-        }
     }
 
     public static Sort toSort(List<Order> orders) {

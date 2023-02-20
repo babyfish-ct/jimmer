@@ -10,35 +10,16 @@ import org.junit.jupiter.api.Test;
 
 public class GlobalFilterTest extends AbstractQueryTest {
 
-    private static final Filter<NamedEntityProps> UNDELETED_FILTER =
-            new Filter<NamedEntityProps>() {
-                @Override
-                public void filter(FilterArgs<NamedEntityProps> args) {
-                    args.where(args.getTable().deleted().eq(false));
-                }
-            };
-
-    private static final Filter<NamedEntityProps> DELETED_FILTER =
-            new Filter<NamedEntityProps>() {
-                @Override
-                public void filter(FilterArgs<NamedEntityProps> args) {
-                    args.where(args.getTable().deleted().eq(true));
-                }
-            };
-
     private LambdaClient lambdaClient;
 
     private LambdaClient lambdaClientForDeletedData;
 
     @BeforeEach
     public void initialize() {
-        JSqlClient sqlClient = getSqlClient(it -> {
-           it.addFilters(UNDELETED_FILTER);
-           it.addDisabledFilters(DELETED_FILTER);
-        });
+        JSqlClient sqlClient = getSqlClient();
         JSqlClient sqlClientForDeletedData = sqlClient.filters(it -> {
-            it.enable(DELETED_FILTER);
-            it.disable(UNDELETED_FILTER);
+            it.enable(sqlClient.getFilters().builtIns().getDeclaredAlreadyDeletedFilter(NamedEntity.class));
+            it.disable(sqlClient.getFilters().builtIns().getDeclaredNotDeletedFilter(NamedEntity.class));
         });
         lambdaClient = new LambdaClient(sqlClient);
         lambdaClientForDeletedData = new LambdaClient(sqlClientForDeletedData);

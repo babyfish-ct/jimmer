@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.query
 
+import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.expression.between
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.inheritance.Role
@@ -10,10 +11,14 @@ import kotlin.test.Test
 
 class InheritanceQueryTest : AbstractQueryTest() {
 
+    private val _sqlClient: KSqlClient = sqlClient {
+        ignoreBuiltInFilters()
+    }
+
     @Test
     fun testFetchLonely() {
         executeAndExpect(
-            sqlClient.createQuery(Role::class) {
+            _sqlClient.createQuery(Role::class) {
                 select(
                     table.fetchBy {
                         name()
@@ -33,7 +38,7 @@ class InheritanceQueryTest : AbstractQueryTest() {
     @Test
     fun testFetchIdOnlyChildren() {
         executeAndExpect(
-            sqlClient.createQuery(Role::class) {
+            _sqlClient.createQuery(Role::class) {
                 select(
                     table.fetchBy {
                         name()
@@ -62,7 +67,7 @@ class InheritanceQueryTest : AbstractQueryTest() {
     @Test
     fun testFetchChildren() {
         executeAndExpect(
-            sqlClient.createQuery(Role::class) {
+            _sqlClient.createQuery(Role::class) {
                 select(
                     table.fetchBy {
                         name()
@@ -106,7 +111,7 @@ class InheritanceQueryTest : AbstractQueryTest() {
     @Test
     fun testQueryByTime() {
         executeAndExpect(
-            sqlClient.createQuery(Role::class) {
+            _sqlClient.createQuery(Role::class) {
                 where(
                     table.createdTime.between(
                         LocalDateTime.of(2022, 10, 3, 0, 0, 0),

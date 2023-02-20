@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.association.meta;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.meta.impl.PropChains;
@@ -10,6 +11,8 @@ import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.impl.util.StaticCache;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.util.*;
@@ -105,6 +108,7 @@ public class AssociationType implements ImmutableType {
         return targetProp;
     }
 
+    @NotNull
     @Override
     public Class<?> getJavaClass() {
         return Association.class;
@@ -130,24 +134,29 @@ public class AssociationType implements ImmutableType {
         return false;
     }
 
+    @NotNull
     @Override
     public Annotation getImmutableAnnotation() { return null; }
 
+    @Nullable
     @Override
     public String getTableName() {
         return middleTable.getTableName();
     }
 
+    @NotNull
     @Override
     public Map<String, ImmutableProp> getDeclaredProps() {
         return props;
     }
 
+    @NotNull
     @Override
     public Map<String, ImmutableProp> getProps() {
         return props;
     }
 
+    @NotNull
     @Override
     public ImmutableProp getProp(String name) {
         ImmutableProp prop = props.get(name);
@@ -159,6 +168,7 @@ public class AssociationType implements ImmutableType {
         return prop;
     }
 
+    @NotNull
     @Override
     public ImmutableProp getProp(int id) {
         switch (id) {
@@ -173,6 +183,7 @@ public class AssociationType implements ImmutableType {
         }
     }
 
+    @NotNull
     @Override
     public List<ImmutableProp> getPropChainByColumnName(String columnName) {
         List<ImmutableProp> chain = chainMap.get(DatabaseIdentifiers.comparableIdentifier(columnName));
@@ -188,16 +199,19 @@ public class AssociationType implements ImmutableType {
         return chain;
     }
 
+    @NotNull
     @Override
     public Map<String, ImmutableProp> getSelectableProps() {
         return props;
     }
 
+    @NotNull
     @Override
     public Map<String, ImmutableProp> getSelectableReferenceProps() {
         return props;
     }
 
+    @NotNull
     @Override
     public BiFunction<DraftContext, Object, Draft> getDraftFactory() {
         throw new UnsupportedOperationException("draftFactory is not supported by AssociationType");
@@ -208,6 +222,7 @@ public class AssociationType implements ImmutableType {
         return false;
     }
 
+    @Nullable
     @Override
     public ImmutableType getSuperType() {
         return null;
@@ -218,16 +233,25 @@ public class AssociationType implements ImmutableType {
         throw new UnsupportedOperationException("Id property is not supported by association type");
     }
 
+    @Nullable
     @Override
     public ImmutableProp getVersionProp() {
         return null;
     }
 
+    @Nullable
+    @Override
+    public LogicalDeletedInfo getDeclaredLogicalDeletedInfo() {
+        return null;
+    }
+
+    @NotNull
     @Override
     public Set<ImmutableProp> getKeyProps() {
         return Collections.emptySet();
     }
 
+    @Nullable
     @Override
     public IdGenerator getIdGenerator() {
         return null;

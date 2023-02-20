@@ -7,20 +7,20 @@ import kotlin.reflect.KClass
 class KFilterDsl internal constructor(
     private val javaConfig: FilterConfig
 ) {
-    fun enable(vararg filters: KFilter<*>) {
-        javaConfig.enable(filters.map { it.toJavaFilter() })
+    fun enable(vararg filters: KFilter<*>?) {
+        javaConfig.enable(filters.map { it?.toJavaFilter() })
     }
 
-    fun enable(filters: Collection<KFilter<*>>) {
-        javaConfig.enable(filters.map { it.toJavaFilter() })
+    fun enable(filters: Collection<KFilter<*>?>) {
+        javaConfig.enable(filters.map { it?.toJavaFilter() })
     }
 
-    fun disable(vararg filters: KFilter<*>) {
-        javaConfig.disable(filters.map { it.toJavaFilter() })
+    fun disable(vararg filters: KFilter<*>?) {
+        javaConfig.disable(filters.map { it?.toJavaFilter() })
     }
 
-    fun disable(filters: Collection<KFilter<*>>) {
-        javaConfig.disable(filters.map { it.toJavaFilter() })
+    fun disable(filters: Collection<KFilter<*>?>) {
+        javaConfig.disable(filters.map { it?.toJavaFilter() })
     }
 
     fun enableByTypes(vararg filterTypes: KClass<*>) {

@@ -3,38 +3,42 @@ package org.babyfish.jimmer.sql.kt.filter.impl
 import org.apache.commons.lang3.reflect.TypeUtils
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies
 import org.babyfish.jimmer.sql.ast.table.Props
-import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy
+import org.babyfish.jimmer.sql.filter.Filter
 import org.babyfish.jimmer.sql.filter.FilterArgs
 import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl
-import org.babyfish.jimmer.sql.filter.impl.TypeAwareFilter
+import org.babyfish.jimmer.sql.filter.impl.TypeAware
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 
 internal open class JavaFilter constructor(
-    protected val ktFilter: KFilter<*>
-) : TypeAwareFilter {
+    protected val kFilter: KFilter<*>
+) : TypeAware, Filter<Props> {
 
-    private val immutableType: ImmutableType = TypeUtils
-        .getTypeArguments(ktFilter::class.java, KFilter::class.java)
-        .values
-        .first()
-        .let {
-            if (it !is Class<*>) {
-                throw IllegalArgumentException(
-                    "\"${ktFilter::class.qualifiedName}\" is illegal, " +
-                        "the type argument of \"${KFilter::class.qualifiedName}\" " +
-                        "is not specified"
-                )
-            }
-            ImmutableType.get(it)
+    private val immutableType: ImmutableType =
+        if (kFilter is TypeAware) {
+            kFilter.immutableType
+        } else {
+            TypeUtils
+                .getTypeArguments(kFilter::class.java, KFilter::class.java)
+                .values
+                .first()
+                .let {
+                    if (it !is Class<*>) {
+                        throw IllegalArgumentException(
+                            "\"${kFilter::class.qualifiedName}\" is illegal, " +
+                                "the type argument of \"${KFilter::class.qualifiedName}\" " +
+                                "is not specified"
+                        )
+                    }
+                    ImmutableType.get(it)
+                }
         }
 
     @Suppress("UNCHECKED_CAST")
     override fun filter(args: FilterArgs<Props>?) {
         val javaQuery = (args as FilterArgsImpl<*>).unwrap()
-        (ktFilter as KFilter<Any>).filter(
+        (kFilter as KFilter<Any>).filter(
             KFilterArgsImpl(
                 javaQuery,
                 args.getTable().let {
@@ -52,21 +56,15 @@ internal open class JavaFilter constructor(
         immutableType
 
     override fun getFilterType(): Class<*> =
-        ktFilter::class.java
-
-    override fun hashCode(): Int =
-        ktFilter.hashCode()
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) {
-            return true
+        if (kFilter is TypeAware) {
+            kFilter.filterType
+        } else {
+            kFilter.javaClass
         }
-        if (other !is JavaFilter) {
-            return false
-        }
-        return ktFilter == other.ktFilter
-    }
+
+    override fun unwrap(): Any =
+        kFilter
 
     override fun toString(): String =
-        ktFilter.toString()
+        "JavaFilter(ktFilter=$kFilter)"
 }

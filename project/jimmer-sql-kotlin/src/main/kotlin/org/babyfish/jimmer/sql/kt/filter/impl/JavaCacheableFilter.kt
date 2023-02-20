@@ -11,8 +11,8 @@ internal open class JavaCacheableFilter(
 ) : JavaFilter(ktFilter), CacheableFilter<Props> {
 
     override fun getParameters(): SortedMap<String, Any>? =
-        (ktFilter as KCacheableFilter<*>).getParameters()
+        (kFilter as KCacheableFilter<*>).getParameters()
 
     override fun isAffectedBy(e: EntityEvent<*>): Boolean =
-        (ktFilter as KCacheableFilter<*>).isAffectedBy(e)
+        (kFilter as KCacheableFilter<*>).isAffectedBy(e)
 }

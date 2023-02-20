@@ -125,6 +125,14 @@ public class ProducerGenerator {
                         prop.getId(),
                         prop.getName()
                 );
+            } else if (prop == type.getLogicalDeletedProp()) {
+                builder.add(
+                        ".logicalDeleted($L, $S, $T.class, $L)\n",
+                        prop.getId(),
+                        prop.getName(),
+                        prop.getElementTypeName(),
+                        prop.isNullable()
+                );
             } else if (prop.getAnnotation(Key.class) != null && !prop.isAssociation(false)) {
                 builder.add(
                         ".key($L, $S, $T.class)\n",

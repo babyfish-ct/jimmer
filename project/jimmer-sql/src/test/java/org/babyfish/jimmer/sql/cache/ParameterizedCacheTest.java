@@ -34,14 +34,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
         JSqlClient sqlClient = getSqlClient(it -> {
             it.addFilters(new UndeletedFilter());
             it.addDisabledFilters(new DeletedFilter());
-            it.setEntityManager(
-                    new EntityManager(
-                            Administrator.class,
-                            AdministratorMetadata.class,
-                            Role.class,
-                            Permission.class
-                    )
-            );
+            it.ignoreBuiltInFilters();
             it.setCaches(cfg -> {
                 cfg.setCacheFactory(
                         new CacheFactory() {

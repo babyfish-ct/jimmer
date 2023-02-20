@@ -17,9 +17,11 @@ import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.TriggersImpl;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
 import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
+import org.babyfish.jimmer.sql.filter.BuiltInFilters;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
+import org.babyfish.jimmer.sql.filter.impl.BuiltinFiltersImpl;
 import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl;
@@ -473,6 +475,8 @@ class JSqlClientImpl implements JSqlClient {
 
         private final Set<Filter<?>> disabledFilters = new HashSet<>();
 
+        private boolean ignoreBuiltInFilters = false;
+
         private final List<DraftInterceptor<?>> interceptors = new ArrayList<>();
 
         private ObjectMapper binLogObjectMapper;
@@ -612,13 +616,13 @@ class JSqlClientImpl implements JSqlClient {
 
         @Override
         @OldChain
-        public Builder setEntityManager(EntityManager scanner) {
-            if (entityManager != null) {
+        public Builder setEntityManager(EntityManager entityManager) {
+            if (this.entityManager != null && this.entityManager != entityManager) {
                 throw new IllegalStateException(
                         "The EntityManager of SqlBuilder.Builder can only be set once"
                 );
             }
-            entityManager = scanner;
+            this.entityManager = entityManager;
             return this;
         }
 
@@ -646,8 +650,11 @@ class JSqlClientImpl implements JSqlClient {
 
         @Override
         public Builder addFilters(Collection<Filter<?>> filters) {
-            this.filters.addAll(filters);
-            this.disabledFilters.removeAll(filters);
+            for (Filter<?> filter : filters) {
+                if (filter != null) {
+                    this.filters.add(filter);
+                }
+            }
             return this;
         }
 
@@ -658,8 +665,18 @@ class JSqlClientImpl implements JSqlClient {
 
         @Override
         public Builder addDisabledFilters(Collection<Filter<?>> filters) {
-            this.filters.addAll(filters);
-            this.disabledFilters.addAll(filters);
+            for (Filter<?> filter : filters) {
+                if (filter != null) {
+                    this.filters.add(filter);
+                    this.disabledFilters.add(filter);
+                }
+            }
+            return this;
+        }
+
+        @Override
+        public Builder ignoreBuiltInFilters() {
+            ignoreBuiltInFilters = true;
             return this;
         }
 
@@ -675,7 +692,11 @@ class JSqlClientImpl implements JSqlClient {
 
         @Override
         public Builder addDraftInterceptors(Collection<DraftInterceptor<?>> interceptors) {
-            this.interceptors.addAll(interceptors);
+            for (DraftInterceptor<?> interceptor : interceptors) {
+                if (interceptor != null) {
+                    this.interceptors.add(interceptor);
+                }
+            }
             return this;
         }
 
@@ -687,19 +708,17 @@ class JSqlClientImpl implements JSqlClient {
 
         @Override
         public JSqlClient build() {
-            createTriggersIfNecessary();
-            FilterManager filterManager = new FilterManager(filters, disabledFilters);
-            BinLogParser binLogParser = new BinLogParser();
-            BinLog binLog;
-            if (entityManager != null) {
-                binLog = new BinLog(
-                        entityManager,
-                        binLogParser,
-                        triggers
-                );
-            } else {
-                binLog = null;
+            if (entityManager == null) {
+                throw new IllegalStateException("The `entityManager` of SqlClient has not been configured");
             }
+            createTriggersIfNecessary();
+            FilterManager filterManager = createFilterManager();
+            BinLogParser binLogParser = new BinLogParser();
+            BinLog binLog = new BinLog(
+                    entityManager,
+                    binLogParser,
+                    triggers
+            );
             TransientResolverManager transientResolverManager =
                     new TransientResolverManager(
                             transientResolverProvider != null ?
@@ -746,6 +765,27 @@ class JSqlClientImpl implements JSqlClient {
                         break;
                 }
             }
+        }
+
+        private FilterManager createFilterManager() {
+            BuiltInFilters builtInFilters = new BuiltinFiltersImpl();
+            if (ignoreBuiltInFilters) {
+                return new FilterManager(builtInFilters, filters, disabledFilters);
+            }
+            List<Filter<?>> mergedFilters = new ArrayList<>(filters);
+            List<Filter<?>> mergedDisabledFilters = new ArrayList<>(disabledFilters);
+            for (ImmutableType type : entityManager.getAllTypes()) {
+                Filter<?> notDeletedFilter = builtInFilters.getDeclaredNotDeletedFilter(type);
+                Filter<?> alreadyDeletedFilter = builtInFilters.getDeclaredAlreadyDeletedFilter(type);
+                if (notDeletedFilter != null) {
+                    mergedFilters.add(notDeletedFilter);
+                }
+                if (alreadyDeletedFilter != null) {
+                    mergedFilters.add(alreadyDeletedFilter);
+                    mergedDisabledFilters.add(alreadyDeletedFilter);
+                }
+            }
+            return new FilterManager(builtInFilters, mergedFilters, mergedDisabledFilters);
         }
     }
 }
