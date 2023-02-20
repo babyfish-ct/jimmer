@@ -56,6 +56,6 @@ public interface Example<E> {
     enum MatchMode {
         NOT_EMPTY,
         NOT_NULL,
-        NULLAbLE
+        NULLABLE
     }
 }

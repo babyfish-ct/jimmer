@@ -87,6 +87,14 @@ class ProducerGenerator(
                     prop.id,
                     prop.name
                 )
+            prop.primaryAnnotationType == LogicalDeleted::class.java ->
+                add(
+                    ".logicalDeleted(%L, %S, %T::class.java, %L)\n",
+                    prop.id,
+                    prop.name,
+                    prop.targetTypeName(overrideNullable = false),
+                    prop.isNullable
+                )
             prop.isKey && prop.isAssociation(false) ->
                 add(
                     ".keyReference(%L, %S, %T::class.java, %L)\n",

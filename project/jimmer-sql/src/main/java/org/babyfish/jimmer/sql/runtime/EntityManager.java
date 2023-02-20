@@ -21,9 +21,6 @@ public class EntityManager {
     }
 
     public EntityManager(Collection<Class<?>> classes) {
-        if (classes.isEmpty()) {
-            throw new IllegalArgumentException("classes cannot be empty");
-        }
         if (!(classes instanceof Set<?>)) {
             classes = new LinkedHashSet<>(classes);
         }

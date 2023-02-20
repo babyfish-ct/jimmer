@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
+import org.babyfish.jimmer.sql.model.JimmerModule;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.h2.Driver;
 import org.junit.jupiter.api.Assertions;
@@ -81,7 +82,8 @@ public class AbstractTest {
 
     protected JSqlClient getSqlClient(Consumer<JSqlClient.Builder> block) {
         JSqlClient.Builder builder = JSqlClient.newBuilder()
-                .setExecutor(new ExecutorImpl());
+                .setExecutor(new ExecutorImpl())
+                .setEntityManager(JimmerModule.ENTITY_MANAGER);
         if (block != null) {
             block.accept(builder);
         }

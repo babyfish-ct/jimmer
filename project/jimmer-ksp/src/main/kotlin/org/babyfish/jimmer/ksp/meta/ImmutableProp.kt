@@ -207,6 +207,12 @@ class ImmutableProp(
     val isId: Boolean =
         primaryAnnotationType == Id::class.java
 
+    val isVersion: Boolean =
+        primaryAnnotationType == Version::class.java
+
+    val isLogicalDeleted: Boolean =
+        primaryAnnotationType == LogicalDeleted::class.java
+
     val isKey: Boolean =
         propDeclaration.annotations {
             it.fullName == KEY_FULL_NAME

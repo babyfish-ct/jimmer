@@ -4,10 +4,12 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
 import org.babyfish.jimmer.sql.model.BookProps;
+import org.babyfish.jimmer.sql.model.JimmerModule;
 import org.babyfish.jimmer.sql.model.embedded.OrderItem;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
 import org.babyfish.jimmer.sql.model.embedded.ProductProps;
 import org.babyfish.jimmer.sql.model.embedded.Transform;
+import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +18,7 @@ import static org.babyfish.jimmer.sql.common.Constants.learningGraphQLId1;
 
 public class BinLogTest {
 
-    private final JSqlClient sqlClient = JSqlClient.newBuilder().build();
+    private final JSqlClient sqlClient = JSqlClient.newBuilder().setEntityManager(new EntityManager()).build();
 
     @Test
     public void testTransform() {

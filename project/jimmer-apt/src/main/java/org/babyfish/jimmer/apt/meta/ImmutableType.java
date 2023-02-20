@@ -47,6 +47,8 @@ public class ImmutableType {
 
     private ImmutableProp versionProp;
 
+    private ImmutableProp logicalDeletedProp;
+
     private final ClassName className;
 
     private final ClassName draftClassName;
@@ -233,6 +235,11 @@ public class ImmutableType {
                 .stream()
                 .filter(it -> it.getAnnotation(Version.class) != null)
                 .collect(Collectors.toList());
+        List<ImmutableProp> logicalDeletedProps = declaredProps
+                .values()
+                .stream()
+                .filter(it -> it.getAnnotation(LogicalDeleted.class) != null)
+                .collect(Collectors.toList());
         if (superType != null) {
             if (superType.getIdProp() != null && !idProps.isEmpty()) {
                 throw new MetaException(
@@ -240,7 +247,9 @@ public class ImmutableType {
                                 typeElement.getQualifiedName() +
                                 "\", " +
                                 idProps.get(0) +
-                                "\" cannot be decorated by @Id because id has been declared in super type"
+                                "\" cannot be decorated by `@" +
+                                Id.class.getName() +
+                                "` because id has been declared in super type"
                 );
             }
             if (superType.getVersionProp() != null && !versionProps.isEmpty()) {
@@ -249,11 +258,25 @@ public class ImmutableType {
                                 typeElement.getQualifiedName() +
                                 "\", " +
                                 versionProps.get(0) +
-                                "\" cannot be decorated by @Version because version has been declared in super type"
+                                "\" cannot be decorated by `@" +
+                                Version.class.getName() +
+                                "` because version has been declared in super type"
+                );
+            }
+            if (superType.getLogicalDeletedProp() != null && !logicalDeletedProps.isEmpty()) {
+                throw new MetaException(
+                        "Illegal type \"" +
+                                typeElement.getQualifiedName() +
+                                "\", " +
+                                logicalDeletedProps.get(0) +
+                                "\" cannot be decorated by `@" +
+                                LogicalDeleted.class.getName() +
+                                "` because version has been declared in super type"
                 );
             }
             idProp = superType.idProp;
             versionProp = superType.versionProp;
+            logicalDeletedProp = superType.logicalDeletedProp;
         }
         if (!isEntity && !isMappedSuperClass) {
             if (!idProps.isEmpty()) {
@@ -262,7 +285,9 @@ public class ImmutableType {
                                 typeElement.getQualifiedName() +
                                 "\", " +
                                 idProps.get(0) +
-                                "\" cannot be decorated by @Id because current type is not entity"
+                                "\" cannot be decorated by `@" +
+                                Id.class.getName() +
+                                "` because current type is not entity"
                 );
             }
             if (!versionProps.isEmpty()) {
@@ -271,7 +296,20 @@ public class ImmutableType {
                                 typeElement.getQualifiedName() +
                                 "\", " +
                                 versionProps.get(0) +
-                                "\" cannot be decorated by @Version because current type is not entity"
+                                "\" cannot be decorated by `@" +
+                                Version.class.getName() +
+                                "` because current type is not entity"
+                );
+            }
+            if (!logicalDeletedProps.isEmpty()) {
+                throw new MetaException(
+                        "Illegal type \"" +
+                                typeElement.getQualifiedName() +
+                                "\", " +
+                                logicalDeletedProps.get(0) +
+                                "\" cannot be decorated by `@" +
+                                LogicalDeleted.class.getName() +
+                                "` because current type is not entity"
                 );
             }
         } else {
@@ -284,19 +322,37 @@ public class ImmutableType {
                                 idProps.get(0) +
                                 "\" and \"" +
                                 idProps.get(1) +
-                                "\" is decorated by @Id"
+                                "\" is decorated by `@" +
+                                LogicalDeleted.class.getName() +
+                                "`"
                 );
             }
             if (versionProps.size() > 1) {
                 throw new MetaException(
                         "Illegal type \"" +
                                 typeElement.getQualifiedName() +
-                                "\", multiple id properties are not supported, " +
+                                "\", multiple version properties are not supported, " +
                                 "but both \"" +
                                 versionProps.get(0) +
                                 "\" and \"" +
                                 versionProps.get(1) +
-                                "\" is decorated by @Version"
+                                "\" is decorated by `@" +
+                                Version.class.getName() +
+                                "`"
+                );
+            }
+            if (logicalDeletedProps.size() > 1) {
+                throw new MetaException(
+                        "Illegal type \"" +
+                                typeElement.getQualifiedName() +
+                                "\", multiple logical deleted properties are not supported, " +
+                                "but both \"" +
+                                logicalDeletedProps.get(0) +
+                                "\" and \"" +
+                                logicalDeletedProps.get(1) +
+                                "\" is decorated by `@" +
+                                LogicalDeleted.class.getName() +
+                                "`"
                 );
             }
             if (idProp == null) {
@@ -325,6 +381,16 @@ public class ImmutableType {
                             "Illegal property \"" +
                                     versionProps +
                                     "\", association cannot be version property"
+                    );
+                }
+            }
+            if (logicalDeletedProp == null && !logicalDeletedProps.isEmpty()) {
+                logicalDeletedProp = logicalDeletedProps.get(0);
+                if (logicalDeletedProp.isAssociation(false)) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    logicalDeletedProps +
+                                    "\", association cannot be logical deleted property"
                     );
                 }
             }
@@ -437,6 +503,10 @@ public class ImmutableType {
 
     public ImmutableProp getVersionProp() {
         return versionProp;
+    }
+
+    public ImmutableProp getLogicalDeletedProp() {
+        return logicalDeletedProp;
     }
 
     public ClassName getClassName() {

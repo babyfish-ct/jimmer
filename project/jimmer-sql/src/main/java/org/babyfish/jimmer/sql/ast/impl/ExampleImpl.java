@@ -180,7 +180,7 @@ public class ExampleImpl<E> implements Example<E> {
                 Predicate predicate = null;
                 MatchMode matchMode = getMatchMode(prop);
                 if (value == null) {
-                    if (matchMode == MatchMode.NULLAbLE) {
+                    if (matchMode == MatchMode.NULLABLE) {
                         predicate = expr.isNull();
                     }
                 } else if (value instanceof String) {

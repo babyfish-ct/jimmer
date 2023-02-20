@@ -192,6 +192,9 @@ public interface JSqlClient extends SubQueryProvider {
         Builder addDisabledFilters(Filter<?>... filters);
 
         @OldChain
+        Builder ignoreBuiltInFilters();
+
+        @OldChain
         Builder addDisabledFilters(Collection<Filter<?>> filters);
 
         @OldChain

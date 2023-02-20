@@ -27,16 +27,9 @@ class ParameterizedCacheTest : AbstractQueryTest() {
     @BeforeTest
     fun initialize() {
         _sqlClient = sqlClient {
+            ignoreBuiltInFilters()
             addFilters(UndeleteFilter())
             addDisabledFilters(DeleteFilter())
-            setEntityManager(
-                EntityManager(
-                    Administrator::class.java,
-                    AdministratorMetadata::class.java,
-                    Role::class.java,
-                    Permission::class.java
-                )
-            )
             setCaches {
                 setCacheFactory(
                     object : KCacheFactory {

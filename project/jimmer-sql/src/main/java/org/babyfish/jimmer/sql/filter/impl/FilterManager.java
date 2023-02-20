@@ -49,14 +49,18 @@ public class FilterManager implements Filters {
     private final StaticCache<ImmutableType, List<Filter<Props>>> allCacheableCache =
             new StaticCache<>(this::createAllCacheable, false);
 
+    private final BuiltInFilters builtIns;
+
     private JSqlClient sqlClient;
 
     public FilterManager(
+            BuiltInFilters builtIns,
             List<Filter<?>> filters,
             Collection<Filter<?>> disabledFilters
     ) {
-        this.allFilters = filters(filters);
-        this.disabledFilters = disable(null, disabledFilters, this.allFilters);
+        this.builtIns = builtIns;
+        this.allFilters = standardFilters(filters);
+        this.disabledFilters = standardDisabledFilters(null, disabledFilters, this.allFilters);
         this.filterMap = filterMap(this.allFilters, this.disabledFilters);
         this.allCacheableFilterMap = filterMap(
                 this.allFilters.stream().filter(it -> it instanceof CacheableFilter<?>).collect(Collectors.toList()),
@@ -65,11 +69,13 @@ public class FilterManager implements Filters {
     }
 
     private FilterManager(
+            BuiltInFilters builtIns,
             Set<Filter<?>> filters,
             Set<Filter<?>> disabledFilters,
             Map<ImmutableType, List<Filter<Props>>> filterMap,
             Map<ImmutableType, List<Filter<Props>>> allCacheableFilterMap
     ) {
+        this.builtIns = builtIns;
         this.allFilters = filters;
         this.disabledFilters = disabledFilters;
         this.filterMap = filterMap;
@@ -146,11 +152,14 @@ public class FilterManager implements Filters {
             return this;
         }
         Set<Filter<?>> disabledSet = new HashSet<>(disabledFilters);
-        filters.forEach(disabledSet::remove);
+        for (Filter<?> filter : filters) {
+            disabledSet.remove(unwrap(filter));
+        }
         if (disabledSet.size() == disabledFilters.size()) {
             return this;
         }
         return new FilterManager(
+                builtIns,
                 allFilters,
                 disabledSet,
                 filterMap(allFilters, disabledSet),
@@ -162,11 +171,12 @@ public class FilterManager implements Filters {
         if (filters.isEmpty()) {
             return this;
         }
-        Set<Filter<?>> disabledSet = disable(disabledFilters, filters, this.allFilters);
+        Set<Filter<?>> disabledSet = standardDisabledFilters(disabledFilters, filters, this.allFilters);
         if (disabledSet.size() == disabledFilters.size()) {
             return this;
         }
         return new FilterManager(
+                builtIns,
                 allFilters,
                 disabledSet,
                 filterMap(allFilters, disabledSet),
@@ -182,8 +192,8 @@ public class FilterManager implements Filters {
         for (Filter<?> filter : disabledFilters) {
             boolean matched = false;
             for (Class<?> expectedType : filterTypes) {
-                Class<?> actualType = filter instanceof TypeAwareFilter ?
-                        ((TypeAwareFilter) filter).getFilterType() :
+                Class<?> actualType = filter instanceof TypeAware ?
+                        ((TypeAware) filter).getFilterType() :
                         filter.getClass();
                 if (expectedType.isAssignableFrom(actualType)) {
                     matched = true;
@@ -205,8 +215,8 @@ public class FilterManager implements Filters {
         for (Filter<?> filter : allFilters) {
             boolean matched = false;
             for (Class<?> expectedType : filterTypes) {
-                Class<?> actualType = filter instanceof TypeAwareFilter ?
-                        ((TypeAwareFilter) filter).getFilterType() :
+                Class<?> actualType = filter instanceof TypeAware ?
+                        ((TypeAware) filter).getFilterType() :
                         filter.getClass();
                 if (expectedType.isAssignableFrom(actualType)) {
                     matched = true;
@@ -228,18 +238,6 @@ public class FilterManager implements Filters {
         if (this.sqlClient != null) {
             throw new IllegalStateException("The filter manager has been initialized");
         }
-        if (sqlClient.getEntityManager() == null) {
-            for (Filter<?> filter : allFilters) {
-                if (filter instanceof CacheableFilter<?>) {
-                    throw new IllegalStateException(
-                            "The EntityManager of SqlClient must be configured " +
-                                    "when \"" +
-                                    CacheableFilter.class.getName() +
-                                    "\" is used"
-                    );
-                }
-            }
-        }
         if (sqlClient.getConnectionManager() == ConnectionManager.ILLEGAL) {
             for (Filter<?> filter : allFilters) {
                 if (filter instanceof CacheableFilter<?>) {
@@ -254,6 +252,11 @@ public class FilterManager implements Filters {
         }
         this.sqlClient = sqlClient;
         onInitialized();
+    }
+
+    @Override
+    public BuiltInFilters builtIns() {
+        return builtIns;
     }
 
     private Filter<Props> create(ImmutableType type) {
@@ -306,10 +309,12 @@ public class FilterManager implements Filters {
         return filters;
     }
 
-    private static ImmutableType getImmutableType(Filter<Props> filter) {
-        if (filter instanceof TypeAwareFilter) {
-            return ((TypeAwareFilter)filter).getImmutableType();
+    public static ImmutableType getImmutableType(Filter<?> filter) {
+
+        if (filter instanceof TypeAware) {
+            return ((TypeAware)filter).getImmutableType();
         }
+
         Class<?> filterClass = filter.getClass();
         Collection<Type> filterTypeArguments = TypeUtils
                 .getTypeArguments(filterClass, Filter.class)
@@ -407,14 +412,26 @@ public class FilterManager implements Filters {
         }
     }
 
-    private static Set<Filter<?>> filters(Collection<Filter<?>> filters) {
+    private static Set<Filter<?>> standardFilters(Collection<Filter<?>> filters) {
         Set<Filter<?>> set = new LinkedHashSet<>();
         for (Filter<?> filter : filters) {
-            if (filter != null) {
-                set.add(filter);
+            Filter<?> unwrapped = unwrap(filter);
+            if (unwrapped != null) {
+                set.add(unwrapped);
             }
         }
         return set;
+    }
+
+    private static Filter<?> unwrap(Filter<?> filter) {
+        Object o = filter;
+        while (o instanceof TypeAware) {
+            o = ((TypeAware)o).unwrap();
+            if (o instanceof Filter<?>) {
+                filter = (Filter<?>) o;
+            }
+        }
+        return filter;
     }
 
     @SuppressWarnings("unchecked")
@@ -434,18 +451,20 @@ public class FilterManager implements Filters {
         return map;
     }
 
-    private static <E> Set<E> disable(Collection<E> base, Collection<E> more, Collection<E> enabled) {
-        Set<E> set = base != null ? new HashSet<>(base) : new HashSet<>();
-        set.addAll(more);
-        set.retainAll(enabled);
-        return set;
-    }
-
-    private static void collectFilterTypes(Class<?> filterType, Set<Class<?>> filterTypes) {
-        if (filterType != null && Filter.class.isAssignableFrom(filterType)) {
-            filterTypes.add(filterType);
-            collectFilterTypes(filterType.getSuperclass(), filterTypes);
+    private static Set<Filter<?>> standardDisabledFilters(
+            Collection<Filter<?>> base,
+            Collection<Filter<?>> more,
+            Collection<Filter<?>> all
+    ) {
+        Set<Filter<?>> set = base != null ? new HashSet<>(base) : new HashSet<>();
+        for (Filter<?> filter : more) {
+            Filter<?> unwrapped = unwrap(filter);
+            if (unwrapped != null) {
+                set.add(unwrapped);
+            }
         }
+        set.retainAll(all);
+        return set;
     }
 
     private static class CompositeFilter implements Filter<Props> {
@@ -557,7 +576,6 @@ public class FilterManager implements Filters {
         CachesImpl caches = (CachesImpl) this.sqlClient.getCaches();
         for (Map.Entry<ImmutableProp, LocatedCache<?, ?>> entry : caches.getPropCacheMap().entrySet()) {
             ImmutableProp prop = entry.getKey();
-            Cache<?, ?> cache = entry.getValue();
             if (prop.isAssociation(TargetLevel.PERSISTENT)) {
                 List<Filter<Props>> filters = allCacheableCache.get(prop.getTargetType());
                 if (!filters.isEmpty()) {

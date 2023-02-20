@@ -33,14 +33,6 @@ class ParameterizedCacheEvictTest : AbstractQueryTest() {
         _sqlClient = sqlClient {
             addFilters(UndeleteFilter())
             addDisabledFilters(DeleteFilter())
-            setEntityManager(
-                EntityManager(
-                    Administrator::class.java,
-                    AdministratorMetadata::class.java,
-                    Role::class.java,
-                    Permission::class.java
-                )
-            )
             setCaches {
                 setCacheFactory(
                     object : KCacheFactory {

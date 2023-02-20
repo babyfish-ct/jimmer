@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.repository;
 
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.spring.repository.support.Utils;
@@ -27,6 +28,8 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
      */
 
     JSqlClient sql();
+
+    ImmutableType type();
 
     Pager pager(Pageable pageable);
 

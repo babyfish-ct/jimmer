@@ -25,15 +25,6 @@ public class MutateCacheTest extends AbstractQueryTest {
     public void initialize() {
         cacheOpRecords.clear();
         lambdaClient = getLambdaClient(builder -> {
-            builder.setEntityManager(
-                    new EntityManager(
-                            BookStore.class,
-                            Book.class,
-                            Author.class,
-                            Country.class,
-                            TreeNode.class
-                    )
-            );
             builder.setCaches(cfg ->
                     cfg.setCacheFactory(
                             new CacheFactory() {

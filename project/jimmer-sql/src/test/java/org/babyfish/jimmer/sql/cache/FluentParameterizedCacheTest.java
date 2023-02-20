@@ -32,16 +32,9 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
     @BeforeEach
     public void initialize() {
         sqlClient = getSqlClient(it -> {
+            it.ignoreBuiltInFilters();
             it.addFilters(new UndeletedFilter());
             it.addDisabledFilters(new DeletedFilter());
-            it.setEntityManager(
-                    new EntityManager(
-                            Administrator.class,
-                            AdministratorMetadata.class,
-                            Role.class,
-                            Permission.class
-                    )
-            );
             it.setCaches(cfg -> {
                 cfg.setCacheFactory(
                         new CacheFactory() {

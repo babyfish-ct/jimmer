@@ -23,14 +23,6 @@ public class ObjectCacheTest extends AbstractQueryTest {
     @BeforeEach
     public void initialize() {
         sqlClient = getSqlClient(builder -> {
-            builder.setEntityManager(
-                    new EntityManager(
-                            BookStore.class,
-                            Book.class,
-                            Author.class,
-                            Country.class
-                    )
-            );
             builder.setCaches(cfg ->
                     cfg.setCacheFactory(
                             new CacheFactory() {

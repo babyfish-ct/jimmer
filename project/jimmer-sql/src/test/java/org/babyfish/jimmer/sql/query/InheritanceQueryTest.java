@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.query;
 
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.inheritance.PermissionFetcher;
 import org.babyfish.jimmer.sql.model.inheritance.Role;
@@ -10,6 +11,11 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 
 public class InheritanceQueryTest extends AbstractQueryTest {
+
+    @Override
+    protected LambdaClient getLambdaClient() {
+        return getLambdaClient(JSqlClient.Builder::ignoreBuiltInFilters);
+    }
 
     @Test
     public void testFetchLonely() {

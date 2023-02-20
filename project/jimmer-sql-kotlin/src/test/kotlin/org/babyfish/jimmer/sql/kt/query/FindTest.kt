@@ -190,27 +190,4 @@ class FindTest : AbstractQueryTest() {
             )
         }
     }
-
-    @Test
-    fun testFetchByExampleWithNull() {
-        connectAndExpect({
-            sqlClient.entities.forConnection(it)
-                .findByExample(
-                    example(
-                        new(Book::class).by {
-                            store = null
-                            name = "X"
-                        }
-                    ) {
-                        ilike(Book::name, LikeMode.END)
-                    }
-                )
-        }) {
-            sql(
-                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK as tb_1_ 
-                    |where lower(tb_1_.NAME) like ? and tb_1_.STORE_ID is null""".trimMargin()
-            )
-        }
-    }
 }

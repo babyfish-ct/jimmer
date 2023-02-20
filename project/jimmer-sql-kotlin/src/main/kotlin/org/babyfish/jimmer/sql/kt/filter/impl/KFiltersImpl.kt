@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.filter.impl
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.lang.Ref
 import org.babyfish.jimmer.sql.filter.Filters
+import org.babyfish.jimmer.sql.kt.filter.KBuiltInFilters
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.filter.KFilters
 import java.util.*
@@ -24,4 +25,7 @@ internal class KFiltersImpl(
 
     override fun getTargetParameterMapRef(prop: KProperty1<*, *>): Ref<SortedMap<String, Any>?>? =
         javaFilters.getTargetParameterMapRef(prop.toImmutableProp())
+
+    override val builtIns: KBuiltInFilters =
+        KBuiltInFiltersImpl(javaFilters.builtIns())
 }

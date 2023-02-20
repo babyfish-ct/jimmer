@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.spring.repository
 
 import org.babyfish.jimmer.Input
+import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
@@ -19,6 +20,8 @@ import kotlin.reflect.KProperty1
 interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
 
     val sql: KSqlClient
+
+    val type: ImmutableType
 
     fun pager(pageIndex: Int, pageSize: Int): Pager
 

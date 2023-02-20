@@ -5,6 +5,8 @@ import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.impl.Metadata;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.runtime.DraftContext;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.util.*;
@@ -35,7 +37,8 @@ public interface ImmutableType {
     ) {
         return Metadata.newTypeBuilder(kotlinClass, superType, draftFactory);
     }
-    
+
+    @NotNull
     Class<?> getJavaClass();
 
     boolean isKotlinClass();
@@ -46,36 +49,75 @@ public interface ImmutableType {
 
     boolean isEmbeddable();
 
+    @NotNull
     Annotation getImmutableAnnotation();
 
     boolean isAssignableFrom(ImmutableType type);
 
+    @Nullable
     ImmutableType getSuperType();
 
+    @NotNull
     BiFunction<DraftContext, Object, Draft> getDraftFactory();
 
+    @NotNull
     Map<String, ImmutableProp> getDeclaredProps();
 
+    /**
+     * @return The id property declared in this type of super types.
+     * <ul>
+     *     <p>If the current type is decorated by {@link org.babyfish.jimmer.sql.Entity}, returns non-null value</p>
+     *     <p>If the current type is decorated by {@link org.babyfish.jimmer.sql.MappedSuperclass},
+     *     find id property in current type of super types, if nothing can be found, return null</p>
+     *     <p>Otherwise, always returns null</p>
+     * </ul>
+     */
     ImmutableProp getIdProp();
 
+    /**
+     * @return The version property declared in this type of super types.
+     * <ul>
+     *     <p>If the current type is decorated by {@link org.babyfish.jimmer.sql.Entity}, returns non-null value</p>
+     *     <p>If the current type is decorated by {@link org.babyfish.jimmer.sql.MappedSuperclass},
+     *     find version property in current type of super types, if nothing can be found, return null</p>
+     *     <p>Otherwise, always returns null</p>
+     * </ul>
+     */
+    @Nullable
     ImmutableProp getVersionProp();
 
+    /**
+     * Get the logical deleted property declared in this type, exclude super types
+     * @return The logical deleted property, may be null.
+     */
+    @Nullable
+    LogicalDeletedInfo getDeclaredLogicalDeletedInfo();
+
+    @NotNull
     Set<ImmutableProp> getKeyProps();
 
+    @Nullable
     String getTableName();
 
+    @NotNull
     Map<String, ImmutableProp> getProps();
 
+    @NotNull
     ImmutableProp getProp(String name);
 
+    @NotNull
     ImmutableProp getProp(int id);
 
+    @NotNull
     List<ImmutableProp> getPropChainByColumnName(String columnName);
 
+    @NotNull
     Map<String, ImmutableProp> getSelectableProps();
 
+    @NotNull
     Map<String, ImmutableProp> getSelectableReferenceProps();
 
+    @Nullable
     IdGenerator getIdGenerator();
 
     interface Builder {
@@ -92,6 +134,13 @@ public interface ImmutableType {
         );
 
         Builder version(int id, String name);
+
+        Builder logicalDeleted(
+                int id,
+                String name,
+                Class<?> elementType,
+                boolean nullable
+        );
 
         Builder add(
                 int id,

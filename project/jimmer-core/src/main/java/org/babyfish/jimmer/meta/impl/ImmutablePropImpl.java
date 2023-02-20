@@ -196,6 +196,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         } else {
             dissociateAction = DissociateAction.NONE;
         }
+
         this.base = null;
     }
 

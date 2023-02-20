@@ -11,26 +11,20 @@ import kotlin.test.Test
 
 class GlobalFilterTest : AbstractQueryTest() {
 
-    private lateinit var _sqlClient: KSqlClient
-
     private lateinit var _sqlClientForDeleted: KSqlClient
 
     @BeforeTest
     fun initialize() {
-        _sqlClient = sqlClient {
-            addFilters(UNDELETED_FILTER)
-            addDisabledFilters(DELETED_FILTER)
-        }
-        _sqlClientForDeleted = _sqlClient.filters {
-            disable(UNDELETED_FILTER)
-            enable(DELETED_FILTER)
+        _sqlClientForDeleted = sqlClient.filters {
+            disable(sqlClient.filters.builtIns.getDeclaredNotDeletedFilter(NamedEntity::class))
+            enable(sqlClient.filters.builtIns.getDeclaredAlreadyDeletedFilter(NamedEntity::class))
         }
     }
 
     @Test
     fun testQueryUndeletedRoleWithPermissions() {
         executeAndExpect(
-            _sqlClient.createQuery(Role::class) {
+            sqlClient.createQuery(Role::class) {
                 select(
                     table.fetchBy {
                         allScalarFields()
@@ -77,7 +71,7 @@ class GlobalFilterTest : AbstractQueryTest() {
     @Test
     fun testQueryUndeletedPermissionWithRole() {
         executeAndExpect(
-            _sqlClient.createQuery(Permission::class) {
+            sqlClient.createQuery(Permission::class) {
                 select(
                     table.fetchBy {
                         allScalarFields()
@@ -129,7 +123,7 @@ class GlobalFilterTest : AbstractQueryTest() {
     @Test
     fun testQueryUndeletedAdministratorWithRoles() {
         executeAndExpect(
-            _sqlClient.createQuery(Administrator::class) {
+            sqlClient.createQuery(Administrator::class) {
                 select(
                     table.fetchBy {
                         allScalarFields()
@@ -192,7 +186,7 @@ class GlobalFilterTest : AbstractQueryTest() {
     @Test
     fun testQueryUndeletedRoleWithAdministrators() {
         executeAndExpect(
-            _sqlClient.createQuery(Role::class) {
+            sqlClient.createQuery(Role::class) {
                 select(
                     table.fetchBy {
                         allScalarFields()
@@ -246,7 +240,7 @@ class GlobalFilterTest : AbstractQueryTest() {
     @Test
     fun testQueryUndeletedAdministratorWithAdministratorMetadata() {
         executeAndExpect(
-            _sqlClient.createQuery(Administrator::class) {
+            sqlClient.createQuery(Administrator::class) {
                 select(
                     table.fetchBy {
                         allScalarFields()
@@ -308,7 +302,7 @@ class GlobalFilterTest : AbstractQueryTest() {
     @Test
     fun testQueryUndeletedAdministratorMetadataWithAdministrator() {
         executeAndExpect(
-            _sqlClient.createQuery(AdministratorMetadata::class) {
+            sqlClient.createQuery(AdministratorMetadata::class) {
                 select(
                     table.fetchBy {
                         allTableFields()
@@ -706,17 +700,3 @@ class GlobalFilterTest : AbstractQueryTest() {
         }
     }
 }
-
-private val UNDELETED_FILTER: KFilter<NamedEntity> =
-    object: KFilter<NamedEntity> {
-
-        override fun filter(args: KFilterArgs<NamedEntity>) =
-            args.where(args.table.deleted eq false)
-    }
-
-private val DELETED_FILTER: KFilter<NamedEntity> =
-    object: KFilter<NamedEntity> {
-
-        override fun filter(args: KFilterArgs<NamedEntity>) =
-            args.where(args.table.deleted eq true)
-    }

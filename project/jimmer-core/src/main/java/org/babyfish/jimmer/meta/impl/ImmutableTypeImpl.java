@@ -9,6 +9,8 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -57,6 +59,8 @@ class ImmutableTypeImpl implements ImmutableType {
     private ImmutableProp idProp;
 
     private ImmutableProp versionProp;
+
+    private LogicalDeletedInfo declaredLogicalDeletedInfo;
 
     private Set<ImmutableProp> keyProps = Collections.emptySet();
 
@@ -146,6 +150,7 @@ class ImmutableTypeImpl implements ImmutableType {
         this.kotlinClass = kotlinClass;
     }
 
+    @NotNull
     @Override
     public Class<?> getJavaClass() {
         return javaClass;
@@ -171,11 +176,13 @@ class ImmutableTypeImpl implements ImmutableType {
         return isEmbeddable;
     }
 
+    @NotNull
     @Override
     public Annotation getImmutableAnnotation() {
         return immutableAnnotation;
     }
 
+    @Nullable
     KClass<?> getKotlinClass() { return kotlinClass; }
 
     @Override
@@ -183,16 +190,19 @@ class ImmutableTypeImpl implements ImmutableType {
         return javaClass.isAssignableFrom(type.getJavaClass());
     }
 
+    @Nullable
     @Override
     public ImmutableType getSuperType() {
         return superType;
     }
 
+    @NotNull
     @Override
     public BiFunction<DraftContext, Object, Draft> getDraftFactory() {
         return draftFactory;
     }
 
+    @NotNull
     @Override
     public Map<String, ImmutableProp> getDeclaredProps() {
         return declaredProps;
@@ -203,21 +213,31 @@ class ImmutableTypeImpl implements ImmutableType {
         return idProp;
     }
 
+    @Nullable
     @Override
     public ImmutableProp getVersionProp() {
         return versionProp;
     }
 
+    @Nullable
+    @Override
+    public LogicalDeletedInfo getDeclaredLogicalDeletedInfo() {
+        return declaredLogicalDeletedInfo;
+    }
+
+    @NotNull
     @Override
     public Set<ImmutableProp> getKeyProps() {
         return keyProps;
     }
 
+    @Nullable
     @Override
     public String getTableName() {
         return tableName;
     }
 
+    @NotNull
     @Override
     public Map<String, ImmutableProp> getProps() {
         Map<String, ImmutableProp> props = this.props;
@@ -242,6 +262,7 @@ class ImmutableTypeImpl implements ImmutableType {
         return props;
     }
 
+    @NotNull
     @Override
     public ImmutableProp getProp(String name) {
         ImmutableProp prop = getProps().get(name);
@@ -253,6 +274,7 @@ class ImmutableTypeImpl implements ImmutableType {
         return prop;
     }
 
+    @NotNull
     @Override
     public ImmutableProp getProp(int id) {
         ImmutableProp[] arr = this.getPropArr();
@@ -264,6 +286,7 @@ class ImmutableTypeImpl implements ImmutableType {
         return arr[id];
     }
 
+    @NotNull
     private ImmutableProp[] getPropArr() {
         ImmutableProp[] arr = propArr;
         if (arr == null) {
@@ -276,6 +299,7 @@ class ImmutableTypeImpl implements ImmutableType {
         return arr;
     }
 
+    @NotNull
     @Override
     public List<ImmutableProp> getPropChainByColumnName(String columnName) {
         String cmpName = DatabaseIdentifiers.comparableIdentifier(columnName);
@@ -305,6 +329,7 @@ class ImmutableTypeImpl implements ImmutableType {
         return map;
     }
 
+    @NotNull
     @Override
     public Map<String, ImmutableProp> getSelectableProps() {
         Map<String, ImmutableProp> selectableProps = this.selectableProps;
@@ -325,6 +350,7 @@ class ImmutableTypeImpl implements ImmutableType {
         return selectableProps;
     }
 
+    @NotNull
     @Override
     public Map<String, ImmutableProp> getSelectableReferenceProps() {
         Map<String, ImmutableProp> selectableReferenceProps = this.selectableReferenceProps;
@@ -514,6 +540,10 @@ class ImmutableTypeImpl implements ImmutableType {
         this.versionProp = versionProp;
     }
 
+    void setDeclaredLogicalDeletedInfo(LogicalDeletedInfo declaredLogicalDeletedInfo) {
+        this.declaredLogicalDeletedInfo = declaredLogicalDeletedInfo;
+    }
+
     void setKeyProps(Set<ImmutableProp> keyProps) {
         Set<ImmutableProp> set = new LinkedHashSet<>();
         for (ImmutableProp keyProp : keyProps) {
@@ -577,6 +607,8 @@ class ImmutableTypeImpl implements ImmutableType {
 
         private String versionPropName;
 
+        private String logicalDeletedPropName;
+
         private final List<String> keyPropNames = new ArrayList<>();
 
         private final Set<Integer> propIds;
@@ -615,10 +647,31 @@ class ImmutableTypeImpl implements ImmutableType {
         public Builder id(int id, String name, Class<?> elementType) {
             if (!javaClass.isAnnotationPresent(Entity.class)
                 && !javaClass.isAnnotationPresent(MappedSuperclass.class)) {
-                throw new IllegalStateException("Cannot set id for type that is not entity or mapped super type");
+                throw new IllegalStateException(
+                        "Cannot set id property for type \"" +
+                                javaClass.getName() +
+                                "\" which is not entity or mapped super class"
+                );
+            }
+            if (superType != null && superType.getIdProp() != null) {
+                throw new IllegalStateException(
+                        "Cannot set id property for type \"" +
+                                javaClass.getName() +
+                                "\" because there is an id property in the super type \"" +
+                                superType.getJavaClass().getName() +
+                                "\""
+                );
             }
             if (idPropName != null) {
-                throw new IllegalStateException("id property has been set");
+                throw new IllegalStateException(
+                        "Conflict id properties \"" +
+                                idPropName +
+                                "\" and \"" +
+                                name +
+                                "\" in \"" +
+                                javaClass.getName() +
+                                "\""
+                );
             }
             idPropName = name;
             return add(
@@ -634,7 +687,11 @@ class ImmutableTypeImpl implements ImmutableType {
         public Builder key(int id, String name, Class<?> elementType) {
             if (!javaClass.isAnnotationPresent(Entity.class) &&
                 !javaClass.isAnnotationPresent(MappedSuperclass.class)) {
-                throw new IllegalStateException("Cannot add key for type that is not entity or mapped super class");
+                throw new IllegalStateException(
+                        "Cannot set key property for type \"" +
+                                javaClass.getName() +
+                                "\" which is not entity or mapped super class"
+                );
             }
             keyPropNames.add(name);
             return add(id, name, category(elementType), elementType, false);
@@ -655,13 +712,73 @@ class ImmutableTypeImpl implements ImmutableType {
         public Builder version(int id, String name) {
             if (!javaClass.isAnnotationPresent(Entity.class) &&
                 !javaClass.isAnnotationPresent(MappedSuperclass.class)) {
-                throw new IllegalStateException("Cannot set version for type that is not entity or mapped super class");
+                throw new IllegalStateException(
+                        "Cannot set version property for type \"" +
+                                javaClass.getName() +
+                                "\" which is not entity or mapped super class"
+                );
+            }
+            if (superType != null && superType.getVersionProp() != null) {
+                throw new IllegalStateException(
+                        "Cannot set version property for type \"" +
+                                javaClass.getName() +
+                                "\" because there is an id property in the super type \"" +
+                                superType.getJavaClass().getName() +
+                                "\""
+                );
             }
             if (versionPropName != null) {
-                throw new IllegalStateException("version property has been set");
+                throw new IllegalStateException(
+                        "Conflict version properties \"" +
+                                versionPropName +
+                                "\" and \"" +
+                                name +
+                                "\" in \"" +
+                                javaClass.getName() +
+                                "\""
+                );
             }
             versionPropName = name;
             return add(id, name, ImmutablePropCategory.SCALAR, int.class, false);
+        }
+
+        @Override
+        public Builder logicalDeleted(
+                int id,
+                String name,
+                Class<?> elementType,
+                boolean nullable
+        ) {
+            if (!javaClass.isAnnotationPresent(Entity.class) &&
+                    !javaClass.isAnnotationPresent(MappedSuperclass.class)) {
+                throw new IllegalStateException(
+                        "Cannot set logical deleted property for type \"" +
+                                javaClass.getName() +
+                                "\" which is not entity or mapped super class"
+                );
+            }
+            if (superType != null && superType.getIdProp() != null) {
+                throw new IllegalStateException(
+                        "Cannot set logical deleted property for type \"" +
+                                javaClass.getName() +
+                                "\" because there is an id property in the super type \"" +
+                                superType.getJavaClass().getName() +
+                                "\""
+                );
+            }
+            if (logicalDeletedPropName != null) {
+                throw new IllegalStateException(
+                        "Conflict logical deleted properties \"" +
+                                logicalDeletedPropName +
+                                "\" and \"" +
+                                name +
+                                "\" in \"" +
+                                javaClass.getName() +
+                                "\""
+                );
+            }
+            logicalDeletedPropName = name;
+            return add(id, name, ImmutablePropCategory.SCALAR, elementType, nullable);
         }
 
         @Override
@@ -800,6 +917,10 @@ class ImmutableTypeImpl implements ImmutableType {
                 type.setVersionProp(type.declaredProps.get(versionPropName));
             } else if (type.superType != null) {
                 type.setVersionProp(type.superType.getVersionProp());
+            }
+
+            if (logicalDeletedPropName != null) {
+                type.setDeclaredLogicalDeletedInfo(LogicalDeletedInfo.of(type.declaredProps.get(logicalDeletedPropName)));
             }
 
             Set<ImmutableProp> keyProps = type.superType != null ?

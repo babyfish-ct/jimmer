@@ -44,7 +44,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
                 )
         }
 
-    protected val immutableType: ImmutableType =
+    override val type: ImmutableType =
         ImmutableType.get(this.entityType.java)
 
     override fun pager(pageIndex: Int, pageSize: Int): KRepository.Pager {
@@ -84,9 +84,9 @@ open class KRepositoryImpl<E: Any, ID: Any> (
 
     override fun findAll(fetcher: Fetcher<E>?, sort: Sort): List<E> =
         if (fetcher !== null) {
-            sql.entities.findAll(fetcher, sort.toSortDslBlock(immutableType))
+            sql.entities.findAll(fetcher, sort.toSortDslBlock(type))
         } else {
-            sql.entities.findAll(entityType, sort.toSortDslBlock(immutableType))
+            sql.entities.findAll(entityType, sort.toSortDslBlock(type))
         }
 
     override fun findAll(
@@ -157,7 +157,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
         }.modifiedEntity
 
     override fun delete(entity: E) {
-        sql.entities.delete(entityType, ImmutableObjects.get(entity, immutableType.idProp))
+        sql.entities.delete(entityType, ImmutableObjects.get(entity, type.idProp))
     }
 
     override fun deleteById(id: ID) {
@@ -178,7 +178,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             .batchDelete(
                 entityType,
                 entities.map {
-                    ImmutableObjects.get(it, immutableType.idProp)
+                    ImmutableObjects.get(it, type.idProp)
                 }
             )
     }

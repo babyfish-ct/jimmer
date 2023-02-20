@@ -105,6 +105,10 @@ class KSqlClientDsl internal constructor(
         javaBuilder.addDisabledFilters(filters.map { it.toJavaFilter() })
     }
 
+    fun ignoreBuiltInFilters() {
+        javaBuilder.ignoreBuiltInFilters()
+    }
+
     fun addDraftInterceptor(interceptor: DraftInterceptor<*>) {
         javaBuilder.addDraftInterceptor(interceptor)
     }
