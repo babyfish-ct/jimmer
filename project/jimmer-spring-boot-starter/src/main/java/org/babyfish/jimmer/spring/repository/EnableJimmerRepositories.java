@@ -2,6 +2,7 @@ package org.babyfish.jimmer.spring.repository;
 
 import kotlin.Deprecated;
 import org.babyfish.jimmer.spring.repository.config.JimmerRepositoriesRegistrar;
+import org.babyfish.jimmer.spring.repository.config.JimmerRepositoriesRegistrarForAnnotation;
 import org.babyfish.jimmer.spring.repository.support.JimmerRepositoryFactoryBean;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.context.annotation.ComponentScan;
@@ -14,7 +15,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
-@Import(JimmerRepositoriesRegistrar.class)
+@Import(JimmerRepositoriesRegistrarForAnnotation.class)
 public @interface EnableJimmerRepositories {
 
     /**
