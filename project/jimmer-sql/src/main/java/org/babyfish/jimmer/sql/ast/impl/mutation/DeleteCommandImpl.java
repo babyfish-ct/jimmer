@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
@@ -111,7 +112,9 @@ public class DeleteCommandImpl implements DeleteCommand {
 
     static class Data implements Cfg {
 
-        private JSqlClient sqlClient;
+        private final JSqlClient sqlClient;
+
+        private DeleteMode mode;
 
         private Map<ImmutableProp, DissociateAction> dissociateActionMap;
 
@@ -119,11 +122,13 @@ public class DeleteCommandImpl implements DeleteCommand {
 
         Data(JSqlClient sqlClient) {
             this.sqlClient = sqlClient;
+            this.mode = DeleteMode.AUTO;
             this.dissociateActionMap = new LinkedHashMap<>();
         }
 
-        Data(JSqlClient sqlClient, Map<ImmutableProp, DissociateAction> dissociateActionMap) {
+        Data(JSqlClient sqlClient, DeleteMode mode, Map<ImmutableProp, DissociateAction> dissociateActionMap) {
             this.sqlClient = sqlClient;
+            this.mode = mode;
             if (dissociateActionMap != null) {
                 this.dissociateActionMap = new LinkedHashMap<>(dissociateActionMap);
             } else {
@@ -133,6 +138,7 @@ public class DeleteCommandImpl implements DeleteCommand {
 
         Data(Data base) {
             this.sqlClient = base.sqlClient;
+            this.mode = base.mode;
             this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
         }
 
@@ -150,6 +156,12 @@ public class DeleteCommandImpl implements DeleteCommand {
                 dissociateActionMap = Collections.unmodifiableMap(dissociateActionMap);
                 frozen = true;
             }
+            return this;
+        }
+
+        @Override
+        public Cfg setDeleteMode(DeleteMode mode) {
+            this.mode = mode;
             return this;
         }
 
