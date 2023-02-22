@@ -66,10 +66,10 @@ public interface ImmutableType {
     /**
      * @return The id property declared in this type of super types.
      * <ul>
-     *     <p>If the current type is decorated by {@link org.babyfish.jimmer.sql.Entity}, returns non-null value</p>
-     *     <p>If the current type is decorated by {@link org.babyfish.jimmer.sql.MappedSuperclass},
-     *     find id property in current type of super types, if nothing can be found, return null</p>
-     *     <p>Otherwise, always returns null</p>
+     *     <li>If the current type is decorated by {@link org.babyfish.jimmer.sql.Entity}, returns non-null value</li>
+     *     <li>If the current type is decorated by {@link org.babyfish.jimmer.sql.MappedSuperclass},
+     *     find id property in current type of super types, if nothing can be found, return null</li>
+     *     <li>Otherwise, always returns null</li>
      * </ul>
      */
     ImmutableProp getIdProp();
@@ -77,10 +77,10 @@ public interface ImmutableType {
     /**
      * @return The version property declared in this type of super types.
      * <ul>
-     *     <p>If the current type is decorated by {@link org.babyfish.jimmer.sql.Entity}, returns non-null value</p>
-     *     <p>If the current type is decorated by {@link org.babyfish.jimmer.sql.MappedSuperclass},
-     *     find version property in current type of super types, if nothing can be found, return null</p>
-     *     <p>Otherwise, always returns null</p>
+     *     <li>If the current type is decorated by {@link org.babyfish.jimmer.sql.Entity}, returns non-null value</li>
+     *     <li>If the current type is decorated by {@link org.babyfish.jimmer.sql.MappedSuperclass},
+     *     find version property in current type of super types, if nothing can be found, return null</li>
+     *     <li>Otherwise, always returns null</li>
      * </ul>
      */
     @Nullable
