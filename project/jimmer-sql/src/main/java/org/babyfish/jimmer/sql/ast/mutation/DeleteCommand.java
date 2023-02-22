@@ -19,6 +19,9 @@ public interface DeleteCommand extends Executable<DeleteResult> {
     interface Cfg {
 
         @OldChain
+        Cfg setDeleteMode(DeleteMode mode);
+
+        @OldChain
         default Cfg setDissociateAction(
                 TypedProp.Reference<?, ?> prop,
                 DissociateAction dissociateAction

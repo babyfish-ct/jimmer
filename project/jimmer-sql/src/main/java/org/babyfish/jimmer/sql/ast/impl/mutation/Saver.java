@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -205,7 +206,7 @@ class Saver {
                                 associatedObjectIds
                         );
                         Deleter deleter = new Deleter(
-                                new DeleteCommandImpl.Data(data.getSqlClient(), data.dissociateActionMap()),
+                                new DeleteCommandImpl.Data(data.getSqlClient(), DeleteMode.AUTO, data.dissociateActionMap()),
                                 con,
                                 cache,
                                 trigger,
