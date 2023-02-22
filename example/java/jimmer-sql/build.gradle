@@ -13,8 +13,8 @@ repositories {
 
 dependencies {
 
-    implementation 'org.babyfish.jimmer:jimmer-spring-boot-starter:0.6.48-0.7-preview'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.48-0.7-preview'
+    implementation 'org.babyfish.jimmer:jimmer-spring-boot-starter:0.6.49-0.7-preview'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.49-0.7-preview'
 
     implementation 'org.projectlombok:lombok:1.18.26'
     annotationProcessor 'org.projectlombok:lombok:1.18.26'

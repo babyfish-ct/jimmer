@@ -28,7 +28,7 @@ import org.springframework.core.ParameterNameDiscoverer;
         havingValue = "true",
         matchIfMissing = true
 )
-// @ConditionalOnMissingBean({ JimmerRepositoryFactoryBean.class, JimmerRepositoryConfigExtension.class })
+@ConditionalOnMissingBean({ JimmerRepositoryFactoryBean.class, JimmerRepositoryConfigExtension.class })
 @EnableConfigurationProperties(JimmerProperties.class)
 @Import(SqlClientConfig.class)
 public class JimmerAutoConfiguration {
