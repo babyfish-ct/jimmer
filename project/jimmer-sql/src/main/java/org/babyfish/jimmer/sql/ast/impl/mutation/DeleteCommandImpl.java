@@ -165,7 +165,7 @@ public class DeleteCommandImpl implements DeleteCommand {
         }
 
         @Override
-        public Cfg setDeleteMode(DeleteMode mode) {
+        public Cfg setMode(DeleteMode mode) {
             this.mode = mode;
             return this;
         }

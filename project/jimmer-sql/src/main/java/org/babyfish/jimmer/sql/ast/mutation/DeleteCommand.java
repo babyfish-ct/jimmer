@@ -17,7 +17,7 @@ public interface DeleteCommand extends Executable<DeleteResult> {
     interface Cfg {
 
         @OldChain
-        Cfg setDeleteMode(DeleteMode mode);
+        Cfg setMode(DeleteMode mode);
 
         @OldChain
         default Cfg setDissociateAction(

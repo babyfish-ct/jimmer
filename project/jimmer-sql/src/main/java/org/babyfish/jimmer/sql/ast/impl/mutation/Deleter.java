@@ -58,7 +58,7 @@ public class Deleter {
     ) {
         this.data = data;
         this.cascadeData = new DeleteCommandImpl.Data(data);
-        this.cascadeData.setDeleteMode(DeleteMode.PHYSICAL);
+        this.cascadeData.setMode(DeleteMode.PHYSICAL);
         this.con = con;
         if (trigger != null) {
             this.cache = cache;
