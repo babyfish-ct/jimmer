@@ -2,14 +2,20 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.sql.LogicalDeleted;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.Reader;
@@ -23,6 +29,8 @@ import java.util.*;
 public class Deleter {
 
     private final DeleteCommandImpl.Data data;
+
+    private final DeleteCommandImpl.Data cascadeData;
 
     private final Connection con;
 
@@ -49,6 +57,8 @@ public class Deleter {
             Map<AffectedTable, Integer> affectedRowCountMap
     ) {
         this.data = data;
+        this.cascadeData = new DeleteCommandImpl.Data(data);
+        this.cascadeData.setDeleteMode(DeleteMode.PHYSICAL);
         this.con = con;
         if (trigger != null) {
             this.cache = cache;
@@ -119,6 +129,11 @@ public class Deleter {
         if (ids.isEmpty()) {
             return;
         }
+        if (logical(immutableType)) {
+            addPostHandleInput(immutableType, ids);
+            return;
+        }
+
         for (ImmutableProp prop : immutableType.getProps().values()) {
             MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGet(
                     data.getSqlClient(),
@@ -212,7 +227,7 @@ public class Deleter {
             }
             Deleter childDeleter = childDeleterMap.computeIfAbsent(
                     prop.getName(),
-                    it -> new Deleter(data, con, cache, trigger, affectedRowCountMap)
+                    it -> new Deleter(cascadeData, con, cache, trigger, affectedRowCountMap)
             );
             childDeleter.addPreHandleInput(childType, childIds);
             childDeleter.preHandle();
@@ -224,8 +239,61 @@ public class Deleter {
         Map<ImmutableType, Set<Object>> idMultiMap = postHandleIdInputMap;
         postHandleIdInputMap = new LinkedHashMap<>();
         for (Map.Entry<ImmutableType, Set<Object>> e : idMultiMap.entrySet()) {
-            deleteImpl(e.getKey(), e.getValue());
+            if (logical(e.getKey())) {
+                logicallyDeleteImpl(e.getKey(), e.getValue());
+            } else {
+                deleteImpl(e.getKey(), e.getValue());
+            }
         }
+    }
+
+    private void logicallyDeleteImpl(ImmutableType type, Collection<Object> ids) {
+
+        if (ids.isEmpty()) {
+            return;
+        }
+
+        LogicalDeletedInfo info = type.getLogicalDeletedInfo();
+        assert info != null;
+        ImmutableProp prop = info.getProp();
+        Object deletedValue = info.getValue();
+        ids = prepareLogicEvents(type, ids, prop.getId(), deletedValue);
+
+        ColumnDefinition definition = type.getIdProp().getStorage();
+        SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
+        builder.sql("update ");
+        builder.sql(type.getTableName());
+        builder.sql(" set ");
+        builder.sql(info.getProp().<SingleColumn>getStorage().name(0));
+        builder.sql(" = ");
+        if (deletedValue != null) {
+            builder.variable(deletedValue);
+        } else {
+            builder.nullVariable(prop.getElementClass());
+        }
+        builder.sql(" where ");
+        builder.sql(null, definition, true);
+        builder.sql(" in (");
+        String separator = "";
+        for (Object id : ids) {
+            builder.sql(separator);
+            separator = ", ";
+            builder.variable(id);
+        }
+        builder.sql(")");
+        Tuple2<String, List<Object>> sqlResult = builder.build();
+        int affectedRowCount = data
+                .getSqlClient()
+                .getExecutor()
+                .execute(
+                        con,
+                        sqlResult.get_1(),
+                        sqlResult.get_2(),
+                        ExecutionPurpose.DELETE,
+                        null,
+                        PreparedStatement::executeUpdate
+                );
+        addOutput(AffectedTable.of(type), affectedRowCount);
     }
 
     private void deleteImpl(ImmutableType type, Collection<Object> ids) {
@@ -267,6 +335,40 @@ public class Deleter {
         addOutput(AffectedTable.of(type), affectedRowCount);
     }
 
+    private Collection<Object> prepareLogicEvents(
+            ImmutableType type,
+            Collection<Object> ids,
+            int propId,
+            Object deletedValue
+    ) {
+        if (ids.isEmpty()) {
+            return ids;
+        }
+        MutationTrigger trigger = this.trigger;
+        if (trigger == null) {
+            return ids;
+        }
+        int idPropId = type.getIdProp().getId();
+        List<ImmutableSpi> rows = cache.loadByIds(type, ids, con);
+        Iterator<ImmutableSpi> itr = rows.iterator();
+        List<Object> changedIds = new ArrayList<>();
+        while (itr.hasNext()) {
+            ImmutableSpi row = itr.next();
+            if (Objects.equals(row.__get(propId), deletedValue)) {
+                itr.remove();
+            } else {
+                trigger.modifyEntityTable(
+                        row,
+                        Internal.produce(type, row, draft -> {
+                            ((DraftSpi)draft).__set(propId, deletedValue);
+                        })
+                );
+                changedIds.add(row.__get(idPropId));
+            }
+        }
+        return changedIds;
+    }
+
     private Collection<Object> prepareEvents(ImmutableType type, Collection<Object> ids) {
         MutationTrigger trigger = this.trigger;
         if (trigger == null) {
@@ -285,5 +387,23 @@ public class Deleter {
             rowIds.add(row.__get(idPropId));
         }
         return rowIds;
+    }
+
+    private boolean logical(ImmutableType type) {
+        DeleteMode mode = data.getMode();
+        if (mode == DeleteMode.PHYSICAL) {
+            return false;
+        }
+        boolean hasLogicalInfo = type.getLogicalDeletedInfo() != null;
+        if (hasLogicalInfo && mode == DeleteMode.LOGICAL) {
+            throw new ExecutionException(
+                    "The data of \"" +
+                            type +
+                            "\" cannot be logically deleted, because there is no property decorated by `@" +
+                            LogicalDeleted.class.getName() +
+                            "` in that type"
+            );
+        }
+        return hasLogicalInfo;
     }
 }

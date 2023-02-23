@@ -93,6 +93,13 @@ public interface ImmutableType {
     @Nullable
     LogicalDeletedInfo getDeclaredLogicalDeletedInfo();
 
+    /**
+     * Get the logical deleted property declared in this type or super types
+     * @return The logical deleted property, may be null.
+     */
+    @Nullable
+    LogicalDeletedInfo getLogicalDeletedInfo();
+
     @NotNull
     Set<ImmutableProp> getKeyProps();
 

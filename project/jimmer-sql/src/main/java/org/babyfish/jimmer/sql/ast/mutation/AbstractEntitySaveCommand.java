@@ -5,12 +5,9 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.ast.PropExpression;
-import org.babyfish.jimmer.sql.ast.table.Table;
 
 import java.util.Arrays;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public interface AbstractEntitySaveCommand {
 
@@ -60,11 +57,16 @@ public interface AbstractEntitySaveCommand {
                 DissociateAction dissociateAction
         );
 
+        @OldChain
         default Cfg setPessimisticLock() {
             return setPessimisticLock(true);
         }
 
+        @OldChain
         Cfg setPessimisticLock(boolean pessimisticLock);
+
+        @OldChain
+        Cfg setDeleteMode(DeleteMode mode);
     }
 
     interface KeyPropCfg<T> {

@@ -4,11 +4,13 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.OptimisticLockException;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.Administrator;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataDraft;
 import org.babyfish.jimmer.sql.runtime.DbNull;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.sql.PreparedStatement;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -789,5 +792,44 @@ public class SaveTest extends AbstractMutationTest {
                         "of \"<root>\" cannot be null, because that association is `inputNotNull`",
                 ex.getMessage()
         );
+    }
+
+    @Test
+    public void testRestoreLogicalDeleted() {
+        jdbc(null, true, con -> {
+            PreparedStatement statement = con.prepareStatement(
+                    "update ADMINISTRATOR_METADATA set DELETED = ? where ID in (?)"
+            );
+            statement.setBoolean(1, true);
+            statement.setLong(2, 10L);
+            clearExecutions();
+            statement.execute();
+            SimpleSaveResult<AdministratorMetadata> result = null;
+            Throwable throwable = null;
+            try {
+                result = getSqlClient().getEntities().saveCommand(
+                        AdministratorMetadataDraft.$.produce(draft -> {
+                            draft.setId(10L);
+                            draft.setName("am_10");
+                        })
+                ).execute(con);
+            } catch (Throwable ex) {
+                throwable = ex;
+            }
+            ExpectDSLWithResult ctx = new ExpectDSLWithResult(getExecutions(), throwable, result);
+            ctx.statement(it -> {
+                it.sql("select tb_1_.ID, tb_1_.NAME from ADMINISTRATOR_METADATA as tb_1_ where tb_1_.ID = ?");
+                it.variables(10L);
+            });
+            ctx.statement(it -> {
+                it.sql("update ADMINISTRATOR_METADATA set NAME = ?, DELETED = ? where ID = ?");
+                it.variables("am_10", false, 10L);
+            });
+            ctx.entity(it -> {
+                it.original("{\"name\":\"am_10\",\"id\":10}");
+                it.modified("{\"name\":\"am_10\",\"deleted\":false,\"id\":10}");
+            });
+            ctx.close();
+        });
     }
 }

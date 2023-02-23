@@ -62,6 +62,8 @@ class ImmutableTypeImpl implements ImmutableType {
 
     private LogicalDeletedInfo declaredLogicalDeletedInfo;
 
+    private LogicalDeletedInfo logicalDeletedInfo;
+
     private Set<ImmutableProp> keyProps = Collections.emptySet();
 
     private IdGenerator idGenerator;
@@ -223,6 +225,12 @@ class ImmutableTypeImpl implements ImmutableType {
     @Override
     public LogicalDeletedInfo getDeclaredLogicalDeletedInfo() {
         return declaredLogicalDeletedInfo;
+    }
+
+    @Nullable
+    @Override
+    public LogicalDeletedInfo getLogicalDeletedInfo() {
+        return logicalDeletedInfo;
     }
 
     @NotNull
@@ -541,7 +549,22 @@ class ImmutableTypeImpl implements ImmutableType {
     }
 
     void setDeclaredLogicalDeletedInfo(LogicalDeletedInfo declaredLogicalDeletedInfo) {
+        LogicalDeletedInfo superInfo = superType != null ? superType.getLogicalDeletedInfo() : null;
+        if (superInfo != null && declaredLogicalDeletedInfo != null) {
+            throw new AssertionError(
+                    "Internal bug, @LogicalDeleted field is configured in both \"" +
+                            this +
+                            "\" and its super type"
+            );
+        }
         this.declaredLogicalDeletedInfo = declaredLogicalDeletedInfo;
+        if (superInfo != null) {
+            logicalDeletedInfo = superInfo.to(
+                    new ImmutablePropImpl(this, (ImmutablePropImpl) superInfo.getProp())
+            );
+        } else {
+            logicalDeletedInfo = declaredLogicalDeletedInfo;
+        }
     }
 
     void setKeyProps(Set<ImmutableProp> keyProps) {
@@ -921,6 +944,8 @@ class ImmutableTypeImpl implements ImmutableType {
 
             if (logicalDeletedPropName != null) {
                 type.setDeclaredLogicalDeletedInfo(LogicalDeletedInfo.of(type.declaredProps.get(logicalDeletedPropName)));
+            } else {
+                type.setDeclaredLogicalDeletedInfo(null);
             }
 
             Set<ImmutableProp> keyProps = type.superType != null ?
