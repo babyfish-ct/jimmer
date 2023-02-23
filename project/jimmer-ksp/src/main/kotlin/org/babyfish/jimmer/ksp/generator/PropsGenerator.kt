@@ -58,10 +58,14 @@ class PropsGenerator(
                         }
                     } else {
                         for (prop in type.properties.values) {
-                            addProp(type, prop, nonNullTable = true, outerJoin = false)
-                            addProp(type, prop, nonNullTable = false, outerJoin = false)
-                            addProp(type, prop, nonNullTable = true, outerJoin = true)
-                            addProp(type, prop, nonNullTable = false, outerJoin = true)
+                            addProp(type, prop, nonNullTable = true, outerJoin = false, isTableEx = false)
+                            addProp(type, prop, nonNullTable = false, outerJoin = false, isTableEx = false)
+                            addProp(type, prop, nonNullTable = true, outerJoin = true, isTableEx = false)
+                            addProp(type, prop, nonNullTable = false, outerJoin = true, isTableEx = false)
+                            addProp(type, prop, nonNullTable = true, outerJoin = false, isTableEx = true)
+                            addProp(type, prop, nonNullTable = false, outerJoin = false, isTableEx = true)
+                            addProp(type, prop, nonNullTable = true, outerJoin = true, isTableEx = true)
+                            addProp(type, prop, nonNullTable = false, outerJoin = true, isTableEx = true)
                         }
                     }
                     if (type.isEntity) {
@@ -79,7 +83,8 @@ class PropsGenerator(
         type: ImmutableType,
         prop: ImmutableProp,
         nonNullTable: Boolean,
-        outerJoin: Boolean
+        outerJoin: Boolean,
+        isTableEx: Boolean
     ) {
         if (prop.isTransient || prop.isKotlinFormula) {
             return
@@ -90,8 +95,14 @@ class PropsGenerator(
         if (nonNullTable && (prop.isAssociation(true) || prop.isNullable)) {
             return
         }
+        if (!isTableEx && prop.isList) {
+            return
+        }
+        if (isTableEx && !prop.isAssociation(true)) {
+            return
+        }
         val receiverClassName = when {
-            prop.isList -> K_TABLE_EX_CLASS_NAME
+            isTableEx -> K_TABLE_EX_CLASS_NAME
             prop.isAssociation(true) || prop.isNullable -> K_PROPS_CLASS_NAME
             nonNullTable -> K_NON_NULL_PROPS_CLASS_NAME
             else -> K_NULLABLE_PROPS_CLASS_NAME
@@ -107,7 +118,13 @@ class PropsGenerator(
         }
         val returnClassName =
             when {
-                prop.isAssociation(true) ->
+                prop.isAssociation(true) && isTableEx ->
+                    if (outerJoin) {
+                        K_NULLABLE_TABLE_CLASS_NAME_EX
+                    } else {
+                        K_NON_NULL_TABLE_CLASS_NAME_EX
+                    }
+                prop.isAssociation(true) && !isTableEx ->
                     if (outerJoin) {
                         K_NULLABLE_TABLE_CLASS_NAME
                     } else {
