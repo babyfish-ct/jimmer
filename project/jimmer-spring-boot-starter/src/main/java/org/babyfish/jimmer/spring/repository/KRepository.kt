@@ -2,6 +2,8 @@ package org.babyfish.jimmer.spring.repository
 
 import org.babyfish.jimmer.Input
 import org.babyfish.jimmer.meta.ImmutableType
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
@@ -78,46 +80,64 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
     override fun count(): Long
 
     fun insert(input: Input<E>): E =
-        insert(input.toEntity())
+        save(input.toEntity(), SaveMode.INSERT_ONLY)
 
-    fun insert(entity: E): E
+    fun insert(entity: E): E =
+        save(entity, SaveMode.INSERT_ONLY)
 
     fun update(input: Input<E>): E =
-        update(input.toEntity())
+        save(input.toEntity(), SaveMode.UPDATE_ONLY)
 
-    fun update(entity: E): E
+    fun update(entity: E): E =
+        save(entity, SaveMode.UPDATE_ONLY)
 
-    override fun <S: E> save(entity: S): S
+    fun save(input: Input<E>, mode: SaveMode = SaveMode.UPSERT): E =
+        save(input.toEntity(), mode)
 
-    override fun <S : E> saveAll(entities: Iterable<S>): List<S>
+    override fun <S: E> save(entity: S): S =
+        save(entity, SaveMode.UPSERT)
 
-    fun save(input: Input<E>): E
+    fun <S: E> save(entity: S, mode: SaveMode): S
 
-    override fun delete(entity: E)
+    override fun <S : E> saveAll(entities: Iterable<S>): List<S> =
+        saveAll(entities, SaveMode.UPSERT)
 
-    override fun deleteById(id: ID)
+    fun <S : E> saveAll(entities: Iterable<S>, mode: SaveMode): List<S>
+
+    override fun delete(entity: E) {
+        delete(entity, DeleteMode.AUTO)
+    }
+
+    fun delete(entity: E, mode: DeleteMode): Int
+
+    override fun deleteById(id: ID) {
+        deleteById(id, DeleteMode.AUTO)
+    }
+
+    fun deleteById(id: ID, mode: DeleteMode): Int
 
     @AliasFor("deleteAllById")
-    fun deleteByIds(ids: Iterable<ID>)
+    fun deleteByIds(ids: Iterable<ID>) {
+        deleteByIds(ids, DeleteMode.AUTO)
+    }
 
     @AliasFor("deleteByIds")
     override fun deleteAllById(ids: Iterable<ID>) {
-        deleteByIds(ids)
+        deleteByIds(ids, DeleteMode.AUTO)
     }
 
+    fun deleteByIds(ids: Iterable<ID>, mode: DeleteMode): Int
+
+    override fun deleteAll(entities: Iterable<E>) {
+        deleteAll(entities, DeleteMode.AUTO)
+    }
+
+    fun deleteAll(entities: Iterable<E>, mode: DeleteMode): Int
+
     override fun deleteAll()
-
-    override fun deleteAll(entities: Iterable<E>)
-
-    val graphql: GraphQl<E>
 
     interface Pager {
 
         fun <T> execute(query: KConfigurableRootQuery<*, T>): Page<T>
-    }
-
-    interface GraphQl<E> {
-
-        fun <X: Any> load(prop: KProperty1<E, X?>, sources: Collection<E>): Map<E, X>
     }
 }

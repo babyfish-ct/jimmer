@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.spring.repository.support.Utils;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
@@ -115,95 +116,82 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     @NotNull
     default E insert(@NotNull Input<E> input) {
-        return insert(input.toEntity());
+        return save(input.toEntity(), SaveMode.INSERT_ONLY);
     }
 
     @NotNull
     default E insert(@NotNull E entity) {
-        return sql()
-                .getEntities()
-                .saveCommand(entity)
-                .configure(cfg -> {
-                    cfg.setMode(SaveMode.INSERT_ONLY);
-                    cfg.setAutoAttachingAll();
-                }).execute().getModifiedEntity();
+        return save(entity, SaveMode.INSERT_ONLY);
     }
 
     @NotNull
     default E update(@NotNull Input<E> input) {
-        return update(input.toEntity());
+        return save(input.toEntity(), SaveMode.UPDATE_ONLY);
     }
 
     @NotNull
     default E update(@NotNull E entity) {
-        return sql()
-                .getEntities()
-                .saveCommand(entity)
-                .configure(cfg -> {
-                    cfg.setMode(SaveMode.UPDATE_ONLY);
-                    cfg.setAutoAttachingAll();
-                }).execute().getModifiedEntity();
+        return save(entity, SaveMode.UPDATE_ONLY);
     }
 
     @NotNull
     @Override
     default <S extends E> S save(@NotNull S entity) {
-        return sql().getEntities().save(entity, true).getModifiedEntity();
+        return save(entity, SaveMode.UPSERT);
     }
-    
+
+    @NotNull
+    <S extends E> S save(@NotNull S entity, SaveMode mode);
+
     @NotNull
     @Override
     default <S extends E> Iterable<S> saveAll(@NotNull Iterable<S> entities) {
-        return sql()
-                .getEntities()
-                .batchSave(Utils.toCollection(entities), true)
-                .getSimpleResults()
-                .stream()
-                .map(SimpleSaveResult::getModifiedEntity)
-                .collect(Collectors.toList());
+        return saveAll(entities, SaveMode.UPSERT);
     }
 
-    default E save(Input<E> input) {
-        return sql()
-                .getEntities()
-                .save(input.toEntity(), true)
-                .getModifiedEntity();
+    @NotNull
+    <S extends E> Iterable<S> saveAll(@NotNull Iterable<S> entities, SaveMode mode);
+
+    @Override
+    default void delete(@NotNull E entity) {
+        delete(entity, DeleteMode.AUTO);
     }
 
-    @Override
-    void delete(@NotNull E entity);
+    int delete(@NotNull E entity, DeleteMode mode);
 
     @Override
-    void deleteAll(@NotNull Iterable<? extends E> entities);
+    default void deleteAll(@NotNull Iterable<? extends E> entities) {
+        deleteAll(entities, DeleteMode.AUTO);
+    }
+
+    int deleteAll(@NotNull Iterable<? extends E> entities, DeleteMode mode);
 
     @Override
-    void deleteAll();
+    default void deleteById(@NotNull ID id) {
+        deleteById(id, DeleteMode.AUTO);
+    }
 
-    @Override
-    void deleteById(@NotNull ID id);
+    int deleteById(@NotNull ID id, DeleteMode mode);
     
     @AliasFor("deleteAllById")
-    void deleteByIds(Iterable<? extends ID> ids);
+    default void deleteByIds(Iterable<? extends ID> ids) {
+        deleteByIds(ids, DeleteMode.AUTO);
+    }
 
     @AliasFor("deleteByIds")
     @Override
     default void deleteAllById(@NotNull Iterable<? extends ID> ids) {
-        deleteByIds(ids);
+        deleteByIds(ids, DeleteMode.AUTO);
     }
 
-    GraphQl<E> graphql();
+    @AliasFor("deleteAllById")
+    int deleteByIds(Iterable<? extends ID> ids, DeleteMode mode);
+
+    @Override
+    void deleteAll();
 
     interface Pager {
 
         <T> Page<T> execute(ConfigurableRootQuery<?, T> query);
-    }
-
-    interface GraphQl<E> {
-
-        <X> Map<E, X> load(TypedProp.Scalar<E, X> prop, Collection<E> sources);
-
-        <X> Map<E, X> load(TypedProp.Reference<E, X> prop, Collection<E> sources);
-
-        <X> Map<E, List<X>> load(TypedProp.ReferenceList<E, X> prop, Collection<E> sources);
     }
 }
