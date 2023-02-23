@@ -33,7 +33,31 @@ public final class LogicalDeletedInfo {
         Class<?> returnType = prop.getElementClass();
         this.isTwoOptionsOnly =
                 returnType == boolean.class ||
-                        (returnType.isEnum() || returnType.getEnumConstants().length == 2);
+                        (returnType.isEnum() && returnType.getEnumConstants().length == 2);
+    }
+
+    public LogicalDeletedInfo to(ImmutableProp prop) {
+        if (this.prop == prop) {
+            return this;
+        }
+        return new LogicalDeletedInfo(this, prop);
+    }
+
+    private LogicalDeletedInfo(LogicalDeletedInfo base, ImmutableProp prop) {
+        if (!base.prop.getName().equals(prop.getName()) ||
+                !base.prop.getDeclaringType().isAssignableFrom(prop.getDeclaringType())) {
+            throw new IllegalArgumentException(
+                    "\"" +
+                            prop +
+                            "\" does not hide \"" +
+                            base.prop +
+                            "\""
+            );
+        }
+        this.prop = prop;
+        this.value = base.value;
+        this.restoredValue = base.restoredValue;
+        this.isTwoOptionsOnly = base.isTwoOptionsOnly;
     }
 
     public ImmutableProp getProp() {

@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
@@ -155,7 +156,7 @@ public class MutableDeleteImpl
             return 0;
         }
         Deleter deleter = new Deleter(
-                new DeleteCommandImpl.Data(sqlClient),
+                new DeleteCommandImpl.Data(sqlClient, DeleteMode.PHYSICAL),
                 con,
                 cache,
                 binLogOnly ? null : new MutationTrigger(),

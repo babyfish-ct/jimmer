@@ -1,9 +1,7 @@
 package org.babyfish.jimmer.sql.event;
 
-import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.common.TestUtils;
 import org.babyfish.jimmer.sql.model.*;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

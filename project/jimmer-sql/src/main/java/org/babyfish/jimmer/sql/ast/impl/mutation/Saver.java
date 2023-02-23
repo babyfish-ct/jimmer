@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -206,7 +207,11 @@ class Saver {
                                 associatedObjectIds
                         );
                         Deleter deleter = new Deleter(
-                                new DeleteCommandImpl.Data(data.getSqlClient(), DeleteMode.AUTO, data.dissociateActionMap()),
+                                new DeleteCommandImpl.Data(
+                                        data.getSqlClient(),
+                                        data.getDeleteMode(),
+                                        data.dissociateActionMap()
+                                ),
                                 con,
                                 cache,
                                 trigger,
@@ -558,6 +563,10 @@ class Saver {
     @SuppressWarnings("unchecked")
     private void callInterceptor(DraftSpi draftSpi, boolean insert) {
         ImmutableType type = draftSpi.__type();
+        LogicalDeletedInfo info = type.getLogicalDeletedInfo();
+        if (info != null) {
+            draftSpi.__set(info.getProp().getId(), info.getRestoredValue());
+        }
         DraftInterceptor<?> interceptor = data.getSqlClient().getDraftInterceptor(type);
         if (interceptor != null) {
             int idPropId = type.getIdProp().getId();

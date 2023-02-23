@@ -245,6 +245,12 @@ public class AssociationType implements ImmutableType {
         return null;
     }
 
+    @Nullable
+    @Override
+    public LogicalDeletedInfo getLogicalDeletedInfo() {
+        return null;
+    }
+
     @NotNull
     @Override
     public Set<ImmutableProp> getKeyProps() {
