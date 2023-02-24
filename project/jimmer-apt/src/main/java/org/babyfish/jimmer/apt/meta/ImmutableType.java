@@ -208,6 +208,18 @@ public class ImmutableType {
                                         "SQL expression so that the `sql` of that annotation must be specified"
                         );
                     }
+                    if (formula.dependencies().length != 0) {
+                        throw new ModelException(
+                                "The property \"" +
+                                        this +
+                                        "." +
+                                        executableElement +
+                                        "\" is abstract and decorated by @" +
+                                        Formula.class.getName() +
+                                        ", abstract modifier means simple calculation property based on " +
+                                        "SQL expression so that the `dependencies` of that annotation cannot be specified"
+                        );
+                    }
                 }
                 ImmutableProp prop = new ImmutableProp(typeUtils, this, executableElement, ++propIdSequence);
                 map.put(prop.getName(), prop);

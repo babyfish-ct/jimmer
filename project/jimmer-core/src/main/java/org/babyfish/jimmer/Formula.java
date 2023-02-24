@@ -34,7 +34,7 @@ import java.lang.annotation.Target;
  *     }
  * }}</pre>
  *
- * Example2: Simple calculation based on SQL expression(jimmer-trigger is not used)
+ * Example2: Simple calculation based on SQL expression
  * <pre>{@code
  * public interface Employee {
  *
@@ -54,37 +54,8 @@ import java.lang.annotation.Target;
  *     Long getDepartmentId();
  * }}</pre>
  *
- * Example3: Simple calculation based on SQL expression(
- * jimmer-trigger is used and you hope
- * the event for formula property will be raised
- * when events for dependency properties are raised)
- *
- * <pre>{@code
- * public interface Employee {
- *
- *     ... omit other properties...
- *
- *     String firstName();
- *
- *     String lastName();
- *
- *     @Formula(
- *         sql = "concat(FIRST_NAME, LAST_NAME)",
- *         dependencies = {"firstName", "lastName"}
- *     )
- *     String fullName();
- *
- *     @ManyToOne
- *     Department department();
- *
- *     @Formula(
- *         sql = "DEPARTMENT_ID",
- *         dependencies = "department"
- *     )
- *     Long getDepartmentId();
- * }}</pre>
- *
  * For complex calculation, please view
+ *
  * {@link org.babyfish.jimmer.sql.Transient},
  * `org.babyfish.jimmer.sql.TransientResolver` of jimmer-sql and
  * `org.babyfish.jimmer.sql.kt.KTransientResolver` of jimmer-sql-kotlin
@@ -126,14 +97,7 @@ public @interface Formula {
     /**
      * Property names, not columns names
      *
-     * Only need to be specified when any of the following conditions are met
-     * <ul>
-     *     <li>The decorated property is non-abstract</li>
-     *     <li>
-     *         jimmer-trigger is used and
-     *         you hope the events of the dependency fields can cause the event of current field.
-     *     </li>
-     * </ul>
+     * Only need to be specified when the decorated property is non-abstract</li>
      *
      * <ul>
      *     <li>
