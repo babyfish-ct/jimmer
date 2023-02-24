@@ -97,7 +97,7 @@ public @interface Formula {
     /**
      * Property names, not columns names
      *
-     * Only need to be specified when the decorated property is non-abstract</li>
+     * Only need to be specified when the decorated property is non-abstract
      *
      * <ul>
      *     <li>
