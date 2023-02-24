@@ -135,6 +135,16 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     }
 
     @NotNull
+    default E save(@NotNull Input<E> input) {
+        return save(input.toEntity(), SaveMode.UPSERT);
+    }
+
+    @NotNull
+    default E save(@NotNull Input<E> input, SaveMode mode) {
+        return save(input.toEntity(), mode);
+    }
+
+    @NotNull
     @Override
     default <S extends E> S save(@NotNull S entity) {
         return save(entity, SaveMode.UPSERT);

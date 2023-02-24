@@ -7,6 +7,8 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+
 @RestController
 public class BookService {
 
@@ -22,7 +24,8 @@ public class BookService {
             @RequestParam int pageSize,
             @RequestParam String name,
             @RequestParam String storeName,
-            @RequestParam String authorName
+            @RequestParam String authorName,
+            HttpServletRequest request
     ) {
         return bookRepository.findBooks(
                 pageIndex,
