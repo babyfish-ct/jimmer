@@ -295,4 +295,86 @@ public class TransientResolverTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testNewestBooksWithPropFilter() {
+        executeAndExpect(
+                getLambdaClient().createQuery(BookStoreTable.class, (q, store) -> {
+                    return q.select(
+                            store.fetch(
+                                    BookStoreFetcher.$
+                                            .allScalarFields()
+                                            .newestBooks(
+                                                    BookFetcher.$.allScalarFields(),
+                                                    cfg -> cfg.filter(it ->
+                                                            it.orderBy(it.getTable().name())
+                                                    )
+                                            )
+                            )
+                    );
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                    "from BOOK_STORE as tb_1_"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID, tb_2_.ID " +
+                                    "from BOOK_STORE as tb_1_ " +
+                                    "inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                                    "where (tb_2_.NAME, tb_2_.EDITION) in (" +
+                                    "--->select tb_3_.NAME, max(tb_3_.EDITION) " +
+                                    "--->from BOOK as tb_3_ " +
+                                    "--->where tb_3_.STORE_ID in (?, ?) " +
+                                    "--->group by tb_3_.NAME" +
+                                    ")"
+                    );
+                    ctx.statement(2).sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE " +
+                                    "from BOOK as tb_1_ where tb_1_.ID in (?, ?, ?, ?) " +
+                                    "order by tb_1_.NAME asc"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"," +
+                                    "--->--->\"name\":\"O'REILLY\"," +
+                                    "--->--->\"website\":null,\"version\":0," +
+                                    "--->--->\"newestBooks\":[" +
+                                    "--->--->--->{" +
+                                    "--->--->--->--->\"id\":\"9eded40f-6d2e-41de-b4e7-33a28b11c8b6\"," +
+                                    "--->--->--->--->\"name\":\"Effective TypeScript\"," +
+                                    "--->--->--->--->\"edition\":3," +
+                                    "--->--->--->--->\"price\":88.00" +
+                                    "--->--->--->},{" +
+                                    "--->--->--->--->\"id\":\"64873631-5d82-4bae-8eb8-72dd955bfc56\"," +
+                                    "--->--->--->--->\"name\":\"Learning GraphQL\"," +
+                                    "--->--->--->--->\"edition\":3," +
+                                    "--->--->--->--->\"price\":51.00" +
+                                    "--->--->--->},{" +
+                                    "--->--->--->--->\"id\":\"782b9a9d-eac8-41c4-9f2d-74a5d047f45a\"," +
+                                    "--->--->--->--->\"name\":\"Programming TypeScript\"," +
+                                    "--->--->--->--->\"edition\":3," +
+                                    "--->--->--->--->\"price\":48.00" +
+                                    "--->--->--->}" +
+                                    "--->--->]" +
+                                    "--->},{" +
+                                    "--->--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
+                                    "--->--->\"name\":\"MANNING\"," +
+                                    "--->--->\"website\":null," +
+                                    "--->--->\"version\":0," +
+                                    "--->--->\"newestBooks\":[" +
+                                    "--->--->--->{" +
+                                    "--->--->--->--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                    "--->--->--->--->\"name\":\"GraphQL in Action\"," +
+                                    "--->--->--->--->\"edition\":3," +
+                                    "--->--->--->--->\"price\":80.00" +
+                                    "--->--->--->}" +
+                                    "--->--->]" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
+    }
 }
