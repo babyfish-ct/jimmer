@@ -779,11 +779,10 @@ public class SaveTest extends AbstractMutationTest {
                     });
                     ctx.throwable(it -> {
                         it.message(
-                                "Cannot update the entity whose " +
-                                        "type is \"org.babyfish.jimmer.sql.model.BookStore\", " +
-                                        "id is \"2fa3955e-3e83-49b9-902e-0465c109c779\" and " +
-                                        "version is \"1\" at the path " +
-                                        "\"<root>\""
+                                "Save error caused by the path: \"<root>\": " +
+                                        "Cannot update the entity whose type is " +
+                                        "\"org.babyfish.jimmer.sql.model.BookStore\", " +
+                                        "id is \"2fa3955e-3e83-49b9-902e-0465c109c779\" and version is \"1\""
                         );
                         it.type(OptimisticLockException.class);
                     });
@@ -880,8 +879,10 @@ public class SaveTest extends AbstractMutationTest {
                 });
         });
         Assertions.assertEquals(
-                "The association \"org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata.administrator\" " +
-                        "of \"<root>\" cannot be null, because that association is `inputNotNull`",
+                "Save error caused by the path: \"<root>\": " +
+                        "The association \"org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata.administrator\" " +
+                        "cannot be null, " +
+                        "because that association is `inputNotNull`",
                 ex.getMessage()
         );
     }

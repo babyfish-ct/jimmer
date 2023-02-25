@@ -118,17 +118,69 @@ public class OneToManyTest extends AbstractMutationTest {
 
         assertExecutedStatements(
                 new ExecutedStatement(
-                        ""
+                        "select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_ " +
+                                "where tb_1_.NAME = ?",
+                        "MANNING"
+                ),
+                new ExecutedStatement(
+                        "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                "from BOOK as tb_1_ " +
+                                "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
+                        "SQL in Action", 1
+                ),
+                new ExecutedStatement(
+                        "update BOOK set PRICE = ?, STORE_ID = ? where ID = ?",
+                        new BigDecimal(49), 1L, 10L
+                ),
+                new ExecutedStatement(
+                        "select 1 from BOOK " +
+                                "where STORE_ID = ? and ID not in(?) " +
+                                "limit ?",
+                        1L, 10L, 1
+                )
+        );
+    }
+
+    @Test
+    public void testCannotInsertChildByLongAssociation() {
+
+        jdbc("insert into book_store(id, name) values(?, ?)", 1L, "MANNING");
+
+        Assertions.assertThrows(ExecutionException.class, () -> {
+                    sql().getEntities().save(
+                            BookStoreDraft.$.produce(store -> {
+                                store.setName("MANNING");
+                                store.addIntoBooks(book -> {
+                                    book.setName("SQL in Action");
+                                    book.setEdition(1);
+                                    book.setPrice(new BigDecimal(49));
+                                });
+                            })
+                    );
+        });
+
+        assertExecutedStatements(
+                new ExecutedStatement(
+                        "select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_ " +
+                                "where tb_1_.NAME = ?",
+                        "MANNING"
+                ),
+                new ExecutedStatement(
+                        "select " +
+                                "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                                "from BOOK as tb_1_ " +
+                                "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
+                        "SQL in Action", 1
                 )
         );
     }
     
-    //@Test
+    @Test
     public void testDetachChildNotAllowed() {
 
         jdbc("insert into book_store(id, name) values(?, ?)", 1L, "MANNING");
         jdbc(
-                "insert into book(id, name, edition, price) values(?, ?, ?, ?, ?)",
+                "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
                 10,
                 "SQL in Action",
                 1,
@@ -151,12 +203,21 @@ public class OneToManyTest extends AbstractMutationTest {
                     })
             );
         });
-        ex.printStackTrace();
 
         assertExecutedStatements(
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_ where tb_1_.NAME = ?",
                         "MANNING"
+                ),
+                new ExecutedStatement(
+                        "update BOOK set STORE_ID = ? where ID in (?)",
+                        1L, 10L
+                ),
+                new ExecutedStatement(
+                        "select 1 from BOOK " +
+                                "where STORE_ID = ? and ID not in(?) " +
+                                "limit ?",
+                        1L, 10L, 1
                 )
         );
     }
