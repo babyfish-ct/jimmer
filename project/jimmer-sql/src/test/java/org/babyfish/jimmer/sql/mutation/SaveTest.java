@@ -144,6 +144,32 @@ public class SaveTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpdateOnlyByKey() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        BookStoreDraft.$.produce(store -> {
+                            store.setName("XXX");
+                        })
+                ).configure(cfg -> cfg.setMode(SaveMode.UPDATE_ONLY)),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from BOOK_STORE as tb_1_ " +
+                                        "where tb_1_.NAME = ?"
+                        );
+                    });
+                    ctx.totalRowCount(0);
+                    ctx.entity(it -> {
+                        String json = "{\"name\":\"XXX\"}";
+                        it.original(json);
+                        it.modified(json);
+                    });
+                }
+        );
+    }
+
+    @Test
     public void testInsertByKeyProps() {
         UUID newId = UUID.fromString("56506a3c-801b-4f7d-a41d-e889cdc3d67d");
         setAutoIds(BookStore.class, newId);
@@ -363,7 +389,73 @@ public class SaveTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testUpsertMatchedWithOneToMany() {
+    public void testUpsertMatchedWithOneToManyByDeaultForienKey() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        BookStoreDraft.$.produce(store -> {
+                            store.setName("MANNING");
+                            store.setVersion(0);
+                            store.addIntoBooks(book -> book.setId(graphQLInActionId1));
+                            store.addIntoBooks(book -> book.setId(graphQLInActionId2));
+                            store.addIntoBooks(book -> book.setId(graphQLInActionId3));
+                        })
+                ).configure(it ->
+                        it.setDissociateAction(
+                                BookProps.STORE,
+                                DissociateAction.NONE
+                        )
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from BOOK_STORE as tb_1_ " +
+                                        "where tb_1_.NAME = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update BOOK_STORE set VERSION = VERSION + 1 where ID = ? and VERSION = ?");
+                        it.variables(manningId, 0);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set STORE_ID = ? where ID in (?, ?, ?)");
+                        it.variables(manningId, graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select 1 from BOOK where STORE_ID = ? and ID not in(?, ?, ?) limit ?");
+                        it.variables(manningId, graphQLInActionId1, graphQLInActionId2, graphQLInActionId3, 1);
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{" +
+                                        "--->\"name\":\"MANNING\"," +
+                                        "--->\"version\":0," +
+                                        "--->\"books\":[" +
+                                        "--->--->{\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"}," +
+                                        "--->--->{\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"}," +
+                                        "--->--->{\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
+                                        "--->\"name\":\"MANNING\"," +
+                                        "--->\"version\":1," +
+                                        "--->\"books\":[" +
+                                        "--->--->{\"id\":\"a62f7aa3-9490-4612-98b5-98aae0e77120\"}," +
+                                        "--->--->{\"id\":\"e37a8344-73bb-4b23-ba76-82eac11f03e6\"}," +
+                                        "--->--->{\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"}" +
+                                        "--->]" +
+                                        "}"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testUpsertMatchedWithOneToManyBySetNullForeignKey() {
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
                         BookStoreDraft.$.produce(store -> {
