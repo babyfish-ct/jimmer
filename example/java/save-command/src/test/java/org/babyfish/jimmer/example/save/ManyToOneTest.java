@@ -252,7 +252,7 @@ public class ManyToOneTest extends AbstractMutationTest {
                             });
                         })
                 )
-                .configure(cfg -> cfg.setAutoAttaching(BookProps.STORE))
+                .setAutoAttaching(BookProps.STORE)
                 .execute();
 
         assertExecutedStatements(

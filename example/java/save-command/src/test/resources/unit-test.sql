@@ -9,7 +9,7 @@ alter table book_store
 ;
 
 create table book(
-    id identity(1, 1) not null,
+    id identity(10, 10) not null,
     name varchar(50) not null,
     edition integer not null,
     price numeric(10, 2) not null,
@@ -26,7 +26,7 @@ alter table book
 ;
 
 create table author(
-    id identity(1, 1) not null,
+    id identity(100, 100) not null,
     first_name varchar(25) not null,
     last_name varchar(25) not null,
     gender char(1) not null
@@ -61,7 +61,7 @@ alter table book_author_mapping
 ;
 
 create table tree_node(
-    node_id identity(100, 1) not null,
+    node_id identity(1, 1) not null,
     name varchar(20) not null,
     parent_id bigint
 );

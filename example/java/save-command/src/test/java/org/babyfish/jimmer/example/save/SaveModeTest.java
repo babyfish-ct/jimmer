@@ -22,7 +22,7 @@ public class SaveModeTest extends AbstractMutationTest {
                             book.setPrice(new BigDecimal(49));
                         })
                 )
-                .configure(cfg -> cfg.setMode(SaveMode.INSERT_ONLY))
+                .setMode(SaveMode.INSERT_ONLY)
                 .execute();
 
         assertExecutedStatements(
@@ -53,7 +53,7 @@ public class SaveModeTest extends AbstractMutationTest {
                             book.setPrice(new BigDecimal(49));
                         })
                 )
-                .configure(cfg -> cfg.setMode(SaveMode.UPDATE_ONLY))
+                .setMode(SaveMode.UPDATE_ONLY)
                 .execute();
 
         assertExecutedStatements(
@@ -81,7 +81,7 @@ public class SaveModeTest extends AbstractMutationTest {
                             book.setPrice(new BigDecimal(49));
                         })
                 )
-                .configure(cfg -> cfg.setMode(SaveMode.UPDATE_ONLY))
+                .setMode(SaveMode.UPDATE_ONLY)
                 .execute();
 
         assertExecutedStatements(
@@ -108,7 +108,7 @@ public class SaveModeTest extends AbstractMutationTest {
                             book.setPrice(new BigDecimal(49));
                         })
                 )
-                .configure(cfg -> cfg.setMode(SaveMode.UPDATE_ONLY))
+                .setMode(SaveMode.UPDATE_ONLY)
                 .execute();
 
         assertExecutedStatements(

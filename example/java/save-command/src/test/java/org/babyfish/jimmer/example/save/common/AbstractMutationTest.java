@@ -34,13 +34,14 @@ public abstract class AbstractMutationTest {
         connection = createConnection();
         createDatabase(connection);
         executedStatements = new ArrayList<>();
-        sqlClient = JSqlClient
+        JSqlClient.Builder builder = JSqlClient
                 .newBuilder()
                 .setEntityManager(JimmerModule.ENTITY_MANAGER)
                 .setDialect(new H2Dialect())
                 .setExecutor(new RecordSqlExecutor())
-                .setConnectionManager(new ExistsConnectionManager())
-                .build();
+                .setConnectionManager(new ExistsConnectionManager());
+        customize(builder);
+        sqlClient = builder.build();
     }
 
     @AfterEach
@@ -92,6 +93,9 @@ public abstract class AbstractMutationTest {
                         " statements"
         );
     }
+
+    // Can be overridden
+    protected void customize(JSqlClient.Builder builder) {}
 
     private static Connection createConnection() throws SQLException {
         Properties properties = new Properties();
