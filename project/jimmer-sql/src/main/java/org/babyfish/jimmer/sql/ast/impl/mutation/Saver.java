@@ -223,21 +223,23 @@ class Saver {
                         int rowCount = childTableOperator.unsetParent(currentId, associatedObjectIds);
                         addOutput(AffectedTable.of(targetType), rowCount);
                     } else {
-                        throw new ExecutionException(
-                                "Cannot disconnect child objects at the path \"" +
-                                        path +
-                                        "\" by the one-to-many association \"" +
-                                        prop +
-                                        "\" because the many-to-one property \"" +
-                                        mappedBy +
-                                        "\" is not configured as \"on delete set null\" or \"on delete cascade\"." +
-                                        "There are two ways to resolve this issue, configure SaveCommand to automatically detach " +
-                                        "disconnected child objects of the one-to-many property \"" +
-                                        prop +
-                                        "\", or set the delete action of the many-to-one property \"" +
-                                        mappedBy +
-                                        "\" to be \"CASCADE\"."
-                        );
+                        if (childTableOperator.exists(currentId, associatedObjectIds)) {
+                            throw new ExecutionException(
+                                    "Cannot disconnect child objects at the path \"" +
+                                            path +
+                                            "\" by the one-to-many association \"" +
+                                            prop +
+                                            "\" because the many-to-one property \"" +
+                                            mappedBy +
+                                            "\" is not configured as \"on delete set null\" or \"on delete cascade\"." +
+                                            "There are two ways to resolve this issue, configure SaveCommand to automatically detach " +
+                                            "disconnected child objects of the one-to-many property \"" +
+                                            prop +
+                                            "\", or set the delete action of the many-to-one property \"" +
+                                            mappedBy +
+                                            "\" to be \"CASCADE\"."
+                            );
+                        }
                     }
                 }
             }
@@ -296,6 +298,10 @@ class Saver {
             return ObjectType.EXISTING;
         }
         if (data.getMode() == SaveMode.UPDATE_ONLY) {
+            if (path.equals("<root>")) {
+                addOutput(AffectedTable.of(draftSpi.__type()), 0);
+                return ObjectType.UNKNOWN;
+            }
             throw new ExecutionException(
                     "Cannot insert object into path \"" +
                             path +

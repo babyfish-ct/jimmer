@@ -14,6 +14,58 @@ public interface AbstractEntitySaveCommand {
     @NewChain
     AbstractEntitySaveCommand configure(Consumer<Cfg> block);
 
+    @NewChain
+    AbstractEntitySaveCommand setMode(SaveMode mode);
+
+    @NewChain
+    AbstractEntitySaveCommand setKeyProps(ImmutableProp ... props);
+
+    @NewChain
+    default AbstractEntitySaveCommand setKeyProps(TypedProp<?, ?> ... props) {
+        return setKeyProps(
+                Arrays
+                        .stream(props)
+                        .map(TypedProp::unwrap)
+                        .toArray(ImmutableProp[]::new)
+        );
+    }
+
+    @NewChain
+    AbstractEntitySaveCommand setAutoAttachingAll();
+
+    @NewChain
+    default AbstractEntitySaveCommand setAutoAttaching(TypedProp.Association<?, ?> prop) {
+        return setAutoAttaching(prop.unwrap());
+    }
+
+    @NewChain
+    AbstractEntitySaveCommand setAutoAttaching(ImmutableProp prop);
+
+    @NewChain
+    default AbstractEntitySaveCommand setDissociateAction(
+            TypedProp.Reference<?, ?> prop,
+            DissociateAction dissociateAction
+    ) {
+        return setDissociateAction(prop.unwrap(), dissociateAction);
+    }
+
+    @NewChain
+    AbstractEntitySaveCommand setDissociateAction(
+            ImmutableProp prop,
+            DissociateAction dissociateAction
+    );
+
+    @NewChain
+    default AbstractEntitySaveCommand setPessimisticLock() {
+        return setPessimisticLock(true);
+    }
+
+    @NewChain
+    AbstractEntitySaveCommand setPessimisticLock(boolean pessimisticLock);
+
+    @NewChain
+    AbstractEntitySaveCommand setDeleteMode(DeleteMode mode);
+
     interface Cfg {
 
         @OldChain
