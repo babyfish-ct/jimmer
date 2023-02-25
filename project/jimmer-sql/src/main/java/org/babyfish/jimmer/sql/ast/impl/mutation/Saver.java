@@ -10,21 +10,18 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
+import org.babyfish.jimmer.sql.OnDissociate;
 import org.babyfish.jimmer.sql.OptimisticLockException;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
-import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.*;
-import org.babyfish.jimmer.sql.runtime.Converters;
-import org.babyfish.jimmer.sql.runtime.ExecutionException;
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -46,20 +43,22 @@ class Saver {
 
     private final Map<AffectedTable, Integer> affectedRowCountMap;
 
-    private final String path;
+    private final SavePath path;
 
     private boolean triggerSubmitted;
 
     Saver(
             AbstractEntitySaveCommandImpl.Data data,
-            Connection con
+            Connection con,
+            ImmutableType type
     ) {
-        this(data, con, new SaverCache(data), true, new LinkedHashMap<>());
+        this(data, con, type, new SaverCache(data), true, new LinkedHashMap<>());
     }
 
     Saver(
             AbstractEntitySaveCommandImpl.Data data,
             Connection con,
+            ImmutableType type,
             SaverCache cache,
             boolean triggerSubmitImmediately,
             Map<AffectedTable, Integer> affectedRowCountMap
@@ -70,17 +69,17 @@ class Saver {
         this.trigger = data.getTriggers() != null ? new MutationTrigger() : null;
         this.triggerSubmitImmediately = triggerSubmitImmediately && this.trigger != null;
         this.affectedRowCountMap = affectedRowCountMap;
-        this.path = "<root>";
+        this.path = SavePath.root(type);
     }
 
-    Saver(Saver base, AbstractEntitySaveCommandImpl.Data data, String subPath) {
+    Saver(Saver base, AbstractEntitySaveCommandImpl.Data data, ImmutableProp prop) {
         this.data = data;
         this.con = base.con;
         this.cache = base.cache;
         this.trigger = base.trigger;
         this.triggerSubmitImmediately = this.trigger != null;
         this.affectedRowCountMap = base.affectedRowCountMap;
-        this.path = base.path + '.' + subPath;
+        this.path = base.path.to(prop);
     }
 
     @SuppressWarnings("unchecked")
@@ -145,11 +144,10 @@ class Saver {
                 Set<Object> associatedObjectIds = new LinkedHashSet<>();
                 if (associatedValue == null) {
                     if (prop.isInputNotNull()) {
-                        throw new ExecutionException(
+                        throw new SaveException(
+                                path,
                                 "The association \"" +
                                         prop +
-                                        "\" of \"" +
-                                        path +
                                         "\" cannot be null, because that association is `inputNotNull`"
                         );
                     }
@@ -182,24 +180,7 @@ class Saver {
                         associatedObjectIds.add(saveAssociatedObjectAndGetId(prop, associatedObject));
                     }
                 }
-                MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGet(
-                    data.getSqlClient(), con, prop, trigger
-                );
-                if (middleTableOperator != null) {
-                    int rowCount;
-                    if (currentObjectType == ObjectType.NEW) {
-                        rowCount = middleTableOperator.addTargetIds(
-                                currentId,
-                                associatedObjectIds
-                        );
-                    } else {
-                        rowCount = middleTableOperator.setTargetIds(
-                                currentId,
-                                associatedObjectIds
-                        );
-                    }
-                    addOutput(AffectedTable.of(prop), rowCount);
-                } else if (childTableOperator != null && currentObjectType != ObjectType.NEW) {
+                if (childTableOperator != null && currentObjectType != ObjectType.NEW) {
                     DissociateAction dissociateAction = data.getDissociateAction(prop.getMappedBy());
                     if (dissociateAction == DissociateAction.DELETE) {
                         List<Object> detachedTargetIds = childTableOperator.getDetachedChildIds(
@@ -224,23 +205,38 @@ class Saver {
                         addOutput(AffectedTable.of(targetType), rowCount);
                     } else {
                         if (childTableOperator.exists(currentId, associatedObjectIds)) {
-                            throw new ExecutionException(
-                                    "Cannot disconnect child objects at the path \"" +
-                                            path +
-                                            "\" by the one-to-many association \"" +
-                                            prop +
-                                            "\" because the many-to-one property \"" +
+                            throw new SaveException(
+                                    path.to(prop),
+                                    "Cannot dissociate child objects because the dissociation action of the many-to-one property \"" +
                                             mappedBy +
-                                            "\" is not configured as \"on delete set null\" or \"on delete cascade\"." +
-                                            "There are two ways to resolve this issue, configure SaveCommand to automatically detach " +
-                                            "disconnected child objects of the one-to-many property \"" +
-                                            prop +
-                                            "\", or set the delete action of the many-to-one property \"" +
+                                            "\" is not configured as \"set null\" or \"cascade\". " +
+                                            "There are two ways to resolve this issue: Decorate the many-to-one property \"" +
                                             mappedBy +
-                                            "\" to be \"CASCADE\"."
+                                            "\" to by @" +
+                                            OnDissociate.class.getName() +
+                                            " whose argument is `DissociateAction.SET_NULL` or `DissociateAction.DELETE` " +
+                                            ", or use save command's runtime configuration to override it"
                             );
                         }
                     }
+                }
+                MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGet(
+                    data.getSqlClient(), con, prop, trigger
+                );
+                if (middleTableOperator != null) {
+                    int rowCount;
+                    if (currentObjectType == ObjectType.NEW) {
+                        rowCount = middleTableOperator.addTargetIds(
+                                currentId,
+                                associatedObjectIds
+                        );
+                    } else {
+                        rowCount = middleTableOperator.setTargetIds(
+                                currentId,
+                                associatedObjectIds
+                        );
+                    }
+                    addOutput(AffectedTable.of(prop), rowCount);
                 }
             }
         }
@@ -255,7 +251,7 @@ class Saver {
                             SaveMode.UPSERT :
                             SaveMode.UPDATE_ONLY
             );
-            Saver associatedSaver = new Saver(this, associatedData, prop.getName());
+            Saver associatedSaver = new Saver(this, associatedData, prop);
             associatedSaver.saveImpl(associatedDraftSpi);
         }
         return associatedDraftSpi.__get(associatedDraftSpi.__type().getIdProp().getId());
@@ -298,14 +294,13 @@ class Saver {
             return ObjectType.EXISTING;
         }
         if (data.getMode() == SaveMode.UPDATE_ONLY) {
-            if (path.equals("<root>")) {
+            if (path.getParent() == null) {
                 addOutput(AffectedTable.of(draftSpi.__type()), 0);
                 return ObjectType.UNKNOWN;
             }
-            throw new ExecutionException(
-                    "Cannot insert object into path \"" +
-                            path +
-                            "\" because insert operation for this path is disabled"
+            throw new SaveException(
+                    path,
+                    "Cannot insert object because insert operation for this path is disabled"
             );
         }
 
@@ -328,12 +323,11 @@ class Saver {
                 null;
         if (id == null) {
             if (idGenerator == null) {
-                throw new ExecutionException(
+                throw new SaveException(
+                        path,
                         "Cannot save \"" +
                                 type + "\" " +
-                                "without id into path \"" +
-                                path +
-                                "\" because id generator is not specified"
+                                "without id because id generator is not specified"
                 );
             } else if (idGenerator instanceof SequenceIdGenerator) {
                 String sql = data.getSqlClient().getDialect().getSelectIdFromSequenceSql(
@@ -350,7 +344,8 @@ class Saver {
                 id = ((UserIdGenerator)idGenerator).generate(type.getJavaClass());
                 setDraftId(draftSpi, id);
             } else if (!(idGenerator instanceof IdentityIdGenerator)) {
-                throw new ExecutionException(
+                throw new SaveException(
+                        path,
                         "Illegal id generator type: \"" +
                                 idGenerator.getClass().getName() +
                                 "\", id generator must be sub type of \"" +
@@ -380,11 +375,10 @@ class Saver {
             }
         }
         if (props.isEmpty()) {
-            throw new ExecutionException(
+            throw new SaveException(
+                    path,
                     "Cannot insert \"" +
                             type +
-                            "\" into path \"" +
-                            path +
                             "\" without any properties"
             );
         }
@@ -491,11 +485,10 @@ class Saver {
             }
         }
         if (type.getVersionProp() != null && version == null) {
-            throw new ExecutionException(
+            throw new SaveException(
+                    path,
                     "Cannot update \"" +
                             type +
-                            "\" at the path \"" +
-                            path +
                             "\", the version property \"" +
                             type.getVersionProp() +
                             "\" is unloaded"
@@ -557,10 +550,9 @@ class Saver {
             cache.save(draftSpi, true);
         } else if (version != null) {
             throw new OptimisticLockException(
-                    type,
+                    path,
                     draftSpi.__get(type.getIdProp().getId()),
-                    version,
-                    path
+                    version
             );
         }
         return true;
@@ -640,12 +632,11 @@ class Saver {
         });
 
         if (rows.size() > 1) {
-            throw new ExecutionException(
+            throw new SaveException(
+                    path,
                     "Key properties " +
                             actualKeyProps +
-                            " cannot guarantee uniqueness at the path \"" +
-                            path +
-                            "\""
+                            " cannot guarantee uniqueness under that path"
             );
         }
 
@@ -669,12 +660,11 @@ class Saver {
         }
         Set<ImmutableProp> keyProps = data.getKeyProps(type);
         if (keyProps == null) {
-            throw new ExecutionException(
+            throw new SaveException(
+                    path,
                     "Cannot save \"" +
                             type +
-                            "\" without id into the path \"" +
-                            path +
-                            "\", " +
+                            "\" without id into, " +
                             "key properties is not configured"
             );
         }
@@ -703,13 +693,12 @@ class Saver {
             Set<ImmutableProp> keyProps = data.getKeyProps(spi.__type());
             for (ImmutableProp keyProp : keyProps) {
                 if (validate && !spi.__isLoaded(keyProp.getId())) {
-                    throw new ExecutionException(
+                    throw new SaveException(
+                            path,
                             "Cannot save illegal entity object " +
                                     spi +
                                     " whose type is \"" +
                                     spi.__type() +
-                                    "\" into the path \"" +
-                                    path +
                                     "\", key property \"" +
                                     keyProp +
                                     "\" must be loaded when id is unloaded"
@@ -717,25 +706,25 @@ class Saver {
                 }
             }
         } else if (validate && !idPropLoaded) {
-            throw new ExecutionException(
+            throw new SaveException(
+                    path,
                     "Cannot save illegal entity object " +
                             spi +
                             " whose type is \"" +
                             spi.__type() +
-                            "\" into the path \"" +
-                            path +
                             "\", no property is loaded"
             );
         }
         return nonIdPropLoaded;
     }
 
-    private static void setDraftId(DraftSpi spi, Object id) {
+    private void setDraftId(DraftSpi spi, Object id) {
         ImmutableType type = spi.__type();
         ImmutableProp idProp = type.getIdProp();
         Object convertedId = Converters.tryConvert(id, idProp.getElementClass());
         if (convertedId == null) {
-            throw new ExecutionException(
+            throw new SaveException(
+                    path,
                     "The type of generated id does not match the property \"" + idProp + "\""
             );
         }

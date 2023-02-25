@@ -96,7 +96,7 @@ public class SaveModeTest extends AbstractMutationTest {
         );
     }
 
-    //@Test
+    @Test
     public void testUpdateNonExistingDataByKey() {
 
         sql()
@@ -134,7 +134,6 @@ public class SaveModeTest extends AbstractMutationTest {
                             book.setId(1L);
                             book.setName("PL/SQL in Action");
                             book.setEdition(2);
-                            //book.setPrice(new BigDecimal(49));
                         })
                 );
 
