@@ -65,6 +65,10 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         private Set<ImmutableProp> autoAttachingSet;
 
+        private boolean autoCheckingAll;
+
+        private Set<ImmutableProp> autoCheckingSet;
+
         private Map<ImmutableProp, DissociateAction> dissociateActionMap;
 
         private boolean pessimisticLock;
@@ -77,7 +81,8 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.mode = SaveMode.UPSERT;
             this.deleteMode = DeleteMode.AUTO;
             this.keyPropMultiMap = new LinkedHashMap<>();
-            this.autoAttachingSet = new LinkedHashSet<>();
+            this.autoAttachingSet = new HashSet<>();
+            this.autoCheckingSet = new HashSet<>();
             this.dissociateActionMap = new LinkedHashMap<>();
             this.pessimisticLock = false;
         }
@@ -89,7 +94,9 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.deleteMode = base.deleteMode;
             this.keyPropMultiMap = new LinkedHashMap<>(base.keyPropMultiMap);
             this.autoAttachingAll = base.autoAttachingAll;
-            this.autoAttachingSet = new LinkedHashSet<>(base.autoAttachingSet);
+            this.autoAttachingSet = new HashSet<>(base.autoAttachingSet);
+            this.autoCheckingAll = base.autoCheckingAll;
+            this.autoCheckingSet = new HashSet<>(base.autoCheckingSet);
             this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
             this.pessimisticLock = base.pessimisticLock;
         }
@@ -118,6 +125,10 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         public boolean isAutoAttachingProp(ImmutableProp prop) {
             return autoAttachingAll || autoAttachingSet.contains(prop);
+        }
+
+        public boolean isAutoCheckingProp(ImmutableProp prop) {
+            return autoCheckingAll || autoCheckingSet.contains(prop);
         }
 
         public DissociateAction getDissociateAction(ImmutableProp prop) {
@@ -188,6 +199,18 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         public Cfg setAutoAttaching(ImmutableProp prop) {
             validate();
             autoAttachingSet.add(prop);
+            return this;
+        }
+
+        @Override
+        public Cfg setAutoIdOnlyTargetCheckingAll() {
+            autoCheckingAll = true;
+            return this;
+        }
+
+        @Override
+        public Cfg setAutoIdOnlyTargetChecking(ImmutableProp prop) {
+            autoCheckingSet.add(prop);
             return this;
         }
 
