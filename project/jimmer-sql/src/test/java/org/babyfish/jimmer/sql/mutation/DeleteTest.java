@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.junit.jupiter.api.Test;
 
@@ -200,6 +201,23 @@ public class DeleteTest extends AbstractMutationTest {
                         it.sql("delete from TREE_NODE where NODE_ID in (?)");
                     });
                     ctx.totalRowCount(24);
+                }
+        );
+    }
+
+    @Test
+    public void testLogicalDelete() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().deleteCommand(
+                        AdministratorMetadata.class,
+                        10L
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update ADMINISTRATOR_METADATA set DELETED = ? where ID in (?)");
+                        it.variables(true, 10L);
+                    });
+                    ctx.totalRowCount(1);
                 }
         );
     }

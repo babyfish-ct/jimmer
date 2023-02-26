@@ -79,9 +79,7 @@ public class FetcherGenerator {
                         addPropByBoolean(prop);
                         if (prop.isAssociation(true)) {
                             addAssociationProp(prop);
-                            if (!prop.isTransient()) {
-                                addAssociationPropByFieldConfig(prop);
-                            }
+                            addAssociationPropByFieldConfig(prop);
                         }
                     }
                 }

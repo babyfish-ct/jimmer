@@ -71,6 +71,8 @@ public interface ImmutableProp {
 
     boolean isVersion();
 
+    boolean isLogicalDeleted();
+
     ImmutableType getTargetType();
 
     List<OrderedItem> getOrderedItems();

@@ -32,7 +32,8 @@ public class DeleteCommandImpl implements DeleteCommand {
             JSqlClient sqlClient,
             Connection con,
             ImmutableType immutableType,
-            Collection<?> ids
+            Collection<?> ids,
+            DeleteMode mode
     ) {
         Class<?> idClass = immutableType.getIdProp().getElementClass();
         for (Object id : ids) {
@@ -50,7 +51,7 @@ public class DeleteCommandImpl implements DeleteCommand {
         this.con = con;
         this.immutableType = immutableType;
         this.ids = ids;
-        this.data = new Data(sqlClient).freeze();
+        this.data = new Data(sqlClient, mode).freeze();
     }
 
     public DeleteCommandImpl(
@@ -120,9 +121,9 @@ public class DeleteCommandImpl implements DeleteCommand {
 
         private boolean frozen;
 
-        Data(JSqlClient sqlClient) {
+        Data(JSqlClient sqlClient, DeleteMode deleteMode) {
             this.sqlClient = sqlClient;
-            this.mode = DeleteMode.AUTO;
+            this.mode = deleteMode;
             this.dissociateActionMap = new LinkedHashMap<>();
         }
 
@@ -146,6 +147,10 @@ public class DeleteCommandImpl implements DeleteCommand {
             return sqlClient;
         }
 
+        public DeleteMode getMode() {
+            return mode;
+        }
+
         public DissociateAction getDissociateAction(ImmutableProp prop) {
             DissociateAction action = dissociateActionMap.get(prop);
             return action != null ? action : prop.getDissociateAction();
@@ -160,7 +165,7 @@ public class DeleteCommandImpl implements DeleteCommand {
         }
 
         @Override
-        public Cfg setDeleteMode(DeleteMode mode) {
+        public Cfg setMode(DeleteMode mode) {
             this.mode = mode;
             return this;
         }

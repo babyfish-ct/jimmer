@@ -7,8 +7,10 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.query.PaginationContextImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
+import org.babyfish.jimmer.sql.dialect.PaginationContext;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.JSqlClient;
@@ -63,6 +65,49 @@ class ChildTableOperator {
             this.cache = null;
             this.trigger = null;
         }
+    }
+
+    public boolean exists(Object parentId, Collection<Object> retainedChildIds) {
+        SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        SqlBuilder subBuilder = builder.createChildBuilder();
+        subBuilder
+                .sql("select 1 from ")
+                .sql(parentProp.getDeclaringType().getTableName())
+                .sql(" where ")
+                .sql(parentProp.<ColumnDefinition>getStorage())
+                .sql(" = ")
+                .variable(parentId);
+        if (!retainedChildIds.isEmpty()) {
+            subBuilder
+                    .sql(" and ")
+                    .sql(parentProp.getDeclaringType().getIdProp().<ColumnDefinition>getStorage())
+                    .sql(" not in(");
+            String separator = "";
+            for (Object retainedChildId : retainedChildIds) {
+                subBuilder.sql(separator);
+                subBuilder.variable(retainedChildId);
+                separator = ", ";
+            }
+            subBuilder.sql(")");
+        }
+        Tuple2<String, List<Object>> sqlResult = subBuilder.build(result -> {
+            PaginationContextImpl ctx = new PaginationContextImpl(
+                    1,
+                    0,
+                    result.get_1(),
+                    result.get_2()
+            );
+            sqlClient.getDialect().paginate(ctx);
+            return ctx.build();
+        });
+        return sqlClient.getExecutor().execute(
+                con,
+                sqlResult.get_1(),
+                sqlResult.get_2(),
+                ExecutionPurpose.MUTATE,
+                null,
+                stmt -> stmt.executeQuery().next()
+        );
     }
 
     public int setParent(Object parentId, Collection<Object> childIds) {

@@ -145,7 +145,7 @@ public abstract class AbstractDataLoader {
             globalFiler = null;
         }
         this.propFilter = (FieldFilter<Table<ImmutableSpi>>) propFilter;
-        if (prop.isReference(TargetLevel.PERSISTENT) && !prop.isNullable()) {
+        if (prop.isReference(TargetLevel.ENTITY) && !prop.isNullable()) {
             if (globalFiler != null) {
                 throw new ExecutionException(
                         "Cannot apply filter \"" +
@@ -810,9 +810,22 @@ public abstract class AbstractDataLoader {
             }
         }
 
-        List<ImmutableSpi> targets = findTargets(targetIds);
+        boolean noFilter = propFilter == null && globalFiler == null;
+        List<ImmutableSpi> targets;
+        if (noFilter) {
+            targets = findTargets(targetIds);
+        } else {
+            targets = Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOADER, true, (q, target) -> {
+                Expression<Object> pkExpr = target.get(targetIdProp.getName());
+                q.where(pkExpr.in(targetIds));
+                applyPropFilter(q, target, map.keySet());
+                applyGlobalFilter(q, target);
+                return q.select(((Table<ImmutableSpi>)target).fetch(fetcher));
+            }).execute(con);
+        }
+
         if (targets.isEmpty()) {
-            return new HashMap<>();
+            return new LinkedHashMap<>();
         }
 
         Map<Object, ImmutableSpi> targetMap = new HashMap<>((targets.size() * 4 + 2) / 3);
@@ -821,8 +834,8 @@ public abstract class AbstractDataLoader {
             targetMap.put(target.__get(targetIdPropId), target);
         }
 
-        Map<Object, Object> translatedMap = new LinkedHashMap<>((map.size() * 4 + 2) / 3);
-        if (prop.isReferenceList(TargetLevel.OBJECT)) {
+        Map<Object, Object> fetchedMap = new LinkedHashMap<>((map.size() * 4 + 2) / 3);
+        if (noFilter && prop.isReferenceList(TargetLevel.ENTITY)) {
             for (Map.Entry<Object, Object> e : map.entrySet()) {
                 Collection<Object> subCollection = (Collection<Object>) e.getValue();
                 List<ImmutableSpi> targetList = new ArrayList<>(subCollection.size());
@@ -832,18 +845,42 @@ public abstract class AbstractDataLoader {
                         targetList.add(target);
                     }
                 }
-                translatedMap.put(e.getKey(), targetList);
+                fetchedMap.put(e.getKey(), targetList);
+            }
+        } else if (!noFilter && prop.isReferenceList(TargetLevel.ENTITY)) {
+            IdentityHashMap<ImmutableSpi, Object> identityMap = new IdentityHashMap<>();
+            for (Map.Entry<Object, Object> e : map.entrySet()) {
+                Collection<Object> subCollection = (Collection<Object>) e.getValue();
+                for (Object targetId : subCollection) {
+                    ImmutableSpi target = targetMap.get(targetId);
+                    if (target != null) {
+                        identityMap.put(target, e.getKey());
+                    }
+                }
+            }
+            for (ImmutableSpi target : targets) {
+                Object key = identityMap.get(target);
+                if (key != null) {
+                    List<Object> targetList = (List<Object>) fetchedMap.get(key);
+                    if (targetList == null) {
+                        Collection<?> ids = (Collection<?>) map.get(key);
+                        targetList = new ArrayList<>(ids.size());
+                        fetchedMap.put(key, targetList);
+                    }
+                    targetList.add(target);
+                }
             }
         } else {
             for (Map.Entry<Object, Object> e : map.entrySet()) {
                 ImmutableSpi target = targetMap.get(e.getValue());
                 if (target != null) {
-                    translatedMap.put(e.getKey(), target);
+                    fetchedMap.put(e.getKey(), target);
                 }
             }
         }
-        return translatedMap;
+        return fetchedMap;
     }
+
 
     public static Connection transientResolverConnection() {
         Connection con = TRANSIENT_RESOLVER_CON_LOCAL.get();

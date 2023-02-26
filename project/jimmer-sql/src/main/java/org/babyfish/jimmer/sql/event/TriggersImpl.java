@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -130,14 +131,7 @@ public class TriggersImpl implements Triggers {
             throw new IllegalArgumentException("newRow must be immutable");
         }
         EntityEvent<ImmutableSpi> event = new EntityEvent<>((ImmutableSpi)oldRow, (ImmutableSpi) newRow, con, reason);
-        List<EntityListener<ImmutableSpi>> listeners = new ArrayList<>(globalEntityListeners);
-        for (ImmutableType type = event.getImmutableType(); type != null; type = type.getSuperType()) {
-            List<EntityListener<ImmutableSpi>> superListeners =
-                    entityTableListenerMultiMap.get(type);
-            if (superListeners != null) {
-                listeners.addAll(superListeners);
-            }
-        }
+        List<EntityListener<ImmutableSpi>> listeners = entityListeners(event.getImmutableType());
         Throwable throwable = null;
         if (!listeners.isEmpty()) {
             for (EntityListener<ImmutableSpi> listener : listeners) {
@@ -186,10 +180,8 @@ public class TriggersImpl implements Triggers {
             Throwable throwable
     ) {
         ImmutableProp inverseProp = prop.getOpposite();
-        List<AssociationListener> listeners = new ArrayList<>(globalAssociationListeners);
-        List<AssociationListener> inverseListeners = new ArrayList<>(listeners);
-        listeners.addAll(associationListenerMultiMap.get(prop));
-        inverseListeners.addAll(associationListenerMultiMap.get(inverseProp));
+        List<AssociationListener> listeners = associationListeners(prop);
+        List<AssociationListener> inverseListeners = associationListeners(inverseProp);
         if (!listeners.isEmpty()) {
             AssociationEvent e = new AssociationEvent(prop, childId, oldFk, newFk, con, reason);
             for (AssociationListener listener : listeners) {
@@ -243,10 +235,8 @@ public class TriggersImpl implements Triggers {
 
     private void fireMiddleTableDeleteImpl(ImmutableProp prop, Object sourceId, Object targetId, Connection con, Object reason) {
         ImmutableProp inverseProp = prop.getOpposite();
-        List<AssociationListener> listeners = new ArrayList<>(globalAssociationListeners);
-        List<AssociationListener> inverseListeners = new ArrayList<>(listeners);
-        listeners.addAll(associationListenerMultiMap.get(prop));
-        inverseListeners.addAll(associationListenerMultiMap.get(inverseProp));
+        List<AssociationListener> listeners = associationListeners(prop);
+        List<AssociationListener> inverseListeners = associationListeners(inverseProp);
         Throwable throwable = null;
         if (!listeners.isEmpty()) {
             AssociationEvent e = new AssociationEvent(prop, sourceId, targetId, null, con, reason);
@@ -292,10 +282,10 @@ public class TriggersImpl implements Triggers {
 
     private void fireMiddleTableInsertImpl(ImmutableProp prop, Object sourceId, Object targetId, Connection con, Object reason) {
         ImmutableProp inverseProp = prop.getOpposite();
-        List<AssociationListener> listeners = associationListenerMultiMap.get(prop);
-        List<AssociationListener> inverseListeners = associationListenerMultiMap.get(inverseProp);
+        List<AssociationListener> listeners = associationListeners(prop);
+        List<AssociationListener> inverseListeners = associationListeners(inverseProp);
         Throwable throwable = null;
-        if (listeners != null && !listeners.isEmpty()) {
+        if (!listeners.isEmpty()) {
             AssociationEvent e = new AssociationEvent(prop, sourceId, null, targetId, con, reason);
             for (AssociationListener listener : listeners) {
                 try {
@@ -307,7 +297,7 @@ public class TriggersImpl implements Triggers {
                 }
             }
         }
-        if (inverseListeners != null && !inverseListeners.isEmpty()) {
+        if (!inverseListeners.isEmpty()) {
             AssociationEvent e = new AssociationEvent(inverseProp, targetId, null, sourceId, con, reason);
             for (AssociationListener inverseListener : inverseListeners) {
                 try {
@@ -329,9 +319,9 @@ public class TriggersImpl implements Triggers {
 
     @Override
     public void fireAssociationEvict(ImmutableProp prop, Object sourceId, Object reason) {
-        List<AssociationListener> listeners = associationListenerMultiMap.get(prop);
+        List<AssociationListener> listeners = associationListeners(prop);
         Throwable throwable = null;
-        if (listeners != null && !listeners.isEmpty()) {
+        if (!listeners.isEmpty()) {
             AssociationEvent e = new AssociationEvent(prop, sourceId, null, reason);
             for (AssociationListener listener : listeners) {
                 try {
@@ -349,5 +339,28 @@ public class TriggersImpl implements Triggers {
         if (throwable != null) {
             throw (Error)throwable;
         }
+    }
+
+    private List<EntityListener<ImmutableSpi>> entityListeners(ImmutableType type) {
+        List<EntityListener<ImmutableSpi>> listeners = new ArrayList<>(globalEntityListeners);
+        Map<ImmutableType, CopyOnWriteArrayList<EntityListener<ImmutableSpi>>> map =
+                entityTableListenerMultiMap;
+        while (type != null) {
+            CopyOnWriteArrayList<EntityListener<ImmutableSpi>> list = map.get(type);
+            if (list != null) {
+                listeners.addAll(list);
+            }
+            type = type.getSuperType();
+        }
+        return listeners;
+    }
+
+    private List<AssociationListener> associationListeners(ImmutableProp prop) {
+        List<AssociationListener> listeners = new ArrayList<>(globalAssociationListeners);
+        CopyOnWriteArrayList<AssociationListener> list = associationListenerMultiMap.get(prop);
+        if (list != null) {
+            listeners.addAll(list);
+        }
+        return listeners;
     }
 }

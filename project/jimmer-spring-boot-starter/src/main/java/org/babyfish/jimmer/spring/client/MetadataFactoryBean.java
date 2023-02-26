@@ -11,14 +11,24 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.security.Principal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class MetadataFactoryBean implements FactoryBean<Metadata> {
+
+    private static final Set<String> IGNORED_CLASS_NAMES;
 
     private final ApplicationContext ctx;
 
@@ -124,6 +134,11 @@ public class MetadataFactoryBean implements FactoryBean<Metadata> {
                             public boolean isRequestBody(Parameter javaParameter) {
                                 return javaParameter.isAnnotationPresent(RequestBody.class);
                             }
+
+                            @Override
+                            public boolean shouldBeIgnored(Parameter javaParameter) {
+                                return IGNORED_CLASS_NAMES.contains(javaParameter.getType().getName());
+                            }
                         }
                 )
                 .build();
@@ -151,5 +166,16 @@ public class MetadataFactoryBean implements FactoryBean<Metadata> {
             return b;
         }
         return "";
+    }
+
+    static {
+        Set<String> set = new HashSet<>();
+        set.add(HttpServletRequest.class.getName());
+        set.add(ServletRequest.class.getName());
+        set.add(HttpServletResponse.class.getName());
+        set.add(ServletResponse.class.getName());
+        set.add(MultipartFile.class.getName());
+        set.add(Principal.class.getName());
+        IGNORED_CLASS_NAMES = set;
     }
 }

@@ -2,8 +2,9 @@ package org.babyfish.jimmer.spring.repository.support
 
 import org.babyfish.jimmer.ImmutableObjects
 import org.babyfish.jimmer.meta.ImmutableType
-import org.babyfish.jimmer.Input
 import org.babyfish.jimmer.spring.repository.*
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
@@ -129,50 +130,37 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             select(org.babyfish.jimmer.sql.kt.ast.expression.count(table))
         }.fetchOne()
 
-    override fun insert(entity: E): E =
-        sql.entities.save(entity) {
-            setMode(SaveMode.INSERT_ONLY)
-            setAutoAttachingAll()
-        }.modifiedEntity
-
-    override fun update(entity: E): E =
-        sql.entities.save(entity) {
-            setMode(SaveMode.UPDATE_ONLY)
-            setAutoAttachingAll()
-        }.modifiedEntity
-
-    override fun <S : E> save(entity: S): S =
+    override fun <S : E> save(entity: S, mode: SaveMode): S =
         sql.entities.save(entity) {
             setAutoAttachingAll()
+            setMode(mode)
         }.modifiedEntity
 
-    override fun <S : E> saveAll(entities: Iterable<S>): List<S> =
+    override fun <S : E> saveAll(entities: Iterable<S>, mode: SaveMode): List<S> =
         sql.entities.batchSave(Utils.toCollection(entities)) {
             setAutoAttachingAll()
+            setMode(mode)
         }.simpleResults.map { it.modifiedEntity }
 
-    override fun save(input: Input<E>): E =
-        sql.entities.save(input.toEntity()) {
-            setAutoAttachingAll()
-        }.modifiedEntity
+    override fun delete(entity: E, mode: DeleteMode): Int =
+        sql.entities.delete(
+            entityType,
+            ImmutableObjects.get(entity, type.idProp)
+        ) {
+            setMode(mode)
+        }.affectedRowCount(entityType)
 
-    override fun delete(entity: E) {
-        sql.entities.delete(entityType, ImmutableObjects.get(entity, type.idProp))
-    }
+    override fun deleteById(id: ID, mode: DeleteMode): Int =
+        sql.entities.delete(entityType, id) {
+            setMode(mode)
+        }.affectedRowCount(entityType)
 
-    override fun deleteById(id: ID) {
-        sql.entities.delete(entityType, id)
-    }
+    override fun deleteByIds(ids: Iterable<ID>, mode: DeleteMode): Int =
+        sql.entities.batchDelete(entityType, Utils.toCollection(ids)) {
+            setMode(mode)
+        }.affectedRowCount(entityType)
 
-    override fun deleteByIds(ids: Iterable<ID>) {
-        sql.entities.batchDelete(entityType, Utils.toCollection(ids))
-    }
-
-    override fun deleteAll() {
-        sql.createDelete(entityType) {}.execute()
-    }
-
-    override fun deleteAll(entities: Iterable<E>) {
+    override fun deleteAll(entities: Iterable<E>, mode: DeleteMode): Int =
         sql
             .entities
             .batchDelete(
@@ -180,11 +168,13 @@ open class KRepositoryImpl<E: Any, ID: Any> (
                 entities.map {
                     ImmutableObjects.get(it, type.idProp)
                 }
-            )
-    }
+            ) {
+                setMode(mode)
+            }.affectedRowCount(entityType)
 
-    override val graphql: KRepository.GraphQl<E>
-        get() = GraphQlImpl()
+    override fun deleteAll() {
+        sql.createDelete(entityType) {}.execute()
+    }
 
     private class PagerImpl(
         private val pageIndex: Int,
@@ -213,11 +203,5 @@ open class KRepositoryImpl<E: Any, ID: Any> (
                 total.toLong()
             )
         }
-    }
-
-    private inner class GraphQlImpl : KRepository.GraphQl<E> {
-
-        override fun <X : Any> load(prop: KProperty1<E, X?>, sources: Collection<E>): Map<E, X> =
-            sql.loaders.batchLoad(prop, sources)
     }
 }

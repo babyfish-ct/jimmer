@@ -69,6 +69,14 @@ internal val K_NULLABLE_TABLE_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KNullableTable"
 )
+internal val K_NON_NULL_TABLE_CLASS_NAME_EX = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table",
+    "KNonNullTableEx"
+)
+internal val K_NULLABLE_TABLE_CLASS_NAME_EX = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table",
+    "KNullableTableEx"
+)
 internal val K_TABLE_EX_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KTableEx"

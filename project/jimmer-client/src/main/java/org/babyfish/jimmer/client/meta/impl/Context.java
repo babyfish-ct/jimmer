@@ -294,12 +294,12 @@ class Context {
         }
         if (Collection.class.isAssignableFrom(javaClass) ||
                 Map.class.isAssignableFrom(javaClass)) {
-            throw new IllegalDocMetaException(
-                    "The error field type cannot be collection or map"
+            throw new IllegalArgumentException(
+                    "The type of error field cannot be collection"
             );
         }
         if (javaClass.getTypeParameters().length != 0) {
-            throw new IllegalDocMetaException(
+            throw new IllegalArgumentException(
                     "The error field type cannot be generic type"
             );
         }
@@ -556,8 +556,8 @@ class Context {
             throw new IllegalDocMetaException(
                     "Cannot get `" +
                             info.getConstant() +
-                            "` from \"" +
-                            info.getOwnerType().getName() +
+                            "` declared in \"" +
+                            location +
                             "\""
             );
         }

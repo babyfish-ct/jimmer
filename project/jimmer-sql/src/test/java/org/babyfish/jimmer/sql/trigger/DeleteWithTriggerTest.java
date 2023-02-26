@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.trigger;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.junit.jupiter.api.Test;
 
@@ -1344,5 +1345,59 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 }
         );
         assertEvents();
+    }
+
+    @Test
+    public void testLogicalDelete() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().deleteCommand(
+                        AdministratorMetadata.class,
+                        10L
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.EMAIL, tb_1_.WEBSITE, tb_1_.ADMINISTRATOR_ID " +
+                                        "from ADMINISTRATOR_METADATA as tb_1_ " +
+                                        "where tb_1_.ID in (?)"
+                        );
+                        it.variables(10L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update ADMINISTRATOR_METADATA set DELETED = ? where ID in (?)");
+                        it.variables(true, 10L);
+                    });
+                    ctx.totalRowCount(1);
+                }
+        );
+        assertEvents(
+                "Event{" +
+                        "--->oldEntity={" +
+                        "--->--->\"name\":\"am_1\"," +
+                        "--->--->\"deleted\":false," +
+                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                        "--->--->\"email\":\"email_1\"," +
+                        "--->--->\"website\":\"website_1\"," +
+                        "--->--->\"administrator\":{" +
+                        "--->--->--->\"id\":1" +
+                        "--->--->}," +
+                        "--->--->\"id\":10" +
+                        "--->}, " +
+                        "--->newEntity={" +
+                        "--->--->\"name\":\"am_1\"," +
+                        "--->--->\"deleted\":true," +
+                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                        "--->--->\"email\":\"email_1\"," +
+                        "--->--->\"website\":\"website_1\"," +
+                        "--->--->\"administrator\":{" +
+                        "--->--->--->\"id\":1" +
+                        "--->--->}," +
+                        "--->--->\"id\":10" +
+                        "--->}, " +
+                        "--->reason=null" +
+                        "}"
+        );
     }
 }

@@ -166,13 +166,16 @@ class ParameterImpl implements Parameter {
             return new ParameterImpl(declaringOperation, rawParameter, parameterName, index, null, null, true, type);
         }
 
-        Type type = ctx
-                .locate(new ParameterLocation(declaringOperation, index, rawParameter.getName()))
-                .parseType(rawParameter.getAnnotatedType());
-        if (isNullable) {
-            type = NullableTypeImpl.of(type);
+        if (!parameterParser.shouldBeIgnored(rawParameter)) {
+            Type type = ctx
+                    .locate(new ParameterLocation(declaringOperation, index, rawParameter.getName()))
+                    .parseType(rawParameter.getAnnotatedType());
+            if (isNullable) {
+                type = NullableTypeImpl.of(type);
+            }
+            return new ParameterImpl(declaringOperation, rawParameter, parameterName, index, null, null, false, type);
         }
-        return new ParameterImpl(declaringOperation, rawParameter, parameterName, index, null, null, false, type);
+        return null;
     }
 
     private static class ParameterLocation implements Location {
