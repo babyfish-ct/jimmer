@@ -30,16 +30,11 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         this.data = data != null ? data.freeze() : new Data(sqlClient).freeze();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public AbstractEntitySaveCommand configure(Consumer<Cfg> block) {
         Data newData = new Data(data);
         block.accept(newData);
-        if (newData.mode == SaveMode.UPSERT &&
-                newData.keyPropMultiMap.isEmpty() &&
-                !newData.autoAttachingAll &&
-                newData.dissociateActionMap.isEmpty() &&
-                newData.autoAttachingSet.isEmpty()) {
+        if (data.equals(newData)) {
             return this;
         }
         return create(newData);
@@ -251,10 +246,42 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             if (!frozen) {
                 keyPropMultiMap = Collections.unmodifiableMap(keyPropMultiMap);
                 autoAttachingSet = Collections.unmodifiableSet(autoAttachingSet);
+                autoCheckingSet = Collections.unmodifiableSet(autoCheckingSet);
                 dissociateActionMap = Collections.unmodifiableMap(dissociateActionMap);
                 frozen = true;
             }
             return this;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(sqlClient, triggers, frozen, mode, deleteMode, keyPropMultiMap, autoAttachingAll, autoAttachingSet, autoCheckingAll, autoCheckingSet, dissociateActionMap, pessimisticLock);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Data data = (Data) o;
+            return frozen == data.frozen && autoAttachingAll == data.autoAttachingAll && autoCheckingAll == data.autoCheckingAll && pessimisticLock == data.pessimisticLock && sqlClient.equals(data.sqlClient) && Objects.equals(triggers, data.triggers) && mode == data.mode && deleteMode == data.deleteMode && keyPropMultiMap.equals(data.keyPropMultiMap) && autoAttachingSet.equals(data.autoAttachingSet) && autoCheckingSet.equals(data.autoCheckingSet) && dissociateActionMap.equals(data.dissociateActionMap);
+        }
+
+        @Override
+        public String toString() {
+            return "Data{" +
+                    "sqlClient=" + sqlClient +
+                    ", triggers=" + triggers +
+                    ", frozen=" + frozen +
+                    ", mode=" + mode +
+                    ", deleteMode=" + deleteMode +
+                    ", keyPropMultiMap=" + keyPropMultiMap +
+                    ", autoAttachingAll=" + autoAttachingAll +
+                    ", autoAttachingSet=" + autoAttachingSet +
+                    ", autoCheckingAll=" + autoCheckingAll +
+                    ", autoCheckingSet=" + autoCheckingSet +
+                    ", dissociateActionMap=" + dissociateActionMap +
+                    ", pessimisticLock=" + pessimisticLock +
+                    '}';
         }
 
         private void validate() {

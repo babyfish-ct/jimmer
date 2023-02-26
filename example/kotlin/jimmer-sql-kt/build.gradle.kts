@@ -9,8 +9,10 @@ plugins {
 	id("com.google.devtools.ksp") version "1.7.10-1.0.6"
 }
 
+val jimmerVersion = "0.6.57-0.7-preview"
+
 group = "org.babyfish.jimmer.example.kt"
-version = "0.6.51-0.7-preview"
+version = jimmerVersion
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
@@ -19,22 +21,28 @@ repositories {
 
 dependencies {
 
-	implementation("org.babyfish.jimmer:jimmer-spring-boot-starter:0.6.51-0.7-preview")
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.6.51-0.7-preview")
+	api("org.springframework.boot:spring-boot-starter-web")
+	api("org.springframework.data:spring-data-redis")
+	implementation("org.springframework.kafka:spring-kafka:2.9.0")
+
+	implementation("org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}")
+	ksp("org.babyfish.jimmer:jimmer-ksp:${jimmerVersion}")
 
 	implementation("org.mapstruct:mapstruct:1.5.3.Final")
-	kapt("org.babyfish.jimmer:jimmer-mapstruct-apt:0.6.51-0.7-preview")
+	kapt("org.mapstruct:mapstruct-processor:1.5.3.Final")
+	kapt("org.babyfish.jimmer:jimmer-mapstruct-apt:${jimmerVersion}")
 
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
 
 	implementation("org.springdoc:springdoc-openapi-ui:1.6.11")
-	implementation("org.springframework.kafka:spring-kafka:2.9.0")
 
 	runtimeOnly("com.h2database:h2:2.1.212")
 	runtimeOnly("mysql:mysql-connector-java:8.0.30")
 	runtimeOnly("io.lettuce:lettuce-core:6.2.0.RELEASE")
+	runtimeOnly("com.github.ben-manes.caffeine:caffeine:2.9.1")
+
+	testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
 // Without this configuration, gradle command can still run.

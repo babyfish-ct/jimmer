@@ -2,9 +2,6 @@ package org.babyfish.jimmer.example.kt.graphql.cfg
 
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.TargetLevel
-import org.babyfish.jimmer.meta.impl.TypedPropImpl
-import org.babyfish.jimmer.sql.ImmutableProps
-import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.dataloader.BatchLoaderEnvironment
 import org.springframework.context.annotation.Configuration
@@ -13,6 +10,9 @@ import reactor.core.publisher.Mono
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.declaredMemberProperties
 
+/**
+ * In next version, this behavior will be embedded into jimmer
+ */
 @Configuration
 class DataLoaderConfig(registry: BatchLoaderRegistry, sqlClient: KSqlClient) {
     init {
