@@ -339,7 +339,7 @@ class DraftImplGenerator(
                                 } else {
                                     add("%S", prop.name)
                                 }
-                                add(" -> %L = value as %T?", prop.name, prop.typeName(overrideNullable = false))
+                                add(" -> this.%L = value as %T?", prop.name, prop.typeName(overrideNullable = false))
                                 if (!prop.isNullable) {
                                     add("\n    ?: throw IllegalArgumentException(%S)", "'${prop.name} cannot be null")
                                 }

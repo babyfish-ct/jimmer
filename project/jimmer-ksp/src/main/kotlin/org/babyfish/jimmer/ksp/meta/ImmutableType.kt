@@ -130,6 +130,19 @@ class ImmutableType(
                                         "SQL expression so that the `sql` of that annotation must be specified"
                                 )
                             }
+                            val dependencies = formula.get<List<String>>("dependencies") ?: emptyList()
+                            if (dependencies.isNotEmpty()) {
+                                throw ModelException(
+                                    "The property \"" +
+                                        this +
+                                        "." +
+                                        propDeclaration +
+                                        "\" is abstract and decorated by @" +
+                                        Formula::class.java.name +
+                                        ", abstract modifier means simple calculation property based on " +
+                                        "SQL expression so that the `dependencies` of that annotation cannot be specified"
+                                )
+                            }
                         }
                     } else {
                         for (anno in propDeclaration.annotations) {

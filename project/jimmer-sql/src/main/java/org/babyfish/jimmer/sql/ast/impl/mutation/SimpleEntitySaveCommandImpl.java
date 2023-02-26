@@ -58,7 +58,7 @@ public class SimpleEntitySaveCommandImpl<E>
     }
 
     private SimpleSaveResult<E> executeImpl(Connection con) {
-        Saver saver = new Saver(data, con);
+        Saver saver = new Saver(data, con, ((ImmutableSpi)entity).__type());
         return saver.save(entity);
     }
 

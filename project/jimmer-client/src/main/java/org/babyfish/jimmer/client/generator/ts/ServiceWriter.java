@@ -232,7 +232,7 @@ public class ServiceWriter extends TsCodeWriter {
                         operation.getRawMethod() +
                         "\", the path variable {" +
                         pathVariable +
-                        "} cannot be resolved any any parameters"
+                        "} cannot be resolved by any parameter"
         );
     }
 

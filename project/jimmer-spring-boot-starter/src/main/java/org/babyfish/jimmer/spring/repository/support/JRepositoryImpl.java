@@ -11,6 +11,10 @@ import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableRootQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
+import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
+import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -211,24 +215,67 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         return createQuery(null, EMPTY_SORTED_PROPS).count();
     }
 
+    @NotNull
     @Override
-    public void delete(@NotNull E entity) {
-        sqlClient.getEntities().delete(
-                entityType,
-                ImmutableObjects.get(entity, immutableType.getIdProp().getId())
-        );
+    public <S extends E> S save(@NotNull S entity, SaveMode mode) {
+        return sqlClient
+                .getEntities()
+                .saveCommand(entity)
+                .configure(cfg -> cfg.setAutoAttachingAll().setMode(mode))
+                .execute()
+                .getModifiedEntity();
+    }
+
+    @NotNull
+    @Override
+    public <S extends E> Iterable<S> saveAll(@NotNull Iterable<S> entities, SaveMode mode) {
+        return sqlClient
+                .getEntities()
+                .batchSaveCommand(Utils.toCollection(entities))
+                .configure(cfg -> cfg.setAutoAttachingAll().setMode(mode))
+                .execute()
+                .getSimpleResults()
+                .stream()
+                .map(SimpleSaveResult::getModifiedEntity)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public void deleteAll(@NotNull Iterable<? extends E> entities) {
-        sqlClient.getEntities().batchDelete(
+    public int delete(@NotNull E entity, DeleteMode mode) {
+        return sqlClient.getEntities().delete(
+                entityType,
+                ImmutableObjects.get(entity, immutableType.getIdProp().getId()),
+                mode
+        ).getAffectedRowCount(AffectedTable.of(immutableType));
+    }
+
+    @Override
+    public int deleteAll(@NotNull Iterable<? extends E> entities, DeleteMode mode) {
+        return sqlClient.getEntities().batchDelete(
                 entityType,
                 Utils
                         .toCollection(entities)
                         .stream()
                         .map(it -> ImmutableObjects.get(it, immutableType.getIdProp().getId()))
-                        .collect(Collectors.toList())
-        );
+                        .collect(Collectors.toList()),
+                mode
+        ).getAffectedRowCount(AffectedTable.of(immutableType));
+    }
+
+    @Override
+    public int deleteById(@NotNull ID id, DeleteMode mode) {
+        return sqlClient
+                .getEntities()
+                .delete(entityType, id, mode)
+                .getAffectedRowCount(AffectedTable.of(immutableType));
+    }
+
+    @Override
+    public int deleteByIds(Iterable<? extends ID> ids, DeleteMode mode) {
+        return sqlClient
+                .getEntities()
+                .batchDelete(entityType, Utils.toCollection(ids), mode)
+                .getAffectedRowCount(AffectedTable.of(immutableType));
     }
 
     @Override
@@ -236,23 +283,6 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         Mutations
                 .createDelete(sqlClient, immutableType, (d, t) -> {})
                 .execute();
-    }
-
-    @Override
-    public void deleteById(@NotNull ID id) {
-        sqlClient.getEntities().delete(entityType, id);
-    }
-
-    @Override
-    public void deleteByIds(Iterable<? extends ID> ids) {
-        sqlClient
-                .getEntities()
-                .batchDelete(entityType, Utils.toCollection(ids));
-    }
-
-    @Override
-    public GraphQl<E> graphql() {
-        return new GraphQlImpl();
     }
 
     private ConfigurableRootQuery<?, E> createQuery(Fetcher<E> fetcher, TypedProp.Scalar<?, ?>[] sortedProps) {
@@ -322,24 +352,6 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
                     ),
                     total
             );
-        }
-    }
-
-    private class GraphQlImpl implements GraphQl<E> {
-
-        @Override
-        public <X> Map<E, X> load(TypedProp.Scalar<E, X> prop, Collection<E> sources) {
-            return sqlClient.getLoaders().value(prop).batchLoad(sources);
-        }
-
-        @Override
-        public <X> Map<E, X> load(TypedProp.Reference<E, X> prop, Collection<E> sources) {
-            return sqlClient.getLoaders().reference(prop).batchLoad(sources);
-        }
-
-        @Override
-        public <X> Map<E, List<X>> load(TypedProp.ReferenceList<E, X> prop, Collection<E> sources) {
-            return sqlClient.getLoaders().list(prop).batchLoad(sources);
         }
     }
 }

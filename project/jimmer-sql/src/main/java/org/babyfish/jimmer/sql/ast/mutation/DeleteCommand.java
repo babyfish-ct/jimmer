@@ -6,10 +6,8 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.Executable;
-import org.babyfish.jimmer.sql.ast.table.Table;
 
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public interface DeleteCommand extends Executable<DeleteResult> {
 
@@ -19,7 +17,7 @@ public interface DeleteCommand extends Executable<DeleteResult> {
     interface Cfg {
 
         @OldChain
-        Cfg setDeleteMode(DeleteMode mode);
+        Cfg setMode(DeleteMode mode);
 
         @OldChain
         default Cfg setDissociateAction(

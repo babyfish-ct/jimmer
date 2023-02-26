@@ -516,6 +516,12 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     }
 
     @Override
+    public boolean isLogicalDeleted() {
+        LogicalDeletedInfo info = declaringType.getLogicalDeletedInfo();
+        return info != null && info.getProp() == this || (base != null && base.isLogicalDeleted());
+    }
+
+    @Override
     public ImmutableType getTargetType() {
         if (targetTypeResolved) {
             return targetType;

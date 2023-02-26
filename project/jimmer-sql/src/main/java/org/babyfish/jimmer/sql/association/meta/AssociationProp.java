@@ -117,6 +117,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public boolean isLogicalDeleted() {
+        return false;
+    }
+
+    @Override
     public ImmutableProp getMappedBy() {
         return null;
     }

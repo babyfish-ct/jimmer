@@ -87,5 +87,7 @@ public interface Metadata {
         String pathVariableName(Parameter javaParameter);
 
         boolean isRequestBody(Parameter javaParameter);
+
+        boolean shouldBeIgnored(Parameter javaParameter);
     }
 }

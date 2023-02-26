@@ -1,39 +1,48 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.lang.Ref;
-import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 
-import java.lang.reflect.ReflectPermission;
 import java.sql.Connection;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public class BatchEntitySaveCommandImpl<E>
         extends AbstractEntitySaveCommandImpl
         implements BatchEntitySaveCommand<E> {
 
-    private Collection<E> entities;
+    private final Collection<E> entities;
+
+    private final ImmutableType type;
 
     public BatchEntitySaveCommandImpl(JSqlClient sqlClient, Connection con, Collection<E> entities) {
         super(sqlClient, con, null);
+        ImmutableType type = null;
         for (E entity : entities) {
             if (!(entity instanceof ImmutableSpi)) {
                 throw new IllegalArgumentException(
                         "All the elements of entities must be an immutable object"
                 );
             }
+            ImmutableType entityType = ((ImmutableSpi) entity).__type();
+            if (entityType != null && entityType != entityType) {
+                throw new IllegalArgumentException(
+                        "All the elements of entities must belong to same immutable type"
+                );
+            }
+            type = entityType;
         }
         this.entities = entities;
+        this.type = type;
     }
 
     private BatchEntitySaveCommandImpl(BatchEntitySaveCommandImpl<E> base, Data data) {
         super(base.sqlClient, base.con, data);
         this.entities = base.entities;
+        this.type = base.type;
     }
 
     @SuppressWarnings("unchecked")
@@ -74,7 +83,7 @@ public class BatchEntitySaveCommandImpl<E>
         Map<AffectedTable, Integer> affectedRowCountMap = new LinkedHashMap<>();
         int size = entities.size();
         List<SimpleSaveResult<E>> oldSimpleResults = new ArrayList<>(size);
-        Saver saver = new Saver(data, con, cache, false, affectedRowCountMap);
+        Saver saver = new Saver(data, con, type, cache, false, affectedRowCountMap);
         List<Object> modifiedEntities = Internal.produceList(
                 ((ImmutableSpi) entities.iterator().next()).__type(),
                 entities,

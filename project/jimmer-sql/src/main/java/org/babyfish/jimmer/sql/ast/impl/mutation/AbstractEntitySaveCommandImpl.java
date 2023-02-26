@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
@@ -56,6 +57,8 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         private SaveMode mode;
 
+        private DeleteMode deleteMode;
+
         private Map<ImmutableType, Set<ImmutableProp>> keyPropMultiMap;
 
         private boolean autoAttachingAll;
@@ -72,6 +75,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     null :
                     sqlClient.getTriggers(true);
             this.mode = SaveMode.UPSERT;
+            this.deleteMode = DeleteMode.AUTO;
             this.keyPropMultiMap = new LinkedHashMap<>();
             this.autoAttachingSet = new LinkedHashSet<>();
             this.dissociateActionMap = new LinkedHashMap<>();
@@ -82,6 +86,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.sqlClient = base.sqlClient;
             this.triggers = base.triggers;
             this.mode = SaveMode.UPSERT;
+            this.deleteMode = base.deleteMode;
             this.keyPropMultiMap = new LinkedHashMap<>(base.keyPropMultiMap);
             this.autoAttachingAll = base.autoAttachingAll;
             this.autoAttachingSet = new LinkedHashSet<>(base.autoAttachingSet);
@@ -100,6 +105,8 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         public SaveMode getMode() {
             return mode;
         }
+
+        public DeleteMode getDeleteMode() { return deleteMode; }
 
         public Set<ImmutableProp> getKeyProps(ImmutableType type) {
             Set<ImmutableProp> keyProps = keyPropMultiMap.get(type);
@@ -208,6 +215,12 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         @Override
         public Cfg setPessimisticLock(boolean pessimisticLock) {
             this.pessimisticLock = pessimisticLock;
+            return this;
+        }
+
+        @Override
+        public Cfg setDeleteMode(DeleteMode mode) {
+            this.deleteMode = Objects.requireNonNull(mode, "mode cannot be null");
             return this;
         }
 

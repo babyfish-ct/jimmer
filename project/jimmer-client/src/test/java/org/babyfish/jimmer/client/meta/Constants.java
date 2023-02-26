@@ -67,6 +67,11 @@ public class Constants {
         public boolean isRequestBody(Parameter javaParameter) {
             return javaParameter.isAnnotationPresent(RequestBody.class);
         }
+
+        @Override
+        public boolean shouldBeIgnored(Parameter javaParameter) {
+            return false;
+        }
     };
 
     public final static Metadata JAVA_METADATA = Metadata.newBuilder()

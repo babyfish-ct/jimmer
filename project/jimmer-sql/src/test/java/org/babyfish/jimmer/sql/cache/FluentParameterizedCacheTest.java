@@ -93,15 +93,17 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                                     role.fetch(
                                             RoleFetcher.$
                                                     .allScalarFields()
+                                                    .deleted()
                                                     .permissions(
                                                             PermissionFetcher.$
                                                                     .allScalarFields()
+                                                                    .deleted()
                                                     )
                                     )
                             ),
                     ctx -> {
                         ctx.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
                                         "from ROLE as tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(false);
@@ -147,15 +149,17 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                                     role.fetch(
                                             RoleFetcher.$
                                                     .allScalarFields()
+                                                    .deleted()
                                                     .permissions(
                                                             PermissionFetcher.$
                                                                     .allScalarFields()
+                                                                    .deleted()
                                                     )
                                     )
                             ),
                     ctx -> {
                         ctx.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
                                         "from ROLE as tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(true);
@@ -209,15 +213,17 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                                     permission.fetch(
                                             PermissionFetcher.$
                                                     .allScalarFields()
+                                                    .deleted()
                                                     .role(
                                                             RoleFetcher.$
                                                                     .allScalarFields()
+                                                                    .deleted()
                                                     )
                                     )
                             ),
                     ctx -> {
                         ctx.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED, tb_1_.ROLE_ID " +
                                         "from PERMISSION as tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(false);
@@ -269,15 +275,17 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                                     permission.fetch(
                                             PermissionFetcher.$
                                                     .allScalarFields()
+                                                    .deleted()
                                                     .role(
                                                             RoleFetcher.$
                                                                     .allScalarFields()
+                                                                    .deleted()
                                                     )
                                     )
                             ),
                     ctx -> {
                         ctx.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED, tb_1_.ROLE_ID " +
                                         "from PERMISSION as tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(true);
@@ -338,15 +346,17 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                                     administrator.fetch(
                                             AdministratorFetcher.$
                                                     .allScalarFields()
+                                                    .deleted()
                                                     .roles(
                                                             RoleFetcher.$
                                                                     .allScalarFields()
+                                                                    .deleted()
                                                     )
                                     )
                             ),
                     ctx -> {
                         ctx.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
                                         "from ADMINISTRATOR as tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(false);
@@ -407,15 +417,17 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                                     administrator.fetch(
                                             AdministratorFetcher.$
                                                     .allScalarFields()
+                                                    .deleted()
                                                     .roles(
                                                             RoleFetcher.$
                                                                     .allScalarFields()
+                                                                    .deleted()
                                                     )
                                     )
                             ),
                     ctx -> {
                         ctx.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
                                         "from ADMINISTRATOR as tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(true);
@@ -484,15 +496,17 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                                     role.fetch(
                                             RoleFetcher.$
                                                     .allScalarFields()
+                                                    .deleted()
                                                     .administrators(
                                                             AdministratorFetcher.$
                                                                     .allScalarFields()
+                                                                    .deleted()
                                                     )
                                     )
                             ),
                     ctx -> {
                         ctx.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
                                         "from ROLE as tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(false);
@@ -544,15 +558,17 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                                     role.fetch(
                                             RoleFetcher.$
                                                     .allScalarFields()
+                                                    .deleted()
                                                     .administrators(
                                                             AdministratorFetcher.$
                                                                     .allScalarFields()
+                                                                    .deleted()
                                                     )
                                     )
                             ),
                     ctx -> {
                         ctx.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
                                         "from ROLE as tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(true);

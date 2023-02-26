@@ -69,15 +69,17 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                     select(
                         table.fetchBy {
                             allScalarFields()
+                            deleted()
                             permissions {
                                 allScalarFields()
+                                deleted()
                             }
                         }
                     )
                 }
             ) {
                 sql(
-                    """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME 
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                         |from ROLE as tb_1_ 
                         |where tb_1_.DELETED = ?""".trimMargin()
                 ).variables(false)
@@ -117,15 +119,17 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                     select(
                         table.fetchBy {
                             allScalarFields()
+                            deleted()
                             permissions {
                                 allScalarFields()
+                                deleted()
                             }
                         }
                     )
                 }
             ) {
                 sql(
-                    """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME 
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                         |from ROLE as tb_1_ 
                         |where tb_1_.DELETED = ?""".trimMargin()
                 ).variables(true)
@@ -172,15 +176,17 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                     select(
                         table.fetchBy {
                             allScalarFields()
+                            deleted()
                             role {
                                 allScalarFields()
+                                deleted()
                             }
                         }
                     )
                 }
             ) {
                 sql(
-                    """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID 
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED, tb_1_.ROLE_ID 
                         |from PERMISSION as tb_1_ 
                         |where tb_1_.DELETED = ?""".trimMargin()
                 ).variables(false)
@@ -229,15 +235,17 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                     select(
                         table.fetchBy {
                             allScalarFields()
+                            deleted()
                             role {
                                 allScalarFields()
+                                deleted()
                             }
                         }
                     )
                 }
             ) {
                 sql(
-                    """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID 
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED, tb_1_.ROLE_ID 
                         |from PERMISSION as tb_1_ 
                         |where tb_1_.DELETED = ?""".trimMargin()
                 ).variables(true)
@@ -293,15 +301,17 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                     select(
                         table.fetchBy {
                             allScalarFields()
+                            deleted()
                             roles {
                                 allScalarFields()
+                                deleted()
                             }
                         }
                     )
                 }
             ) {
                 sql(
-                    """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME 
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                         |from ADMINISTRATOR as tb_1_ 
                         |where tb_1_.DELETED = ?""".trimMargin()
                 ).variables(false)
@@ -360,15 +370,17 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                     select(
                         table.fetchBy {
                             allScalarFields()
+                            deleted()
                             roles {
                                 allScalarFields()
+                                deleted()
                             }
                         }
                     )
                 }
             ) {
                 sql(
-                    """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME 
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                         |from ADMINISTRATOR as tb_1_ 
                         |where tb_1_.DELETED = ?""".trimMargin()
                 ).variables(true)
@@ -434,15 +446,17 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                     select(
                         table.fetchBy {
                             allScalarFields()
+                            deleted()
                             administrators {
                                 allScalarFields()
+                                deleted()
                             }
                         }
                     )
                 }
             ) {
                 sql(
-                    """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME 
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                         |from ROLE as tb_1_ 
                         |where tb_1_.DELETED = ?""".trimMargin()
                 ).variables(false)
@@ -492,15 +506,17 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                     select(
                         table.fetchBy {
                             allScalarFields()
+                            deleted()
                             administrators {
                                 allScalarFields()
+                                deleted()
                             }
                         }
                     )
                 }
             ) {
                 sql(
-                    """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME 
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                         |from ROLE as tb_1_ 
                         |where tb_1_.DELETED = ?""".trimMargin()
                 ).variables(true)
@@ -557,15 +573,17 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                     select(
                         table.fetchBy {
                             allScalarFields()
+                            deleted()
                             metadata {
                                 allScalarFields()
+                                deleted()
                             }
                         }
                     )
                 }
             ) {
                 sql(
-                    """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME 
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                         |from ADMINISTRATOR as tb_1_ 
                         |where tb_1_.DELETED = ?""".trimMargin()
                 ).variables(false)
@@ -623,15 +641,17 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                     select(
                         table.fetchBy {
                             allScalarFields()
+                            deleted()
                             metadata {
                                 allScalarFields()
+                                deleted()
                             }
                         }
                     )
                 }
             ) {
                 sql(
-                    """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME 
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                         |from ADMINISTRATOR as tb_1_ 
                         |where tb_1_.DELETED = ?""".trimMargin()
                 ).variables(true)

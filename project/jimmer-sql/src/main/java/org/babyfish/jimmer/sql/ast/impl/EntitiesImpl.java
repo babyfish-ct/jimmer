@@ -430,7 +430,8 @@ public class EntitiesImpl implements Entities {
     @Override
     public DeleteCommand deleteCommand(
             Class<?> entityType,
-            Object id
+            Object id,
+            DeleteMode mode
     ) {
         if (id instanceof Collection<?>) {
             throw new IllegalArgumentException("`id` cannot be collection, do you want to call 'batchDeleteCommand'?");
@@ -438,13 +439,14 @@ public class EntitiesImpl implements Entities {
         if ((id instanceof ImmutableSpi && ((ImmutableSpi)id).__type().isEntity()) || id instanceof Input<?>) {
             throw new IllegalArgumentException("`id` must be simple type");
         }
-        return batchDeleteCommand(entityType, Collections.singleton(id));
+        return batchDeleteCommand(entityType, Collections.singleton(id), mode);
     }
 
     @Override
     public DeleteCommand batchDeleteCommand(
             Class<?> entityType,
-            Collection<?> ids
+            Collection<?> ids,
+            DeleteMode mode
     ) {
         for (Object id : ids) {
             if ((id instanceof ImmutableSpi && ((ImmutableSpi)id).__type().isEntity()) || id instanceof Input<?>) {
@@ -452,6 +454,6 @@ public class EntitiesImpl implements Entities {
             }
         }
         ImmutableType immutableType = ImmutableType.get(entityType);
-        return new DeleteCommandImpl(sqlClient, con, immutableType, ids);
+        return new DeleteCommandImpl(sqlClient, con, immutableType, ids, mode);
     }
 }

@@ -107,8 +107,10 @@ public class StaticObjectTypeImpl implements StaticObjectType {
         if (declaringType != null) {
             if (!Modifier.isPublic(javaType.getModifiers()) || !Modifier.isStatic(javaType.getModifiers())) {
                 throw new IllegalDocMetaException(
-                        "Cannot generate documentation for \"" +
+                        "Cannot parse type \"" +
                                 javaType.getName() +
+                                "\" declared in \"" +
+                                ctx.getLocation() +
                                 "\", it is nested class but is not public and static"
                 );
             }
@@ -157,10 +159,12 @@ public class StaticObjectTypeImpl implements StaticObjectType {
                     continue;
                 }
                 if (method.getTypeParameters().length != 0) {
-                    throw new IllegalDocMetaException(
-                            "Illegal getter method \"" +
+                    throw new IllegalArgumentException(
+                            "The getter method \"" +
                                     method +
-                                    "\", it can not have type parameters"
+                                    "\" declared in \"" +
+                                    ctx.getLocation() +
+                                    "\" is illegal, it can not have type parameters"
                     );
                 }
                 String name = method.getName().substring(prefix.length());

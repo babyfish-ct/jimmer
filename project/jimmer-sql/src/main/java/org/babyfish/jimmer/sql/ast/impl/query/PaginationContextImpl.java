@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.dialect.PaginationContext;
 import java.util.ArrayList;
 import java.util.List;
 
-class PaginationContextImpl implements PaginationContext {
+public class PaginationContextImpl implements PaginationContext {
     
     private int limit;
     
