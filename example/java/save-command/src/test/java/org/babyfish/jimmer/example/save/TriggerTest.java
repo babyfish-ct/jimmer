@@ -73,7 +73,11 @@ public class TriggerTest extends AbstractMutationWithTriggerTest {
                 )
                 .setAutoAttachingAll()
                 .execute();
-
+        
+        /*
+         * This example focuses on triggers, so we don't assert SQL statements,
+         * but directly assert events
+         */
         assertEvents(
 
                 "The entity \"org.babyfish.jimmer.example.save.model.BookStore\" is changed, " +

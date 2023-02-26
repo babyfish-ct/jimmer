@@ -31,14 +31,16 @@ public class RecursiveTest extends AbstractMutationTest {
                 .getEntities()
                 .saveCommand(
                         /*
-                         * `TreeNode` has two key properties: `name` and `parent`,
-                         * this means `name` and `parent` must be specified when `id` is missing.
+                         * `TreeNode` has two key properties: `name` and `parentNode`,
+                         * this means `name` and `parentNode` must be specified when `id` is missing.
                          *
-                         * One-to-many association is special. In this demo,
-                         * Associations named `childNodes` specify `parent` for child objects
-                         * implicitly so that all child objects does not require the `parent`.
+                         * One-to-many association is special, parent object can specify the
+                         * many-to-one association of its child objects implicitly.
+                         * In this demo, Associations named `childNodes` specify `parentNode`
+                         * for child objects implicitly so that all child objects do not require
+                         * the `parentNode`.
                          *
-                         * However, the `parent` of ROOT cannot be specified implicitly,
+                         * However, the `parentNode` of ROOT cannot be specified implicitly,
                          * so that it must be specified manually
                          */
                         TreeNodeDraft.$.produce(root -> {
@@ -80,7 +82,7 @@ public class RecursiveTest extends AbstractMutationTest {
                         "root"
                 ),
 
-                // root does not exist, insert it
+                // Root does not exist, insert it
                 new ExecutedStatement(
                         "insert into TREE_NODE(NAME, parent_id) values(?, ?)",
                         "root", null
@@ -189,8 +191,8 @@ public class RecursiveTest extends AbstractMutationTest {
                 .getEntities()
                 .saveCommand(
                         // Please view the comment of `testCreateTree` to understand
-                        // why `parent` is a key property of `TreeNode` but only the
-                        // root node requires `parent`.
+                        // why `parentNode` is a key property of `TreeNode`
+                        // but only the root node needs it.
                         TreeNodeDraft.$.produce(root -> {
                             root.setParentNode(null);
                             root.setName("root");
@@ -200,14 +202,14 @@ public class RecursiveTest extends AbstractMutationTest {
                                     child_1_1.setName("child-1-1");
                                     child_1_1.setChildNodes(Collections.emptyList());
                                 });
-                                // `child-1-2` will be deleted
+                                // `child-1-2` in database will be deleted
                             });
                             // `-+-child-2`
                             // ` |`
                             // ` +----child-2-1`
                             // ` |`
                             // `-|----child-2-2`
-                            // will be deleted
+                            // in database will be deleted
                         })
                 )
                 .setDissociateAction(TreeNodeProps.PARENT_NODE, DissociateAction.DELETE)
