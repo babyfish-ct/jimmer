@@ -19,8 +19,9 @@ public interface TreeNode {
 
     @Key
     @Nullable
-    @JoinColumn(name = "parent_id")
     @ManyToOne
+    @JoinColumn(name = "parent_id")
+    @OnDissociate(DissociateAction.DELETE)
     TreeNode parentNode();
 
     @OneToMany(mappedBy = "parentNode")
