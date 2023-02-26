@@ -293,9 +293,12 @@ public class ManyToOneTest extends AbstractMutationTest {
                             });
                         })
                 )
-                // You can also call
-                // .setAutoAttachingAll()
-                // If you use the repository of spring-data-jimmer, `setAutoAttachingAll` is called automatically
+                /*
+                 * You can also use `setAutoAttachingAll()`.
+                 *
+                 * If you use jimmer-spring-starter, it is unecessary to
+                 * do it because this switch is turned on.
+                 */
                 .setAutoAttaching(BookProps.STORE)
                 .execute();
 
