@@ -15,7 +15,7 @@ java {
 
 dependencies {
 
-    implementation("org.mapstruct:mapstruct-processor:1.5.3.Final")
+    compileOnly("org.mapstruct:mapstruct-processor:1.5.3.Final")
     implementation(project(":jimmer-core"))
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

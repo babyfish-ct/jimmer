@@ -881,8 +881,8 @@ public class SaveTest extends AbstractMutationTest {
         Assertions.assertEquals(
                 "Save error caused by the path: \"<root>\": " +
                         "The association \"org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata.administrator\" " +
-                        "cannot be null, " +
-                        "because that association is `inputNotNull`",
+                        "cannot be null, because that association is decorated by \"@org.babyfish.jimmer.sql.OneToOne\" " +
+                        "whose `inputNotNull` is true",
                 ex.getMessage()
         );
     }

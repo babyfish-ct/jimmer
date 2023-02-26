@@ -16,5 +16,9 @@ interface KSaveCommandDsl {
 
     fun setAutoAttaching(prop: KProperty1<*, *>)
 
+    fun setAutoIdOnlyTargetChecking(prop: KProperty1<*, *>)
+
+    fun setAutoIdOnlyTargetCheckingAll()
+
     fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction)
 }
