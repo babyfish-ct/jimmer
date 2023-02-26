@@ -25,7 +25,7 @@ public class AbstractMutationWithTriggerTest extends AbstractMutationTest {
                             e.getImmutableType() +
                             "\" is changed, " +
                             "old: " + e.getOldEntity() +
-                            "new: " + e.getNewEntity()
+                            ", new: " + e.getNewEntity()
             );
         });
         sql().getTriggers().addAssociationListener(e -> {
@@ -34,8 +34,8 @@ public class AbstractMutationWithTriggerTest extends AbstractMutationTest {
                             e.getImmutableProp() +
                             "\" is changed, " +
                             "source id: " + e.getSourceId() +
-                            "detached target id: " + e.getDetachedTargetId() +
-                            "attached target id: " + e.getAttachedTargetId()
+                            ", detached target id: " + e.getDetachedTargetId() +
+                            ", attached target id: " + e.getAttachedTargetId()
             );
         });
     }

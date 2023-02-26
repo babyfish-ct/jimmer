@@ -8,6 +8,7 @@ import java.util.List;
 public interface Author {
 
     @Id
+    // `identity(100, 100)` in database, so it is 100, 200, 300 ...
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 

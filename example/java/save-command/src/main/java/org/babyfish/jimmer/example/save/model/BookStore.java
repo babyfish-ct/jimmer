@@ -9,6 +9,7 @@ import java.util.List;
 public interface BookStore {
 
     @Id
+    // `identity(1, 1)` in database, so it is 1, 2, 3 ...
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
