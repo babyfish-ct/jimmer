@@ -9,8 +9,10 @@ plugins {
 	id("com.google.devtools.ksp") version "1.7.10-1.0.6"
 }
 
+val jimmerVersion = "0.6.57-0.7-preview"
+
 group = "org.babyfish.jimmer.example.kt"
-version = "0.6.51-0.7-preview"
+version = jimmerVersion
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
@@ -19,25 +21,24 @@ repositories {
 
 dependencies {
 
-	implementation("org.babyfish.jimmer:jimmer-spring-boot-starter:0.6.51-0.7-preview")
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.6.51-0.7-preview")
-
-	implementation("org.mapstruct:mapstruct:1.5.3.Final")
-	kapt("org.babyfish.jimmer:jimmer-mapstruct-apt:0.6.51-0.7-preview")
-
+	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-graphql")
-
-	implementation("com.graphql-java:graphql-java-extended-scalars:18.1")
-
 	implementation("org.springframework.data:spring-data-redis")
 	implementation("org.springframework.kafka:spring-kafka:2.9.0")
 
-	// In order to work with java-8, caffeine 2.x must be used
-	implementation("com.github.ben-manes.caffeine:caffeine:2.9.1")
+	implementation("org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}")
+	ksp("org.babyfish.jimmer:jimmer-ksp:${jimmerVersion}")
+
+	implementation("org.mapstruct:mapstruct:1.5.3.Final")
+	kapt("org.mapstruct:mapstruct-processor:1.5.3.Final")
+	kapt("org.babyfish.jimmer:jimmer-mapstruct-apt:${jimmerVersion}")
+
+	implementation("com.graphql-java:graphql-java-extended-scalars:18.1")
 
 	runtimeOnly("com.h2database:h2:2.1.212")
 	runtimeOnly("mysql:mysql-connector-java:8.0.30")
 	runtimeOnly("io.lettuce:lettuce-core:6.2.0.RELEASE")
+	runtimeOnly("com.github.ben-manes.caffeine:caffeine:2.9.1")
 
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")

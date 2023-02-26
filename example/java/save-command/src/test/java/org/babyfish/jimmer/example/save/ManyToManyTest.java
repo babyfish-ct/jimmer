@@ -90,14 +90,18 @@ public class ManyToManyTest extends AbstractMutationTest {
         );
 
         ExecutionException ex = Assertions.assertThrows(ExecutionException.class, () -> {
-            sql().getEntities().save(
-                    BookDraft.$.produce(book -> {
-                        book.setName("SQL in Action");
-                        book.setEdition(1);
-                        book.setPrice(new BigDecimal(49));
-                        book.addIntoAuthors(author -> author.setId(99999L));
-                    })
-            );
+            sql()
+                    .getEntities()
+                    .saveCommand(
+                            BookDraft.$.produce(book -> {
+                                book.setName("SQL in Action");
+                                book.setEdition(1);
+                                book.setPrice(new BigDecimal(49));
+                                book.addIntoAuthors(author -> author.setId(99999L));
+                            })
+                    )
+                    .configure(cfg -> cfg.setAutoIdOnlyTargetCheckingAll())
+                    .execute();
         });
         Assertions.assertEquals(
                 "Cannot execute SQL statement: " +
@@ -105,15 +109,6 @@ public class ManyToManyTest extends AbstractMutationTest {
                         "variables: [10, 99999]",
                 ex.getMessage()
         );
-        /*
-         * In the current Jimmer, the many-to-one property is based on the foreign key.
-         * If the associated object holds an illegal id, the database will report an error.
-         *
-         * In the future, Jimmer will support fake foreign key(It should be understood
-         * as a foreign key in business, but it is not a foreign key in the database.
-         * It is suitable for the database sharding and table sharding), an additional
-         * validation will be added here.
-         */
 
         assertExecutedStatements(
 
@@ -230,7 +225,9 @@ public class ManyToManyTest extends AbstractMutationTest {
         });
         Assertions.assertEquals(
                 "Save error caused by the path: \"<root>.authors\": " +
-                        "Cannot insert object because insert operation for this path is disabled",
+                        "Cannot insert object because insert operation for this path is disabled, " +
+                        "please call `setAutoAttaching(BookProps.AUTHORS)` or " +
+                        "`setAutoAttachingAll()` of the save command",
                 ex.getMessage()
         );
 

@@ -247,7 +247,10 @@ class ManyToOneTest : AbstractMutationTest() {
         }
 
         Assertions.assertEquals(
-            "Save error caused by the path: \"<root>.store\": Cannot insert object because insert operation for this path is disabled",
+            "Save error caused by the path: \"<root>.store\": " +
+                "Cannot insert object because insert operation for this path is disabled, " +
+                "please call `setAutoAttaching(Book::store)` " +
+                "or `setAutoAttachingAll()` of the save command",
             ex.message
         )
 

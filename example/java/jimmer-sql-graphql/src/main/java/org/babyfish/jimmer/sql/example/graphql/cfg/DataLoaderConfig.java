@@ -11,6 +11,9 @@ import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
+/**
+ * In next version, this behavior will be embedded into jimmer
+ */
 @Configuration
 public class DataLoaderConfig {
 

@@ -53,6 +53,10 @@ class GraphQLConfig {
         }
 
     companion object {
+
+        /**
+         * In next version, this behavior will be embedded into jimmer
+         */
         private fun registerJimmerDataFetchers(
             wiringBuilder: RuntimeWiring.Builder,
             entityManager: EntityManager
@@ -74,6 +78,9 @@ class GraphQLConfig {
         }
     }
 
+    /**
+     * In next version, this behavior will be embedded into jimmer
+     */
     private class JimmerSimpleFetcher(
         private val propId: Int
     ) : DataFetcher<Any> {
@@ -83,6 +90,9 @@ class GraphQLConfig {
         }
     }
 
+    /**
+     * In next version, this behavior will be embedded into jimmer
+     */
     private class JimmerComplexFetcher(
         private val prop: ImmutableProp
     ) : DataFetcher<Any> {

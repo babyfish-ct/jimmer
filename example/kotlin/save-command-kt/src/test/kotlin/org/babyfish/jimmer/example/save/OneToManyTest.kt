@@ -212,7 +212,9 @@ class OneToManyTest() : AbstractMutationTest() {
 
         Assertions.assertEquals(
             "Save error caused by the path: \"<root>.books\": " +
-                "Cannot insert object because insert operation for this path is disabled",
+                "Cannot insert object because insert operation for this path is disabled, " +
+                "please call `setAutoAttaching(BookStore::books)` " +
+                "or `setAutoAttachingAll()` of the save command",
             ex.message
         )
 
@@ -339,7 +341,7 @@ class OneToManyTest() : AbstractMutationTest() {
                 "Cannot dissociate child objects because the dissociation action of the many-to-one property " +
                 "\"org.babyfish.jimmer.example.save.model.Book.store\" is not configured as \"set null\" or \"cascade\". " +
                 "There are two ways to resolve this issue: " +
-                "Decorate the many-to-one property \"org.babyfish.jimmer.example.save.model.Book.store\" to " +
+                "Decorate the many-to-one property \"org.babyfish.jimmer.example.save.model.Book.store\" " +
                 "by @org.babyfish.jimmer.sql.OnDissociate whose argument is " +
                 "`DissociateAction.SET_NULL` or `DissociateAction.DELETE` , " +
                 "or use save command's runtime configuration to override it"),

@@ -234,7 +234,9 @@ class ManyToManyTest : AbstractMutationTest() {
         }
         Assertions.assertEquals(
             "Save error caused by the path: \"<root>.authors\": " +
-                "Cannot insert object because insert operation for this path is disabled",
+                "Cannot insert object because insert operation for this path is disabled, " +
+                "please call `setAutoAttaching(Book::authors)` " +
+                "or `setAutoAttachingAll()` of the save command",
             ex.message
         )
         assertExecutedStatements(

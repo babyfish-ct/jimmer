@@ -4,8 +4,12 @@ plugins {
 	id 'java'
 }
 
+ext {
+	jimmerVersion = "0.6.57-0.7-preview"
+}
+
 group = 'org.babyfish.jimmer.sql.example'
-version = '0.6.51-0.7-preview'
+version = jimmerVersion
 
 java {
 	sourceCompatibility = JavaVersion.VERSION_1_8
@@ -18,18 +22,19 @@ repositories {
 
 dependencies {
 
-	implementation 'org.babyfish.jimmer:jimmer-spring-boot-starter:0.6.51-0.7-preview'
-	annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.51-0.7-preview'
+	implementation 'org.springframework.boot:spring-boot-starter-graphql'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.data:spring-data-redis'
+	implementation 'org.springframework.kafka:spring-kafka:2.9.0'
+
+	implementation "org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}"
+	annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
 
 	implementation 'org.projectlombok:lombok:1.18.26'
 	annotationProcessor 'org.projectlombok:lombok:1.18.26'
 
 	implementation 'org.mapstruct:mapstruct:1.5.3.Final'
-	// The annotation processor of mapstruct is included in 'jimmer-apt'
-
-	implementation 'org.springframework.boot:spring-boot-starter-graphql'
-	implementation 'org.springframework.data:spring-data-redis'
-	implementation 'org.springframework.kafka:spring-kafka:2.9.0'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
 
 	implementation 'com.graphql-java:graphql-java-extended-scalars:18.1'
 
@@ -39,6 +44,7 @@ dependencies {
 	runtimeOnly 'com.h2database:h2:2.1.212'
 	runtimeOnly 'mysql:mysql-connector-java:8.0.30'
 	runtimeOnly 'io.lettuce:lettuce-core:6.2.0.RELEASE'
+	runtimeOnly 'com.github.ben-manes.caffeine:caffeine:2.9.1'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.graphql:spring-graphql-test'
