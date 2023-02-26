@@ -34,7 +34,7 @@ public class IncompleteObjectTest extends AbstractMutationTest {
                             store.setWebsite(null); // `website` is specified
                         })
                 )
-                .configure(cfg -> cfg.setMode(SaveMode.UPDATE_ONLY))
+                .setMode(SaveMode.UPDATE_ONLY)
                 .execute();
 
         assertExecutedStatements(
@@ -69,7 +69,7 @@ public class IncompleteObjectTest extends AbstractMutationTest {
                             // this does NOT mean null, but UNKNOWN
                         })
                 )
-                .configure(cfg -> cfg.setMode(SaveMode.UPDATE_ONLY))
+                .setMode(SaveMode.UPDATE_ONLY)
                 .execute();
 
         assertExecutedStatements(
