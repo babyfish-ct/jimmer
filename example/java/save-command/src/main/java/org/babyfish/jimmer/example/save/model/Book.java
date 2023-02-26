@@ -10,6 +10,7 @@ import java.util.List;
 public interface Book {
 
     @Id
+    //`identity(10, 10)` in database, so it is 10, 20, 30 ...
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 

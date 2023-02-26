@@ -6,6 +6,12 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
+/**
+ * Recommended learning sequence: 7
+ *
+ * <p>SaveModeTest -> IncompleteObjectTest -> ManyToOneTest ->
+ * OneToManyTest -> ManyToManyTest -> RecursiveTest -> [Current: TriggerTest]</p>
+ */
 public class TriggerTest extends AbstractMutationWithTriggerTest {
 
     @Test
@@ -67,5 +73,70 @@ public class TriggerTest extends AbstractMutationWithTriggerTest {
                 )
                 .setAutoAttachingAll()
                 .execute();
+
+        assertEvents(
+
+                "The entity \"org.babyfish.jimmer.example.save.model.BookStore\" is changed, " +
+                        "old: null, " +
+                        "new: {\"id\":2,\"name\":\"TURING\"}",
+
+                "The entity \"org.babyfish.jimmer.example.save.model.Book\" is changed, " +
+                        "old: {\"id\":10,\"name\":\"Microservices Security in Action\",\"edition\":1,\"price\":33.59,\"store\":{\"id\":1}}, " +
+                        "new: {\"id\":10,\"name\":\"Microservices Security in Action\",\"edition\":1,\"price\":43.59,\"store\":{\"id\":2}}",
+
+                "The association \"org.babyfish.jimmer.example.save.model.Book.store\" is changed, " +
+                        "source id: 10, " +
+                        "detached target id: 1, " +
+                        "attached target id: 2",
+
+                "The association \"org.babyfish.jimmer.example.save.model.BookStore.books\" is changed, " +
+                        "source id: 1, " +
+                        "detached target id: 10, " +
+                        "attached target id: null",
+
+                "The association \"org.babyfish.jimmer.example.save.model.BookStore.books\" is changed, " +
+                        "source id: 2, " +
+                        "detached target id: null, " +
+                        "attached target id: 10",
+
+                "The association \"org.babyfish.jimmer.example.save.model.Book.authors\" is changed, " +
+                        "source id: 10, " +
+                        "detached target id: null, " +
+                        "attached target id: 300",
+
+                "The association \"org.babyfish.jimmer.example.save.model.Author.books\" is changed, " +
+                        "source id: 300, " +
+                        "detached target id: null, " +
+                        "attached target id: 10",
+
+                "The entity \"org.babyfish.jimmer.example.save.model.Book\" is changed, " +
+                        "old: {\"id\":20,\"name\":\"LINQ in Action\",\"edition\":1,\"price\":21.59,\"store\":{\"id\":1}}, " +
+                        "new: {\"id\":20,\"name\":\"LINQ in Action\",\"edition\":1,\"price\":31.59,\"store\":{\"id\":2}}",
+
+                "The association \"org.babyfish.jimmer.example.save.model.Book.store\" is changed, " +
+                        "source id: 20, " +
+                        "detached target id: 1, " +
+                        "attached target id: 2",
+
+                "The association \"org.babyfish.jimmer.example.save.model.BookStore.books\" is changed, " +
+                        "source id: 1, " +
+                        "detached target id: 20, " +
+                        "attached target id: null",
+
+                "The association \"org.babyfish.jimmer.example.save.model.BookStore.books\" is changed, " +
+                        "source id: 2, " +
+                        "detached target id: null, " +
+                        "attached target id: 20",
+
+                "The association \"org.babyfish.jimmer.example.save.model.Book.authors\" is changed, " +
+                        "source id: 20, " +
+                        "detached target id: 300, " +
+                        "attached target id: null",
+
+                "The association \"org.babyfish.jimmer.example.save.model.Author.books\" is changed, " +
+                        "source id: 300, " +
+                        "detached target id: 20, " +
+                        "attached target id: null"
+        );
     }
 }

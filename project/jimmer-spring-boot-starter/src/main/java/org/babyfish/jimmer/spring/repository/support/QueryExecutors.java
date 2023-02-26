@@ -100,7 +100,7 @@ public class QueryExecutors {
                     long rowCount = (Long)query.fetchOne();
                     return returnType == int.class ? (int)rowCount : rowCount;
                 case EXISTS:
-                    return query.limit(1, 0).fetchOne() != null;
+                    return query.limit(1, 0).fetchOneOrNull() != null;
             }
         }
         return null;
