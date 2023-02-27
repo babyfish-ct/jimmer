@@ -8,7 +8,6 @@ import org.babyfish.jimmer.example.save.model.BookDraft;
 import org.babyfish.jimmer.example.save.model.BookProps;
 import org.babyfish.jimmer.example.save.model.BookStore;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
-import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SaveException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -73,6 +72,61 @@ public class ManyToOneTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testIllegalShortAssociation() {
+
+        jdbc(
+                "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
+                10L, "SQL in Action", 1, new BigDecimal(45));
+
+        SaveException ex = Assertions.assertThrows(SaveException.class, () -> {
+            sql()
+                    .getEntities()
+                    .saveCommand(
+                            BookDraft.$.produce(book -> {
+                                book.setName("SQL in Action");
+                                book.setEdition(1);
+                                book.setPrice(new BigDecimal(49));
+                                book.setStore(
+                                        ImmutableObjects.makeIdOnly(BookStore.class, 99999L)
+                                );
+                            })
+                    )
+                    /*
+                     * You can also use `setAutoIdOnlyTargetCheckingAll()`.
+                     *
+                     * If you use jimmer-spring-starter, it is unnecessary to
+                     * do it because this switch is turned on.
+                     *
+                     * If the underlying `BOOK.STORE_ID` has foreign key constraints,
+                     * even if this configuration is not used, error still will be
+                     * raised by database so that you can choose not to use this
+                     * configuration when you have strict performance requirements.
+                     * However, this configuration can bring better error message.
+                     *
+                     * Sometimes it is not possible to add foreign key constraints,
+                     * such as table sharding. At this time, this configuration is
+                     * very important.
+                     */
+                    .setAutoIdOnlyTargetChecking(BookProps.STORE)
+                    .execute();
+        });
+        Assertions.assertEquals(
+                "Save error caused by the path: " +
+                        "\"<root>.store\": Illegal ids: [99999]",
+                ex.getMessage()
+        );
+
+        assertExecutedStatements(
+
+                // Is target id valid?
+                new ExecutedStatement(
+                        "select tb_1_.ID from BOOK_STORE as tb_1_ where tb_1_.ID in (?)",
+                        99999L
+                )
+        );
+    }
+
+    @Test
     public void testAssociationByKey() {
 
         jdbc("insert into book_store(id, name) values(?, ?)", 1L, "MANNING");
@@ -119,61 +173,6 @@ public class ManyToOneTest extends AbstractMutationTest {
         );
 
         Assertions.assertEquals(1, result.getTotalAffectedRowCount());
-    }
-
-    @Test
-    public void testIllegalShortAssociation() {
-
-        jdbc(
-                "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
-                10L, "SQL in Action", 1, new BigDecimal(45));
-
-        ExecutionException ex = Assertions.assertThrows(ExecutionException.class, () -> {
-                sql()
-                        .getEntities()
-                        .save(
-                                BookDraft.$.produce(book -> {
-                                    book.setName("SQL in Action");
-                                    book.setEdition(1);
-                                    book.setPrice(new BigDecimal(49));
-                                    book.setStore(
-                                            ImmutableObjects.makeIdOnly(BookStore.class, 99999L)
-                                    );
-                                })
-                        );
-        });
-        Assertions.assertEquals(
-                "Cannot execute SQL statement: " +
-                        "update BOOK set PRICE = ?, STORE_ID = ? where ID = ?, " +
-                        "variables: [49, 99999, 10]",
-                ex.getMessage()
-        );
-        /*
-         * In the current Jimmer, the many-to-one property is based on the foreign key.
-         * If the associated object holds an illegal id, the database will report an error.
-         *
-         * In the future, Jimmer will support fake foreign key(It should be understood
-         * as a foreign key in business, but it is not a foreign key in the database.
-         * It is suitable for the database sharding and table sharding), an additional
-         * validation will be added here.
-         */
-
-        assertExecutedStatements(
-
-                // Select aggregate-root object by
-                new ExecutedStatement(
-                        "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK as tb_1_ " +
-                                "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
-                        "SQL in Action", 1
-                ),
-
-                // Aggregate-root exists, update it with illegal foreign key
-                new ExecutedStatement(
-                        "update BOOK set PRICE = ?, STORE_ID = ? where ID = ?",
-                        new BigDecimal(49), 99999L, 10L
-                )
-        );
     }
 
     @Test

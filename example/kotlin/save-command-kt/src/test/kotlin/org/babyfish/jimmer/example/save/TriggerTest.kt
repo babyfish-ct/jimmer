@@ -81,7 +81,7 @@ class TriggerTest : AbstractMutationWithTriggerTest() {
                 }
             ) {
                 /*
-                 * If you use jimmer-spring-starter, it is unecessary to
+                 * If you use jimmer-spring-starter, it is unnecessary to
                  * do it because this switch is turned on.
                  */
                 setAutoAttachingAll()
