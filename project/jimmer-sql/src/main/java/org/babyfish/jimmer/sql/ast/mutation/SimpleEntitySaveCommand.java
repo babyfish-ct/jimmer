@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.mutation;
 
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.lang.NewChain;
+import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
@@ -45,6 +46,21 @@ public interface SimpleEntitySaveCommand<E>
     @NewChain
     default SimpleEntitySaveCommand<E> setAutoAttaching(ImmutableProp prop) {
         return configure(cfg -> cfg.setAutoAttaching(prop));
+    }
+
+    @OldChain
+    default SimpleEntitySaveCommand<E> setAutoIdOnlyTargetCheckingAll() {
+        return configure(Cfg::setAutoIdOnlyTargetCheckingAll);
+    }
+
+    @OldChain
+    default SimpleEntitySaveCommand<E> setAutoIdOnlyTargetChecking(TypedProp.Association<?, ?> prop) {
+        return configure(cfg -> cfg.setAutoIdOnlyTargetChecking(prop));
+    }
+
+    @OldChain
+    default SimpleEntitySaveCommand<E> setAutoIdOnlyTargetChecking(ImmutableProp prop) {
+        return configure(cfg -> cfg.setAutoIdOnlyTargetChecking(prop));
     }
 
     @NewChain

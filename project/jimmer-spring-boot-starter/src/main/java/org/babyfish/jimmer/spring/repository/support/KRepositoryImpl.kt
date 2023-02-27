@@ -133,12 +133,14 @@ open class KRepositoryImpl<E: Any, ID: Any> (
     override fun <S : E> save(entity: S, mode: SaveMode): S =
         sql.entities.save(entity) {
             setAutoAttachingAll()
+            setAutoIdOnlyTargetCheckingAll()
             setMode(mode)
         }.modifiedEntity
 
     override fun <S : E> saveAll(entities: Iterable<S>, mode: SaveMode): List<S> =
         sql.entities.batchSave(Utils.toCollection(entities)) {
             setAutoAttachingAll()
+            setAutoIdOnlyTargetCheckingAll()
             setMode(mode)
         }.simpleResults.map { it.modifiedEntity }
 

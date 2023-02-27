@@ -54,6 +54,9 @@ public class GraphQLConfig {
         };
     }
 
+    /**
+     * In next version, this behavior will be embedded into jimmer
+     */
     private static void registerJimmerDataFetchers(
             RuntimeWiring.Builder wiringBuilder,
             EntityManager entityManager) {
@@ -73,6 +76,9 @@ public class GraphQLConfig {
         }
     }
 
+    /**
+     * In next version, this behavior will be embedded into jimmer
+     */
     private static class JimmerSimpleFetcher implements DataFetcher<Object> {
 
         private final int propId;
@@ -88,6 +94,9 @@ public class GraphQLConfig {
         }
     }
 
+    /**
+     * In next version, this behavior will be embedded into jimmer
+     */
     private static class JimmerComplexFetcher implements DataFetcher<Object> {
 
         private final ImmutableProp prop;

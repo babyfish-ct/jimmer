@@ -221,7 +221,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         return sqlClient
                 .getEntities()
                 .saveCommand(entity)
-                .configure(cfg -> cfg.setAutoAttachingAll().setMode(mode))
+                .configure(cfg -> cfg.setAutoAttachingAll().setAutoIdOnlyTargetCheckingAll().setMode(mode))
                 .execute()
                 .getModifiedEntity();
     }
@@ -232,7 +232,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         return sqlClient
                 .getEntities()
                 .batchSaveCommand(Utils.toCollection(entities))
-                .configure(cfg -> cfg.setAutoAttachingAll().setMode(mode))
+                .configure(cfg -> cfg.setAutoAttachingAll().setAutoIdOnlyTargetCheckingAll().setMode(mode))
                 .execute()
                 .getSimpleResults()
                 .stream()

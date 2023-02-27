@@ -82,38 +82,55 @@ public class ManyToManyTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testInsertMiddleTableByIllegalShortAssociation() {
+    public void testIllegalShortAssociation() {
 
         jdbc(
                 "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
                 10L, "SQL in Action", 1, new BigDecimal(45)
         );
+        jdbc(
+                "insert into author(id, first_name, last_name, gender) values(?, ?, ?, ?)",
+                100L, "Ben", "Brumm", "M"
+        );
 
-        ExecutionException ex = Assertions.assertThrows(ExecutionException.class, () -> {
-            sql().getEntities().save(
-                    BookDraft.$.produce(book -> {
-                        book.setName("SQL in Action");
-                        book.setEdition(1);
-                        book.setPrice(new BigDecimal(49));
-                        book.addIntoAuthors(author -> author.setId(99999L));
-                    })
-            );
+        SaveException ex = Assertions.assertThrows(SaveException.class, () -> {
+            sql()
+                    .getEntities()
+                    .saveCommand(
+                            BookDraft.$.produce(book -> {
+                                book.setName("SQL in Action");
+                                book.setEdition(1);
+                                book.setPrice(new BigDecimal(49));
+                                book.addIntoAuthors(author -> author.setId(100L));
+                                book.addIntoAuthors(author -> author.setId(88888L));
+                                book.addIntoAuthors(author -> author.setId(99999L));
+                            })
+                    )
+                    /*
+                     * You can also use `setAutoIdOnlyTargetCheckingAll()`.
+                     *
+                     * If you use jimmer-spring-starter, it is unnecessary to
+                     * do it because this switch is turned on.
+                     *
+                     * If the underlying `BOOK_AUTHOR_MAPPING.AUTHOR_ID`
+                     * has foreign key constraints,
+                     * even if this configuration is not used, error still will be
+                     * raised by database so that you can choose not to use this
+                     * configuration when you have strict performance requirements.
+                     * However, this configuration can bring better error message.
+                     *
+                     * Sometimes it is not possible to add foreign key constraints,
+                     * such as table sharding. At this time, this configuration is
+                     * very important.
+                     */
+                    .setAutoIdOnlyTargetChecking(BookProps.AUTHORS)
+                    .execute();
         });
         Assertions.assertEquals(
-                "Cannot execute SQL statement: " +
-                        "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values (?, ?), " +
-                        "variables: [10, 99999]",
+                "Save error caused by the path: \"<root>.authors\": " +
+                        "Illegal ids: [88888, 99999]",
                 ex.getMessage()
         );
-        /*
-         * In the current Jimmer, the many-to-one property is based on the foreign key.
-         * If the associated object holds an illegal id, the database will report an error.
-         *
-         * In the future, Jimmer will support fake foreign key(It should be understood
-         * as a foreign key in business, but it is not a foreign key in the database.
-         * It is suitable for the database sharding and table sharding), an additional
-         * validation will be added here.
-         */
 
         assertExecutedStatements(
 
@@ -131,20 +148,14 @@ public class ManyToManyTest extends AbstractMutationTest {
                         new BigDecimal(49), 10L
                 ),
 
-                // Query mapping from middle table
+                // Are target ids valid
                 new ExecutedStatement(
-                        "select AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID = ?",
-                        10L
-                ),
-
-                // Mapping does not exist, insert it, cause error
-                new ExecutedStatement(
-                        "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values (?, ?)",
-                        10L, 99999L
+                        "select tb_1_.ID from AUTHOR as tb_1_ where tb_1_.ID in (?, ?, ?)",
+                        100L, 88888L, 99999L
                 )
         );
     }
-    
+
     @Test
     public void deleteMiddleTable() {
         jdbc(
@@ -230,7 +241,9 @@ public class ManyToManyTest extends AbstractMutationTest {
         });
         Assertions.assertEquals(
                 "Save error caused by the path: \"<root>.authors\": " +
-                        "Cannot insert object because insert operation for this path is disabled",
+                        "Cannot insert object because insert operation for this path is disabled, " +
+                        "please call `setAutoAttaching(BookProps.AUTHORS)` or " +
+                        "`setAutoAttachingAll()` of the save command",
                 ex.getMessage()
         );
 

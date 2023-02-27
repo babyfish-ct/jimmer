@@ -30,16 +30,11 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         this.data = data != null ? data.freeze() : new Data(sqlClient).freeze();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public AbstractEntitySaveCommand configure(Consumer<Cfg> block) {
         Data newData = new Data(data);
         block.accept(newData);
-        if (newData.mode == SaveMode.UPSERT &&
-                newData.keyPropMultiMap.isEmpty() &&
-                !newData.autoAttachingAll &&
-                newData.dissociateActionMap.isEmpty() &&
-                newData.autoAttachingSet.isEmpty()) {
+        if (data.equals(newData)) {
             return this;
         }
         return create(newData);
@@ -65,6 +60,10 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         private Set<ImmutableProp> autoAttachingSet;
 
+        private boolean autoCheckingAll;
+
+        private Set<ImmutableProp> autoCheckingSet;
+
         private Map<ImmutableProp, DissociateAction> dissociateActionMap;
 
         private boolean pessimisticLock;
@@ -77,7 +76,8 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.mode = SaveMode.UPSERT;
             this.deleteMode = DeleteMode.AUTO;
             this.keyPropMultiMap = new LinkedHashMap<>();
-            this.autoAttachingSet = new LinkedHashSet<>();
+            this.autoAttachingSet = new HashSet<>();
+            this.autoCheckingSet = new HashSet<>();
             this.dissociateActionMap = new LinkedHashMap<>();
             this.pessimisticLock = false;
         }
@@ -89,7 +89,9 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.deleteMode = base.deleteMode;
             this.keyPropMultiMap = new LinkedHashMap<>(base.keyPropMultiMap);
             this.autoAttachingAll = base.autoAttachingAll;
-            this.autoAttachingSet = new LinkedHashSet<>(base.autoAttachingSet);
+            this.autoAttachingSet = new HashSet<>(base.autoAttachingSet);
+            this.autoCheckingAll = base.autoCheckingAll;
+            this.autoCheckingSet = new HashSet<>(base.autoCheckingSet);
             this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
             this.pessimisticLock = base.pessimisticLock;
         }
@@ -118,6 +120,10 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         public boolean isAutoAttachingProp(ImmutableProp prop) {
             return autoAttachingAll || autoAttachingSet.contains(prop);
+        }
+
+        public boolean isAutoCheckingProp(ImmutableProp prop) {
+            return autoCheckingAll || autoCheckingSet.contains(prop);
         }
 
         public DissociateAction getDissociateAction(ImmutableProp prop) {
@@ -192,6 +198,18 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         }
 
         @Override
+        public Cfg setAutoIdOnlyTargetCheckingAll() {
+            autoCheckingAll = true;
+            return this;
+        }
+
+        @Override
+        public Cfg setAutoIdOnlyTargetChecking(ImmutableProp prop) {
+            autoCheckingSet.add(prop);
+            return this;
+        }
+
+        @Override
         public Cfg setDissociateAction(ImmutableProp prop, DissociateAction dissociateAction) {
             validate();
 
@@ -228,10 +246,42 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             if (!frozen) {
                 keyPropMultiMap = Collections.unmodifiableMap(keyPropMultiMap);
                 autoAttachingSet = Collections.unmodifiableSet(autoAttachingSet);
+                autoCheckingSet = Collections.unmodifiableSet(autoCheckingSet);
                 dissociateActionMap = Collections.unmodifiableMap(dissociateActionMap);
                 frozen = true;
             }
             return this;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(sqlClient, triggers, frozen, mode, deleteMode, keyPropMultiMap, autoAttachingAll, autoAttachingSet, autoCheckingAll, autoCheckingSet, dissociateActionMap, pessimisticLock);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Data data = (Data) o;
+            return frozen == data.frozen && autoAttachingAll == data.autoAttachingAll && autoCheckingAll == data.autoCheckingAll && pessimisticLock == data.pessimisticLock && sqlClient.equals(data.sqlClient) && Objects.equals(triggers, data.triggers) && mode == data.mode && deleteMode == data.deleteMode && keyPropMultiMap.equals(data.keyPropMultiMap) && autoAttachingSet.equals(data.autoAttachingSet) && autoCheckingSet.equals(data.autoCheckingSet) && dissociateActionMap.equals(data.dissociateActionMap);
+        }
+
+        @Override
+        public String toString() {
+            return "Data{" +
+                    "sqlClient=" + sqlClient +
+                    ", triggers=" + triggers +
+                    ", frozen=" + frozen +
+                    ", mode=" + mode +
+                    ", deleteMode=" + deleteMode +
+                    ", keyPropMultiMap=" + keyPropMultiMap +
+                    ", autoAttachingAll=" + autoAttachingAll +
+                    ", autoAttachingSet=" + autoAttachingSet +
+                    ", autoCheckingAll=" + autoCheckingAll +
+                    ", autoCheckingSet=" + autoCheckingSet +
+                    ", dissociateActionMap=" + dissociateActionMap +
+                    ", pessimisticLock=" + pessimisticLock +
+                    '}';
         }
 
         private void validate() {
