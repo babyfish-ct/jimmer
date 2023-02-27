@@ -22,7 +22,7 @@ public final class SpringTransientResolverProvider implements TransientResolverP
     }
 
     @Override
-    public TransientResolver<?, ?> get(String ref) throws Exception {
+    public TransientResolver<?, ?> get(String ref, JSqlClient sqlClient) throws Exception {
         return (TransientResolver<?, ?>) ctx.getBean(ref);
     }
 }

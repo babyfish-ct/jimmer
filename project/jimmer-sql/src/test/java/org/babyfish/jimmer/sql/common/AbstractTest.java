@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.common;
 
 import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
@@ -15,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.model.JimmerModule;
+import org.babyfish.jimmer.sql.model.calc.BookStoreMostPopularAuthorResolver;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.h2.Driver;
 import org.junit.jupiter.api.Assertions;
@@ -83,7 +85,21 @@ public class AbstractTest {
     protected JSqlClient getSqlClient(Consumer<JSqlClient.Builder> block) {
         JSqlClient.Builder builder = JSqlClient.newBuilder()
                 .setExecutor(new ExecutorImpl())
-                .setEntityManager(JimmerModule.ENTITY_MANAGER);
+                .setEntityManager(JimmerModule.ENTITY_MANAGER)
+                .setTransientResolverProvider(
+                        new DefaultTransientResolverProvider() {
+                            @Override
+                            public TransientResolver<?, ?> get(
+                                    String ref,
+                                    JSqlClient sqlClient
+                            ) throws Exception {
+                                if (ref.equals("bookStoreMostPopularAuthorResolver")) {
+                                    return new BookStoreMostPopularAuthorResolver(sqlClient);
+                                }
+                                return super.get(ref, sqlClient);
+                            }
+                        }
+                );
         if (block != null) {
             block.accept(builder);
         }

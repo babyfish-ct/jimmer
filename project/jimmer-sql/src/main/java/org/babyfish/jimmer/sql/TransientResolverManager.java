@@ -85,7 +85,7 @@ class TransientResolverManager {
         TransientResolver<?, ?> resolver = null;
         if (!resolverRef.isEmpty()) {
             try {
-                resolver = provider.get(resolverRef);
+                resolver = provider.get(resolverRef, sqlClient);
             } catch (Exception ex) {
                 throw new ModelException(
                         "Illegal property \"" +
@@ -107,7 +107,7 @@ class TransientResolverManager {
             }
             resolverType = resolver.getClass();
         }
-        if (!TransientResolver.class.isAssignableFrom(trans.value())) {
+        if (!TransientResolver.class.isAssignableFrom(resolverType)) {
             throw new ModelException(
                     "Illegal property \"" +
                             prop.getName() +

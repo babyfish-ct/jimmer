@@ -11,7 +11,7 @@ public interface TransientResolverProvider {
             JSqlClient sqlClient
     ) throws Exception;
 
-    default TransientResolver<?, ?> get(String ref) throws Exception {
+    default TransientResolver<?, ?> get(String ref, JSqlClient sqlClient) throws Exception {
         throw new UnsupportedOperationException(
                 "The `ref` of \"@" +
                         Transient.class.getName() +
