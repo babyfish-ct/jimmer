@@ -18,7 +18,10 @@ dependencies {
     testImplementation(kotlin("test"))
 
     testImplementation("org.mapstruct:mapstruct:1.5.3.Final")
+
+    kaptTest("org.mapstruct:mapstruct-processor:1.5.3.Final")
     kaptTest(project(":jimmer-mapstruct-apt"))
+
     kspTest(project(":jimmer-ksp"))
 
     dokkaHtmlPlugin("org.jetbrains.dokka:dokka-base:1.6.0")

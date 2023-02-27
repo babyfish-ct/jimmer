@@ -29,6 +29,14 @@ internal class KSaveCommandDslImpl(
         javaCfg.setAutoAttaching(prop.toImmutableProp())
     }
 
+    override fun setAutoIdOnlyTargetCheckingAll() {
+        javaCfg.setAutoIdOnlyTargetCheckingAll()
+    }
+
+    override fun setAutoIdOnlyTargetChecking(prop: KProperty1<*, *>) {
+        javaCfg.setAutoIdOnlyTargetChecking(prop.toImmutableProp())
+    }
+
     override fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction) {
         javaCfg.setDissociateAction(prop.toImmutableProp(), action)
     }

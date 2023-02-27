@@ -5,14 +5,13 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.DraftInterceptor;
-import org.babyfish.jimmer.sql.OnDissociate;
-import org.babyfish.jimmer.sql.OptimisticLockException;
+import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
@@ -148,7 +147,9 @@ class Saver {
                                 path,
                                 "The association \"" +
                                         prop +
-                                        "\" cannot be null, because that association is `inputNotNull`"
+                                        "\" cannot be null, because that association is decorated by \"@" +
+                                        (prop.getAnnotation(ManyToOne.class) != null ? ManyToOne.class : OneToOne.class).getName() +
+                                        "\" whose `inputNotNull` is true"
                         );
                     }
                 } else {
@@ -156,9 +157,20 @@ class Saver {
                             associatedValue instanceof List<?> ?
                                     (List<DraftSpi>) associatedValue :
                                     Collections.singletonList((DraftSpi) associatedValue);
-                    if (childTableOperator != null) {
+                    List<Object> idOnlyTargetIds = Collections.emptyList();
+                    if (data.isAutoCheckingProp(prop) || childTableOperator != null) {
                         int targetIdPropId = prop.getTargetType().getIdProp().getId();
-                        List<Object> updatingTargetIds = new ArrayList<>();
+                        idOnlyTargetIds = new ArrayList<>();
+                        for (DraftSpi associatedObject : associatedObjects) {
+                            if (!isNonIdPropLoaded(associatedObject, false)) {
+                                idOnlyTargetIds.add(associatedObject.__get(targetIdPropId));
+                            }
+                        }
+                    }
+                    if (data.isAutoCheckingProp(prop)) {
+                        validateIdOnlyTargetIds(prop, idOnlyTargetIds);
+                    }
+                    if (childTableOperator != null) {
                         for (DraftSpi associatedObject : associatedObjects) {
                             if (isNonIdPropLoaded(associatedObject, false)) {
                                 associatedObject.__set(
@@ -167,12 +179,10 @@ class Saver {
                                             ((DraftSpi) backRef).__set(currentIdPropId, currentId);
                                         })
                                 );
-                            } else {
-                                updatingTargetIds.add(associatedObject.__get(targetIdPropId));
                             }
                         }
-                        if (!updatingTargetIds.isEmpty()) {
-                            int rowCount = childTableOperator.setParent(currentId, updatingTargetIds);
+                        if (!idOnlyTargetIds.isEmpty()) {
+                            int rowCount = childTableOperator.setParent(currentId, idOnlyTargetIds);
                             addOutput(AffectedTable.of(targetType), rowCount);
                         }
                     }
@@ -212,7 +222,7 @@ class Saver {
                                             "\" is not configured as \"set null\" or \"cascade\". " +
                                             "There are two ways to resolve this issue: Decorate the many-to-one property \"" +
                                             mappedBy +
-                                            "\" to by @" +
+                                            "\" by @" +
                                             OnDissociate.class.getName() +
                                             " whose argument is `DissociateAction.SET_NULL` or `DissociateAction.DELETE` " +
                                             ", or use save command's runtime configuration to override it"
@@ -239,6 +249,32 @@ class Saver {
                     addOutput(AffectedTable.of(prop), rowCount);
                 }
             }
+        }
+    }
+
+    private void validateIdOnlyTargetIds(ImmutableProp prop, List<Object> targetIds) {
+        if (targetIds.isEmpty()) {
+            return;
+        }
+        List<Object> existingTargetIds = Queries
+                .createQuery(
+                        data.getSqlClient(),
+                        prop.getTargetType(),
+                        ExecutionPurpose.MUTATE,
+                        true,
+                        (q, t) -> {
+                            PropExpression<Object> idExpr = t.get(prop.getTargetType().getIdProp().getName());
+                            q.where(idExpr.in(targetIds));
+                            return q.select(idExpr);
+                        }
+                ).execute(con);
+        Set<Object> illegalTargetIds = new LinkedHashSet<>(targetIds);
+        illegalTargetIds.removeAll(new HashSet<>(existingTargetIds));
+        if (!illegalTargetIds.isEmpty()) {
+            throw new SaveException(
+                    path.to(prop),
+                    "Illegal ids: " + illegalTargetIds
+            );
         }
     }
 
@@ -280,7 +316,7 @@ class Saver {
 
         ImmutableSpi existingSpi = find(draftSpi);
         if (existingSpi != null) {
-            boolean updated = false;
+            boolean updated;
             int idPropId = draftSpi.__type().getIdProp().getId();
             if (draftSpi.__isLoaded(idPropId)) {
                 updated = update(draftSpi, false);
@@ -298,9 +334,23 @@ class Saver {
                 addOutput(AffectedTable.of(draftSpi.__type()), 0);
                 return ObjectType.UNKNOWN;
             }
+            String guide;
+            if (path.getType().isKotlinClass()) {
+                guide = "call `setAutoAttaching(" +
+                        path.getProp().getDeclaringType().getJavaClass().getSimpleName() +
+                        "::" +
+                        path.getProp().getName() +
+                        ")` or `setAutoAttachingAll()` of the save command";
+            } else {
+                guide = "call `setAutoAttaching(" +
+                        path.getProp().getDeclaringType().getJavaClass().getSimpleName() +
+                        "Props." +
+                        DatabaseIdentifiers.databaseIdentifier(path.getProp().getName()) +
+                        ")` or `setAutoAttachingAll()` of the save command";
+            }
             throw new SaveException(
                     path,
-                    "Cannot insert object because insert operation for this path is disabled"
+                    "Cannot insert object because insert operation for this path is disabled, please " + guide
             );
         }
 
@@ -341,7 +391,7 @@ class Saver {
                 });
                 setDraftId(draftSpi, id);
             } else if (idGenerator instanceof UserIdGenerator) {
-                id = ((UserIdGenerator)idGenerator).generate(type.getJavaClass());
+                id = ((UserIdGenerator<?>)idGenerator).generate(type.getJavaClass());
                 setDraftId(draftSpi, id);
             } else if (!(idGenerator instanceof IdentityIdGenerator)) {
                 throw new SaveException(

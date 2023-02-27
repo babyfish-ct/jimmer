@@ -30,6 +30,7 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
     testAnnotationProcessor(project(":jimmer-apt"))
+    testAnnotationProcessor("org.mapstruct:mapstruct-processor:1.5.3.Final")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.26")
 }
 
