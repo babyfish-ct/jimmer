@@ -69,7 +69,7 @@ public class ErrorGenerator {
     public void generate() {
         typeBuilder = TypeSpec
                 .classBuilder(exceptionName)
-                .addModifiers(Modifier.PUBLIC)
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                 .superclass(CodeBasedException.class);
         addMembers();
         try {
@@ -112,10 +112,17 @@ public class ErrorGenerator {
     }
 
     private void addMembers() {
-        addClassFields();
+
         addConstructor();
-        addGetCode();
-        addGetFields();
+
+        typeBuilder.addMethod(
+                MethodSpec
+                        .methodBuilder("getCode")
+                        .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                        .addAnnotation(Override.class)
+                        .returns(className)
+                        .build()
+        );
 
         for (Element element : typeElement.getEnclosedElements()) {
             if (element.getKind() == ElementKind.ENUM_CONSTANT) {
@@ -123,28 +130,12 @@ public class ErrorGenerator {
                 addCreator(element, true);
             }
         }
-    }
 
-    private void addClassFields() {
-        typeBuilder.addField(
-                FieldSpec
-                        .builder(className, "code")
-                        .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
-                        .build()
-        );
-        typeBuilder.addField(
-                FieldSpec
-                        .builder(
-                                ParameterizedTypeName.get(
-                                        Constants.MAP_CLASS_NAME,
-                                        Constants.STRING_CLASS_NAME,
-                                        Constants.OBJECT_CLASS_NAME
-                                ),
-                                "fields"
-                        )
-                        .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
-                        .build()
-        );
+        for (Element element : typeElement.getEnclosedElements()) {
+            if (element.getKind() == ElementKind.ENUM_CONSTANT) {
+                addType(element);
+            }
+        }
     }
 
     private void addConstructor() {
@@ -154,48 +145,7 @@ public class ErrorGenerator {
                         .addModifiers(Modifier.PRIVATE)
                         .addParameter(String.class, "message")
                         .addParameter(Throwable.class, "cause")
-                        .addParameter(className, "code")
-                        .addParameter(
-                                ParameterizedTypeName.get(
-                                        Constants.MAP_CLASS_NAME,
-                                        Constants.STRING_CLASS_NAME,
-                                        Constants.OBJECT_CLASS_NAME
-                                ),
-                                "fields"
-                        )
                         .addStatement("super(message, cause)")
-                        .addStatement("this.code = code")
-                        .addStatement("this.fields = fields")
-                        .build()
-        );
-    }
-
-    private void addGetCode() {
-        typeBuilder.addMethod(
-                MethodSpec
-                        .methodBuilder("getCode")
-                        .addModifiers(Modifier.PUBLIC)
-                        .addAnnotation(Override.class)
-                        .returns(className)
-                        .addStatement("return code")
-                        .build()
-        );
-    }
-
-    private void addGetFields() {
-        typeBuilder.addMethod(
-                MethodSpec
-                        .methodBuilder("getFields")
-                        .addModifiers(Modifier.PUBLIC)
-                        .addAnnotation(Override.class)
-                        .returns(
-                                ParameterizedTypeName.get(
-                                        Constants.MAP_CLASS_NAME,
-                                        Constants.STRING_CLASS_NAME,
-                                        Constants.OBJECT_CLASS_NAME
-                                )
-                        )
-                        .addStatement("return fields")
                         .build()
         );
     }
@@ -204,7 +154,7 @@ public class ErrorGenerator {
     private void addCreator(Element element, boolean withCause) {
 
         MethodSpec.Builder builder = MethodSpec
-                .methodBuilder(creatorName(element))
+                .methodBuilder(javaName(element, false))
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .returns(exceptionClassName)
                 .addParameter(
@@ -222,6 +172,144 @@ public class ErrorGenerator {
             );
         }
 
+        List<Field> fields = fieldsOf(element);
+
+        for (Field field : fields) {
+            builder.addParameter(
+                    ParameterSpec
+                            .builder(field.type, field.name)
+                            .addAnnotation(field.isNullable ? Nullable.class : NotNull.class)
+                            .build()
+            );
+        }
+        builder.addCode("return new $L(\n$>", javaName(element, true));
+        builder.addCode("message,\n").addCode(withCause ? "cause" : "null");
+        for (Field field : fields) {
+            builder.addCode(",\n$L", field.name);
+        }
+        builder.addCode("\n$<);\n");
+
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addType(Element element) {
+        TypeSpec.Builder builder = TypeSpec
+                .classBuilder(javaName(element, true))
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                .superclass(exceptionClassName);
+
+        List<Field> fields = fieldsOf(element);
+        for (Field field : fields) {
+            FieldSpec.Builder fieldBuilder = FieldSpec
+                    .builder(field.type, field.name)
+                    .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
+                    .addAnnotation(field.isNullable ? Nullable.class : NotNull.class);
+            builder.addField(fieldBuilder.build());
+        }
+
+        MethodSpec.Builder initBuilder = MethodSpec
+                .constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(Constants.STRING_CLASS_NAME, "message")
+                .addParameter(Constants.THROWABLE_CLASS_NAME, "cause");
+        for (Field field : fields) {
+            ParameterSpec.Builder parameterBuilder =
+                    ParameterSpec
+                            .builder(field.type, field.name)
+                            .addAnnotation(field.isNullable ? Nullable.class : NotNull.class);
+            initBuilder.addParameter(parameterBuilder.build());
+        }
+        initBuilder.addStatement("super(message, cause)");
+        for (Field field : fields) {
+            initBuilder.addStatement("this.$L = $L", field.name, field.name);
+        }
+        builder.addMethod(initBuilder.build());
+
+        builder.addMethod(
+                MethodSpec
+                        .methodBuilder("getCode")
+                        .addModifiers(Modifier.PUBLIC)
+                        .addAnnotation(Override.class)
+                        .returns(className)
+                        .addStatement("return $T.$L", className, element.getSimpleName().toString())
+                        .build()
+        );
+
+        MethodSpec.Builder getFieldsBuilder = MethodSpec
+                .methodBuilder("getFields")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .returns(
+                        ParameterizedTypeName.get(
+                                Constants.MAP_CLASS_NAME,
+                                Constants.STRING_CLASS_NAME,
+                                Constants.OBJECT_CLASS_NAME
+                        )
+                );
+        if (fields.isEmpty()) {
+            getFieldsBuilder.addStatement("return $T.emptyMap()", Constants.COLLECTIONS_CLASS_NAME);
+        } else if (fields.size() == 1) {
+            getFieldsBuilder.addStatement(
+                    "return $T.singletonMap($S, $L)",
+                    Constants.COLLECTIONS_CLASS_NAME,
+                    fields.get(0).name,
+                    fields.get(0).name
+            );
+        } else {
+            getFieldsBuilder.addStatement(
+                    "$T __fields = new $T<>()",
+                    Constants.MAP_CLASS_NAME,
+                    Constants.LINKED_HASH_MAP_CLASS_NAME
+            );
+            for (Field field : fields) {
+                getFieldsBuilder.addStatement("__fields.put($S, $L)", field.name, field.name);
+            }
+            getFieldsBuilder.addStatement("return __fields");
+        }
+        builder.addMethod(getFieldsBuilder.build());
+
+        for (Field field : fields) {
+            builder.addMethod(
+                    MethodSpec
+                            .methodBuilder(
+                                    (field.type.equals(TypeName.BOOLEAN) ? "is" : "get") +
+                                            Character.toUpperCase(field.name.charAt(0)) +
+                                            field.name.substring(1)
+                            )
+                            .addModifiers(Modifier.PUBLIC)
+                            .returns(field.type)
+                            .addAnnotation(field.isNullable ? Nullable.class : NotNull.class)
+                            .addStatement("return $L", field.name)
+                            .build()
+            );
+        }
+
+        typeBuilder.addType(builder.build());
+    }
+
+    private static String javaName(Element element, boolean upperHead) {
+        String simpleName = element.getSimpleName().toString();
+        int size = simpleName.length();
+        boolean toUpper = upperHead;
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < size; i++) {
+            char c = simpleName.charAt(i);
+            if (c == '_') {
+                toUpper = true;
+            } else {
+                if (toUpper) {
+                    builder.append(Character.toUpperCase(c));
+                } else {
+                    builder.append(Character.toLowerCase(c));
+                }
+                toUpper = false;
+            }
+        }
+        return builder.toString();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Field> fieldsOf(Element element) {
         List<Field> fields = new ArrayList<>();
         for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
             String qualifiedName = ((TypeElement) annotationMirror.getAnnotationType().asElement())
@@ -241,79 +329,7 @@ public class ErrorGenerator {
                 break;
             }
         }
-
-        for (Field field : fields) {
-            builder.addParameter(
-                    ParameterSpec
-                            .builder(
-                                    field.isList ?
-                                            ParameterizedTypeName.get(Constants.LIST_CLASS_NAME, field.type) :
-                                            field.type,
-                                    field.name
-                            )
-                            .addAnnotation(field.isNullable ? Nullable.class : NotNull.class)
-                            .build()
-            );
-        }
-        if (fields.isEmpty()) {
-            builder.addStatement(
-                    "return new $T(message, $L, $T.$L, $T.emptyMap())",
-                    exceptionClassName,
-                    withCause ? "cause" : "null",
-                    className,
-                    element.getSimpleName().toString(),
-                    Constants.COLLECTIONS_CLASS_NAME
-            );
-        } else if (fields.size() == 1) {
-            builder.addStatement(
-                    "return new $T(message, $L, $T.$L, $T.singletonMap($S, $L))",
-                    exceptionClassName,
-                    withCause ? "cause" : "null",
-                    className,
-                    element.getSimpleName().toString(),
-                    Constants.COLLECTIONS_CLASS_NAME,
-                    fields.get(0).name,
-                    fields.get(0).name
-            );
-        } else {
-            builder.addStatement(
-                    "$T<String, Object> __map = new $T()",
-                    Constants.MAP_CLASS_NAME,
-                    Constants.LINKED_HASH_MAP_CLASS_NAME
-            );
-            for (Field field : fields) {
-                builder.addStatement("__map.put($S, $L)", field.name, field.name);
-            }
-            builder.addStatement(
-                    "return new $T(message, $L, $T.$L, __map)",
-                    exceptionClassName,
-                    withCause ? "cause" : "null",
-                    className,
-                    element.getSimpleName().toString()
-            );
-        }
-        typeBuilder.addMethod(builder.build());
-    }
-
-    private static String creatorName(Element element) {
-        String simpleName = element.getSimpleName().toString();
-        int size = simpleName.length();
-        boolean toUpper = false;
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < size; i++) {
-            char c = simpleName.charAt(i);
-            if (c == '_') {
-                toUpper = true;
-            } else {
-                if (toUpper) {
-                    builder.append(Character.toUpperCase(c));
-                } else {
-                    builder.append(Character.toLowerCase(c));
-                }
-                toUpper = false;
-            }
-        }
-        return builder.toString();
+        return fields;
     }
 
     private static class Field {
@@ -351,6 +367,12 @@ public class ErrorGenerator {
                 } else if (key.equals("list")){
                     isList = (boolean) value;
                 }
+            }
+            if (isList) {
+                typeName = ParameterizedTypeName.get(
+                        Constants.LIST_CLASS_NAME,
+                        typeName
+                );
             }
             return new Field(name, typeName, isNullable, isList);
         }

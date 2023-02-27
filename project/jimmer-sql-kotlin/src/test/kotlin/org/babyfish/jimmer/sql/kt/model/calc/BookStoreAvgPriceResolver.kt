@@ -10,7 +10,6 @@ import org.babyfish.jimmer.sql.kt.model.id
 import org.babyfish.jimmer.sql.kt.model.price
 import org.babyfish.jimmer.sql.kt.model.store
 import java.math.BigDecimal
-import java.sql.Connection
 
 class BookStoreAvgPriceResolver(
     private val sqlClient: KSqlClient

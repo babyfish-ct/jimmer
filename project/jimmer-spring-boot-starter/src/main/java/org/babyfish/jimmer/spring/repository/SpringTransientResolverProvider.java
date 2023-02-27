@@ -20,4 +20,9 @@ public final class SpringTransientResolverProvider implements TransientResolverP
     ) throws Exception {
         return ctx.getBean(resolverType);
     }
+
+    @Override
+    public TransientResolver<?, ?> get(String ref) throws Exception {
+        return (TransientResolver<?, ?>) ctx.getBean(ref);
+    }
 }

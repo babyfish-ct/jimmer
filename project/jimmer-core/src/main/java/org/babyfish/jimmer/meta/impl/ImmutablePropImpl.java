@@ -140,7 +140,9 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
         Transient trans = getAnnotation(Transient.class);
         isTransient = trans != null;
-        hasTransientResolver = trans != null && trans.value() != void.class;
+        hasTransientResolver = trans != null && (
+                trans.value() != void.class || !trans.ref().isEmpty()
+        );
         if (associationType != null) {
             associationAnnotation = getAnnotation(associationType);
         } else {

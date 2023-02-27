@@ -54,6 +54,7 @@ class ErrorGenerator(
                         TypeSpec
                             .classBuilder(exceptionSimpleName)
                             .superclass(CodeBasedException::class)
+                            .addModifiers(KModifier.ABSTRACT)
                             .addSuperclassConstructorParameter("message, cause")
                             .apply {
                                 addMembers()
@@ -68,36 +69,7 @@ class ErrorGenerator(
     }
 
     private fun TypeSpec.Builder.addMembers() {
-        addClassFields()
-        addConstructor()
-        addType(
-            TypeSpec
-                .companionObjectBuilder()
-                .apply {
-                    for (item in declaration.declarations.filterIsInstance<KSClassDeclaration>()) {
-                        addItem(item)
-                    }
-                }
-                .build()
-        )
-    }
 
-    private fun TypeSpec.Builder.addClassFields() {
-        addProperty(
-            PropertySpec
-                .builder("code", enumClassName, KModifier.OVERRIDE)
-                .initializer("code")
-                .build()
-        )
-        addProperty(
-            PropertySpec
-                .builder("fields", MAP.parameterizedBy(STRING, ANY.copy(nullable = true)), KModifier.OVERRIDE)
-                .initializer("fields")
-                .build()
-        )
-    }
-
-    private fun TypeSpec.Builder.addConstructor() {
         primaryConstructor(
             FunSpec
                 .constructorBuilder()
@@ -112,32 +84,49 @@ class ErrorGenerator(
                         .defaultValue("null")
                         .build()
                 )
-                .addParameter("code", enumClassName)
-                .addParameter(
-                    "fields",
-                    MAP.parameterizedBy(STRING, ANY.copy(nullable = true))
-                )
                 .build()
         )
+
+        addProperty(
+            PropertySpec
+                .builder("code", enumClassName)
+                .addModifiers(KModifier.ABSTRACT, KModifier.OVERRIDE)
+                .build()
+        )
+
+        addType(
+            TypeSpec
+                .companionObjectBuilder()
+                .apply {
+                    for (item in declaration.declarations.filterIsInstance<KSClassDeclaration>()) {
+                        addItem(item)
+                    }
+                }
+                .build()
+        )
+
+        for (item in declaration.declarations.filterIsInstance<KSClassDeclaration>()) {
+            addType(
+                TypeSpec
+                    .classBuilder(ktName(item, true))
+                    .superclass(exceptionClassName)
+                    .addSuperclassConstructorParameter("message, cause")
+                    .apply {
+                        val fields = fieldsOf(item)
+                        addInit(fields)
+                        addCode(item)
+                        addFields(fields)
+                    }
+                    .build()
+            )
+        }
     }
 
     private fun TypeSpec.Builder.addItem(item: KSClassDeclaration) {
-        val fields = item.annotations(ErrorField::class).map { anno ->
-            anno.get<String>("name")!! to
-                anno.get<KSType>("type")!!
-                    .toClassName()
-                    .let {
-                        if (anno.get<Boolean>("list") == true) {
-                            LIST.parameterizedBy(it)
-                        } else {
-                            it
-                        }
-                    }
-                    .copy(nullable = anno.get<Boolean>("nullable") == true)
-        }
+        val fields = fieldsOf(item)
         addFunction(
             FunSpec
-                .builder(creatorName(item))
+                .builder(ktName(item, false))
                 .addAnnotation(JVM_STATIC_CLASS_NAME)
                 .addParameter("message", STRING)
                 .addParameter(
@@ -166,40 +155,103 @@ class ErrorGenerator(
                         CodeBlock
                             .builder()
                             .apply {
-                                if (fields.isEmpty()) {
-                                    addStatement(
-                                        "return %T(message, cause, %T.%N, %M())",
-                                        exceptionClassName,
-                                        enumClassName,
-                                        item.toString(),
-                                        EMPTY_MAP
-                                    )
-                                } else {
-                                    add("return %T(\n", exceptionClassName)
-                                    indent()
-                                    add("message,\n")
-                                    add("cause,\n")
-                                    add("%T.%N,\n", enumClassName, item.toString())
-                                    add("%M(", MAP_OF)
-                                    indent()
-                                    var addComma = false
-                                    for ((name, _) in fields) {
-                                        if (addComma) {
-                                            add(",")
-                                        } else {
-                                            addComma = true
-                                        }
-                                        add("\n%S %M %L", name, TO, name)
-                                    }
-                                    unindent()
-                                    add("\n)\n")
-                                    unindent()
-                                    add(")\n")
+                                add("return %L(\n", ktName(item, true))
+                                indent()
+                                add("message,\ncause")
+                                for (field in fields) {
+                                    add(",\n").add(field.first)
                                 }
+                                unindent()
+                                add("\n)\n")
                             }
                             .build()
                     )
                 }
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addInit(fields: List<Pair<String, TypeName>>) {
+        for (field in fields) {
+            addProperty(
+                PropertySpec
+                    .builder(field.first, field.second)
+                    .initializer(field.first)
+                    .build()
+            )
+        }
+        primaryConstructor(
+            FunSpec
+                .constructorBuilder()
+                .addParameter("message", STRING)
+                .addParameter(
+                    ParameterSpec
+                        .builder("cause", THROWABLE.copy(nullable = true))
+                        .defaultValue("null")
+                        .build()
+                )
+                .apply {
+                    for (field in fields) {
+                        addParameter(
+                            ParameterSpec
+                                .builder(field.first, field.second)
+                                .apply {
+                                    if (field.second.isNullable) {
+                                        defaultValue("null")
+                                    }
+                                }
+                                .build()
+                        )
+                    }
+                }
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addCode(item: KSClassDeclaration) {
+        addProperty(
+            PropertySpec
+                .builder("code", enumClassName, KModifier.OVERRIDE)
+                .getter(
+                    FunSpec
+                        .getterBuilder()
+                        .addStatement("return %T.%N", enumClassName, item.simpleName.asString())
+                        .build()
+                )
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addFields(fields: List<Pair<String, TypeName>>) {
+        addProperty(
+            PropertySpec
+                .builder("fields", MAP.parameterizedBy(STRING, ANY.copy(nullable = true)), KModifier.OVERRIDE)
+                .getter(
+                    FunSpec
+                        .getterBuilder()
+                        .addCode(
+                            CodeBlock
+                                .builder()
+                                .apply {
+                                    if (fields.isEmpty()) {
+                                        add("return emptyMap()")
+                                    } else {
+                                        add("return mapOf(\n")
+                                        indent()
+                                        for (i in fields.indices) {
+                                            if (i != 0) {
+                                                add(",\n")
+                                            }
+                                            add("%S to %N", fields[i].first, fields[i].first)
+                                        }
+                                        unindent()
+                                        add("\n)\n")
+                                    }
+                                }
+                                .build()
+                        )
+                        .build()
+                )
                 .build()
         )
     }
@@ -217,10 +269,10 @@ class ErrorGenerator(
                 (it as KSClassDeclaration).longSimpleName + "_"
             } ?: "") + simpleName.asString()
 
-        private fun creatorName(item: KSClassDeclaration): String {
+        private fun ktName(item: KSClassDeclaration, upperHead: Boolean): String {
             val simpleName = item.toString()
             val size = simpleName.length
-            var toUpper = false
+            var toUpper = upperHead
             val builder = StringBuilder()
             for (i in 0 until size) {
                 val c = simpleName[i]
@@ -237,5 +289,20 @@ class ErrorGenerator(
             }
             return builder.toString()
         }
+
+        private fun fieldsOf(item: KSClassDeclaration): List<Pair<String, TypeName>> =
+            item.annotations(ErrorField::class).map { anno ->
+                anno.get<String>("name")!! to
+                    anno.get<KSType>("type")!!
+                        .toClassName()
+                        .let {
+                            if (anno.get<Boolean>("list") == true) {
+                                LIST.parameterizedBy(it)
+                            } else {
+                                it
+                            }
+                        }
+                        .copy(nullable = anno.get<Boolean>("nullable") == true)
+            }
     }
 }
