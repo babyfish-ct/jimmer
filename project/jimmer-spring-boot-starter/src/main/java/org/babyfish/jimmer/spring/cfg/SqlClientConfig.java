@@ -146,34 +146,6 @@ public class SqlClientConfig {
         return sqlClient;
     }
 
-    @Bean(name = "jimmerCaches")
-    @ConditionalOnMissingBean({Caches.class, KCaches.class})
-    @ConditionalOnProperty(name = "jimmer.language", havingValue = "java", matchIfMissing = true)
-    public Caches caches(JSqlClient sqlClient) {
-        return sqlClient.getCaches();
-    }
-
-    @Bean(name = "jimmerCaches")
-    @ConditionalOnMissingBean({Caches.class, KCaches.class})
-    @ConditionalOnProperty(name = "jimmer.language", havingValue = "kotlin")
-    public KCaches caches(KSqlClient sqlClient) {
-        return sqlClient.getCaches();
-    }
-
-    @Bean(name = "jimmerFilters")
-    @ConditionalOnMissingBean({Filters.class, KFilters.class})
-    @ConditionalOnProperty(name = "jimmer.language", havingValue = "java", matchIfMissing = true)
-    public Filters filters(JSqlClient sqlClient) {
-        return sqlClient.getFilters();
-    }
-
-    @Bean(name = "jimmerFilters")
-    @ConditionalOnMissingBean({Filters.class, KFilters.class})
-    @ConditionalOnProperty(name = "jimmer.language", havingValue = "kotlin")
-    public KFilters filters(KSqlClient sqlClient) {
-        return sqlClient.getFilters();
-    }
-
     private static void preCreateSqlClient(
             JSqlClient.Builder builder,
             ApplicationContext ctx,
