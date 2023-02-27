@@ -13,12 +13,22 @@ export class BookStoreService {
         return (await this.executor({uri: _uri, method: 'DELETE'})) as void
     }
     
-    async findComplexStore(options: BookStoreServiceOptions['findComplexStore']): Promise<
-        BookStoreDto['BookStoreService/COMPLEX_FETCHER'] | undefined
+    async findComplexStoreWithAllBooks(options: BookStoreServiceOptions['findComplexStoreWithAllBooks']): Promise<
+        BookStoreDto['BookStoreService/WITH_ALL_BOOKS_FETCHER'] | undefined
     > {
         let _uri = '/bookStore/';
         _uri += encodeURIComponent(options.id);
-        return (await this.executor({uri: _uri, method: 'GET'})) as BookStoreDto['BookStoreService/COMPLEX_FETCHER'] | undefined
+        _uri += '/withAllBooks';
+        return (await this.executor({uri: _uri, method: 'GET'})) as BookStoreDto['BookStoreService/WITH_ALL_BOOKS_FETCHER'] | undefined
+    }
+    
+    async findComplexStoreWithNewestBooks(options: BookStoreServiceOptions['findComplexStoreWithNewestBooks']): Promise<
+        BookStoreDto['BookStoreService/WITH_NEWEST_BOOKS_FETCHER'] | undefined
+    > {
+        let _uri = '/bookStore/';
+        _uri += encodeURIComponent(options.id);
+        _uri += '/withNewestBooks';
+        return (await this.executor({uri: _uri, method: 'GET'})) as BookStoreDto['BookStoreService/WITH_NEWEST_BOOKS_FETCHER'] | undefined
     }
     
     async findSimpleStores(): Promise<
@@ -45,7 +55,8 @@ export class BookStoreService {
 
 export type BookStoreServiceOptions = {
     'deleteBookStore': {readonly id: number},
-    'findComplexStore': {readonly id: number},
+    'findComplexStoreWithAllBooks': {readonly id: number},
+    'findComplexStoreWithNewestBooks': {readonly id: number},
     'findSimpleStores': {},
     'findStores': {},
     'saveBookStore': {readonly body: BookStoreInput}

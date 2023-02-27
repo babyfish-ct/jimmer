@@ -50,6 +50,6 @@ public interface BookStore extends BaseEntity {
      * It is worth noting that if the calculated property returns entity object
      * or entity list, the shape can be controlled by the deeper child fetcher
      */
-    @Transient(ref = "bookStoreNewestBooksResolver")
+    @Transient(BookStoreNewestBooksResolver.class)
     List<Book> newestBooks();
 }

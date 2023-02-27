@@ -16,4 +16,6 @@ export interface Author {
     readonly gender: Gender;
     
     readonly books: ReadonlyArray<Book>;
+    
+    readonly fullName: string;
 }
