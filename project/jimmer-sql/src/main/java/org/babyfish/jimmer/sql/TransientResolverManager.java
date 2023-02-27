@@ -82,15 +82,6 @@ class TransientResolverManager {
         if (resolverType == void.class && resolverRef.isEmpty()) {
             return null;
         }
-        if (!TransientResolver.class.isAssignableFrom(trans.value())) {
-            throw new ModelException(
-                    "Illegal property \"" +
-                            prop.getName() +
-                            "\", the resolver type must implement \"" +
-                            TransientResolver.class +
-                            "\""
-            );
-        }
         TransientResolver<?, ?> resolver = null;
         if (!resolverRef.isEmpty()) {
             try {
@@ -115,6 +106,15 @@ class TransientResolverManager {
                 );
             }
             resolverType = resolver.getClass();
+        }
+        if (!TransientResolver.class.isAssignableFrom(trans.value())) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            prop.getName() +
+                            "\", the resolver type must implement \"" +
+                            TransientResolver.class +
+                            "\""
+            );
         }
         if (resolverType.isInterface() || (resolverType.getModifiers() & Modifier.ABSTRACT) != 0) {
             throw new ModelException(
