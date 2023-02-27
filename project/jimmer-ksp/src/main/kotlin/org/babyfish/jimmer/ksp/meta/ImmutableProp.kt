@@ -37,8 +37,19 @@ class ImmutableProp(
 
     fun hasTransientResolver(): Boolean =
         annotation(Transient::class)?.let {
-            val resolveClassName = it.get<KSType>("value")?.toClassName()
-            resolveClassName != UNIT
+            val resolverClassName = it.get<KSType>("value")?.toClassName()
+            val resolverRef = it.get<String>("ref") ?: ""
+            val hasValue = resolverClassName != null && resolverClassName != UNIT
+            val hasRef = resolverRef.isNotEmpty()
+            if (hasValue && hasRef) {
+                throw MetaException(
+                    "Illegal property \"" +
+                        this +
+                        "\", it is decorated by @Transient, " +
+                        "the `value` and `ref` are both specified, this is not allowed"
+                )
+            }
+            hasValue || hasRef
         } ?: false
 
     val isKotlinFormula: Boolean =

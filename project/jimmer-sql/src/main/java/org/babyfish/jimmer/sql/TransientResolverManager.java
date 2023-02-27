@@ -78,7 +78,8 @@ class TransientResolverManager {
             return null;
         }
         Class<?> resolverType = trans.value();
-        if (resolverType == void.class) {
+        String resolverRef = trans.ref();
+        if (resolverType == void.class && resolverRef.isEmpty()) {
             return null;
         }
         if (!TransientResolver.class.isAssignableFrom(trans.value())) {
@@ -89,6 +90,31 @@ class TransientResolverManager {
                             TransientResolver.class +
                             "\""
             );
+        }
+        TransientResolver<?, ?> resolver = null;
+        if (!resolverRef.isEmpty()) {
+            try {
+                resolver = provider.get(resolverRef);
+            } catch (Exception ex) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                this +
+                                "\", the \"" +
+                                provider.getClass().getName() +
+                                ".get(String)\" throws exception",
+                        ex
+                );
+            }
+            if (resolver == null) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                this +
+                                "\", the \"" +
+                                provider.getClass().getName() +
+                                ".get(String)\" returns null"
+                );
+            }
+            resolverType = resolver.getClass();
         }
         if (resolverType.isInterface() || (resolverType.getModifiers() & Modifier.ABSTRACT) != 0) {
             throw new ModelException(
@@ -176,6 +202,9 @@ class TransientResolverManager {
             );
         }
 
+        if (resolver != null) {
+            return resolver;
+        }
         try {
             return provider.get((Class<TransientResolver<?,?>>) resolverType, sqlClient);
         } catch (Exception ex) {

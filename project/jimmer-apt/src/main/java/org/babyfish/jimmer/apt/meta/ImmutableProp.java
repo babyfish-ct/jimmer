@@ -181,12 +181,24 @@ public class ImmutableProp {
                         .getQualifiedName()
                         .toString()
                         .equals(Transient.class.getName())) {
+                    boolean hasValue = false;
+                    boolean hasRef = false;
                     for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e : mirror.getElementValues().entrySet()) {
                         if (e.getKey().getSimpleName().contentEquals("value")) {
-                            hasResolver = !e.getValue().toString().equals("void");
+                            hasValue = !e.getValue().toString().equals("void");
+                        } else if (e.getKey().getSimpleName().contentEquals("ref")) {
+                            hasRef = !e.getValue().toString().isEmpty();
                         }
-                        break;
                     }
+                    if (hasValue && hasRef) {
+                        throw new MetaException(
+                                "Illegal property \"" +
+                                        this +
+                                        "\", it is decorated by @Transient, " +
+                                        "the `value` and `ref` are both specified, this is not allowed"
+                        );
+                    }
+                    hasResolver = hasValue || hasRef;
                 }
             }
         }

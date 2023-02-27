@@ -36,6 +36,9 @@ class Constants {
     public static final ClassName STRING_CLASS_NAME =
             ClassName.get(String.class);
 
+    public static final ClassName THROWABLE_CLASS_NAME =
+            ClassName.get(Throwable.class);
+
     public static final ClassName LIST_CLASS_NAME =
             ClassName.get(List.class);
 

@@ -6,6 +6,7 @@ abstract class CodeBasedException protected constructor(
 ) : RuntimeException(message, cause) {
 
     abstract val code: Enum<*>
+
     abstract val fields: Map<String, Any?>
 
     val exportedError: ExportedError

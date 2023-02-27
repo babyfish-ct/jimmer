@@ -8,6 +8,20 @@ import java.lang.annotation.*;
 /**
  * <p>Example-1: Transient property</p>
  *
+ * <p>If no argument of this annotation is not specified, the decorated property
+ * is a transient property, that means you can only get and set(by draft) it and
+ * ORM will ignore it</p>
+ *
+ * <p>Otherwise, the decorated property is a complex calculation property
+ * that means you can add it into ObjectFetcher and jimmer will load it in query.</p>
+ *
+ * <p>
+ * `@Transient` with argument means complex calculation means complex calculation property,
+ * You can also view {@link Formula} which can be used as simple calculation property
+ * </p>
+ *
+ * <p>Example-1: Transient property ignored by ORM</p>
+ *
  * <pre>{@code
  * public class BookStore {
  *
@@ -32,6 +46,9 @@ import java.lang.annotation.*;
  *     BigDecimal avgPrice();
  * }
  *
+ * // If `TransientResolverProvider` of `SqlClient` is `SpringTransientResolverProvider`,
+ * // please decorate the resolver class by 'org.springframework.stereotype.Component'
+ * @Component
  * class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDecimal>{
  *     ...omit code...
  * }}</pre>
@@ -50,6 +67,9 @@ import java.lang.annotation.*;
  *     Author mostPopularAuthor();
  * }
  *
+ * // If `TransientResolverProvider` of `SqlClient` is `SpringTransientResolverProvider`,
+ * // please decorate the resolver class by 'org.springframework.stereotype.Component'
+ * @Component
  * class BookStoreMostPopularAuthorResolver implements TransientResolver<Long, Long>{
  *     ...omit code...
  * }}</pre>
@@ -68,6 +88,9 @@ import java.lang.annotation.*;
  *     List<Book> newestBooks();
  * }
  *
+ * // If `TransientResolverProvider` of `SqlClient` is `SpringTransientResolverProvider`,
+ * // please decorate the resolver class by 'org.springframework.stereotype.Component'
+ * @Component
  * class BookStoreNewestBooksResolver implements TransientResolver<Long, List<Long>>{
  *     ...omit code...
  * }}</pre>
@@ -81,28 +104,9 @@ import java.lang.annotation.*;
 public @interface Transient {
 
     /**
-     * <p>
-     *     If this argument is not specified, the decorated property is a transient property,
-     *     that means you can only get and set(by draft) it and ORM will ignore it.
-     * </p>
-     *
-     * <p>
-     *     Otherwise, the decorated property is a complex calculation property
-     *     that means you can add it into ObjectFetcher and jimmer will load it in query.
-     * </p>
-     *
-     * <p>
-     *     `@Transient` with `value` means complex calculation means complex calculation property,
-     *     You can also view {@link Formula} which can be used as simple calcluation property
-     * </p>
-     *
-     *
-     * @return
-     * <p>
-     *     A class implements
-     *     `org.babyfish.jimmer.sql.TransientResolver` of jimmer-sql or
-     *     `org.babyfish.jimmer.sql.kt.KTransientResolver` of jimmer-sql-kotlin.
-     * <p>
+     * @return A class implements
+     * `org.babyfish.jimmer.sql.TransientResolver` of jimmer-sql or
+     * `org.babyfish.jimmer.sql.kt.KTransientResolver` of jimmer-sql-kotlin.
      *
      * <p>The first type argument of `TransientResolver` should the `ID` of declaring entity type</p>
      * <ul>
@@ -120,6 +124,21 @@ public @interface Transient {
      *         a list whose element type is `ID` of target entity type
      *     </li>
      * </ul>
+     *
+     * In multi-module project, the resolver type may be declared in another module
+     * so that `value` cannot be specified, please use {@link #ref()}
      */
     Class<?> value() default void.class;
+
+    /**
+     * In multi-module project, the resolver type may be declared in another module
+     * so that {@link #value()} cannot be specified, please use this argument
+     *
+     * <p>
+     *     This argument can only be used with spring, it means the spring bean name
+     *     of resolver object.
+     * </p>
+     * @return The spring bean name
+     */
+    String ref() default "";
 }
