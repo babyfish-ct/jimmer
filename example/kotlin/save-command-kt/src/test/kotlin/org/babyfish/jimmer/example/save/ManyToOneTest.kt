@@ -66,6 +66,61 @@ class ManyToOneTest : AbstractMutationTest() {
     }
 
     @Test
+    fun testIllegalShortAssociation() {
+
+        jdbc(
+            "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
+            10L, "SQL in Action", 1, BigDecimal(45)
+        )
+
+        val ex = Assertions.assertThrows(SaveException::class.java) {
+            sql
+                .entities
+                .save(
+                    new(Book::class).by {
+                        name = "SQL in Action"
+                        edition = 1
+                        price = BigDecimal(49)
+                        store = makeIdOnly(99999L)
+                    }
+                ) {
+                    /*
+                     * You can also use `setAutoIdOnlyTargetCheckingAll()`.
+                     *
+                     * If you use jimmer-spring-starter, it is unnecessary to
+                     * do it because this switch is turned on.
+                     *
+                     * If the underlying `BOOK.STORE_ID` has foreign key constraints,
+                     * even if this configuration is not used, error still will be
+                     * raised by database so that you can choose not to use this
+                     * configuration when you have strict performance requirements.
+                     * However, this configuration can bring better error message.
+                     *
+                     * Sometimes it is not possible to add foreign key constraints,
+                     * such as table sharding. At this time, this configuration is
+                     * very important.
+                     */
+                    setAutoIdOnlyTargetChecking(Book::store)
+                }
+        }
+
+        Assertions.assertEquals(
+            "Save error caused by the path: \"<root>.store\": " +
+                "Illegal ids: [99999]",
+            ex.message
+        )
+
+        assertExecutedStatements(
+
+            // Is targetId valid?
+            ExecutedStatement(
+                "select tb_1_.ID from BOOK_STORE as tb_1_ where tb_1_.ID in (?)",
+                99999L
+            )
+        )
+    }
+
+    @Test
     fun testAssociationByKey() {
         jdbc("insert into book_store(id, name) values(?, ?)", 1L, "MANNING")
         jdbc(
@@ -111,61 +166,6 @@ class ManyToOneTest : AbstractMutationTest() {
         )
 
         Assertions.assertEquals(1, result.totalAffectedRowCount)
-    }
-
-    @Test
-    fun testIllegalShortAssociation() {
-        
-        jdbc(
-            "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
-            10L, "SQL in Action", 1, BigDecimal(45)
-        )
-        
-        val ex = Assertions.assertThrows(ExecutionException::class.java) {
-            sql
-                .entities
-                .save(
-                    new(Book::class).by {
-                        name = "SQL in Action"
-                        edition = 1
-                        price = BigDecimal(49)
-                        store = makeIdOnly(99999L)
-                    }
-                )
-        }
-        
-        Assertions.assertEquals(
-            "Cannot execute SQL statement: " +
-                "update BOOK set PRICE = ?, STORE_ID = ? where ID = ?, " +
-                "variables: [49, 99999, 10]",
-            ex.message
-        )
-        
-        /*
-         * In the current Jimmer, the many-to-one property is based on the foreign key.
-         * If the associated object holds an illegal id, the database will report an error.
-         *
-         * In the future, Jimmer will support fake foreign key(It should be understood
-         * as a foreign key in business, but it is not a foreign key in the database.
-         * It is suitable for the database sharding and table sharding), an additional
-         * validation will be added here.
-         */
-        assertExecutedStatements(
-
-            // Select aggregate-root object by
-            ExecutedStatement(
-                ("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                    "from BOOK as tb_1_ " +
-                    "where tb_1_.NAME = ? and tb_1_.EDITION = ?"),
-                "SQL in Action", 1
-            ),
-
-            // Aggregate-root exists, update it with illegal foreign key
-            ExecutedStatement(
-                "update BOOK set PRICE = ?, STORE_ID = ? where ID = ?",
-                BigDecimal(49), 99999L, 10L
-            )
-        )
     }
 
     @Test
@@ -293,7 +293,7 @@ class ManyToOneTest : AbstractMutationTest() {
                 /*
                  * You can also use `setAutoAttachingAll()`.
                  *
-                 * If you use jimmer-spring-starter, it is unecessary to
+                 * If you use jimmer-spring-starter, it is unnecessary to
                  * do it because this switch is turned on.
                  */
                 setAutoAttaching(Book::store)

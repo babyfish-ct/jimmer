@@ -84,11 +84,17 @@ class ManyToManyTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testInsertMiddleTableByIllegalShortAssociation() {
+    fun testIllegalShortAssociation() {
+
         jdbc(
             "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
             10L, "SQL in Action", 1, BigDecimal(45)
         )
+        jdbc(
+            "insert into author(id, first_name, last_name, gender) values(?, ?, ?, ?)",
+            100L, "Ben", "Brumm", "M"
+        )
+
         val ex = Assertions.assertThrows(ExecutionException::class.java) {
             sql.entities.save(
                 new(Book::class).by {
@@ -96,31 +102,46 @@ class ManyToManyTest : AbstractMutationTest() {
                     edition = 1
                     price = BigDecimal(49)
                     authors().addBy {
+                        id = 100L
+                    }
+                    authors().addBy {
+                        id = 88888L
+                    }
+                    authors().addBy {
                         id = 99999L
                     }
                 }
-            )
+            ) {
+                /*
+                 * You can also use `setAutoIdOnlyTargetCheckingAll()`.
+                 *
+                 * If you use jimmer-spring-starter, it is unnecessary to
+                 * do it because this switch is turned on.
+                 *
+                 * If the underlying `BOOK_AUTHOR_MAPPING.AUTHOR_ID`
+                 * has foreign key constraints,
+                 * even if this configuration is not used, error still will be
+                 * raised by database so that you can choose not to use this
+                 * configuration when you have strict performance requirements.
+                 * However, this configuration can bring better error message.
+                 *
+                 * Sometimes it is not possible to add foreign key constraints,
+                 * such as table sharding. At this time, this configuration is
+                 * very important.
+                 */
+                setAutoIdOnlyTargetChecking(Book::authors)
+            }
         }
+
         Assertions.assertEquals(
-            "Cannot execute SQL statement: " +
-                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values (?, ?), " +
-                "variables: [10, 99999]",
+            "Save error caused by the path: \"<root>.authors\": " +
+                "Illegal ids: [88888, 99999]",
             ex.message
         )
 
-        /*
-         * In the current Jimmer, the many-to-one property is based on the foreign key.
-         * If the associated object holds an illegal id, the database will report an error.
-         *
-         * In the future, Jimmer will support fake foreign key(It should be understood
-         * as a foreign key in business, but it is not a foreign key in the database.
-         * It is suitable for the database sharding and table sharding), an additional
-         * validation will be added here.
-         */
-
         assertExecutedStatements(
 
-            // Select aggregate-root by key
+            // Query aggregate-root by key
             ExecutedStatement(
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                     "from BOOK as tb_1_ " +
@@ -128,22 +149,16 @@ class ManyToManyTest : AbstractMutationTest() {
                 "SQL in Action", 1
             ),
 
-            // Aggregate-root exists, update it
+            // Aggregate exists, update it
             ExecutedStatement(
                 "update BOOK set PRICE = ? where ID = ?",
                 BigDecimal(49), 10L
             ),
 
-            // Query mapping from middle table
+            // Are target ids valid
             ExecutedStatement(
-                "select AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID = ?",
-                10L
-            ),
-
-            // Mapping does not exist, insert it, cause error
-            ExecutedStatement(
-                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values (?, ?)",
-                10L, 99999L
+                "select tb_1_.ID from AUTHOR as tb_1_ where tb_1_.ID in (?, ?, ?)",
+                100L, 88888L, 99999L
             )
         )
     }
@@ -293,7 +308,7 @@ class ManyToManyTest : AbstractMutationTest() {
                 /*
                  * You can also use `setAutoAttachingAll()`.
                  *
-                 * If you use jimmer-spring-starter, it is unecessary to
+                 * If you use jimmer-spring-starter, it is unnecessary to
                  * do it because this switch is turned on.
                  */
                 setAutoAttaching(Book::authors)

@@ -2,16 +2,20 @@ plugins {
     id 'java'
 }
 
+ext {
+    jimmerVersion = "0.6.58-0.7-preview"
+}
+
 group 'org.example'
-version '0.6.57-0.7-preview'
+version jimmerVersion
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation 'org.babyfish.jimmer:jimmer-sql:0.6.57-0.7-preview'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.6.57-0.7-preview'
+    implementation "org.babyfish.jimmer:jimmer-sql:${jimmerVersion}"
+    annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 

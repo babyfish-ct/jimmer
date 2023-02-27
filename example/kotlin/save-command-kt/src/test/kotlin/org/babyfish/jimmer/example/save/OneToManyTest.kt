@@ -259,7 +259,7 @@ class OneToManyTest() : AbstractMutationTest() {
                 /*
                  * You can also use `setAutoAttachingAll()`.
                  *
-                 * If you use jimmer-spring-starter, it is unecessary to
+                 * If you use jimmer-spring-starter, it is unnecessary to
                  * do it because this switch is turned on.
                  */
                 setAutoAttaching(BookStore::books)

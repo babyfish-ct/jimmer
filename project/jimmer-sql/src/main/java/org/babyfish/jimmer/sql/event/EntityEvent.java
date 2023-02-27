@@ -82,10 +82,21 @@ public class EntityEvent<E> {
     }
 
     /**
+     * Determine whether the trigger for sending the current event is within
+     * a transaction or based on binlog
+     *
      * <ul>
      *  <li>If the event is fired by binlog trigger, returns null</li>
      *  <li>If the event is fired by transaction trigger, returns current trigger</li>
      * </ul>
+     *
+     * <p>
+     *     Notes, If you use jimmer in spring-boot and accept events with `@EventListener`,
+     *     it will be very important to determine whether this property is null.
+     *     Because once the `triggerType` of `SqlClient` is set to `BOTH`, the same event
+     *     will be notified twice.
+     * </p>
+     *
      * @return The current connection or null
      */
     @Nullable
