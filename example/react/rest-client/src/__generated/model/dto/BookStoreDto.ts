@@ -12,7 +12,7 @@ export type BookStoreDto = {
         readonly name: string, 
         readonly website?: string
     }, 
-    'BookStoreService/COMPLEX_FETCHER': {
+    'BookStoreService/WITH_ALL_BOOKS_FETCHER': {
         readonly id: number, 
         readonly createdTime: string, 
         readonly modifiedTime: string, 
@@ -20,6 +20,30 @@ export type BookStoreDto = {
         readonly website?: string, 
         readonly avgPrice: number, 
         readonly books: ReadonlyArray<{
+            readonly id: number, 
+            readonly createdTime: string, 
+            readonly modifiedTime: string, 
+            readonly name: string, 
+            readonly edition: number, 
+            readonly price: number, 
+            readonly authors: ReadonlyArray<{
+                readonly id: number, 
+                readonly createdTime: string, 
+                readonly modifiedTime: string, 
+                readonly firstName: string, 
+                readonly lastName: string, 
+                readonly gender: Gender
+            }>
+        }>
+    }, 
+    'BookStoreService/WITH_NEWEST_BOOKS_FETCHER': {
+        readonly id: number, 
+        readonly createdTime: string, 
+        readonly modifiedTime: string, 
+        readonly name: string, 
+        readonly website?: string, 
+        readonly avgPrice: number, 
+        readonly newestBooks: ReadonlyArray<{
             readonly id: number, 
             readonly createdTime: string, 
             readonly modifiedTime: string, 

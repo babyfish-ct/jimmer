@@ -12,7 +12,9 @@ export interface BookStore {
     
     readonly website?: string;
     
+    readonly books: ReadonlyArray<Book>;
+    
     readonly avgPrice: number;
     
-    readonly books: ReadonlyArray<Book>;
+    readonly newestBooks: ReadonlyArray<Book>;
 }
