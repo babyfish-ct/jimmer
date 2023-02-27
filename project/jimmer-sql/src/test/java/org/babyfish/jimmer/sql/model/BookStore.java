@@ -37,7 +37,7 @@ public interface BookStore {
     BigDecimal avgPrice();
 
     @Nullable
-    @Transient(BookStoreMostPopularAuthorResolver.class)
+    @Transient(ref = "bookStoreMostPopularAuthorResolver")
     Author mostPopularAuthor();
 
     @Transient(BookStoreNewestBooksResolver.class)

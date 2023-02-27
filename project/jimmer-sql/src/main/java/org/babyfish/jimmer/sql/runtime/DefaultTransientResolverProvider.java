@@ -14,7 +14,7 @@ public class DefaultTransientResolverProvider implements TransientResolverProvid
 
     private static final Constructor<?> K_SQL_CLIENT_IMPL_CONSTRUCTOR;
 
-    private DefaultTransientResolverProvider() {}
+    protected DefaultTransientResolverProvider() {}
 
     @Override
     public TransientResolver<?, ?> get(
@@ -26,6 +26,7 @@ public class DefaultTransientResolverProvider implements TransientResolverProvid
         try {
             constructor = resolverType.getConstructor();
         } catch (NoSuchMethodException ex) {
+            // Do nothing
         }
         if (constructor != null) {
             return (TransientResolver<?, ?>) constructor.newInstance();
@@ -34,6 +35,7 @@ public class DefaultTransientResolverProvider implements TransientResolverProvid
         try {
             constructor = resolverType.getConstructor(JSqlClient.class);
         } catch (NoSuchMethodException ex) {
+            // Do nothing
         }
         if (constructor != null) {
             return (TransientResolver<?, ?>) constructor.newInstance(sqlClient);
@@ -43,6 +45,7 @@ public class DefaultTransientResolverProvider implements TransientResolverProvid
             try {
                 constructor = resolverType.getConstructor(K_SQL_CLIENT_CLASS);
             } catch (NoSuchMethodException ex) {
+                // Do nothing
             }
             if (constructor != null) {
                 Object kSqlClient;
