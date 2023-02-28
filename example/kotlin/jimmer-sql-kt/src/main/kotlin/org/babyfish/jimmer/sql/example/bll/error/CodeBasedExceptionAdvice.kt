@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 
 @ControllerAdvice
-class BusinessErrorAdvice {
+class CodeBasedExceptionAdvice {
 
     @ExceptionHandler
     fun handle(ex: BusinessException): ResponseEntity<ExportedError> =
