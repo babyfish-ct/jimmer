@@ -7,7 +7,6 @@ import { api } from "../common/ApiInstance";
 import { RequestOf } from "../__generated";
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
-import EditRoadIcon from '@mui/icons-material/EditRoad';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { toSortModel, toSortCode } from "../common/SortModels";
 import { Alert, Button, Chip, Drawer, Fab, TextField } from "@mui/material";
@@ -93,7 +92,7 @@ export const BookList:FC = memo(() => {
                 <GridActionsCellItem icon={<DeleteIcon/>} label="Delete" onClick={e => onDelete(params.row, e)}/>
             ]
         }
-    ], [onEdit, onDelete, tenant]);
+    ], [onEdit, onDelete]);
 
     const [options, setOptions] = useImmer<RequestOf<typeof api.bookService.findBooks>>(() => {
         return {
