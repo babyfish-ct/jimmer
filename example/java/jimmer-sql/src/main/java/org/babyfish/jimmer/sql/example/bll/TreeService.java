@@ -55,7 +55,7 @@ public class TreeService {
                 input.toEntity(),
 
                 // `parent` must be loaded because it is a part of key
-                draft -> draft.setParent((TreeNode) null)
+                draft -> draft.setParent(null)
         );
         return treeNodeRepository.save(rootNode);
     }
