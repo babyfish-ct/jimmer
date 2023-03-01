@@ -210,7 +210,9 @@ class SaveModeTest : AbstractMutationTest() {
 
             // Query whether the data exists by key
             ExecutedStatement(
-                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK as tb_1_ where tb_1_.NAME = ? and tb_1_.EDITION = ?",
+                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                    "from BOOK as tb_1_ " +
+                    "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                 "SQL in Action", 1
             ),
 
@@ -276,7 +278,9 @@ class SaveModeTest : AbstractMutationTest() {
 
             // Query whether the data exists by key
             ExecutedStatement(
-                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK as tb_1_ where tb_1_.NAME = ? and tb_1_.EDITION = ?",
+                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                    "from BOOK as tb_1_ " +
+                    "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                 "SQL in Action", 1
             ),
 

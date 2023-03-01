@@ -159,6 +159,8 @@ public class OneToManyTest extends AbstractMutationTest {
                         "MANNING"
                 ),
 
+                // Aggregate-root exists, but not changed, do nothing
+
                 // Select child object by key
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
@@ -223,6 +225,8 @@ public class OneToManyTest extends AbstractMutationTest {
                         "MANNING"
                 ),
 
+                // Aggregate-root exists, but not changed, do nothing
+
                 // Query child object by key
                 // In this test case, nothing will be found, it need to be inserted.
                 // However, the switch to automatically create associated objects
@@ -272,7 +276,9 @@ public class OneToManyTest extends AbstractMutationTest {
                         "MANNING"
                 ),
 
-                // Select parent object by key
+                // Aggregate-root exists, but not changed, do nothing
+
+                // Select child object by key
                 new ExecutedStatement(
                         "select " +
                                 "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
@@ -349,6 +355,8 @@ public class OneToManyTest extends AbstractMutationTest {
                         "MANNING"
                 ),
 
+                // Aggregate-root exists, but not changed, do nothing
+
                 // Update the foreign key of child object(s)
                 new ExecutedStatement(
                         "update BOOK set STORE_ID = ? where ID in (?)",
@@ -375,12 +383,11 @@ public class OneToManyTest extends AbstractMutationTest {
 
         jdbc("insert into book_store(id, name) values(?, ?)", 1L, "MANNING");
         jdbc(
-                "insert into book(id, name, edition, price, store_id) values(?, ?, ?, ?, ?)",
+                "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
                 10L,
                 "SQL in Action",
                 1,
-                new BigDecimal(45),
-                1L
+                new BigDecimal(45)
         );
         jdbc(
                 "insert into book(id, name, edition, price, store_id) values(?, ?, ?, ?, ?)",
@@ -410,6 +417,8 @@ public class OneToManyTest extends AbstractMutationTest {
                         "MANNING"
                 ),
 
+                // Aggregate-root exists, but not changed, do nothing
+
                 // Update foreign key of child object(s)
                 new ExecutedStatement(
                         "update BOOK set STORE_ID = ? where ID in (?)",
@@ -435,12 +444,11 @@ public class OneToManyTest extends AbstractMutationTest {
 
         jdbc("insert into book_store(id, name) values(?, ?)", 1L, "MANNING");
         jdbc(
-                "insert into book(id, name, edition, price, store_id) values(?, ?, ?, ?, ?)",
+                "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
                 10L,
                 "SQL in Action",
                 1,
-                new BigDecimal(45),
-                1L
+                new BigDecimal(45)
         );
         jdbc(
                 "insert into book(id, name, edition, price, store_id) values(?, ?, ?, ?, ?)",

@@ -178,9 +178,9 @@ class ManyToManyTest : AbstractMutationTest() {
             "insert into author(id, first_name, last_name, gender) values(?, ?, ?, ?)",
             200L, "Prabath", "Siriwardena", "M"
         )
-
         jdbc("insert into book_author_mapping(book_id, author_id) values(?, ?)", 10L, 100L)
         jdbc("insert into book_author_mapping(book_id, author_id) values(?, ?)", 10L, 200L)
+
         val result = sql.entities.save(
             new(Book::class).by {
                 name = "SQL in Action"
@@ -229,10 +229,12 @@ class ManyToManyTest : AbstractMutationTest() {
 
     @Test
     fun testInsertAuthorFailed() {
+
         jdbc(
             "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
             10L, "SQL in Action", 1, BigDecimal(45)
         )
+
         val ex = Assertions.assertThrows(SaveException::class.java) {
             sql.entities.save(
                 new(Book::class).by {
@@ -318,9 +320,9 @@ class ManyToManyTest : AbstractMutationTest() {
 
             // Query aggregate-root by key
             ExecutedStatement(
-                ("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
+                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                     "from BOOK as tb_1_ " +
-                    "where tb_1_.NAME = ? and tb_1_.EDITION = ?"),
+                    "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                 "SQL in Action", 1
             ),
 

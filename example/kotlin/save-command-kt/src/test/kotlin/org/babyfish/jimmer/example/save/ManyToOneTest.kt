@@ -49,13 +49,17 @@ class ManyToOneTest : AbstractMutationTest() {
                 }
             )
         
-        assertExecutedStatements( // Select data by id
+        assertExecutedStatements(
+
+            // Select data by key
             ExecutedStatement(
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                     "from BOOK as tb_1_ " +
                     "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                 "SQL in Action", 1
-            ),  // Data exists, update it.
+            ),
+
+            // Data exists, update it.
             // The foreign key `store_id` is updated.
             ExecutedStatement(
                 "update BOOK set PRICE = ?, STORE_ID = ? where ID = ?",
@@ -122,11 +126,13 @@ class ManyToOneTest : AbstractMutationTest() {
 
     @Test
     fun testAssociationByKey() {
+
         jdbc("insert into book_store(id, name) values(?, ?)", 1L, "MANNING")
         jdbc(
             "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
             10L, "SQL in Action", 1, BigDecimal(45)
         )
+
         val result = sql
             .entities
             .save(
@@ -261,9 +267,9 @@ class ManyToOneTest : AbstractMutationTest() {
             // If no data selected, report error because the switch to
             // automatically create associated objects has not been turned on
             ExecutedStatement(
-                ("select tb_1_.ID, tb_1_.NAME " +
+                "select tb_1_.ID, tb_1_.NAME " +
                     "from BOOK_STORE as tb_1_ " +
-                    "where tb_1_.NAME = ?"),
+                    "where tb_1_.NAME = ?",
                 "TURING"
             )
         )

@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import kotlin.math.min
 
-abstract class AbstractMutationWithTriggerTest() : AbstractMutationTest() {
+abstract class AbstractMutationWithTriggerTest : AbstractMutationTest() {
 
     private val events: MutableList<String> = ArrayList()
 
@@ -16,6 +16,8 @@ abstract class AbstractMutationWithTriggerTest() : AbstractMutationTest() {
 
     @BeforeEach
     fun registerEventListeners() {
+
+        events.clear()
 
         /*
          * If jimmer-spring-starter is used, it's unnecessary

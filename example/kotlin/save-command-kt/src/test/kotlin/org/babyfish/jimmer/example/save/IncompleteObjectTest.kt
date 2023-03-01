@@ -75,9 +75,9 @@ class IncompleteObjectTest : AbstractMutationTest() {
 
             // Unspecified property `website` will not be updated
             ExecutedStatement(
-                ("update BOOK_STORE " +
+                "update BOOK_STORE " +
                     "set NAME = ? " +
-                    "where ID = ?"),
+                    "where ID = ?",
                 "O'REILLY+", 1L
             )
         )
@@ -91,7 +91,7 @@ class IncompleteObjectTest : AbstractMutationTest() {
          *   you need to query the old object, modify the properties you want to modify,
          *   and finally save it.
          *
-         * In Jimmer, create an object and specify the properties you want to modify,
+         * - In Jimmer, create an object and specify the properties you want to modify,
          * save it.
          */
 

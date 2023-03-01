@@ -218,9 +218,7 @@ class RecursiveTest : AbstractMutationTest() {
                     // `-|----child-2-2`
                     // in database will be deleted
                 }
-            ) {
-                setDissociateAction(TreeNode::parentNode, DissociateAction.DELETE)
-            }
+            )
 
         assertExecutedStatements(
 

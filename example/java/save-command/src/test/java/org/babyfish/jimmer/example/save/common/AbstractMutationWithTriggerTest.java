@@ -19,6 +19,9 @@ public class AbstractMutationWithTriggerTest extends AbstractMutationTest {
 
     @BeforeEach
     public void registerEventListeners() {
+
+        events.clear();
+
         sql().getTriggers().addEntityListener(e -> {
             events.add(
                     "The entity \"" +
