@@ -63,7 +63,7 @@ public class ImmutableSerializer extends StdSerializer<ImmutableSpi> {
             if (ignore != null && ignore.value()) {
                 continue;
             }
-            if (immutable.__isLoaded(prop.getId())) {
+            if (immutable.__isLoaded(prop.getId()) && !prop.isIdView()) {
                 Object value = immutable.__get(prop.getId());
                 if (value != null && prop.getConverter() != null) {
                     value = ((Converter<Object>)prop.getConverter()).output(value);

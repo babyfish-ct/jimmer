@@ -583,4 +583,12 @@ public class ImmutableType {
     public Map<ClassName, String> getValidationMessageMap() {
         return validationMessageMap;
     }
+
+    public boolean resolve(TypeUtils typeUtils, int step) {
+        boolean hasNext = false;
+        for (ImmutableProp prop : declaredProps.values()) {
+            hasNext |= prop.resolve(typeUtils, step);
+        }
+        return hasNext;
+    }
 }

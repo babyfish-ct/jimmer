@@ -4,15 +4,16 @@ import com.squareup.javapoet.*;
 import org.babyfish.jimmer.UnloadedException;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.NonSharedList;
 import org.babyfish.jimmer.sql.Id;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.PrimitiveType;
+import java.util.ArrayList;
 import java.util.Objects;
 
-import static org.babyfish.jimmer.apt.generator.Constants.CLONEABLE_CLASS_NAME;
-import static org.babyfish.jimmer.apt.generator.Constants.JSON_IGNORE_CLASS_NAME;
+import static org.babyfish.jimmer.apt.generator.Constants.*;
 
 public class ImplGenerator {
 
@@ -50,7 +51,7 @@ public class ImplGenerator {
 
     private void addFields() {
         for (ImmutableProp prop : type.getProps().values()) {
-            if (!prop.isJavaFormula()) {
+            if (!prop.isJavaFormula() && prop.getIdViewBaseProp() == null) {
                 FieldSpec.Builder valueBuilder = FieldSpec.builder(
                         prop.isList() ?
                                 ParameterizedTypeName.get(
@@ -73,6 +74,7 @@ public class ImplGenerator {
     }
 
     private void addGetter(ImmutableProp prop) {
+
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getGetterName())
                 .addModifiers(Modifier.PUBLIC)
@@ -81,24 +83,57 @@ public class ImplGenerator {
         if (prop.isBeanStyle()) {
             builder.addAnnotation(JSON_IGNORE_CLASS_NAME);
         }
-        if (prop.isJavaFormula()) {
-            builder.beginControlFlow("if (!__isLoaded($S))", prop.getName());
-        } else if (prop.isLoadedStateRequired()) {
-            builder.beginControlFlow("if (!$L)", prop.getLoadedStateName());
+
+        ImmutableProp baseProp = prop.getIdViewBaseProp();
+        if (baseProp != null) {
+            if (baseProp.isList()) {
+                builder.addStatement(
+                        "$T<$T> __ids = new $T($L().size())",
+                        LIST_CLASS_NAME,
+                        baseProp.getTargetType().getIdProp().getTypeName().box(),
+                        ArrayList.class,
+                        baseProp.getGetterName()
+                );
+                builder.beginControlFlow(
+                        "for ($T __target : $L())",
+                        baseProp.getElementTypeName(),
+                        baseProp.getGetterName()
+                );
+                builder.addStatement(
+                        "__ids.add(__target.$L())",
+                        baseProp.getTargetType().getIdProp().getGetterName()
+                );
+                builder.endControlFlow();
+                builder.addStatement("return __ids");
+            } else {
+                builder.addStatement("$T __target = $L()", baseProp.getElementTypeName(), baseProp.getGetterName());
+                builder.addStatement(
+                        prop.isNullable() ?
+                        "return __target != null ? __target.$L() : null" :
+                        "__target.$L()",
+                        baseProp.getTargetType().getIdProp().getGetterName()
+                );
+            }
         } else {
-            builder.beginControlFlow("if ($L == null)", prop.getName());
-        }
-        builder.addStatement(
-                        "throw new $T($T.class, $S)",
-                        unloadedExceptionClassName,
-                        type.getClassName(),
-                        prop.getName()
-                )
-                .endControlFlow();
-        if (prop.isJavaFormula()) {
-            builder.addStatement("return super.$L()", prop.getName());
-        } else {
-            builder.addStatement("return $L", prop.getName());
+            if (prop.isJavaFormula()) {
+                builder.beginControlFlow("if (!__isLoaded($S))", prop.getName());
+            } else if (prop.isLoadedStateRequired()) {
+                builder.beginControlFlow("if (!$L)", prop.getLoadedStateName());
+            } else {
+                builder.beginControlFlow("if ($L == null)", prop.getName());
+            }
+            builder.addStatement(
+                            "throw new $T($T.class, $S)",
+                            unloadedExceptionClassName,
+                            type.getClassName(),
+                            prop.getName()
+                    )
+                    .endControlFlow();
+            if (prop.isJavaFormula()) {
+                builder.addStatement("return super.$L()", prop.getName());
+            } else {
+                builder.addStatement("return $L", prop.getName());
+            }
         }
         typeBuilder.addMethod(builder.build());
     }
@@ -128,17 +163,38 @@ public class ImplGenerator {
         builder.beginControlFlow("switch (prop)");
         for (ImmutableProp prop : type.getPropsOrderById()) {
             Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
-            if (prop.isJavaFormula()) {
-                builder.addCode("case $L: return $L$>", arg, prop.getLoadedStateName());
+            builder.addCode("case $L: ", arg);
+            ImmutableProp baseProp = prop.getIdViewBaseProp();
+            if (baseProp != null) {
+                if (baseProp.isList()) {
+                    builder.addStatement(
+                            "return __isLoaded($L) && $L().stream().allMatch(__each -> (($T)__each).__isLoaded($L))",
+                            baseProp.getId(),
+                            baseProp.getGetterName(),
+                            ImmutableSpi.class,
+                            baseProp.getTargetType().getIdProp().getId()
+                    );
+                } else {
+                    builder.addStatement(
+                            "return __isLoaded($L) && $L() != null && (($T)$L()).__isLoaded($L)",
+                            baseProp.getId(),
+                            baseProp.getGetterName(),
+                            ImmutableSpi.class,
+                            baseProp.getGetterName(),
+                            baseProp.getTargetType().getIdProp().getId()
+                    );
+                }
+            } else if (prop.isJavaFormula()) {
+                builder.addCode("return $L$>", prop.getLoadedStateName());
                 for (String dependency : prop.getDependencies()) {
                     builder.addCode(" && \n");
                     builder.addCode("__isLoaded($S)", dependency);
                 }
                 builder.addStatement("$<");
             } else if (prop.isLoadedStateRequired()) {
-                builder.addStatement("case $L: return $L", arg, prop.getLoadedStateName());
+                builder.addStatement("return $L", prop.getLoadedStateName());
             } else {
-                builder.addStatement("case $L: return $L != null", arg, prop.getName());
+                builder.addStatement("return $L != null", prop.getName());
             }
         }
         builder.addStatement(
@@ -162,6 +218,9 @@ public class ImplGenerator {
             builder.addAnnotation(Override.class);
         }
         for (ImmutableProp prop : type.getProps().values()) {
+            if (prop.getIdViewBaseProp() != null) {
+                continue;
+            }
             if (prop.isJavaFormula()) {
                 builder.addStatement("hash = 31 * hash + $T.hashCode($L)", Boolean.class, prop.getLoadedStateName());
                 continue;
@@ -225,6 +284,9 @@ public class ImplGenerator {
                 .endControlFlow()
                 .addStatement("$T other = ($T)obj", type.getImplementorClassName(), type.getImplementorClassName());
         for (ImmutableProp prop : type.getProps().values()) {
+            if (prop.getIdViewBaseProp() != null) {
+                continue;
+            }
             if (prop.isJavaFormula()) {
                 builder
                         .beginControlFlow(

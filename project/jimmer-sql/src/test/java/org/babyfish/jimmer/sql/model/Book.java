@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.model;
 
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
+import org.jetbrains.annotations.Nullable;
 
 import javax.validation.constraints.Null;
 import javax.validation.constraints.Positive;
@@ -36,4 +37,11 @@ public interface Book {
             inverseJoinColumnName = "AUTHOR_ID"
     )
     List<Author> authors();
+
+    @IdView
+    @Nullable
+    UUID storeId();
+
+    @IdView("authors")
+    List<UUID> authorIds();
 }

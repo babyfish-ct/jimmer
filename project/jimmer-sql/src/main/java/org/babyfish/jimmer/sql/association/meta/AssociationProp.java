@@ -102,6 +102,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public boolean isIdView() {
+        return false;
+    }
+
+    @Override
     public Converter<?> getConverter() {
         return null;
     }

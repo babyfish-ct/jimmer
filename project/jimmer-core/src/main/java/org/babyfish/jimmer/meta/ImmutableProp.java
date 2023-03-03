@@ -59,6 +59,8 @@ public interface ImmutableProp {
     @Nullable
     FormulaTemplate getFormulaTemplate();
 
+    boolean isIdView();
+
     Converter<?> getConverter();
 
     @NotNull

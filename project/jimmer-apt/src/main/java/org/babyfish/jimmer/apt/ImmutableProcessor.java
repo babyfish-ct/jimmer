@@ -127,6 +127,17 @@ public class ImmutableProcessor extends AbstractProcessor {
                 }
             }
         }
+        int step = 0;
+        while (true) {
+            boolean hasNext = false;
+            for (ImmutableType type : map.values()) {
+                hasNext |= type.resolve(typeUtils, step);
+            }
+            if (!hasNext) {
+                break;
+            }
+            step++;
+        }
         return map;
     }
 

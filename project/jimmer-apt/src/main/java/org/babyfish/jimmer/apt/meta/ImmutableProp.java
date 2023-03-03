@@ -6,6 +6,7 @@ import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.TypeUtils;
+import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.sql.*;
 
@@ -71,6 +72,10 @@ public class ImmutableProp {
     private final Map<ClassName, String> validationMessageMap;
 
     private Annotation associationAnnotation;
+
+    private ImmutableType targetType;
+
+    private ImmutableProp idViewBaseProp;
 
     public ImmutableProp(
             TypeUtils typeUtils,
@@ -222,6 +227,16 @@ public class ImmutableProp {
             );
         }
 
+        elementTypeName = TypeName.get(elementType);
+        if (isList) {
+            typeName = ParameterizedTypeName.get(
+                    ClassName.get(List.class),
+                    elementTypeName
+            );
+        } else {
+            typeName = elementTypeName;
+        }
+
         PropDescriptor.Builder builder = PropDescriptor.newBuilder(
                 declaringType.getTypeElement().getQualifiedName().toString(),
                 typeUtils.getImmutableAnnotationType(declaringType.getTypeElement()),
@@ -229,7 +244,9 @@ public class ImmutableProp {
                 ClassName.get(elementType).toString(),
                 typeUtils.getImmutableAnnotationType(elementType),
                 isList,
-                null,
+                elementTypeName.isPrimitive() || elementTypeName.isBoxedPrimitive() ?
+                    elementTypeName.isBoxedPrimitive() :
+                    null,
                 declaringType.getTypeElement().getAnnotation(Immutable.class),
                 MetaException::new
         );
@@ -252,16 +269,6 @@ public class ImmutableProp {
             associationAnnotation = executableElement.getAnnotation(descriptor.getType().getAnnotationType());
         }
         isNullable = descriptor.isNullable();
-
-        elementTypeName = TypeName.get(elementType);
-        if (isList) {
-            typeName = ParameterizedTypeName.get(
-                    ClassName.get(List.class),
-                    elementTypeName
-            );
-        } else {
-            typeName = elementTypeName;
-        }
 
         if (isAssociation) {
             draftElementTypeName = ClassName.get(
@@ -382,7 +389,7 @@ public class ImmutableProp {
     }
 
     public boolean isLoadedStateRequired() {
-        return isJavaFormula || isNullable || typeName.isPrimitive();
+        return idViewBaseProp == null && (isJavaFormula || isNullable || typeName.isPrimitive());
     }
     
     public Class<?> getBoxType() {
@@ -406,6 +413,134 @@ public class ImmutableProp {
             default:
                 return null;
         }
+    }
+
+    public ImmutableType getTargetType() {
+        return targetType;
+    }
+
+    public ImmutableProp getIdViewBaseProp() {
+        return idViewBaseProp;
+    }
+
+    boolean resolve(TypeUtils typeUtils, int step) {
+        switch (step) {
+            case 0:
+                resolveTargetType(typeUtils);
+                return true;
+            case 1:
+                resolveIdViewBaseProp(typeUtils);
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private void resolveTargetType(TypeUtils typeUtils) {
+        if (isAssociation) {
+            targetType = typeUtils.getImmutableType(elementType);
+        }
+    }
+
+    private void resolveIdViewBaseProp(TypeUtils typeUtils) {
+        IdView idView = getAnnotation(IdView.class);
+        if (idView == null) {
+            return;
+        }
+        String base = idView.value();
+        if (base.isEmpty()) {
+            if (!isList && name.length() > 2 && !Character.isUpperCase(name.charAt(name.length() - 3)) && name.endsWith("Id")) {
+                base = name.substring(0, name.length() - 2);
+            } else {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                this +
+                                "\", it is decorated by \"@" +
+                                IdView.class.getName() +
+                                "\", the argument of that annotation is not specified by " +
+                                "the base property name cannot be determined automatically, " +
+                                "please specify the argument of that annotation"
+                );
+            }
+        }
+        if (base.equals(name)) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            this +
+                            "\", it is decorated by \"@" +
+                            IdView.class.getName() +
+                            "\", the argument of that annotation cannot be equal to the current property name\"" +
+                            name +
+                            "\""
+            );
+        }
+        ImmutableProp baseProp = declaringType.getProps().get(base);
+        if (baseProp == null) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            this +
+                            "\", it is decorated by \"@" +
+                            IdView.class.getName() +
+                            "\" but there is no base property \"" +
+                            base +
+                            "\" in the declaring type"
+            );
+        }
+        if (!baseProp.isAssociation(true) || baseProp.isTransient) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            this +
+                            "\", it is decorated by \"@" +
+                            IdView.class.getName() +
+                            "\" but the base property \"" +
+                            baseProp +
+                            "\" is not persistence association"
+            );
+        }
+        if (isList != baseProp.isList) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            this +
+                            "\", it " +
+                            (isList ? "is" : "is not") +
+                            " list and decorated by \"@" +
+                            IdView.class.getName() +
+                            "\" but the base property \"" +
+                            baseProp +
+                            "\" " +
+                            (baseProp.isList ? "is" : "is not") +
+                            " list"
+            );
+        }
+        if (isNullable != baseProp.isNullable) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            this +
+                            "\", it " +
+                            (isNullable ? "is" : "is not") +
+                            " nullable and decorated by \"@" +
+                            IdView.class.getName() +
+                            "\" but the base property \"" +
+                            baseProp +
+                            "\" " +
+                            (baseProp.isList ? "is" : "is not") +
+                            " nullable"
+            );
+        }
+        if (!elementTypeName.box().equals(baseProp.targetType.getIdProp().getElementTypeName().box())) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            this +
+                            "\", it is decorated by \"@" +
+                            IdView.class.getName() +
+                            "\", the base property \"" +
+                            baseProp +
+                            "\" returns entity type whose id is \"" +
+                            baseProp.targetType.getIdProp().getElementTypeName() +
+                            "\", but the current property does not return that type"
+            );
+        }
+        idViewBaseProp = baseProp;
     }
 
     public <A extends Annotation> A getAnnotation(Class<A> annotationType) {

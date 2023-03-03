@@ -51,7 +51,7 @@ public class PropDescriptor {
             String elementText,
             Class<? extends Annotation> elementAnnotationType,
             boolean isList,
-            Boolean kotlinNullable,
+            Boolean explicitNullable,
             Immutable immutable,
             Function<String, RuntimeException> exceptionCreator
     ) {
@@ -62,7 +62,7 @@ public class PropDescriptor {
                 elementText,
                 elementAnnotationType,
                 isList,
-                kotlinNullable,
+                explicitNullable,
                 exceptionCreator
         );
     }
@@ -74,6 +74,7 @@ public class PropDescriptor {
         VERSION(Version.class, false),
         LOGICAL_DELETED(LogicalDeleted.class, false),
         FORMULA(Formula.class, false),
+        ID_VIEW(IdView.class, false),
         BASIC(null, false),
         ONE_TO_ONE(OneToOne.class, true),
         MANY_TO_ONE(ManyToOne.class, true),
@@ -136,7 +137,7 @@ public class PropDescriptor {
 
         private final boolean isList;
 
-        private final Boolean kotlinNullable;
+        private final Boolean explicitNullable;
 
         private final Function<String, RuntimeException> exceptionCreator;
 
@@ -157,7 +158,7 @@ public class PropDescriptor {
                 String elementText,
                 Class<? extends Annotation> elementAnnotationType,
                 boolean isList,
-                Boolean kotlinNullable,
+                Boolean explicitNullable,
                 Function<String, RuntimeException> exceptionCreator
         ) {
             this.typeText = typeText;
@@ -166,7 +167,7 @@ public class PropDescriptor {
             this.elementText = elementText;
             this.elementAnnotationType = elementAnnotationType;
             this.isList = isList;
-            this.kotlinNullable = kotlinNullable;
+            this.explicitNullable = explicitNullable;
             this.exceptionCreator = exceptionCreator;
         }
 
@@ -375,6 +376,7 @@ public class PropDescriptor {
         private void validateList(Type type) {
             switch (type) {
                 case TRANSIENT:
+                case ID_VIEW:
                     break;
                 case ONE_TO_MANY:
                 case MANY_TO_MANY:
@@ -429,7 +431,7 @@ public class PropDescriptor {
         }
 
         private void addNullityAnnotation(String annotationTypeName, boolean nullable) {
-            if (kotlinNullable != null) {
+            if (explicitNullable != null) {
                 throw exceptionCreator.apply(
                         "The property \"" +
                                 propText +
@@ -455,8 +457,8 @@ public class PropDescriptor {
         }
 
         private boolean determineNullable(Type type) {
-            boolean specifiedNullable = kotlinNullable != null ?
-                    kotlinNullable :
+            boolean specifiedNullable = explicitNullable != null ?
+                    explicitNullable :
                     annotationNullity != null && annotationNullity.isNullable;
             switch (type) {
                 case ID:
@@ -515,6 +517,7 @@ public class PropDescriptor {
             typeMap.put(Version.class, Type.VERSION);
             typeMap.put(LogicalDeleted.class, Type.LOGICAL_DELETED);
             typeMap.put(Formula.class, Type.FORMULA);
+            typeMap.put(IdView.class, Type.ID_VIEW);
             typeMap.put(OneToOne.class, Type.ONE_TO_ONE);
             typeMap.put(ManyToOne.class, Type.MANY_TO_ONE);
             typeMap.put(OneToMany.class, Type.ONE_TO_MANY);
@@ -525,6 +528,7 @@ public class PropDescriptor {
             families.put(Type.VERSION, setOf(Column.class));
             families.put(Type.LOGICAL_DELETED, setOf(LogicalDeleted.class, Column.class));
             families.put(Type.FORMULA, setOf(Formula.class));
+            families.put(Type.ID_VIEW, setOf(IdView.class));
             families.put(Type.BASIC, setOf(Key.class, Column.class, PropOverrides.class, PropOverride.class));
             families.put(Type.ONE_TO_ONE, setOf(Key.class, OnDissociate.class, JoinColumns.class, JoinColumn.class, JoinTable.class));
             families.put(Type.MANY_TO_ONE, setOf(Key.class, OnDissociate.class, JoinColumns.class, JoinColumn.class, JoinTable.class));

@@ -5,6 +5,7 @@ import kotlin.reflect.KProperty1;
 import kotlin.reflect.full.KClasses;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Formula;
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.meta.*;
@@ -50,6 +51,8 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     private final boolean hasTransientResolver;
 
     private final boolean isFormula;
+
+    private final boolean isIdView;
 
     private final FormulaTemplate formulaTemplate;
 
@@ -151,6 +154,15 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
         Formula formula = getAnnotation(Formula.class);
         isFormula = formula != null;
+        if (formula != null && isAssociation(TargetLevel.ENTITY)) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            this +
+                            "\", it is decorated by \"" +
+                            Formula.class.getName() +
+                            "\" so that it cannot be association"
+            );
+        }
         if (formula != null && !formula.sql().isEmpty()) {
             try {
                 formulaTemplate = FormulaTemplate.of(formula.sql());
@@ -164,6 +176,18 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
             }
         } else {
             formulaTemplate = null;
+        }
+
+        IdView idView = getAnnotation(IdView.class);
+        isIdView = idView != null;
+        if (idView != null && isAssociation(TargetLevel.ENTITY)) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            this +
+                            "\", it is decorated by \"" +
+                            IdView.class.getName() +
+                            "\" so that it cannot be association"
+            );
         }
 
         ManyToOne manyToOne = getAnnotation(ManyToOne.class);
@@ -227,6 +251,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         this.associationAnnotation = base.associationAnnotation;
         this.isTransient = base.isTransient;
         this.isFormula = base.isFormula;
+        this.isIdView = base.isIdView;
         this.formulaTemplate = base.formulaTemplate;
         this.hasTransientResolver = base.hasTransientResolver;
         this.dissociateAction = base.dissociateAction;
@@ -406,6 +431,11 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     @Override
     public FormulaTemplate getFormulaTemplate() {
         return formulaTemplate;
+    }
+
+    @Override
+    public boolean isIdView() {
+        return isIdView;
     }
 
     @Override
@@ -730,7 +760,11 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     @Override
     public List<ImmutableProp> getDependencies() {
-        return getDependenciesImpl(new LinkedList<>());
+        List<ImmutableProp> list = dependencies;
+        if (list == null) {
+            return getDependenciesImpl(new LinkedList<>());
+        }
+        return list;
     }
 
     private List<ImmutableProp> getDependenciesImpl(LinkedList<ImmutableProp> stack) {
@@ -738,6 +772,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         if (list == null) {
             list = new ArrayList<>();
             Formula formula = getAnnotation(Formula.class);
+            IdView idView = getAnnotation(IdView.class);
             if (formula != null) {
                 String[] arr = formula.dependencies();
                 if (arr.length != 0) {
@@ -799,8 +834,106 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
                         stack.pop();
                     }
                 }
+            } else if (idView != null) {
+                String base = idView.value();
+                if (base.isEmpty()) {
+                    if (!isScalarList() &&
+                            name.length() > 2 &&
+                            name.endsWith("Id") &&
+                            !Character.isUpperCase(name.charAt(name.length() - 3))) {
+                        base = name.substring(0, name.length() - 2);
+                    } else {
+                        throw new ModelException(
+                                "Illegal property \"" +
+                                        this +
+                                        "\", it is decorated by \"" +
+                                        IdView.class.getName() +
+                                        "\" without argument, but the base property name cannot be determined automatically, " +
+                                        "please specify the argument of that annotation"
+                        );
+                    }
+                }
+                if (base.equals(name)) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it is decorated by \"" +
+                                    IdView.class.getName() +
+                                    "\", the argument of that annotation can not be equal to the current property name \"" +
+                                    name +
+                                    "\""
+                    );
+                }
+                ImmutableProp baseProp = declaringType.getProps().get(base);
+                if (baseProp == null) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it is decorated by \"" +
+                                    IdView.class.getName() +
+                                    "\", the argument of that annotation is \"" +
+                                    base +
+                                    "\" but there is no such property in the declaring type"
+                    );
+                }
+                if (isScalarList() && !baseProp.isReferenceList(TargetLevel.PERSISTENT)) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\" is a scalar list property, it is decorated by \"" +
+                                    IdView.class.getName() +
+                                    "\" whose argument of that annotation is \"" +
+                                    base +
+                                    "\" but the base property \"" +
+                                    baseProp +
+                                    "\" is not a persistent reference list property"
+                    );
+                } else if (!isScalarList() && !baseProp.isReference(TargetLevel.PERSISTENT)) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\" is a scalar property, it is decorated by \"" +
+                                    IdView.class.getName() +
+                                    "\" whose argument of that annotation is \"" +
+                                    base +
+                                    "\" but the base property \"" +
+                                    baseProp +
+                                    "\" is not a persistent reference property"
+                    );
+                }
+                if (!Classes.matches(baseProp.getTargetType().getIdProp().getElementClass(), getElementClass())) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\" is a scalar property, it is decorated by \"" +
+                                    IdView.class.getName() +
+                                    "\" whose argument of that annotation is \"" +
+                                    base +
+                                    "\", the base property \"" +
+                                    baseProp +
+                                    "\" return the entity type whose id is \"" +
+                                    baseProp.getTargetType().getIdProp().getElementClass() +
+                                    "\" but the element type of the current property is \"" +
+                                    getElementClass() +
+                                    "\""
+                    );
+                }
+                if (isNullable() != baseProp.isNullable()) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\" is a scalar property, it is decorated by \"" +
+                                    IdView.class.getName() +
+                                    "\" whose argument of that annotation is \"" +
+                                    base +
+                                    "\", but the nullity of current property does not equal to the nullity of the base property \"" +
+                                    baseProp +
+                                    "\""
+                    );
+                }
+                list.add(baseProp);
             }
-            dependencies = list;
+            dependencies = Collections.unmodifiableList(list);
         }
         return list;
     }
