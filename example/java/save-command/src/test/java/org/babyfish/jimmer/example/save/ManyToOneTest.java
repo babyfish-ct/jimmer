@@ -232,8 +232,10 @@ public class ManyToOneTest extends AbstractMutationTest {
         Assertions.assertEquals(1, result.getAffectedRowCount(Book.class));
     }
 
+    // This exception will never be raised if you use spring-data-jimmer
+    // because this switch has already been turned on by it.
     @Test
-    public void testAssociationByNonExistingParentAndNotAllowedToCreate() {
+    public void testAttachParentFailed() {
 
         jdbc(
                 "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
@@ -276,7 +278,7 @@ public class ManyToOneTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testLongAssociationByNonExistingParentAndAllowToCreate() {
+    public void testAttachParent() {
 
         jdbc(
                 "insert into book(id, name, edition, price) values(?, ?, ?, ?)",

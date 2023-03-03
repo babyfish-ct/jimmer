@@ -157,7 +157,7 @@ public class ManyToManyTest extends AbstractMutationTest {
     }
 
     @Test
-    public void deleteMiddleTable() {
+    public void testDeleteMiddleTable() {
         jdbc(
                 "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
                 10L, "SQL in Action", 1, new BigDecimal(45)
@@ -217,8 +217,10 @@ public class ManyToManyTest extends AbstractMutationTest {
         Assertions.assertEquals(1, result.getAffectedRowCount(BookProps.AUTHORS));
     }
 
+    // This exception will never be raised if you use spring-data-jimmer
+    // because this switch has already been turned on by it.
     @Test
-    public void testInsertAuthorFailed() {
+    public void testAttachAuthorFailed() {
 
         jdbc(
                 "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
@@ -277,7 +279,7 @@ public class ManyToManyTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testInsertNewAuthorByLongAssociation() {
+    public void testAttachAuthor() {
 
         jdbc(
                 "insert into book(id, name, edition, price) values(?, ?, ?, ?)",

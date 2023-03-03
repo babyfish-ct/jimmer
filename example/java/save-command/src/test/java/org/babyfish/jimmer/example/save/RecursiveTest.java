@@ -231,6 +231,8 @@ public class RecursiveTest extends AbstractMutationTest {
                         "root"
                 ),
 
+                // Aggregate-root exists, but not changed, do nothing
+
                 // Query `child-1` by key
                 new ExecutedStatement(
                         "select tb_1_.node_id, tb_1_.NAME, tb_1_.parent_id " +
@@ -238,6 +240,8 @@ public class RecursiveTest extends AbstractMutationTest {
                                 "where tb_1_.NAME = ? and tb_1_.parent_id = ?",
                         "child-1", 1L
                 ),
+
+                // `child-1` exists, but not changed, do nothing
 
                 // Query `child-1-1` by key
                 new ExecutedStatement(
@@ -247,11 +251,15 @@ public class RecursiveTest extends AbstractMutationTest {
                         "child-1-1", 2L
                 ),
 
+                // `child-1-1` exists, but not changed, do nothing
+
                 // Query child nodes of `child-1-1`
                 new ExecutedStatement(
                         "select node_id from TREE_NODE where parent_id = ?",
                         3L
                 ),
+
+                // `child-1-1` does not have child nodes, do nothing
 
                 // Query child nodes of `child-1` except `child-1-1`
                 new ExecutedStatement(
@@ -266,6 +274,8 @@ public class RecursiveTest extends AbstractMutationTest {
                         "select node_id from TREE_NODE where parent_id in (?)",
                         4L
                 ),
+
+                // `child-1-2` does not have child nodes, do nothing
 
                 // Delete `child-1-2`
                 new ExecutedStatement(
@@ -292,6 +302,8 @@ public class RecursiveTest extends AbstractMutationTest {
                         "select node_id from TREE_NODE where parent_id in (?, ?)",
                         6L, 7L
                 ),
+
+                // `child-2-1` and `child-2-2` does not have child nodes, do nothing
 
                 // Delete `child-2-1` and `child-2-2`
                 new ExecutedStatement(

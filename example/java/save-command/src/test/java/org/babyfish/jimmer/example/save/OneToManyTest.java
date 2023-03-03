@@ -191,6 +191,8 @@ public class OneToManyTest extends AbstractMutationTest {
         Assertions.assertEquals(1, result.getTotalAffectedRowCount());
     }
 
+    // This exception will never be raised if you use spring-data-jimmer
+    // because this switch has already been turned on by it.
     @Test
     public void testAttachChildFailed() {
 
@@ -477,6 +479,8 @@ public class OneToManyTest extends AbstractMutationTest {
                         "select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_ where tb_1_.NAME = ?",
                         "MANNING"
                 ),
+
+                // Aggregate-root exists, but not changed, do nothing
 
                 // Update foreign key of child objects.
                 new ExecutedStatement(
