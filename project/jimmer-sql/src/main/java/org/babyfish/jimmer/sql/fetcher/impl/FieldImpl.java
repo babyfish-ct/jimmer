@@ -30,6 +30,8 @@ class FieldImpl implements Field {
 
     private final boolean isSimpleField;
 
+    private final boolean implicit;
+
     FieldImpl(
             ImmutableType entityType,
             ImmutableProp prop,
@@ -38,7 +40,8 @@ class FieldImpl implements Field {
             int limit,
             int offset,
             RecursionStrategy<?> recursionStrategy,
-            FetcherImpl<?> childFetcher
+            FetcherImpl<?> childFetcher,
+            boolean implicit
     ) {
         this.entityType = entityType;
         this.prop = prop;
@@ -49,6 +52,7 @@ class FieldImpl implements Field {
         this.recursionStrategy = recursionStrategy;
         this.childFetcher = childFetcher;
         this.isSimpleField = determineIsSimpleField();
+        this.implicit = implicit;
     }
 
     @Override
@@ -94,6 +98,11 @@ class FieldImpl implements Field {
     @Override
     public boolean isSimpleField() {
         return isSimpleField;
+    }
+
+    @Override
+    public boolean isImplicit() {
+        return implicit;
     }
 
     @Override

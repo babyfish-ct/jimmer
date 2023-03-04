@@ -233,7 +233,7 @@ class ManyToOneTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testAssociationByNonExistingParentAndNotAllowedToCreate() {
+    fun testAttachParentFailed() {
         jdbc(
             "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
             200L, "SQL in Action", 1, BigDecimal(45)
@@ -276,7 +276,7 @@ class ManyToOneTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testLongAssociationByNonExistingParentAndAllowToCreate() {
+    fun testAttachParent() {
 
         jdbc(
             "insert into book(id, name, edition, price) values(?, ?, ?, ?)",

@@ -228,7 +228,7 @@ class ManyToManyTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testInsertAuthorFailed() {
+    fun testAttachAuthorFailed() {
 
         jdbc(
             "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
@@ -286,7 +286,7 @@ class ManyToManyTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testInsertNewAuthorByLongAssociation() {
+    fun testAttachAuthor() {
 
         jdbc(
             "insert into book(id, name, edition, price) values(?, ?, ?, ?)",

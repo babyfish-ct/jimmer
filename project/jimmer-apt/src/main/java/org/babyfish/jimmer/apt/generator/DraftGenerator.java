@@ -70,7 +70,6 @@ public class DraftGenerator {
             addGetter(prop, false);
             addGetter(prop, true);
             addSetter(prop);
-            addUsing(prop);
             addUtilMethod(prop, false);
             addUtilMethod(prop, true);
         }
@@ -122,18 +121,6 @@ public class DraftGenerator {
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                 .addAnnotation(OldChain.class)
                 .addParameter(TypeName.get(prop.getReturnType()), prop.getName())
-                .returns(type.getDraftClassName());
-        typeBuilder.addMethod(builder.build());
-    }
-
-    private void addUsing(ImmutableProp prop) {
-        if (!prop.isJavaFormula()) {
-            return;
-        }
-        MethodSpec.Builder builder = MethodSpec
-                .methodBuilder(prop.getUsingName())
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .addAnnotation(OldChain.class)
                 .returns(type.getDraftClassName());
         typeBuilder.addMethod(builder.build());
     }

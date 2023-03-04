@@ -40,6 +40,8 @@ public class ImplGenerator {
         addClone();
         addIsLoaded(int.class);
         addIsLoaded(String.class);
+        addIsVisible(int.class);
+        addIsVisible(String.class);
         addHashCode(false);
         addHashCode(true);
         addParameterizedHashCode();
@@ -51,7 +53,16 @@ public class ImplGenerator {
 
     private void addFields() {
         for (ImmutableProp prop : type.getProps().values()) {
-            if (!prop.isJavaFormula() && prop.getIdViewBaseProp() == null) {
+            if (prop.isVisibilityControllable()) {
+                FieldSpec.Builder stateBuilder = FieldSpec.builder(
+                        boolean.class,
+                        prop.getVisibleName()
+                ).initializer(
+                        Boolean.toString(prop.isValueRequired())
+                );
+                typeBuilder.addField(stateBuilder.build());
+            }
+            if (prop.isValueRequired()) {
                 FieldSpec.Builder valueBuilder = FieldSpec.builder(
                         prop.isList() ?
                                 ParameterizedTypeName.get(
@@ -185,10 +196,15 @@ public class ImplGenerator {
                     );
                 }
             } else if (prop.isJavaFormula()) {
-                builder.addCode("return $L$>", prop.getLoadedStateName());
-                for (String dependency : prop.getDependencies()) {
-                    builder.addCode(" && \n");
-                    builder.addCode("__isLoaded($S)", dependency);
+                boolean first = true;
+                builder.addCode("return $>");
+                for (ImmutableProp dependency : prop.getDependencies()) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        builder.addCode(" && \n");
+                    }
+                    builder.addCode("__isLoaded($L)", dependency.getId());
                 }
                 builder.addStatement("$<");
             } else if (prop.isLoadedStateRequired()) {
@@ -208,6 +224,31 @@ public class ImplGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
+    private void addIsVisible(Class<?> argType) {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("__isVisible")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addParameter(argType, "prop")
+                .returns(boolean.class);
+        if (type.getProps().values().stream().anyMatch(ImmutableProp::isVisibilityControllable)) {
+            builder.beginControlFlow("switch (prop)");
+            for (ImmutableProp prop : type.getPropsOrderById()) {
+                Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
+                if (prop.isVisibilityControllable()) {
+                    builder
+                            .addCode("case $L: ", arg)
+                            .addStatement("return $L", prop.getVisibleName());
+                }
+            }
+            builder.addStatement("default: return true");
+            builder.endControlFlow();
+        } else {
+            builder.addStatement("return true");
+        }
+        typeBuilder.addMethod(builder.build());
+    }
+
     private void addHashCode(boolean shallow) {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(shallow ? "__shallowHashCode" : "hashCode")
@@ -221,9 +262,11 @@ public class ImplGenerator {
             if (prop.getIdViewBaseProp() != null) {
                 continue;
             }
-            if (prop.isJavaFormula()) {
-                builder.addStatement("hash = 31 * hash + $T.hashCode($L)", Boolean.class, prop.getLoadedStateName());
-                continue;
+            if (prop.isVisibilityControllable()) {
+                builder.addStatement("hash = 31 * hash + $T.hashCode($L)", Boolean.class, prop.getVisibleName());
+                if (!prop.isValueRequired()) {
+                    continue;
+                }
             }
             Class<?> boxType = prop.getBoxType();
             if (boxType != null) {
@@ -284,19 +327,18 @@ public class ImplGenerator {
                 .endControlFlow()
                 .addStatement("$T other = ($T)obj", type.getImplementorClassName(), type.getImplementorClassName());
         for (ImmutableProp prop : type.getProps().values()) {
-            if (prop.getIdViewBaseProp() != null) {
-                continue;
-            }
-            if (prop.isJavaFormula()) {
+            if (prop.isVisibilityControllable()) {
                 builder
                         .beginControlFlow(
-                                "if ($L != other.__isLoaded($L))",
-                                prop.getLoadedStateName(),
+                                "if ($L != other.__isVisible($L))",
+                                prop.getVisibleName(),
                                 prop.getId()
                         )
                         .addStatement("return false")
                         .endControlFlow();
-                continue;
+                if (!prop.isValueRequired()) {
+                    continue;
+                }
             }
             if (prop.isLoadedStateRequired()) {
                 builder.addStatement("boolean __$L = $L", prop.getLoadedStateName(), prop.getLoadedStateName());

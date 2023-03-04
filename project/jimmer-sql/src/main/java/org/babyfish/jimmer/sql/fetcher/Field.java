@@ -34,4 +34,6 @@ public interface Field {
      * @return
      */
     boolean isSimpleField();
+
+    boolean isImplicit();
 }

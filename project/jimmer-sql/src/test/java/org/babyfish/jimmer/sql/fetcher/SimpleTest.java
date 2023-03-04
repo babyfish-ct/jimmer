@@ -280,8 +280,6 @@ public class SimpleTest extends AbstractQueryTest {
                             "[" +
                                     "--->{" +
                                     "--->--->\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
-                                    "--->--->\"firstName\":\"Eve\"," +
-                                    "--->--->\"lastName\":\"Procello\"," +
                                     "--->--->\"fullName\":\"Eve Procello\"" +
                                     "--->}" +
                                     "]"
@@ -312,6 +310,44 @@ public class SimpleTest extends AbstractQueryTest {
                                     "--->{" +
                                     "--->--->\"id\":\"fd6bb6cf-336d-416c-8005-1ae11a6694b5\"," +
                                     "--->--->\"fullName2\":\"Eve Procello\"" +
+                                    "--->}" +
+                                    "]"
+                    );
+                }
+        );
+    }
+
+    @Test
+    public void testIdView() {
+        BookTable table = BookTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(graphQLInActionId3))
+                        .select(
+                                table.fetch(
+                                        BookFetcher.$
+                                                .allScalarFields()
+                                                .storeId()
+                                                .authorIds()
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID from BOOK as tb_1_ where tb_1_.ID = ?"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_1_.AUTHOR_ID from BOOK_AUTHOR_MAPPING as tb_1_ where tb_1_.BOOK_ID = ?"
+                    );
+                    ctx.rows(
+                            "[" +
+                                    "--->{" +
+                                    "--->--->\"id\":\"780bdf07-05af-48bf-9be9-f8c65236fecc\"," +
+                                    "--->--->\"name\":\"GraphQL in Action\"," +
+                                    "--->--->\"edition\":3," +
+                                    "--->--->\"price\":80.00," +
+                                    "--->--->\"storeId\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"," +
+                                    "--->--->\"authorIds\":[\"eb4963fd-5223-43e8-b06b-81e6172ee7ae\"]" +
                                     "--->}" +
                                     "]"
                     );

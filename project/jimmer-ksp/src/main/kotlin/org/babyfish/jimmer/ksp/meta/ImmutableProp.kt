@@ -11,7 +11,6 @@ import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
 import org.babyfish.jimmer.ksp.generator.parseValidationMessages
-import org.babyfish.jimmer.meta.ModelException
 import org.babyfish.jimmer.meta.impl.PropDescriptor
 import org.babyfish.jimmer.sql.*
 import kotlin.reflect.KClass
@@ -96,7 +95,7 @@ class ImmutableProp(
             resolvedType
         }.declaration.also {
             if (it.annotation(MappedSuperclass::class) !== null) {
-                throw ModelException(
+                throw MetaException(
                     "Illegal property \"$this\", its target type \"$it\" is illegal, it cannot be type decorated by @MappedSuperclass"
                 )
             }
@@ -262,4 +261,124 @@ class ImmutableProp(
 
     override fun toString(): String =
         "${declaringType}.${propDeclaration.name}"
+
+    private var _idViewBaseProp: ImmutableProp? = null
+
+    internal fun resolve(ctx: Context, step: Int): Boolean =
+        when (step) {
+            0 -> {
+                resolveTargetType(ctx)
+                true
+            }
+            1 -> {
+                resolveIdViewBaseProp()
+                true
+            }
+            else -> false
+        }
+
+    private fun resolveTargetType(ctx: Context) {
+        if (isAssociation) {
+            targetType
+        }
+    }
+
+    private fun resolveIdViewBaseProp() {
+        val idView = annotation(IdView::class) ?: return
+        var base: String = idView.get<String>("value") ?: ""
+        if (base.isEmpty()) {
+            if (!isList && name.length > 2 && !name[name.length - 3].isUpperCase() && name.endsWith("Id")) {
+                base = name.substring(0, name.length - 2)
+            } else {
+                throw MetaException(
+                    "Illegal property \"" +
+                        this +
+                        "\", it is decorated by \"@" +
+                        IdView::class.java.name +
+                        "\", the argument of that annotation is not specified by " +
+                        "the base property name cannot be determined automatically, " +
+                        "please specify the argument of that annotation"
+                )
+            }
+        }
+        if ((base == name)) {
+            throw MetaException(
+                "Illegal property \"" +
+                    this +
+                    "\", it is decorated by \"@" +
+                    IdView::class.java.name +
+                    "\", the argument of that annotation cannot be equal to the current property name\"" +
+                    name +
+                    "\""
+            )
+        }
+        val baseProp = declaringType.properties[base]
+            ?: throw MetaException(
+                "Illegal property \"" +
+                    this +
+                    "\", it is decorated by \"@" +
+                    IdView::class.java.name +
+                    "\" but there is no base property \"" +
+                    base +
+                    "\" in the declaring type"
+            )
+        if (!baseProp.isAssociation(true) || baseProp.isTransient) {
+            throw MetaException(
+                "Illegal property \"" +
+                    this +
+                    "\", it is decorated by \"@" +
+                    IdView::class.java.name +
+                    "\" but the base property \"" +
+                    baseProp +
+                    "\" is not persistence association"
+            )
+        }
+        if (isList != baseProp.isList) {
+            throw MetaException(
+                "Illegal property \"" +
+                    this +
+                    "\", it " +
+                    (if (isList) "is" else "is not") +
+                    " list and decorated by \"@" +
+                    IdView::class.java.name +
+                    "\" but the base property \"" +
+                    baseProp +
+                    "\" " +
+                    (if (baseProp.isList) "is" else "is not") +
+                    " list"
+            )
+        }
+        if (isNullable != baseProp.isNullable) {
+            throw MetaException(
+                "Illegal property \"" +
+                    this +
+                    "\", it " +
+                    (if (isNullable) "is" else "is not") +
+                    " nullable and decorated by \"@" +
+                    IdView::class.java.name +
+                    "\" but the base property \"" +
+                    baseProp +
+                    "\" " +
+                    (if (baseProp.isList) "is" else "is not") +
+                    " nullable"
+            )
+        }
+        val targetIdTypeName = baseProp.targetType!!.idProp!!.targetTypeName(
+            overrideNullable = baseProp.isNullable
+        )
+        if (targetTypeName() != targetIdTypeName) {
+            throw MetaException(
+                "Illegal property \"" +
+                    this +
+                    "\", it is decorated by \"@" +
+                    IdView::class.java.name +
+                    "\", the base property \"" +
+                    baseProp +
+                    "\" returns entity type whose id is \"" +
+                    targetIdTypeName +
+                    "\", but the current property does not return that type"
+            )
+        }
+        _idViewBaseProp = baseProp
+    }
 }

@@ -39,39 +39,17 @@ public class ImmutableProcessor extends AbstractProcessor {
 
     private boolean processed;
 
-    private Set<String> dtoDirs;
-
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
         messager = processingEnv.getMessager();
         String includes = processingEnv.getOptions().get("jimmer.source.includes");
         String excludes = processingEnv.getOptions().get("jimmer.source.excludes");
-        String dtoDirs = processingEnv.getOptions().get("jimmer.dtoDirs");
         if (includes != null && !includes.isEmpty()) {
             this.includes = includes.trim().split("\\s*,\\s*");
         }
         if (excludes != null && !excludes.isEmpty()) {
             this.excludes = excludes.trim().split("\\s*,\\s*");
-        }
-        if (dtoDirs != null && !dtoDirs.isEmpty()) {
-            Set<String> dirs = new LinkedHashSet<>();
-            for (String path : dtoDirs.trim().split("\\*[,:;]\\s*")) {
-                if (path.startsWith("/")) {
-                    path = path.substring(1);
-                }
-                if (path.endsWith("/")) {
-                    path = path.substring(0, path.length() - 1);
-                }
-                if (!path.isEmpty()) {
-                    dirs.add(path);
-                }
-            }
-            this.dtoDirs = dirs;
-        } else {
-            Set<String> dirs = new LinkedHashSet<>();
-            dirs.add("src/main/dto");
-            this.dtoDirs = dirs;
         }
         typeUtils = new TypeUtils(
                 processingEnv.getElementUtils(),
@@ -234,26 +212,6 @@ public class ImmutableProcessor extends AbstractProcessor {
     private void generateErrorType(List<TypeElement> typeElements) {
         for (TypeElement typeElement : typeElements) {
             new ErrorGenerator(typeElement, filer).generate();
-        }
-    }
-
-    private void collectActualDtoDir(File baseFile, List<String> outputFiles) {
-        for (String dtoDir : dtoDirs) {
-            File subFile = baseFile;
-            for (String part : dtoDir.split("/")) {
-                subFile = new File(subFile, part);
-                if (!subFile.isDirectory()) {
-                    subFile = null;
-                    break;
-                }
-            }
-            if (subFile != null) {
-                String path = subFile.getAbsolutePath();
-                if (path.endsWith("/")) {
-                    path = path.substring(0, path.length() - 1);
-                }
-                outputFiles.add(path);
-            }
         }
     }
 

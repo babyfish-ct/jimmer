@@ -149,7 +149,8 @@ public class FetcherImpl<E> implements Fetcher<E> {
                                 fetcher.limit,
                                 fetcher.offset,
                                 fetcher.recursionStrategy,
-                                fetcher.childFetcher
+                                fetcher.childFetcher,
+                                false
                         );
                 if (!map.containsKey(name)) {
                     map.putIfAbsent(name, field);
@@ -157,19 +158,19 @@ public class FetcherImpl<E> implements Fetcher<E> {
                 }
             }
             Map<String, Field> orderedMap = new LinkedHashMap<>();
-            LinkedList<Field> nonAbstractFormulaFields = new LinkedList<>();
+            LinkedList<Field> extensionFields = new LinkedList<>();
             for (String name : orderedNames) {
                 Field field = map.get(name);
                 if (field != null) {
                     orderedMap.put(name, field);
                     ImmutableProp prop = field.getProp();
-                    if (prop.isFormula() && prop.getFormulaTemplate() == null) {
-                        nonAbstractFormulaFields.add(field);
+                    if (!prop.getDependencies().isEmpty()) {
+                        extensionFields.add(field);
                     }
                 }
             }
-            while (!nonAbstractFormulaFields.isEmpty()) {
-                Field field = nonAbstractFormulaFields.remove(0);
+            while (!extensionFields.isEmpty()) {
+                Field field = extensionFields.remove(0);
                 for (ImmutableProp dependencyProp : field.getProp().getDependencies()) {
                     if (!orderedMap.containsKey(dependencyProp.getName())) {
                         Field dependencyField = new FieldImpl(
@@ -180,11 +181,12 @@ public class FetcherImpl<E> implements Fetcher<E> {
                                 Integer.MAX_VALUE,
                                 0,
                                 null,
-                                null
+                                null,
+                                true
                         );
                         orderedMap.put(dependencyProp.getName(), dependencyField);
                         if (dependencyProp.isFormula() && dependencyProp.getFormulaTemplate() == null) {
-                            nonAbstractFormulaFields.add(dependencyField);
+                            extensionFields.add(dependencyField);
                         }
                     }
                 }

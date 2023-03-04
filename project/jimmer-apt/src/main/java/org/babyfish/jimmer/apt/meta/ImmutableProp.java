@@ -6,7 +6,6 @@ import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.TypeUtils;
-import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.sql.*;
 
@@ -31,8 +30,6 @@ public class ImmutableProp {
 
     private final String setterName;
 
-    private final String usingName;
-
     private final String applierName;
 
     private final String adderByName;
@@ -40,6 +37,8 @@ public class ImmutableProp {
     private final boolean beanStyle;
 
     private final String loadedStateName;
+
+    private final String visibleName;
 
     private final TypeMirror returnType;
 
@@ -59,8 +58,6 @@ public class ImmutableProp {
 
     private final boolean isJavaFormula;
 
-    private final Set<String> dependencies;
-
     private final boolean isList;
 
     private final boolean isAssociation;
@@ -75,7 +72,11 @@ public class ImmutableProp {
 
     private ImmutableType targetType;
 
+    private Set<ImmutableProp> dependencies;
+
     private ImmutableProp idViewBaseProp;
+
+    private boolean isVisibilityControllable;
 
     public ImmutableProp(
             TypeUtils typeUtils,
@@ -113,7 +114,6 @@ public class ImmutableProp {
                     getterName.substring(2, 3).toLowerCase() +
                     getterName.substring(3);
             setterName = "set" + getterName.substring(2);
-            usingName = "use" + getterName.substring(2);
             applierName = "apply" + getterName.substring(2);
             adderByName = "addInto" + getterName.substring(2);
             beanStyle = true;
@@ -124,7 +124,6 @@ public class ImmutableProp {
                     getterName.substring(3, 4).toLowerCase() +
                             getterName.substring(4);
             setterName = "set" + getterName.substring(3);
-            usingName = "use" + getterName.substring(3);
             applierName = "apply" + getterName.substring(3);
             adderByName = "addInto" + getterName.substring(3);
             beanStyle = true;
@@ -134,13 +133,13 @@ public class ImmutableProp {
                     getterName.substring(0, 1).toUpperCase() +
                     getterName.substring(1);
             setterName = "set" + suffix;
-            usingName = "use" +suffix;
             applierName = "apply" + suffix;
             adderByName = "addInto" + suffix;
             beanStyle = false;
         }
 
         loadedStateName = name + "Loaded";
+        visibleName = name + "Visible";
 
         if (typeUtils.isCollection(returnType)) {
             if (!typeUtils.isListStrictly(returnType)) {
@@ -211,9 +210,6 @@ public class ImmutableProp {
 
         Formula formula = executableElement.getAnnotation(Formula.class);
         isJavaFormula = formula != null && formula.sql().isEmpty();
-        dependencies = formula != null ?
-                Collections.unmodifiableSet(new LinkedHashSet<>(Arrays.asList(formula.dependencies()))) :
-                Collections.emptySet();
 
         isAssociation = typeUtils.isImmutable(elementType);
         isEntityAssociation = typeUtils.isEntity(elementType);
@@ -308,10 +304,6 @@ public class ImmutableProp {
         return setterName;
     }
 
-    public String getUsingName() {
-        return usingName;
-    }
-
     public String getApplierName() {
         return applierName;
     }
@@ -324,6 +316,10 @@ public class ImmutableProp {
 
     public String getLoadedStateName() {
         return getLoadedStateName(false);
+    }
+
+    public String getVisibleName() {
+        return visibleName;
     }
 
     public String getLoadedStateName(boolean force) {
@@ -372,10 +368,6 @@ public class ImmutableProp {
         return isJavaFormula;
     }
 
-    public Set<String> getDependencies() {
-        return dependencies;
-    }
-
     public boolean isList() {
         return isList;
     }
@@ -386,6 +378,10 @@ public class ImmutableProp {
 
     public boolean isNullable() {
         return isNullable;
+    }
+
+    public boolean isValueRequired() {
+        return idViewBaseProp == null && !isJavaFormula;
     }
 
     public boolean isLoadedStateRequired() {
@@ -419,8 +415,16 @@ public class ImmutableProp {
         return targetType;
     }
 
+    public Set<ImmutableProp> getDependencies() {
+        return dependencies;
+    }
+
     public ImmutableProp getIdViewBaseProp() {
         return idViewBaseProp;
+    }
+
+    public boolean isVisibilityControllable() {
+        return isVisibilityControllable;
     }
 
     boolean resolve(TypeUtils typeUtils, int step) {
@@ -429,7 +433,10 @@ public class ImmutableProp {
                 resolveTargetType(typeUtils);
                 return true;
             case 1:
-                resolveIdViewBaseProp(typeUtils);
+                resolveFormulaDependencies();
+                return true;
+            case 2:
+                resolveIdViewBaseProp();
                 return true;
             default:
                 return false;
@@ -442,7 +449,35 @@ public class ImmutableProp {
         }
     }
 
-    private void resolveIdViewBaseProp(TypeUtils typeUtils) {
+    private void resolveFormulaDependencies() {
+        Formula formula = getAnnotation(Formula.class);
+        if (formula == null || formula.dependencies().length == 0) {
+            this.dependencies = Collections.emptySet();
+        } else {
+            Map<String, ImmutableProp> propMap = declaringType.getProps();
+            Set<ImmutableProp> props = new LinkedHashSet<>();
+            for (String dependency : formula.dependencies()) {
+                ImmutableProp prop = propMap.get(dependency);
+                if (prop == null) {
+                    throw new MetaException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it is decorated by \"@" +
+                                    Formula.class.getName() +
+                                    "\" but the dependency property \"" +
+                                    dependency +
+                                    "\" does not eixst"
+                    );
+                }
+                props.add(prop);
+                prop.isVisibilityControllable = true;
+            }
+            this.isVisibilityControllable = true;
+            this.dependencies = Collections.unmodifiableSet(props);
+        }
+    }
+
+    private void resolveIdViewBaseProp() {
         IdView idView = getAnnotation(IdView.class);
         if (idView == null) {
             return;
@@ -452,7 +487,7 @@ public class ImmutableProp {
             if (!isList && name.length() > 2 && !Character.isUpperCase(name.charAt(name.length() - 3)) && name.endsWith("Id")) {
                 base = name.substring(0, name.length() - 2);
             } else {
-                throw new ModelException(
+                throw new MetaException(
                         "Illegal property \"" +
                                 this +
                                 "\", it is decorated by \"@" +
@@ -464,7 +499,7 @@ public class ImmutableProp {
             }
         }
         if (base.equals(name)) {
-            throw new ModelException(
+            throw new MetaException(
                     "Illegal property \"" +
                             this +
                             "\", it is decorated by \"@" +
@@ -476,7 +511,7 @@ public class ImmutableProp {
         }
         ImmutableProp baseProp = declaringType.getProps().get(base);
         if (baseProp == null) {
-            throw new ModelException(
+            throw new MetaException(
                     "Illegal property \"" +
                             this +
                             "\", it is decorated by \"@" +
@@ -487,7 +522,7 @@ public class ImmutableProp {
             );
         }
         if (!baseProp.isAssociation(true) || baseProp.isTransient) {
-            throw new ModelException(
+            throw new MetaException(
                     "Illegal property \"" +
                             this +
                             "\", it is decorated by \"@" +
@@ -498,7 +533,7 @@ public class ImmutableProp {
             );
         }
         if (isList != baseProp.isList) {
-            throw new ModelException(
+            throw new MetaException(
                     "Illegal property \"" +
                             this +
                             "\", it " +
@@ -513,7 +548,7 @@ public class ImmutableProp {
             );
         }
         if (isNullable != baseProp.isNullable) {
-            throw new ModelException(
+            throw new MetaException(
                     "Illegal property \"" +
                             this +
                             "\", it " +
@@ -528,7 +563,7 @@ public class ImmutableProp {
             );
         }
         if (!elementTypeName.box().equals(baseProp.targetType.getIdProp().getElementTypeName().box())) {
-            throw new ModelException(
+            throw new MetaException(
                     "Illegal property \"" +
                             this +
                             "\", it is decorated by \"@" +
@@ -540,6 +575,8 @@ public class ImmutableProp {
                             "\", but the current property does not return that type"
             );
         }
+        baseProp.isVisibilityControllable = true;
+        isVisibilityControllable = true;
         idViewBaseProp = baseProp;
     }
 

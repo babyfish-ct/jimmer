@@ -8,6 +8,10 @@ public interface ImmutableSpi {
 
     boolean __isLoaded(String prop);
 
+    boolean __isVisible(int prop);
+
+    boolean __isVisible(String prop);
+
     Object __get(int prop);
 
     Object __get(String prop);

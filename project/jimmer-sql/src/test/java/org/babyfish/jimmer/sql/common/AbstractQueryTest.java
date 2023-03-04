@@ -193,7 +193,7 @@ public class AbstractQueryTest extends AbstractTest {
                 }
             }
             for (ImmutableProp prop : spi.__type().getProps().values()) {
-                if (!prop.isIdView()) {
+                if (!prop.isIdView() && prop.getDependencies().isEmpty()) {
                     Assertions.assertEquals(
                             propNameList.contains(prop.getName()),
                             spi.__isLoaded(prop.getId()),

@@ -110,7 +110,17 @@ class ProducerGenerator(
                     prop.name,
                     prop.targetTypeName(overrideNullable = false)
                 )
-            prop.primaryAnnotationType !== null && prop.primaryAnnotationType != Formula::class.java && prop.primaryAnnotationType != Transient::class.java ->
+            prop.primaryAnnotationType == IdView::class.java ->
+                add(
+                    ".add(%L, %S, %T.%L, %T::class.java, %L)",
+                    prop.id,
+                    prop.name,
+                    IMMUTABLE_PROP_CATEGORY_CLASS_NAME,
+                    if (prop.isList) "SCALAR_LIST" else "SCALAR",
+                    prop.targetTypeName(overrideNullable = false),
+                    prop.isNullable
+                )
+            prop.primaryAnnotationType != null && prop.primaryAnnotationType != Formula::class.java && prop.primaryAnnotationType != Transient::class.java ->
                 add(
                     ".add(%L, %S, %T::class.java, %T::class.java, %L)\n",
                     prop.id,

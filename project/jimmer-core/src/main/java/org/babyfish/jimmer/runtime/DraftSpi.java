@@ -12,9 +12,9 @@ public interface DraftSpi extends Draft, ImmutableSpi {
 
     void __set(String prop, Object value);
 
-    void __use(int prop);
+    void __show(int prop, boolean show);
 
-    void __use(String prop);
+    void __show(String prop, boolean show);
 
     DraftContext __draftContext();
 

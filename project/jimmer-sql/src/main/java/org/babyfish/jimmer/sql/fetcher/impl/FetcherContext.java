@@ -1,10 +1,12 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 
 import java.sql.Connection;
 import java.util.Collection;
@@ -52,11 +54,16 @@ class FetcherContext {
     @SuppressWarnings("unchecked")
     public void add(Fetcher<?> fetcher, DraftSpi draft) {
         for (Field field : fetcher.getFieldMap().values()) {
-            if (field.getProp().isFormula() && field.getProp().getFormulaTemplate() == null) {
-                draft.__use(field.getProp().getId());
-                return;
+            ImmutableProp prop = field.getProp();
+            if (!prop.getDependencies().isEmpty()) {
+                draft.__show(field.getProp().getId(), true);
+                continue;
             }
-            if (!field.isSimpleField() || sqlClient.getFilters().getFilter(field.getProp().getTargetType()) != null) {
+            if (field.isImplicit()) {
+                draft.__show(field.getProp().getId(), false);
+            }
+            if (!field.isSimpleField() ||
+                    sqlClient.getFilters().getFilter(field.getProp().getTargetType()) != null) {
                 RecursionStrategy<?> recursionStrategy = field.getRecursionStrategy();
                 if (recursionStrategy != null &&
                         !((RecursionStrategy<Object>)recursionStrategy).isRecursive(

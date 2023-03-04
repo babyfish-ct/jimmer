@@ -40,23 +40,6 @@ class ImmutableProcessor(
                 it.trim().split("\\s*[,;]\\s*").toTypedArray()
             }
 
-    private val dtoDirs: Set<String> =
-        environment.options["jimmer.dtoDirs"]
-            ?.trim()
-            ?.takeIf { it.isNotEmpty() }
-            ?.let { text ->
-                text.split("\\s*[,:;]\\s*")
-                    .map {
-                        when {
-                            it.startsWith("/") -> it.substring(1)
-                            it.endsWith("/") -> it.substring(0, it.length - 1)
-                            else -> it
-                        }
-                    }
-                    .toSet()
-            }
-            ?: setOf("src/main/dto")
-
     override fun process(resolver: Resolver): List<KSAnnotated> {
         if (!processed.compareAndSet(false, true)) {
             return emptyList()
@@ -102,6 +85,19 @@ class ImmutableProcessor(
                     }
                 }
             }
+        }
+        var step = 0
+        while (true) {
+            var hasNext = false
+            for (declarations in modelMap.values) {
+                for (declaration in declarations) {
+                    hasNext = hasNext or ctx.typeOf(declaration).resolve(ctx, step)
+                }
+            }
+            if (!hasNext) {
+                break
+            }
+            step++
         }
         return modelMap
     }
@@ -192,26 +188,6 @@ class ImmutableProcessor(
             return false
         }
         return true
-    }
-
-    private fun collectActualDtoDir(baseFile: File, outputFiles: MutableList<String>) {
-        for (dtoDir in dtoDirs) {
-            var subFile: File? = baseFile
-            for (part in dtoDir.split("/").toTypedArray()) {
-                subFile = File(subFile, part)
-                if (!subFile.isDirectory) {
-                    subFile = null
-                    break
-                }
-            }
-            if (subFile != null) {
-                var path = subFile.absolutePath
-                if (path.endsWith("/")) {
-                    path = path.substring(0, path.length - 1)
-                }
-                outputFiles.add(path)
-            }
-        }
     }
 
     private class PackageCollector {

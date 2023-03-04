@@ -46,14 +46,13 @@ public class DraftImplGenerator {
             addGetter(prop);
             addCreator(prop);
             addSetter(prop);
-            addUsing(prop);
             addUtilMethod(prop, false);
             addUtilMethod(prop, true);
         }
         addSet(int.class);
         addSet(String.class);
-        addUse(int.class);
-        addUse(String.class);
+        addShow(int.class);
+        addShow(String.class);
         addUnload(int.class);
         addUnload(String.class);
         addDraftContext();
@@ -228,6 +227,26 @@ public class DraftImplGenerator {
                         .addParameter(String.class, "prop")
                         .returns(boolean.class)
                         .addStatement("return $L.__isLoaded(prop)", UNMODIFIED)
+                        .build()
+        );
+        typeBuilder.addMethod(
+                MethodSpec
+                        .methodBuilder("__isVisible")
+                        .addModifiers(Modifier.PUBLIC)
+                        .addAnnotation(Override.class)
+                        .addParameter(int.class, "prop")
+                        .returns(boolean.class)
+                        .addStatement("return $L.__isVisible(prop)", UNMODIFIED)
+                        .build()
+        );
+        typeBuilder.addMethod(
+                MethodSpec
+                        .methodBuilder("__isVisible")
+                        .addModifiers(Modifier.PUBLIC)
+                        .addAnnotation(Override.class)
+                        .addParameter(String.class, "prop")
+                        .returns(boolean.class)
+                        .addStatement("return $L.__isVisible(prop)", UNMODIFIED)
                         .build()
         );
         typeBuilder.addMethod(
@@ -431,20 +450,6 @@ public class DraftImplGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addUsing(ImmutableProp prop) {
-        if (!prop.isJavaFormula()) {
-            return;
-        }
-        MethodSpec.Builder builder = MethodSpec
-                .methodBuilder(prop.getUsingName())
-                .addModifiers(Modifier.PUBLIC)
-                .addAnnotation(Override.class)
-                .returns(type.getDraftClassName());
-        builder.addStatement("__modified().$L = true", prop.getLoadedStateName());
-        builder.addStatement("return this");
-        typeBuilder.addMethod(builder.build());
-    }
-
     private void addUtilMethod(ImmutableProp prop, boolean withBase) {
         if (!prop.isAssociation(false)) {
             return;
@@ -545,21 +550,22 @@ public class DraftImplGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addUse(Class<?> argType) {
+    private void addShow(Class<?> argType) {
         MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("__use")
+                .methodBuilder("__show")
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
-                .addParameter(argType, "prop");
+                .addParameter(argType, "prop")
+                .addParameter(TypeName.BOOLEAN, "visible");
         builder.beginControlFlow("switch (prop)");
         for (ImmutableProp prop : type.getPropsOrderById()) {
-            if (prop.isJavaFormula()) {
+            if (prop.isVisibilityControllable()) {
                 Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
                 builder.addStatement(
-                        "case $L: $L().$L = true;break",
+                        "case $L: $L().$L = visible;break",
                         arg,
                         DRAFT_FIELD_MODIFIED,
-                        prop.getLoadedStateName()
+                        prop.getVisibleName()
                 );
             }
         }
@@ -568,7 +574,7 @@ public class DraftImplGenerator {
                 "Illegal property " +
                         (argType == String.class ? "name" : "id") +
                         ": \"",
-                "\",it does not exists or is not non-abstract formula property",
+                "\",it does not exists or the visibility of that property is not controllable",
                 "(Only non-abstract formula property can be used)"
         );
         builder.endControlFlow();

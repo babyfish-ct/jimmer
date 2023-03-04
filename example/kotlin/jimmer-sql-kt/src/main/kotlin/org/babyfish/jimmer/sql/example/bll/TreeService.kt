@@ -41,7 +41,19 @@ class TreeService(
         val treeNode = new(TreeNode::class).by(
             input.toEntity()
         ) {
-            // parent must be loaded because it is a part of key
+            /*
+             * `TreeNode` has two key properties: `name` and `parent`,
+             * this means `name` and `parent` must be specified when `id` is missing.
+             *
+             * One-to-many association is special, parent object can specify the
+             * many-to-one association of its child objects implicitly.
+             * In this demo, Associations named `childNodes` specify `parent`
+             * for child objects implicitly so that all child objects do not require
+             * the `parent`.
+             *
+             * However, the `parent` of ROOT cannot be specified implicitly,
+             * so that it must be specified manually
+             */
             parent = null
         }
         return treeNodeRepository.save(treeNode)
