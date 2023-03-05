@@ -21,7 +21,7 @@ class OperationImpl implements Operation {
 
     private final Type type;
 
-    private final List<EnumBasedError> errors;
+    private final Collection<EnumBasedError> errors;
 
     private final Document document;
 
@@ -33,7 +33,7 @@ class OperationImpl implements Operation {
             String uri,
             HttpMethod method,
             Type type,
-            List<EnumBasedError> errors
+            Collection<EnumBasedError> errors
     ) {
         this.declaringService = declaringService;
         this.rawMethod = rawMethod;
@@ -80,7 +80,7 @@ class OperationImpl implements Operation {
     }
 
     @Override
-    public List<EnumBasedError> getErrors() {
+    public Collection<EnumBasedError> getErrors() {
         return errors;
     }
 
@@ -97,6 +97,11 @@ class OperationImpl implements Operation {
             parameter.accept(visitor);
         }
         type.accept(visitor);
+        for (EnumBasedError error : errors) {
+            for (EnumBasedError.Field field : error.getFields().values()) {
+                field.getType().accept(visitor);
+            }
+        }
         visitor.visitedOperation(this);
     }
 

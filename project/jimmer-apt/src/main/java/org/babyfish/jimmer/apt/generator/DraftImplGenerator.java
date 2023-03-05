@@ -300,7 +300,38 @@ public class DraftImplGenerator {
         if (prop.isBeanStyle()) {
             builder.addAnnotation(JSON_IGNORE_CLASS_NAME);
         }
-        if (prop.isList()) {
+
+        ImmutableProp baseProp = prop.getIdViewBaseProp();
+        if (baseProp != null) {
+            if (baseProp.isList()) {
+                builder.addStatement(
+                        "$T<$T> __ids = new $T($L().size())",
+                        LIST_CLASS_NAME,
+                        baseProp.getTargetType().getIdProp().getTypeName().box(),
+                        ArrayList.class,
+                        baseProp.getGetterName()
+                );
+                builder.beginControlFlow(
+                        "for ($T __target : $L())",
+                        baseProp.getElementTypeName(),
+                        baseProp.getGetterName()
+                );
+                builder.addStatement(
+                        "__ids.add(__target.$L())",
+                        baseProp.getTargetType().getIdProp().getGetterName()
+                );
+                builder.endControlFlow();
+                builder.addStatement("return __ids");
+            } else {
+                builder.addStatement("$T __target = $L()", baseProp.getElementTypeName(), baseProp.getGetterName());
+                builder.addStatement(
+                        prop.isNullable() ?
+                                "return __target != null ? __target.$L() : null" :
+                                "__target.$L()",
+                        baseProp.getTargetType().getIdProp().getGetterName()
+                );
+            }
+        } else if (prop.isList()) {
             builder.addCode(
                     "return $L.$L($L.$L(), $T.class, $L);",
                     DRAFT_FIELD_CTX,

@@ -7,6 +7,9 @@ import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.IllegalDocMetaException;
 import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.client.meta.Type;
+import org.babyfish.jimmer.error.ErrorFamily;
+import org.babyfish.jimmer.error.ErrorField;
+import org.babyfish.jimmer.error.ErrorFields;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -32,6 +35,8 @@ class Context {
 
     final Map<Class<?>, EnumType> enumTypeMap;
 
+    final Map<Enum<?>, EnumBasedError> errorMap;
+
     final Map<Fetcher<?>, ImmutableObjectType> fetchedImmutableObjectTypeMap;
 
     final Map<ImmutableType, ImmutableObjectType> rawImmutableObjectTypeMap;
@@ -55,6 +60,7 @@ class Context {
         this.location = null;
         this.staticObjectTypeMap = new LinkedHashMap<>();
         this.enumTypeMap = new LinkedHashMap<>();
+        this.errorMap = new LinkedHashMap<>();
         this.rawImmutableObjectTypeMap = new LinkedHashMap<>();
         this.viewImmutableObjectTypeMap = new LinkedHashMap<>();
         this.fetchedImmutableObjectTypeMap = new LinkedHashMap<>();
@@ -71,6 +77,7 @@ class Context {
         this.location = location;
         this.staticObjectTypeMap = base.staticObjectTypeMap;
         this.enumTypeMap = base.enumTypeMap;
+        this.errorMap = base.errorMap;
         this.fetchedImmutableObjectTypeMap = base.fetchedImmutableObjectTypeMap;
         this.rawImmutableObjectTypeMap = base.rawImmutableObjectTypeMap;
         this.viewImmutableObjectTypeMap = base.viewImmutableObjectTypeMap;
@@ -87,6 +94,7 @@ class Context {
         this.location = base.location;
         this.staticObjectTypeMap = base.staticObjectTypeMap;
         this.enumTypeMap = base.enumTypeMap;
+        this.errorMap = base.errorMap;
         this.fetchedImmutableObjectTypeMap = base.fetchedImmutableObjectTypeMap;
         this.rawImmutableObjectTypeMap = base.rawImmutableObjectTypeMap;
         this.viewImmutableObjectTypeMap = base.viewImmutableObjectTypeMap;
@@ -112,6 +120,7 @@ class Context {
         this.location = base.location;
         this.staticObjectTypeMap = base.staticObjectTypeMap;
         this.enumTypeMap = base.enumTypeMap;
+        this.errorMap = base.errorMap;
         this.fetchedImmutableObjectTypeMap = base.fetchedImmutableObjectTypeMap;
         this.rawImmutableObjectTypeMap = base.rawImmutableObjectTypeMap;
         this.viewImmutableObjectTypeMap = base.viewImmutableObjectTypeMap;
@@ -137,6 +146,7 @@ class Context {
         this.location = base.location;
         this.staticObjectTypeMap = base.staticObjectTypeMap;
         this.enumTypeMap = base.enumTypeMap;
+        this.errorMap = base.errorMap;
         this.fetchedImmutableObjectTypeMap = base.fetchedImmutableObjectTypeMap;
         this.rawImmutableObjectTypeMap = base.rawImmutableObjectTypeMap;
         this.viewImmutableObjectTypeMap = base.viewImmutableObjectTypeMap;
@@ -656,6 +666,82 @@ class Context {
                 rawImmutableObjectTypeMap.put(impl.getImmutableType(), impl);
                 break;
         }
+    }
+
+    public EnumBasedError getError(Enum<?> error) {
+        EnumBasedError enumBasedError = errorMap.get(error);
+        if (enumBasedError == null) {
+            enumBasedError = getErrorImpl(error);
+            errorMap.put(error, enumBasedError);
+        }
+        return enumBasedError;
+    }
+
+    private EnumBasedError getErrorImpl(Enum<?> error) {
+        if (!error.getClass().isAnnotationPresent(ErrorFamily.class)) {
+            throw new IllegalArgumentException(
+                    "The enum type \"" +
+                            error.getClass().getName() +
+                            "\" cannot be considered as error " +
+                            "because it is not decorated by \"" +
+                            ErrorFamily.class.getName() +
+                            "\""
+            );
+        }
+        Field constantField;
+        Map<String, EnumBasedError.Field> fieldMap = new LinkedHashMap<>();
+        try {
+            constantField = error.getClass().getField(error.name());
+        } catch (NoSuchFieldException ex) {
+            throw new AssertionError(
+                    "Cannot get field of \"" +
+                            error.name() +
+                            "\" from \"" +
+                            error.getClass() +
+                            "\""
+            );
+        }
+        ErrorFields fields = constantField.getAnnotation(ErrorFields.class);
+        if (fields != null) {
+            for (ErrorField field : fields.value()) {
+                if (fieldMap.put(field.name(), parseErrorField(error, field)) != null) {
+                    throw new IllegalArgumentException(
+                            "Duplicated field name \"" +
+                                    field.name() +
+                                    "\" is declared on \"" +
+                                    error.getClass().getName() +
+                                    "." +
+                                    error.name() +
+                                    "\""
+                    );
+                }
+            }
+        } else {
+            ErrorField field = constantField.getAnnotation(ErrorField.class);
+            if (field != null) {
+                fieldMap.put(field.name(), parseErrorField(error, field));
+            }
+        }
+        return new EnumBasedError(error, fieldMap);
+    }
+
+    private EnumBasedError.Field parseErrorField(Enum<?> error, ErrorField field) {
+        Type type;
+        try {
+            type = parseErrorFieldType(field.type());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalDocMetaException(
+                    "Cannot parse the field \"" +
+                            field.name() +
+                            "\" of \"" +
+                            error.getClass().getName() +
+                            "." +
+                            error.name() +
+                            "\". " +
+                            ex.getMessage()
+            );
+        }
+        return new EnumBasedError.Field(field.name(), type);
     }
 
     private static class UnifiedTypeParameter {

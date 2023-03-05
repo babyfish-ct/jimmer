@@ -1,15 +1,11 @@
 package org.babyfish.jimmer.client.meta.impl;
 
-import org.babyfish.jimmer.client.IllegalDocMetaException;
+import org.babyfish.jimmer.client.ThrowsAll;
 import org.babyfish.jimmer.client.meta.EnumBasedError;
-import org.babyfish.jimmer.client.meta.Type;
 import org.babyfish.jimmer.error.ErrorFamily;
-import org.babyfish.jimmer.error.ErrorField;
-import org.babyfish.jimmer.error.ErrorFields;
 import org.babyfish.jimmer.impl.util.StaticCache;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -27,9 +23,18 @@ public class Throws {
         this.ctx = ctx;
     }
 
-    public List<EnumBasedError> getErrors(Method operationMethod) {
-        List<EnumBasedError> errors = new ArrayList<>();
+    public Collection<EnumBasedError> getErrors(Method operationMethod) {
+        Collection<EnumBasedError> errors = new LinkedHashSet<>();
+        ThrowsAll throwsAll = operationMethod.getAnnotation(ThrowsAll.class);
+        if (throwsAll != null) {
+            for (Enum<?> constant : throwsAll.value().getEnumConstants()) {
+                errors.add(ctx.getError(constant));
+            }
+        }
         for (Annotation annotation : operationMethod.getAnnotations()) {
+            if (annotation.annotationType() == ThrowsAll.class) {
+                continue;
+            }
             Method valueMethod = ANNOTATION_VALUE_METHOD_CACHE.get(annotation.annotationType());
             if (valueMethod != null) {
                 Object[] arr;
@@ -51,7 +56,7 @@ public class Throws {
                     );
                 }
                 for (Object o : arr) {
-                    errors.add(parseError((Enum<?>) o));
+                    errors.add(ctx.getError((Enum<?>) o));
                 }
             }
         }
@@ -73,62 +78,5 @@ public class Throws {
             return null;
         }
         return valueMethod;
-    }
-
-    private EnumBasedError parseError(Enum<?> error) {
-        Field constantField;
-        Map<String, EnumBasedError.Field> fieldMap = new LinkedHashMap<>();
-        try {
-            constantField = error.getClass().getField(error.name());
-        } catch (NoSuchFieldException ex) {
-            throw new AssertionError(
-                    "Cannot get field of \"" +
-                            error.name() +
-                            "\" from \"" +
-                            error.getClass() +
-                            "\""
-            );
-        }
-        ErrorFields fields = constantField.getAnnotation(ErrorFields.class);
-        if (fields != null) {
-            for (ErrorField field : fields.value()) {
-                if (fieldMap.put(field.name(), parseErrorField(error, field)) != null) {
-                    throw new IllegalArgumentException(
-                            "Duplicated field name \"" +
-                                    field.name() +
-                                    "\" is declared on \"" +
-                                    error.getClass().getName() +
-                                    "." +
-                                    error.name() +
-                                    "\""
-                    );
-                }
-            }
-        } else {
-            ErrorField field = constantField.getAnnotation(ErrorField.class);
-            if (field != null) {
-                fieldMap.put(field.name(), parseErrorField(error, field));
-            }
-        }
-        return new EnumBasedError(error, fieldMap);
-    }
-
-    private EnumBasedError.Field parseErrorField(Enum<?> error, ErrorField field) {
-        Type type;
-        try {
-            type = ctx.parseErrorFieldType(field.type());
-        } catch (IllegalArgumentException ex) {
-            throw new IllegalDocMetaException(
-                    "Cannot parse the field \"" +
-                            field.name() +
-                            "\" of \"" +
-                            error.getClass().getName() +
-                            "." +
-                            error.name() +
-                            "\". " +
-                            ex.getMessage()
-            );
-        }
-        return new EnumBasedError.Field(field.name(), type);
     }
 }

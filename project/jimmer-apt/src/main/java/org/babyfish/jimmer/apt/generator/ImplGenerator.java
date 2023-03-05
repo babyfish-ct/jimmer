@@ -86,6 +86,10 @@ public class ImplGenerator {
 
     private void addGetter(ImmutableProp prop) {
 
+        if (prop.isJavaFormula()) {
+            return;
+        }
+
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getGetterName())
                 .addModifiers(Modifier.PUBLIC)
@@ -126,9 +130,7 @@ public class ImplGenerator {
                 );
             }
         } else {
-            if (prop.isJavaFormula()) {
-                builder.beginControlFlow("if (!__isLoaded($S))", prop.getName());
-            } else if (prop.isLoadedStateRequired()) {
+            if (prop.isLoadedStateRequired()) {
                 builder.beginControlFlow("if (!$L)", prop.getLoadedStateName());
             } else {
                 builder.beginControlFlow("if ($L == null)", prop.getName());
@@ -140,11 +142,7 @@ public class ImplGenerator {
                             prop.getName()
                     )
                     .endControlFlow();
-            if (prop.isJavaFormula()) {
-                builder.addStatement("return super.$L()", prop.getName());
-            } else {
-                builder.addStatement("return $L", prop.getName());
-            }
+            builder.addStatement("return $L", prop.getName());
         }
         typeBuilder.addMethod(builder.build());
     }

@@ -1,11 +1,12 @@
 package org.babyfish.jimmer.sql.trigger;
 
 import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.OptimisticLockException;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.runtime.DbNull;
+import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
+import org.babyfish.jimmer.sql.runtime.SaveException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -1453,7 +1454,13 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                                         "\"org.babyfish.jimmer.sql.model.BookStore\", " +
                                         "id is \"2fa3955e-3e83-49b9-902e-0465c109c779\" and version is \"1\""
                         );
-                        it.type(OptimisticLockException.class);
+                        it.type(SaveException.class);
+                        it.detail(ex -> {
+                            Assertions.assertEquals(
+                                    SaveErrorCode.ILLEGAL_VERSION,
+                                    ((SaveException)ex).getCode()
+                            );
+                        });
                     });
                 }
         );

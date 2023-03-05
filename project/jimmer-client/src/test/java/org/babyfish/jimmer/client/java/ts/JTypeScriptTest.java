@@ -50,7 +50,9 @@ public class JTypeScriptTest {
         new ModuleErrorsWriter(ctx).flush();
         String code = out.toString();
         Assertions.assertEquals(
-                "export type AllErrors = \n" +
+                "import type { ExportedSavePath } from './model/static';\n" +
+                        "\n" +
+                        "export type AllErrors = \n" +
                         "    {\n" +
                         "        readonly family: \"BusinessError\",\n" +
                         "        readonly code: \"GLOBAL_TENANT_REQUIRED\"\n" +
@@ -65,6 +67,71 @@ public class JTypeScriptTest {
                         "        readonly code: \"OUT_OF_RANGE\",\n" +
                         "        readonly \"min\": number,\n" +
                         "        readonly \"max\": number\n" +
+                        "    } | \n" +
+                        "    {\n" +
+                        "        readonly family: \"SaveErrorCode\",\n" +
+                        "        readonly code: \"CANNOT_CREATE_TARGET\",\n" +
+                        "        readonly \"exportedPath\": ExportedSavePath\n" +
+                        "    } | \n" +
+                        "    {\n" +
+                        "        readonly family: \"SaveErrorCode\",\n" +
+                        "        readonly code: \"CANNOT_DISSOCIATE_TARGETS\",\n" +
+                        "        readonly \"exportedPath\": ExportedSavePath\n" +
+                        "    } | \n" +
+                        "    {\n" +
+                        "        readonly family: \"SaveErrorCode\",\n" +
+                        "        readonly code: \"ILLEGAL_GENERATED_ID\",\n" +
+                        "        readonly \"exportedPath\": ExportedSavePath\n" +
+                        "    } | \n" +
+                        "    {\n" +
+                        "        readonly family: \"SaveErrorCode\",\n" +
+                        "        readonly code: \"ILLEGAL_ID_GENERATOR\",\n" +
+                        "        readonly \"exportedPath\": ExportedSavePath\n" +
+                        "    } | \n" +
+                        "    {\n" +
+                        "        readonly family: \"SaveErrorCode\",\n" +
+                        "        readonly code: \"ILLEGAL_TARGET_ID\",\n" +
+                        "        readonly \"exportedPath\": ExportedSavePath\n" +
+                        "    } | \n" +
+                        "    {\n" +
+                        "        readonly family: \"SaveErrorCode\",\n" +
+                        "        readonly code: \"ILLEGAL_VERSION\",\n" +
+                        "        readonly \"exportedPath\": ExportedSavePath\n" +
+                        "    } | \n" +
+                        "    {\n" +
+                        "        readonly family: \"SaveErrorCode\",\n" +
+                        "        readonly code: \"KEY_NOT_UNIQUE\",\n" +
+                        "        readonly \"exportedPath\": ExportedSavePath\n" +
+                        "    } | \n" +
+                        "    {\n" +
+                        "        readonly family: \"SaveErrorCode\",\n" +
+                        "        readonly code: \"NEITHER_ID_NOR_KEY\",\n" +
+                        "        readonly \"exportedPath\": ExportedSavePath\n" +
+                        "    } | \n" +
+                        "    {\n" +
+                        "        readonly family: \"SaveErrorCode\",\n" +
+                        "        readonly code: \"NO_ID_GENERATOR\",\n" +
+                        "        readonly \"exportedPath\": ExportedSavePath\n" +
+                        "    } | \n" +
+                        "    {\n" +
+                        "        readonly family: \"SaveErrorCode\",\n" +
+                        "        readonly code: \"NO_KEY_PROPS\",\n" +
+                        "        readonly \"exportedPath\": ExportedSavePath\n" +
+                        "    } | \n" +
+                        "    {\n" +
+                        "        readonly family: \"SaveErrorCode\",\n" +
+                        "        readonly code: \"NO_NON_ID_PROPS\",\n" +
+                        "        readonly \"exportedPath\": ExportedSavePath\n" +
+                        "    } | \n" +
+                        "    {\n" +
+                        "        readonly family: \"SaveErrorCode\",\n" +
+                        "        readonly code: \"NO_VERSION\",\n" +
+                        "        readonly \"exportedPath\": ExportedSavePath\n" +
+                        "    } | \n" +
+                        "    {\n" +
+                        "        readonly family: \"SaveErrorCode\",\n" +
+                        "        readonly code: \"NULL_TARGET\",\n" +
+                        "        readonly \"exportedPath\": ExportedSavePath\n" +
                         "    }\n" +
                         ";\n" +
                         "\n" +
@@ -96,6 +163,73 @@ public class JTypeScriptTest {
                         "        )\n" +
                         "    },\n" +
                         "    \"bookService\": {\n" +
+                        "        \"saveBooks\": AllErrors & (\n" +
+                        "            {\n" +
+                        "                readonly family: 'SaveErrorCode',\n" +
+                        "                readonly code: 'NULL_TARGET',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | \n" +
+                        "            {\n" +
+                        "                readonly family: 'SaveErrorCode',\n" +
+                        "                readonly code: 'ILLEGAL_TARGET_ID',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | \n" +
+                        "            {\n" +
+                        "                readonly family: 'SaveErrorCode',\n" +
+                        "                readonly code: 'CANNOT_DISSOCIATE_TARGETS',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | \n" +
+                        "            {\n" +
+                        "                readonly family: 'SaveErrorCode',\n" +
+                        "                readonly code: 'CANNOT_CREATE_TARGET',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | \n" +
+                        "            {\n" +
+                        "                readonly family: 'SaveErrorCode',\n" +
+                        "                readonly code: 'NO_ID_GENERATOR',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | \n" +
+                        "            {\n" +
+                        "                readonly family: 'SaveErrorCode',\n" +
+                        "                readonly code: 'ILLEGAL_ID_GENERATOR',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | \n" +
+                        "            {\n" +
+                        "                readonly family: 'SaveErrorCode',\n" +
+                        "                readonly code: 'ILLEGAL_GENERATED_ID',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | \n" +
+                        "            {\n" +
+                        "                readonly family: 'SaveErrorCode',\n" +
+                        "                readonly code: 'NO_KEY_PROPS',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | \n" +
+                        "            {\n" +
+                        "                readonly family: 'SaveErrorCode',\n" +
+                        "                readonly code: 'NO_NON_ID_PROPS',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | \n" +
+                        "            {\n" +
+                        "                readonly family: 'SaveErrorCode',\n" +
+                        "                readonly code: 'NO_VERSION',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | \n" +
+                        "            {\n" +
+                        "                readonly family: 'SaveErrorCode',\n" +
+                        "                readonly code: 'ILLEGAL_VERSION',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | \n" +
+                        "            {\n" +
+                        "                readonly family: 'SaveErrorCode',\n" +
+                        "                readonly code: 'KEY_NOT_UNIQUE',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | \n" +
+                        "            {\n" +
+                        "                readonly family: 'SaveErrorCode',\n" +
+                        "                readonly code: 'NEITHER_ID_NOR_KEY',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            }\n" +
+                        "        )\n" +
                         "    }\n" +
                         "};\n",
                 code

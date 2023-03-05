@@ -2,6 +2,7 @@ package org.babyfish.jimmer.client.java.service;
 
 import org.babyfish.jimmer.client.Doc;
 import org.babyfish.jimmer.client.FetchBy;
+import org.babyfish.jimmer.client.ThrowsAll;
 import org.babyfish.jimmer.client.java.model.Author;
 import org.babyfish.jimmer.client.java.model.Book;
 import org.babyfish.jimmer.client.java.model.BookInput;
@@ -11,6 +12,7 @@ import org.babyfish.jimmer.client.meta.common.*;
 import org.babyfish.jimmer.client.java.model.*;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
@@ -79,6 +81,7 @@ public interface BookService {
     );
 
     @PutMapping("/book")
+    @ThrowsAll(SaveErrorCode.class)
     Book saveBooks(@RequestBody BookInput input);
 
     @DeleteMapping("/book/{id}")

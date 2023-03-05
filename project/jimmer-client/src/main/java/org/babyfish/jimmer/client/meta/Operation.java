@@ -3,6 +3,7 @@ package org.babyfish.jimmer.client.meta;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.List;
 
 public interface Operation extends Node {
@@ -21,7 +22,7 @@ public interface Operation extends Node {
 
     Type getType();
 
-    List<EnumBasedError> getErrors();
+    Collection<EnumBasedError> getErrors();
 
     @Nullable
     Document getDocument();

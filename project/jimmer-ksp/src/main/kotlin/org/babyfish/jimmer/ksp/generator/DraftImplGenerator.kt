@@ -170,7 +170,22 @@ class DraftImplGenerator(
                         .getterBuilder()
                         .addAnnotation(JSON_IGNORE_CLASS_NAME)
                         .apply {
-                            if (prop.isList || prop.isScalarList) {
+                            if (prop.idViewBaseProp !== null) {
+                                if (prop.isList) {
+                                    addStatement(
+                                        "return %N.map {it.%N}",
+                                        prop.idViewBaseProp!!.name,
+                                        prop.idViewBaseProp!!.targetType!!.idProp!!.name
+                                    )
+                                } else {
+                                    addStatement(
+                                        "return %N%L%N",
+                                        prop.idViewBaseProp!!.name,
+                                        if (prop.isNullable) "?." else ".",
+                                        prop.idViewBaseProp!!.targetType!!.idProp!!.name
+                                    )
+                                }
+                            } else if (prop.isList || prop.isScalarList) {
                                 addCode(
                                     "return __ctx.toDraftList(%L.%L, %T::class.java, %L)",
                                     UNMODIFIED,

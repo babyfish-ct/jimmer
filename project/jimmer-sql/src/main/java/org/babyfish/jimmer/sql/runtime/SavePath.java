@@ -5,6 +5,9 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 public final class SavePath {
@@ -100,4 +103,61 @@ public final class SavePath {
         }
         return parent + "." + prop.getName();
     }
+
+    public ExportedSavePath export() {
+        List<SavePath> paths = new ArrayList<>();
+        for (SavePath p = this; p != null; p = p.parent) {
+            paths.add(p);
+        }
+        Collections.reverse(paths);
+        int size = paths.size();
+        List<ExportedSavePath.Node> nodes = new ArrayList<>(size - 1);
+        for (int i = 1; i < size; i++) {
+            nodes.add(
+                    new ExportedSavePath.Node(
+                            paths.get(i).prop.getName(),
+                            paths.get(i).prop.getTargetType().toString()
+                    )
+            );
+        }
+        return new ExportedSavePath(paths.get(0).type.toString(), nodes);
+    }
+
+    public static SavePath of(ExportedSavePath path) {
+        Class<?> rootType;
+        try {
+            rootType = Class.forName(path.getRootTypeName());
+        } catch (ClassNotFoundException ex) {
+            throw new IllegalArgumentException(
+                    "The root type \"" +
+                            path.getRootTypeName() +
+                            "\" does not exist"
+            );
+        }
+        return of(path, rootType);
+    }
+
+    public static SavePath of(ExportedSavePath path, ClassLoader classLoader) {
+        Class<?> rootType;
+        try {
+            rootType = Class.forName(path.getRootTypeName(), true, classLoader);
+        } catch (ClassNotFoundException ex) {
+            throw new IllegalArgumentException(
+                    "The root type \"" +
+                            path.getRootTypeName() +
+                            "\" does not exist"
+            );
+        }
+        return of(path, rootType);
+    }
+
+    private static SavePath of(ExportedSavePath path, Class<?> rootType) {
+        SavePath savePath = new SavePath(ImmutableType.get(rootType));
+        for (ExportedSavePath.Node node : path.getNodes()) {
+            ImmutableProp prop = savePath.getType().getProp(node.getProp());
+            savePath = savePath.to(prop);
+        }
+        return savePath;
+    }
+
 }
