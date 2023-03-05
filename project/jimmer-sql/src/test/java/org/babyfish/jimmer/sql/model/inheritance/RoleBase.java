@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.model.inheritance;
 
-import org.babyfish.jimmer.sql.ManyToMany;
-import org.babyfish.jimmer.sql.MappedSuperclass;
-import org.babyfish.jimmer.sql.OneToMany;
-import org.babyfish.jimmer.sql.Transient;
+import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.model.calc.RolePermissionCountResolver;
 
 import java.util.List;
@@ -19,4 +16,7 @@ public interface RoleBase extends NamedEntity {
 
     @Transient(RolePermissionCountResolver.class)
     int getPermissionCount();
+
+    @IdView("permissions")
+    List<Long> permissionIds();
 }

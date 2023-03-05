@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.example.model;
 
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.example.model.common.TenantAware;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
@@ -39,4 +40,18 @@ public interface Book extends TenantAware {
 
     @OneToMany(mappedBy = "book", orderedProps = @OrderedProp("index"))
     List<Chapter> chapters();
+
+    // -----------------------------
+    // Optional properties
+    // -----------------------------
+
+    // Optional property `storeId`
+    // If this property is deleted, please add `BookInput.Mapper.toBookStore(Long)`
+    @IdView
+    Long storeId();
+
+    // Optional property `authorIds`
+    // If this property is deleted, please add `BookInputMapper.toAuthor(Long)`
+    @IdView("authors")
+    List<Long> authorIds();
 }

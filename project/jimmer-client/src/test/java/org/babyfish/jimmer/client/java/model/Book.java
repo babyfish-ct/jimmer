@@ -1,10 +1,7 @@
 package org.babyfish.jimmer.client.java.model;
 
 import org.babyfish.jimmer.client.Doc;
-import org.babyfish.jimmer.sql.Entity;
-import org.babyfish.jimmer.sql.Id;
-import org.babyfish.jimmer.sql.ManyToMany;
-import org.babyfish.jimmer.sql.ManyToOne;
+import org.babyfish.jimmer.sql.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
@@ -30,4 +27,10 @@ public interface Book {
     @Doc("All authors involved in writing the work")
     @ManyToMany
     List<Author> authors();
+
+    @IdView
+    Long storeId();
+
+    @IdView("authors")
+    List<Long> authorIds();
 }

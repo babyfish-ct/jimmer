@@ -47,12 +47,14 @@ public class BookInput implements Input<Book> {
         @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
         Book toBook(BookInput input);
 
-        @BeanMapping(ignoreByDefault = true)
-        @Mapping(target = "id", source = ".")
-        BookStore toBookStore(Long id);
+        //If `Book.storeId` is deleted, please add this method
+        //@BeanMapping(ignoreByDefault = true)
+        //@Mapping(target = "id", source = ".")
+        //BookStore toBookStore(Long id);
 
-        @BeanMapping(ignoreByDefault = true)
-        @Mapping(target = "id", source = ".")
-        Author toAuthor(Long id);
+        //If `Book.authorIds` is deleted, please add this method
+        //@BeanMapping(ignoreByDefault = true)
+        //@Mapping(target = "id", source = ".")
+        //Author toAuthor(Long id);
     }
 }

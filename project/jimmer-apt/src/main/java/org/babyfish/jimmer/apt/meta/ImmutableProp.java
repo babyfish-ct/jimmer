@@ -240,10 +240,9 @@ public class ImmutableProp {
                 ClassName.get(elementType).toString(),
                 typeUtils.getImmutableAnnotationType(elementType),
                 isList,
-                elementTypeName.isPrimitive() || elementTypeName.isBoxedPrimitive() ?
-                    elementTypeName.isBoxedPrimitive() :
+                typeName.isPrimitive() || typeName.isBoxedPrimitive() ?
+                    typeName.isBoxedPrimitive() :
                     null,
-                declaringType.getTypeElement().getAnnotation(Immutable.class),
                 MetaException::new
         );
         for (AnnotationMirror annotationMirror : executableElement.getAnnotationMirrors()) {
@@ -558,7 +557,7 @@ public class ImmutableProp {
                             "\" but the base property \"" +
                             baseProp +
                             "\" " +
-                            (baseProp.isList ? "is" : "is not") +
+                            (baseProp.isNullable ? "is" : "is not") +
                             " nullable"
             );
         }

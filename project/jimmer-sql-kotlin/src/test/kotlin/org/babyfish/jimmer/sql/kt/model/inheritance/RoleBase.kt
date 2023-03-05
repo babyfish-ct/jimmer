@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.model.inheritance
 
+import org.babyfish.jimmer.sql.IdView
 import org.babyfish.jimmer.sql.ManyToMany
 import org.babyfish.jimmer.sql.MappedSuperclass
 import org.babyfish.jimmer.sql.OneToMany
@@ -12,4 +13,7 @@ interface RoleBase : NamedEntity {
 
     @ManyToMany(mappedBy = "roles")
     val administrators: List<Administrator>
+
+    @IdView("permissions")
+    val permissionIds: List<Long>
 }

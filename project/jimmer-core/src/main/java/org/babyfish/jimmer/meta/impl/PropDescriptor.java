@@ -52,7 +52,6 @@ public class PropDescriptor {
             Class<? extends Annotation> elementAnnotationType,
             boolean isList,
             Boolean explicitNullable,
-            Immutable immutable,
             Function<String, RuntimeException> exceptionCreator
     ) {
         return new Builder(
@@ -489,6 +488,12 @@ public class PropDescriptor {
                         );
                     }
                     break;
+                case ID_VIEW:
+                    if (isList) {
+                        if (specifiedNullable) {
+                            throw new IllegalArgumentException("Fuck " + explicitNullable + ", " + annotationNullity);
+                        }
+                    }
             }
             return specifiedNullable;
         }
@@ -573,6 +578,14 @@ public class PropDescriptor {
         private AnnotationNullity(String annotationTypeName, boolean isNullable) {
             this.annotationTypeName = annotationTypeName;
             this.isNullable = isNullable;
+        }
+
+        @Override
+        public String toString() {
+            return "AnnotationNullity{" +
+                    "annotationTypeName='" + annotationTypeName + '\'' +
+                    ", isNullable=" + isNullable +
+                    '}';
         }
     }
 

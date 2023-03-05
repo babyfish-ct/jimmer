@@ -311,6 +311,12 @@ public class JFeignTest {
                         "    private List<Dynamic_Author> authors;\n" +
                         "    \n" +
                         "    @Nullable\n" +
+                        "    private Long storeId;\n" +
+                        "    \n" +
+                        "    @Nullable\n" +
+                        "    private List<Long> authorIds;\n" +
+                        "    \n" +
+                        "    @Nullable\n" +
                         "    public Long getId() {\n" +
                         "        return id;\n" +
                         "    }\n" +
@@ -362,6 +368,24 @@ public class JFeignTest {
                         "    \n" +
                         "    public void setAuthors(@Nullable List<Dynamic_Author> authors) {\n" +
                         "        this.authors = authors;\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    @Nullable\n" +
+                        "    public Long getStoreId() {\n" +
+                        "        return storeId;\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    public void setStoreId(@Nullable Long storeId) {\n" +
+                        "        this.storeId = storeId;\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    @Nullable\n" +
+                        "    public List<Long> getAuthorIds() {\n" +
+                        "        return authorIds;\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    public void setAuthorIds(@Nullable List<Long> authorIds) {\n" +
+                        "        this.authorIds = authorIds;\n" +
                         "    }\n" +
                         "}\n",
                 code

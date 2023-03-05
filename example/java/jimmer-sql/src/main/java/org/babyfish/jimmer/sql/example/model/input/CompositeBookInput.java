@@ -3,10 +3,7 @@ package org.babyfish.jimmer.sql.example.model.input;
 import lombok.Data;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.Input;
-import org.babyfish.jimmer.sql.example.model.Author;
-import org.babyfish.jimmer.sql.example.model.Book;
-import org.babyfish.jimmer.sql.example.model.BookStore;
-import org.babyfish.jimmer.sql.example.model.Chapter;
+import org.babyfish.jimmer.sql.example.model.*;
 import org.jetbrains.annotations.Nullable;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
@@ -32,11 +29,9 @@ public class CompositeBookInput implements Input<Book> {
     private BigDecimal price;
 
     @Nullable
-    private Long storeId;
+    private BookStoreTarget store;
 
-    private List<Long> authorIds;
-
-    private List<String> chapters;
+    private List<AuthorTarget> authors;
 
     @Override
     public Book toEntity() {
@@ -46,21 +41,26 @@ public class CompositeBookInput implements Input<Book> {
     @Mapper
     interface Converter {
 
-        @Mapping(target = "store", source = "storeId")
-        @Mapping(target = "authors", source = "authorIds")
         @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
         Book toBook(CompositeBookInput input);
 
-        @BeanMapping(ignoreByDefault = true)
-        @Mapping(target = "id", source = ".")
-        BookStore toBookStore(Long id);
+        @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        BookStore toBookStore(BookStoreTarget target);
 
-        @BeanMapping(ignoreByDefault = true)
-        @Mapping(target = "id", source = ".")
-        Author toAuthor(Long id);
+        @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        Author toAuthor(AuthorTarget target);
+    }
 
-        @BeanMapping(ignoreByDefault = true)
-        @Mapping(target = "title", source = ".")
-        Chapter toChapter(String title);
+    @Data
+    public static class BookStoreTarget {
+        private String name;
+        private String website;
+    }
+
+    @Data
+    public static class AuthorTarget {
+        private String firstName;
+        private String lastName;
+        private Gender gender;
     }
 }

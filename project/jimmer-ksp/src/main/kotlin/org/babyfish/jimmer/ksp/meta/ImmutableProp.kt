@@ -100,8 +100,7 @@ class ImmutableProp(
                     ?: targetDeclaration.annotation(Embeddable::class)?.let { Embeddable::class.java }
                     ?: targetDeclaration.annotation(Immutable::class)?.let { Immutable::class.java },
                 isList,
-                resolvedType.isMarkedNullable,
-                null
+                resolvedType.isMarkedNullable
             ) {
                 MetaException(it)
             }.apply {
@@ -360,7 +359,7 @@ class ImmutableProp(
                     "\" but the base property \"" +
                     baseProp +
                     "\" " +
-                    (if (baseProp.isList) "is" else "is not") +
+                    (if (baseProp.isNullable) "is" else "is not") +
                     " nullable"
             )
         }

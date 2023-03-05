@@ -920,6 +920,10 @@ public class JTypeScriptTest {
                         "     * All authors involved in writing the work\n" +
                         "     */\n" +
                         "    readonly authors: ReadonlyArray<Author>;\n" +
+                        "    \n" +
+                        "    readonly storeId?: number;\n" +
+                        "    \n" +
+                        "    readonly authorIds: ReadonlyArray<number>;\n" +
                         "}\n",
                 code
         );
