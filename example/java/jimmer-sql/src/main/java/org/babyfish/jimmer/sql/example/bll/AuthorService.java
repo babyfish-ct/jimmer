@@ -1,11 +1,13 @@
 package org.babyfish.jimmer.sql.example.bll;
 
 import org.babyfish.jimmer.client.FetchBy;
+import org.babyfish.jimmer.client.ThrowsAll;
 import org.babyfish.jimmer.spring.model.SortUtils;
 import org.babyfish.jimmer.sql.example.dal.AuthorRepository;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.example.model.input.AuthorInput;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -85,6 +87,7 @@ public class AuthorService {
                     );
 
     @PutMapping
+    @ThrowsAll(SaveErrorCode.class)
     public Author saveAuthor(AuthorInput input) {
         return authorRepository.save(input);
     }

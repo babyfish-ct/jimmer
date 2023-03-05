@@ -89,7 +89,7 @@ export class BookService {
     async saveCompositeBook(options: BookServiceOptions['saveCompositeBook']): Promise<
         Dynamic<Book>
     > {
-        let _uri = '/book/withChapters';
+        let _uri = '/book/composite';
         return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Dynamic<Book>
     }
 }

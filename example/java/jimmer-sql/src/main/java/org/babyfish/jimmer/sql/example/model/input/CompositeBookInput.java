@@ -1,13 +1,11 @@
 package org.babyfish.jimmer.sql.example.model.input;
 
 import lombok.Data;
-import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.jetbrains.annotations.Nullable;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 import org.mapstruct.factory.Mappers;
 
@@ -29,7 +27,7 @@ public class CompositeBookInput implements Input<Book> {
     private BigDecimal price;
 
     @Nullable
-    private BookStoreTarget store;
+    private StoreTarget store;
 
     private List<AuthorTarget> authors;
 
@@ -45,22 +43,28 @@ public class CompositeBookInput implements Input<Book> {
         Book toBook(CompositeBookInput input);
 
         @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
-        BookStore toBookStore(BookStoreTarget target);
+        BookStore toBookStore(StoreTarget target);
 
         @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
         Author toAuthor(AuthorTarget target);
     }
 
     @Data
-    public static class BookStoreTarget {
+    public static class StoreTarget {
+
         private String name;
+
+        @Nullable
         private String website;
     }
 
     @Data
     public static class AuthorTarget {
+
         private String firstName;
+
         private String lastName;
+
         private Gender gender;
     }
 }

@@ -42,19 +42,28 @@ public class BookInput implements Input<Book> {
     @Mapper
     interface Converter {
 
-        @Mapping(target = "store", source = "storeId")
-        @Mapping(target = "authors", source = "authorIds")
         @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
         Book toBook(BookInput input);
-
-        //If `Book.storeId` is deleted, please add this method
-        //@BeanMapping(ignoreByDefault = true)
-        //@Mapping(target = "id", source = ".")
-        //BookStore toBookStore(Long id);
-
-        //If `Book.authorIds` is deleted, please add this method
-        //@BeanMapping(ignoreByDefault = true)
-        //@Mapping(target = "id", source = ".")
-        //Author toAuthor(Long id);
     }
+
+    /*
+     * If `Book` does not support `storeId` and `authorIds` which
+     * are decorated by `@IdView`, the mapper should look like this
+     */
+//    @Mapper
+//    interface Converter {
+//
+//        @Mapping(target = "store", source = "storeId")
+//        @Mapping(target = "authors", source = "authorIds")
+//        @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+//        Book toBook(BookInput input);
+//
+//        @BeanMapping(ignoreByDefault = true)
+//        @Mapping(target = "id", source = ".")
+//        BookStore toBookStore(Long id);
+//
+//        @BeanMapping(ignoreByDefault = true)
+//        @Mapping(target = "id", source = ".")
+//        Author toAuthor(Long id);
+//    }
 }

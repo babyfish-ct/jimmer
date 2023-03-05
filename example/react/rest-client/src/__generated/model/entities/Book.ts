@@ -1,4 +1,4 @@
-import type { Author, BookStore, Chapter } from './';
+import type { Author, BookStore } from './';
 
 export interface Book {
     
@@ -20,5 +20,7 @@ export interface Book {
     
     readonly authors: ReadonlyArray<Author>;
     
-    readonly chapters: ReadonlyArray<Chapter>;
+    readonly storeId?: number;
+    
+    readonly authorIds: ReadonlyArray<number>;
 }

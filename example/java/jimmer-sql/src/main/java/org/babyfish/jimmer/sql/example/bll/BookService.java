@@ -100,10 +100,6 @@ public class BookService {
                     .authors(
                             AuthorFetcher.$
                                     .allScalarFields()
-                    )
-                    .chapters(
-                            ChapterFetcher.$
-                                    .allScalarFields()
                     );
 
     @PutMapping
@@ -113,18 +109,11 @@ public class BookService {
         return bookRepository.save(input);
     }
 
-    @PutMapping("/withChapters")
+    @PutMapping("/composite")
     @BusinessThrows({BusinessErrorCode.GLOBAL_TENANT_REQUIRED})
     @ThrowsAll(SaveErrorCode.class)
     public Book saveCompositeBook(@RequestBody CompositeBookInput input) {
-        return bookRepository.save(
-                BookDraft.$.produce(input.toEntity(), draft -> {
-                    int size = draft.chapters().size();
-                    for (int i = 0; i < size; i++) {
-                        draft.chapters(true).get(i).setIndex(i);
-                    }
-                })
-        );
+        return bookRepository.save(input);
     }
 
     @DeleteMapping("/{id}")

@@ -38,9 +38,6 @@ public interface Book extends TenantAware {
     )
     List<Author> authors();
 
-    @OneToMany(mappedBy = "book", orderedProps = @OrderedProp("index"))
-    List<Chapter> chapters();
-
     // -----------------------------
     // Optional properties
     // -----------------------------

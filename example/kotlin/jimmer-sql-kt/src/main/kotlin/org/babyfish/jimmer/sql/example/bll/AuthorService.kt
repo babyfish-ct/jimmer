@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.example.bll
 
 import org.babyfish.jimmer.client.FetchBy
+import org.babyfish.jimmer.client.ThrowsAll
 import org.babyfish.jimmer.sql.example.dal.AuthorRepository
 import org.babyfish.jimmer.sql.example.model.Author
 import org.babyfish.jimmer.sql.example.model.Gender
@@ -8,6 +9,7 @@ import org.babyfish.jimmer.sql.example.model.by
 import org.babyfish.jimmer.spring.model.SortUtils
 import org.babyfish.jimmer.sql.example.model.input.AuthorInput
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
+import org.babyfish.jimmer.sql.runtime.SaveErrorCode
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 
@@ -57,6 +59,7 @@ class AuthorService(
         authorRepository.findNullable(id, COMPLEX_FETCHER)
 
     @PutMapping
+    @ThrowsAll(SaveErrorCode::class)
     fun saveAuthor(@RequestBody input: AuthorInput): Author =
         authorRepository.save(input)
 

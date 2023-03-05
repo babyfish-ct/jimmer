@@ -1,12 +1,14 @@
 package org.babyfish.jimmer.sql.example.bll;
 
 import org.babyfish.jimmer.client.FetchBy;
+import org.babyfish.jimmer.client.ThrowsAll;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.example.dal.BookRepository;
 import org.babyfish.jimmer.sql.example.dal.BookStoreRepository;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.example.model.input.BookStoreInput;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -100,6 +102,7 @@ public class BookStoreService {
                     );
 
     @PutMapping
+    @ThrowsAll(SaveErrorCode.class)
     public BookStore saveBookStore(@RequestBody BookStoreInput input) {
         return bookStoreRepository.save(input);
     }

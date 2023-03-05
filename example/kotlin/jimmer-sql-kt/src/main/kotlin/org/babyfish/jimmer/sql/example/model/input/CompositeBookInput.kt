@@ -4,7 +4,7 @@ import org.babyfish.jimmer.Input
 import org.babyfish.jimmer.sql.example.model.Author
 import org.babyfish.jimmer.sql.example.model.Book
 import org.babyfish.jimmer.sql.example.model.BookStore
-import org.babyfish.jimmer.sql.example.model.Chapter
+import org.babyfish.jimmer.sql.example.model.Gender
 import org.mapstruct.BeanMapping
 import org.mapstruct.Mapper
 import org.mapstruct.Mapping
@@ -17,9 +17,8 @@ data class CompositeBookInput(
     val name: String,
     val edition: Int,
     val price: BigDecimal,
-    val storeId: Long?,
-    val authorIds: List<Long>,
-    val chapters: List<String>
+    val store: StoreTarget?,
+    val authors: List<AuthorTarget>
 ): Input<Book> {
 
     override fun toEntity(): Book =
@@ -29,25 +28,28 @@ data class CompositeBookInput(
     internal interface Converter {
 
         @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
-        @Mapping(target = "store", source = "storeId")
-        @Mapping(target = "authors", source = "authorIds")
         fun toBook(input: CompositeBookInput): Book
 
-        @BeanMapping(ignoreByDefault = true)
-        @Mapping(target = "id", source = ".")
-        fun toBookStore(id: Long?): BookStore
+        @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        fun toBookStore(id: StoreTarget): BookStore
 
-        @BeanMapping(ignoreByDefault = true)
-        @Mapping(target = "id", source = ".")
-        fun toAuthor(id: Long?): Author
-
-        @BeanMapping(ignoreByDefault = true)
-        @Mapping(target = "title", source = ".")
-        fun toChapter(title: String): Chapter
+        @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        fun toAuthor(id: AuthorTarget): Author
     }
 
     companion object {
         @JvmStatic
         private val CONVERTER = Mappers.getMapper(Converter::class.java)
     }
+
+    data class StoreTarget(
+        val name: String,
+        val website: String?
+    )
+
+    data class AuthorTarget(
+        val firstName: String,
+        val lastName: String,
+        val gender: Gender
+    )
 }

@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.example.bll
 
+import org.babyfish.jimmer.client.Doc
 import org.babyfish.jimmer.client.FetchBy
+import org.babyfish.jimmer.client.ThrowsAll
 import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.example.dal.BookRepository
 import org.babyfish.jimmer.sql.example.model.*
@@ -10,6 +12,7 @@ import org.babyfish.jimmer.sql.example.bll.error.BusinessThrows
 import org.babyfish.jimmer.sql.example.model.input.BookInput
 import org.babyfish.jimmer.sql.example.model.input.CompositeBookInput
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
+import org.babyfish.jimmer.sql.runtime.SaveErrorCode
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.transaction.annotation.Transactional
@@ -35,7 +38,6 @@ class BookService(
     fun findSimpleBooks(): List<@FetchBy("SIMPLE_FETCHER") Book> =
         bookRepository.findAll(SIMPLE_FETCHER) {
             asc(Book::name)
-            asc(Book::chapters)
         }
 
     @GetMapping("/list")
@@ -62,21 +64,17 @@ class BookService(
     ): @FetchBy("COMPLEX_FETCHER") Book? =
         bookRepository.findNullable(id, COMPLEX_FETCHER)
 
-    @BusinessThrows([BusinessErrorCode.GLOBAL_TENANT_REQUIRED])
     @PutMapping
+    @BusinessThrows([BusinessErrorCode.GLOBAL_TENANT_REQUIRED])
+    @ThrowsAll(SaveErrorCode::class)
     fun saveBook(@RequestBody input: BookInput): Book =
         bookRepository.save(input)
 
+    @PutMapping("/composite")
     @BusinessThrows([BusinessErrorCode.GLOBAL_TENANT_REQUIRED])
-    @PutMapping("/withChapters")
+    @ThrowsAll(SaveErrorCode::class)
     fun saveBook(@RequestBody input: CompositeBookInput): Book =
-        bookRepository.save(
-            new(Book::class).by(input.toEntity()) {
-                for (i in chapters.indices) {
-                    chapters()[i].index = i
-                }
-            }
-        )
+        bookRepository.save(input)
 
     @DeleteMapping("/{id}")
     fun deleteBook(@PathVariable id: Long) {
@@ -113,9 +111,6 @@ class BookService(
                 avgPrice()
             }
             authors {
-                allScalarFields()
-            }
-            chapters {
                 allScalarFields()
             }
         }

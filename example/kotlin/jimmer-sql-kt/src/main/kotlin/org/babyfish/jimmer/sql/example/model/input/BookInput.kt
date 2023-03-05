@@ -27,18 +27,29 @@ data class BookInput(
     internal interface Converter {
 
         @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
-        @Mapping(target = "store", source = "storeId")
-        @Mapping(target = "authors", source = "authorIds")
         fun toBook(input: BookInput): Book
-
-        @BeanMapping(ignoreByDefault = true)
-        @Mapping(target = "id", source = ".")
-        fun toBookStore(id: Long?): BookStore
-
-        @BeanMapping(ignoreByDefault = true)
-        @Mapping(target = "id", source = ".")
-        fun toAuthor(id: Long?): Author
     }
+
+    /*
+     * If `Book` does not support `storeId` and `authorIds` which
+     * are decorated by `@IdView`, the mapper should look like this
+     */
+//    @Mapper
+//    internal interface Converter {
+//
+//        @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+//        @Mapping(target = "store", source = "storeId")
+//        @Mapping(target = "authors", source = "authorIds")
+//        fun toBook(input: BookInput): Book
+//
+//        @BeanMapping(ignoreByDefault = true)
+//        @Mapping(target = "id", source = ".")
+//        fun toBookStore(id: Long?): BookStore
+//
+//        @BeanMapping(ignoreByDefault = true)
+//        @Mapping(target = "id", source = ".")
+//        fun toAuthor(id: Long?): Author
+//    }
 
     companion object {
         @JvmStatic

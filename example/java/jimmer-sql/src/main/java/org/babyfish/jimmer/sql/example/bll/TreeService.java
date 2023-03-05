@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.example.bll;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.client.FetchBy;
+import org.babyfish.jimmer.client.ThrowsAll;
 import org.babyfish.jimmer.sql.example.dal.TreeNodeRepository;
 import org.babyfish.jimmer.sql.example.model.TreeNode;
 import org.babyfish.jimmer.sql.example.model.TreeNodeDraft;
@@ -9,6 +10,7 @@ import org.babyfish.jimmer.sql.example.model.TreeNodeFetcher;
 import org.babyfish.jimmer.sql.example.model.input.RecursiveTreeInput;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig;
+import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +51,7 @@ public class TreeService {
     }
 
     @PutMapping("/root/recursive")
+    @ThrowsAll(SaveErrorCode.class)
     public TreeNode saveTree(@RequestBody RecursiveTreeInput input) {
         TreeNode rootNode = TreeNodeDraft.$.produce(
 
