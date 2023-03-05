@@ -20,7 +20,6 @@ public class PropDescriptorTest {
                                     null,
                                     false,
                                     null,
-                                    null,
                                     IllegalArgumentException::new
                             )
                             .add(Id.class)
@@ -46,7 +45,6 @@ public class PropDescriptorTest {
                                     "String",
                                     null,
                                     false,
-                                    null,
                                     null,
                                     IllegalArgumentException::new
                             )
@@ -74,7 +72,6 @@ public class PropDescriptorTest {
                                     Entity.class,
                                     false,
                                     null,
-                                    null,
                                     IllegalArgumentException::new
                             )
                             .add(JoinColumn.class)
@@ -100,7 +97,6 @@ public class PropDescriptorTest {
                                     "BookStore",
                                     Entity.class,
                                     false,
-                                    null,
                                     null,
                                     IllegalArgumentException::new
                             )
@@ -128,7 +124,6 @@ public class PropDescriptorTest {
                                     Entity.class,
                                     true,
                                     null,
-                                    null,
                                     IllegalArgumentException::new
                             )
                             .add(ManyToMany.class)
@@ -153,7 +148,6 @@ public class PropDescriptorTest {
                         null,
                         false,
                         null,
-                        null,
                         IllegalArgumentException::new
                 )
                 .add(Id.class)
@@ -171,7 +165,6 @@ public class PropDescriptorTest {
                         "Int",
                         null,
                         false,
-                        null,
                         null,
                         IllegalArgumentException::new
                 )
@@ -191,7 +184,6 @@ public class PropDescriptorTest {
                         null,
                         false,
                         null,
-                        null,
                         IllegalArgumentException::new
                 )
                 .add(Formula.class)
@@ -210,7 +202,6 @@ public class PropDescriptorTest {
                         "String",
                         null,
                         false,
-                        null,
                         null,
                         IllegalArgumentException::new
                 )
@@ -233,7 +224,6 @@ public class PropDescriptorTest {
                         Embeddable.class,
                         false,
                         null,
-                        null,
                         IllegalArgumentException::new
                 )
                 .add(PropOverrides.class)
@@ -254,7 +244,6 @@ public class PropDescriptorTest {
                         "String",
                         Entity.class,
                         false,
-                        null,
                         null,
                         IllegalArgumentException::new
                 )
@@ -281,7 +270,6 @@ public class PropDescriptorTest {
                         Entity.class,
                         false,
                         null,
-                        null,
                         IllegalArgumentException::new
                 )
                 .add(ManyToOne.class)
@@ -307,7 +295,6 @@ public class PropDescriptorTest {
                         Entity.class,
                         true,
                         null,
-                        null,
                         IllegalArgumentException::new
                 )
                 .add(OneToMany.class)
@@ -326,7 +313,6 @@ public class PropDescriptorTest {
                         "Author",
                         Entity.class,
                         true,
-                        null,
                         null,
                         IllegalArgumentException::new
                 )
@@ -348,7 +334,6 @@ public class PropDescriptorTest {
                         "String",
                         null,
                         false,
-                        null,
                         null,
                         IllegalArgumentException::new
                 )
