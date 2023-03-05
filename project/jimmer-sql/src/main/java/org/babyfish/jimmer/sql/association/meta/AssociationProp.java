@@ -77,6 +77,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public boolean isMutable() {
+        return true;
+    }
+
+    @Override
     public Annotation getAssociationAnnotation() {
         return null;
     }

@@ -65,7 +65,7 @@ public class ImplementorGenerator {
                 "default: throw new IllegalArgumentException($S + prop + $S)",
                 "Illegal property " +
                         (argType == int.class ? "id" : "name") +
-                        ": \"",
+                        " for \"" + type + "\": \"",
                         "\""
         );
         builder.endControlFlow();

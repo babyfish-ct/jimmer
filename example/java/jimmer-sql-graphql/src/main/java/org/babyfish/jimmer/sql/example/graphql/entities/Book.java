@@ -41,7 +41,18 @@ public interface Book extends TenantAware {
     )
     List<Author> authors();
 
-    @OneToMany(mappedBy = "book", orderedProps = @OrderedProp("index"))
-    List<Chapter> chapters();
+    // -----------------------------
+    // Optional properties
+    // -----------------------------
+
+    // Optional property `storeId`
+    // If this property is deleted, please add `BookInput.Mapper.toBookStore(Long)`
+    @IdView
+    Long storeId();
+
+    // Optional property `authorIds`
+    // If this property is deleted, please add `BookInputMapper.toAuthor(Long)`
+    @IdView("authors")
+    List<Long> authorIds();
 }
 

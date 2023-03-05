@@ -100,9 +100,11 @@ class MutationCache {
             ImmutableSpi newSpi = spi;
             spi = (ImmutableSpi) Internal.produce(spi.__type(), oldSpi, draft -> {
                 for (ImmutableProp prop : type.getProps().values()) {
-                    int propId = prop.getId();
-                    if (newSpi.__isLoaded(propId)) {
-                        ((DraftSpi) draft).__set(propId, newSpi.__get(prop.getId()));
+                    if (prop.isMutable()) {
+                        int propId = prop.getId();
+                        if (newSpi.__isLoaded(propId)) {
+                            ((DraftSpi) draft).__set(propId, newSpi.__get(prop.getId()));
+                        }
                     }
                 }
             });

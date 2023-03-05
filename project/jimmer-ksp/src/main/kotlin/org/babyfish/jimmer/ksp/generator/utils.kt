@@ -7,15 +7,17 @@ import com.squareup.kotlinpoet.CodeBlock
 import org.babyfish.jimmer.ksp.annotations
 import org.babyfish.jimmer.ksp.fullName
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
+import org.babyfish.jimmer.ksp.meta.ImmutableType
 import org.babyfish.jimmer.meta.ModelException
 import javax.validation.Constraint
 import kotlin.math.abs
 import kotlin.reflect.KClass
 
-internal fun CodeBlock.Builder.addElseForNonExistingProp(argType: KClass<*>) {
+internal fun CodeBlock.Builder.addElseForNonExistingProp(type: ImmutableType, argType: KClass<*>) {
     add("else -> throw IllegalArgumentException(\n")
     indent()
-    add("%S + \n", "Illegal property ${if (argType == Int::class) "id" else "name"}")
+    add("%S + \n", "Illegal property ${if (argType == Int::class) "id " else "name"}")
+    add("%S + \n", " for \"$type\": ")
     add("prop\n")
     unindent()
     addStatement(")\n")

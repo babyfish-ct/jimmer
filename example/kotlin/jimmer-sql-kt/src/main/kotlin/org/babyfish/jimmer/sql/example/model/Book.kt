@@ -33,9 +33,6 @@ interface Book : TenantAware {
     // Optional properties
     // -----------------------------
 
-    // -----------------------------
-    // Optional properties
-    // -----------------------------
     // Optional property `storeId`
     // If this property is deleted, please add `BookInput.Mapper.toBookStore(Long)`
     @IdView

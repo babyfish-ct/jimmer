@@ -47,7 +47,7 @@ class ValueParser {
             List<ImmutableProp> chain,
             JsonNode jsonNode,
             JSqlClient sqlClient
-    ) throws IOException {
+    ) {
         ImmutableProp entityProp = chain.get(0);
         if (entityProp.isEmbedded(EmbeddedLevel.BOTH)) {
             for (ImmutableProp prop : chain) {

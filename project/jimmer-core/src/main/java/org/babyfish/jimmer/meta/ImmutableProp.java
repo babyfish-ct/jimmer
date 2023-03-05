@@ -42,6 +42,8 @@ public interface ImmutableProp {
 
     boolean isInputNotNull();
 
+    boolean isMutable();
+
     <A extends Annotation> A getAnnotation(Class<A> annotationType);
 
     Annotation[] getAnnotations();

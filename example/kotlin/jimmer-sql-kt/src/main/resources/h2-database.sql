@@ -126,7 +126,6 @@ insert into book_author_mapping(book_id, author_id) values
     (12, 5)
 ;
 
-
 create table tree_node(
     node_id identity(100, 1) not null,
     name varchar(20) not null,

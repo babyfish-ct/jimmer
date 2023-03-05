@@ -12,6 +12,7 @@ type Mutation {
     saveBookStore(input: BookStoreInput!): BookStore!
     deleteBookStore(id: Long): Int!
     saveBook(input: BookInput!): Book!
+    saveCompositeBook(input: CompositeBookInput!): Book!
     deleteBook(id: Long): Int!
     saveAuthor(input: AuthorInput!): Author!
     deleteAuthor(id: Long): Int!
@@ -27,7 +28,7 @@ type BookStore implements CommonEntity {
     name: String!
     website: String
     avgPrice: BigDecimal!
-    books(name: String): [Book!]!
+    books: [Book!]!
     newestBooks: [Book!]!
     createdTime: LocalDateTime!
     modifiedTime: LocalDateTime!
@@ -40,7 +41,6 @@ type Book implements CommonEntity {
     price: BigDecimal!
     store: BookStore
     authors: [Author!]!
-    chapters: [Chapter!]!
     createdTime: LocalDateTime!
     modifiedTime: LocalDateTime!
 }
@@ -49,17 +49,9 @@ type Author implements CommonEntity {
     id: Long!
     firstName: String!
     lastName: String!
+    fullName: String
     gender: Gender!
-    fullName: String!
-    books(name: String): [Book!]!
-    createdTime: LocalDateTime!
-    modifiedTime: LocalDateTime!
-}
-
-type Chapter implements CommonEntity {
-    id: Long!
-    index: Int!
-    title: String!
+    books: [Book!]!
     createdTime: LocalDateTime!
     modifiedTime: LocalDateTime!
 }
@@ -77,7 +69,26 @@ input BookInput {
     price: BigDecimal!
     storeId: Long
     authorIds: [Long!]!
-    chapters: [String!]!
+}
+
+input CompositeBookInput {
+    id: Long
+    name: String!
+    edition: Int
+    price: BigDecimal!
+    store: CompositeBookInput_StoreTarget
+    authors: [CompositeBookInput_AuthorTarget!]!
+}
+
+input CompositeBookInput_StoreTarget {
+    name: String!
+    website: String
+}
+
+input CompositeBookInput_AuthorTarget {
+    firstName: String!
+    lastName: String!
+    gender: Gender!
 }
 
 input AuthorInput {

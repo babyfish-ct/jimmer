@@ -220,7 +220,7 @@ class ImplGenerator(
                                     addStatement("%L -> %L", arg, cond)
                                 }
                             }
-                            addElseForNonExistingProp(argType)
+                            addElseForNonExistingProp(type, argType)
                             endControlFlow()
                         }
                         .build()

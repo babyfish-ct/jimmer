@@ -339,7 +339,7 @@ class DraftImplGenerator(
                                 unindent()
                                 add("\n")
                             }
-                            addElseForNonExistingProp(argType)
+                            addElseForNonExistingProp(type, argType)
                             endControlFlow()
                         }
                         .build()
@@ -375,7 +375,7 @@ class DraftImplGenerator(
                                 }
                                 add("\n")
                             }
-                            addElseForNonExistingProp(argType)
+                            addElseForNonExistingProp(type, argType)
                             endControlFlow()
                         }
                         .build()

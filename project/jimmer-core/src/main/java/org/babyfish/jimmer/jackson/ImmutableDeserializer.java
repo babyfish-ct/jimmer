@@ -36,7 +36,7 @@ public class ImmutableDeserializer extends StdDeserializer<Object> {
 
         return Internal.produce(immutableType, null, draft -> {
             for (ImmutableProp prop : immutableType.getProps().values()) {
-                if (node.has(prop.getName())) {
+                if (prop.isMutable() && node.has(prop.getName())) {
                     Object value = PropDeserializeUtils.readTreeAsValue(
                             ctx,
                             node.get(prop.getName()),

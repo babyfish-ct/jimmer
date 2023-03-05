@@ -574,7 +574,7 @@ public class DraftImplGenerator {
                 "default: throw new IllegalArgumentException($S + prop + $S)",
                 "Illegal property " +
                         (argType == String.class ? "name" : "id") +
-                        ": \"",
+                        " for \"" + type + "\": \"",
                 "\""
         );
         builder.endControlFlow();
@@ -604,7 +604,7 @@ public class DraftImplGenerator {
                 "default: throw new IllegalArgumentException(\n$>$S + \nprop + \n$S + \n$S\n$<)",
                 "Illegal property " +
                         (argType == String.class ? "name" : "id") +
-                        ": \"",
+                        " for \"" + type + "\": \"",
                 "\",it does not exists or the visibility of that property is not controllable",
                 "(Only non-abstract formula property can be used)"
         );
@@ -649,7 +649,7 @@ public class DraftImplGenerator {
                 "default: throw new IllegalArgumentException($S + prop + $S)",
                 "Illegal property " +
                         (argType == String.class ? "name" : "id") +
-                        ": \"",
+                        " for \"" + type + "\": \"",
                 "\", it does not exist or its loaded state is not controllable"
         );
         builder.endControlFlow();

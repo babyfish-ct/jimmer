@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.example.graphql.bll;
 import org.babyfish.jimmer.sql.example.graphql.dal.BookRepository;
 import org.babyfish.jimmer.sql.example.graphql.entities.*;
 import org.babyfish.jimmer.sql.example.graphql.entities.input.BookInput;
+import org.babyfish.jimmer.sql.example.graphql.entities.input.CompositeBookInput;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.BatchMapping;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -49,14 +50,13 @@ public class BookService {
     @MutationMapping
     @Transactional
     public Book saveBook(@Argument BookInput input) {
-        return bookRepository.save(
-                BookDraft.$.produce(input.toEntity(), draft -> {
-                    int size = draft.chapters().size();
-                    for (int i = 0; i < size; i++) {
-                        draft.chapters(true).get(i).setIndex(i);
-                    }
-                })
-        );
+        return bookRepository.save(input);
+    }
+
+    @MutationMapping
+    @Transactional
+    public Book saveCompositeBook(@Argument CompositeBookInput input) {
+        return bookRepository.save(input);
     }
 
     @MutationMapping

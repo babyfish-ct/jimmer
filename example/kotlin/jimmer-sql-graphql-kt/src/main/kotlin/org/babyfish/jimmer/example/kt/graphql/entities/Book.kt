@@ -35,6 +35,17 @@ interface Book : TenantAware {
     )
     val authors: List<Author>
 
-    @OneToMany(mappedBy = "book", orderedProps = [OrderedProp("index")])
-    val chapters: List<Chapter>
+    // -----------------------------
+    // Optional properties
+    // -----------------------------
+
+    // Optional property `storeId`
+    // If this property is deleted, please add `BookInput.Mapper.toBookStore(Long)`
+    @IdView
+    val storeId: Long?
+
+    // Optional property `authorIds`
+    // If this property is deleted, please add `BookInputMapper.toAuthor(Long)`
+    @IdView("authors")
+    val authorIds: List<Long>
 }

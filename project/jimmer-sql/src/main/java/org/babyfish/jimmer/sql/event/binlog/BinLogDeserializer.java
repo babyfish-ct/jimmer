@@ -47,7 +47,7 @@ class BinLogDeserializer extends StdDeserializer<Object> {
                 ValueParser.addEntityProp((DraftSpi) draft, chain, childNode, sqlClient);
             }
             for (ImmutableProp prop : immutableType.getProps().values()) {
-                if (prop.isEmbedded(EmbeddedLevel.BOTH)) {
+                if (prop.isMutable() && prop.isEmbedded(EmbeddedLevel.BOTH)) {
                     if (!EmbeddableObjects.isCompleted(((DraftSpi) draft).__get(prop.getId()))) {
                         if (!prop.isNullable()) {
                             throw new IllegalArgumentException(
