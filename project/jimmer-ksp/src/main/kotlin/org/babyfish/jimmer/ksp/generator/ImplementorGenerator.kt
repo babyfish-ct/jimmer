@@ -49,7 +49,7 @@ class ImplementorGenerator(
                                     addStatement("%S -> %L", prop.name, prop.name)
                                 }
                             }
-                            addElseBranchForProp(argType)
+                            addElseForNonExistingProp(argType)
                         }
                         .endControlFlow()
                         .build()

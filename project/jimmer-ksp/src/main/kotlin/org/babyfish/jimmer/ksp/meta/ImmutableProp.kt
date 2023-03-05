@@ -13,6 +13,7 @@ import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
 import org.babyfish.jimmer.ksp.generator.parseValidationMessages
 import org.babyfish.jimmer.meta.impl.PropDescriptor
 import org.babyfish.jimmer.sql.*
+import java.lang.IllegalArgumentException
 import kotlin.reflect.KClass
 
 class ImmutableProp(
@@ -54,24 +55,6 @@ class ImmutableProp(
     val isKotlinFormula: Boolean =
         annotation(Formula::class) != null && !propDeclaration.isAbstract()
 
-    val dependencies: List<String> =
-        annotation(Formula::class)?.get("dependencies") ?: emptyList()
-
-    val usingFunName: String? =
-        if (isKotlinFormula) {
-            val name = propDeclaration.name
-            if (resolvedType == ctx.resolver.builtIns.booleanType &&
-                name.length > 2 &&
-                name.startsWith("is") &&
-                name[2].isUpperCase()) {
-                "use${name.substring(2)}"
-            } else {
-                "use${name[0].uppercase()}${name.substring(1)}"
-            }
-        } else {
-            null
-        }
-
     val isList: Boolean =
         (resolvedType.declaration as KSClassDeclaration).asStarProjectedType().let { starType ->
             when {
@@ -88,7 +71,7 @@ class ImmutableProp(
             }
         }
 
-    val targetDeclaration: KSClassDeclaration =
+    private val targetDeclaration: KSClassDeclaration =
         if (isList) {
             resolvedType.arguments[0].type!!.resolve()
         } else {
@@ -238,14 +221,18 @@ class ImmutableProp(
             false
         }
 
-    val valueFieldName: String = "__${name}Value"
+    val valueFieldName: String?
+        get() = if (isKotlinFormula || idViewBaseProp !== null) null else "__${name}Value"
 
     val loadedFieldName: String? =
-        if (isNullable || isPrimitive || isKotlinFormula) {
+        if (idViewBaseProp === null && !isKotlinFormula && (isNullable || isPrimitive)) {
             "__${name}Loaded"
         } else {
             null
         }
+
+    val visibleFieldName: String?
+        get() = if (_isVisibilityControllable) "__${name}Visible" else null
 
     fun annotation(annotationType: KClass<out Annotation>): KSAnnotation? =
         propDeclaration.annotation(annotationType)
@@ -264,6 +251,16 @@ class ImmutableProp(
 
     private var _idViewBaseProp: ImmutableProp? = null
 
+    private lateinit var _dependencies: Set<ImmutableProp>
+
+    private var _isVisibilityControllable: Boolean = false
+
+    val idViewBaseProp: ImmutableProp?
+        get() = _idViewBaseProp
+
+    val dependencies: Set<ImmutableProp>
+        get() = _dependencies
+
     internal fun resolve(ctx: Context, step: Int): Boolean =
         when (step) {
             0 -> {
@@ -272,6 +269,10 @@ class ImmutableProp(
             }
             1 -> {
                 resolveIdViewBaseProp()
+                true
+            }
+            2 -> {
+                resolveFormulaDependencies()
                 true
             }
             else -> false
@@ -301,7 +302,7 @@ class ImmutableProp(
                 )
             }
         }
-        if ((base == name)) {
+        if (base == name) {
             throw MetaException(
                 "Illegal property \"" +
                     this +
@@ -379,6 +380,34 @@ class ImmutableProp(
                     "\", but the current property does not return that type"
             )
         }
+        baseProp._isVisibilityControllable = true
+        _isVisibilityControllable = true
         _idViewBaseProp = baseProp
+    }
+
+    private fun resolveFormulaDependencies() {
+        val propNames = annotation(Formula::class)?.get<List<String>>("dependencies") ?: emptyList()
+        if (propNames.isEmpty()) {
+            _dependencies = emptySet()
+        } else {
+            val propMap = declaringType.properties
+            val props = mutableSetOf<ImmutableProp>()
+            for (dependency in propNames) {
+                val prop = propMap[dependency]
+                    ?: throw MetaException(
+                        "Illegal property \"" +
+                            this +
+                            "\", it is decorated by \"@" +
+                            Formula::class.qualifiedName +
+                            "\" but the dependency property \"" +
+                            dependency +
+                            "\" does not eixst"
+                    )
+                props.add(prop)
+                prop._isVisibilityControllable = true
+            }
+            this._isVisibilityControllable = true
+            this._dependencies = props
+        }
     }
 }

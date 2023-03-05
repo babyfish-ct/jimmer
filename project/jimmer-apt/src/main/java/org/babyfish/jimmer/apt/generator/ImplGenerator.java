@@ -187,7 +187,7 @@ public class ImplGenerator {
                     );
                 } else {
                     builder.addStatement(
-                            "return __isLoaded($L) && $L() != null && (($T)$L()).__isLoaded($L)",
+                            "return __isLoaded($L) && ($L() == null || (($T)$L()).__isLoaded($L))",
                             baseProp.getId(),
                             baseProp.getGetterName(),
                             ImmutableSpi.class,
@@ -259,9 +259,6 @@ public class ImplGenerator {
             builder.addAnnotation(Override.class);
         }
         for (ImmutableProp prop : type.getProps().values()) {
-            if (prop.getIdViewBaseProp() != null) {
-                continue;
-            }
             if (prop.isVisibilityControllable()) {
                 builder.addStatement("hash = 31 * hash + $T.hashCode($L)", Boolean.class, prop.getVisibleName());
                 if (!prop.isValueRequired()) {

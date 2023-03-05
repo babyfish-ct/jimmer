@@ -109,14 +109,6 @@ class DraftGenerator(
                     .build()
             )
         }
-        prop.usingFunName?.let { usingName ->
-            addFunction(
-                FunSpec
-                    .builder(usingName)
-                    .addModifiers(KModifier.ABSTRACT)
-                    .build()
-            )
-        }
     }
 
     private fun FileSpec.Builder.addAddFun(type: ImmutableType) {

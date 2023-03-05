@@ -596,6 +596,8 @@ public class DraftImplGenerator {
                         arg,
                         prop.getIdViewBaseProp().getId()
                 );
+            } else if (prop.isJavaFormula()) {
+                builder.addStatement("case $L: break", arg);
             } else if (prop.isLoadedStateRequired()) {
                 builder.addStatement(
                         "case $L: $L().$L = false;break",
@@ -617,7 +619,7 @@ public class DraftImplGenerator {
                 "Illegal property " +
                         (argType == String.class ? "name" : "id") +
                         ": \"",
-                "\""
+                "\", it does not exist or its loaded state is not controllable"
         );
         builder.endControlFlow();
         typeBuilder.addMethod(builder.build());

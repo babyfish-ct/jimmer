@@ -27,6 +27,8 @@ class ImplGenerator(
                     addCloneFun()
                     addIsLoadedFun(Int::class)
                     addIsLoadedFun(String::class)
+                    addIsVisibleFun(Int::class)
+                    addIsVisibleFun(String::class)
                     addHashCodeFun(true)
                     addHashCodeFun(false)
                     addParameterizedHashCode()
@@ -39,11 +41,11 @@ class ImplGenerator(
     }
 
     private fun TypeSpec.Builder.addFields(prop: ImmutableProp) {
-        if (!prop.isKotlinFormula) {
+        prop.valueFieldName?.let {
             addProperty(
                 PropertySpec
                     .builder(
-                        prop.valueFieldName,
+                        it,
                         if (prop.isList) {
                             NON_SHARED_LIST_CLASS_NAME
                                 .parameterizedBy(prop.targetTypeName())
@@ -81,6 +83,16 @@ class ImplGenerator(
                     .build()
             )
         }
+        prop.visibleFieldName?.let {
+            addProperty(
+                PropertySpec
+                    .builder(it, BOOLEAN)
+                    .addModifiers(KModifier.INTERNAL)
+                    .initializer((!prop.isKotlinFormula && prop.idViewBaseProp == null).toString())
+                    .mutable()
+                    .build()
+            )
+        }
     }
 
     private fun TypeSpec.Builder.addProp(prop: ImmutableProp) {
@@ -96,26 +108,40 @@ class ImplGenerator(
                             CodeBlock
                                 .builder()
                                 .apply {
-                                    if (!prop.isKotlinFormula) {
-                                        addStatement("val %L = this.%L", prop.valueFieldName, prop.valueFieldName)
-                                    }
-                                    beginControlFlow(
-                                        when {
-                                            prop.isKotlinFormula -> "if (!__isLoaded(${prop.id}))"
-                                            prop.loadedFieldName !== null -> "if (!${prop.loadedFieldName})"
-                                            else -> "if (${prop.valueFieldName} === null)"
+                                    if (prop.idViewBaseProp !== null) {
+                                        if (prop.isList) {
+                                            addStatement(
+                                                "return %N.map {it.%N}",
+                                                prop.idViewBaseProp!!.name,
+                                                prop.idViewBaseProp!!.targetType!!.idProp!!.name
+                                            )
+                                        } else {
+                                            addStatement(
+                                                "return %N%L%N",
+                                                prop.idViewBaseProp!!.name,
+                                                if (prop.isNullable) "?." else ".",
+                                                prop.idViewBaseProp!!.targetType!!.idProp!!.name
+                                            )
                                         }
-                                    )
-                                    addStatement(
-                                        "throw %T(%T::class.java, %S)",
-                                        UNLOADED_EXCEPTION_CLASS_NAME,
-                                        prop.declaringType.className,
-                                        prop.name
-                                    )
-                                    endControlFlow()
-                                    if (prop.isKotlinFormula) {
+                                    } else if (prop.isKotlinFormula) {
                                         addStatement("return super.%N", prop.name)
-                                    } else {
+                                    }   else {
+                                        if (prop.loadedFieldName === null) {
+                                            addStatement("val %N = this.%N", prop.valueFieldName, prop.valueFieldName)
+                                        }
+                                        beginControlFlow(
+                                            when {
+                                                prop.loadedFieldName !== null -> "if (!${prop.loadedFieldName})"
+                                                else -> "if (${prop.valueFieldName} === null)"
+                                            }
+                                        )
+                                        addStatement(
+                                            "throw %T(%T::class.java, %S)",
+                                            UNLOADED_EXCEPTION_CLASS_NAME,
+                                            prop.declaringType.className,
+                                            prop.name
+                                        )
+                                        endControlFlow()
                                         addStatement("return %N", prop.valueFieldName)
                                     }
                                 }
@@ -153,11 +179,39 @@ class ImplGenerator(
                             beginControlFlow("when (prop)")
                             for (prop in type.propsOrderById) {
                                 val arg = if (argType == Int::class) prop.id else "\"${prop.name}\""
-                                if (prop.isKotlinFormula) {
-                                    add("%L -> %N", arg, prop.loadedFieldName)
+                                val baseProp = prop.idViewBaseProp
+                                if (baseProp !== null) {
+                                    if (prop.isList) {
+                                        addStatement(
+                                            "%L -> __isLoaded(%L) && %L.any { (it as %T).__isLoaded(%L) }",
+                                            arg,
+                                            baseProp.id,
+                                            baseProp.name,
+                                            IMMUTABLE_SPI_CLASS_NAME,
+                                            baseProp.targetType!!.idProp!!.id
+                                        )
+                                    } else {
+                                        addStatement(
+                                            "%L -> __isLoaded(%L) && (%L as %T)%L__isLoaded(%L) ?: true",
+                                            arg,
+                                            baseProp.id,
+                                            baseProp.name,
+                                            IMMUTABLE_SPI_CLASS_NAME.copy(nullable = baseProp.isNullable),
+                                            if (baseProp.isNullable) "?." else ".",
+                                            baseProp.targetType!!.idProp!!.id
+                                        )
+                                    }
+                                } else if (prop.isKotlinFormula) {
+                                    add("%L ->", arg)
                                     indent()
+                                    var first = true
                                     for (dependency in prop.dependencies) {
-                                        add(" && \n__isLoaded(%S)", dependency)
+                                        if (first) {
+                                            first = false
+                                        } else {
+                                            add(" && \n")
+                                        }
+                                        add("__isLoaded(%L)", dependency.id)
                                     }
                                     add("\n")
                                     unindent()
@@ -166,8 +220,43 @@ class ImplGenerator(
                                     addStatement("%L -> %L", arg, cond)
                                 }
                             }
-                            addElseBranchForProp(argType)
+                            addElseForNonExistingProp(argType)
                             endControlFlow()
+                        }
+                        .build()
+                )
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addIsVisibleFun(argType: KClass<*>) {
+        addFunction(
+            FunSpec
+                .builder("__isVisible")
+                .addModifiers(KModifier.OVERRIDE)
+                .addParameter("prop", if (argType == Int::class) INT else STRING)
+                .returns(BOOLEAN)
+                .addCode(
+                    CodeBlock
+                        .builder()
+                        .apply {
+                            if (type.properties.values.any { it.visibleFieldName !== null}) {
+                                add("return ")
+                                beginControlFlow("when (prop)")
+                                for (prop in type.propsOrderById) {
+                                    if (prop.visibleFieldName !== null) {
+                                        addStatement(
+                                            "%L -> %L",
+                                            if (argType == Int::class) prop.id else "\"${prop.name}\"",
+                                            prop.visibleFieldName
+                                        )
+                                    }
+                                }
+                                addStatement("else -> true")
+                                endControlFlow()
+                            } else {
+                                addStatement("return true")
+                            }
                         }
                         .build()
                 )
@@ -191,9 +280,11 @@ class ImplGenerator(
                         .apply {
                             addStatement("var hash = 1")
                             for (prop in type.properties.values) {
-                                if (prop.isKotlinFormula) {
-                                    addStatement("hash = 31 * hash + %L.hashCode()", prop.loadedFieldName)
-                                    continue
+                                if (prop.visibleFieldName !== null) {
+                                    addStatement("hash = 31 * hash + %L.hashCode()", prop.visibleFieldName)
+                                    if (prop.valueFieldName === null) {
+                                        continue
+                                    }
                                 }
                                 beginControlFlow(
                                     "if (%L)",
@@ -255,15 +346,17 @@ class ImplGenerator(
                             addStatement("return false")
                             endControlFlow()
                             for (prop in type.properties.values) {
-                                if (prop.isKotlinFormula) {
+                                if (prop.visibleFieldName != null) {
                                     beginControlFlow(
-                                        "if (%L != __other.__isLoaded(%L))",
-                                        prop.loadedFieldName,
+                                        "if (%L != __other.__isVisible(%L))",
+                                        prop.visibleFieldName,
                                         prop.id
                                     )
                                     addStatement("return false")
                                     endControlFlow()
-                                    continue
+                                    if (prop.valueFieldName == null) {
+                                        continue
+                                    }
                                 }
                                 val localLoadedName = "__${prop.name}Loaded"
                                 val objLoadedName = prop.loadedFieldName ?: "${prop.valueFieldName} !== null"

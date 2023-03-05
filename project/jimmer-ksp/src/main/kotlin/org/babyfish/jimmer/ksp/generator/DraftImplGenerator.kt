@@ -33,19 +33,20 @@ class DraftImplGenerator(
                     addFields()
                     addIsLoadedProp(Int::class)
                     addIsLoadedProp(String::class)
+                    addIsVisibleProp(Int::class)
+                    addIsVisibleProp(String::class)
                     addHashCodeFuns()
                     addEqualsFuns()
                     for (prop in type.properties.values) {
                         addProp(prop)
-                        addPropUse(prop)
                         addPropFun(prop)
                     }
                     addUnloadFun(Int::class)
                     addUnloadFun(String::class)
                     addSetFun(Int::class)
                     addSetFun(String::class)
-                    addUseFun(Int::class)
-                    addUseFun(String::class)
+                    addShowFun(Int::class)
+                    addShowFun(String::class)
                     addDraftContextFun()
                     addResolveFun()
                 }
@@ -101,6 +102,18 @@ class DraftImplGenerator(
                 .returns(BOOLEAN)
                 .addModifiers(KModifier.OVERRIDE)
                 .addCode("return %L.__isLoaded(prop)", UNMODIFIED)
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addIsVisibleProp(argType: KClass<*>) {
+        addFunction(
+            FunSpec
+                .builder("__isVisible")
+                .addParameter("prop", if (argType == Int::class) INT else STRING)
+                .returns(BOOLEAN)
+                .addModifiers(KModifier.OVERRIDE)
+                .addCode("return %L.__isVisible(prop)", UNMODIFIED)
                 .build()
         )
     }
@@ -183,25 +196,37 @@ class DraftImplGenerator(
                                     CodeBlock
                                         .builder()
                                         .apply {
-                                            ValidationGenerator(prop, this).generate()
-                                            addStatement("val __tmpModified = %L", MODIFIED)
-                                            if (prop.isList || prop.isScalarList) {
+                                            val idViewBaseProp = prop.idViewBaseProp
+                                            if (idViewBaseProp !== null) {
                                                 addStatement(
-                                                    "__tmpModified.%L = %T.of(__tmpModified.%L, %L)",
-                                                    prop.valueFieldName,
-                                                    NON_SHARED_LIST_CLASS_NAME,
-                                                    prop.valueFieldName,
-                                                    prop.name
+                                                    "%N = %L%L%N { %M(it) }",
+                                                    idViewBaseProp.name,
+                                                    prop.name,
+                                                    if (idViewBaseProp.isNullable) "?." else ".",
+                                                    if (idViewBaseProp.isList) "map" else "let",
+                                                    MAKE_ID_ONLY
                                                 )
                                             } else {
-                                                addStatement(
-                                                    "__tmpModified.%L = %L",
-                                                    prop.valueFieldName,
-                                                    prop.name
-                                                )
-                                            }
-                                            prop.loadedFieldName?.let {
-                                                addStatement("__tmpModified.%L = true", it)
+                                                ValidationGenerator(prop, this).generate()
+                                                addStatement("val __tmpModified = %L", MODIFIED)
+                                                if (prop.isList || prop.isScalarList) {
+                                                    addStatement(
+                                                        "__tmpModified.%L = %T.of(__tmpModified.%L, %L)",
+                                                        prop.valueFieldName,
+                                                        NON_SHARED_LIST_CLASS_NAME,
+                                                        prop.valueFieldName,
+                                                        prop.name
+                                                    )
+                                                } else {
+                                                    addStatement(
+                                                        "__tmpModified.%L = %L",
+                                                        prop.valueFieldName,
+                                                        prop.name
+                                                    )
+                                                }
+                                                prop.loadedFieldName?.let {
+                                                    addStatement("__tmpModified.%L = true", it)
+                                                }
                                             }
                                         }
                                         .build()
@@ -212,18 +237,6 @@ class DraftImplGenerator(
                 }
                 .build()
         )
-    }
-
-    private fun TypeSpec.Builder.addPropUse(prop: ImmutableProp) {
-        prop.usingFunName?.let {
-            addFunction(
-                FunSpec
-                    .builder(it)
-                    .addModifiers(KModifier.OVERRIDE)
-                    .addStatement("%L.%L = true", MODIFIED, prop.loadedFieldName!!)
-                    .build()
-            )
-        }
     }
 
     private fun TypeSpec.Builder.addPropFun(prop: ImmutableProp) {
@@ -297,19 +310,21 @@ class DraftImplGenerator(
                                 } else {
                                     add("%S", prop.name)
                                 }
-                                add(" ->\n")
+                                add(" ->")
                                 indent()
-                                add("%L\n.", MODIFIED)
-                                prop
-                                    .loadedFieldName
-                                    ?.let {
-                                        add("%L = false", it)
-                                    }
-                                    ?: add("%L = null", prop.valueFieldName)
+                                when {
+                                    prop.idViewBaseProp !== null ->
+                                        addStatement("__unload(%L)", prop.idViewBaseProp!!.id)
+                                    prop.isKotlinFormula ->
+                                        addStatement("{}")
+                                    prop.loadedFieldName !== null ->
+                                        add("%L\n.%L = false", MODIFIED, prop.loadedFieldName)
+                                    else -> add("%L\n.%L = null", MODIFIED, prop.valueFieldName)
+                                }
                                 unindent()
                                 add("\n")
                             }
-                            addElseBranchForProp(argType)
+                            addElseForNonExistingProp(argType)
                             endControlFlow()
                         }
                         .build()
@@ -345,7 +360,7 @@ class DraftImplGenerator(
                                 }
                                 add("\n")
                             }
-                            addElseBranchForProp(argType)
+                            addElseForNonExistingProp(argType)
                             endControlFlow()
                         }
                         .build()
@@ -354,39 +369,50 @@ class DraftImplGenerator(
         )
     }
 
-    private fun TypeSpec.Builder.addUseFun(argType: KClass<*>) {
+    private fun TypeSpec.Builder.addShowFun(argType: KClass<*>) {
         addFunction(
             FunSpec
-                .builder("__use")
+                .builder("__show")
                 .addParameter("prop", if (argType == Int::class) INT else STRING)
+                .addParameter("visible", BOOLEAN)
                 .addModifiers(KModifier.OVERRIDE)
                 .addCode(
                     CodeBlock
                         .builder()
                         .apply {
-                            beginControlFlow("when (prop)")
-                            for (prop in type.propsOrderById) {
-                                if (prop.isKotlinFormula) {
-                                    if (argType == Int::class) {
-                                        add(prop.id.toString())
-                                    } else {
-                                        add("%S", prop.name)
+                            if (type.properties.values.any { it.visibleFieldName !== null }) {
+                                beginControlFlow("when (prop)")
+                                for (prop in type.propsOrderById) {
+                                    if (prop.visibleFieldName != null) {
+                                        if (argType == Int::class) {
+                                            add(prop.id.toString())
+                                        } else {
+                                            add("%S", prop.name)
+                                        }
+                                        add(" -> %L\n.%L = visible\n", MODIFIED, prop.visibleFieldName)
                                     }
-                                    add(" -> %L.%L = true\n", MODIFIED, prop.loadedFieldName)
                                 }
+                                add("else -> throw IllegalArgumentException(\n")
+                                indent()
+                                add(
+                                    "%S + \nprop + \n%S",
+                                    "Illegal property " +
+                                        (if (argType == String::class) "name" else "id") +
+                                        ": \"",
+                                    "\",it does not exists or is its visibility is not controllable)"
+                                )
+                                unindent()
+                                add("\n)")
+                                endControlFlow()
+                            } else {
+                                add(
+                                    "%S + \nprop + \n%S",
+                                    "Illegal property " +
+                                        (if (argType == String::class) "name" else "id") +
+                                        ": \"",
+                                    "\",it does not exists or is its visibility is not controllable)"
+                                )
                             }
-                            add("else -> throw IllegalArgumentException(\n")
-                            indent()
-                            add("%S + \nprop + \n%S + \n%S",
-                                "Illegal property " +
-                                    (if (argType == String::class) "name" else "id") +
-                                    ": \"",
-                                "\",it does not exists or is not non-abstract formula property",
-                                "(Only non-abstract formula property can be used)"
-                            )
-                            unindent()
-                            add("\n)")
-                            endControlFlow()
                         }
                         .build()
                 )
@@ -425,7 +451,7 @@ class DraftImplGenerator(
                             if (type.properties.values.any { it.isList || it.isReference }) {
                                 beginControlFlow("if (__tmpModified === null)")
                                 for (prop in type.properties.values) {
-                                    if (prop.isList || prop.isReference) {
+                                    if (prop.idViewBaseProp == null && (prop.isList || prop.isReference)) {
                                         beginControlFlow("if (__isLoaded(%L))", prop.id)
                                         addStatement("val oldValue = base.%L", prop.name)
                                         addStatement(
@@ -450,7 +476,9 @@ class DraftImplGenerator(
                                 addStatement("__tmpModified = __modified")
                                 nextControlFlow("else")
                                 for (prop in type.properties.values) {
-                                    if (prop.isList) {
+                                    if (prop.idViewBaseProp !== null) {
+                                        continue
+                                    } else if (prop.isList) {
                                         addStatement(
                                             "__tmpModified.%L = %T.of(__tmpModified.%L, __ctx.%L(__tmpModified.%L))",
                                             prop.valueFieldName,
@@ -576,5 +604,12 @@ class DraftImplGenerator(
                     .build()
             )
         }
+    }
+
+    companion object {
+
+        @JvmStatic
+        private val MAKE_ID_ONLY =
+            MemberName("org.babyfish.jimmer.kt", "makeIdOnly")
     }
 }

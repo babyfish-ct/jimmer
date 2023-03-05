@@ -138,8 +138,8 @@ public class ImmutableProp {
             beanStyle = false;
         }
 
-        loadedStateName = name + "Loaded";
-        visibleName = name + "Visible";
+        loadedStateName = "__" + name + "Loaded";
+        visibleName = "__" + name + "Visible";
 
         if (typeUtils.isCollection(returnType)) {
             if (!typeUtils.isListStrictly(returnType)) {
@@ -385,7 +385,7 @@ public class ImmutableProp {
     }
 
     public boolean isLoadedStateRequired() {
-        return idViewBaseProp == null && (isJavaFormula || isNullable || typeName.isPrimitive());
+        return idViewBaseProp == null && !isJavaFormula && (isNullable || typeName.isPrimitive());
     }
     
     public Class<?> getBoxType() {

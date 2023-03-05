@@ -225,7 +225,7 @@ class ImmutableType(
         }
 
     val propsOrderById: List<ImmutableProp> by lazy {
-        properties.values.sortedBy { it -> it.id }
+        properties.values.sortedBy { it.id }
     }
 
     val idProp: ImmutableProp? by lazy {

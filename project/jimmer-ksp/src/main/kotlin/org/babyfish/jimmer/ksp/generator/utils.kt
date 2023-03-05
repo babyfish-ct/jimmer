@@ -7,18 +7,18 @@ import com.squareup.kotlinpoet.CodeBlock
 import org.babyfish.jimmer.ksp.annotations
 import org.babyfish.jimmer.ksp.fullName
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
-import org.babyfish.jimmer.ksp.meta.ImmutableType
 import org.babyfish.jimmer.meta.ModelException
 import javax.validation.Constraint
 import kotlin.math.abs
 import kotlin.reflect.KClass
 
-internal fun CodeBlock.Builder.addElseBranchForProp(argType: KClass<*>) {
-    addStatement("""else -> throw IllegalArgumentException("Illegal property ${
-        if (argType == Int::class) "id" else "name"
-    }: ${
-        "\$prop"
-    }")""")
+internal fun CodeBlock.Builder.addElseForNonExistingProp(argType: KClass<*>) {
+    add("else -> throw IllegalArgumentException(\n")
+    indent()
+    add("%S + \n", "Illegal property ${if (argType == Int::class) "id" else "name"}")
+    add("prop\n")
+    unindent()
+    addStatement(")\n")
 }
 
 internal fun regexpPatternFieldName(prop: ImmutableProp, index: Int): String =

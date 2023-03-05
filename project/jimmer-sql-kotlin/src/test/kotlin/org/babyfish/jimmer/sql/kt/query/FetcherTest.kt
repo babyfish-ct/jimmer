@@ -653,9 +653,7 @@ class FetcherTest : AbstractQueryTest() {
                 """[
                     |--->{
                     |--->--->"id":2,
-                    |--->--->"fullName":"Alex Banks",
-                    |--->--->"firstName":"Alex",
-                    |--->--->"lastName":"Banks"
+                    |--->--->"fullName":"Alex Banks"
                     |--->}
                     |]""".trimMargin()
             )
@@ -680,6 +678,46 @@ class FetcherTest : AbstractQueryTest() {
                     |where tb_1_.FIRST_NAME = ?""".trimMargin()
             )
             rows("[{\"id\":2,\"fullName2\":\"Alex Banks\"}]")
+        }
+    }
+
+    @Test
+    fun testFetchIdView() {
+        executeAndExpect(
+            sqlClient
+                .createQuery(Book::class) {
+                    where(table.id eq 12L)
+                    select(
+                        table.fetchBy {
+                            allScalarFields()
+                            storeId()
+                            authorIds()
+                        }
+                    )
+                }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK as tb_1_ 
+                    |where tb_1_.ID = ?""".trimMargin()
+            )
+            statement(1).sql(
+                """select tb_1_.AUTHOR_ID 
+                    |from BOOK_AUTHOR_MAPPING as tb_1_ 
+                    |where tb_1_.BOOK_ID = ?""".trimMargin()
+            )
+            rows(
+                """[
+                    |--->{
+                    |--->--->"id":12,
+                    |--->--->"name":"GraphQL in Action",
+                    |--->--->"edition":3,
+                    |--->--->"price":80.00,
+                    |--->--->"storeId":2,
+                    |--->--->"authorIds":[5]
+                    |--->}
+                    |]""".trimMargin()
+            )
         }
     }
 
