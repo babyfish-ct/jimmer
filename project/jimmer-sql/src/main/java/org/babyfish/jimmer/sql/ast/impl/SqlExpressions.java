@@ -57,7 +57,7 @@ public class SqlExpressions {
             return (E)new Str(sql, expressions, values);
         }
         if (type.isPrimitive() || Number.class.isAssignableFrom(type)) {
-            return (E)new Num((Class<Number>)type, sql, expressions, values);
+            return (E)new Num(type, sql, expressions, values);
         }
         if (Comparable.class.isAssignableFrom(type)) {
             return (E)new Cmp(type, sql, expressions, values);
@@ -72,61 +72,21 @@ public class SqlExpressions {
         private List<Object> parts;
 
         Any(Class<T> type, String sql, List<Expression<?>> expressions, List<Object> values) {
-
-            if (sql.indexOf('\'') != -1) {
-                throw new IllegalArgumentException("SQL template cannot contains \"'\"");
-            }
-
-            int sqlLen = sql.length();
-            List<Object> parts = new ArrayList<>();
-            int index = 0;
-            int usedExpressionCount = 0;
-            int usedValueCount = 0;
-
-            while (true) {
-                int newIndex = sql.indexOf('%', index);
-                if (newIndex == -1) {
-                    break;
+            List<Expression> literals;
+            if (values.isEmpty()) {
+                literals = Collections.emptyList();
+            } else {
+                literals = new ArrayList<>(values.size());
+                for (Object value : values) {
+                    if (value == null) {
+                        throw new IllegalArgumentException("`values` cannot contain null");
+                    }
+                    literals.add(Expression.any().value(value));
                 }
-                if (newIndex > index) {
-                    parts.add(sql.substring(index, newIndex));
-                }
-                char partType = newIndex + 1 < sqlLen ? sql.charAt(newIndex + 1) : ' ';
-                switch (partType) {
-                    case 'e':
-                        if (usedExpressionCount >= expressions.size()) {
-                            throw new IllegalArgumentException("No enough expressions");
-                        }
-                        parts.add(expressions.get(usedExpressionCount++));
-                        break;
-                    case 'v':
-                        if (usedValueCount >= values.size()) {
-                            throw new IllegalArgumentException("No enough values");
-                        }
-                        parts.add(Literals.any(values.get(usedValueCount++)));
-                        break;
-                    default:
-                        throw new IllegalArgumentException(
-                                "Illegal SQL template '" +
-                                        sql +
-                                        "', position: " +
-                                        newIndex +
-                                        ", only '%e' and '%v' are supported"
-                        );
-                }
-                index = newIndex + 2;
-            }
-            if (usedExpressionCount < expressions.size()) {
-                throw new IllegalArgumentException("Too many expression");
-            }
-            if (usedValueCount < values.size()) {
-                throw new IllegalArgumentException("Too many values");
-            }
-            if (index < sqlLen) {
-                parts.add(sql.substring(index));
             }
             this.type = type;
-            this.parts = parts;
+
+            this.parts = parts(sql, expressions, literals);
         }
 
         @Override
@@ -186,5 +146,57 @@ public class SqlExpressions {
         Prd(String sql, List<Expression<?>> expressions, List<Object> values) {
             super(Boolean.class, sql, expressions, values);
         }
+    }
+
+    public static List<Object> parts(String sql, List<?> expressions, List<?> values) {
+        List<Object> parts = new ArrayList<>();
+        int size = sql.length();
+        int start = 0;
+        boolean isStr = false;
+        int usedExpressionCount = 0;
+        int usedValueCount = 0;
+        for (int i = 0; i < size; i++) {
+            char c = sql.charAt(i);
+            if (c == '\'') {
+                isStr = !isStr;
+            } else if (!isStr && c == '%' && i + 1 < size) {
+                char next = sql.charAt(i + 1);
+                char nextNext = i + 2 < size ? sql.charAt(i + 2) : '\0';
+                if (!Character.isLetter(nextNext) && !Character.isDigit(nextNext)) {
+                    switch (next) {
+                        case 'e':
+                            if (start < i) {
+                                parts.add(sql.substring(start, i));
+                            }
+                            start = i + 2;
+                            if (usedExpressionCount >= expressions.size()) {
+                                throw new IllegalArgumentException("Not enough expressions");
+                            }
+                            parts.add(expressions.get(usedExpressionCount++));
+                            break;
+                        case 'v':
+                            if (start < i) {
+                                parts.add(sql.substring(start, i));
+                            }
+                            start = i + 2;
+                            if (usedValueCount >= values.size()) {
+                                throw new IllegalArgumentException("Not enough values");
+                            }
+                            parts.add(values.get(usedValueCount++));
+                            break;
+                    }
+                }
+            }
+        }
+        if (usedExpressionCount < expressions.size()) {
+            throw new IllegalArgumentException("Too many expressions");
+        }
+        if (usedValueCount < values.size()) {
+            throw new IllegalArgumentException("Too many values");
+        }
+        if (start < size) {
+            parts.add(sql.substring(start));
+        }
+        return parts;
     }
 }

@@ -350,7 +350,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     @Override
     public boolean isMutable() {
-        return !isFormula || formulaTemplate == null;
+        return !isFormula || formulaTemplate != null;
     }
 
     @Override
