@@ -26,11 +26,13 @@ private fun bookDemo() {
     val book = new(Book::class).by {
         name = "book"
         store().name = "store"
-        authors().addBy {
-            name = "author-1"
-        }
-        authors().addBy {
-            name = "author-2"
+        authors().apply {
+            addBy {
+                name = "author-1"
+            }
+            addBy {
+                name = "author-2"
+            }
         }
     }
 
@@ -60,11 +62,13 @@ private fun treeNodeDemo() {
             name = "Food"
             childNodes().addBy {
                 name = "Drinks"
-                childNodes().addBy {
-                    name = "Cococola"
-                }
-                childNodes().addBy {
-                    name = "Fanta"
+                childNodes().apply {
+                    addBy {
+                        name = "Cococola"
+                    }
+                    addBy {
+                        name = "Fanta"
+                    }
                 }
             }
         }
