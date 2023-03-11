@@ -97,9 +97,14 @@ class ProducerGenerator(
                 )
             prop.isKey && prop.isAssociation(false) ->
                 add(
-                    ".keyReference(%L, %S, %T::class.java, %L)\n",
+                    ".keyReference(%L, %S, %T::class.java, %T::class.java, %L)\n",
                     prop.id,
                     prop.name,
+                    if (prop.annotation(OneToOne::class) !== null) {
+                        OneToOne::class
+                    } else {
+                        ManyToOne::class
+                    },
                     prop.targetTypeName(overrideNullable = false),
                     prop.isNullable
                 )

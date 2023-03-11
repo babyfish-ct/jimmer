@@ -6,6 +6,8 @@ import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ImmutablePropCategory;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.Key;
+import org.babyfish.jimmer.sql.ManyToOne;
+import org.babyfish.jimmer.sql.OneToOne;
 
 import javax.lang.model.element.Modifier;
 
@@ -142,9 +144,10 @@ public class ProducerGenerator {
                 );
             } else if (prop.getAnnotation(Key.class) != null && prop.isAssociation(false)) {
                 builder.add(
-                        ".keyReference($L, $S, $T.class, $L)\n",
+                        ".keyReference($L, $S, $T.class, $T.class, $L)\n",
                         prop.getId(),
                         prop.getName(),
+                        prop.getAnnotation(OneToOne.class) != null ? OneToOne.class : ManyToOne.class,
                         prop.getElementTypeName(),
                         prop.isNullable() ? "true" : "false"
                 );

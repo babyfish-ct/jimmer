@@ -136,6 +136,7 @@ public interface ImmutableType {
         Builder keyReference(
                 int id,
                 String name,
+                Class<? extends Annotation> associationAnnotationType,
                 Class<?> elementType,
                 boolean nullable
         );

@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.kt.model.inheritance
 
-import org.babyfish.jimmer.sql.DissociateAction
-import org.babyfish.jimmer.sql.MappedSuperclass
-import org.babyfish.jimmer.sql.OnDissociate
-import org.babyfish.jimmer.sql.OneToOne
+import org.babyfish.jimmer.sql.*
 
 @MappedSuperclass
 interface AdministratorMetadataBase : NamedEntity {
@@ -12,6 +9,7 @@ interface AdministratorMetadataBase : NamedEntity {
 
     val website: String
 
+    @Key
     @OneToOne(inputNotNull = true)
     @OnDissociate(DissociateAction.DELETE)
     val administrator: Administrator?

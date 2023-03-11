@@ -724,11 +724,24 @@ class ImmutableTypeImpl implements ImmutableType {
         public Builder keyReference(
                 int id,
                 String name,
+                Class<? extends Annotation> associationAnnotationType,
                 Class<?> elementType,
                 boolean nullable
         ) {
+            if (associationAnnotationType != OneToOne.class && associationAnnotationType != ManyToOne.class) {
+                throw new IllegalArgumentException(
+                        "The `associationAnnotationType` must be `OneOne` or `ManyToOne`"
+                );
+            }
             keyPropNames.add(name);
-            return add(id, name, ImmutablePropCategory.REFERENCE, elementType, nullable, ManyToOne.class);
+            return add(
+                    id,
+                    name,
+                    ImmutablePropCategory.REFERENCE,
+                    elementType,
+                    nullable,
+                    associationAnnotationType
+            );
         }
 
         @Override

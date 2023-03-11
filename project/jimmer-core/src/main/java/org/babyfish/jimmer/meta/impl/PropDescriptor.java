@@ -436,7 +436,7 @@ public class PropDescriptor {
                                 propText +
                                 "\" is illegal, it cannot be decorated by @" +
                                 annotationTypeName +
-                                " because its nullity hash already specified by kotlin language"
+                                " because its nullity can be automatically determined"
                 );
             }
             if (annotationNullity != null) {

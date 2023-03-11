@@ -20,9 +20,9 @@ public class Storages {
             return null;
         }
         Annotation annotation = prop.getAssociationAnnotation();
-        if (annotation instanceof OneToOne && !((OneToOne)annotation).mappedBy().isEmpty() ||
+        if ((annotation instanceof OneToOne && !((OneToOne)annotation).mappedBy().isEmpty()) ||
                 annotation instanceof OneToMany || (
-                annotation instanceof ManyToMany && !((ManyToMany)annotation).mappedBy().isEmpty())
+                (annotation instanceof ManyToMany && !((ManyToMany)annotation).mappedBy().isEmpty()))
         ) {
             return null;
         }
