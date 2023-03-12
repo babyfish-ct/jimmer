@@ -10,9 +10,9 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.temporal.Temporal;
@@ -123,7 +123,18 @@ class ValueParser {
         }
         Object value = valueOf(jsonNode, sqlType);
         if (provider != null && value != null) {
-            return provider.toScalar(value);
+            try {
+                return provider.toScalar(value);
+            } catch (Exception ex) {
+                throw new ExecutionException(
+                        "Cannot convert the value \"" +
+                                value +
+                                "\" to the jvm type \"" +
+                                provider.getScalarType() +
+                                "\"",
+                        ex
+                );
+            }
         }
         return value;
     }

@@ -94,7 +94,7 @@ public class TableGenerator {
         addCopyConstructor();
         try {
             for (ImmutableProp prop : type.getProps().values()) {
-                if ((!isTableEx && !prop.isList() || (isTableEx && prop.isAssociation(true)))) {
+                if (prop.isDsl(isTableEx)) {
                     addProperty(prop, false);
                     addProperty(prop, true);
                 }

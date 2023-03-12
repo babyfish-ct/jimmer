@@ -88,7 +88,7 @@ public class PropsGenerator {
             }
             if (type.isEntity() || type.isMappedSuperClass()) {
                 for (ImmutableProp prop : type.getDeclaredProps().values()) {
-                    if (!prop.isList()) {
+                    if (prop.isDsl(false)) {
                         addProp(prop, false);
                         addProp(prop, true);
                     }

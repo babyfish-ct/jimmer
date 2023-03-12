@@ -1,22 +1,26 @@
 package org.babyfish.jimmer.sql.runtime;
 
 import org.apache.commons.lang3.reflect.TypeUtils;
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.sql.Embeddable;
+import org.babyfish.jimmer.sql.Entity;
+import org.babyfish.jimmer.sql.MappedSuperclass;
 
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Consumer;
 
 public abstract class ScalarProvider<T, S> {
 
-    private final Class<T> scalarType;
+    private final Type scalarType;
 
     private final Class<S> sqlType;
 
     public ScalarProvider(Class<T> scalarType, Class<S> sqlType) {
+        validateScalarType(scalarType);
         this.scalarType = scalarType;
         this.sqlType = sqlType;
     }
@@ -24,12 +28,22 @@ public abstract class ScalarProvider<T, S> {
     @SuppressWarnings("unchecked")
     protected ScalarProvider() {
         Map<TypeVariable<?>, Type> argMap = TypeUtils.getTypeArguments(this.getClass(), ScalarProvider.class);
+        if (argMap.isEmpty()) {
+            throw new IllegalStateException(
+                    "Illegal type \"" +
+                            getClass().getName() +
+                            "\", it does not specify generic arguments for \"" +
+                            ScalarProvider.class.getName() +
+                            "\""
+            );
+        }
         TypeVariable<?>[] params = ScalarProvider.class.getTypeParameters();
-        this.scalarType = (Class<T>)argMap.get(params[0]);
+        this.scalarType = (Type)argMap.get(params[0]);
         this.sqlType = (Class<S>) argMap.get(params[1]);
+        validateScalarType(scalarType);
     }
 
-    public final Class<T> getScalarType() {
+    public final Type getScalarType() {
         return scalarType;
     }
 
@@ -37,9 +51,28 @@ public abstract class ScalarProvider<T, S> {
         return sqlType;
     }
 
-    public abstract T toScalar(S sqlValue);
+    public abstract T toScalar(S sqlValue) throws Exception;
 
-    public abstract S toSql(T scalarValue);
+    public abstract S toSql(T scalarValue) throws Exception;
+
+    /**
+     * User can override this method, it can return null, empty or handled property.
+     * <ul>
+     *     <li>Null or empty: Global scalar provider, can be applied to any properties</li>
+     *     <li>Otherwise: Property-specific scalar provider</li>
+     * </ul>
+     *
+     * <p>Actually, there are two ways to add property-specific scalar providers</p>
+     * <ul>
+     *     <li>Override {@link #getHandledProps()}</li>
+     *     <li>Use {@link org.babyfish.jimmer.sql.JSqlClient.Builder#addScalarProvider(ImmutableProp, ScalarProvider)} or 
+     *     {@link org.babyfish.jimmer.sql.JSqlClient.Builder#addScalarProvider(TypedProp, ScalarProvider)}</li>
+     * </ul>
+     * @return Null or handled property.
+     */
+    public Collection<ImmutableProp> getHandledProps() {
+        return null;
+    }
 
     public static <E extends Enum<E>> ScalarProvider<E, String> enumProviderByString(
             Class<E> enumType
@@ -108,4 +141,75 @@ public abstract class ScalarProvider<T, S> {
                     return scalarValue.toString();
                 }
             };
+
+    private void validateScalarType(Type scalarType) {
+
+        if (scalarType == UUID.class) {
+            return; // UUID is standard type, but it can be overridden by ScalarProvider
+        }
+
+        if (!(scalarType instanceof Class<?>)) {
+            return;
+        }
+        Class<?> scalarClass = (Class<?>) scalarType;
+        if (scalarType == void.class) {
+            throw new IllegalArgumentException(
+                    "Illegal scalar type \"" +
+                            scalarClass.getName() +
+                            "\", it cannot be void"
+            );
+        }
+        if (scalarType == Object.class) {
+            throw new IllegalArgumentException(
+                    "Illegal scalar type \"" +
+                            scalarClass.getName() +
+                            "\", scalar provider does not support object type which means any"
+            );
+        }
+        if (ReaderManager.isStandardScalarType(scalarClass)) {
+            throw new IllegalArgumentException(
+                    "Illegal scalar type \"" +
+                            ((Class<?>)scalarType).getName() +
+                            "\", scalar provider does not support standard scalar type"
+            );
+        }
+        Class<?> annotationType = getOrmAnnotationType(scalarClass);
+        if (annotationType != null) {
+            throw new IllegalArgumentException(
+                    "Illegal scalar type \"" +
+                            scalarClass.getName() +
+                            "\", scalar provider does not support scalar type which is decorated by \"@" +
+                            annotationType.getName() +
+                            "\""
+            );
+        }
+    }
+
+    private Class<?> getOrmAnnotationType(Class<?> type) {
+        if (type == null) {
+            return null;
+        }
+        if (type != Object.class) {
+            if (type.isAnnotationPresent(Entity.class)) {
+                return Entity.class;
+            }
+            if (type.isAssignableFrom(MappedSuperclass.class)) {
+                return MappedSuperclass.class;
+            }
+            if (type.isAssignableFrom(Embeddable.class)) {
+                return Embeddable.class;
+            }
+        }
+        Class<?> annoType = getOrmAnnotationType(type.getSuperclass());
+        if (annoType != null) {
+            return annoType;
+        }
+        for (Class<?> interfaceType : type.getInterfaces()) {
+            annoType = getOrmAnnotationType(interfaceType);
+            if (annoType != null) {
+                return annoType;
+            }
+        }
+        return null;
+    }
 }

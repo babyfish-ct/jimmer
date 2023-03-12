@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
@@ -42,6 +43,7 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -56,6 +58,8 @@ class JSqlClientImpl implements JSqlClient {
     private final Executor executor;
 
     private final Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap;
+
+    private final Map<ImmutableProp, ScalarProvider<?, ?>> propScalarProviderMap;
 
     private final Map<Class<?>, IdGenerator> idGeneratorMap;
 
@@ -91,6 +95,7 @@ class JSqlClientImpl implements JSqlClient {
             Dialect dialect,
             Executor executor,
             Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
+            Map<ImmutableProp, ScalarProvider<?, ?>> propScalarProviderMap,
             Map<Class<?>, IdGenerator> idGeneratorMap,
             int defaultBatchSize,
             int defaultListBatchSize,
@@ -117,6 +122,7 @@ class JSqlClientImpl implements JSqlClient {
                         executor :
                         DefaultExecutor.INSTANCE;
         this.scalarProviderMap = scalarProviderMap;
+        this.propScalarProviderMap = propScalarProviderMap;
         this.idGeneratorMap = idGeneratorMap;
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
@@ -168,6 +174,19 @@ class JSqlClientImpl implements JSqlClient {
         return provider != null ?
             provider :
             (ScalarProvider<T, S>)DefaultScalarProviders.getProvider(scalarType);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T, S> ScalarProvider<T, S> getScalarProvider(ImmutableProp prop) {
+        ScalarProvider<T, S> provider = (ScalarProvider<T, S>) propScalarProviderMap.get(prop);
+        if (provider != null) {
+            return provider;
+        }
+        if (prop.isScalar(TargetLevel.ENTITY)) {
+            return getScalarProvider((Class<T>)prop.getElementClass());
+        }
+        return null;
     }
 
     @Override
@@ -334,6 +353,7 @@ class JSqlClientImpl implements JSqlClient {
                 dialect,
                 executor,
                 scalarProviderMap,
+                propScalarProviderMap,
                 idGeneratorMap,
                 defaultBatchSize,
                 defaultListBatchSize,
@@ -365,6 +385,7 @@ class JSqlClientImpl implements JSqlClient {
                 dialect,
                 executor,
                 scalarProviderMap,
+                propScalarProviderMap,
                 idGeneratorMap,
                 defaultBatchSize,
                 defaultListBatchSize,
@@ -391,6 +412,7 @@ class JSqlClientImpl implements JSqlClient {
                 dialect,
                 executor,
                 scalarProviderMap,
+                propScalarProviderMap,
                 idGeneratorMap,
                 defaultBatchSize,
                 defaultListBatchSize,
@@ -454,6 +476,8 @@ class JSqlClientImpl implements JSqlClient {
         private TransientResolverProvider transientResolverProvider;
 
         private final Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap = new HashMap<>();
+
+        private final Map<ImmutableProp, ScalarProvider<?, ?>> propScalarProviderMap = new HashMap<>();
 
         private final Map<Class<?>, IdGenerator> idGeneratorMap = new HashMap<>();
 
@@ -533,65 +557,99 @@ class JSqlClientImpl implements JSqlClient {
         @Override
         @OldChain
         public JSqlClient.Builder addScalarProvider(ScalarProvider<?, ?> scalarProvider) {
-            Class<?> scalarType = scalarProvider.getScalarType();
-            if (scalarProviderMap.containsKey(scalarType)) {
-                throw new IllegalStateException(
-                        "Cannot set scalar provider for scalar type \"" +
-                                scalarType +
-                                "\" twice"
-                );
+            Collection<ImmutableProp> props = scalarProvider.getHandledProps();
+            if (props == null || props.isEmpty()) {
+                addScalarProviderImpl(null, scalarProvider);
+            } else {
+                for (ImmutableProp prop : props) {
+                    if (prop == null) {
+                        throw new IllegalStateException(
+                                "Each property of returned list of \"" +
+                                        scalarProvider.getClass().getName() +
+                                        ".getHandledProps" +
+                                        "\" cannot be null"
+                        );
+                    }
+                    if (!prop.isScalar(TargetLevel.ENTITY) && !prop.isScalarList()) {
+                        throw new IllegalStateException(
+                                "Each property of returned list of \"" +
+                                        scalarProvider.getClass().getName() +
+                                        ".getHandledProps" +
+                                        "\" must be scalar, but \"" +
+                                        prop +
+                                        "\" is not"
+                        );
+                    }
+                    addScalarProviderImpl(prop, scalarProvider);
+                }
             }
-            if (Collection.class.isAssignableFrom(scalarType) || Map.class.isAssignableFrom(scalarType)) {
-                throw new IllegalStateException(
-                        "Illegal scalar provider type \"" +
-                                scalarProvider.getClass() +
-                                "\" is illegal, the scalar type \"" +
-                                scalarType +
-                                "\" cannot be collection or map"
-                );
-            }
-            Class<?> ormAnnoType = getOrmAnnotationType(scalarType);
-            if (ormAnnoType != null) {
-                throw new IllegalStateException(
-                        "Illegal scalar provider type \"" +
-                                scalarProvider.getClass() +
-                                "\" is illegal, the scalar type \"" +
-                                scalarType +
-                                "\" or it super types cannot be decorated by \"@" +
-                                ormAnnoType.getName() +
-                                "\""
-                );
-            }
-            scalarProviderMap.put(scalarType, scalarProvider);
             return this;
         }
 
-        private Class<?> getOrmAnnotationType(Class<?> type) {
-            if (type == null) {
-                return null;
+        @Override
+        public Builder addScalarProvider(TypedProp<?, ?> prop, ScalarProvider<?, ?> scalarProvider) {
+            if (prop == null) {
+                throw new IllegalArgumentException("prop cannot be null");
             }
-            if (type != Object.class) {
-                if (type.isAnnotationPresent(Entity.class)) {
-                    return Entity.class;
-                }
-                if (type.isAssignableFrom(MappedSuperclass.class)) {
-                    return MappedSuperclass.class;
-                }
-                if (type.isAssignableFrom(Embeddable.class)) {
-                    return Embeddable.class;
-                }
+            addScalarProviderImpl(prop.unwrap(), scalarProvider);
+            return this;
+        }
+
+        @Override
+        public Builder addScalarProvider(ImmutableProp prop, ScalarProvider<?, ?> scalarProvider) {
+            if (prop == null) {
+                throw new IllegalArgumentException("prop cannot be null");
             }
-            Class<?> annoType = getOrmAnnotationType(type.getSuperclass());
-            if (annoType != null) {
-                return annoType;
-            }
-            for (Class<?> interfaceType : type.getInterfaces()) {
-                annoType = getOrmAnnotationType(interfaceType);
-                if (annoType != null) {
-                    return annoType;
+            addScalarProviderImpl(prop, scalarProvider);
+            return this;
+        }
+
+        private void addScalarProviderImpl(ImmutableProp prop, ScalarProvider<?, ?> scalarProvider) {
+            Type scalarType = scalarProvider.getScalarType();
+            if (prop == null) {
+                if (!(scalarType instanceof Class<?>)) {
+                    throw new IllegalStateException(
+                            "The scalar provider for scalar type \"" +
+                                    scalarType +
+                                    "\" is used as global scalar provider, " +
+                                    "so its first type argument must be calss"
+                    );
                 }
+                if (scalarProviderMap.containsKey(scalarType)) {
+                    throw new IllegalStateException(
+                            "Cannot set scalar provider for scalar type \"" +
+                                    scalarType +
+                                    "\" twice"
+                    );
+                }
+                if (Iterable.class.isAssignableFrom((Class<?>) scalarType) ||
+                        Map.class.isAssignableFrom((Class<?>) scalarType)) {
+                    throw new IllegalStateException(
+                            "Illegal scalar provider type \"" +
+                                    scalarProvider.getClass() +
+                                    "\" is illegal, the scalar type \"" +
+                                    scalarType +
+                                    "\" cannot be collection or map"
+                    );
+                }
+                scalarProviderMap.put((Class<?>) scalarType, scalarProvider);
+            } else {
+                if (!prop.isScalar(TargetLevel.ENTITY) && !prop.isScalarList()) {
+                    throw new IllegalStateException(
+                            "Cannot set scalar provider for property type \"" +
+                                    prop +
+                                    "\" because the property is not scalar property"
+                    );
+                }
+                if (propScalarProviderMap.containsKey(prop)) {
+                    throw new IllegalStateException(
+                            "Cannot set scalar provider for property type \"" +
+                                    prop +
+                                    "\" twice"
+                    );
+                }
+                propScalarProviderMap.put(prop, scalarProvider);
             }
-            return null;
         }
 
         @Override
@@ -731,6 +789,7 @@ class JSqlClientImpl implements JSqlClient {
                     dialect,
                     executor,
                     scalarProviderMap,
+                    propScalarProviderMap,
                     idGeneratorMap,
                     defaultBatchSize,
                     defaultListBatchSize,

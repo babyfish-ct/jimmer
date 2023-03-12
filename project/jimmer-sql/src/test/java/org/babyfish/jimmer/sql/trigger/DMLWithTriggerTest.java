@@ -767,6 +767,10 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
     }
 
     private static byte[] toBytes(UUID uuid) {
-        return ScalarProvider.UUID_BY_BYTE_ARRAY.toSql(uuid);
+        try {
+            return ScalarProvider.UUID_BY_BYTE_ARRAY.toSql(uuid);
+        } catch (Exception ex) {
+            throw new IllegalArgumentException(ex);
+        }
     }
 }

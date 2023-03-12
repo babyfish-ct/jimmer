@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.error
 
+import kotlin.reflect.KClass
+
 abstract class CodeBasedException protected constructor(
     message: String,
     cause: Throwable?
@@ -20,7 +22,9 @@ abstract class CodeBasedException protected constructor(
         }
 
     companion object {
-        private fun familyName(name: String): String {
+
+        @JvmStatic
+        fun familyName(name: String): String {
             var prevLower = false
             val size = name.length
             val builder = StringBuilder()

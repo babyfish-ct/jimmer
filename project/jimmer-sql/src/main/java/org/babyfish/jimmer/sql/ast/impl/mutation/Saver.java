@@ -424,8 +424,26 @@ class Saver {
             if (prop.getStorage() instanceof ColumnDefinition && draftSpi.__isLoaded(prop.getId())) {
                 props.add(prop);
                 Object value = draftSpi.__get(prop.getId());
-                if (value != null && prop.isReference(TargetLevel.PERSISTENT)) {
-                    value = ((ImmutableSpi) value).__get(prop.getTargetType().getIdProp().getId());
+                if (value != null) {
+                    if (prop.isReference(TargetLevel.PERSISTENT)) {
+                        value = ((ImmutableSpi) value).__get(prop.getTargetType().getIdProp().getId());
+                    } else {
+                        ScalarProvider<Object, Object> scalarProvider = data.getSqlClient().getScalarProvider(prop);
+                        if (scalarProvider != null) {
+                            try {
+                                value = scalarProvider.toSql(value);
+                            } catch (Exception ex) {
+                                throw new ExecutionException(
+                                        "Cannot convert the value of \"" +
+                                                prop +
+                                                "\" by the scalar provider \"" +
+                                                scalarProvider.getClass().getName() +
+                                                "\"",
+                                        ex
+                                );
+                            }
+                        }
+                    }
                 }
                 values.add(value);
             }

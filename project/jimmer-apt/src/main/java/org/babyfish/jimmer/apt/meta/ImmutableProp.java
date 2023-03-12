@@ -386,6 +386,18 @@ public class ImmutableProp {
     public boolean isLoadedStateRequired() {
         return idViewBaseProp == null && !isJavaFormula && (isNullable || typeName.isPrimitive());
     }
+
+    public boolean isDsl(boolean isTableEx) {
+        if (idViewBaseProp != null || isJavaFormula || isTransient) {
+            return false;
+        }
+        if (isList) {
+            if (isAssociation(true)) {
+                return isTableEx;
+            }
+        }
+        return true;
+    }
     
     public Class<?> getBoxType() {
         switch (returnType.getKind()) {

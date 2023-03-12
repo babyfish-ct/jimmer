@@ -6,6 +6,8 @@ import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
+import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
+import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.springframework.core.annotation.AliasFor
@@ -24,6 +26,8 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
     val sql: KSqlClient
 
     val type: ImmutableType
+
+    val entityType: KClass<E>
 
     fun pager(pageIndex: Int, pageSize: Int): Pager
 
@@ -80,29 +84,33 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
     override fun count(): Long
 
     fun insert(input: Input<E>): E =
-        save(input.toEntity(), SaveMode.INSERT_ONLY)
+        save(input.toEntity(), SaveMode.INSERT_ONLY).modifiedEntity
 
     fun insert(entity: E): E =
-        save(entity, SaveMode.INSERT_ONLY)
+        save(entity, SaveMode.INSERT_ONLY).modifiedEntity
 
-    fun update(input: Input<E>): E =
-        save(input.toEntity(), SaveMode.UPDATE_ONLY)
+    fun update(input: Input<E>): Int =
+        save(input.toEntity(), SaveMode.UPDATE_ONLY).affectedRowCount(entityType)
 
-    fun update(entity: E): E =
-        save(entity, SaveMode.UPDATE_ONLY)
+    fun update(entity: E): Int =
+        save(entity, SaveMode.UPDATE_ONLY).affectedRowCount(entityType)
 
-    fun save(input: Input<E>, mode: SaveMode = SaveMode.UPSERT): E =
+    fun save(input: Input<E>): E =
+        save(input.toEntity(), SaveMode.UPSERT).modifiedEntity
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <S: E> save(entity: S): S =
+        save(entity, SaveMode.UPSERT).modifiedEntity as S
+
+    fun save(input: Input<E>, mode: SaveMode): KSimpleSaveResult<E> =
         save(input.toEntity(), mode)
 
-    override fun <S: E> save(entity: S): S =
-        save(entity, SaveMode.UPSERT)
-
-    fun <S: E> save(entity: S, mode: SaveMode): S
+    fun <S: E> save(entity: S, mode: SaveMode): KSimpleSaveResult<S>
 
     override fun <S : E> saveAll(entities: Iterable<S>): List<S> =
-        saveAll(entities, SaveMode.UPSERT)
+        saveAll(entities, SaveMode.UPSERT).simpleResults.map { it.modifiedEntity }
 
-    fun <S : E> saveAll(entities: Iterable<S>, mode: SaveMode): List<S>
+    fun <S : E> saveAll(entities: Iterable<S>, mode: SaveMode): KBatchSaveResult<S>
 
     override fun delete(entity: E) {
         delete(entity, DeleteMode.AUTO)

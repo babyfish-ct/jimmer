@@ -98,6 +98,21 @@ public class SqlBuilder {
         if (definition instanceof SingleColumn) {
             builder.append(((SingleColumn)definition).getName()).append(" = ");
             if (value != null) {
+                ScalarProvider<Object, Object> scalarProvider = ctx.getSqlClient().getScalarProvider(prop);
+                if (scalarProvider != null) {
+                    try {
+                        value = scalarProvider.toSql(value);
+                    } catch (Exception ex) {
+                        throw new ExecutionException(
+                                "Cannot convert the value of \"" +
+                                        prop +
+                                        "\" by \"" +
+                                        scalarProvider.getClass().getName() +
+                                        "\"",
+                                ex
+                        );
+                    }
+                }
                 variable(value);
             } else {
                 nullVariable(prop.getElementClass());
@@ -141,6 +156,10 @@ public class SqlBuilder {
     }
 
     public SqlBuilder variable(Object value) {
+        return variable(value, null);
+    }
+
+    public SqlBuilder variable(Object value, ScalarProvider<?, ?> scalarProvider) {
         validate();
         if (value instanceof TupleImplementor) {
             if (value instanceof Tuple2<?,?>) {
@@ -291,7 +310,18 @@ public class SqlBuilder {
                     ctx.getSqlClient().getScalarProvider((Class<Object>) value.getClass());
             Object finalValue;
             if (scalarProvider != null) {
-                finalValue = scalarProvider.toSql(value);
+                try {
+                    finalValue = ((ScalarProvider<Object, Object>)scalarProvider).toSql(value);
+                } catch (Exception ex) {
+                    throw new ExecutionException(
+                            "Cannot convert the jvm type \"" +
+                                    value +
+                                    "\" to the sql type \"" +
+                                    scalarProvider.getSqlType() +
+                                    "\"",
+                            ex
+                    );
+                }
             } else {
                 finalValue = value;
             }

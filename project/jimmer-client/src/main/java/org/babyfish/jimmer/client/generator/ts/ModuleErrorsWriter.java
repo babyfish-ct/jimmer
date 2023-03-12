@@ -5,6 +5,7 @@ import org.babyfish.jimmer.client.meta.EnumBasedError;
 import org.babyfish.jimmer.client.meta.NullableType;
 import org.babyfish.jimmer.client.meta.Operation;
 import org.babyfish.jimmer.client.meta.Service;
+import org.babyfish.jimmer.error.CodeBasedException;
 
 import java.util.*;
 
@@ -19,7 +20,7 @@ public class ModuleErrorsWriter extends TsCodeWriter {
         for (Service service : ctx.getServiceFileMap().keySet()) {
             for (Operation operation : service.getOperations()) {
                 for (EnumBasedError error : operation.getErrors()) {
-                    String family = error.getRawError().getClass().getSimpleName();
+                    String family = CodeBasedException.familyName(error.getRawError().getClass().getSimpleName());
                     errorMap
                             .computeIfAbsent(
                                     family,

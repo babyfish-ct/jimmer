@@ -37,7 +37,7 @@ public class ReaderManager {
     public ReaderManager(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
     }
-    
+
     public Reader<?> reader(Class<?> type) {
         ImmutableType immutableType = ImmutableType.tryGet(type);
         return immutableType != null ? reader(immutableType) : scalarReader(type);
@@ -62,11 +62,11 @@ public class ReaderManager {
             if (prop.isReference(TargetLevel.PERSISTENT)) {
                 return new ReferenceReader(prop, this);
             }
-            return scalarReader(prop.getElementClass());
+            return scalarReader(prop);
         }
         FormulaTemplate template = prop.getFormulaTemplate();
         if (template != null) {
-            return scalarReader(prop.getElementClass());
+            return scalarReader(prop);
         }
         return null;
     }
@@ -94,6 +94,35 @@ public class ReaderManager {
     }
 
     @SuppressWarnings("unchecked")
+    private Reader<?> scalarReader(ImmutableProp prop) {
+        ImmutableType immutableType = prop.getTargetType();
+        if (immutableType != null && immutableType.isEmbeddable()) {
+            return new EmbeddedReader(immutableType, this);
+        }
+        Reader<?> reader = prop.isScalarList() ? null : BASE_READER_MAP.get(prop.getElementClass());
+        if (reader == null) {
+            ScalarProvider<Object, Object> scalarProvider = sqlClient.getScalarProvider(prop);
+            if (scalarProvider == null) {
+                throw new IllegalArgumentException(
+                        "No scalar provider for property \"" +
+                                prop +
+                                "\""
+                );
+            }
+            Class<?> sqlType = scalarProvider.getSqlType();
+            reader = BASE_READER_MAP.get(sqlType);
+            if (reader == null) {
+                reader = new AnyReader();
+            }
+            reader = new CustomizedScalarReader<>(
+                    scalarProvider,
+                    (Reader<Object>) reader
+            );
+        }
+        return reader;
+    }
+
+    @SuppressWarnings("unchecked")
     private Reader<?> scalarReader(Class<?> type) {
         ImmutableType immutableType = ImmutableType.tryGet(type);
         if (immutableType != null && immutableType.isEmbeddable()) {
@@ -112,14 +141,7 @@ public class ReaderManager {
             Class<?> sqlType = scalarProvider.getSqlType();
             reader = BASE_READER_MAP.get(sqlType);
             if (reader == null) {
-                throw new ModelException(
-                        "The scalar provider type \"" +
-                                scalarProvider.getClass().getName() +
-                                "\" is illegal, its sql type \"" +
-                                sqlType.getName() +
-                                "\" must be one of " +
-                                BASE_READER_MAP.keySet()
-                );
+                reader = new AnyReader();
             }
             reader = new CustomizedScalarReader<>(
                     (ScalarProvider<Object, Object>) scalarProvider,
@@ -336,6 +358,14 @@ public class ReaderManager {
         }
     }
 
+    private static class AnyReader implements Reader<Object> {
+
+        @Override
+        public Object read(ResultSet rs, Col col) throws SQLException {
+            return rs.getObject(col.get());
+        }
+    }
+
     private static class CustomizedScalarReader<T, S> implements Reader<T> {
 
         private final ScalarProvider<T, S> scalarProvider;
@@ -350,7 +380,18 @@ public class ReaderManager {
         @Override
         public T read(ResultSet rs, Col col) throws SQLException {
             S sqlValue = sqlReader.read(rs, col);
-            return sqlValue != null ? scalarProvider.toScalar(sqlValue) : null;
+            try {
+                return sqlValue != null ? scalarProvider.toScalar(sqlValue) : null;
+            } catch (Exception ex) {
+                throw new ExecutionException(
+                        "Cannot read convert \"" +
+                                sqlValue +
+                                "\" to the jvm type \"" +
+                                scalarProvider.getScalarType() +
+                                "\"",
+                        ex
+                );
+            }
         }
     }
 
@@ -362,7 +403,7 @@ public class ReaderManager {
 
         private ReferenceReader(ImmutableProp prop, ReaderManager readerManager) {
             this.targetType = prop.getTargetType();
-            this.foreignKeyReader = readerManager.scalarReader(targetType.getIdProp().getElementClass());
+            this.foreignKeyReader = readerManager.scalarReader(targetType.getIdProp());
         }
 
         @Override
@@ -421,7 +462,7 @@ public class ReaderManager {
                 if (childProp.isEmbedded(EmbeddedLevel.SCALAR)) {
                     map.put(childProp, new EmbeddedReader(childProp.getTargetType(), readerManager));
                 } else {
-                    map.put(childProp, readerManager.scalarReader(childProp.getElementClass()));
+                    map.put(childProp, readerManager.scalarReader(childProp));
                 }
             }
             this.readerMap = map;
@@ -441,6 +482,10 @@ public class ReaderManager {
             });
             return EmbeddableObjects.isCompleted(embeddable) ? embeddable : null;
         }
+    }
+
+    public static boolean isStandardScalarType(Class<?> type) {
+        return BASE_READER_MAP.containsKey(type);
     }
 
     static {

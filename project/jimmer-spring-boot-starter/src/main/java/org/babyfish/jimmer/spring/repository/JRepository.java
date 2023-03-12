@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.spring.repository.support.Utils;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
@@ -31,6 +32,8 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     JSqlClient sql();
 
     ImmutableType type();
+
+    Class<E> entityType();
 
     Pager pager(Pageable pageable);
 
@@ -116,51 +119,58 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     @NotNull
     default E insert(@NotNull Input<E> input) {
-        return save(input.toEntity(), SaveMode.INSERT_ONLY);
+        return save(input.toEntity(), SaveMode.INSERT_ONLY).getModifiedEntity();
     }
 
     @NotNull
     default E insert(@NotNull E entity) {
-        return save(entity, SaveMode.INSERT_ONLY);
+        return save(entity, SaveMode.INSERT_ONLY).getModifiedEntity();
     }
 
     @NotNull
-    default E update(@NotNull Input<E> input) {
-        return save(input.toEntity(), SaveMode.UPDATE_ONLY);
+    default int update(@NotNull Input<E> input) {
+        return save(input.toEntity(), SaveMode.UPDATE_ONLY).getAffectedRowCount(entityType());
     }
 
     @NotNull
-    default E update(@NotNull E entity) {
-        return save(entity, SaveMode.UPDATE_ONLY);
+    default int update(@NotNull E entity) {
+        return save(entity, SaveMode.UPDATE_ONLY).getAffectedRowCount(entityType());
     }
 
     @NotNull
     default E save(@NotNull Input<E> input) {
-        return save(input.toEntity(), SaveMode.UPSERT);
-    }
-
-    @NotNull
-    default E save(@NotNull Input<E> input, SaveMode mode) {
-        return save(input.toEntity(), mode);
+        return save(input.toEntity(), SaveMode.UPSERT).getModifiedEntity();
     }
 
     @NotNull
     @Override
     default <S extends E> S save(@NotNull S entity) {
-        return save(entity, SaveMode.UPSERT);
+        return save(entity, SaveMode.UPSERT).getModifiedEntity();
     }
 
     @NotNull
-    <S extends E> S save(@NotNull S entity, SaveMode mode);
+    default SimpleSaveResult<E> save(
+            @NotNull Input<E> input,
+            SaveMode mode
+    ) {
+        return save(input.toEntity(), mode);
+    }
+
+    @NotNull
+    <S extends E> SimpleSaveResult<S> save(@NotNull S entity, SaveMode mode);
 
     @NotNull
     @Override
     default <S extends E> Iterable<S> saveAll(@NotNull Iterable<S> entities) {
-        return saveAll(entities, SaveMode.UPSERT);
+        return saveAll(entities, SaveMode.UPSERT)
+                .getSimpleResults()
+                .stream()
+                .map(SimpleSaveResult::getModifiedEntity)
+                .collect(Collectors.toList());
     }
 
     @NotNull
-    <S extends E> Iterable<S> saveAll(@NotNull Iterable<S> entities, SaveMode mode);
+    <S extends E> BatchSaveResult<S> saveAll(@NotNull Iterable<S> entities, SaveMode mode);
 
     @Override
     default void delete(@NotNull E entity) {

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt
 
 import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.kt.toImmutableProp
+import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.cache.*
@@ -73,6 +74,14 @@ class KSqlClientDsl internal constructor(
 
     fun addScalarProvider(scalarProvider: ScalarProvider<*, *>) {
         javaBuilder.addScalarProvider(scalarProvider)
+    }
+
+    fun addScalarProvider(prop: KProperty1<*, *>, scalarProvider: ScalarProvider<*, *>) {
+        javaBuilder.addScalarProvider(prop.toImmutableProp(), scalarProvider)
+    }
+
+    fun addScalarProvider(prop: ImmutableProp, scalarProvider: ScalarProvider<*, *>) {
+        javaBuilder.addScalarProvider(prop, scalarProvider)
     }
 
     fun setEntityManager(entityManager: EntityManager) {

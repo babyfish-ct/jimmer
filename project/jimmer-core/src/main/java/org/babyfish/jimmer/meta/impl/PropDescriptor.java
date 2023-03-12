@@ -389,13 +389,13 @@ public class PropDescriptor {
                     }
                     break;
                 default:
-                    if (isList) {
+                    if (type.isAssociation && isList) {
                         throw exceptionCreator.apply(
                                 "The property \"" +
                                         propText +
-                                        "\" is illegal, list property must be decorated by @" +
+                                        "\" is illegal, list association property must be decorated by @" +
                                         OneToMany.class +
-                                        "or @" +
+                                        " or @" +
                                         ManyToMany.class
                         );
                     }

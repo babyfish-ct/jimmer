@@ -17,6 +17,8 @@ abstract class ComparisonPredicate extends AbstractPredicate {
     ) {
         this.left = left;
         this.right = right;
+        Literals.bindPropAndLiteral(left, right);
+        Literals.bindPropAndLiteral(right, left);
     }
 
     protected abstract String operator();

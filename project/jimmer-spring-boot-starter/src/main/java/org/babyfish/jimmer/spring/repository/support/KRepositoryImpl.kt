@@ -3,11 +3,11 @@ package org.babyfish.jimmer.spring.repository.support
 import org.babyfish.jimmer.ImmutableObjects
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.spring.repository.*
-import org.babyfish.jimmer.sql.ast.mutation.AffectedTable
-import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
-import org.babyfish.jimmer.sql.ast.mutation.SaveMode
+import org.babyfish.jimmer.sql.ast.mutation.*
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
+import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
+import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KConfigurableRootQueryImplementor
@@ -30,7 +30,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
         this(sql, entityType.kotlin)
 
     @Suppress("UNCHECKED_CAST")
-    protected val entityType: KClass<E> =
+    final override val entityType: KClass<E> =
         if (entityType !== null) {
             entityType
         } else {
@@ -130,19 +130,19 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             select(org.babyfish.jimmer.sql.kt.ast.expression.count(table))
         }.fetchOne()
 
-    override fun <S : E> save(entity: S, mode: SaveMode): S =
+    override fun <S: E> save(entity: S, mode: SaveMode): KSimpleSaveResult<S> =
         sql.entities.save(entity) {
             setAutoAttachingAll()
             setAutoIdOnlyTargetCheckingAll()
             setMode(mode)
-        }.modifiedEntity
+        }
 
-    override fun <S : E> saveAll(entities: Iterable<S>, mode: SaveMode): List<S> =
+    override fun <S : E> saveAll(entities: Iterable<S>, mode: SaveMode): KBatchSaveResult<S> =
         sql.entities.batchSave(Utils.toCollection(entities)) {
             setAutoAttachingAll()
             setAutoIdOnlyTargetCheckingAll()
             setMode(mode)
-        }.simpleResults.map { it.modifiedEntity }
+        }
 
     override fun delete(entity: E, mode: DeleteMode): Int =
         sql.entities.delete(

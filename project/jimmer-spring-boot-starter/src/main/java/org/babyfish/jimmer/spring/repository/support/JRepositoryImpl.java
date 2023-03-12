@@ -11,10 +11,7 @@ import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableRootQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
-import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
-import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
-import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
-import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
+import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -83,6 +80,11 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     @Override
     public ImmutableType type() {
         return immutableType;
+    }
+
+    @Override
+    public Class<E> entityType() {
+        return entityType;
     }
 
     @Override
@@ -217,27 +219,22 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @NotNull
     @Override
-    public <S extends E> S save(@NotNull S entity, SaveMode mode) {
+    public <S extends E> SimpleSaveResult<S> save(@NotNull S entity, SaveMode mode) {
         return sqlClient
                 .getEntities()
                 .saveCommand(entity)
                 .configure(cfg -> cfg.setAutoAttachingAll().setAutoIdOnlyTargetCheckingAll().setMode(mode))
-                .execute()
-                .getModifiedEntity();
+                .execute();
     }
 
     @NotNull
     @Override
-    public <S extends E> Iterable<S> saveAll(@NotNull Iterable<S> entities, SaveMode mode) {
+    public <S extends E> BatchSaveResult<S> saveAll(@NotNull Iterable<S> entities, SaveMode mode) {
         return sqlClient
                 .getEntities()
                 .batchSaveCommand(Utils.toCollection(entities))
                 .configure(cfg -> cfg.setAutoAttachingAll().setAutoIdOnlyTargetCheckingAll().setMode(mode))
-                .execute()
-                .getSimpleResults()
-                .stream()
-                .map(SimpleSaveResult::getModifiedEntity)
-                .collect(Collectors.toList());
+                .execute();
     }
 
     @Override

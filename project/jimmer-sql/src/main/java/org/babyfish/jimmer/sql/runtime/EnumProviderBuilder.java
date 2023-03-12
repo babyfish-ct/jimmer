@@ -90,8 +90,8 @@ public class EnumProviderBuilder<E extends Enum<E>, S> {
             E scalarValue = enumMap.get(sqlValue);
             if (scalarValue == null) {
                 throw new IllegalArgumentException(
-                        "Cannot resolve '$" +
-                                getScalarType().getName() +
+                        "Cannot resolve '" +
+                                getScalarType() +
                                 "' by the value '" +
                                 sqlValue +
                                 "'"
