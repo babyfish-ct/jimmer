@@ -227,9 +227,10 @@ class PropsGenerator(
                     )
                 )
                 .addCode(
-                    "return fetch(%T(%T::class).by(block))",
+                    "return fetch(%T(%T::class).%M(block))",
                     NEW_FETCHER_FUN_CLASS_NAME,
-                    type.className
+                    type.className,
+                    MemberName(type.className.packageName, "by")
                 )
                 .build()
         )
