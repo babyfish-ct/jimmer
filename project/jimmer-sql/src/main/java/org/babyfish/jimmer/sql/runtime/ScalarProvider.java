@@ -6,6 +6,8 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -43,17 +45,21 @@ public abstract class ScalarProvider<T, S> {
         validateScalarType(scalarType);
     }
 
+    @NotNull
     public final Type getScalarType() {
         return scalarType;
     }
 
+    @NotNull
     public final Class<S> getSqlType() {
         return sqlType;
     }
 
-    public abstract T toScalar(S sqlValue) throws Exception;
+    @NotNull
+    public abstract T toScalar(@NotNull S sqlValue) throws Exception;
 
-    public abstract S toSql(T scalarValue) throws Exception;
+    @NotNull
+    public abstract S toSql(@NotNull T scalarValue) throws Exception;
 
     /**
      * User can override this method, it can return null, empty or handled property.

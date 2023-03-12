@@ -4,12 +4,18 @@ import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.le
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal abstract class ComparisonPredicate(
     protected val left: KExpression<*>,
     protected val right: KExpression<*>
 ) : AbstractKPredicate() {
+
+    init {
+        LiteralExpression.bindPropAndLiteral(left, right)
+        LiteralExpression.bindPropAndLiteral(right, left)
+    }
 
     override fun precedence(): Int =
         ExpressionPrecedences.COMPARISON

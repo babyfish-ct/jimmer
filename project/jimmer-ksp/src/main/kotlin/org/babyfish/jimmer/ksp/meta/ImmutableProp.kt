@@ -13,7 +13,6 @@ import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
 import org.babyfish.jimmer.ksp.generator.parseValidationMessages
 import org.babyfish.jimmer.meta.impl.PropDescriptor
 import org.babyfish.jimmer.sql.*
-import java.lang.IllegalArgumentException
 import kotlin.reflect.KClass
 
 class ImmutableProp(
@@ -69,6 +68,13 @@ class ImmutableProp(
                     }
                 else -> false
             }
+        }
+
+    fun isDsl(isTableEx: Boolean): Boolean =
+        when {
+            idViewBaseProp !== null || isKotlinFormula || isTransient -> false
+            isList && isAssociation(true) -> isTableEx
+            else -> true
         }
 
     private val targetDeclaration: KSClassDeclaration =

@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
+import kotlin.math.exp
 
 internal class BetweenPredicate<T: Comparable<*>>(
     private val negative: Boolean,
@@ -12,6 +13,11 @@ internal class BetweenPredicate<T: Comparable<*>>(
     private val min: KNonNullExpression<T>,
     private val max: KNonNullExpression<T>,
 ): AbstractKPredicate() {
+
+    init {
+        LiteralExpression.bindPropAndLiteral(expression, min)
+        LiteralExpression.bindPropAndLiteral(expression, max)
+    }
 
     override fun not(): AbstractKPredicate =
         BetweenPredicate(!negative, expression, min, max)

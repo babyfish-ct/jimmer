@@ -1,18 +1,20 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
 public class EnumProviderBuilder<E extends Enum<E>, S> {
 
-    private Class<E> enumType;
+    private final Class<E> enumType;
 
-    private Class<S> sqlType;
+    private final Class<S> sqlType;
 
-    private Function<E, S> defaultSqlValueMapper;
+    private final Function<E, S> defaultSqlValueMapper;
 
-    private Map<E, S> sqlMap = new HashMap<>();
+    private final Map<E, S> sqlMap = new HashMap<>();
 
     public static <E extends Enum<E>, S> EnumProviderBuilder<E, S> of(
             Class<E> enumType,
@@ -32,7 +34,7 @@ public class EnumProviderBuilder<E extends Enum<E>, S> {
         this.defaultSqlValueMapper = defaultSqlValueMapper;
     }
 
-    public EnumProviderBuilder<E, S> map(E enumValue, S sqlValue) {
+    public EnumProviderBuilder<E, S> map(@NotNull E enumValue, @NotNull S sqlValue) {
         if (sqlMap.containsValue(enumValue)) {
             throw new IllegalStateException("'${enumValue}' has been mapped");
         }
@@ -86,7 +88,7 @@ public class EnumProviderBuilder<E extends Enum<E>, S> {
         }
 
         @Override
-        public E toScalar(S sqlValue) {
+        public @NotNull E toScalar(@NotNull S sqlValue) {
             E scalarValue = enumMap.get(sqlValue);
             if (scalarValue == null) {
                 throw new IllegalArgumentException(
@@ -101,7 +103,7 @@ public class EnumProviderBuilder<E extends Enum<E>, S> {
         }
 
         @Override
-        public S toSql(E enumValue) {
+        public @NotNull S toSql(@NotNull E enumValue) {
             S sqlValue = sqlMap.get(enumValue);
             if (sqlValue == null) {
                 throw new AssertionError(

@@ -384,7 +384,7 @@ public class ReaderManager {
                 return sqlValue != null ? scalarProvider.toScalar(sqlValue) : null;
             } catch (Exception ex) {
                 throw new ExecutionException(
-                        "Cannot read convert \"" +
+                        "Cannot convert \"" +
                                 sqlValue +
                                 "\" to the jvm type \"" +
                                 scalarProvider.getScalarType() +

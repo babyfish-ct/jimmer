@@ -86,16 +86,13 @@ class PropsGenerator(
         outerJoin: Boolean,
         isTableEx: Boolean
     ) {
-        if (prop.isTransient || prop.isKotlinFormula) {
+        if (!prop.isDsl(isTableEx)) {
             return
         }
         if (outerJoin && !prop.isAssociation(true)) {
             return
         }
         if (nonNullTable && (prop.isAssociation(true) || prop.isNullable)) {
-            return
-        }
-        if (!isTableEx && prop.isList) {
             return
         }
         if (isTableEx && !prop.isAssociation(true)) {
@@ -137,7 +134,13 @@ class PropsGenerator(
                         K_NULLABLE_PROP_EXPRESSION
                     }
             }.parameterizedBy(
-                prop.targetTypeName(overrideNullable = false)
+                prop.targetTypeName(overrideNullable = false).let {
+                    if (prop.isList && !prop.isAssociation(true)) {
+                        LIST.parameterizedBy(it)
+                    } else {
+                        it
+                    }
+                }
             )
 
         addProperty(

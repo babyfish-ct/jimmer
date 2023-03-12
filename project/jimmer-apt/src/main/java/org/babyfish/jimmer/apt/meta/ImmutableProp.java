@@ -391,10 +391,8 @@ public class ImmutableProp {
         if (idViewBaseProp != null || isJavaFormula || isTransient) {
             return false;
         }
-        if (isList) {
-            if (isAssociation(true)) {
-                return isTableEx;
-            }
+        if (isList && isAssociation(true)) {
+            return isTableEx;
         }
         return true;
     }
