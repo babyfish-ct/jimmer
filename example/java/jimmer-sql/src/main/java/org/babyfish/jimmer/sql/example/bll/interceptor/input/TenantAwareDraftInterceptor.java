@@ -2,11 +2,11 @@ package org.babyfish.jimmer.sql.example.bll.interceptor.input;
 
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DraftInterceptor;
-import org.babyfish.jimmer.sql.example.bll.error.BusinessException;
 import org.babyfish.jimmer.sql.example.bll.interceptor.TenantProvider;
 import org.babyfish.jimmer.sql.example.model.common.TenantAwareDraft;
 import org.babyfish.jimmer.sql.example.model.common.TenantAwareProps;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -14,8 +14,14 @@ public class TenantAwareDraftInterceptor implements DraftInterceptor<TenantAware
 
     private final TenantProvider tenantProvider;
 
-    public TenantAwareDraftInterceptor(TenantProvider tenantProvider) {
+    private final String defaultTenant;
+
+    public TenantAwareDraftInterceptor(
+            TenantProvider tenantProvider,
+            @Value("${demo.default-tenant}") String defaultTenant
+    ) {
         this.tenantProvider = tenantProvider;
+        this.defaultTenant = defaultTenant;
     }
 
     @Override
@@ -23,9 +29,7 @@ public class TenantAwareDraftInterceptor implements DraftInterceptor<TenantAware
         if (!ImmutableObjects.isLoaded(draft, TenantAwareProps.TENANT)) {
             String tenant = tenantProvider.get();
             if (tenant == null) {
-                throw BusinessException.globalTenantRequired(
-                        "Global tenant must be specified when the tenant of saved object is not specified"
-                );
+                tenant = defaultTenant;
             }
             draft.setTenant(tenant);
         }

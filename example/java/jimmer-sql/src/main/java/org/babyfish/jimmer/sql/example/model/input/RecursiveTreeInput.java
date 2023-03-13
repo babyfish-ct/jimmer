@@ -3,6 +3,8 @@ package org.babyfish.jimmer.sql.example.model.input;
 import lombok.Data;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.sql.example.model.TreeNode;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
@@ -17,6 +19,7 @@ public class RecursiveTreeInput implements Input<TreeNode> {
 
     private String name;
 
+    @Nullable
     private List<RecursiveTreeInput> childNodes;
 
     @Override

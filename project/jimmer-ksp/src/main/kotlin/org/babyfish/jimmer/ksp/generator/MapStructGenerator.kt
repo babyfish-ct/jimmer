@@ -37,7 +37,7 @@ class MapStructGenerator(
         if (prop.isKotlinFormula || prop.idViewBaseProp !== null) {
             return
         }
-        if (isMapStructLoadStateRequired(prop)) {
+        if (isMapStructLoadedStateRequired(prop)) {
             addProperty(
                 PropertySpec
                     .builder(prop.loadedFieldName!!, BOOLEAN)
@@ -66,21 +66,33 @@ class MapStructGenerator(
                 .apply {
                     val baseProp = prop.idViewBaseProp
                     if (baseProp !== null) {
-                        if (isMapStructLoadStateRequired(baseProp)) {
+                        if (isMapStructLoadedStateRequired(baseProp)) {
                             addStatement("this.%N = true", baseProp.loadedFieldName!!)
                         }
-                        addStatement(
-                            "this.%N = %N?.%L { %M(it) }",
-                            baseProp.name,
-                            prop.name,
-                            if (prop.isList) "map" else "let",
-                            MAKE_ID_ONLY
-                        )
+                        if (prop.isList) {
+                            addStatement(
+                                "this.%N = %N?.map { %M(it) } ?: emptyList()",
+                                baseProp.name,
+                                prop.name,
+                                MAKE_ID_ONLY
+                            )
+                        } else {
+                            addStatement(
+                                "this.%N = %N?.let { %M(it) }",
+                                baseProp.name,
+                                prop.name,
+                                MAKE_ID_ONLY
+                            )
+                        }
                     } else {
-                        if (isMapStructLoadStateRequired(prop)) {
+                        if (isMapStructLoadedStateRequired(prop)) {
                             addStatement("this.%N = true", prop.loadedFieldName!!)
                         }
-                        addStatement("this.%L = %L", prop.name, prop.name)
+                        if (prop.isList) {
+                            addStatement("this.%L = %L ?: emptyList()", prop.name, prop.name)
+                        } else {
+                            addStatement("this.%L = %L", prop.name, prop.name)
+                        }
                     }
                 }
                 .addStatement("return this")
@@ -104,9 +116,7 @@ class MapStructGenerator(
                                 if (prop.isKotlinFormula || prop.idViewBaseProp !== null) {
                                     continue
                                 }
-                                if (prop.isList) {
-                                    addStatement("%L = __that.%L ?: emptyList()", prop.name, prop.name)
-                                } else if (isMapStructLoadStateRequired(prop)) {
+                                if (isMapStructLoadedStateRequired(prop)) {
                                     beginControlFlow("if (__that.%L)", prop.loadedFieldName)
                                     addStatement("%L = __that.%L", prop.name, prop.name)
                                     endControlFlow()
@@ -132,7 +142,7 @@ class MapStructGenerator(
             MemberName("org.babyfish.jimmer.kt", "makeIdOnly")
 
         @JvmStatic
-        private fun isMapStructLoadStateRequired(prop: ImmutableProp): Boolean =
+        private fun isMapStructLoadedStateRequired(prop: ImmutableProp): Boolean =
             prop.isNullable
     }
 }

@@ -43,6 +43,7 @@ type Book implements CommonEntity {
     authors: [Author!]!
     createdTime: LocalDateTime!
     modifiedTime: LocalDateTime!
+    tenant: String!
 }
 
 type Author implements CommonEntity {

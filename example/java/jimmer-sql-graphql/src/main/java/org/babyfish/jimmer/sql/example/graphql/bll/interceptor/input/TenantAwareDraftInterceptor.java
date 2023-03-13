@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.example.graphql.entities.common.TenantAwareDraft;
 import org.babyfish.jimmer.sql.example.graphql.entities.common.TenantAwareProps;
 import org.babyfish.jimmer.sql.example.graphql.bll.interceptor.TenantProvider;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -13,8 +14,14 @@ public class TenantAwareDraftInterceptor implements DraftInterceptor<TenantAware
 
     private final TenantProvider tenantProvider;
 
-    public TenantAwareDraftInterceptor(TenantProvider tenantProvider) {
+    private final String defaultTenant;
+
+    public TenantAwareDraftInterceptor(
+            TenantProvider tenantProvider,
+            @Value("${demo.default-tenant}") String defaultTenant
+    ) {
         this.tenantProvider = tenantProvider;
+        this.defaultTenant = defaultTenant;
     }
 
     @Override
@@ -22,9 +29,7 @@ public class TenantAwareDraftInterceptor implements DraftInterceptor<TenantAware
         if (!ImmutableObjects.isLoaded(draft, TenantAwareProps.TENANT)) {
             String tenant = tenantProvider.get();
             if (tenant == null) {
-                throw new IllegalStateException(
-                        "Global tenant must be specified when the tenant of saved object is not specified"
-                );
+                tenant = defaultTenant;
             }
             draft.setTenant(tenant);
         }

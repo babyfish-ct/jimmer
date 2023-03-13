@@ -280,13 +280,20 @@ class DraftImplGenerator(
                         CodeBlock
                             .builder()
                             .apply {
-                                beginControlFlow(
-                                    "if (!__isLoaded(%L) || %L === null)",
-                                    prop.id,
-                                    prop.name
-                                )
+                                if (prop.isNullable) {
+                                    beginControlFlow(
+                                        "if (!__isLoaded(%L) || %L === null)",
+                                        prop.id,
+                                        prop.name
+                                    )
+                                } else {
+                                    beginControlFlow(
+                                        "if (!__isLoaded(%L))",
+                                        prop.id
+                                    )
+                                }
                                 if (prop.isList) {
-                                    addStatement("%L = kotlin.collections.emptyList()", prop.name)
+                                    addStatement("%L = emptyList()", prop.name)
                                 } else {
                                     addStatement(
                                         "%L = %T.produce {}",

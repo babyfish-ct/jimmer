@@ -365,11 +365,18 @@ public class DraftImplGenerator {
                 .addAnnotation(Override.class)
                 .addParameter(boolean.class, "autoCreate")
                 .returns(prop.getDraftTypeName(true));
-        builder.beginControlFlow(
-                "if (autoCreate && (!__isLoaded($L) || $L() == null))",
-                prop.getId(),
-                prop.getGetterName()
-        );
+        if (prop.isNullable()) {
+            builder.beginControlFlow(
+                    "if (autoCreate && (!__isLoaded($L) || $L() == null))",
+                    prop.getId(),
+                    prop.getGetterName()
+            );
+        } else {
+            builder.beginControlFlow(
+                    "if (autoCreate && (!__isLoaded($L)))",
+                    prop.getId()
+            );
+        }
         if (prop.isList()) {
             builder.addStatement(
                     "$L(new $T<>())",

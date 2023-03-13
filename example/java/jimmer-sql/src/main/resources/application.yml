@@ -30,3 +30,6 @@ jimmer:
 springdoc:
   swagger-ui:
     path: /ui
+
+demo:
+  default-tenant: a

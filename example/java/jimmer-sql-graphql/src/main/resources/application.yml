@@ -8,3 +8,6 @@ spring:
 
 jimmer:
   show-sql: true
+
+demo:
+  default-tenant: a
