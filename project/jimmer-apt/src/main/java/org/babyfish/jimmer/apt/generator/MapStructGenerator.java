@@ -1,10 +1,13 @@
 package org.babyfish.jimmer.apt.generator;
 
 import com.squareup.javapoet.*;
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 
 import javax.lang.model.element.Modifier;
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class MapStructGenerator {
 
@@ -35,10 +38,10 @@ public class MapStructGenerator {
     }
 
     private void addFields(ImmutableProp prop) {
-        if (prop.isJavaFormula()) {
+        if (prop.isJavaFormula() || prop.getIdViewBaseProp() != null) {
             return;
         }
-        if (prop.isLoadedStateRequired()) {
+        if (isMapStructLoadStateRequired(prop)) {
             typeBuilder.addField(
                     FieldSpec.builder(
                             TypeName.BOOLEAN,
@@ -48,7 +51,7 @@ public class MapStructGenerator {
         }
         typeBuilder.addField(
                 FieldSpec.builder(
-                        prop.getTypeName(),
+                        prop.getTypeName().box(),
                         prop.getName()
                 ).addModifiers(Modifier.PRIVATE).build()
         );
@@ -62,30 +65,53 @@ public class MapStructGenerator {
                 .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(
-                        prop.getTypeName(),
+                        prop.getTypeName().box(),
                         prop.getName()
                 )
                 .returns(type.getMapStructClassName());
-        if (prop.isList()) {
-            builder.addStatement(
-                    "this.$L = $L != null ? $L : $T.emptyList()",
-                    prop.getName(),
-                    prop.getName(),
-                    prop.getName(),
-                    Constants.COLLECTIONS_CLASS_NAME
-            );
-        } else if (prop.isNullable() || prop.getTypeName().isPrimitive()) {
-            if (prop.isLoadedStateRequired()) {
-                builder.addStatement("this.$L = true", prop.getLoadedStateName());
+        if (prop.getIdViewBaseProp() != null) {
+            ImmutableProp baseProp = prop.getIdViewBaseProp();
+            if (isMapStructLoadStateRequired(baseProp)) {
+                builder.addStatement("this.$L = true", baseProp.getLoadedStateName());
             }
-            builder.addStatement("this.$L = $L", prop.getName(), prop.getName());
-        } else {
-            builder.beginControlFlow("if ($L != null)", prop.getName());
-            if (prop.isLoadedStateRequired()) {
-                builder.addStatement("this.$L = true", prop.getLoadedStateName());
+            builder.beginControlFlow("if ($L == null)", prop.getName());
+            builder.addStatement("this.$L = null", baseProp.getName());
+            builder.nextControlFlow("else");
+            if (prop.isList()) {
+                builder.addStatement(
+                        "$T<$T> __targets = new $T($L.size())",
+                        Constants.LIST_CLASS_NAME,
+                        baseProp.getElementTypeName(),
+                        ArrayList.class,
+                        prop.getName()
+                );
+                builder.beginControlFlow(
+                        "for ($T __targetId : $L)",
+                        prop.getElementTypeName(),
+                        prop.getName()
+                );
+                builder.addStatement(
+                        "__targets.add($T.makeIdOnly($T.class, __targetId))",
+                        ImmutableObjects.class,
+                        baseProp.getTargetType().getClassName()
+                );
+                builder.endControlFlow();
+                builder.addStatement("this.$L = __targets", baseProp.getName());
+            } else {
+                builder.addStatement(
+                        "this.$L = $T.makeIdOnly($T.class, $L)",
+                        baseProp.getName(),
+                        ImmutableObjects.class,
+                        baseProp.getTargetType().getClassName(),
+                        prop.getName()
+                );
             }
-            builder.addStatement("this.$L = $L", prop.getName(), prop.getName());
             builder.endControlFlow();
+        } else {
+            if (isMapStructLoadStateRequired(prop)) {
+                builder.addStatement("this.$L = true", prop.getLoadedStateName());
+            }
+            builder.addStatement("this.$L = $L", prop.getName(), prop.getName());
         }
         builder.addStatement("return this");
         typeBuilder.addMethod(builder.build());
@@ -98,17 +124,31 @@ public class MapStructGenerator {
                 .returns(type.getClassName());
         builder.addCode("return $T.$L.produce(draft -> {$>\n", type.getDraftClassName(), "$");
         for (ImmutableProp prop : type.getProps().values()) {
-            if (!prop.isJavaFormula()) {
-                if (prop.isLoadedStateRequired()) {
+            if (!prop.isJavaFormula() && prop.getIdViewBaseProp() == null) {
+                if (prop.isList()) {
+                    builder.addStatement(
+                            "draft.$L($L != null ? $L : $T.emptyList())",
+                            prop.getSetterName(),
+                            prop.getName(),
+                            prop.getName(),
+                            Collections.class
+                    );
+                } else if (isMapStructLoadStateRequired(prop)) {
                     builder.beginControlFlow("if ($L)", prop.getLoadedStateName());
+                    builder.addStatement("draft.$L($L)", prop.getSetterName(), prop.getName());
+                    builder.endControlFlow();
                 } else {
                     builder.beginControlFlow("if ($L != null)", prop.getName());
+                    builder.addStatement("draft.$L($L)", prop.getSetterName(), prop.getName());
+                    builder.endControlFlow();
                 }
-                builder.addStatement("draft.$L($L)", prop.getSetterName(), prop.getName());
-                builder.endControlFlow();
             }
         }
         builder.addCode("$<});\n");
         typeBuilder.addMethod(builder.build());
+    }
+
+    private static boolean isMapStructLoadStateRequired(ImmutableProp prop) {
+        return prop.isNullable();
     }
 }

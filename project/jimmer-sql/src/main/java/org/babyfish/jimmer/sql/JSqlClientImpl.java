@@ -609,10 +609,12 @@ class JSqlClientImpl implements JSqlClient {
             if (prop == null) {
                 if (!(scalarType instanceof Class<?>)) {
                     throw new IllegalStateException(
-                            "The scalar provider for scalar type \"" +
+                            "Illegal scalar provider type \"" +
+                                    scalarProvider.getClass().getName() +
+                                    "\" its scalar type argument cannot be \"" +
                                     scalarType +
-                                    "\" is used as global scalar provider, " +
-                                    "so its first type argument must be calss"
+                                    "\" because it is global scalar provider, " +
+                                    "please use property-specific scalar provider"
                     );
                 }
                 if (scalarProviderMap.containsKey(scalarType)) {
@@ -622,14 +624,15 @@ class JSqlClientImpl implements JSqlClient {
                                     "\" twice"
                     );
                 }
-                if (Iterable.class.isAssignableFrom((Class<?>) scalarType) ||
+                if (((Class<?>) scalarType).isArray() ||
+                        Iterable.class.isAssignableFrom((Class<?>) scalarType) ||
                         Map.class.isAssignableFrom((Class<?>) scalarType)) {
                     throw new IllegalStateException(
                             "Illegal scalar provider type \"" +
-                                    scalarProvider.getClass() +
-                                    "\" is illegal, the scalar type \"" +
-                                    scalarType +
-                                    "\" cannot be collection or map"
+                                    scalarProvider.getClass().getName() +
+                                    "\" its scalar type argument cannot be array, collection or map," +
+                                    " because it is global scalar provider, " +
+                                    "please use property-specific scalar provider"
                     );
                 }
                 scalarProviderMap.put((Class<?>) scalarType, scalarProvider);

@@ -128,13 +128,13 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     }
 
     @NotNull
-    default int update(@NotNull Input<E> input) {
-        return save(input.toEntity(), SaveMode.UPDATE_ONLY).getAffectedRowCount(entityType());
+    default E update(@NotNull Input<E> input) {
+        return save(input.toEntity(), SaveMode.UPDATE_ONLY).getModifiedEntity();
     }
 
     @NotNull
-    default int update(@NotNull E entity) {
-        return save(entity, SaveMode.UPDATE_ONLY).getAffectedRowCount(entityType());
+    default E update(@NotNull E entity) {
+        return save(entity, SaveMode.UPDATE_ONLY).getModifiedEntity();
     }
 
     @NotNull

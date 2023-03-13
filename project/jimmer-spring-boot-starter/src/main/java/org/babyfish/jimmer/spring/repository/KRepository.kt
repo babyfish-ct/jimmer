@@ -89,11 +89,11 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
     fun insert(entity: E): E =
         save(entity, SaveMode.INSERT_ONLY).modifiedEntity
 
-    fun update(input: Input<E>): Int =
-        save(input.toEntity(), SaveMode.UPDATE_ONLY).affectedRowCount(entityType)
+    fun update(input: Input<E>): E =
+        save(input.toEntity(), SaveMode.UPDATE_ONLY).modifiedEntity
 
-    fun update(entity: E): Int =
-        save(entity, SaveMode.UPDATE_ONLY).affectedRowCount(entityType)
+    fun update(entity: E): E =
+        save(entity, SaveMode.UPDATE_ONLY).modifiedEntity
 
     fun save(input: Input<E>): E =
         save(input.toEntity(), SaveMode.UPSERT).modifiedEntity

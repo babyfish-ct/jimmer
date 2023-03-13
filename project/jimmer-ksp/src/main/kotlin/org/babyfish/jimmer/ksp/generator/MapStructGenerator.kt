@@ -34,10 +34,13 @@ class MapStructGenerator(
     }
 
     private fun TypeSpec.Builder.addFields(prop: ImmutableProp) {
-        prop.loadedFieldName?.let {
+        if (prop.isKotlinFormula || prop.idViewBaseProp !== null) {
+            return
+        }
+        if (isMapStructLoadStateRequired(prop)) {
             addProperty(
                 PropertySpec
-                    .builder(it, BOOLEAN)
+                    .builder(prop.loadedFieldName!!, BOOLEAN)
                     .mutable(true)
                     .addModifiers(KModifier.PRIVATE)
                     .initializer("false")
@@ -46,22 +49,10 @@ class MapStructGenerator(
         }
         addProperty(
             PropertySpec
-                .builder(prop.name, prop.typeName().copy(nullable = !prop.isPrimitive))
+                .builder(prop.name, prop.typeName().copy(nullable = true))
                 .addModifiers(KModifier.PRIVATE)
                 .mutable(true)
-                .initializer(
-                    if (prop.isPrimitive) {
-                        when (prop.typeName()) {
-                            BOOLEAN -> "false"
-                            CHAR -> "Char.MIN_VALUE"
-                            FLOAT -> "0F"
-                            DOUBLE -> "0.0"
-                            else -> "0"
-                        }
-                    } else {
-                        "null"
-                    }
-                )
+                .initializer("null")
                 .build()
         )
     }
@@ -70,23 +61,26 @@ class MapStructGenerator(
         addFunction(
             FunSpec
                 .builder(prop.name)
-                .addParameter(prop.name, prop.typeName().copy(nullable = !prop.isPrimitive))
+                .addParameter(prop.name, prop.typeName().copy(nullable = true))
                 .returns(type.draftClassName("MapStruct"))
                 .apply {
-                    if (prop.isList) {
-                        addStatement("this.%L = %L ?: emptyList()", prop.name, prop.name)
-                    } else if (prop.isNullable || prop.isPrimitive) {
-                        prop.loadedFieldName?.let {
-                            addStatement("this.%L = true", it)
+                    val baseProp = prop.idViewBaseProp
+                    if (baseProp !== null) {
+                        if (isMapStructLoadStateRequired(baseProp)) {
+                            addStatement("this.%N = true", baseProp.loadedFieldName!!)
                         }
-                        addStatement("this.%L = %L", prop.name, prop.name)
+                        addStatement(
+                            "this.%N = %N?.%L { %M(it) }",
+                            baseProp.name,
+                            prop.name,
+                            if (prop.isList) "map" else "let",
+                            MAKE_ID_ONLY
+                        )
                     } else {
-                        beginControlFlow("if (%L !== null)", prop.name)
-                        prop.loadedFieldName?.let {
-                            addStatement("this.%L = true", it)
+                        if (isMapStructLoadStateRequired(prop)) {
+                            addStatement("this.%N = true", prop.loadedFieldName!!)
                         }
                         addStatement("this.%L = %L", prop.name, prop.name)
-                        endControlFlow()
                     }
                 }
                 .addStatement("return this")
@@ -105,18 +99,19 @@ class MapStructGenerator(
                         .apply {
                             add("return %T\n.%L.produce {", type.draftClassName, "`$`")
                             indent()
-                            addStatement("val that = this@%T", type.draftClassName("MapStruct"))
+                            addStatement("val __that = this@%T", type.draftClassName("MapStruct"))
                             for (prop in type.properties.values) {
-                                if (prop.isKotlinFormula) {
+                                if (prop.isKotlinFormula || prop.idViewBaseProp !== null) {
                                     continue
                                 }
-                                val loadName = prop.loadedFieldName
-                                if (loadName !== null) {
-                                    beginControlFlow("if (that.%L)", loadName)
-                                    addStatement("%L = that.%L", prop.name, prop.name)
+                                if (prop.isList) {
+                                    addStatement("%L = __that.%L ?: emptyList()", prop.name, prop.name)
+                                } else if (isMapStructLoadStateRequired(prop)) {
+                                    beginControlFlow("if (__that.%L)", prop.loadedFieldName)
+                                    addStatement("%L = __that.%L", prop.name, prop.name)
                                     endControlFlow()
                                 } else {
-                                    beginControlFlow("that.%L?.let ", prop.name)
+                                    beginControlFlow("__that.%L?.let ", prop.name)
                                     addStatement("%L = it", prop.name)
                                     endControlFlow()
                                 }
@@ -128,5 +123,16 @@ class MapStructGenerator(
                 )
                 .build()
         )
+    }
+
+    companion object {
+
+        @JvmStatic
+        private val MAKE_ID_ONLY =
+            MemberName("org.babyfish.jimmer.kt", "makeIdOnly")
+
+        @JvmStatic
+        private fun isMapStructLoadStateRequired(prop: ImmutableProp): Boolean =
+            prop.isNullable
     }
 }
