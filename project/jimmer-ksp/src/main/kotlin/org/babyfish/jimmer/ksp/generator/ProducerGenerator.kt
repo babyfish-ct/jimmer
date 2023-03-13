@@ -79,7 +79,7 @@ class ProducerGenerator(
                     ".id(%L, %S, %T::class.java)\n",
                     prop.id,
                     prop.name,
-                    prop.targetTypeName(overrideNullable = false)
+                    prop.targetClassName
                 )
             prop.primaryAnnotationType == Version::class.java ->
                 add(
@@ -92,7 +92,7 @@ class ProducerGenerator(
                     ".logicalDeleted(%L, %S, %T::class.java, %L)\n",
                     prop.id,
                     prop.name,
-                    prop.targetTypeName(overrideNullable = false),
+                    prop.targetClassName,
                     prop.isNullable
                 )
             prop.isKey && prop.isAssociation(false) ->
@@ -105,7 +105,7 @@ class ProducerGenerator(
                     } else {
                         ManyToOne::class
                     },
-                    prop.targetTypeName(overrideNullable = false),
+                    prop.targetClassName,
                     prop.isNullable
                 )
             prop.isKey && !prop.isAssociation(false) ->
@@ -113,7 +113,7 @@ class ProducerGenerator(
                     ".key(%L, %S, %T::class.java)\n",
                     prop.id,
                     prop.name,
-                    prop.targetTypeName(overrideNullable = false)
+                    prop.targetClassName
                 )
             prop.primaryAnnotationType == IdView::class.java ->
                 add(
@@ -122,7 +122,7 @@ class ProducerGenerator(
                     prop.name,
                     IMMUTABLE_PROP_CATEGORY_CLASS_NAME,
                     if (prop.isList) "SCALAR_LIST" else "SCALAR",
-                    prop.targetTypeName(overrideNullable = false),
+                    prop.targetClassName,
                     prop.isNullable
                 )
             prop.primaryAnnotationType != null && prop.primaryAnnotationType != Formula::class.java && prop.primaryAnnotationType != Transient::class.java ->
@@ -137,7 +137,7 @@ class ProducerGenerator(
                         prop.primaryAnnotationType == ManyToMany::class.java -> MANY_TO_MANY_CLASS_NAME
                         else -> error("Internal bug: $prop has wrong sql annotation @${prop.primaryAnnotationType.name}")
                     },
-                    prop.targetTypeName(overrideNullable = false),
+                    prop.targetClassName,
                     prop.isNullable
                 )
             else ->
@@ -152,7 +152,7 @@ class ProducerGenerator(
                         prop.isAssociation(false) -> "REFERENCE"
                         else -> "SCALAR"
                     },
-                    prop.targetTypeName(overrideNullable = false),
+                    prop.targetClassName,
                     prop.isNullable
                 )
         }

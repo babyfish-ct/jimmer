@@ -4,10 +4,7 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.JimmerModule;
-import org.babyfish.jimmer.sql.model.pg.JsonWrapper;
-import org.babyfish.jimmer.sql.model.pg.JsonWrapperProps;
-import org.babyfish.jimmer.sql.model.pg.PointScalarProvider;
-import org.babyfish.jimmer.sql.model.pg.TagsScalarProvider;
+import org.babyfish.jimmer.sql.model.pg.*;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +42,7 @@ public abstract class AbstractJsonTest {
                 .setDialect(new PostgresDialect())
                 .addScalarProvider(new PointScalarProvider())
                 .addScalarProvider(JsonWrapperProps.TAGS, new TagsScalarProvider())
+                .addScalarProvider(JsonWrapperProps.SCORES, new ScoresScalarProvider())
                 .build();
     }
 

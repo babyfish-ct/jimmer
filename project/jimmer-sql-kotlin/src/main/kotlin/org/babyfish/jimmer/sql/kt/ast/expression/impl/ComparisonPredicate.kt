@@ -13,8 +13,8 @@ internal abstract class ComparisonPredicate(
 ) : AbstractKPredicate() {
 
     init {
-        LiteralExpression.bindPropAndLiteral(left, right)
-        LiteralExpression.bindPropAndLiteral(right, left)
+        LiteralExpression.bind(left, right)
+        LiteralExpression.bind(right, left)
     }
 
     override fun precedence(): Int =

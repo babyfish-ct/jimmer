@@ -351,6 +351,12 @@ public class ImmutableProp {
         return elementTypeName;
     }
 
+    public TypeName getRawElementTypeName() {
+        return elementTypeName instanceof ParameterizedTypeName ?
+                ((ParameterizedTypeName)elementTypeName).rawType :
+                elementTypeName;
+    }
+
     public TypeName getDraftElementTypeName() {
         return draftElementTypeName;
     }

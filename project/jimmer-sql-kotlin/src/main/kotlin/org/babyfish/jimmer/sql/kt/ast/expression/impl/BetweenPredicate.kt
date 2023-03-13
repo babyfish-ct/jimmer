@@ -15,8 +15,8 @@ internal class BetweenPredicate<T: Comparable<*>>(
 ): AbstractKPredicate() {
 
     init {
-        LiteralExpression.bindPropAndLiteral(expression, min)
-        LiteralExpression.bindPropAndLiteral(expression, max)
+        LiteralExpression.bind(min, expression)
+        LiteralExpression.bind(max, expression)
     }
 
     override fun not(): AbstractKPredicate =

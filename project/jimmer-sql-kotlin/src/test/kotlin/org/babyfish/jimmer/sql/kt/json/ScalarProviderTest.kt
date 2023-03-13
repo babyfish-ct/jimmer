@@ -1,11 +1,10 @@
 package org.babyfish.jimmer.sql.kt.json
 
 import org.babyfish.jimmer.kt.new
+import org.babyfish.jimmer.sql.ast.tuple.Tuple2
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
-import org.babyfish.jimmer.sql.kt.model.pg.JsonWrapper
-import org.babyfish.jimmer.sql.kt.model.pg.Point
-import org.babyfish.jimmer.sql.kt.model.pg.by
-import org.babyfish.jimmer.sql.kt.model.pg.tags
+import org.babyfish.jimmer.sql.kt.ast.expression.tuple
+import org.babyfish.jimmer.sql.kt.model.pg.*
 import kotlin.test.Test
 import kotlin.test.expect
 
@@ -18,9 +17,15 @@ class ScalarProviderTest : AbstractJsonTest() {
                 id = 1
                 point = Point(3, 4)
                 tags = listOf("java", "kotlin")
+                scores = mapOf(1L to 100)
             }
         )
-        expect("{\"id\":1,\"point\":{\"x\":3,\"y\":4},\"tags\":[\"java\",\"kotlin\"]}") {
+        expect(
+            "{\"id\":1," +
+            "\"point\":{\"x\":3,\"y\":4}," +
+            "\"tags\":[\"java\",\"kotlin\"]," +
+            "\"scores\":{\"1\":100}}"
+        ) {
             sqlClient.entities.findById(JsonWrapper::class, 1L).toString()
         }
 
@@ -31,7 +36,13 @@ class ScalarProviderTest : AbstractJsonTest() {
                 tags = listOf("kotlin", "java")
             }
         )
-        expect("{\"id\":1,\"point\":{\"x\":4,\"y\":3},\"tags\":[\"kotlin\",\"java\"]}") {
+        expect(
+            "{" +
+                "\"id\":1," +
+                "\"point\":{\"x\":4,\"y\":3}," +
+                "\"tags\":[\"kotlin\",\"java\"]," +
+                "\"scores\":{\"1\":100}" +
+                "}") {
             sqlClient.entities.findById(JsonWrapper::class, 1L).toString()
         }
 
@@ -41,7 +52,34 @@ class ScalarProviderTest : AbstractJsonTest() {
                 where(table.tags eq listOf("kotlin", "java"))
             }
             .execute()
-        expect("{\"id\":1,\"point\":{\"x\":4,\"y\":3},\"tags\":[\"java\",\"kotlin\",\"scala\"]}") {
+        expect(
+            "{" +
+                "\"id\":1," +
+                "\"point\":{\"x\":4,\"y\":3}," +
+                "\"tags\":[\"java\",\"kotlin\",\"scala\"]," +
+                "\"scores\":{\"1\":100}" +
+                "}") {
+            sqlClient.entities.findById(JsonWrapper::class, 1L).toString()
+        }
+
+        sqlClient
+            .createUpdate(JsonWrapper::class) {
+                set(table.scores, mapOf(2L to 200))
+                where(
+                    tuple(table.tags, table.scores) eq Tuple2(
+                        listOf("java", "kotlin", "scala"),
+                        mapOf(1L to 100)
+                    )
+                )
+            }
+            .execute()
+        expect(
+            "{" +
+                "\"id\":1," +
+                "\"point\":{\"x\":4,\"y\":3}," +
+                "\"tags\":[\"java\",\"kotlin\",\"scala\"]," +
+                "\"scores\":{\"2\":200}" +
+                "}") {
             sqlClient.entities.findById(JsonWrapper::class, 1L).toString()
         }
     }

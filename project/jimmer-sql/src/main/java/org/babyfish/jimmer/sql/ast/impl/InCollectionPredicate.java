@@ -40,34 +40,13 @@ class InCollectionPredicate extends AbstractPredicate {
         if (values.isEmpty()) {
             builder.sql(negative ? "1 = 1" : "1 = 0");
         } else {
-            ScalarProvider<Object, Object> scalarProvider =
-                    expression instanceof PropExpression<?> ?
-                            builder.getAstContext().getSqlClient().getScalarProvider(
-                                    ((PropExpressionImplementor<?>)expression).getProp()
-                            ) :
-                            null;
             renderChild((Ast) expression, builder);
             builder.sql(negative ? " not in " : " in ");
             builder.sql("(");
             String separator = "";
+            values = Literals.convert(values, expression, builder.getAstContext().getSqlClient());
             for (Object value : values) {
                 builder.sql(separator);
-                if (value != null && scalarProvider != null) {
-                    try {
-                        value = scalarProvider.toSql(value);
-                    } catch (Exception ex) {
-                        throw new ExecutionException(
-                                "Cannot convert the value \"" +
-                                        value +
-                                        "\" of property \"" +
-                                        ((PropExpressionImplementor<?>)expression).getProp() +
-                                        "\" by \"" +
-                                        scalarProvider.getClass().getName() +
-                                        "\"",
-                                ex
-                        );
-                    }
-                }
                 builder.variable(value);
                 separator = ", ";
             }

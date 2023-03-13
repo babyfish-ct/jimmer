@@ -1,8 +1,10 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
+import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
+import org.babyfish.jimmer.sql.ast.impl.TupleExpressionImplementor
 import org.babyfish.jimmer.sql.ast.tuple.*
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
@@ -12,7 +14,8 @@ internal class Tuple2Expression<T1, T2>(
     private val selection1: Selection<T1>,
     private val selection2: Selection<T2>
 ): AbstractKExpression<Tuple2<T1, T2>>(),
-    KNonNullExpression<Tuple2<T1, T2>> {
+    KNonNullExpression<Tuple2<T1, T2>>,
+    TupleExpressionImplementor<Tuple2<T1, T2>> {
     init {
         if (selection1 !is KExpression<*>) {
             throw IllegalArgumentException("selection1 is not KExpression")
@@ -42,6 +45,15 @@ internal class Tuple2Expression<T1, T2>(
             builder.sql(")")
         }
     }
+
+    override fun size(): Int = 2
+
+    override operator fun get(index: Int): Selection<*> =
+        when (index) {
+            0 -> selection1
+            1 -> selection2
+            else -> throw IllegalArgumentException("index must between 0 and ${size() - 1}")
+        }
 }
 
 internal class Tuple3Expression<T1, T2, T3>(
@@ -49,7 +61,8 @@ internal class Tuple3Expression<T1, T2, T3>(
     private val selection2: Selection<T2>,
     private val selection3: Selection<T3>
 ): AbstractKExpression<Tuple3<T1, T2, T3>>(),
-    KNonNullExpression<Tuple3<T1, T2, T3>> {
+    KNonNullExpression<Tuple3<T1, T2, T3>>,
+    TupleExpressionImplementor<Tuple3<T1, T2, T3>> {
     init {
         if (selection1 !is KExpression<*>) {
             throw IllegalArgumentException("selection1 is not KExpression")
@@ -85,6 +98,16 @@ internal class Tuple3Expression<T1, T2, T3>(
             builder.sql(")")
         }
     }
+
+    override fun size(): Int = 3
+
+    override operator fun get(index: Int): Selection<*> =
+        when (index) {
+            0 -> selection1
+            1 -> selection2
+            2 -> selection3
+            else -> throw IllegalArgumentException("index must between 0 and ${size() - 1}")
+        }
 }
 
 internal class Tuple4Expression<T1, T2, T3, T4>(
@@ -93,7 +116,8 @@ internal class Tuple4Expression<T1, T2, T3, T4>(
     private val selection3: Selection<T3>,
     private val selection4: Selection<T4>
 ): AbstractKExpression<Tuple4<T1, T2, T3, T4>>(),
-    KNonNullExpression<Tuple4<T1, T2, T3, T4>> {
+    KNonNullExpression<Tuple4<T1, T2, T3, T4>>,
+    TupleExpressionImplementor<Tuple4<T1, T2, T3, T4>> {
     init {
         if (selection1 !is KExpression<*>) {
             throw IllegalArgumentException("selection1 is not KExpression")
@@ -135,6 +159,17 @@ internal class Tuple4Expression<T1, T2, T3, T4>(
             builder.sql(")")
         }
     }
+
+    override fun size(): Int = 4
+
+    override operator fun get(index: Int): Selection<*> =
+        when (index) {
+            0 -> selection1
+            1 -> selection2
+            2 -> selection3
+            3 -> selection4
+            else -> throw IllegalArgumentException("index must between 0 and ${size() - 1}")
+        }
 }
 
 internal class Tuple5Expression<T1, T2, T3, T4, T5>(
@@ -144,7 +179,8 @@ internal class Tuple5Expression<T1, T2, T3, T4, T5>(
     private val selection4: Selection<T4>,
     private val selection5: Selection<T5>
 ): AbstractKExpression<Tuple5<T1, T2, T3, T4, T5>>(),
-    KNonNullExpression<Tuple5<T1, T2, T3, T4, T5>> {
+    KNonNullExpression<Tuple5<T1, T2, T3, T4, T5>>,
+    TupleExpressionImplementor<Tuple5<T1, T2, T3, T4, T5>> {
     init {
         if (selection1 !is KExpression<*>) {
             throw IllegalArgumentException("selection1 is not KExpression")
@@ -192,6 +228,18 @@ internal class Tuple5Expression<T1, T2, T3, T4, T5>(
             builder.sql(")")
         }
     }
+
+    override fun size(): Int = 5
+
+    override operator fun get(index: Int): Selection<*> =
+        when (index) {
+            0 -> selection1
+            1 -> selection2
+            2 -> selection3
+            3 -> selection4
+            4 -> selection5
+            else -> throw IllegalArgumentException("index must between 0 and ${size() - 1}")
+        }
 }
 
 internal class Tuple6Expression<T1, T2, T3, T4, T5, T6>(
@@ -202,7 +250,8 @@ internal class Tuple6Expression<T1, T2, T3, T4, T5, T6>(
     private val selection5: Selection<T5>,
     private val selection6: Selection<T6>
 ): AbstractKExpression<Tuple6<T1, T2, T3, T4, T5, T6>>(),
-    KNonNullExpression<Tuple6<T1, T2, T3, T4, T5, T6>> {
+    KNonNullExpression<Tuple6<T1, T2, T3, T4, T5, T6>>,
+    TupleExpressionImplementor<Tuple6<T1, T2, T3, T4, T5, T6>>{
     init {
         if (selection1 !is KExpression<*>) {
             throw IllegalArgumentException("selection1 is not KExpression")
@@ -256,6 +305,19 @@ internal class Tuple6Expression<T1, T2, T3, T4, T5, T6>(
             builder.sql(")")
         }
     }
+
+    override fun size(): Int = 6
+
+    override operator fun get(index: Int): Selection<*> =
+        when (index) {
+            0 -> selection1
+            1 -> selection2
+            2 -> selection3
+            3 -> selection4
+            4 -> selection5
+            5 -> selection6
+            else -> throw IllegalArgumentException("index must between 0 and ${size() - 1}")
+        }
 }
 
 internal class Tuple7Expression<T1, T2, T3, T4, T5, T6, T7>(
@@ -267,7 +329,8 @@ internal class Tuple7Expression<T1, T2, T3, T4, T5, T6, T7>(
     private val selection6: Selection<T6>,
     private val selection7: Selection<T7>
 ): AbstractKExpression<Tuple7<T1, T2, T3, T4, T5, T6, T7>>(),
-    KNonNullExpression<Tuple7<T1, T2, T3, T4, T5, T6, T7>> {
+    KNonNullExpression<Tuple7<T1, T2, T3, T4, T5, T6, T7>>,
+    TupleExpressionImplementor<Tuple7<T1, T2, T3, T4, T5, T6, T7>>{
     init {
         if (selection1 !is KExpression<*>) {
             throw IllegalArgumentException("selection1 is not KExpression")
@@ -327,6 +390,20 @@ internal class Tuple7Expression<T1, T2, T3, T4, T5, T6, T7>(
             builder.sql(")")
         }
     }
+
+    override fun size(): Int = 7
+
+    override operator fun get(index: Int): Selection<*> =
+        when (index) {
+            0 -> selection1
+            1 -> selection2
+            2 -> selection3
+            3 -> selection4
+            4 -> selection5
+            5 -> selection6
+            6 -> selection7
+            else -> throw IllegalArgumentException("index must between 0 and ${size() - 1}")
+        }
 }
 
 internal class Tuple8Expression<T1, T2, T3, T4, T5, T6, T7, T8>(
@@ -339,7 +416,8 @@ internal class Tuple8Expression<T1, T2, T3, T4, T5, T6, T7, T8>(
     private val selection7: Selection<T7>,
     private val selection8: Selection<T8>
 ): AbstractKExpression<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>>(),
-    KNonNullExpression<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> {
+    KNonNullExpression<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>>,
+    TupleExpressionImplementor<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>>{
     init {
         if (selection1 !is KExpression<*>) {
             throw IllegalArgumentException("selection1 is not KExpression")
@@ -405,6 +483,21 @@ internal class Tuple8Expression<T1, T2, T3, T4, T5, T6, T7, T8>(
             builder.sql(")")
         }
     }
+
+    override fun size(): Int = 8
+
+    override operator fun get(index: Int): Selection<*> =
+        when (index) {
+            0 -> selection1
+            1 -> selection2
+            2 -> selection3
+            3 -> selection4
+            4 -> selection5
+            5 -> selection6
+            6 -> selection7
+            7 -> selection8
+            else -> throw IllegalArgumentException("index must between 0 and ${size() - 1}")
+        }
 }
 
 internal class Tuple9Expression<T1, T2, T3, T4, T5, T6, T7, T8, T9>(
@@ -418,7 +511,8 @@ internal class Tuple9Expression<T1, T2, T3, T4, T5, T6, T7, T8, T9>(
     private val selection8: Selection<T8>,
     private val selection9: Selection<T9>
 ): AbstractKExpression<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>>(), 
-    KNonNullExpression<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> {
+    KNonNullExpression<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>>,
+    TupleExpressionImplementor<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> {
     init {
         if (selection1 !is KExpression<*>) {
             throw IllegalArgumentException("selection1 is not KExpression")
@@ -490,4 +584,20 @@ internal class Tuple9Expression<T1, T2, T3, T4, T5, T6, T7, T8, T9>(
             builder.sql(")")
         }
     }
+
+    override fun size(): Int = 9
+
+    override operator fun get(index: Int): Selection<*> =
+        when (index) {
+            0 -> selection1
+            1 -> selection2
+            2 -> selection3
+            3 -> selection4
+            4 -> selection5
+            5 -> selection6
+            6 -> selection7
+            7 -> selection8
+            8 -> selection9
+            else -> throw IllegalArgumentException("index must between 0 and ${size() - 1}")
+        }
 }

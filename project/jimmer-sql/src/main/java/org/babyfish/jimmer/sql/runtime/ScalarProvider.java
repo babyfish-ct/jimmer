@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;
+import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -158,6 +159,7 @@ public abstract class ScalarProvider<T, S> {
             return;
         }
         Class<?> scalarClass = (Class<?>) scalarType;
+
         if (scalarType == void.class) {
             throw new IllegalArgumentException(
                     "Illegal scalar type \"" +
@@ -170,6 +172,13 @@ public abstract class ScalarProvider<T, S> {
                     "Illegal scalar type \"" +
                             scalarClass.getName() +
                             "\", scalar provider does not support object type which means any"
+            );
+        }
+        if (TupleImplementor.class.isAssignableFrom(scalarClass)) {
+            throw new IllegalArgumentException(
+                    "Illegal scalar type \"" +
+                            scalarClass.getName() +
+                            "\", scalar provider does not support tuple type"
             );
         }
         if (ReaderManager.isStandardScalarType(scalarClass)) {

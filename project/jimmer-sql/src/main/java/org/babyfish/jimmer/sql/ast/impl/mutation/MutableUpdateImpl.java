@@ -95,7 +95,7 @@ public class MutableUpdateImpl
         if (assignmentMap.put(target, value) != null) {
             throw new IllegalStateException("Cannot update same column twice");
         }
-        Literals.bindPropAndLiteral(path, value);
+        Literals.bind(value, path);
         return this;
     }
 

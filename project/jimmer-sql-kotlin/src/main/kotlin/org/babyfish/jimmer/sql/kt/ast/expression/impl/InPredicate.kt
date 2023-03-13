@@ -27,23 +27,14 @@ internal class InCollectionPredicate(
         if (values.isEmpty()) {
             builder.sql(if (negative) "1 = 1" else "1 = 0")
         } else {
-            val scalarProvider = (expression as? PropExpressionImplementor<*>)?.prop?.let {
-                builder.astContext.sqlClient.getScalarProvider<Any, Any>(it)
-            }
             (expression as Ast).renderTo(builder)
             builder.sql(if (negative) " not in (" else " in (")
             var sp = ""
-            for (value in values) {
+            for (value in LiteralExpression.convert(values, expression, builder.astContext.sqlClient)) {
                 builder.sql(sp)
                 sp = ", "
                 if (value != null) {
-                    builder.variable(
-                        if (scalarProvider !== null) {
-                            scalarProvider.toSql(value)
-                        } else {
-                            value
-                        }
-                    )
+                    builder.variable(value)
                 } else {
                     builder.nullVariable((expression as ExpressionImplementor<*>).type)
                 }

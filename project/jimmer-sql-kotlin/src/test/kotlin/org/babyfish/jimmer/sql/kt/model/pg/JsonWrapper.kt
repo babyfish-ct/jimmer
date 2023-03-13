@@ -17,4 +17,7 @@ interface JsonWrapper {
 
     @Column(name = "json_2")
     val tags: List<String>
+
+    @Column(name = "json_3")
+    val scores: Map<Long, Int>
 }

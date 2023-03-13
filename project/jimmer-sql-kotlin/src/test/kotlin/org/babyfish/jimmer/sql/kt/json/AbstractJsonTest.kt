@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.json
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.model.ENTITY_MANAGER
 import org.babyfish.jimmer.sql.kt.model.pg.PointProvider
+import org.babyfish.jimmer.sql.kt.model.pg.ScoresProvider
 import org.babyfish.jimmer.sql.kt.model.pg.TagsProvider
 import org.babyfish.jimmer.sql.kt.newKSqlClient
 import org.junit.Assume
@@ -31,6 +32,7 @@ abstract class AbstractJsonTest {
             }
             addScalarProvider(PointProvider())
             addScalarProvider(TagsProvider())
+            addScalarProvider(ScoresProvider())
         }
     }
 

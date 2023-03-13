@@ -181,7 +181,7 @@ class FetcherDslGenerator(
                                     "%T(%T::class).%M(childBlock),\n",
                                     NEW_FETCHER_FUN_CLASS_NAME,
                                     prop.targetTypeName(overrideNullable = false),
-                                    MemberName(prop.targetTypeName().packageName, "by")
+                                    MemberName(prop.targetClassName.packageName, "by")
                                 )
                             } else {
                                 add("childFetcher,\n")
