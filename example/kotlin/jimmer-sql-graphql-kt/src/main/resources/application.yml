@@ -9,3 +9,6 @@ spring:
 jimmer:
   language: kotlin
   show-sql: true
+
+demo:
+  default-tenant: a

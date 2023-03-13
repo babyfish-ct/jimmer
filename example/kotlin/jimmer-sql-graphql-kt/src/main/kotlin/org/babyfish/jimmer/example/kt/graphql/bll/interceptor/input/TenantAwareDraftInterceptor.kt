@@ -5,19 +5,18 @@ import org.babyfish.jimmer.example.kt.graphql.entities.common.TenantAwareDraft
 import org.babyfish.jimmer.example.kt.graphql.bll.interceptor.TenantProvider
 import org.babyfish.jimmer.kt.isLoaded
 import org.babyfish.jimmer.sql.DraftInterceptor
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
 @Component
 class TenantAwareDraftInterceptor(
-    private val tenantProvider: TenantProvider
+    private val tenantProvider: TenantProvider,
+    @Value("\${demo.default-tenant}") private val defaultTenant: String
 ) : DraftInterceptor<TenantAwareDraft> {
 
     override fun beforeSave(draft: TenantAwareDraft, isNew: Boolean) {
         if (!isLoaded(draft, TenantAware::tenant)) {
-            val tenant = tenantProvider.tenant ?: error(
-                "Global tenant must be specified when the tenant of saved object is unspecified"
-            )
-            draft.tenant = tenant
+            draft.tenant = tenantProvider.tenant ?: defaultTenant
         }
     }
 }
