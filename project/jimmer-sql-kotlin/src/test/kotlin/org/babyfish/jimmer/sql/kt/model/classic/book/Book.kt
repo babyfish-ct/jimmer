@@ -1,9 +1,9 @@
-package org.babyfish.jimmer.sql.kt.model
+package org.babyfish.jimmer.sql.kt.model.classic.book
 
 import org.babyfish.jimmer.sql.*
+import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
+import org.babyfish.jimmer.sql.kt.model.classic.author.Author
 import java.math.BigDecimal
-import java.util.*
-import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Positive
 import javax.validation.constraints.PositiveOrZero
 

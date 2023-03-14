@@ -3,6 +3,13 @@ package org.babyfish.jimmer.sql.kt.mutation
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.model.*
+import org.babyfish.jimmer.sql.kt.model.classic.author.firstName
+import org.babyfish.jimmer.sql.kt.model.classic.book.Book
+import org.babyfish.jimmer.sql.kt.model.classic.book.authors
+import org.babyfish.jimmer.sql.kt.model.classic.book.id
+import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
+import org.babyfish.jimmer.sql.kt.model.classic.store.name
+import org.babyfish.jimmer.sql.kt.model.classic.store.website
 import org.junit.Test
 
 class DMLTest : AbstractMutationTest() {

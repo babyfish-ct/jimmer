@@ -47,6 +47,13 @@ class FetcherGenerator(
                             .build()
                     )
                     val type = ctx.typeOf(modelClassDeclaration)
+                    for (prop in type.properties.values) {
+                        if (prop.isAssociation(true) &&
+                            prop.targetType!!.isEntity &&
+                            prop.targetType!!.className.packageName != type.className.packageName) {
+                            addImport(prop.targetClassName.packageName, "by")
+                        }
+                    }
                     addCreateFun(type, false)
                     addCreateFun(type, true)
                     FetcherDslGenerator(type, this).generate()

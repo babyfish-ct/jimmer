@@ -1,9 +1,15 @@
 package org.babyfish.jimmer.sql.kt.query
 
-import org.babyfish.jimmer.sql.ast.query.OrderMode
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.*
+import org.babyfish.jimmer.sql.kt.model.classic.book.Book
+import org.babyfish.jimmer.sql.kt.model.classic.book.edition
+import org.babyfish.jimmer.sql.kt.model.classic.book.name
+import org.babyfish.jimmer.sql.kt.model.classic.book.price
+import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
+import org.babyfish.jimmer.sql.kt.model.classic.store.name
+import org.babyfish.jimmer.sql.kt.model.classic.store.website
 import java.math.BigDecimal
 import kotlin.test.Test
 

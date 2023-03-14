@@ -8,19 +8,23 @@ import org.babyfish.jimmer.impl.util.StaticCache;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
-class DefaultScalarProviders {
+class DefaultScalarProvider {
 
-    private static final StaticCache<Class<?>, ScalarProvider<?, ?>> cache =
-        new StaticCache<>(DefaultScalarProviders::createProvider, true);
+    private final StaticCache<Class<?>, ScalarProvider<?, ?>> cache =
+        new StaticCache<>(this::createProvider, true);
 
-    private DefaultScalarProviders() {}
+    private final EnumType.Strategy defaultEnumStrategy;
 
-    public static ScalarProvider<?, ?> getProvider(Class<?> type) {
+    DefaultScalarProvider(EnumType.Strategy defaultEnumStrategy) {
+        this.defaultEnumStrategy = defaultEnumStrategy;
+    }
+
+    public ScalarProvider<?, ?> getProvider(Class<?> type) {
         return cache.get(type);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private static ScalarProvider<?, ?> createProvider(Class<?> type) {
+    private ScalarProvider<?, ?> createProvider(Class<?> type) {
         if (type.isAnnotationPresent(Immutable.class)) {
             throw new IllegalArgumentException(
                 "\"" +
@@ -57,13 +61,19 @@ class DefaultScalarProviders {
         if (enumType != null && enumType.value() == EnumType.Strategy.ORDINAL) {
             return newEnumByIntProvider((Class<Enum>)type);
         }
+        if (enumType != null && enumType.value() == EnumType.Strategy.NAME) {
+            return newEnumByStringProvider((Class<Enum>)type);
+        }
         if (type.isEnum()) {
+            if (defaultEnumStrategy == EnumType.Strategy.ORDINAL) {
+                return newEnumByIntProvider((Class<Enum>)type);
+            }
             return newEnumByStringProvider((Class<Enum>)type);
         }
         return null;
     }
 
-    private static ScalarProvider<?, ?> newProvider(Class<? extends ScalarProvider<?, ?>> providerType) {
+    private ScalarProvider<?, ?> newProvider(Class<? extends ScalarProvider<?, ?>> providerType) {
         try {
             return providerType.getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException ex) {
@@ -83,7 +93,7 @@ class DefaultScalarProviders {
         }
     }
 
-    private static <E extends Enum<E>> ScalarProvider<E, ?> newEnumByStringProvider(Class<E> enumType) {
+    private <E extends Enum<E>> ScalarProvider<E, ?> newEnumByStringProvider(Class<E> enumType) {
         return ScalarProvider.enumProviderByString(enumType, it -> {
             for (E enumValue: enumType.getEnumConstants()) {
                 Field enumField;
@@ -114,7 +124,7 @@ class DefaultScalarProviders {
     }
 
     @SuppressWarnings("unchecked")
-    private static <E extends Enum<E>> ScalarProvider<?, ?> newEnumByIntProvider(Class<E> enumType) {
+    private <E extends Enum<E>> ScalarProvider<?, ?> newEnumByIntProvider(Class<E> enumType) {
         return ScalarProvider.enumProviderByInt(enumType, it -> {
             for (E enumValue: enumType.getEnumConstants()) {
                 Field enumField;

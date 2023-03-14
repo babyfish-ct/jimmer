@@ -4,12 +4,11 @@ import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.kt.ast.expression.desc
 import org.babyfish.jimmer.sql.kt.ast.expression.ne
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
-import org.babyfish.jimmer.sql.kt.model.BookStore
+import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.by
-import org.babyfish.jimmer.sql.kt.model.edition
+import org.babyfish.jimmer.sql.kt.model.classic.book.edition
+import org.babyfish.jimmer.sql.kt.model.classic.store.by
 import org.junit.Test
-import java.math.BigDecimal
-import kotlin.test.expect
 
 class LoaderTest : AbstractQueryTest() {
 

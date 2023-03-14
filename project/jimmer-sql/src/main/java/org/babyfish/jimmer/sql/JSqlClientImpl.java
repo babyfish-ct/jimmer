@@ -63,6 +63,8 @@ class JSqlClientImpl implements JSqlClient {
 
     private final Map<Class<?>, IdGenerator> idGeneratorMap;
 
+    private final DefaultScalarProvider defaultScalarProvider;
+
     private final int defaultBatchSize;
 
     private final int defaultListBatchSize;
@@ -97,6 +99,7 @@ class JSqlClientImpl implements JSqlClient {
             Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
             Map<ImmutableProp, ScalarProvider<?, ?>> propScalarProviderMap,
             Map<Class<?>, IdGenerator> idGeneratorMap,
+            DefaultScalarProvider defaultScalarProvider,
             int defaultBatchSize,
             int defaultListBatchSize,
             EntitiesImpl entities,
@@ -124,6 +127,7 @@ class JSqlClientImpl implements JSqlClient {
         this.scalarProviderMap = scalarProviderMap;
         this.propScalarProviderMap = propScalarProviderMap;
         this.idGeneratorMap = idGeneratorMap;
+        this.defaultScalarProvider = defaultScalarProvider;
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
         this.entities =
@@ -173,7 +177,7 @@ class JSqlClientImpl implements JSqlClient {
         ScalarProvider<T, S> provider = (ScalarProvider<T, S>) scalarProviderMap.get(scalarType);
         return provider != null ?
             provider :
-            (ScalarProvider<T, S>)DefaultScalarProviders.getProvider(scalarType);
+            (ScalarProvider<T, S>) defaultScalarProvider.getProvider(scalarType);
     }
 
     @SuppressWarnings("unchecked")
@@ -355,6 +359,7 @@ class JSqlClientImpl implements JSqlClient {
                 scalarProviderMap,
                 propScalarProviderMap,
                 idGeneratorMap,
+                defaultScalarProvider,
                 defaultBatchSize,
                 defaultListBatchSize,
                 entities,
@@ -387,6 +392,7 @@ class JSqlClientImpl implements JSqlClient {
                 scalarProviderMap,
                 propScalarProviderMap,
                 idGeneratorMap,
+                defaultScalarProvider,
                 defaultBatchSize,
                 defaultListBatchSize,
                 entities,
@@ -414,6 +420,7 @@ class JSqlClientImpl implements JSqlClient {
                 scalarProviderMap,
                 propScalarProviderMap,
                 idGeneratorMap,
+                defaultScalarProvider,
                 defaultBatchSize,
                 defaultListBatchSize,
                 entities,
@@ -480,6 +487,8 @@ class JSqlClientImpl implements JSqlClient {
         private final Map<ImmutableProp, ScalarProvider<?, ?>> propScalarProviderMap = new HashMap<>();
 
         private final Map<Class<?>, IdGenerator> idGeneratorMap = new HashMap<>();
+
+        private EnumType.Strategy defaultEnumStrategy = EnumType.Strategy.NAME;
 
         private int defaultBatchSize = DEFAULT_BATCH_SIZE;
 
@@ -656,6 +665,12 @@ class JSqlClientImpl implements JSqlClient {
         }
 
         @Override
+        public Builder setDefaultEnumStrategy(EnumType.Strategy strategy) {
+            this.defaultEnumStrategy = strategy != null ? strategy : EnumType.Strategy.NAME;
+            return this;
+        }
+
+        @Override
         @OldChain
         public JSqlClient.Builder setDefaultBatchSize(int size) {
             if (size < 1) {
@@ -794,6 +809,7 @@ class JSqlClientImpl implements JSqlClient {
                     scalarProviderMap,
                     propScalarProviderMap,
                     idGeneratorMap,
+                    new DefaultScalarProvider(defaultEnumStrategy),
                     defaultBatchSize,
                     defaultListBatchSize,
                     null,

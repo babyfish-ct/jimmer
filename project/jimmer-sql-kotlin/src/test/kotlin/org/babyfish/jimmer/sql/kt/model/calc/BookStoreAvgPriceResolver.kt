@@ -5,10 +5,11 @@ import org.babyfish.jimmer.sql.kt.KTransientResolver
 import org.babyfish.jimmer.sql.kt.ast.expression.avg
 import org.babyfish.jimmer.sql.kt.ast.expression.coalesce
 import org.babyfish.jimmer.sql.kt.ast.expression.valueIn
-import org.babyfish.jimmer.sql.kt.model.Book
+import org.babyfish.jimmer.sql.kt.model.classic.book.Book
+import org.babyfish.jimmer.sql.kt.model.classic.book.price
+import org.babyfish.jimmer.sql.kt.model.classic.book.store
+import org.babyfish.jimmer.sql.kt.model.classic.store.id
 import org.babyfish.jimmer.sql.kt.model.id
-import org.babyfish.jimmer.sql.kt.model.price
-import org.babyfish.jimmer.sql.kt.model.store
 import java.math.BigDecimal
 
 class BookStoreAvgPriceResolver(

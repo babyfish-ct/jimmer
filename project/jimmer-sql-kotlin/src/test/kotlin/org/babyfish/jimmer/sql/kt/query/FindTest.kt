@@ -1,15 +1,16 @@
 package org.babyfish.jimmer.sql.kt.query
 
 import org.babyfish.jimmer.kt.new
-import org.babyfish.jimmer.sql.ast.LikeMode
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.ast.query.example
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
-import org.babyfish.jimmer.sql.kt.model.Book
-import org.babyfish.jimmer.sql.kt.model.BookStore
+import org.babyfish.jimmer.sql.kt.model.classic.book.Book
+import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.by
-import org.babyfish.jimmer.sql.kt.model.edition
+import org.babyfish.jimmer.sql.kt.model.classic.book.by
+import org.babyfish.jimmer.sql.kt.model.classic.book.edition
+import org.babyfish.jimmer.sql.kt.model.classic.store.by
 import kotlin.test.Test
 
 class FindTest : AbstractQueryTest() {

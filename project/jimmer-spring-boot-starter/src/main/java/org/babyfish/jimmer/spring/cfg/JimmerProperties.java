@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.cfg;
 
+import org.babyfish.jimmer.sql.EnumType;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
@@ -28,6 +29,9 @@ public class JimmerProperties {
     @NotNull
     private final TriggerType triggerType;
 
+    @NotNull
+    private final EnumType.Strategy defaultEnumStrategy;
+
     private final int defaultBatchSize;
 
     private final int defaultListBatchSize;
@@ -42,6 +46,7 @@ public class JimmerProperties {
             @Nullable String dialect,
             boolean showSql,
             @Nullable TriggerType triggerType,
+            @Nullable EnumType.Strategy defaultEnumStrategy,
             @Nullable Integer defaultBatchSize,
             @Nullable Integer defaultListBatchSize,
             @Nullable Client client,
@@ -95,6 +100,10 @@ public class JimmerProperties {
         }
         this.showSql = showSql;
         this.triggerType = triggerType != null ? triggerType : TriggerType.BINLOG_ONLY;
+        this.defaultEnumStrategy =
+                defaultEnumStrategy != null ?
+                        defaultEnumStrategy :
+                        EnumType.Strategy.NAME;
         this.defaultBatchSize =
                 defaultBatchSize != null ?
                         defaultBatchSize :
@@ -128,6 +137,11 @@ public class JimmerProperties {
     @NotNull
     public TriggerType getTriggerType() {
         return triggerType;
+    }
+
+    @NotNull
+    public EnumType.Strategy getDefaultEnumStrategy() {
+        return defaultEnumStrategy;
     }
 
     public int getDefaultBatchSize() {

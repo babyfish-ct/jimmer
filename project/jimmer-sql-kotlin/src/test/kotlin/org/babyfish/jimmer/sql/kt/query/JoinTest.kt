@@ -5,8 +5,14 @@ import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.ast.expression.sql
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 import org.babyfish.jimmer.sql.kt.ast.table.KWeakJoin
+import org.babyfish.jimmer.sql.kt.model.classic.author.Author
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.*
+import org.babyfish.jimmer.sql.kt.model.classic.author.firstName
+import org.babyfish.jimmer.sql.kt.model.classic.author.id
+import org.babyfish.jimmer.sql.kt.model.classic.author.lastName
+import org.babyfish.jimmer.sql.kt.model.classic.book.Book
+import org.babyfish.jimmer.sql.kt.model.classic.book.id
 import kotlin.test.Test
 
 class JoinTest : AbstractQueryTest() {

@@ -2,8 +2,8 @@ package org.babyfish.jimmer.sql.kt.mutation
 
 import org.babyfish.jimmer.sql.DissociateAction
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
-import org.babyfish.jimmer.sql.kt.model.Book
-import org.babyfish.jimmer.sql.kt.model.BookStore
+import org.babyfish.jimmer.sql.kt.model.classic.book.Book
+import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.junit.Test
 
 class DeleteCommandTest : AbstractMutationTest() {

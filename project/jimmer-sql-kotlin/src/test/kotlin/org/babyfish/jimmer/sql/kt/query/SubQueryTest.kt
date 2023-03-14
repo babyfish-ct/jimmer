@@ -4,6 +4,13 @@ import org.babyfish.jimmer.sql.ast.LikeMode
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.*
+import org.babyfish.jimmer.sql.kt.model.classic.book.Book
+import org.babyfish.jimmer.sql.kt.model.classic.book.edition
+import org.babyfish.jimmer.sql.kt.model.classic.book.name
+import org.babyfish.jimmer.sql.kt.model.classic.book.store
+import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
+import org.babyfish.jimmer.sql.kt.model.classic.store.id
+import org.babyfish.jimmer.sql.kt.model.classic.store.name
 import kotlin.test.Test
 
 class SubQueryTest : AbstractQueryTest() {

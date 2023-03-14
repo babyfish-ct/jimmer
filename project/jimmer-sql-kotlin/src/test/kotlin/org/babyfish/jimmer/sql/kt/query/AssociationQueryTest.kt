@@ -5,9 +5,9 @@ import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.ast.expression.exists
 import org.babyfish.jimmer.sql.kt.ast.table.source
 import org.babyfish.jimmer.sql.kt.ast.table.target
+import org.babyfish.jimmer.sql.kt.model.classic.author.firstName
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
-import org.babyfish.jimmer.sql.kt.model.Book
-import org.babyfish.jimmer.sql.kt.model.firstName
+import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.junit.Test
 
 class AssociationQueryTest : AbstractQueryTest() {

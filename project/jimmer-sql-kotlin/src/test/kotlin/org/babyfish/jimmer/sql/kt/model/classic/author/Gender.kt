@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.kt.model
+package org.babyfish.jimmer.sql.kt.model.classic.author
 
 import org.babyfish.jimmer.sql.EnumItem
 

@@ -5,8 +5,9 @@ import org.babyfish.jimmer.sql.ast.LikeMode
 import org.babyfish.jimmer.sql.kt.ast.query.KExample
 import org.babyfish.jimmer.sql.kt.ast.query.example
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
-import org.babyfish.jimmer.sql.kt.model.Book
+import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.by
+import org.babyfish.jimmer.sql.kt.model.classic.book.by
 import org.junit.Test
 
 class QueryByExampleTest : AbstractQueryTest() {

@@ -176,6 +176,9 @@ public interface JSqlClient extends SubQueryProvider {
         Builder addScalarProvider(ImmutableProp prop, ScalarProvider<?, ?> scalarProvider);
 
         @OldChain
+        Builder setDefaultEnumStrategy(EnumType.Strategy strategy);
+
+        @OldChain
         Builder setDefaultBatchSize(int size);
 
         @OldChain

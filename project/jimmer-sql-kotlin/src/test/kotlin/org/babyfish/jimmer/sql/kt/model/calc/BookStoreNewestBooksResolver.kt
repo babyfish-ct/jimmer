@@ -6,7 +6,10 @@ import org.babyfish.jimmer.sql.kt.ast.expression.asNonNull
 import org.babyfish.jimmer.sql.kt.ast.expression.max
 import org.babyfish.jimmer.sql.kt.ast.expression.tuple
 import org.babyfish.jimmer.sql.kt.ast.expression.valueIn
-import org.babyfish.jimmer.sql.kt.model.*
+import org.babyfish.jimmer.sql.kt.model.classic.book.*
+import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
+import org.babyfish.jimmer.sql.kt.model.classic.store.books
+import org.babyfish.jimmer.sql.kt.model.classic.store.id
 
 class BookStoreNewestBooksResolver(
     private val sqlClient: KSqlClient

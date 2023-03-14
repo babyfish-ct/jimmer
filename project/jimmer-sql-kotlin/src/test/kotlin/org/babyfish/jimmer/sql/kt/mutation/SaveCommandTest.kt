@@ -1,9 +1,15 @@
 package org.babyfish.jimmer.sql.kt.mutation
 
 import org.babyfish.jimmer.kt.new
+import org.babyfish.jimmer.sql.kt.model.classic.author.Author
+import org.babyfish.jimmer.sql.kt.model.classic.author.addBy
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
 import org.babyfish.jimmer.sql.kt.common.PreparedIdGenerator
 import org.babyfish.jimmer.sql.kt.model.*
+import org.babyfish.jimmer.sql.kt.model.classic.author.Gender
+import org.babyfish.jimmer.sql.kt.model.classic.book.Book
+import org.babyfish.jimmer.sql.kt.model.classic.book.by
+import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.junit.Test
 import java.math.BigDecimal
 

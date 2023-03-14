@@ -1,7 +1,9 @@
-package org.babyfish.jimmer.sql.kt.model
+package org.babyfish.jimmer.sql.kt.model.classic.author
 
 import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.sql.*
+import org.babyfish.jimmer.sql.kt.model.classic.book.Book
+import org.babyfish.jimmer.sql.kt.model.Organization
 import javax.validation.constraints.NotBlank
 
 @Entity

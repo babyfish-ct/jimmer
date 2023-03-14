@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.kt.mutation
 
 import org.babyfish.jimmer.sql.kt.common.AbstractMutationTest
-import org.babyfish.jimmer.sql.kt.model.Author
-import org.babyfish.jimmer.sql.kt.model.Book
+import org.babyfish.jimmer.sql.kt.model.classic.author.Author
+import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.junit.Test
 
 class AssociationMutationTest : AbstractMutationTest() {

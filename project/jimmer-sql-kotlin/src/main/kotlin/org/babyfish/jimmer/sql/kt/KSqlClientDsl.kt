@@ -4,8 +4,12 @@ import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.DraftInterceptor
+import org.babyfish.jimmer.sql.EnumType
 import org.babyfish.jimmer.sql.JSqlClient
-import org.babyfish.jimmer.sql.cache.*
+import org.babyfish.jimmer.sql.cache.Cache
+import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback
+import org.babyfish.jimmer.sql.cache.CacheConfig
+import org.babyfish.jimmer.sql.cache.CacheFactory
 import org.babyfish.jimmer.sql.dialect.Dialect
 import org.babyfish.jimmer.sql.event.TriggerType
 import org.babyfish.jimmer.sql.kt.filter.KFilter
@@ -13,7 +17,6 @@ import org.babyfish.jimmer.sql.kt.filter.impl.toJavaFilter
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
 import org.babyfish.jimmer.sql.meta.IdGenerator
 import org.babyfish.jimmer.sql.runtime.*
-import java.lang.IllegalStateException
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.util.function.Function
@@ -26,6 +29,10 @@ class KSqlClientDsl internal constructor(
 ) {
     fun setDialect(dialect: Dialect) {
         javaBuilder.setDialect(dialect)
+    }
+
+    fun setDefaultEnumStrategy(strategy: EnumType.Strategy) {
+        javaBuilder.setDefaultEnumStrategy(strategy)
     }
 
     fun setDefaultBatchSize(size: Int) {
