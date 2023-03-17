@@ -18,6 +18,8 @@ class InCollectionPredicate extends AbstractPredicate {
 
     private Collection<?> values;
 
+    private Collection<?> convertedValues;
+
     private boolean negative;
 
     public InCollectionPredicate(
@@ -44,8 +46,12 @@ class InCollectionPredicate extends AbstractPredicate {
             builder.sql(negative ? " not in " : " in ");
             builder.sql("(");
             String separator = "";
-            values = Literals.convert(values, expression, builder.getAstContext().getSqlClient());
-            for (Object value : values) {
+            Collection<?> convertedValues = this.convertedValues;
+            if (convertedValues == null) {
+                convertedValues = Literals.convert(values, expression, builder.getAstContext().getSqlClient());
+                this.convertedValues = convertedValues;
+            }
+            for (Object value : convertedValues) {
                 builder.sql(separator);
                 builder.variable(value);
                 separator = ", ";

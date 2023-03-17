@@ -33,6 +33,9 @@ public class ImplementorGenerator {
         typeBuilder.superinterfaces.add(spiClassName);
         addGet(int.class);
         addGet(String.class);
+        for (ImmutableProp prop : type.getProps().values()) {
+            addGetterIfNecessary(prop);
+        }
         addType();
         addToString();
         addDummyProp();
@@ -80,6 +83,27 @@ public class ImplementorGenerator {
                 .returns(Constants.RUNTIME_TYPE_CLASS_NAME)
                 .addStatement("return TYPE");
         typeBuilder.addMethod(builder.build());
+    }
+
+    private void addGetterIfNecessary(ImmutableProp prop) {
+        String name = prop.getGetterName();
+        boolean isBoolean = prop.getTypeName().equals(TypeName.BOOLEAN);
+        if (name.startsWith("get") ||
+                (isBoolean && name.startsWith("is"))) {
+            return;
+        }
+        typeBuilder.addMethod(
+                MethodSpec
+                        .methodBuilder(
+                                (isBoolean ? "is" : "get") +
+                                        Character.toUpperCase(name.charAt(0)) +
+                                        name.substring(1)
+                        )
+                        .addModifiers(Modifier.PUBLIC)
+                        .returns(prop.getTypeName())
+                        .addStatement("return $L()", name)
+                        .build()
+        );
     }
 
     private void addToString() {

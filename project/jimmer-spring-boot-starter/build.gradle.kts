@@ -26,6 +26,8 @@ dependencies {
     compileOnly("org.springframework.boot:spring-boot-starter-web:2.7.0")
     compileOnly("org.springframework.data:spring-data-redis:2.7.0")
     compileOnly( "com.github.ben-manes.caffeine:caffeine:2.9.1")
+    compileOnly("org.springframework.graphql:spring-graphql:1.0.0")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:2.7.0")
     testAnnotationProcessor(project(":jimmer-apt"))
     kspTest(project(":jimmer-ksp"))
     testImplementation("org.springframework.boot:spring-boot-starter-test:2.7.0")
