@@ -45,6 +45,7 @@ public class PropDescriptor {
     }
 
     public static Builder newBuilder(
+            boolean isKotlinType,
             String typeText,
             Class<? extends Annotation> typeAnnotationType,
             String propText,
@@ -55,6 +56,7 @@ public class PropDescriptor {
             Function<String, RuntimeException> exceptionCreator
     ) {
         return new Builder(
+                isKotlinType,
                 typeText,
                 typeAnnotationType,
                 propText,
@@ -124,6 +126,8 @@ public class PropDescriptor {
         private static final Set<Class<? extends Annotation>> ASSOCIATION_STORAGE_ANNOTATION_TYPES =
                 setOf(JoinColumns.class, JoinColumn.class, JoinTable.class);
 
+        private final boolean isKotlinType;
+
         private final String typeText;
 
         private final Class<? extends Annotation> typeAnnotationType;
@@ -151,6 +155,7 @@ public class PropDescriptor {
         private boolean hasMappedBy;
 
         Builder(
+                boolean isKotlinType,
                 String typeText,
                 Class<? extends Annotation> typeAnnotationType,
                 String propText,
@@ -160,6 +165,7 @@ public class PropDescriptor {
                 Boolean explicitNullable,
                 Function<String, RuntimeException> exceptionCreator
         ) {
+            this.isKotlinType = isKotlinType;
             this.typeText = typeText;
             this.typeAnnotationType = typeAnnotationType;
             this.propText = propText;
@@ -431,13 +437,28 @@ public class PropDescriptor {
 
         private void addNullityAnnotation(String annotationTypeName, boolean nullable) {
             if (explicitNullable != null) {
-                throw exceptionCreator.apply(
-                        "The property \"" +
-                                propText +
-                                "\" is illegal, it cannot be decorated by @" +
-                                annotationTypeName +
-                                " because its nullity can be automatically determined"
-                );
+                if (isKotlinType) {
+                    throw exceptionCreator.apply(
+                            "The property \"" +
+                                    propText +
+                                    "\" is illegal, it is unnecessary to use \"@" +
+                                    annotationTypeName +
+                                    "\" in kotlin"
+                    );
+                } else if (explicitNullable != nullable) {
+                    throw exceptionCreator.apply(
+                            "The property \"" +
+                                    propText +
+                                    "\" is illegal, it cannot be decorated by \"@" +
+                                    annotationTypeName +
+                                    "\" which let the property be " +
+                                    (nullable ? "nullable" : "nonnull") +
+                                    " because the property type \"" +
+                                    elementText +
+                                    "\" can only be " +
+                                    (explicitNullable ? "nullable" : "nonnull")
+                    );
+                }
             }
             if (annotationNullity != null) {
                 if (annotationNullity.isNullable != nullable) {

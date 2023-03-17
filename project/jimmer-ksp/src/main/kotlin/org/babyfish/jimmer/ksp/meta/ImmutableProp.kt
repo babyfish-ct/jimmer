@@ -98,6 +98,7 @@ class ImmutableProp(
     init {
         val descriptor = PropDescriptor
             .newBuilder(
+                true,
                 declaringType.toString(),
                 declaringType.sqlAnnotationType?.java,
                 this.toString(),

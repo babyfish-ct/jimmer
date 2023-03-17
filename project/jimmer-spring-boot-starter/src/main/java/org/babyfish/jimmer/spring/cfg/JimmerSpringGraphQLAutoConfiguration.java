@@ -78,7 +78,7 @@ public class JimmerSpringGraphQLAutoConfiguration {
     }
 
     @Bean
-    public RuntimeWiringConfigurer runtimeWiringConfigurer(EntityManager entityManager) {
+    public RuntimeWiringConfigurer jimmerRuntimeWiringConfigurer(EntityManager entityManager) {
         return wiringBuilder -> {
             registerJimmerDataFetchers(wiringBuilder, entityManager);
         };

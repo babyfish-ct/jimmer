@@ -234,6 +234,7 @@ public class ImmutableProp {
         }
 
         PropDescriptor.Builder builder = PropDescriptor.newBuilder(
+                false,
                 declaringType.getTypeElement().getQualifiedName().toString(),
                 typeUtils.getImmutableAnnotationType(declaringType.getTypeElement()),
                 this.toString(),

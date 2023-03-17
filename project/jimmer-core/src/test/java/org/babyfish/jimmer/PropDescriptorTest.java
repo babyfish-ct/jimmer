@@ -13,6 +13,7 @@ public class PropDescriptorTest {
                 Assertions.assertThrows(IllegalArgumentException.class, () -> {
                     PropDescriptor
                             .newBuilder(
+                                    false,
                                     "Book",
                                     Entity.class,
                                     "id",
@@ -39,6 +40,7 @@ public class PropDescriptorTest {
                 Assertions.assertThrows(IllegalArgumentException.class, () -> {
                     PropDescriptor
                             .newBuilder(
+                                    false,
                                     "Book",
                                     Entity.class,
                                     "name",
@@ -65,6 +67,7 @@ public class PropDescriptorTest {
                 Assertions.assertThrows(IllegalArgumentException.class, () -> {
                     PropDescriptor
                             .newBuilder(
+                                    false,
                                     "Book",
                                     Entity.class,
                                     "store",
@@ -91,6 +94,7 @@ public class PropDescriptorTest {
                 Assertions.assertThrows(IllegalArgumentException.class, () -> {
                     PropDescriptor
                             .newBuilder(
+                                    false,
                                     "Book",
                                     Entity.class,
                                     "store",
@@ -117,6 +121,7 @@ public class PropDescriptorTest {
                 Assertions.assertThrows(IllegalArgumentException.class, () -> {
                     PropDescriptor
                             .newBuilder(
+                                    false,
                                     "Book",
                                     Entity.class,
                                     "authors",
@@ -141,6 +146,7 @@ public class PropDescriptorTest {
     public void testId() {
         PropDescriptor family = PropDescriptor
                 .newBuilder(
+                        false,
                         "Book",
                         Entity.class,
                         "id",
@@ -159,6 +165,7 @@ public class PropDescriptorTest {
     public void testVersion() {
         PropDescriptor family = PropDescriptor
                 .newBuilder(
+                        false,
                         "Book",
                         Entity.class,
                         "version",
@@ -177,6 +184,7 @@ public class PropDescriptorTest {
     public void testFormula() {
         PropDescriptor family = PropDescriptor
                 .newBuilder(
+                        false,
                         "Author",
                         Entity.class,
                         "fullName",
@@ -196,6 +204,7 @@ public class PropDescriptorTest {
     public void testBasic() {
         PropDescriptor family = PropDescriptor
                 .newBuilder(
+                        false,
                         "Book",
                         Entity.class,
                         "name",
@@ -217,6 +226,7 @@ public class PropDescriptorTest {
     public void testEmbedded() {
         PropDescriptor family = PropDescriptor
                 .newBuilder(
+                        false,
                         "Book",
                         Entity.class,
                         "size",
@@ -238,6 +248,7 @@ public class PropDescriptorTest {
     public void testOneToOne() {
         PropDescriptor family = PropDescriptor
                 .newBuilder(
+                        false,
                         "Book",
                         Entity.class,
                         "photo",
@@ -263,6 +274,7 @@ public class PropDescriptorTest {
     public void testManyToOne() {
         PropDescriptor family = PropDescriptor
                 .newBuilder(
+                        false,
                         "Book",
                         Entity.class,
                         "store",
@@ -288,6 +300,7 @@ public class PropDescriptorTest {
     public void testOneToMany() {
         PropDescriptor family = PropDescriptor
                 .newBuilder(
+                        false,
                         "BookStore",
                         Entity.class,
                         "books",
@@ -307,6 +320,7 @@ public class PropDescriptorTest {
     public void testManyToMany() {
         PropDescriptor family = PropDescriptor
                 .newBuilder(
+                        false,
                         "Book",
                         Entity.class,
                         "authors",
@@ -328,6 +342,7 @@ public class PropDescriptorTest {
     public void testKeyOnly() {
         PropDescriptor family = PropDescriptor
                 .newBuilder(
+                        false,
                         "Book",
                         Entity.class,
                         "name",
