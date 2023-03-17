@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.mutation.*
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
+import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
@@ -130,19 +131,11 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             select(org.babyfish.jimmer.sql.kt.ast.expression.count(table))
         }.fetchOne()
 
-    override fun <S: E> save(entity: S, mode: SaveMode): KSimpleSaveResult<S> =
-        sql.entities.save(entity) {
-            setAutoAttachingAll()
-            setAutoIdOnlyTargetCheckingAll()
-            setMode(mode)
-        }
+    override fun <S: E> save(entity: S, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S> =
+        sql.entities.save(entity, block = block)
 
-    override fun <S : E> saveAll(entities: Iterable<S>, mode: SaveMode): KBatchSaveResult<S> =
-        sql.entities.batchSave(Utils.toCollection(entities)) {
-            setAutoAttachingAll()
-            setAutoIdOnlyTargetCheckingAll()
-            setMode(mode)
-        }
+    override fun <S : E> saveAll(entities: Iterable<S>, block: KSaveCommandDsl.() -> Unit): KBatchSaveResult<S> =
+        sql.entities.batchSave(Utils.toCollection(entities), block = block)
 
     override fun delete(entity: E, mode: DeleteMode): Int =
         sql.entities.delete(

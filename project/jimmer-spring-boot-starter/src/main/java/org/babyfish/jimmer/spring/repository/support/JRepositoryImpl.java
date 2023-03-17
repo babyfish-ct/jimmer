@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.spring.repository.support;
 
 import org.babyfish.jimmer.ImmutableObjects;
+import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.spring.repository.JRepository;
@@ -229,12 +230,32 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @NotNull
     @Override
+    public SimpleEntitySaveCommand<E> saveCommand(@NotNull Input<E> input) {
+        return sqlClient.getEntities().saveCommand(input);
+    }
+
+    @NotNull
+    @Override
+    public <S extends E> SimpleEntitySaveCommand<S> saveCommand(@NotNull S entity) {
+        return sqlClient.getEntities().saveCommand(entity);
+    }
+
+    @NotNull
+    @Override
     public <S extends E> BatchSaveResult<S> saveAll(@NotNull Iterable<S> entities, SaveMode mode) {
         return sqlClient
                 .getEntities()
                 .batchSaveCommand(Utils.toCollection(entities))
                 .configure(cfg -> cfg.setAutoAttachingAll().setAutoIdOnlyTargetCheckingAll().setMode(mode))
                 .execute();
+    }
+
+    @NotNull
+    @Override
+    public <S extends E> BatchEntitySaveCommand<S> saveAllCommand(@NotNull Iterable<S> entities) {
+        return sqlClient
+                .getEntities()
+                .batchSaveCommand(Utils.toCollection(entities));
     }
 
     @Override

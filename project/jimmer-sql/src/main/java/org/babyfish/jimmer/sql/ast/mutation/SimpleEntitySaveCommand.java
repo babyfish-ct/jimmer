@@ -1,8 +1,6 @@
 package org.babyfish.jimmer.sql.ast.mutation;
 
 import org.babyfish.jimmer.lang.NewChain;
-import org.babyfish.jimmer.lang.NewChain;
-import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
@@ -48,19 +46,34 @@ public interface SimpleEntitySaveCommand<E>
         return configure(cfg -> cfg.setAutoAttaching(prop));
     }
 
-    @OldChain
+    @NewChain
     default SimpleEntitySaveCommand<E> setAutoIdOnlyTargetCheckingAll() {
         return configure(Cfg::setAutoIdOnlyTargetCheckingAll);
     }
 
-    @OldChain
+    @NewChain
     default SimpleEntitySaveCommand<E> setAutoIdOnlyTargetChecking(TypedProp.Association<?, ?> prop) {
         return configure(cfg -> cfg.setAutoIdOnlyTargetChecking(prop));
     }
 
-    @OldChain
+    @NewChain
     default SimpleEntitySaveCommand<E> setAutoIdOnlyTargetChecking(ImmutableProp prop) {
         return configure(cfg -> cfg.setAutoIdOnlyTargetChecking(prop));
+    }
+
+    @NewChain
+    default SimpleEntitySaveCommand<E> setAppendOnlyAll() {
+        return configure(Cfg::setAppendOnlyAll);
+    }
+
+    @NewChain
+    default SimpleEntitySaveCommand<E> setAppendOnly(TypedProp.Association<?, ?> prop) {
+        return configure(cfg -> cfg.setAppendOnly(prop));
+    }
+
+    @NewChain
+    default SimpleEntitySaveCommand<E> setAppendOnly(ImmutableProp prop) {
+        return configure(cfg -> cfg.setAppendOnly(prop));
     }
 
     @NewChain

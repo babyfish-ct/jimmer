@@ -1,3 +1,5 @@
+drop table employee if exists;
+drop table department if exists;
 drop table animal if exists;
 drop table order_item_product_mapping if exists;
 drop table product if exists;
@@ -466,3 +468,30 @@ alter table animal
         primary key(id);
 
 insert into animal(id, name) values(1, 'Trigger'), (2, 'Lion');
+
+
+
+create table department(
+    id bigint not null,
+    name varchar(20) not null
+);
+alter table department
+    add constraint pk_department
+        primary key(id);
+
+create table employee(
+    id bigint not null,
+    name varchar(20) not null,
+    department_id bigint not null
+);
+alter table employee
+    add constraint pk_employee
+        primary key(id);
+alter table employee
+    add constraint fk_employee_department
+        foreign key(department_id)
+            references department(id);
+
+insert into department(id, name) values(1, 'Market');
+insert into employee(id, name, department_id) values(1, 'Sam', 1);
+insert into employee(id, name, department_id) values(2, 'Jessica', 1);

@@ -107,6 +107,17 @@ public interface AbstractEntitySaveCommand {
         Cfg setAutoIdOnlyTargetChecking(ImmutableProp prop);
 
         @OldChain
+        default Cfg setAppendOnly(TypedProp.Association<?, ?> prop) {
+            return setAppendOnly(prop.unwrap());
+        }
+
+        @OldChain
+        Cfg setAppendOnly(ImmutableProp prop);
+
+        @OldChain
+        Cfg setAppendOnlyAll();
+
+        @OldChain
         default Cfg setDissociateAction(
                 TypedProp.Reference<?, ?> prop,
                 DissociateAction dissociateAction

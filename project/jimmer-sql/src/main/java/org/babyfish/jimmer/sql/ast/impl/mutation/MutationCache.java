@@ -31,7 +31,7 @@ class MutationCache {
         this.pessimisticLockRequired = pessimisticLockRequired;
     }
 
-    public ImmutableSpi find(ImmutableSpi example) {
+    public ImmutableSpi find(ImmutableSpi example, boolean requiresKey) {
         ImmutableType type = example.__type();
         ImmutableProp idProp = type.getIdProp();
         int idPropId = idProp.getId();
@@ -41,7 +41,10 @@ class MutationCache {
                 return idObjMap.get(new TypedId(type, id));
             }
         }
-        TypedKey key = TypedKey.of(example, keyProps(type), true);
+        TypedKey key = TypedKey.of(example, keyProps(type), requiresKey);
+        if (key == null) {
+            return null;
+        }
         return keyObjMap.get(key);
     }
 
@@ -84,7 +87,7 @@ class MutationCache {
         ImmutableProp idProp = type.getIdProp();
         Set<ImmutableProp> keyProps = keyProps(type);
 
-        ImmutableSpi oldSpi = find(spi);
+        ImmutableSpi oldSpi = find(spi, false);
         if (oldSpi != null) {
 
             TypedId oldTypedId = new TypedId(type, oldSpi.__get(idProp.getId()));

@@ -191,7 +191,7 @@ class Saver {
                         associatedObjectIds.add(saveAssociatedObjectAndGetId(prop, associatedObject));
                     }
                 }
-                if (childTableOperator != null && currentObjectType != ObjectType.NEW) {
+                if (childTableOperator != null && currentObjectType != ObjectType.NEW && !data.isAppendOnly(prop)) {
                     DissociateAction dissociateAction = data.getDissociateAction(prop.getMappedBy());
                     if (dissociateAction == DissociateAction.DELETE) {
                         List<Object> detachedTargetIds = childTableOperator.getDetachedChildIds(
@@ -237,7 +237,7 @@ class Saver {
                 );
                 if (middleTableOperator != null) {
                     int rowCount;
-                    if (currentObjectType == ObjectType.NEW) {
+                    if (currentObjectType == ObjectType.NEW || data.isAppendOnly(prop)) {
                         rowCount = middleTableOperator.addTargetIds(
                                 currentId,
                                 associatedObjectIds
@@ -667,15 +667,18 @@ class Saver {
 
     @SuppressWarnings("unchecked")
     private ImmutableSpi find(DraftSpi example) {
-
-        ImmutableSpi cached = cache.find(example);
+        ImmutableProp prop = path.getProp();
+        boolean requiresKey = prop != null && !data.isAppendOnly(prop);
+        ImmutableSpi cached = cache.find(example, requiresKey);
         if (cached != null) {
             return cached;
         }
 
         ImmutableType type = example.__type();
-
-        Collection<ImmutableProp> actualKeyProps = actualKeyProps(example);
+        Collection<ImmutableProp> actualKeyProps = actualKeyProps(example, requiresKey);
+        if (actualKeyProps == null || actualKeyProps.isEmpty()) {
+            return null;
+        }
 
         List<ImmutableSpi> rows = Internal.requiresNewDraftContext(ctx -> {
             List<ImmutableSpi> list = Queries.createQuery(data.getSqlClient(), type, ExecutionPurpose.MUTATE, true, (q, table) -> {
@@ -730,7 +733,7 @@ class Saver {
         return spi;
     }
 
-    private Collection<ImmutableProp> actualKeyProps(ImmutableSpi spi) {
+    private Collection<ImmutableProp> actualKeyProps(ImmutableSpi spi, boolean requiresKey) {
 
         ImmutableType type = spi.__type();
         ImmutableProp idProp = type.getIdProp();
@@ -742,7 +745,7 @@ class Saver {
             return Collections.singleton(idProp);
         }
         Set<ImmutableProp> keyProps = data.getKeyProps(type);
-        if (keyProps == null) {
+        if (keyProps == null && requiresKey) {
             throw new SaveException(
                     SaveErrorCode.NO_KEY_PROPS,
                     path,
@@ -799,7 +802,7 @@ class Saver {
                             spi +
                             " whose type is \"" +
                             spi.__type() +
-                            "\", no property is loaded"
+                            "\", neither id nor key is specified"
             );
         }
         return nonIdPropLoaded;

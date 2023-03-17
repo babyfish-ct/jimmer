@@ -5,10 +5,7 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.spring.repository.support.Utils;
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.mutation.BatchSaveResult;
-import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
-import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
-import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
+import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.jetbrains.annotations.NotNull;
@@ -160,6 +157,12 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     <S extends E> SimpleSaveResult<S> save(@NotNull S entity, SaveMode mode);
 
     @NotNull
+    SimpleEntitySaveCommand<E> saveCommand(@NotNull Input<E> input);
+
+    @NotNull
+    <S extends E> SimpleEntitySaveCommand<S> saveCommand(@NotNull S entity);
+
+    @NotNull
     @Override
     default <S extends E> Iterable<S> saveAll(@NotNull Iterable<S> entities) {
         return saveAll(entities, SaveMode.UPSERT)
@@ -171,6 +174,9 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
 
     @NotNull
     <S extends E> BatchSaveResult<S> saveAll(@NotNull Iterable<S> entities, SaveMode mode);
+
+    @NotNull
+    <S extends E> BatchEntitySaveCommand<S> saveAllCommand(@NotNull Iterable<S> entities);
 
     @Override
     default void delete(@NotNull E entity) {

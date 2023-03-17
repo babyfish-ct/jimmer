@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.event.TriggerType;
@@ -64,6 +65,10 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         private Set<ImmutableProp> autoCheckingSet;
 
+        private boolean appendOnlyAll;
+
+        private Set<ImmutableProp> appendOnlySet;
+
         private Map<ImmutableProp, DissociateAction> dissociateActionMap;
 
         private boolean pessimisticLock;
@@ -78,6 +83,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.keyPropMultiMap = new LinkedHashMap<>();
             this.autoAttachingSet = new HashSet<>();
             this.autoCheckingSet = new HashSet<>();
+            this.appendOnlySet = new HashSet<>();
             this.dissociateActionMap = new LinkedHashMap<>();
             this.pessimisticLock = false;
         }
@@ -92,6 +98,8 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.autoAttachingSet = new HashSet<>(base.autoAttachingSet);
             this.autoCheckingAll = base.autoCheckingAll;
             this.autoCheckingSet = new HashSet<>(base.autoCheckingSet);
+            this.appendOnlyAll = base.appendOnlyAll;
+            this.appendOnlySet = base.appendOnlySet;
             this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
             this.pessimisticLock = base.pessimisticLock;
         }
@@ -124,6 +132,10 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         public boolean isAutoCheckingProp(ImmutableProp prop) {
             return autoCheckingAll || autoCheckingSet.contains(prop);
+        }
+
+        public boolean isAppendOnly(ImmutableProp prop) {
+            return appendOnlyAll || appendOnlySet.contains(prop);
         }
 
         public DissociateAction getDissociateAction(ImmutableProp prop) {
@@ -206,6 +218,18 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         @Override
         public Cfg setAutoIdOnlyTargetChecking(ImmutableProp prop) {
             autoCheckingSet.add(prop);
+            return this;
+        }
+
+        @Override
+        public Cfg setAppendOnly(ImmutableProp prop) {
+            appendOnlySet.add(prop);
+            return this;
+        }
+
+        @Override
+        public Cfg setAppendOnlyAll() {
+            appendOnlyAll = true;
             return this;
         }
 

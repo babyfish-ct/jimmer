@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
+import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
@@ -105,12 +106,29 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
     fun save(input: Input<E>, mode: SaveMode): KSimpleSaveResult<E> =
         save(input.toEntity(), mode)
 
-    fun <S: E> save(entity: S, mode: SaveMode): KSimpleSaveResult<S>
+    fun <S: E> save(entity: S, mode: SaveMode): KSimpleSaveResult<S> =
+        save(entity) {
+            setAutoAttachingAll()
+            setAutoIdOnlyTargetCheckingAll()
+            setMode(mode)
+        }
+
+    fun save(input: Input<E>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
+        save(input.toEntity(), block)
+
+    fun <S: E> save(entity: S, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<S>
 
     override fun <S : E> saveAll(entities: Iterable<S>): List<S> =
         saveAll(entities, SaveMode.UPSERT).simpleResults.map { it.modifiedEntity }
 
-    fun <S : E> saveAll(entities: Iterable<S>, mode: SaveMode): KBatchSaveResult<S>
+    fun <S : E> saveAll(entities: Iterable<S>, mode: SaveMode): KBatchSaveResult<S> =
+        saveAll(entities) {
+            setAutoAttachingAll()
+            setAutoIdOnlyTargetCheckingAll()
+            setMode(mode)
+        }
+
+    fun <S : E> saveAll(entities: Iterable<S>, block: KSaveCommandDsl.() -> Unit): KBatchSaveResult<S>
 
     override fun delete(entity: E) {
         delete(entity, DeleteMode.AUTO)

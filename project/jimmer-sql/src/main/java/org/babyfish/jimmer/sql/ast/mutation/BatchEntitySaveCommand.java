@@ -47,6 +47,36 @@ public interface BatchEntitySaveCommand<E>
     }
 
     @NewChain
+    default BatchEntitySaveCommand<E> setAutoIdOnlyTargetCheckingAll() {
+        return configure(Cfg::setAutoIdOnlyTargetCheckingAll);
+    }
+
+    @NewChain
+    default BatchEntitySaveCommand<E> setAutoIdOnlyTargetChecking(TypedProp.Association<?, ?> prop) {
+        return configure(cfg -> cfg.setAutoIdOnlyTargetChecking(prop));
+    }
+
+    @NewChain
+    default BatchEntitySaveCommand<E> setAutoIdOnlyTargetChecking(ImmutableProp prop) {
+        return configure(cfg -> cfg.setAutoIdOnlyTargetChecking(prop));
+    }
+
+    @NewChain
+    default BatchEntitySaveCommand<E> setAppendOnlyAll() {
+        return configure(Cfg::setAppendOnlyAll);
+    }
+
+    @NewChain
+    default BatchEntitySaveCommand<E> setAppendOnly(TypedProp.Association<?, ?> prop) {
+        return configure(cfg -> cfg.setAppendOnly(prop));
+    }
+
+    @NewChain
+    default BatchEntitySaveCommand<E> setAppendOnly(ImmutableProp prop) {
+        return configure(cfg -> cfg.setAppendOnly(prop));
+    }
+
+    @NewChain
     default BatchEntitySaveCommand<E> setDissociateAction(
             TypedProp.Reference<?, ?> prop,
             DissociateAction dissociateAction
