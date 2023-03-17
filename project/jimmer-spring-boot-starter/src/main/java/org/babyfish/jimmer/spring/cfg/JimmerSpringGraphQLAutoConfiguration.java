@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.spring.graphql;
+package org.babyfish.jimmer.spring.cfg;
 
 import graphql.GraphQL;
 import graphql.schema.DataFetcher;
