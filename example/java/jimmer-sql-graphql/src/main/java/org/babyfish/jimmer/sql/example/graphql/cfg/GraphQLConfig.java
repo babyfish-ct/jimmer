@@ -37,7 +37,7 @@ public class GraphQLConfig {
                     .build();
 
     @Bean
-    public RuntimeWiringConfigurer runtimeWiringConfigurer2(EntityManager entityManager) {
+    public RuntimeWiringConfigurer runtimeWiringConfigurer(EntityManager entityManager) {
         return wiringBuilder -> {
             wiringBuilder
                     .scalar(ExtendedScalars.GraphQLLong)
