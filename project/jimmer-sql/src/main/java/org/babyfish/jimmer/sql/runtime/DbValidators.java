@@ -125,13 +125,17 @@ public class DbValidators {
             if (storage instanceof MiddleTable) {
                 Table middleTable = middleTableOf(prop);
                 MiddleTable middleTableMeta = (MiddleTable) storage;
-                ForeignKey thisForeignKey = middleTable.getForeignKey(ctx, middleTableMeta.getColumnDefinition());
-                if (thisForeignKey != null) {
-                    thisForeignKey.assertReferencedColumns(ctx, type);
+                if (middleTableMeta.getColumnDefinition().isForeignKey()) {
+                    ForeignKey thisForeignKey = middleTable.getForeignKey(ctx, middleTableMeta.getColumnDefinition());
+                    if (thisForeignKey != null) {
+                        thisForeignKey.assertReferencedColumns(ctx, type);
+                    }
                 }
-                ForeignKey targetForeignKey = middleTable.getForeignKey(ctx, middleTableMeta.getTargetColumnDefinition());
-                if (targetForeignKey != null) {
-                    targetForeignKey.assertReferencedColumns(ctx, prop.getTargetType());
+                if (middleTableMeta.getTargetColumnDefinition().isForeignKey()) {
+                    ForeignKey targetForeignKey = middleTable.getForeignKey(ctx, middleTableMeta.getTargetColumnDefinition());
+                    if (targetForeignKey != null) {
+                        targetForeignKey.assertReferencedColumns(ctx, prop.getTargetType());
+                    }
                 }
             } else if (storage != null && prop.isReference(TargetLevel.PERSISTENT)) {
                 ColumnDefinition columnDefinition = prop.getStorage();
