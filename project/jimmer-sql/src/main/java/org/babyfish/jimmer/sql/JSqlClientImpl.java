@@ -44,6 +44,7 @@ import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 
 import java.lang.reflect.Type;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -514,6 +515,8 @@ class JSqlClientImpl implements JSqlClient {
 
         private ObjectMapper binLogObjectMapper;
 
+        private boolean validate;
+
         public BuilderImpl() {}
 
         @Override
@@ -783,9 +786,34 @@ class JSqlClientImpl implements JSqlClient {
         }
 
         @Override
+        public Builder setValidate(boolean validate) {
+            this.validate = validate;
+            return this;
+        }
+
+        @Override
         public JSqlClient build() {
             if (entityManager == null) {
                 throw new IllegalStateException("The `entityManager` of SqlClient has not been configured");
+            }
+            if (validate) {
+                ConnectionManager cm = connectionManager;
+                if (cm == null) {
+                    throw new IllegalStateException(
+                            "The `connectionManager` of must be configured when `validate` is configured"
+                    );
+                }
+                cm.execute(con -> {
+                    try {
+                        DbValidators.validate(entityManager, con);
+                    } catch (SQLException ex) {
+                        throw new ExecutionException(
+                                "Cannot validate the database because of SQL exception",
+                                ex
+                        );
+                    }
+                    return null;
+                });
             }
             createTriggersIfNecessary();
             FilterManager filterManager = createFilterManager();

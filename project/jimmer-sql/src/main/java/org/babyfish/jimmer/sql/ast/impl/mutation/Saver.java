@@ -669,7 +669,12 @@ class Saver {
     private ImmutableSpi find(DraftSpi example) {
         ImmutableProp prop = path.getProp();
         boolean requiresKey = prop != null && !data.isAppendOnly(prop);
-        ImmutableSpi cached = cache.find(example, requiresKey);
+        ImmutableSpi cached;
+        try {
+            cached = cache.find(example, requiresKey);
+        } catch (IllegalArgumentException ex) {
+            throw new SaveException(SaveErrorCode.NO_KEY_PROPS, path, ex.getMessage());
+        }
         if (cached != null) {
             return cached;
         }

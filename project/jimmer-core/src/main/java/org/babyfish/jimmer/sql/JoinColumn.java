@@ -11,4 +11,5 @@ import java.lang.annotation.*;
 public @interface JoinColumn {
     String name();
     String referencedColumnName() default "";
+    boolean foreignKey() default true;
 }

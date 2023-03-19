@@ -27,6 +27,9 @@ public class JimmerProperties {
     private final boolean showSql;
 
     @NotNull
+    private final boolean validate;
+
+    @NotNull
     private final TriggerType triggerType;
 
     @NotNull
@@ -45,6 +48,7 @@ public class JimmerProperties {
             @Nullable String language,
             @Nullable String dialect,
             boolean showSql,
+            boolean validate,
             @Nullable TriggerType triggerType,
             @Nullable EnumType.Strategy defaultEnumStrategy,
             @Nullable Integer defaultBatchSize,
@@ -99,6 +103,7 @@ public class JimmerProperties {
             }
         }
         this.showSql = showSql;
+        this.validate = validate;
         this.triggerType = triggerType != null ? triggerType : TriggerType.BINLOG_ONLY;
         this.defaultEnumStrategy =
                 defaultEnumStrategy != null ?
@@ -132,6 +137,10 @@ public class JimmerProperties {
 
     public boolean isShowSql() {
         return showSql;
+    }
+
+    public boolean isValidate() {
+        return validate;
     }
 
     @NotNull

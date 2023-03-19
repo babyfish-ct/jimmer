@@ -239,7 +239,7 @@ class ImmutableTypeImpl implements ImmutableType {
         return keyProps;
     }
 
-    @Nullable
+    @NotNull
     @Override
     public String getTableName() {
         return tableName;
@@ -707,7 +707,7 @@ class ImmutableTypeImpl implements ImmutableType {
         }
 
         @Override
-        public Builder key(int id, String name, Class<?> elementType) {
+        public Builder key(int id, String name, Class<?> elementType, boolean nullable) {
             if (!javaClass.isAnnotationPresent(Entity.class) &&
                 !javaClass.isAnnotationPresent(MappedSuperclass.class)) {
                 throw new IllegalStateException(
@@ -717,7 +717,7 @@ class ImmutableTypeImpl implements ImmutableType {
                 );
             }
             keyPropNames.add(name);
-            return add(id, name, category(elementType), elementType, false);
+            return add(id, name, category(elementType), elementType, nullable);
         }
 
         @Override

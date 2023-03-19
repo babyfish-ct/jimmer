@@ -110,10 +110,11 @@ class ProducerGenerator(
                 )
             prop.isKey && !prop.isAssociation(false) ->
                 add(
-                    ".key(%L, %S, %T::class.java)\n",
+                    ".key(%L, %S, %T::class.java, %L)\n",
                     prop.id,
                     prop.name,
-                    prop.targetClassName
+                    prop.targetClassName,
+                    prop.isNullable
                 )
             prop.primaryAnnotationType == IdView::class.java ->
                 add(

@@ -1,11 +1,11 @@
 package org.babyfish.jimmer.apt.generator;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.ImmutableObjects;
-import org.babyfish.jimmer.apt.TypeUtils;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
-import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.jackson.ImmutableModuleRequiredException;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 
@@ -29,8 +29,8 @@ public class ImplementorGenerator {
         typeBuilder.modifiers.add(Modifier.PUBLIC);
         typeBuilder.modifiers.add(Modifier.STATIC);
         typeBuilder.modifiers.add(Modifier.ABSTRACT);
-        typeBuilder.superinterfaces.add(type.getClassName());
-        typeBuilder.superinterfaces.add(spiClassName);
+        typeBuilder.addSuperinterface(type.getClassName());
+        typeBuilder.addSuperinterface(spiClassName);
         addGet(int.class);
         addGet(String.class);
         for (ImmutableProp prop : type.getProps().values()) {
@@ -86,24 +86,23 @@ public class ImplementorGenerator {
     }
 
     private void addGetterIfNecessary(ImmutableProp prop) {
-        String name = prop.getGetterName();
-        boolean isBoolean = prop.getTypeName().equals(TypeName.BOOLEAN);
-        if (name.startsWith("get") ||
-                (isBoolean && name.startsWith("is"))) {
-            return;
+        if (!prop.isBeanStyle()) {
+            String name = prop.getGetterName();
+            boolean isBoolean = prop.getTypeName().equals(TypeName.BOOLEAN);
+            typeBuilder.addMethod(
+                    MethodSpec
+                            .methodBuilder(
+                                    (isBoolean ? "is" : "get") +
+                                            Character.toUpperCase(name.charAt(0)) +
+                                            name.substring(1)
+                            )
+                            .addAnnotation(JsonIgnore.class)
+                            .addModifiers(Modifier.PUBLIC)
+                            .returns(prop.getTypeName())
+                            .addStatement("return $L()", name)
+                            .build()
+            );
         }
-        typeBuilder.addMethod(
-                MethodSpec
-                        .methodBuilder(
-                                (isBoolean ? "is" : "get") +
-                                        Character.toUpperCase(name.charAt(0)) +
-                                        name.substring(1)
-                        )
-                        .addModifiers(Modifier.PUBLIC)
-                        .returns(prop.getTypeName())
-                        .addStatement("return $L()", name)
-                        .build()
-        );
     }
 
     private void addToString() {

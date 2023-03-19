@@ -187,6 +187,7 @@ public class SqlClientConfig {
         } else {
             builder.setExecutor(executor);
         }
+        builder.setValidate(properties.isValidate());
 
         if (cacheFactory != null) {
             builder.setCaches(cfg -> {

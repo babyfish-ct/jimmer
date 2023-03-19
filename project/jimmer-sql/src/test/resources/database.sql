@@ -19,6 +19,31 @@ drop table country if exists;
 drop table book_store if exists;
 drop table tree_node if exists;
 drop sequence tree_node_id_seq if exists;
+drop table D if exists;
+drop table C if exists;
+drop table B if exists;
+drop table A if exists;
+
+create table A(
+    id bigint not null primary key,
+    deleted boolean not null
+);
+
+create table B(
+    id bigint not null primary key,
+    status varchar(7) not null
+);
+
+create table C(
+    id bigint not null primary key,
+    deleted_time datetime
+);
+
+create table D(
+    id bigint not null primary key,
+    created_time datetime
+);
+
 
 create table book_store(
     id uuid not null,
@@ -249,7 +274,7 @@ create table administrator_metadata(
     name varchar(50) not null,
     email varchar(50) not null,
     website varchar(50) not null,
-    administrator_id bigint,
+    administrator_id bigint not null,
     deleted boolean not null,
     created_time timestamp not null,
     modified_time timestamp not null
@@ -292,7 +317,7 @@ alter table administrator_role_mapping
 create table permission(
     id bigint not null,
     name varchar(50) not null,
-    role_id bigint not null,
+    role_id bigint,
     deleted boolean not null,
     created_time timestamp not null,
     modified_time timestamp not null

@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.kt.model.pg
 
-import org.babyfish.jimmer.sql.Column
-import org.babyfish.jimmer.sql.Entity
-import org.babyfish.jimmer.sql.Id
-import org.babyfish.jimmer.sql.Table
+import org.babyfish.jimmer.sql.*
 
 @Entity
 @Table(name = "pg_json_wrapper")

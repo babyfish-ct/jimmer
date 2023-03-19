@@ -66,6 +66,7 @@ import java.util.List;
 
 @SpringBootTest(properties = {
         "jimmer.client.ts.path=/my-ts.zip",
+        "jimmer.validate=true",
         "jimmer.client.java-feign.path=/my-java.zip",
         "jimmer.client.java-feign.base-package=com.myapp.feign",
         "jimmer.dialect=org.babyfish.jimmer.sql.dialect.H2Dialect",

@@ -8,10 +8,7 @@ import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.*;
 
 import java.lang.annotation.Annotation;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Storages {
 
@@ -35,7 +32,7 @@ public class Storages {
             if (columnName.isEmpty()) {
                 columnName = DatabaseIdentifiers.databaseIdentifier(prop.getName());
             }
-            return new SingleColumn(columnName);
+            return new SingleColumn(columnName, false);
         }
         Storage storage = middleTable(prop, false);
         if (storage == null) {
@@ -110,13 +107,21 @@ public class Storages {
                             ex.ref +
                             "\" in several join columns"
             );
+        } catch (ForeignKeyConflict ex) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            prop +
+                            "\", conflict columns \"" +
+                            ex.columnName1 +
+                            "\" and \"" +
+                            ex.columnName2 +
+                            "\", their attribute `foreignKey` is different"
+            );
         }
         if (definition != null) {
             return definition;
         }
-        return new SingleColumn(
-                DatabaseIdentifiers.databaseIdentifier(prop.getName()) + "_ID"
-        );
+        return new SingleColumn(DatabaseIdentifiers.databaseIdentifier(prop.getName()) + "_ID", true);
     }
 
     private static MiddleTable middleTable(ImmutableProp prop, boolean force) {
@@ -224,6 +229,18 @@ public class Storages {
                             "\" in several " +
                             (leftParsed ? "inverseColumns" : "joinColumns")
             );
+        } catch (ForeignKeyConflict ex) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            prop +
+                            "\", conflict columns \"" +
+                            ex.columnName1 +
+                            "\" and \"" +
+                            ex.columnName2 +
+                            "\" in " +
+                            (leftParsed ? "inverseColumns" : "joinColumns") +
+                            ", their attribute `foreignKey` is different"
+            );
         }
         String tableName = joinTable != null ? joinTable.name() : "";
         if (tableName.isEmpty()) {
@@ -241,13 +258,15 @@ public class Storages {
         if (definition == null) {
             definition = new SingleColumn(
                     DatabaseIdentifiers.databaseIdentifier(prop.getDeclaringType().getJavaClass().getSimpleName()) +
-                            "_ID"
+                            "_ID",
+                    true
             );
         }
         if (targetDefinition == null) {
             targetDefinition = new SingleColumn(
                     DatabaseIdentifiers.databaseIdentifier(prop.getTargetType().getJavaClass().getSimpleName()) +
-                            "_ID"
+                            "_ID",
+                    true
             );
         }
         return new MiddleTable(tableName, definition, targetDefinition);
@@ -257,13 +276,21 @@ public class Storages {
             JoinColumnObj[] joinColumns,
             ImmutableType targetType,
             boolean isEmbedded
-    ) throws IllegalJoinColumnCount, NoReference, ReferenceNothing, TargetConflict, SourceConflict {
+    ) throws IllegalJoinColumnCount, NoReference, ReferenceNothing, TargetConflict, SourceConflict, ForeignKeyConflict {
         if (joinColumns == null || joinColumns.length == 0) {
             ColumnDefinition definition = targetType.getIdProp().getStorage();
             if (definition.size() == 1) {
                 return null;
             }
             throw new IllegalJoinColumnCount(definition.size(), 0);
+        }
+        JoinColumnObj firstJoinColumn = null;
+        for (JoinColumnObj joinColumn : joinColumns) {
+            if (firstJoinColumn == null) {
+                firstJoinColumn = joinColumn;
+            } else if (firstJoinColumn.foreignKey != joinColumn.foreignKey) {
+                throw new ForeignKeyConflict(firstJoinColumn.name, joinColumn.name);
+            }
         }
         ColumnDefinition targetIdDefinition = targetType.getIdProp().getStorage();
         if (joinColumns.length != targetIdDefinition.size()) {
@@ -277,7 +304,7 @@ public class Storages {
             if (!ref.isEmpty() && !ref.equals(targetIdDefinition.name(0))) {
                 throw new ReferenceNothing(ref);
             }
-            return new SingleColumn(joinColumns[0].name);
+            return new SingleColumn(joinColumns[0].name, joinColumns[0].foreignKey);
         }
         Map<String, String> columnMap = new HashMap<>();
         for (JoinColumnObj joinColumn : joinColumns) {
@@ -299,7 +326,7 @@ public class Storages {
                 throw new SourceConflict(name);
             }
         }
-        return new MultipleJoinColumns(referencedColumnMap, isEmbedded);
+        return new MultipleJoinColumns(referencedColumnMap, isEmbedded, joinColumns[0].foreignKey);
     }
 
     private static class JoinColumnObj {
@@ -308,14 +335,18 @@ public class Storages {
 
         final String referencedColumnName;
 
-        JoinColumnObj(String name, String referencedColumnName) {
+        final boolean foreignKey;
+
+        JoinColumnObj(String name, String referencedColumnName, boolean foreignKey) {
             this.name = name;
             this.referencedColumnName = referencedColumnName;
+            this.foreignKey = foreignKey;
         }
 
         JoinColumnObj(JoinColumn joinColumn) {
             this.name = joinColumn.name();
             this.referencedColumnName = joinColumn.referencedColumnName();
+            this.foreignKey = joinColumn.foreignKey();
         }
 
         static JoinColumnObj[] array(String name) {
@@ -323,7 +354,7 @@ public class Storages {
                 return null;
             }
             return new JoinColumnObj[] {
-                    new JoinColumnObj(name, "")
+                    new JoinColumnObj(name, "", true)
             };
         }
 
@@ -334,7 +365,8 @@ public class Storages {
             return new JoinColumnObj[] {
                     new JoinColumnObj(
                             joinColumn.name(),
-                            joinColumn.referencedColumnName()
+                            joinColumn.referencedColumnName(),
+                            joinColumn.foreignKey()
                     )
             };
         }
@@ -365,7 +397,7 @@ public class Storages {
 
         final String ref;
 
-        private ReferenceNothing(String ref) {
+        ReferenceNothing(String ref) {
             this.ref = ref;
         }
     }
@@ -374,7 +406,7 @@ public class Storages {
 
         final String ref;
 
-        private TargetConflict(String ref) {
+        TargetConflict(String ref) {
             this.ref = ref;
         }
     }
@@ -383,8 +415,20 @@ public class Storages {
 
         final String name;
 
-        private SourceConflict(String name) {
+        SourceConflict(String name) {
             this.name = name;
+        }
+    }
+
+    private static class ForeignKeyConflict extends Exception {
+
+        final String columnName1;
+
+        final String columnName2;
+
+        private ForeignKeyConflict(String columnName1, String columnName2) {
+            this.columnName1 = columnName1;
+            this.columnName2 = columnName2;
         }
     }
 }

@@ -10,6 +10,7 @@ import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.hr.Department;
 import org.babyfish.jimmer.sql.model.hr.DepartmentDraft;
 import org.babyfish.jimmer.sql.model.hr.Employee;
 import org.babyfish.jimmer.sql.model.inheritance.*;
@@ -1117,7 +1118,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testAppendOnly() {
+    public void testAppendOnlyChild() {
         setAutoIds(Employee.class, 100L);
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
@@ -1150,6 +1151,43 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                         "--->\"name\":\"Develop\"," +
                                         "--->\"employees\":[" +
                                         "--->--->{\"id\":100,\"name\":\"Tim\",\"department\":{\"id\":1}}" +
+                                        "--->]" +
+                                        "}");
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testAppendOnlyAll() {
+        setAutoIds(Department.class, 10L);
+        setAutoIds(Employee.class, 100L);
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        DepartmentDraft.$.produce(draft -> {
+                            draft.setName("Develop");
+                            draft.addIntoEmployees(employee -> employee.setName("Tim"));
+                        })
+                ).setAppendOnlyAll().setAutoAttachingAll(),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("insert into DEPARTMENT(ID, NAME) values(?, ?)");
+                        it.variables(10L, "Develop");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("insert into EMPLOYEE(ID, NAME, DEPARTMENT_ID) values(?, ?, ?)");
+                        it.variables(100L, "Tim", 10L);
+                    });
+                    ctx.entity(it -> {
+                        it.original(
+                                "{\"name\":\"Develop\",\"employees\":[{\"name\":\"Tim\"}]}"
+                        );
+                        it.modified(
+                                "{" +
+                                        "--->\"id\":10," +
+                                        "--->\"name\":\"Develop\"," +
+                                        "--->\"employees\":[" +
+                                        "--->--->{\"id\":100,\"name\":\"Tim\",\"department\":{\"id\":10}}" +
                                         "--->]" +
                                         "}");
                     });

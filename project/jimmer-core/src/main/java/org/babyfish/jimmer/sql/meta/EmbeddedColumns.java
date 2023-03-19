@@ -36,6 +36,11 @@ public class EmbeddedColumns extends MultipleColumns {
         return Collections.unmodifiableMap(partialMap);
     }
 
+    @Override
+    public boolean isForeignKey() {
+        return false;
+    }
+
     public static class Partial extends MultipleColumns {
 
         private final String path;
@@ -47,6 +52,11 @@ public class EmbeddedColumns extends MultipleColumns {
 
         public String path() {
             return path;
+        }
+
+        @Override
+        public boolean isForeignKey() {
+            return false;
         }
     }
 

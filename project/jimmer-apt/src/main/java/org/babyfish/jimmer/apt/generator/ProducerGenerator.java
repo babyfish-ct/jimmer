@@ -137,10 +137,11 @@ public class ProducerGenerator {
                 );
             } else if (prop.getAnnotation(Key.class) != null && !prop.isAssociation(false)) {
                 builder.add(
-                        ".key($L, $S, $T.class)\n",
+                        ".key($L, $S, $T.class, $L)\n",
                         prop.getId(),
                         prop.getName(),
-                        prop.getRawElementTypeName()
+                        prop.getRawElementTypeName(),
+                        prop.isNullable()
                 );
             } else if (prop.getAnnotation(Key.class) != null && prop.isAssociation(false)) {
                 builder.add(

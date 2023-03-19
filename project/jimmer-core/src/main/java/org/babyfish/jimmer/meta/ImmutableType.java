@@ -103,7 +103,7 @@ public interface ImmutableType {
     @NotNull
     Set<ImmutableProp> getKeyProps();
 
-    @Nullable
+    @NotNull
     String getTableName();
 
     @NotNull
@@ -131,7 +131,7 @@ public interface ImmutableType {
 
         Builder id(int id, String name, Class<?> elementType);
 
-        Builder key(int id, String name, Class<?> elementType);
+        Builder key(int id, String name, Class<?> elementType, boolean nullable);
 
         Builder keyReference(
                 int id,

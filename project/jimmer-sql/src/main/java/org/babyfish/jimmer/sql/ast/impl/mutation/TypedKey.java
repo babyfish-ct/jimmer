@@ -40,12 +40,13 @@ class TypedKey {
         ImmutableType type = spi.__type();
         if (keyProps == null || keyProps.isEmpty()) {
             if (requiresKey) {
-                throw new ExecutionException(
+                throw new IllegalArgumentException(
                         "Requires key properties configuration for \"" +
                                 type +
-                                "\", In an idempotent save command, " +
-                                "if the saved object does not have id, " +
-                                "the key property of associated object must be specified."
+                                "\", in an idempotent save command, " +
+                                "if the saved associated object does not have id, " +
+                                "either configure the key properties for the type of associated object, " +
+                                "or set the handle mode of association to `AppendOnly`"
                 );
             }
             return null;
