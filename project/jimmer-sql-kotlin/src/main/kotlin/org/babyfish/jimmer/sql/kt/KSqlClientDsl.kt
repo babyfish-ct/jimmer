@@ -137,6 +137,10 @@ class KSqlClientDsl internal constructor(
         javaBuilder.addDraftInterceptors(interceptor)
     }
 
+    fun setDatabaseValidationError(mode: DatabaseValidationMode) {
+        javaBuilder.setDatabaseValidationMode(mode)
+    }
+
     @DslScope
     class ConnectionManagerDsl internal constructor(
         private val javaBlock: Function<Connection, *>
