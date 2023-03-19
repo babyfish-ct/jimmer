@@ -290,7 +290,7 @@ public abstract class AbstractDataLoader {
         );
         Collection<Object> missedFkSourceIds;
         missedFkSourceIds = new ArrayList<>();
-        if (globalFiler != null) {
+        if (globalFiler != null || propFilter != null || !prop.<ColumnDefinition>getStorage().isForeignKey()) {
             missedFkSourceIds = toSourceIds(sources);
         } else {
             for (ImmutableSpi source : sources) {
@@ -351,7 +351,7 @@ public abstract class AbstractDataLoader {
         }
         Map<Object, ImmutableSpi> map1 = null;
         if (!fkMap.isEmpty()) {
-            if (globalFiler != null || propFilter != null) {
+            if (globalFiler != null || propFilter != null || !prop.<ColumnDefinition>getStorage().isForeignKey()) {
                 map1 = Utils.joinMaps(
                         fkMap,
                         Utils.toMap(
@@ -371,7 +371,8 @@ public abstract class AbstractDataLoader {
         }
         Map<Object, ImmutableSpi> map2 = null;
         if (!missedFkSourceIds.isEmpty()) {
-            if (globalFiler != null || propFilter != null || fetcher.getFieldMap().size() > 1) {
+            if (globalFiler != null || propFilter != null || !prop.<ColumnDefinition>getStorage().isForeignKey() ||
+                    fetcher.getFieldMap().size() > 1) {
                 map2 = Tuple2.toMap(
                         querySourceTargetPairs(missedFkSourceIds)
                 );

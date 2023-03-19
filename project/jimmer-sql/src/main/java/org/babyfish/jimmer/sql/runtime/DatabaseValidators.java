@@ -8,11 +8,12 @@ import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.DatabaseValidationIgnore;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.*;
 import java.util.*;
 
-public class DbValidators {
+public class DatabaseValidators {
 
     private final Connection con;
 
@@ -22,16 +23,17 @@ public class DbValidators {
 
     private Map<ImmutableProp, org.babyfish.jimmer.lang.Ref<Table>> middleTableRefMap = new HashMap<>();
 
-    public static void validate(EntityManager entityManager, Connection con) throws SQLException {
-        new DbValidators(con).validate(entityManager);
+    @Nullable
+    public static DatabaseValidationException validate(EntityManager entityManager, Connection con) throws SQLException {
+        return new DatabaseValidators(con).validate(entityManager);
     }
 
-    private DbValidators(Connection con) {
+    private DatabaseValidators(Connection con) {
         this.con = con;
         this.items = new ArrayList<>();
     }
 
-    private void validate(EntityManager entityManager) throws SQLException {
+    private DatabaseValidationException validate(EntityManager entityManager) throws SQLException {
         for (ImmutableType type : entityManager.getAllTypes()) {
             if (type.isEntity() && !type.getJavaClass().isAnnotationPresent(DatabaseValidationIgnore.class)) {
                 validateSelf(type);
@@ -43,8 +45,9 @@ public class DbValidators {
             }
         }
         if (!items.isEmpty()) {
-            throw new DatabaseValidationException(items);
+            return new DatabaseValidationException(items);
         }
+        return null;
     }
 
     private void validateSelf(ImmutableType type) throws SQLException {
@@ -100,7 +103,7 @@ public class DbValidators {
                                         prop,
                                         "The property is " +
                                                 (nullable ? "nullable" : "nonnull(include inputNotNull)") +
-                                                ", but the column \"" +
+                                                ", but the database column \"" +
                                                 ((SingleColumn) storage).getName() +
                                                 "\" is " +
                                                 (column.nullable ? "nullable" : "nonnull")
@@ -391,7 +394,7 @@ public class DbValidators {
                 );
             }
             if (foreignKey == null) {
-                ctx.dbValidators.items.add(
+                ctx.databaseValidators.items.add(
                         new DatabaseValidationException.Item(
                                 ctx.type,
                                 ctx.prop,
@@ -425,7 +428,7 @@ public class DbValidators {
         private Map<Set<String>, ForeignKey> getForeignKeyMap(ForeignKeyContext ctx) throws SQLException {
             Map<Set<String>, ForeignKey> map = _foreignKeyMap;
             if (map == null) {
-                map = ctx.dbValidators.foreignKeys(this);
+                map = ctx.databaseValidators.foreignKeys(this);
                 _foreignKeyMap = map;
             }
             return map;
@@ -474,7 +477,7 @@ public class DbValidators {
                 ImmutableType referencedType
         ) {
             if (!referencedType.getIdProp().<ColumnDefinition>getStorage().toColumnNames().equals(referenceColumNames)) {
-                ctx.dbValidators.items.add(
+                ctx.databaseValidators.items.add(
                         new DatabaseValidationException.Item(
                                 ctx.type,
                                 ctx.prop,
@@ -492,14 +495,14 @@ public class DbValidators {
 
     private static class ForeignKeyContext {
 
-        final DbValidators dbValidators;
+        final DatabaseValidators databaseValidators;
 
         final ImmutableType type;
 
         final ImmutableProp prop;
 
-        private ForeignKeyContext(DbValidators dbValidators, ImmutableType type, ImmutableProp prop) {
-            this.dbValidators = dbValidators;
+        private ForeignKeyContext(DatabaseValidators databaseValidators, ImmutableType type, ImmutableProp prop) {
+            this.databaseValidators = databaseValidators;
             this.type = type;
             this.prop = prop;
         }

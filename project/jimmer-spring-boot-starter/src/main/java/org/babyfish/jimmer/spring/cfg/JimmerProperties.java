@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
+import org.babyfish.jimmer.sql.runtime.DatabaseValidationMode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -27,7 +28,7 @@ public class JimmerProperties {
     private final boolean showSql;
 
     @NotNull
-    private final boolean validate;
+    private final DatabaseValidationMode databaseValidationMode;
 
     @NotNull
     private final TriggerType triggerType;
@@ -48,7 +49,7 @@ public class JimmerProperties {
             @Nullable String language,
             @Nullable String dialect,
             boolean showSql,
-            boolean validate,
+            @Nullable DatabaseValidationMode databaseValidationMode,
             @Nullable TriggerType triggerType,
             @Nullable EnumType.Strategy defaultEnumStrategy,
             @Nullable Integer defaultBatchSize,
@@ -103,7 +104,10 @@ public class JimmerProperties {
             }
         }
         this.showSql = showSql;
-        this.validate = validate;
+        this.databaseValidationMode =
+                databaseValidationMode != null ?
+                        databaseValidationMode :
+                        DatabaseValidationMode.NONE;
         this.triggerType = triggerType != null ? triggerType : TriggerType.BINLOG_ONLY;
         this.defaultEnumStrategy =
                 defaultEnumStrategy != null ?
@@ -139,8 +143,9 @@ public class JimmerProperties {
         return showSql;
     }
 
-    public boolean isValidate() {
-        return validate;
+    @NotNull
+    public DatabaseValidationMode getDatabaseValidationMode() {
+        return databaseValidationMode;
     }
 
     @NotNull

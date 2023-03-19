@@ -2,10 +2,7 @@ package org.babyfish.jimmer.sql;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.lang.OldChain;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
@@ -42,6 +39,8 @@ import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 import java.sql.SQLException;
@@ -473,6 +472,8 @@ class JSqlClientImpl implements JSqlClient {
 
     public static class BuilderImpl implements JSqlClient.Builder {
 
+        private static final Logger LOGGER = LoggerFactory.getLogger(BuilderImpl.class);
+
         private ConnectionManager connectionManager;
 
         private ConnectionManager slaveConnectionManager;
@@ -515,7 +516,7 @@ class JSqlClientImpl implements JSqlClient {
 
         private ObjectMapper binLogObjectMapper;
 
-        private boolean validate;
+        private DatabaseValidationMode databaseValidationMode = DatabaseValidationMode.NONE;
 
         public BuilderImpl() {}
 
@@ -786,8 +787,11 @@ class JSqlClientImpl implements JSqlClient {
         }
 
         @Override
-        public Builder setValidate(boolean validate) {
-            this.validate = validate;
+        public Builder setDatabaseValidationMode(DatabaseValidationMode databaseValidationMode) {
+            this.databaseValidationMode = Objects.requireNonNull(
+                    databaseValidationMode,
+                    "argument cannot be null"
+            );
             return this;
         }
 
@@ -796,27 +800,33 @@ class JSqlClientImpl implements JSqlClient {
             if (entityManager == null) {
                 throw new IllegalStateException("The `entityManager` of SqlClient has not been configured");
             }
-            if (validate) {
+            FilterManager filterManager = createFilterManager();
+            validateFilteredAssociations(filterManager);
+            if (databaseValidationMode != DatabaseValidationMode.NONE) {
                 ConnectionManager cm = connectionManager;
                 if (cm == null) {
                     throw new IllegalStateException(
                             "The `connectionManager` of must be configured when `validate` is configured"
                     );
                 }
-                cm.execute(con -> {
+                DatabaseValidationException validationException = cm.execute(con -> {
                     try {
-                        DbValidators.validate(entityManager, con);
+                        return DatabaseValidators.validate(entityManager, con);
                     } catch (SQLException ex) {
                         throw new ExecutionException(
                                 "Cannot validate the database because of SQL exception",
                                 ex
                         );
                     }
-                    return null;
                 });
+                if (validationException != null) {
+                    if (databaseValidationMode == DatabaseValidationMode.ERROR) {
+                        throw validationException;
+                    }
+                    LOGGER.warn(validationException.getMessage(), validationException);
+                }
             }
             createTriggersIfNecessary();
-            FilterManager filterManager = createFilterManager();
             BinLogParser binLogParser = new BinLogParser();
             BinLog binLog = new BinLog(
                     entityManager,
@@ -892,6 +902,27 @@ class JSqlClientImpl implements JSqlClient {
                 }
             }
             return new FilterManager(builtInFilters, mergedFilters, mergedDisabledFilters);
+        }
+
+        private void validateFilteredAssociations(FilterManager filterManager) {
+            for (ImmutableType type : entityManager.getAllTypes()) {
+                if (type.isEntity()) {
+                    for (ImmutableProp prop : type.getProps().values()) {
+                        if (!prop.isNullable() &&
+                                prop.isReference(TargetLevel.ENTITY) &&
+                                filterManager.contains(prop.getTargetType())
+                        ) {
+                            throw new ModelException(
+                                    "Illegal reference association property \"" +
+                                            prop +
+                                            "\", it must be nullable because the target type \"" +
+                                            prop.getTargetType() +
+                                            "\" may be handled by some global filters"
+                            );
+                        }
+                    }
+                }
+            }
         }
     }
 }

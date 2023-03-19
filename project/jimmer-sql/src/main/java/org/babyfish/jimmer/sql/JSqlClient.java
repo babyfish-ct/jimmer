@@ -221,7 +221,7 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setBinLogObjectMapper(ObjectMapper mapper);
 
         @OldChain
-        Builder setValidate(boolean validate);
+        Builder setDatabaseValidationMode(DatabaseValidationMode mode);
 
         JSqlClient build();
     }

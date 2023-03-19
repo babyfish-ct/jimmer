@@ -187,7 +187,7 @@ public class SqlClientConfig {
         } else {
             builder.setExecutor(executor);
         }
-        builder.setValidate(properties.isValidate());
+        builder.setDatabaseValidationMode(properties.getDatabaseValidationMode());
 
         if (cacheFactory != null) {
             builder.setCaches(cfg -> {

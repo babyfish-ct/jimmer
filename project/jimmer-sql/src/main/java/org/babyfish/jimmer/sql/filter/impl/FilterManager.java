@@ -259,6 +259,16 @@ public class FilterManager implements Filters {
         return builtIns;
     }
 
+    public boolean contains(ImmutableType type) {
+        for (ImmutableType t = type; t != null; t = t.getSuperType()) {
+            if (filterMap.containsKey(t)) {
+                // No matter enabled or disabled
+                return true;
+            }
+        }
+        return false;
+    }
+
     private Filter<Props> create(ImmutableType type) {
         return create(type, false);
     }

@@ -11,6 +11,7 @@ import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.spi.EntityPropImplementor;
 import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
@@ -539,6 +540,16 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         validateDeclaringEntity("storage");
         storage = Storages.of(this);
         storageResolved = true;
+        if (storage instanceof ColumnDefinition && isReference(TargetLevel.PERSISTENT)) {
+            if (!((ColumnDefinition) storage).isForeignKey()) {
+                throw new ModelException(
+                    "Illegal reference association property \"" +
+                            this +
+                            "\", it is based on fake foreign key(`foreignKey` = false), " +
+                            "so that it must be nullable"
+                );
+            }
+        }
         return (S)storage;
     }
 
