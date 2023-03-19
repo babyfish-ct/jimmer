@@ -23,6 +23,7 @@ spring:
 # generated TypeScript code contain the DTO model hidden by jimmer backend
 jimmer:
   show-sql: true
+  database-validation-mode: ERROR
   client:
     ts:
       path: /ts.zip
