@@ -137,7 +137,7 @@ class KSqlClientDsl internal constructor(
         javaBuilder.addDraftInterceptors(interceptor)
     }
 
-    fun setDatabaseValidationError(mode: DatabaseValidationMode) {
+    fun setDatabaseValidationMode(mode: DatabaseValidationMode) {
         javaBuilder.setDatabaseValidationMode(mode)
     }
 
