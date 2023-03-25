@@ -1,0 +1,98 @@
+---
+sidebar_position: 5
+title: 启动应用
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 配置EnitytManager
+
+和JPA的EntityManager完全不同，Jimmer中的EntityManager是一个非常简单的全局对象，用于描述所有实体类型，由代码生成器。
+
+在[上一篇文章](./generate)中，我们介绍了编译时生成更多的源代码。
+
+现在我们需要使用自动生成`JimmerModule.java`或`JimmerModule.kt`，添加一个Spring配置。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="JimmerConfig.java"
+package com.example;
+
+// highlight-next-line
+import com.example.model.JimmerModule;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class JimmerConfig {
+
+    @Bean
+    public EntityManager entityManager() {
+        // highlight-next-line
+        return JimmerModule.ENTITY_MANAGER;
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="JimmerConfig.kt"
+package com.example
+
+// highlight-next-line
+import com.example.model.ENTITY_MANAGER
+
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+
+@Configuration
+class JimmerConfig {
+
+    @Bean
+    fun entityManager(): EntityManager =
+        // highlight-next-line
+        ENTITY_MANAGER
+}
+```
+
+</TabItem>
+</Tabs>
+
+## 配置数据源
+
+修改application.properties或application.yml
+
+<Tabs groupId="springBoot">
+<TabItem value="properties" label="application.properties">
+
+```
+spring.datasource.driver-class-name = com.mysql.cj.jdbc.Driver
+spring.datasource.url: jdbc:mysql://localhost:3306/jimmer_demo
+spring.datasource.username: root
+spring.datasource.password: 123456
+```
+
+</TabItem>
+<TabItem value="maven" label="application.yml">
+
+```
+spring:
+    datasource:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://localhost:3306/jimmer_demo
+        username: root
+        password: 123456
+```
+
+</TabItem>
+</Tabs>
+
+## 启动SpringBoot
+
+现在，万事具备，可以启动SpringBoot程序了。
+
+本教程后续内容围绕基于这个项目进行修改，逐步讲解Jimmer的各种功能。
