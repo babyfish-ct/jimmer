@@ -1,0 +1,633 @@
+---
+sidebar_position: 2
+title: 初识查询
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+[上一篇文档](./repository)中，我们定义的Repository接口并没有定义任何方法，因为从基接口继承到的行为足够我们展示本文的示例了。
+
+## 查询简单对象
+
+在任何位置注入`bookStoreRepository`，如此调用
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+List<BookStore> stores = bookStoreRepository.findAll();
+System.out.println(stores);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val stores = bookStoreRepository.findAll()
+println(stores)
+```
+
+</TabItem>
+</Tabs>
+
+打印结果为(为了方便阅读，做了格式化)
+
+```json
+[
+    {
+        "id" : 1,
+        "name" : "O'REILLY",
+        "website" : null
+    }, {
+        "id" : 2,
+        "name" : "MANNING",
+        "website" : null
+    }
+]
+```
+
+执行的SQL为(为了方便阅读，做了格式化)
+
+```sql
+select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE 
+from BOOK_STORE as tb_1_
+```
+
+## 查询复杂数据结构
+
+在任何位置注入`bookStoreRepository`，如此调用
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+List<BookStore> stores = bookStoreRepository.findAll(
+    BookStoreFetcher.$
+        .allScalarFields()
+        .books(
+            BookFetcher.$
+                .allScalarFields()
+                .authors(
+                    AuthorFetcher.$
+                        .allScalarFields()
+                )
+        )
+);
+System.out.println(stores);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val stores = bookStoreRepository.findAll(
+    newFetcher(BookStore::class).by {
+        allScalarFields()
+        books {
+            allScalarFields()
+            authors {
+                allScalarFields()
+            }
+        }
+    }
+)
+println(stores)
+```
+
+</TabItem>
+</Tabs>
+
+必要说明：
+
+-   `findAll`方法的参数叫对象抓取器。Jimmer可以查询任意复杂的数据结构，对象抓取器用于指定被查询数据结构的形状。
+
+-   Java代码中，`BookStoreFetcher`、`BookFetcher`和`AuthorFetcher`是预编译器自动生成的代码，包名和对应实体一致。
+
+-   Kotlin代码中
+    -   `newFetcher`为`org.babyfish.jimmer.sql.kt.fetcher.newFetcher`
+    -   `by`函数是扩展函数，是预编译器自动生成的代码，包名和对应实体一致。
+
+-   `allScalarFields`表示盲目查询实体的所有非关联字段，不做精细控制。
+
+打印结果为(为了方便阅读，做了格式化)
+
+```json
+[
+    {
+        "id":1,
+        "name":"O'REILLY",
+        "website":null,
+        "books":[
+            {
+                "id":6,
+                "name":"Effective TypeScript",
+                "edition":3,
+                "price":88,
+                "authors":[
+                    {
+                        "id":3,
+                        "firstName":"Dan",
+                        "lastName":"Vanderkam",
+                        "gender":"MALE"
+                    }
+                ]
+            },
+            {
+                "id":5,
+                "name":"Effective TypeScript",
+                "edition":2,
+                "price":69,
+                "authors":[
+                    {
+                        "id":3,
+                        "firstName":"Dan",
+                        "lastName":"Vanderkam",
+                        "gender":"MALE"
+                    }
+                ]
+            },
+            {
+                "id":4,
+                "name":"Effective TypeScript",
+                "edition":1,
+                "price":73,
+                "authors":[
+                    {
+                        "id":3,
+                        "firstName":"Dan",
+                        "lastName":"Vanderkam",
+                        "gender":"MALE"
+                    }
+                ]
+            },
+            {
+                "id":3,
+                "name":"Learning GraphQL",
+                "edition":3,
+                "price":51,
+                "authors":[
+                    {
+                        "id":2,
+                        "firstName":"Alex",
+                        "lastName":"Banks",
+                        "gender":"MALE"
+                    },
+                    {
+                        "id":1,
+                        "firstName":"Eve",
+                        "lastName":"Procello",
+                        "gender":"FEMALE"
+                    }
+                ]
+            },
+            {
+                "id":2,
+                "name":"Learning GraphQL",
+                "edition":2,
+                "price":55,
+                "authors":[
+                    {
+                        "id":2,
+                        "firstName":"Alex",
+                        "lastName":"Banks",
+                        "gender":"MALE"
+                    },
+                    {
+                        "id":1,
+                        "firstName":"Eve",
+                        "lastName":"Procello",
+                        "gender":"FEMALE"
+                    }
+                ]
+            },
+            {
+                "id":1,
+                "name":"Learning GraphQL",
+                "edition":1,
+                "price":null,
+                "authors":[
+                    {
+                        "id":2,
+                        "firstName":"Alex",
+                        "lastName":"Banks",
+                        "gender":"MALE"
+                    },
+                    {
+                        "id":1,
+                        "firstName":"Eve",
+                        "lastName":"Procello",
+                        "gender":"FEMALE"
+                    }
+                ]
+            },
+            {
+                "id":9,
+                "name":"Programming TypeScript",
+                "edition":3,
+                "price":48,
+                "authors":[
+                    {
+                        "id":4,
+                        "firstName":"Boris",
+                        "lastName":"Cherny",
+                        "gender":"MALE"
+                    }
+                ]
+            },
+            {
+                "id":8,
+                "name":"Programming TypeScript",
+                "edition":2,
+                "price":45,
+                "authors":[
+                    {
+                        "id":4,
+                        "firstName":"Boris",
+                        "lastName":"Cherny",
+                        "gender":"MALE"
+                    }
+                ]
+            },
+            {
+                "id":7,
+                "name":"Programming TypeScript",
+                "edition":1,
+                "price":48,
+                "authors":[
+                    {
+                        "id":4,
+                        "firstName":"Boris",
+                        "lastName":"Cherny",
+                        "gender":"MALE"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id":2,
+        "name":"MANNING",
+        "website":null,
+        "books":[
+            {
+                "id":12,
+                "name":"GraphQL in Action",
+                "edition":3,
+                "price":80,
+                "authors":[
+                    {
+                        "id":5,
+                        "firstName":"Samer",
+                        "lastName":"Buna",
+                        "gender":"MALE"
+                    }
+                ]
+            },
+            {
+                "id":11,
+                "name":"GraphQL in Action",
+                "edition":2,
+                "price":81,
+                "authors":[
+                    {
+                        "id":5,
+                        "firstName":"Samer",
+                        "lastName":"Buna",
+                        "gender":"MALE"
+                    }
+                ]
+            },
+            {
+                "id":10,
+                "name":"GraphQL in Action",
+                "edition":1,
+                "price":80,
+                "authors":[
+                    {
+                        "id":5,
+                        "firstName":"Samer",
+                        "lastName":"Buna",
+                        "gender":"MALE"
+                    }
+                ]
+            }
+        ]
+    }
+]
+```
+
+执行的SQL为(为了方便阅读，做了格式化)
+
+```sql
+/* 第一步，查询书店 */
+select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE 
+from BOOK_STORE as tb_1_
+
+/* 第二步，为上一步得到的所有书店查询相关的书籍 */
+select tb_1_.STORE_ID, tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE 
+from BOOK as tb_1_ 
+where tb_1_.STORE_ID in (
+    ?, ?
+    /* 实际参数列表：1, 2 */
+)
+
+/* 第三步，为上一步得到的所有书籍查询相关的作者 */
+select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER 
+from AUTHOR as tb_1_ 
+inner join BOOK_AUTHOR_MAPPING as tb_2_ 
+    on tb_1_.ID = tb_2_.AUTHOR_ID 
+where tb_2_.BOOK_ID in (
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    /* 实际参数列表：6, 5, 4, 12, 11, 10, 3, 2, 1, 9, 8, 7 */
+)
+```
+
+可见，指定对象抓取器后，Jimmer会完成逐层查询，知道整个数据结构查询完成为止。
+
+:::tip
+对象抓取器优势：
+
+-   非关联属性也可以精细控制（注意：本例子未展示，只是用`allScalarFields`盲目查询所有非关联字段），这种能力对以下两种情况非常有用：
+
+    -   实体字段非常多，但是当前业务只需要很少一部分。
+
+    -   权限管理系统具备字段级限制，当前用户并没有权限访问所有字段。
+
+-   关联属性的查询是批量化的，对于每一层关联，Jimmer都是用批量查询一条SQL完成，解决`N + 1`查询问题
+
+    然而，如果某个批次数据太多，Jimmer会自动截断成多个批次，不强求必须一条SQL完成。批次大小可以配置：
+
+    -   非集合关联（一对一、多对一）：由spring boot的配置属性`jimmer.default-batch-size`控制，默认256
+    -   集合关联（一对多、一对多）：由spring boot的配置属性`jimmer.default-list-batch-size`控制，默认16
+
+    注意：Oracle下，配置值不得大于1000
+
+-   不仅可以精细控制每一个被映射到数据库的属性是否需要，还可以控制业务计算属性是否需要。
+
+    所谓业务计算属性，指不能从数据库简单映射的属性，必须靠业务系统计算才能得到的复杂属性。
+
+    业务计算属性属性将会在后续教程中讲解，这里读者明白对象抓取器有这个能力即可。
+
+-   Jimmer可以为关联属性/计算属性启用缓存。一旦某些关联属性/计算属性启用了缓存，对象抓取器将会和自动缓存交互，而不只是简单是生成SQL语句。
+
+    无论关联属性/计算属性的查询是单纯的SQL行为，还是需要混入缓存行为，对对象抓取器的使用者透明。
+
+-   如果聚合根对象是分页查询的结果（注意：本例子未展示，只是用`java.util.List`返回所有数据，并未使用分页查询），对象抓取器都所有行为都发生在分页后。
+:::
+
+## 递归查询
+
+上文中，我们演示的复杂数据结构查询，但数据结构的深度是已知的。
+
+接下来，我们演示无限深度数据结构查询，递归查询。
+
+在任何位置注入`treeNodeRepository`，如此调用
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+TreeNode treeNode = treeNodeRepository.findNullable(
+    1L,
+    TreeNodeFetcher.$
+        .allScalarFields()
+        .childNodes(
+            TreeNodeFetcher.$
+                    .allScalarFields(),
+            // highlight-next-line
+            cfg -> cfg.recursive()
+        )
+);
+System.out.println(treeNode);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNode = treeNodeRepository.findNullable(
+    1L,
+    newFetcher(TreeNode::class).by {
+        allScalarFields()
+        childNodes({
+            // highlight-next-line
+            recursive()
+        }) {
+            allScalarFields()
+        }
+    }
+)
+println(treeNode)
+```
+
+</TabItem>
+</Tabs>
+
+打印结果为(为了方便阅读，做了格式化)
+
+```json
+{
+    "id":1,
+    "name":"Home",
+    "childNodes":[
+        {
+            "id":9,
+            "name":"Clothing",
+            "childNodes":[
+                {
+                    "id":18,
+                    "name":"Man",
+                    "childNodes":[
+                        {
+                            "id":19,
+                            "name":"Casual wear",
+                            "childNodes":[
+                                {
+                                    "id":20,
+                                    "name":"Jacket",
+                                    "childNodes":[
+
+                                    ]
+                                },
+                                {
+                                    "id":21,
+                                    "name":"Jeans",
+                                    "childNodes":[
+
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "id":22,
+                            "name":"Formal wear",
+                            "childNodes":[
+                                {
+                                    "id":24,
+                                    "name":"Shirt",
+                                    "childNodes":[
+
+                                    ]
+                                },
+                                {
+                                    "id":23,
+                                    "name":"Suit",
+                                    "childNodes":[
+
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id":10,
+                    "name":"Woman",
+                    "childNodes":[
+                        {
+                            "id":11,
+                            "name":"Casual wear",
+                            "childNodes":[
+                                {
+                                    "id":12,
+                                    "name":"Dress",
+                                    "childNodes":[
+
+                                    ]
+                                },
+                                {
+                                    "id":14,
+                                    "name":"Jeans",
+                                    "childNodes":[
+
+                                    ]
+                                },
+                                {
+                                    "id":13,
+                                    "name":"Miniskirt",
+                                    "childNodes":[
+
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "id":15,
+                            "name":"Formal wear",
+                            "childNodes":[
+                                {
+                                    "id":17,
+                                    "name":"Shirt",
+                                    "childNodes":[
+
+                                    ]
+                                },
+                                {
+                                    "id":16,
+                                    "name":"Suit",
+                                    "childNodes":[
+
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id":2,
+            "name":"Food",
+            "childNodes":[
+                {
+                    "id":6,
+                    "name":"Bread",
+                    "childNodes":[
+                        {
+                            "id":7,
+                            "name":"Baguette",
+                            "childNodes":[
+
+                            ]
+                        },
+                        {
+                            "id":8,
+                            "name":"Ciabatta",
+                            "childNodes":[
+
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id":3,
+                    "name":"Drinks",
+                    "childNodes":[
+                        {
+                            "id":4,
+                            "name":"Coca Cola",
+                            "childNodes":[
+
+                            ]
+                        },
+                        {
+                            "id":5,
+                            "name":"Fanta",
+                            "childNodes":[
+
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+```
+
+执行的SQL为(为了方便阅读，做了格式化)
+
+```sql
+/* 查询聚合根 */
+select tb_1_.NODE_ID, tb_1_.NAME 
+from TREE_NODE as tb_1_ 
+where tb_1_.NODE_ID = ? /* 实际参数: 1 */
+
+/* 查询第一层子节点 */
+select tb_1_.NODE_ID, tb_1_.NAME 
+from TREE_NODE as tb_1_ 
+where tb_1_.PARENT_ID = ? /* 实际参数: 1 */
+
+/* 查询第二层子节点 */
+select tb_1_.PARENT_ID, tb_1_.NODE_ID, tb_1_.NAME 
+from TREE_NODE as tb_1_ 
+where tb_1_.PARENT_ID in (
+    ?, ?
+    /* 实际参数列表: 9, 2 */
+)
+
+/* 查询第三层子节点 */
+select tb_1_.PARENT_ID, tb_1_.NODE_ID, tb_1_.NAME 
+from TREE_NODE as tb_1_ 
+where tb_1_.PARENT_ID in (
+    ?, ?, ?, ?
+    /* 实际参数列表: 18, 10, 6, 3 */
+)
+
+/* 查询第四层子节点 */
+select tb_1_.PARENT_ID, tb_1_.NODE_ID, tb_1_.NAME 
+from TREE_NODE as tb_1_ 
+where tb_1_.PARENT_ID in (
+    ?, ?, ?, ?, ?, ?, ?, ?,
+    /* 实际参数列表: 19, 22, 11, 15, 7, 8, 4 */
+)
+
+/* 查询第五层子节点 */
+select tb_1_.PARENT_ID, tb_1_.NODE_ID, tb_1_.NAME 
+from TREE_NODE as tb_1_ 
+where tb_1_.PARENT_ID in (
+    ?, ?, ?, ?, ?, ?, ?, ?, ?
+    /* 实际参数列表: 20, 21, 24, 23, 12, 14, 13, 17, 16 */
+)
+```
