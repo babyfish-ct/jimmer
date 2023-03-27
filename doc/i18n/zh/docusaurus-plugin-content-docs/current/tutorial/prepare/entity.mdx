@@ -144,7 +144,7 @@ import TabItem from '@theme/TabItem';
         String lastName();
 
         /*
-         * 这里，Gender是一个枚举，代码忽略
+         * 这里，Gender是一个枚举，代码稍后给出
          */
         Gender gender();
     }
@@ -170,7 +170,7 @@ import TabItem from '@theme/TabItem';
         val lastName: String
 
         /*
-         * 这里，Gender是一个枚举，代码忽略
+         * 这里，Gender是一个枚举，，代码稍后给出
          */
         val gender: Gender
     }
@@ -178,6 +178,57 @@ import TabItem from '@theme/TabItem';
 
     </TabItem>
     </Tabs>
+
+    其中`Gender`是一个枚举，只有两个选项：`MALE`和`FEMALE`。
+
+    ORM处理枚举有两种方式：
+    -   按Java枚举的名称映射为字符串：可观察性优先的选择，也是默认的选项。
+    -   安Java美剧的orinal映射为数字：性能优先的选择。
+
+    虽然本教程示例按照默认方式把枚举映射成字符串，但数据库中check约束限定的取值是`M`和`F`，并非`MALE`和`FEMALE`，所以，这个没有需要简单配置一下。
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Author.java"
+    package com.example.model;
+
+    import org.babyfish.jimmer.sql.EnumItem;
+
+    public enum Gender {
+
+        @EnumItem(name = "M")
+        MALE,
+
+        @EnumItem(name = "F")
+        FEMALE
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    package com.example.model
+
+    import org.babyfish.jimmer.sql.EnumItem
+
+    enum class Gender {
+
+        @EnumItem(name = "M")
+        MALE,
+
+        @EnumItem(name = "F")
+        FEMALE
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    :::info
+    完整的自定义标量类型的映射，请参见**TODO**
+    :::
 
 -   TreeNode
 
