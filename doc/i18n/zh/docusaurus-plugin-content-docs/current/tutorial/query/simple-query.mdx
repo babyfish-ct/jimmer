@@ -44,7 +44,7 @@ import com.example.model.Book
 
 import org.babyfish.jimmer.spring.repository.KRepository
 
-interface BookRepository : KRepository<BookStore, Long> {
+interface BookRepository : KRepository<Book, Long> {
 
     fun findByNameOrderByEditionDesc(
         name: String?
@@ -107,7 +107,7 @@ import com.example.model.Book
 
 import org.babyfish.jimmer.spring.repository.KRepository
 
-interface BookRepository : KRepository<BookStore, Long> {
+interface BookRepository : KRepository<Book, Long> {
 
     fun findByNameLikeIgnoreCaseAndPriceBetween(
         name: String? = null,
@@ -128,7 +128,7 @@ interface BookRepository : KRepository<BookStore, Long> {
     <TabItem value="java" label="Java">
 
     ```java
-    List<Book> books = bookStoreRepository
+    List<Book> books = bookRepository
         .findByNameLikeIgnoreCaseAndPriceBetween(
             null,
             null,
@@ -140,7 +140,7 @@ interface BookRepository : KRepository<BookStore, Long> {
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    val books = bookStoreRepository
+    val books = bookRepository
         .findByNameOrderByEditionDesc()
     ```
 
@@ -159,7 +159,7 @@ interface BookRepository : KRepository<BookStore, Long> {
     <TabItem value="java" label="Java">
 
     ```java
-    List<Book> books = bookStoreRepository
+    List<Book> books = bookRepository
         .findByNameLikeIgnoreCaseAndPriceBetween(
             "G",
             null,
@@ -171,7 +171,7 @@ interface BookRepository : KRepository<BookStore, Long> {
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    val books = bookStoreRepository
+    val books = bookRepository
         .findByNameOrderByEditionDesc(name = "G")
     ```
 
@@ -191,7 +191,7 @@ interface BookRepository : KRepository<BookStore, Long> {
     <TabItem value="java" label="Java">
 
     ```java
-    List<Book> books = bookStoreRepository
+    List<Book> books = bookRepository
         .findByNameLikeIgnoreCaseAndPriceBetween(
             null,
             new BigDecimal(40),
@@ -203,7 +203,7 @@ interface BookRepository : KRepository<BookStore, Long> {
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    val books = bookStoreRepository
+    val books = bookRepository
         .findByNameOrderByEditionDesc(
             minPice = BigDecimal(40)
         )
@@ -225,7 +225,7 @@ interface BookRepository : KRepository<BookStore, Long> {
     <TabItem value="java" label="Java">
 
     ```java
-    List<Book> books = bookStoreRepository
+    List<Book> books = bookRepository
         .findByNameLikeIgnoreCaseAndPriceBetween(
             null,
             null,
@@ -237,7 +237,7 @@ interface BookRepository : KRepository<BookStore, Long> {
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    val books = bookStoreRepository
+    val books = bookRepository
         .findByNameOrderByEditionDesc(
             maxPice = BigDecimal(60)
         )
@@ -260,7 +260,7 @@ interface BookRepository : KRepository<BookStore, Long> {
     <TabItem value="java" label="Java">
 
     ```java
-    List<Book> books = bookStoreRepository
+    List<Book> books = bookRepository
         .findByNameLikeIgnoreCaseAndPriceBetween(
             null,
             new BigDecimal(40),
@@ -272,7 +272,7 @@ interface BookRepository : KRepository<BookStore, Long> {
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    val books = bookStoreRepository
+    val books = bookRepository
         .findByNameOrderByEditionDesc(
             null,
             BigDecimal(40),
@@ -299,7 +299,7 @@ interface BookRepository : KRepository<BookStore, Long> {
     <TabItem value="java" label="Java">
 
     ```java
-    List<Book> books = bookStoreRepository
+    List<Book> books = bookRepository
         .findByNameLikeIgnoreCaseAndPriceBetween(
             "G",
             new BigDecimal(40),
@@ -311,7 +311,7 @@ interface BookRepository : KRepository<BookStore, Long> {
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    val books = bookStoreRepository
+    val books = bookRepository
         .findByNameOrderByEditionDesc(
             "G",
             BigDecimal(40),
@@ -370,7 +370,7 @@ import com.example.model.Book
 
 import org.babyfish.jimmer.spring.repository.KRepository
 
-interface BookRepository : KRepository<BookStore, Long> {
+interface BookRepository : KRepository<Book, Long> {
 
     // name -> `Book.name`
     // storeName -> `Book.store.name`
@@ -402,7 +402,7 @@ interface BookRepository : KRepository<BookStore, Long> {
     <TabItem value="java" label="Java">
 
     ```java
-    List<Book> books = bookStoreRepository
+    List<Book> books = bookRepository
         .findByNameStartsWithAndStoreName("G", null);
     ```
 
@@ -410,7 +410,7 @@ interface BookRepository : KRepository<BookStore, Long> {
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    val books = bookStoreRepository
+    val books = bookRepository
         .findByNameStartsWithAndStoreName("G")
     ```
 
@@ -431,7 +431,7 @@ interface BookRepository : KRepository<BookStore, Long> {
     <TabItem value="java" label="Java">
 
     ```java
-    List<Book> books = bookStoreRepository
+    List<Book> books = bookRepository
         .findByNameStartsWithAndStoreName(null, "MANNING");
     ```
 
@@ -439,7 +439,7 @@ interface BookRepository : KRepository<BookStore, Long> {
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    val books = bookStoreRepository
+    val books = bookRepository
         .findByNameStartsWithAndStoreName(null, "MANNING")
     ```
 
@@ -500,7 +500,7 @@ import com.example.model.Book
 import org.babyfish.jimmer.spring.repository.KRepository
 import org.springframework.data.domain.Sort
 
-interface BookRepository : KRepository<BookStore, Long> {
+interface BookRepository : KRepository<Book, Long> {
 
     fun findByNameLikeIgnoreCase(
 
@@ -564,15 +564,13 @@ val sort = SortUtils.toSort(
 </TabItem>
 </Tabs>
 
-下面的例子使用`SortUtils`。
-
 -   不需要JOIN的ORDER BY
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
     ```java
-    List<Book> books = bookStoreRepository
+    List<Book> books = bookRepository
         .findByName(
             null, 
             SortUtils.toSort("name, edition desc")
@@ -583,7 +581,7 @@ val sort = SortUtils.toSort(
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    val books = bookStoreRepository
+    val books = bookRepository
         .findByName(
             null, 
             SortUtils.toSort("name, edition desc")
@@ -610,7 +608,7 @@ val sort = SortUtils.toSort(
     <TabItem value="java" label="Java">
 
     ```java
-    List<Book> books = bookStoreRepository
+    List<Book> books = bookRepository
         .findByName(
             null, 
             SortUtils.toSort("store.name, name, edition desc")
@@ -621,7 +619,7 @@ val sort = SortUtils.toSort(
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    val books = bookStoreRepository
+    val books = bookRepository
         .findByName(
             null, 
             SortUtils.toSort("store.name, name, edition desc")
@@ -698,7 +696,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Page
 /* highlight-end */
 
-interface BookRepository : KRepository<BookStore, Long> {
+interface BookRepository : KRepository<Book, Long> {
 
     fun findByName(
 
@@ -725,7 +723,7 @@ interface BookRepository : KRepository<BookStore, Long> {
 <TabItem value="java" label="Java">
 
 ```java
-Page<Book> page = bookStoreRepository
+Page<Book> page = bookRepository
     .findByName(
         null, 
         PageRequest.of(
@@ -740,7 +738,7 @@ Page<Book> page = bookStoreRepository
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-val page = bookStoreRepository
+val page = bookRepository
     .findByName(
         null, 
         PageRequest.of(
@@ -907,7 +905,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Page
 
-interface BookRepository : KRepository<BookStore, Long> {
+interface BookRepository : KRepository<Book, Long> {
 
     fun findByName(
 
@@ -920,7 +918,7 @@ interface BookRepository : KRepository<BookStore, Long> {
         pageable: Pageable,
 
         // highlight-next-line
-        fetcher: Fetcher<BookStore>? = null
+        fetcher: Fetcher<Book>? = null
     ): Page<Book>
 }
 ```
@@ -936,7 +934,7 @@ interface BookRepository : KRepository<BookStore, Long> {
 <TabItem value="java" label="Java">
 
 ```java
-Page<Book> page = bookStoreRepository
+Page<Book> page = bookRepository
     .findByName(
         null, 
         PageRequest.of(
@@ -949,7 +947,7 @@ Page<Book> page = bookStoreRepository
             .allScalarFields()
             // highlight-next-line
             .store(
-                BookStoreFetcher.$
+                BookFetcher.$
                     .name() // 关联对象仅查询id(隐含+强制)和name
             )
             // highlight-next-line
@@ -965,7 +963,7 @@ Page<Book> page = bookStoreRepository
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-val page = bookStoreRepository
+val page = bookRepository
     .findByName(
         null, 
         PageRequest.of(
@@ -981,6 +979,7 @@ val page = bookStoreRepository
                 // 关联对象仅查询id(隐含+强制)和name
                 name()
             }
+            // highlight-next-line
             authors {
                 // 关联对象仅查询id(隐含+强制)、firstName和lastName
                 firstName()
@@ -1181,3 +1180,11 @@ where tb_2_.BOOK_ID in (
     /* 实际参数列表：10, 3, 2, 1, 9 */
 )
 ```
+
+:::tip
+无论是本文讨论的简单查询，还是下一篇文档要讨论的[复杂查询](./complex-query)，
+只要查询返回实体对象或其集合，而非简单的列元祖，
+都建议最后添加一个`Fetcher`参数，让所有对象查询具备如同`GraphQL`一样的强大数据结构形状控制能力。
+
+这会为上层业务开发带来巨大的便利。
+:::
