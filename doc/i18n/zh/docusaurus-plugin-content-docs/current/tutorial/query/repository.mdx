@@ -34,6 +34,8 @@ Jimmer整合了spring data，为Java用户和Kotlin用户各自提供了一个Re
     ```java title="BookStoreRepostory.java"
     package com.example.repository;
 
+    import com.example.model.BookStore;
+
     import org.babyfish.jimmer.spring.repository.JRepository;
 
     public interface BookRepository extends JRepository<BookStore, Long> {}
@@ -42,10 +44,12 @@ Jimmer整合了spring data，为Java用户和Kotlin用户各自提供了一个Re
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
     
-    ```java title="BookStoreRepostory.kt"
-    package com.example.repository;
+    ```kotlin title="BookStoreRepostory.kt"
+    package com.example.repository
 
-    import org.babyfish.jimmer.spring.repository.KRepository;
+    import com.example.model.BookStore
+
+    import org.babyfish.jimmer.spring.repository.KRepository
 
     interface BookRepository : KRepository<BookStore, Long>
     ```
@@ -61,6 +65,8 @@ Jimmer整合了spring data，为Java用户和Kotlin用户各自提供了一个Re
     ```java title="BookRepostory.java"
     package com.example.repository;
 
+    import com.example.model.Book;
+
     import org.babyfish.jimmer.spring.repository.JRepository;
 
     public interface BookRepository extends JRepository<Book, Long> {}
@@ -69,10 +75,12 @@ Jimmer整合了spring data，为Java用户和Kotlin用户各自提供了一个Re
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
     
-    ```java title="BookRepostory.kt"
-    package com.example.repository;
+    ```kotlin title="BookRepostory.kt"
+    package com.example.repository
 
-    import org.babyfish.jimmer.spring.repository.KRepository;
+    import com.example.model.Book
+
+    import org.babyfish.jimmer.spring.repository.KRepository
 
     interface BookRepository : KRepository<Book, Long>
     ```
@@ -88,6 +96,8 @@ Jimmer整合了spring data，为Java用户和Kotlin用户各自提供了一个Re
     ```java title="AuthorRepostory.java"
     package com.example.repository;
 
+    import com.example.model.Auhtor;
+
     import org.babyfish.jimmer.spring.repository.JRepository;
 
     public interface AuthorRepository extends JRepository<Author, Long> {}
@@ -96,10 +106,12 @@ Jimmer整合了spring data，为Java用户和Kotlin用户各自提供了一个Re
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
     
-    ```java title="AuthorRepostory.kt"
-    package com.example.repository;
+    ```kotlin title="AuthorRepostory.kt"
+    package com.example.repository
 
-    import org.babyfish.jimmer.spring.repository.KRepository;
+    import com.example.model.Author
+
+    import org.babyfish.jimmer.spring.repository.KRepository
 
     interface AuthorRepository : KRepository<Author, Long>
     ```
@@ -115,6 +127,8 @@ Jimmer整合了spring data，为Java用户和Kotlin用户各自提供了一个Re
     ```java title="TreeNodeRepostory.java"
     package com.example.repository;
 
+    import com.example.model.TreeNode;
+
     import org.babyfish.jimmer.spring.repository.JRepository;
 
     public interface TreeNodeRepository extends JRepository<TreeNode, Long> {}
@@ -123,10 +137,12 @@ Jimmer整合了spring data，为Java用户和Kotlin用户各自提供了一个Re
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
     
-    ```java title="TreeNodeRepostory.kt"
-    package com.example.repository;
+    ```kotlin title="TreeNodeRepostory.kt"
+    package com.example.repository
 
-    import org.babyfish.jimmer.spring.repository.KRepository;
+    import com.example.model.TreeNode
+
+    import org.babyfish.jimmer.spring.repository.KRepository
 
     interface TreeNodeRepository : KRepository<TreeNode, Long>
     ```

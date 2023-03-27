@@ -129,10 +129,11 @@ jimmer:
 
 除了kotlin项目必需的`jimmer.language`外，还有其他配置。
 
-这里再介绍很拥有的基本配置，对Java和Kotlin都有效
+这里再介绍几个很用的基本配置，对Java和Kotlin都有效
 
 |属性名|类型|默认值|描述|
 |---|---|---|---|
+|jimmer.dialect|string|org.babyfish.jimmer.sql.dialect.DefaultDialect|数据库方言类名|
 |jimmer.show-sql|boolean|false|如果为true，自动打印被执行的SQL|
 |jimmer.database-validation-mode|NONE&#124;WARNING&#124;ERROR|NONE|如果非NONE，验证数据库结构和代码实体类型结构的一致性，如果不一致，WARNING导致日志告警，ERROR导致报错|
 
@@ -142,6 +143,7 @@ jimmer:
 <TabItem value="properties" label="application.properties">
 
 ```
+jimmer.dialect = org.babyfish.jimmer.sql.dialect.MySqlDialect
 jimmer.show-sql = true
 jimmer.database-validation-mode = ERROR
 ...省略其他配置...
@@ -152,6 +154,7 @@ jimmer.database-validation-mode = ERROR
 
 ```
 jimmer:
+    dialect: org.babyfish.jimmer.sql.dialect.MySqlDialect
     show-sql: true
     database-validation-mode: ERROR
     ...省略其他配置...

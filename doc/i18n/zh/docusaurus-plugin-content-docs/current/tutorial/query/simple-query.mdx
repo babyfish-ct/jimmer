@@ -6,4 +6,1179 @@ title: 简单查询
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## TODO
+和其他spring-data实现一样，用户可以在Repository接口内部定义抽象方法。只要这些方法的名称、参数和返回值遵循约定，Jimmer自动实现它们。比如
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookRepository.java"
+package com.example.repository;
+
+import com.example.model.Book;
+
+import org.babyfish.jimmer.spring.repository.JRepository;
+import org.jetbrains.annotations.Nullable;
+
+public interface BookRepository extends JRepository<Book, Long> {
+
+    List<Book> findByNameOrderByEditionDesc(
+        @Nullable String name
+    );
+
+    List<Book> findByPriceBetweenOrderByName(
+        @Nullable BigDecimal minPrice, 
+        @Nullable BigDecimal maxPrice
+    );
+
+    long countByName(String name);
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookRepository.kt"
+package com.example.repository
+
+import com.example.model.Book
+
+import org.babyfish.jimmer.spring.repository.KRepository
+
+interface BookRepository : KRepository<BookStore, Long> {
+
+    fun findByNameOrderByEditionDesc(
+        name: String?
+    ): List<Book>
+
+    fun findByPriceBetweenOrderByName(
+        minPrice: BigDecimal?, 
+        maxPrice: BigDecimal?
+    ): List<Book>
+
+    fun countByName(String name): Long
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::note
+方法的约定形式多样化，但基本用法和spring-data-jpa类似。
+
+因此，请参考[https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#repository-query-keywords](https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#repository-query-keywords)，本文不再赘述。
+:::
+
+## 动态WHERE
+
+你也许发现了，上面的例子中不少参数可以为null。
+
+在Jimmer中，被自动实现的抽象方法天生支持动态查询，即，任何查询参数都可以为null。
+
+让我们来看另外一个更具代表性的例子，抽象方法定义如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookRepository.java"
+package com.example.repository;
+
+import com.example.model.Book;
+
+import org.babyfish.jimmer.spring.repository.JRepository;
+import org.jetbrains.annotations.Nullable;
+
+public interface BookRepository extends JRepository<Book, Long> {
+
+    List<Book> findByNameLikeIgnoreCaseAndPriceBetween(
+        @Nullable String name,
+        @Nullable BigDecimal minPrice,
+        @Nullable BigDecimal maxPrice
+    );
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookRepository.kt"
+package com.example.repository
+
+import com.example.model.Book
+
+import org.babyfish.jimmer.spring.repository.KRepository
+
+interface BookRepository : KRepository<BookStore, Long> {
+
+    fun findByNameLikeIgnoreCaseAndPriceBetween(
+        name: String? = null,
+        minPrice: BigDecimal? = null, 
+        maxPrice: BigDecimal? = null
+    ): List<Book>
+}
+```
+
+</TabItem>
+</Tabs>
+
+该方法的每个参数都可以为null，请看如下6种用法
+
+-   不指定任何参数
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    List<Book> books = bookStoreRepository
+        .findByNameLikeIgnoreCaseAndPriceBetween(
+            null,
+            null,
+            null
+        );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = bookStoreRepository
+        .findByNameOrderByEditionDesc()
+    ```
+
+    </TabItem>
+    </Tabs>
+    
+    生成的SQL如下(为了方便阅读，做了格式化)
+
+    ```sql
+    select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+    from BOOK as tb_1_
+    ```
+
+-   指定name
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    List<Book> books = bookStoreRepository
+        .findByNameLikeIgnoreCaseAndPriceBetween(
+            "G",
+            null,
+            null
+        );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = bookStoreRepository
+        .findByNameOrderByEditionDesc(name = "G")
+    ```
+
+    </TabItem>
+    </Tabs>
+    
+    生成的SQL如下(为了方便阅读，做了格式化)
+
+    ```sql
+    select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+    from BOOK as tb_1_
+    where lower(tb_1_.NAME) like ? /* 实际参数: %g% */
+    ```
+
+-   指定minPrice
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    List<Book> books = bookStoreRepository
+        .findByNameLikeIgnoreCaseAndPriceBetween(
+            null,
+            new BigDecimal(40),
+            null
+        );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = bookStoreRepository
+        .findByNameOrderByEditionDesc(
+            minPice = BigDecimal(40)
+        )
+    ```
+
+    </TabItem>
+    </Tabs>
+    
+    生成的SQL如下(为了方便阅读，做了格式化)
+
+    ```sql
+    select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+    from BOOK as tb_1_
+    where tb_1_.PRICE >= ? /* 实际参数: 40 */
+    ```
+
+-   指定maxPrice
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    List<Book> books = bookStoreRepository
+        .findByNameLikeIgnoreCaseAndPriceBetween(
+            null,
+            null,
+            new BigDecimal(60)
+        );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = bookStoreRepository
+        .findByNameOrderByEditionDesc(
+            maxPice = BigDecimal(60)
+        )
+    ```
+
+    </TabItem>
+    </Tabs>
+    
+    生成的SQL如下(为了方便阅读，做了格式化)
+
+    ```sql
+    select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+    from BOOK as tb_1_
+    where tb_1_.PRICE <= ? /* 实际参数: 60 */
+    ```
+
+-   同时指定minPrice和maxPrice
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    List<Book> books = bookStoreRepository
+        .findByNameLikeIgnoreCaseAndPriceBetween(
+            null,
+            new BigDecimal(40),
+            new BigDecimal(60)
+        );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = bookStoreRepository
+        .findByNameOrderByEditionDesc(
+            null,
+            BigDecimal(40),
+            BigDecimal(60)
+        )
+    ```
+
+    </TabItem>
+    </Tabs>
+    
+    生成的SQL如下(为了方便阅读，做了格式化)
+
+    ```sql
+    select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+    from BOOK as tb_1_
+    where (
+        tb_1_.PRICE between ? /* 实际参数: 40 */ and ? /* 实际参数: 60 */
+    ) 
+    ```
+
+-   指定所有参数
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    List<Book> books = bookStoreRepository
+        .findByNameLikeIgnoreCaseAndPriceBetween(
+            "G",
+            new BigDecimal(40),
+            new BigDecimal(60)
+        );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = bookStoreRepository
+        .findByNameOrderByEditionDesc(
+            "G",
+            BigDecimal(40),
+            BigDecimal(60)
+        )
+    ```
+
+    </TabItem>
+    </Tabs>
+    
+    生成的SQL如下(为了方便阅读，做了格式化)
+
+    ```sql
+    select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+    from BOOK as tb_1_
+    where 
+        where lower(tb_1_.NAME) like ? /* 实际参数: %g% */
+    and (
+        tb_1_.PRICE between ? /* 实际参数: 40 */ and ? /* 实际参数: 60 */
+    ) 
+    ```
+
+## 动态JOIN
+
+用户不但可以对当前被查询的对象的属性施加过滤条件，还可以对关联对象的的属性施加过滤条件，比如
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookRepository.java"
+package com.example.repository;
+
+import com.example.model.Book;
+
+import org.babyfish.jimmer.spring.repository.JRepository;
+import org.jetbrains.annotations.Nullable;
+
+public interface BookRepository extends JRepository<Book, Long> {
+
+    // name -> `Book.name`
+    // storeName -> `Book.store.name`
+    List<Book> findByNameStartsWithAndStoreName(
+        @Nullable String name,
+        @Nullable String storeName
+    );
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookRepository.kt"
+package com.example.repository
+
+import com.example.model.Book
+
+import org.babyfish.jimmer.spring.repository.KRepository
+
+interface BookRepository : KRepository<BookStore, Long> {
+
+    // name -> `Book.name`
+    // storeName -> `Book.store.name`
+    fun findByNameStartsWithAndStoreName(
+        name: String? = null,
+        storeName: String? = null
+    ): List<Book>
+}
+```
+
+</TabItem>
+</Tabs>
+
+这里，`findByNameStartWithAndStoreName`中的`StoreName`，其实是`store.name`。
+
+表示一个先通过`Book.store`关联连接到`BookStore`，再对`BookStore.name`施加条件。
+
+:::note
+-   仅当`storeName`参数被指定时，才会在SQL种生成JOIN
+
+-   能够被约定方法采用的关联必须是非集合关联（一对一、一对多）
+:::
+
+让我们看看如何使用
+
+-   指定参数`name`，不生成JOIN
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    List<Book> books = bookStoreRepository
+        .findByNameStartsWithAndStoreName("G", null);
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = bookStoreRepository
+        .findByNameStartsWithAndStoreName("G")
+    ```
+
+    </TabItem>
+    </Tabs>
+    
+    生成的SQL如下(为了方便阅读，做了格式化)
+
+    ```sql
+    select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+    from BOOK as tb_1_
+    where tb_1_.NAME like ? /* 实际参数: G% */
+    ```
+
+-   指定参数`storeName`，生成JOIN
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    List<Book> books = bookStoreRepository
+        .findByNameStartsWithAndStoreName(null, "MANNING");
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = bookStoreRepository
+        .findByNameStartsWithAndStoreName(null, "MANNING")
+    ```
+
+    </TabItem>
+    </Tabs>
+    
+    生成的SQL如下(为了方便阅读，做了格式化)
+
+    ```sql
+    select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+    from BOOK as tb_1_ 
+    /* highlight-next-line */
+    inner join BOOK_STORE as tb_2_ 
+        on tb_1_.STORE_ID = tb_2_.ID 
+    where tb_2_.NAME = ? /* 实际参数: MANNING */
+    ```
+
+## 动态ORDER BY
+
+只要抽象方法具备一个`org.springframework.data.domain.Sort`类型的参数，就可以动态排序。例如：
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookRepository.java"
+package com.example.repository;
+
+import com.example.model.Book;
+
+import org.babyfish.jimmer.spring.repository.JRepository;
+import org.jetbrains.annotations.Nullable;
+import org.springframework.data.domain.Sort;
+
+public interface BookRepository extends JRepository<Book, Long> {
+
+    List<Book> findByNameLikeIgnoreCase(
+
+        // 后续例子不用此参数，总是给null。
+        // 原因：
+        // 如果一个查询不需要任何参数，从基接口继承的方法足矣，无需定义此方法。
+        // 本例中，此参数的存在的价值，仅仅是为了让当前自定义抽象方法看起来合理。
+        @Nullable String name,
+
+        // highlight-next-line
+        @Nullable Sort sort
+    );
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookRepository.kt"
+package com.example.repository
+
+import com.example.model.Book
+
+import org.babyfish.jimmer.spring.repository.KRepository
+import org.springframework.data.domain.Sort
+
+interface BookRepository : KRepository<BookStore, Long> {
+
+    fun findByNameLikeIgnoreCase(
+
+        // 后续例子不用此参数，总是给null。
+        // 原因：
+        // 如果一个查询不需要任何参数，从基接口继承的函数足矣，无需定义此函数。
+        // 本例中，此参数的存在的价值，仅仅是为了让当前自定义抽象函数看起来合理。
+        name: String? = null,
+
+        // highlight-next-line
+        sort: Sort? = null
+    ): List<Book>
+}
+```
+
+</TabItem>
+</Tabs>
+
+为了方便上层代码从前端接受排序字符串，Jimmer提供了辅助类`org.babyfish.jimmer.spring.model.SortUtils`，把前端传递的字符串转化为`org.springframework.data.domain.Sort`。
+
+其使用方式为
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Sort sort = SortUtils.toSort(
+    "store.name asc", "name asc", "edition desc"
+);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val sort = SortUtils.toSort(
+    "store.name asc", "name asc", "edition desc"
+)
+```
+
+</TabItem>
+</Tabs>
+或
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Sort sort = SortUtils.toSort(
+    "store.name asc, name asc, edition desc"
+);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val sort = SortUtils.toSort(
+    "store.name asc, name asc, edition desc"
+);
+```
+
+</TabItem>
+</Tabs>
+
+下面的例子使用`SortUtils`。
+
+-   不需要JOIN的ORDER BY
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    List<Book> books = bookStoreRepository
+        .findByName(
+            null, 
+            SortUtils.toSort("name, edition desc")
+        );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = bookStoreRepository
+        .findByName(
+            null, 
+            SortUtils.toSort("name, edition desc")
+        )
+    ```
+
+    </TabItem>
+    </Tabs>
+    
+    生成的SQL如下(为了方便阅读，做了格式化)
+
+    ```sql
+    select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+    from BOOK as tb_1_
+    /* highlight-next-line */ 
+    order by 
+        tb_1_.NAME asc, 
+        tb_1_.EDITION desc
+    ```
+
+-   需要JOIN的ORDER BY
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    List<Book> books = bookStoreRepository
+        .findByName(
+            null, 
+            SortUtils.toSort("store.name, name, edition desc")
+        );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = bookStoreRepository
+        .findByName(
+            null, 
+            SortUtils.toSort("store.name, name, edition desc")
+        )
+    ```
+
+    </TabItem>
+    </Tabs>
+    
+    生成的SQL如下(为了方便阅读，做了格式化)
+
+    ```sql
+    select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+    from BOOK as tb_1_ 
+    /* highlight-next-line */
+    left join BOOK_STORE as tb_2_ 
+        on tb_1_.STORE_ID = tb_2_.ID 
+    /* highlight-next-line */
+    order by 
+        tb_2_.NAME asc, 
+        tb_1_.NAME asc, 
+        tb_1_.EDITION desc
+    ```
+
+## 分页查询
+
+要进行分页操作，方法需要
+- 具备一个类型为`org.springframework.data.domain.Pageable`的参数
+- 返回`org.springframework.data.domain.Page<当前实体>`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookRepository.java"
+package com.example.repository;
+
+import com.example.model.Book;
+
+import org.babyfish.jimmer.spring.repository.JRepository;
+import org.jetbrains.annotations.Nullable;
+/* highlight-start */
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
+/* highlight-end */
+
+public interface BookRepository extends JRepository<Book, Long> {
+
+    // highlight-next-line
+    Page<Book> findByName(
+
+        // 后续例子不用此参数，总是给null。
+        // 原因：
+        // 如果一个查询不需要任何参数，从基接口继承的方法足矣，无需定义此方法。
+        // 本例中，此参数的存在的价值，仅仅是为了让当前自定义抽象方法看起来合理。
+        @Nullable String name,
+
+        // highlight-next-line
+        Pageable pageable
+    );
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookRepository.kt"
+package com.example.repository
+
+import com.example.model.Book
+
+import org.babyfish.jimmer.spring.repository.KRepository
+/* highlight-start */
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Page
+/* highlight-end */
+
+interface BookRepository : KRepository<BookStore, Long> {
+
+    fun findByName(
+
+        // 后续例子不用此参数，总是给null。
+        // 原因：
+        // 如果一个查询不需要任何参数，从基接口继承的函数足矣，无需定义此函数。
+        // 本例中，此参数的存在的价值，仅仅是为了让当前自定义抽象函数看起来合理。
+        name: String? = null,
+
+        // highlight-next-line
+        pageable: Pageable
+
+    // highlight-next-line
+    ): Page<Book>
+}
+```
+
+</TabItem>
+</Tabs>
+
+用法如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Page<Book> page = bookStoreRepository
+    .findByName(
+        null, 
+        PageRequest.of(
+            1, // 从0开始，1表示第二页,
+            5,
+            SortUtils.toSort("name, edition desc")
+        )
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val page = bookStoreRepository
+    .findByName(
+        null, 
+        PageRequest.of(
+            1, // 从0开始，1表示第二页,
+            5,
+            SortUtils.toSort("name, edition desc")
+        )
+    )
+```
+
+</TabItem>
+</Tabs>
+
+返回的Page对象如下
+
+```json
+{
+    // highlight-next-line
+    "content":[
+        {
+            "id":10,
+            "name":"GraphQL in Action",
+            "edition":1,
+            "price":80,
+            "store":{
+                "id":2
+            }
+        },
+        {
+            "id":3,
+            "name":"Learning GraphQL",
+            "edition":3,
+            "price":51,
+            "store":{
+                "id":1
+            }
+        },
+        {
+            "id":2,
+            "name":"Learning GraphQL",
+            "edition":2,
+            "price":55,
+            "store":{
+                "id":1
+            }
+        },
+        {
+            "id":1,
+            "name":"Learning GraphQL",
+            "edition":1,
+            "price":45,
+            "store":{
+                "id":1
+            }
+        },
+        {
+            "id":9,
+            "name":"Programming TypeScript",
+            "edition":3,
+            "price":48,
+            "store":{
+                "id":1
+            }
+        }
+    ],
+    "pageable":{
+        "sort":{
+            "unsorted":false,
+            "sorted":true,
+            "empty":false
+        },
+        "pageNumber":1,
+        "pageSize":5,
+        "offset":5,
+        "paged":true,
+        "unpaged":false
+    },
+    // highlight-start
+    "totalPages":3,
+    "totalElements":12,
+    "last":false,
+    "numberOfElements":5,
+    // highlight-end
+    "first":false,
+    "sort":{
+        "unsorted":false,
+        "sorted":true,
+        "empty":false
+    },
+    "number":1,
+    "size":5,
+    "empty":false
+}
+```
+
+
+生成的SQL如下(为了方便阅读，做了格式化)
+
+```sql
+/* 第一步：查询分页前记录总行数 */
+select count(tb_1_.ID) from BOOK as tb_1_
+
+/* 第二步：查询一页面之内的数据 */
+select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+from BOOK as tb_1_ 
+order by 
+    tb_1_.NAME asc, 
+    tb_1_.EDITION desc
+/* MySQL分页 */ 
+/* highlight-next-line */
+limit ?, /* 实际参数: 5(offset) */ ? /* 实际参数: 5(limit) */
+```
+
+## 对象抓取器
+
+对象抓取器是Jimmer特色功能之一，查询任意复杂的数据结构，而非简单实体对象。
+
+让抽象方法具备一个类型为`org.babyfish.jimmer.sql.fetcher.Fetcher<当前实体>`的参数即可。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookRepository.java"
+package com.example.repository;
+
+import com.example.model.Book;
+
+import org.babyfish.jimmer.spring.repository.JRepository;
+// highlight-next-line
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.jetbrains.annotations.Nullable;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
+
+public interface BookRepository extends JRepository<Book, Long> {
+
+    Page<Book> findByName(
+
+        // 后续例子不用此参数，总是给null。
+        // 原因：
+        // 如果一个查询不需要任何参数，从基接口继承的方法足矣，无需定义此方法。
+        // 本例中，此参数的存在的价值，仅仅是为了让当前自定义抽象方法看起来合理。
+        @Nullable String name,
+
+        Pageable pageable,
+
+        // highlight-next-line
+        @Nullable Fetcher<Book> fetcher
+    );
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookRepository.kt"
+package com.example.repository
+
+import com.example.model.Book
+
+import org.babyfish.jimmer.spring.repository.KRepository
+// highlight-next-line
+import org.babyfish.jimmer.sql.fetcher.Fetcher
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Page
+
+interface BookRepository : KRepository<BookStore, Long> {
+
+    fun findByName(
+
+        // 后续例子不用此参数，总是给null。
+        // 原因：
+        // 如果一个查询不需要任何参数，从基接口继承的函数足矣，无需定义此函数。
+        // 本例中，此参数的存在的价值，仅仅是为了让当前自定义抽象函数看起来合理。
+        name: String? = null,
+
+        pageable: Pageable,
+
+        // highlight-next-line
+        fetcher: Fetcher<BookStore>? = null
+    ): Page<Book>
+}
+```
+
+</TabItem>
+</Tabs>
+
+如果不传递Fetcher或者传递简单对象的形状，结果必然和前面例子相似，没必要重复。
+
+所以，我们直接演示查询复杂数据结构
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Page<Book> page = bookStoreRepository
+    .findByName(
+        null, 
+        PageRequest.of(
+            1, // 从0开始，1表示第二页,
+            5,
+            SortUtils.toSort("name, edition desc")
+        ),
+        // highlight-next-line
+        BookFetcher.$
+            .allScalarFields()
+            // highlight-next-line
+            .store(
+                BookStoreFetcher.$
+                    .name() // 关联对象仅查询id(隐含+强制)和name
+            )
+            // highlight-next-line
+            .authors(
+                AuthorFetcher.$
+                    // 关联对象仅查询id(隐含+强制)、firstName和lastName
+                    .firstName().lastName()
+            )
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val page = bookStoreRepository
+    .findByName(
+        null, 
+        PageRequest.of(
+            1, // 从0开始，1表示第二页,
+            5,
+            SortUtils.toSort("name, edition desc")
+        ),
+        // highlight-next-line
+        newFetcher(Book::class).by {
+            allScalarFields()
+            // highlight-next-line
+            store {
+                // 关联对象仅查询id(隐含+强制)和name
+                name()
+            }
+            authors {
+                // 关联对象仅查询id(隐含+强制)、firstName和lastName
+                firstName()
+                lastName()
+            }
+        }
+    )
+```
+
+</TabItem>
+</Tabs>
+
+返回的Page对象如下
+
+```json
+{
+    "content":[
+        {
+            "id":10,
+            "name":"GraphQL in Action",
+            "edition":1,
+            "price":80,
+            // highlight-next-line
+            "store":{
+                "id":2,
+                "name":"MANNING"
+            },
+            // highlight-next-line
+            "authors":[
+                {
+                    "id":5,
+                    "firstName":"Samer",
+                    "lastName":"Buna"
+                }
+            ]
+        },
+        {
+            "id":3,
+            "name":"Learning GraphQL",
+            "edition":3,
+            "price":51,
+            // highlight-next-line
+            "store":{
+                "id":1,
+                "name":"O'REILLY"
+            },
+            // highlight-next-line
+            "authors":[
+                {
+                    "id":2,
+                    "firstName":"Alex",
+                    "lastName":"Banks"
+                },
+                {
+                    "id":1,
+                    "firstName":"Eve",
+                    "lastName":"Procello"
+                }
+            ]
+        },
+        {
+            "id":2,
+            "name":"Learning GraphQL",
+            "edition":2,
+            "price":55,
+            // highlight-next-line
+            "store":{
+                "id":1,
+                "name":"O'REILLY"
+            },
+            // highlight-next-line
+            "authors":[
+                {
+                    "id":2,
+                    "firstName":"Alex",
+                    "lastName":"Banks"
+                },
+                {
+                    "id":1,
+                    "firstName":"Eve",
+                    "lastName":"Procello"
+                }
+            ]
+        },
+        {
+            "id":1,
+            "name":"Learning GraphQL",
+            "edition":1,
+            "price":45,
+            // highlight-next-line
+            "store":{
+                "id":1,
+                "name":"O'REILLY"
+            },
+            // highlight-next-line
+            "authors":[
+                {
+                    "id":2,
+                    "firstName":"Alex",
+                    "lastName":"Banks"
+                },
+                {
+                    "id":1,
+                    "firstName":"Eve",
+                    "lastName":"Procello"
+                }
+            ]
+        },
+        {
+            "id":9,
+            "name":"Programming TypeScript",
+            "edition":3,
+            "price":48,
+            // highlight-next-line
+            "store":{
+                "id":1,
+                "name":"O'REILLY"
+            },
+            // highlight-next-line
+            "authors":[
+                {
+                    "id":4,
+                    "firstName":"Boris",
+                    "lastName":"Cherny"
+                }
+            ]
+        }
+    ],
+    "pageable":{
+        "sort":{
+            "unsorted":false,
+            "sorted":true,
+            "empty":false
+        },
+        "pageNumber":1,
+        "pageSize":5,
+        "offset":5,
+        "paged":true,
+        "unpaged":false
+    },
+    "totalPages":3,
+    "totalElements":12,
+    "last":false,
+    "sort":{
+        "unsorted":false,
+        "sorted":true,
+        "empty":false
+    },
+    "numberOfElements":5,
+    "number":1,
+    "first":false,
+    "size":5,
+    "empty":false
+}
+```
+
+
+生成的SQL如下(为了方便阅读，做了格式化)
+
+```sql
+/* 第一步：查询分页前记录总行数 */
+select count(tb_1_.ID) from BOOK as tb_1_
+
+/* 第二步：查询一页面之内的聚合根对象 */
+select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+from BOOK as tb_1_ 
+order by 
+    tb_1_.NAME asc, 
+    tb_1_.EDITION desc
+/* MySQL分页 */ 
+/* highlight-next-line */
+limit ?, /* 实际参数: 5(offset) */ ? /* 实际参数: 5(limit) */
+
+/* 
+ * 第三步：为分页后的5条数据（非分页前的12条数据）
+ * 查询属性`Book.store`所关联的对象
+ * 
+ * 注意：
+ * 当前情况下，这5条记录的外键`STORE_ID`会被查询，这时，直接通过外键找父对象。
+ * 虽然数据有5条，但是外建只有两个取值，所以，SQL参数只有两个。
+ */
+select tb_1_.ID, tb_1_.NAME 
+from BOOK_STORE as tb_1_ 
+where tb_1_.ID in (
+    ?, ?
+    /* 实际参数列表：2， 1 */
+)
+
+/* 
+ * 第四步：为分页后的5条数据（非分页前的12条数据）
+ * 查询属性`Book.authors`所关联的对象 
+ */
+select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME 
+from AUTHOR as tb_1_ 
+inner join BOOK_AUTHOR_MAPPING as tb_2_ 
+    on tb_1_.ID = tb_2_.AUTHOR_ID 
+where tb_2_.BOOK_ID in (
+    ?, ?, ?, ?, ?
+    /* 实际参数列表：10, 3, 2, 1, 9 */
+)
+```

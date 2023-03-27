@@ -680,7 +680,7 @@ interface TreeNode {
 
         如上所述，Jimmer利用实体对象的动态性，提供静态语言ORM难以想象的灵活性。
 
-        然而，Jimmer拒绝动态语言高度的不安全性和不可维护性。Jimmer实体仍然是普通的Java/Kotlin对象，保住了静态语言的拼写安全和类型安全。
+        然而，Jimmer拒绝动态语言高度的不安全性和不可维护性。Jimmer实体仍然是普通的Java/Kotlin对象，保住了静态语言的拼写安全、类型安全、甚至空安全(限kotlin)。
 
         :::note
         Jimmer的动态实体唯一的不安全问题是，直接访问不存在的属性会导致异常：`org.babyfish.jimmer.UnloadedException`。
