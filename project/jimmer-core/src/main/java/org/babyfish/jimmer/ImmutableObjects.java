@@ -15,6 +15,8 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.*;
+
 public class ImmutableObjects {
 
     private static final ObjectMapper MAPPER;
@@ -260,6 +262,57 @@ public class ImmutableObjects {
                 }
             }
         });
+    }
+
+    public static <T> Collection<T> toIdOnly(Iterable<T> immutables) {
+        if (immutables instanceof Set<?>) {
+            return toIdOnly((Set<T>) immutables);
+        }
+        List<T> idOnlyList = immutables instanceof Collection<?> ?
+                new ArrayList<>(((Collection<?>)immutables).size()) :
+                new ArrayList<>();
+        for (T immutable : immutables) {
+            idOnlyList.add(toIdOnly(immutable));
+        }
+        return idOnlyList;
+    }
+
+    public static <T> Set<T> toIdOnly(Set<T> immutables) {
+        Set<T> idOnlySet = new LinkedHashSet<>((immutables.size() * 4 + 2) / 3);
+        for (T immutable : immutables) {
+            idOnlySet.add(toIdOnly(immutable));
+        }
+        return idOnlySet;
+    }
+
+    public static <T> List<T> toIdOnly(List<T> immutables) {
+        List<T> idOnlyList = new ArrayList<>(immutables.size());
+        for (T immutable : immutables) {
+            idOnlyList.add(toIdOnly(immutable));
+        }
+        return idOnlyList;
+    }
+
+    public static <T> T toIdOnly(T immutable) {
+        if (immutable == null) {
+            return null;
+        }
+        ImmutableSpi spi = (ImmutableSpi) immutable;
+        ImmutableType type = spi.__type();
+        ImmutableProp idProp = type.getIdProp();
+        if (idProp == null) {
+            throw new IllegalArgumentException(
+                    "Cannot convert \"" + type + "\" to id only object because it is not entity"
+            );
+        }
+        if (!spi.__isLoaded(idProp.getId())) {
+            throw new IllegalArgumentException(
+                    "Cannot convert \"" + type + "\" to id only object because its id property \"" +
+                            type.getIdProp() +
+                            "\""
+            );
+        }
+        return makeIdOnly(type, spi.__get(idProp.getId()));
     }
 
     /**
