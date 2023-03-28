@@ -1,0 +1,266 @@
+---
+sidebar_position: 1
+title: 公式属性
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+公式属性是使用`@org.babyfish.jimmer.sql.Formula`声明的属性，有两者用法
+
+-   基于Java/Kotlin的计算属性
+-   基于SQL的计算属性
+
+:::note
+公式属性为实现简单而快速的计算而设计，如果需要复杂的计算，请采用[复杂计算](./transient)
+:::
+
+在[定义实体](../../prepare/entity)一文中，我们为`Author`定义了两个字段：`firstName`和`lastName`。
+
+接下来，让我们为`Author`添加一个叫新属性`fullName`：
+
+```
+fullName = firstName + ' ' + lastName
+```
+
+接下来，我们用两者不同的方式，即基于Java/Kotlin的计算和基于SQL的计算，来实现`Author.fullName`
+
+## 基于Java/Kotlin的计算
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Author.java"
+package com.example.model;
+
+import org.babyfish.jimmer.sql.*;
+
+@Entity
+public interface Author {
+
+    @Formula(dependencies = {"firstName", "lastName"})
+    default String fullName() {
+        return firstName() + ' ' + lastName();
+    }
+
+    ...省略其他属性...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Author.kt"
+package com.example.model
+
+import org.babyfish.jimmer.sql.*
+
+@Entity
+interface Author {
+
+    @Formula(dependencies = ["firstName", "lastName"])
+    val fullName: String
+        get() = "$firstName $lastName"
+
+    ...省略其他属性...
+}
+```
+
+</TabItem>
+</Tabs>
+
+不难发现，基于Java/Kotlin的公式计算属性有以下特征
+
+-   属性不是抽象的(Java下需要使用`default`关键字)，直接给出计算逻辑实现。
+
+-   `@Formula`的`dependencies`被指定，表示当前属性依赖于`Author.firstName`和`Author.lastName`。
+
+    即，动态实体必须确保同时具备`firstName`和`lastName`属性才可以计算`fullName`
+
+用法如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Author author = authorRepository.findNullable(
+    1L,
+    AuthorFetcher.$
+        //查询id(隐含+强制)和fullName
+        // highlight-next-line
+        .fullName() 
+);
+System.out.println(author);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val author = authorRepository.findNullable(
+    1L,
+    newFetcher(Auhtor::class).by {
+        //查询id(隐含+强制)和fullName
+        // highlight-next-line
+        fullName() 
+    }
+);
+println(author)
+```
+
+</TabItem>
+</Tabs>
+
+执行的SQL为
+
+```sql
+select 
+    tb_1_.ID, 
+    /* highlight-start */
+    tb_1_.FIRST_NAME, 
+    tb_1_.LAST_NAME 
+    /* highlight-end */
+from AUTHOR as tb_1_ 
+    where tb_1_.ID = ?
+```
+
+`fullName`是计算属性，在数据库中无对应字段，但其依赖于`firstName`和`lastName`，
+所以此SQL查询`FIRST_NAME`和`LAST_NAME`，让其依赖的属性存在。
+
+接下来，我们看看代码中打印会输出什么
+
+```json
+{"id":1,"fullName":"Eve Procello"}
+```
+
+我们看到，Jackson序列化（实体对象的`toString`方法是序列化的一种快捷方式）后只有`fullName`，但没有`firstName`和`lastName`。
+
+这是，因为对象抓取器因抓取`fullName`而导致`firstName`和`lastName`被间接抓取，他们并未被直接抓取。
+
+在这种情况下，虽然动态对象具备`firstName`和`lastName`，但它们被标记成对Jackson不可见的状态，不会出现在Jackson序列化结果中。
+
+:::note
+如果让对象抓取器直接抓取`firstName`和`lastName`，那么它们一定会出现在序列化结果中。读者可以自行试验，这里不再赘述。
+:::
+
+## 基于SQL的计算
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Author.java"
+package com.example.model;
+
+import org.babyfish.jimmer.sql.*;
+
+@Entity
+public interface Author {
+
+    @Formula(sql = "concat(%alias.FIRST_NAME, ' ', %alias.LAST_NAME)")
+    String fullName();
+
+    ...省略其他属性...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Author.kt"
+package com.example.model
+
+import org.babyfish.jimmer.sql.*
+
+@Entity
+interface Author {
+
+    @Formula(sql = "concat(%alias.FIRST_NAME, ' ', %alias.LAST_NAME)")
+    val fullName: String
+
+    ...省略其他属性...
+}
+```
+
+</TabItem>
+</Tabs>
+
+不难发现，基于SQL的公式计算属性有以下特征
+
+-   属性是抽象的。
+
+-   `@Formula`的`sql`被指定为一个SQL表达式，内部有一个特殊的符号`%alias`
+
+    用户无法事先知道当前表在最终SQL中的别名，所以，Jimmer在这里约定`%alias`表示实际的表列名
+
+用法如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Author author = authorRepository.findNullable(
+    1L,
+    AuthorFetcher.$
+        //查询id(隐含+强制)和fullName
+        // highlight-next-line
+        .fullName() 
+);
+System.out.println(author);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val author = authorRepository.findNullable(
+    1L,
+    newFetcher(Auhtor::class).by {
+        //查询id(隐含+强制)和fullName
+        // highlight-next-line
+        fullName() 
+    }
+);
+println(author)
+```
+
+</TabItem>
+</Tabs>
+
+生成SQL如下:
+
+```sql
+select 
+    tb_1_.ID, 
+    /* 这里，@Formula.sql中的`alias`被替换成了`tb_1_` */
+    /* highlight-next-line */
+    concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME) 
+from AUTHOR as tb_1_ 
+where tb_1_.ID = ?
+```
+
+最终打印结果
+```json
+{"id":1,"fullName":"Eve Procello"}
+```
+
+### 和基于Java/Kotlin的公式计算的比较。
+
+相比于基于Java/Kotlin的公式计算，基于SQL的公式计算有一个缺点和一个优点。
+
+-   缺点：如果对象抓取器同时抓取`firstName`、`lastName`和`fullName`，会导致最终SQL查询三列：
+    
+    `tb_1_.FIRST_NAME`, `tb_1_.LAST_NAME`和`concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME)`。
+
+    很明显，返回数据包含冗余，是一种浪费。
+
+-   优点：基于Java/Kotlin的计算属性只能作为对象抓取器的被抓取字段，无法为SQL DSL所用。
+
+    而基于SQL的计算属性会被代码生成器生成到强类型SQL DSL的API中，为SQL DSL所用，如
+
+    Java的`where(table.fullName().eq("Eve Procello"))`或Kotlin的`where(table.fullName eq "Eve Procello")`
+
+    :::tip
+    所有计算属性中，只有基于SQL的公式计算属性可以被SQL DSL使用。但建议使用支持函数索引的数据库并和函数索引结合使用。
+    :::
+
+因此，建议认真考虑@Formula计算属性应该基于Java/Kotlin计算还是基于SQL计算。

@@ -17,4 +17,6 @@ interface TreeNodeRepository : KRepository<TreeNode, Long> {
             where(table.parent.isNull())
             select(table)
         }.execute()
+
+    fun findByNameAndParentId(name: String, parentId: Long): TreeNode?
 }

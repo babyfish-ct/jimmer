@@ -45,6 +45,34 @@ public class PropExpressionImpl<T>
     }
 
     public static PropExpressionImpl<?> of(Table<?> table, ImmutableProp prop) {
+        if (prop.isTransient()) {
+            throw new IllegalArgumentException(
+                    "Cannot create prop expression for transient property \"" +
+                            prop +
+                            "\""
+            );
+        }
+        if (prop.getIdViewBaseProp() != null) {
+            throw new IllegalArgumentException(
+                    "Cannot create prop expression for id-view property \"" +
+                            prop +
+                            "\""
+            );
+        }
+        if (!prop.getDependencies().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Cannot create prop expression for java/kt based calculated property \"" +
+                            prop +
+                            "\""
+            );
+        }
+        if (prop.isAssociation(TargetLevel.PERSISTENT)) {
+            throw new IllegalArgumentException(
+                    "Cannot create prop expression for java/kt based association property \"" +
+                            prop +
+                            "\""
+            );
+        }
         if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
             return new EmbeddedImpl<>(table, prop);
         }

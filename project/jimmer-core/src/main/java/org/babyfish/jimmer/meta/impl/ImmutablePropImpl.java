@@ -53,8 +53,6 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     private final boolean isFormula;
 
-    private final boolean isIdView;
-
     private final FormulaTemplate formulaTemplate;
 
     private final DissociateAction dissociateAction;
@@ -86,6 +84,10 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     private boolean oppositeResolved;
 
     private List<ImmutableProp> dependencies;
+
+    private ImmutableProp idViewBaseProp;
+
+    private boolean idViewBasePropResolved;
 
     ImmutablePropImpl(
             ImmutableTypeImpl declaringType,
@@ -179,18 +181,6 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
             formulaTemplate = null;
         }
 
-        IdView idView = getAnnotation(IdView.class);
-        isIdView = idView != null;
-        if (idView != null && isAssociation(TargetLevel.ENTITY)) {
-            throw new ModelException(
-                    "Illegal property \"" +
-                            this +
-                            "\", it is decorated by \"" +
-                            IdView.class.getName() +
-                            "\" so that it cannot be association"
-            );
-        }
-
         ManyToOne manyToOne = getAnnotation(ManyToOne.class);
         OneToOne oneToOne = getAnnotation(OneToOne.class);
         inputNotNull = manyToOne != null ?
@@ -252,7 +242,6 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         this.associationAnnotation = base.associationAnnotation;
         this.isTransient = base.isTransient;
         this.isFormula = base.isFormula;
-        this.isIdView = base.isIdView;
         this.formulaTemplate = base.formulaTemplate;
         this.hasTransientResolver = base.hasTransientResolver;
         this.dissociateAction = base.dissociateAction;
@@ -440,8 +429,57 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     }
 
     @Override
-    public boolean isIdView() {
-        return isIdView;
+    public ImmutableProp getIdViewBaseProp() {
+        if (idViewBasePropResolved) {
+            return idViewBaseProp;
+        }
+        ImmutableProp baseProp;
+        IdView idView = getAnnotation(IdView.class);
+        if (idView == null) {
+            baseProp = null;
+        } else {
+            if (isAssociation(TargetLevel.ENTITY)) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                this +
+                                "\", it is decorated by \"" +
+                                IdView.class.getName() +
+                                "\" so that it cannot be association"
+                );
+            }
+            String basePropName;
+            if (idView.value().isEmpty()) {
+                if (name.length() < 3 || !name.endsWith("Id") || Character.isUpperCase(name.charAt(name.length() - 3))) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it is decorated by \"" +
+                                    IdView.class.getName() +
+                                    "\" but the base property name cannot be determined automatically"
+                    );
+                }
+                basePropName = name.substring(0, name.length() - 2);
+            } else {
+                basePropName = idView.value();
+            }
+            baseProp = declaringType.getProps().get(basePropName);
+            if (baseProp == null) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                this +
+                                "\", it is decorated by \"" +
+                                IdView.class.getName() +
+                                "\" but there is not base property named \"" +
+                                basePropName +
+                                "\" in the type \"" +
+                                declaringType +
+                                "\""
+                );
+            }
+        }
+        idViewBaseProp = baseProp;
+        idViewBasePropResolved = true;
+        return baseProp;
     }
 
     @Override

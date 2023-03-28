@@ -188,6 +188,28 @@ open class SpringKotlinTest : AbstractTest() {
     }
 
     @Test
+    fun testByNameAndParentId() {
+        val treeNode = treeNodeRepository.findByNameAndParentId("Food", 1L)
+        assertSQLs(
+            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                "from TREE_NODE as tb_1_ " +
+                "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ?"
+        )
+        Assertions.assertEquals(
+            "{\"id\":2,\"name\":\"Food\",\"parent\":{\"id\":1}}",
+            treeNode?.toString()
+        )
+
+        val treeNode2 = treeNodeRepository.findByNameAndParentId("Food", 2L)
+        assertSQLs(
+            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                "from TREE_NODE as tb_1_ " +
+                "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ?"
+        )
+        Assertions.assertNull(treeNode2)
+    }
+
+    @Test
     open fun testDownloadTypescript() {
         mvc.perform(MockMvcRequestBuilders.get("/my-ts.zip"))
             .andExpect(MockMvcResultMatchers.status().isOk)
