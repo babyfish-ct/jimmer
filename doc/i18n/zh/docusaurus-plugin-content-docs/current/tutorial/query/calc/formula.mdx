@@ -1,18 +1,18 @@
 ---
 sidebar_position: 1
-title: 公式属性
+title: 简单计算
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-公式属性是使用`@org.babyfish.jimmer.sql.Formula`声明的属性，有两者用法
+简单计算属性是使用`@org.babyfish.jimmer.sql.Formula`声明的属性，有两者用法
 
 -   基于Java/Kotlin的计算属性
 -   基于SQL的计算属性
 
 :::note
-公式属性为实现简单而快速的计算而设计，如果需要复杂的计算，请采用[复杂计算](./transient)
+简单计算属性为实现简单而快速的计算而设计，如果需要复杂的计算，请采用[复杂计算](./transient)
 :::
 
 在[定义实体](../../prepare/entity)一文中，我们为`Author`定义了两个字段：`firstName`和`lastName`。
@@ -69,7 +69,7 @@ interface Author {
 </TabItem>
 </Tabs>
 
-不难发现，基于Java/Kotlin的公式计算属性有以下特征
+不难发现，基于Java/Kotlin的简单计算属性有以下特征
 
 -   属性不是抽象的(Java下需要使用`default`关键字)，直接给出计算逻辑实现。
 
@@ -184,7 +184,7 @@ interface Author {
 </TabItem>
 </Tabs>
 
-不难发现，基于SQL的公式计算属性有以下特征
+不难发现，基于SQL的简单计算属性有以下特征
 
 -   属性是抽象的。
 
@@ -243,9 +243,9 @@ where tb_1_.ID = ?
 {"id":1,"fullName":"Eve Procello"}
 ```
 
-### 和基于Java/Kotlin的公式计算的比较。
+### 和基于Java/Kotlin的简单计算的比较。
 
-相比于基于Java/Kotlin的公式计算，基于SQL的公式计算有一个缺点和一个优点。
+相比于基于Java/Kotlin的简单计算，基于SQL的简单计算有一个缺点和一个优点。
 
 -   缺点：如果对象抓取器同时抓取`firstName`、`lastName`和`fullName`，会导致最终SQL查询三列：
     
@@ -260,7 +260,7 @@ where tb_1_.ID = ?
     Java的`where(table.fullName().eq("Eve Procello"))`或Kotlin的`where(table.fullName eq "Eve Procello")`
 
     :::tip
-    所有计算属性中，只有基于SQL的公式计算属性可以被SQL DSL使用。但建议使用支持函数索引的数据库并和函数索引结合使用。
+    所有计算属性中，只有基于SQL的简单计算属性可以被SQL DSL使用。但建议使用支持函数索引的数据库并和函数索引结合使用。
     :::
 
 因此，建议认真考虑@Formula计算属性应该基于Java/Kotlin计算还是基于SQL计算。

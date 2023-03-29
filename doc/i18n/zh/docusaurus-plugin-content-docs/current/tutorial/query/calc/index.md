@@ -17,6 +17,6 @@ title: 计算属性
 
 Jimmer共支持三种计算属性
 
--   [公式属性](./formula)
+-   [简单计算](./formula)
 -   [Id视图](./idview)
 -   [复杂计算](./transient)
