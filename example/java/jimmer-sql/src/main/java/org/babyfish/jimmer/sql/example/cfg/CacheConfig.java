@@ -35,8 +35,8 @@ public class CacheConfig {
         RedisSerializer<byte[]> nopSerializer =
                 new RedisSerializer<byte[]>() {
                     @Override
-                    public byte[] serialize(byte[] bytes) throws SerializationException {
-                        return bytes;
+                    public byte[] serialize(byte[] t) throws SerializationException {
+                        return t;
                     }
                     @Override
                     public byte[] deserialize(byte[] bytes) throws SerializationException {

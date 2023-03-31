@@ -21,8 +21,8 @@ repositories {
 
 dependencies {
 
-	api("org.springframework.boot:spring-boot-starter-web")
-	api("org.springframework.data:spring-data-redis")
+	implementation("org.springframework.boot:spring-boot-starter-web")
+	implementation("org.springframework.data:spring-data-redis")
 	implementation("org.springframework.kafka:spring-kafka:2.9.0")
 
 	implementation("org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}")

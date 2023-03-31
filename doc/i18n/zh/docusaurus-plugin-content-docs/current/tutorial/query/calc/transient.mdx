@@ -1036,6 +1036,7 @@ select tb_1_.ID, tb_1_.NAME
 from BOOK_STORE as tb_1_
 
 /* 第二步：为id为1和2的BookStore计算`newestBooks`能够关联到的所有Book的id集合 */
+/* highlight-start */
 select 
     tb_1_.ID, 
     tb_2_.ID 
@@ -1054,6 +1055,7 @@ where
         group by 
             tb_3_.NAME
     )
+/* highlight-end */
 
 /* 第三步：对关联到的所有Book的id，进一步查询非关联字段 */
 select 
