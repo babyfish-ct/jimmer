@@ -10,7 +10,7 @@ import TabItem from '@theme/TabItem';
 
 默认情况下，缓存并没未启用，Jimmer查询只操作数据库。
 
-然而，用户为Spring注册一个实现了`org.babyfish.jimmer.sql.cache.CacheFactory`接口的对象。
+要启用缓存，用户手续需要Spring注册一个实现了`org.babyfish.jimmer.sql.cache.CacheFactory`接口的对象。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -67,6 +67,10 @@ class CacheConfig {
 
 </TabItem>
 </Tabs>
+
+然后，逐步实现上文中匿名类的方法，逐步制定缓存机制。
+
+这部分内容会在后续教程介绍，而非当本文。
 
 :::info
 Jimmer缓存支持多级缓存，并不对每一层缓存的技术选择做任何假设
