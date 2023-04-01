@@ -20,7 +20,7 @@ create table book(
     edition integer not null,
     price numeric(10, 2) not null,
     store_id bigint unsigned,
-    tenant varchar(20),
+    tenant varchar(20) not null,
     created_time datetime not null,
     modified_time datetime not null 
 ) engine=innodb;

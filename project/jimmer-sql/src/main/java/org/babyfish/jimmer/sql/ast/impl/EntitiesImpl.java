@@ -272,7 +272,9 @@ public class EntitiesImpl implements Entities {
                         itr.set(
                                 (ImmutableSpi) Internal.produce(immutableType, spi, draft -> {
                                     for (ImmutableProp prop : immutableType.getProps().values()) {
-                                        if (spi.__isLoaded(prop.getId()) && !fetcher.getFieldMap().containsKey(prop.getName())) {
+                                        if (prop.getIdViewBaseProp() == null &&
+                                                spi.__isLoaded(prop.getId()) &&
+                                                !fetcher.getFieldMap().containsKey(prop.getName())) {
                                             ((DraftSpi) draft).__unload(prop.getId());
                                         }
                                     }
