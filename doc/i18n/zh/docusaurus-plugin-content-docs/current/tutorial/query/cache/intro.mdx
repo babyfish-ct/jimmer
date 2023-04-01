@@ -174,7 +174,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-// highlight-next-line
 @Configuration
 public class CacheConfig {
 
@@ -202,10 +201,11 @@ public class CacheConfig {
         return template;
     }
 
-    // highlight-next-line
     @Bean
     public CacheFactory cacheFactory(
+        // highlight-next-line
         RedisTemplate<String, byte[]> redisTemplate,
+        // highlight-next-line
         ObjectMapper objectMapper
     ) {
         return new CacheFactory() {
@@ -233,7 +233,6 @@ import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.serializer.RedisSerializer
 import org.springframework.data.redis.serializer.StringRedisSerializer
 
-// highlight-next-line
 @Configuration
 class CacheConfig {
 
@@ -255,10 +254,11 @@ class CacheConfig {
             hashValueSerializer = nopSerializer
         }
 
-    // highlight-next-line
     @Bean
     fun cacheFactory(
+        // highlight-next-line
         redisTemplate: RedisTemplate<String, ByteArray>,
+        // highlight-next-line
         objectMapper: ObjectMapper
     ): CacheFactory =
         object: CacheFactory {

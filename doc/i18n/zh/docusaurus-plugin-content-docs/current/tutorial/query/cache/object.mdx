@@ -6,4 +6,196 @@ title: 对象缓存
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## TODO
+## 基本概念
+
+此缓存把id映射为实体对象，此对象为简单对象，并不包含关联（基于外键且只有id的父对象除外）。
+
+![object-cache](@site/static/img/object-cache.jpeg)
+
+## 启用对象缓存
+
+修改[上一篇文档](./intro)中的`CacheConfig`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+package com.example.cfg;
+
+import org.babyfish.jimmer.spring.cache.CaffeineBinder; ❶
+import org.babyfish.jimmer.spring.cache.RedisValueBinder; ❶
+
+...省略其他import语句...
+
+public class CacheConfig {
+
+    ...省略其他配置...
+
+    @Bean
+    public CacheFactory cacheFactory(
+        RedisTemplate<String, byte[]> redisTemplate,
+        ObjectMapper objectMapper
+    ) {
+        return new CacheFactory() {
+
+            @Override
+            // highlight-next-line
+            public Cache<?, ?> createObjectCache(
+                ImmutableType type ❷
+            ) {
+                return new ChainCacheBuilder<>() ❸
+                    .add( ❹
+                        new CaffeineBinder<>(512, Duration.ofSeconds(1))
+                    )
+                    .add( ❺
+                        new RedisValueBinder<>(
+                            redisTemplate, 
+                            objectMapper, 
+                            type, 
+                            Duration.ofMinutes(10))
+                    )
+                    .build();
+            }
+
+            ...其他可覆盖方法后文介绍...
+        };
+    }
+
+    ...省略其他配置...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+package com.example.cfg
+
+import org.babyfish.jimmer.spring.cache.CaffeineBinder ❶
+import org.babyfish.jimmer.spring.cache.RedisValueBinder ❶
+
+...省略其他import语句...
+
+@Configuration
+class CacheConfig {
+
+    @Bean
+    fun cacheFactory(
+        redisTemplate: RedisTemplate<String, ByteArray>,
+        objectMapper: ObjectMapper
+    ): CacheFactory =
+
+        object: CacheFactory {
+
+            // highlight-next-line
+            override fun createObjectCache(
+                type: ImmutableType ❷
+            ): Cache<*, *>? =
+                ChainCacheBuilder<Any, Any>() ❸
+                    .add( ❹
+                        CaffeineBinder(512, Duration.ofSeconds(1))
+                    )
+                    .add( ❺
+                        RedisValueBinder(
+                            redisTemplate, 
+                            objectMapper, 
+                            type, 
+                            Duration.ofMinutes(10))
+                    )
+                    .build()
+
+            ...其他可覆盖方法后文介绍...
+        }
+
+    ...省略其他配置...
+}
+```
+
+</TabItem>
+</Tabs>
+
+1.  Jimmer对用户使用何种缓存技术不加限制，每一种具体的缓存技术实现被抽象成`Binder`。
+
+    这里，`CaffineBinder`和`RedisValueBinder`都是`Binder`具体实现，分别适配了caffeine和redis。
+
+2.  待被缓存的实体类型。
+
+    Jimmer会遍历所有实体类型，对每个类型都调用一次`createObjectCache`，参数`type`就是当前遍历到的实体类型。
+
+    用户可以对参数`type`进行判断，如果此类型需要对象缓存，就返回非null对象；否则，就返回null。
+
+    很明显，本例忽略了参数`type`，无条件让所有实体类型都支持对象缓存。
+
+3.  使用两级缓存
+
+    `ChainCacheBuilder`可以调用任意次`add`方法，添加多个`Binder`。
+    
+    本例调用了两次，所以使用了两级缓存。
+
+4.  首次调用`add`方法，指定用caffeine作为第一级缓存
+
+5.  第二调用`add`方法，指定用redis作为第二级缓存
+
+## 体验
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookRepository bookRepository = 
+    ctx.getBean(BookRepository.class);
+List<Book> books = bookRepository.findByIds(
+    // highlight-next-line
+    Arrays.asList(1L, 2L, 3L)
+);
+System.out.println(books);
+System.out.println("---------------------");
+books = bookRepository.findByIds(
+    // highlight-next-line
+    Arrays.asList(1L, 2L, 4L)
+);
+System.out.println(books);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Author.kt"
+val bookRepository = 
+    ctx.getBean(BookRepository::class)
+val books = bookRepository.findByIds(
+    // highlight-next-line
+    listOf(1L, 2L, 3L)
+)
+println(books)
+println("---------------------")
+books = bookRepository.findByIds(
+    // highlight-next-line
+    listOf(1L, 2L, 4L)
+)
+println(books)
+```
+
+</TabItem>
+</Tabs>
+
+生成的SQL
+
+```sql
+select 
+    tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+from BOOK as tb_1_ 
+where tb_1_.ID in (
+    // highlight-next-line
+    ?, ?, ? /* 真实参数：1、2、3 */
+)
+
+select 
+    tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+from BOOK as tb_1_ 
+where 
+    // highlight-next-line
+    tb_1_.ID = ? /* 真实参数：4, 因为1和2已经被缓存 */
+```
+
+在第二句SQL中，参数只有4，因为1和2已经因前一条查询的执行而缓存。
