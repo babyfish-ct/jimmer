@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.example.graphql.entities;
 
 import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.example.graphql.bll.resolver.BookStoreAvgPriceResolver;
-import org.babyfish.jimmer.sql.example.graphql.bll.resolver.BookStoreNewestBooksResolver;
+import org.babyfish.jimmer.sql.example.graphql.business.resolver.BookStoreAvgPriceResolver;
+import org.babyfish.jimmer.sql.example.graphql.business.resolver.BookStoreNewestBooksResolver;
 import org.babyfish.jimmer.sql.example.graphql.entities.common.BaseEntity;
 import org.springframework.lang.Nullable;
 

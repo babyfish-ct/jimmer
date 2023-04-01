@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.example.model;
 
 import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.example.bll.resolver.BookStoreAvgPriceResolver;
-import org.babyfish.jimmer.sql.example.bll.resolver.BookStoreNewestBooksResolver;
+import org.babyfish.jimmer.sql.example.business.resolver.BookStoreAvgPriceResolver;
+import org.babyfish.jimmer.sql.example.business.resolver.BookStoreNewestBooksResolver;
 import org.babyfish.jimmer.sql.example.model.common.BaseEntity;
 
 import javax.validation.constraints.Null;

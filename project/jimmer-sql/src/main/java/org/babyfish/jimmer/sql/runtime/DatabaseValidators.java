@@ -258,9 +258,9 @@ public class DatabaseValidators {
             while (rs.next()) {
                 tables.add(
                         new Table(
-                                rs.getString("TABLE_CAT"),
-                                rs.getString("TABLE_SCHEM"),
-                                rs.getString("TABLE_NAME")
+                                DatabaseIdentifiers.comparableIdentifier(rs.getString("TABLE_CAT")),
+                                DatabaseIdentifiers.comparableIdentifier(rs.getString("TABLE_SCHEM")),
+                                DatabaseIdentifiers.comparableIdentifier(rs.getString("TABLE_NAME"))
                         )
                 );
             }
@@ -279,7 +279,7 @@ public class DatabaseValidators {
             while (rs.next()) {
                 Column column = new Column(
                         table,
-                        rs.getString("COLUMN_NAME"),
+                        DatabaseIdentifiers.comparableIdentifier(rs.getString("COLUMN_NAME")),
                         rs.getInt("NULLABLE") == DatabaseMetaData.columnNullable
                 );
                 columnMap.put(column.name, column);
