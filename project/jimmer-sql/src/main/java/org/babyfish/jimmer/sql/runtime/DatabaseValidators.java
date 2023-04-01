@@ -292,7 +292,9 @@ public class DatabaseValidators {
         Set<String> columnNames = new HashSet<>();
         try (ResultSet rs = con.getMetaData().getPrimaryKeys(table.catalog, table.schema, table.name)) {
             while (rs.next()) {
-                columnNames.add(rs.getString("COLUMN_NAME"));
+                columnNames.add(
+                        DatabaseIdentifiers.comparableIdentifier(rs.getString("COLUMN_NAME"))
+                );
             }
         }
         return columnNames;
@@ -306,14 +308,14 @@ public class DatabaseValidators {
                 table.name
         )) {
             while (rs.next()) {
-                String constraintName = rs.getString("FK_NAME");
+                String constraintName = DatabaseIdentifiers.comparableIdentifier(rs.getString("FK_NAME"));
                 Table referencedTable = tablesOf(
-                        rs.getString("PKTABLE_CAT"),
-                        rs.getString("PKTABLE_SCHEM"),
-                        rs.getString("PKTABLE_NAME")
+                        DatabaseIdentifiers.comparableIdentifier(rs.getString("PKTABLE_CAT")),
+                        DatabaseIdentifiers.comparableIdentifier(rs.getString("PKTABLE_SCHEM")),
+                        DatabaseIdentifiers.comparableIdentifier(rs.getString("PKTABLE_NAME"))
                 ).iterator().next();
-                String columnName = rs.getString("FKCOLUMN_NAME");
-                String referencedColumnName = rs.getString("PKCOLUMN_NAME");
+                String columnName = DatabaseIdentifiers.comparableIdentifier(rs.getString("FKCOLUMN_NAME"));
+                String referencedColumnName = DatabaseIdentifiers.comparableIdentifier(rs.getString("PKCOLUMN_NAME"));
                 map.computeIfAbsent(
                         new Tuple2<>(constraintName, referencedTable),
                         it -> new LinkedHashMap<>()).put(columnName, referencedColumnName
