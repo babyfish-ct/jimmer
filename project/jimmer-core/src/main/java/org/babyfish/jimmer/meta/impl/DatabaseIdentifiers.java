@@ -24,6 +24,9 @@ public class DatabaseIdentifiers {
     }
 
     public static String comparableIdentifier(String identifier) {
+        if (identifier == null) {
+            return null;
+        }
         boolean cut = false;
         if (identifier.startsWith("`") && identifier.endsWith("`") && identifier.length() > 2) {
             cut = true;
