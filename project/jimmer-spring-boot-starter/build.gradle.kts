@@ -47,6 +47,14 @@ tasks.getByName<Test>("test") {
     useJUnitPlatform()
 }
 
+tasks.withType<JavaCompile> {
+    /*
+     * it must be compiled with parameters
+     * when using @ConstructorBinding in Spring Native Image
+     */
+    options.compilerArgs.add("-parameters")
+}
+
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions {
         freeCompilerArgs = listOf("-Xjsr305=strict")
