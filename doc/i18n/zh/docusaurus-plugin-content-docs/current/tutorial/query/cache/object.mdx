@@ -8,9 +8,13 @@ import TabItem from '@theme/TabItem';
 
 ## 基本概念
 
-此缓存把id映射为实体对象，此对象为简单对象，并不包含关联（基于外键且只有id的父对象除外）。
+对象缓存把id映射为实体对象。
 
 ![object-cache](@site/static/img/object-cache.jpeg)
+
+-   这里所说的对象为简单对象，并不包含关联（基于外键且只有id的父对象除外），并非复杂的数据结构。
+
+-   这里说讨论的对象缓存和后面要介绍[关联缓存](./association)结合起来，最终提供任意复杂数据结构的缓存服务，而非简单对象缓存服务。
 
 ## 启用对象缓存
 
@@ -150,11 +154,11 @@ List<Book> books = bookRepository.findByIds(
 );
 System.out.println(books);
 System.out.println("---------------------");
-books = bookRepository.findByIds(
+List<Book> books2 = bookRepository.findByIds(
     // highlight-next-line
     Arrays.asList(1L, 2L, 4L)
 );
-System.out.println(books);
+System.out.println(books2);
 ```
 
 </TabItem>
@@ -169,11 +173,11 @@ val books = bookRepository.findByIds(
 )
 println(books)
 println("---------------------")
-books = bookRepository.findByIds(
+val books2 = bookRepository.findByIds(
     // highlight-next-line
     listOf(1L, 2L, 4L)
 )
-println(books)
+println(books2)
 ```
 
 </TabItem>
@@ -199,3 +203,9 @@ where
 ```
 
 在第二句SQL中，参数只有4，因为1和2已经因前一条查询的执行而缓存。
+
+## 对象缓存一致性
+
+Jimmer自动保证对象缓存的一致性。
+
+然而，到目前为止，本教程仅探讨了查询，暂时没涉及修改，所以本文暂时无法讲解如何启用缓存一致性。请参见**TODO**。

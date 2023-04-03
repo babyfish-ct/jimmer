@@ -6,4 +6,404 @@ title: 关联缓存
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## TODO
+## 基本概念
+
+关联缓存把当前对象id映射为关联对象id或其集合。
+
+![association-cache](@site/static/img/association-cache.png)
+
+读者可能对其中多对一关联缓存`Book.store-*`感到疑惑。对于Book数据而言，父对象的id不就是当前对象的外建吗？为什么需要多对一缓存呢？
+
+事实上，这类关联的确不是一定需要的。但是，当以前任何一种条件成立时，就需要多对一关联缓存。
+-   多对一关联基于中间表，而非外建
+-   多对一关联的父对象使用了全局过滤器，外键非空不代表父对象非null
+-   如果使用Jimmer的GraphQL支持，有可能根据外键字段尚未被查询的数据查询父对象。
+
+其他关联缓存相对好理解，无需阐述。
+
+## 启用关联缓存
+
+继续修改`CacheConfig`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+package com.example.cfg;
+
+...省略import语句...
+
+public class CacheConfig {
+
+    ...省略其他配置...
+
+    @Bean
+    public CacheFactory cacheFactory(
+        RedisTemplate<String, byte[]> redisTemplate,
+        ObjectMapper objectMapper
+    ) {
+        return new CacheFactory() {
+
+            @Override
+            // highlight-next-line
+            public Cache<?, ?> createAssociatedIdCache( ❶
+                ImmutableProp prop ❸
+            ) {
+                ❹
+                return new ChainCacheBuilder<>()
+                    .add(
+                        new CaffeineBinder<>(512, Duration.ofSeconds(1))
+                    )
+                    .add(
+                        new RedisValueBinder<>(
+                            redisTemplate, 
+                            objectMapper, 
+                            type, 
+                            Duration.ofMinutes(10))
+                    )
+                    .build();
+            }
+
+            @Override
+            // highlight-next-line
+            public Cache<?, List<?>> createAssociatedIdListCache( ❷
+                ImmutableProp prop ❸
+            ) {
+                ❹
+                return new ChainCacheBuilder<Object, List<?>>() 
+                    .add(
+                        new CaffeineBinder<>(512, Duration.ofSeconds(1))
+                    )
+                    .add(
+                        new RedisValueBinder<>(
+                            redisTemplate, 
+                            objectMapper, 
+                            type, 
+                            Duration.ofMinutes(10))
+                    )
+                    .build();
+            }
+
+            @Override
+            public Cache<?, ?> createObjectCache( ❺
+                ImmutableType type
+            ) {
+                ...忽略上一篇文档中已经讲解的代码...
+            }
+
+            ...其他可覆盖方法后文介绍...
+        };
+    }
+
+    ...省略其他配置...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+package com.example.cfg
+
+...省略import语句...
+
+@Configuration
+class CacheConfig {
+
+    @Bean
+    fun cacheFactory(
+        redisTemplate: RedisTemplate<String, ByteArray>,
+        objectMapper: ObjectMapper
+    ): CacheFactory =
+
+        object: CacheFactory {
+
+            override fun createAssociatedIdCache( ❶
+                prop: ImmutableProp ❸
+            ): Cache<*, *>? =
+                ❹
+                ChainCacheBuilder<Any, Any>()
+                    .add(
+                        CaffeineBinder(512, Duration.ofSeconds(1))
+                    )
+                    .add(
+                        RedisValueBinder(
+                            redisTemplate, 
+                            objectMapper, 
+                            type, 
+                            Duration.ofMinutes(10))
+                    )
+                    .build()
+
+            override fun createAssociatedIdListCache( ❷
+                prop: ImmutableProp ❸
+            ): Cache<*, List<*>? =
+                ❹
+                ChainCacheBuilder<Any, List<*>()
+                    .add(
+                        CaffeineBinder(512, Duration.ofSeconds(1))
+                    )
+                    .add(
+                        RedisValueBinder(
+                            redisTemplate, 
+                            objectMapper, 
+                            type, 
+                            Duration.ofMinutes(10))
+                    )
+                    .build()
+
+            override fun createObjectCache( ❺
+                type: ImmutableType
+            ): Cache<*, *>? =
+                ...忽略上一篇文档中已经讲解的代码...
+
+            ...其他可覆盖方法后文介绍...
+        }
+
+    ...省略其他配置...
+}
+```
+
+</TabItem>
+</Tabs>
+
+1.  `createAssociatedIdCache`：为引用关联（一对一，多对一）创建缓存
+
+2.  `createAssociatedIdListCache`：为集合关联（一对多，多对多）创建缓存
+
+3.  `prop`: 待被缓存的关联属性。
+
+    Jimmer会遍历所有实体属性，对每个类型都调用一次`createAssociatedIdCache`或`createAssociatedIdListCache`，参数`prop`就是当前遍历到的关联属性。
+
+    用户可以对参数`prop`进行判断，如果此类型需要关联缓存，返回非null对象；否则，返回null。
+
+    很明显，本例忽略了参数`type`，无条件让所有关联属性都支持关联缓存。
+
+4.  这里，代码和[对象缓存](./object)一文中所没区别，不再赘述。
+
+5.  除了本文讲解的`createAssociatedIdCache`和`createAssociatedIdListCache`外，
+    上一篇文档中讲解过的`createObjectCache`也很重要，因为为关联对象所属类型指定对象缓存。
+
+    这样，关联缓存和对象缓存可以结合起来，最终为用户提供任意复杂数据结构的缓存。
+
+## 体验
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+// 首次执行时缓存无数据，通过SQL获取所有数据
+List<BookStore> stores = bookStoreRepository.findAll(
+    BookStoreFetcher.$
+        .allScalarFields()
+        .books( ❶
+            BookFetcher.$
+                .allScalarFields()
+                .authors( ❷
+                        AuthorFetcher.$
+                                .allScalarFields()
+                )
+        )
+);
+System.out.println(stores);
+
+System.out.println("----------------");
+
+// 再次执行时缓存有数据，除聚合根对象外的其他信息无需通过SQL获取
+List<BookStore> stores2 = bookStoreRepository.findAll(
+    BookStoreFetcher.$
+        .allScalarFields()
+        .books( ❶
+            BookFetcher.$
+                .allScalarFields()
+                .authors( ❷
+                        AuthorFetcher.$
+                                .allScalarFields()
+                )
+        )
+);
+System.out.println(stores2);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+// 首次执行时缓存无数据，通过SQL获取所有数据
+val stores = bookStoreRepository.findAll(
+    newFetcher(BookStore::class).by {
+        allScalarFields()
+        books { ❶
+            allScalarFields()
+            authors { ❷
+                allScalarFields()
+            }
+        }
+    }
+)
+println(stores)
+
+println("----------------")
+
+// 再次执行时缓存有数据，除聚合根对象外的其他信息无需通过SQL获取
+val stores2 = bookStoreRepository.findAll(
+    newFetcher(BookStore::class).by {
+        allScalarFields()
+        books { ❶
+            allScalarFields()
+            authors { ❷
+                allScalarFields()
+            }
+        }
+    }
+)
+println(stores2)
+```
+
+</TabItem>
+</Tabs>
+
+1.  使用关联缓存`BookStore.books-*`和对象缓存`Book-*`
+2.  使用关联缓存`Book.authors-*`和对象缓存`Author-*`
+
+### 有缓存模式的SQL
+
+这段代码中，一模一样的查询被执行了两次。
+
+1.  第一次执行时，缓存无数据，通过SQL查询所有数据。
+    
+    生成的SQL如下：
+
+    ```sql
+    /* 
+     * 第一步：查询聚合根
+     * 得到两个store, id分别为1和2
+     */
+    select 
+        tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE 
+    from BOOK_STORE as tb_1_
+    
+    /*
+     * 第二步：
+     * 
+     * 查看关联缓存`BookStore.books-1`和`BookStore.books-2`，
+     * 皆不存在，只能通过SQL查询它们，并把结果存入缓存
+     *
+     * 写入缓存的数据:
+     * BookStore.books-1: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+     * BookStore.books-2: [10, 11, 12]
+     */
+    select 
+        tb_1_.STORE_ID, tb_1_.ID 
+    from BOOK as tb_1_ 
+    where 
+        tb_1_.STORE_ID in (
+            ?, ? /* 实际参数列表：1, 2 */
+        ) 
+    order by 
+        tb_1_.NAME asc, tb_1_.EDITION desc
+
+    /*
+     * 第三步：
+     *
+     * 查看对象缓存`Book-1`, `Book-2`, ... , 'Book-12'，
+     * 皆不存在，只能通过SQL查询它们，并把结果存入缓存
+     */
+    select 
+        tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+    from BOOK as tb_1_ where tb_1_.ID in (
+        /* 实际参数列表：6, 5, 4, 3, 2, 1, 9, 8, 7, 12, 11, 10 */
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? 
+    )
+
+    /*
+     * 第四步：
+     * 
+     * 查看关联缓存`Book.authors-1`, `Book.authors-2`, ..., `Book.athors-12`，
+     * 皆不存在，只能通过SQL查询它们，并把结果存入缓存
+     *
+     * 写入缓存的数据:
+     * Book.authors-1: [1, 2]
+     * Book.authors-2: [1, 2]
+     * Book.authors-3: [1, 2]
+     * Book.authors-4: [3]
+     * Book.authors-5: [3]
+     * Book.authors-6: [3]
+     * Book.authors-7: [4]
+     * Book.authors-8: [4]
+     * Book.authors-9: [4]
+     * Book.authors-10: [5]
+     * Book.authors-11: [5]
+     * Book.authors-12: [5]
+     */ 
+    select 
+        tb_1_.BOOK_ID, tb_1_.AUTHOR_ID 
+    from BOOK_AUTHOR_MAPPING as tb_1_ 
+    where tb_1_.BOOK_ID in (
+        /* 实际参数列表：1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 */
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    )
+    
+    /*
+     * 第五步：
+     *
+     * 查看对象缓存`Author-1`, `Author-2`, ... , 'Author-5'，
+     * 皆不存在，只能通过SQL查询它们，并把结果存入缓存
+     */
+    select 
+        tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER 
+    from AUTHOR as tb_1_ 
+    where tb_1_.ID in (
+        /* 实际参数列表：1, 2, 3, 4, 5 */
+        ?, ?, ?, ?, ? 
+    )
+    ```
+
+2.  第二次执行时，缓存有数据，仅仅聚合根对象需要通过SQL查询
+
+    生成的SQL如下：
+
+    ```sql
+    /* 
+     * 第一步：查询聚合根
+     * 得到两个store, id分别为1和2
+     */
+    select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE 
+    from BOOK_STORE as tb_1_
+
+    /*
+     * 后续所有数据，都可以通过
+     * - 关联缓存`BookStore.books-1`和`BookStore.books-2`
+     * - 对象`Book-1`，`Book-2`和``Book-12`
+     * - 关联缓存`Book.authors-1`, `Book.authors-2`, ... , `BookStore.authors-12`
+     * - 对象缓存`Author-1`, `Author-2`, ... , 'Author-5'
+     * 直接得到，所以无后续SQL语句
+     */
+    ```
+### 对比无缓存模式的SQL
+
+在这个例子中，查询被首次执行时，由于缓存中没有任何数据。自然地，所有数据必须通过SQL获取。
+
+但是，和无缓存模式相比，首次执行时生成的SQL并不相同。
+
+请再次查看[初识查询/查询复杂数据结构](../initial-contact#查询复杂数据结构)中的SQL。
+
+通过对比，不难发现，虽然两个例子的查询时相同的，但是
+-   本文档中，首次执行缓存无任何数据时，执行了5条SQL
+-   [初识查询/查询复杂数据结构](../initial-contact#查询复杂数据结构)一节中，执行了3条SQL。
+
+:::info
+即便面对没有任何缓存数据被命中这种极端情况，是否启用缓存，仍然会导致对象抓取器生成皆然不同的SQL。
+
+-   无缓存模式：尽可能生成少的SQL，每条SQL所执行的任务尽可能多，这样的SQL拥有最好的性能。
+
+-   有缓存模式：并不力求生成的SQL数量的最小化，从SQL层面分析，性能不是最佳的，但是和缓存系统结合后，综合性能最佳。
+
+然而，这一切对开发人员完全透明。
+:::
+
+## 关联缓存一致性
+
+Jimmer自动保证关联缓存的一致性。
+
+然而，到目前为止，本教程仅探讨了查询，暂时没有涉及修改，所以本文暂时无法讲解如何启用缓存一致性。请参见**TODO**。
