@@ -250,9 +250,9 @@ public class DatabaseValidators {
     private Set<Table> tablesOf(String catalogName, String schemaName, String tableName) throws SQLException {
         Set<Table> tables = new LinkedHashSet<>();
         try (ResultSet rs = con.getMetaData().getTables(
-                catalogName,
-                schemaName,
-                tableName,
+                DatabaseIdentifiers.comparableIdentifier(catalogName),
+                DatabaseIdentifiers.comparableIdentifier(schemaName),
+                DatabaseIdentifiers.comparableIdentifier(tableName),
                 null
         )) {
             while (rs.next()) {
@@ -271,9 +271,9 @@ public class DatabaseValidators {
     private Map<String, Column> columnsOf(Table table) throws SQLException {
         Map<String, Column> columnMap = new HashMap<>();
         try (ResultSet rs = con.getMetaData().getColumns(
-                table.catalog,
-                table.schema,
-                table.name,
+                DatabaseIdentifiers.comparableIdentifier(table.catalog),
+                DatabaseIdentifiers.comparableIdentifier(table.schema),
+                DatabaseIdentifiers.comparableIdentifier(table.name),
                 null
         )) {
             while (rs.next()) {
@@ -290,7 +290,11 @@ public class DatabaseValidators {
 
     private Set<String> primaryKeyColumns(Table table) throws SQLException {
         Set<String> columnNames = new HashSet<>();
-        try (ResultSet rs = con.getMetaData().getPrimaryKeys(table.catalog, table.schema, table.name)) {
+        try (ResultSet rs = con.getMetaData().getPrimaryKeys(
+                DatabaseIdentifiers.comparableIdentifier(table.catalog),
+                DatabaseIdentifiers.comparableIdentifier(table.schema),
+                DatabaseIdentifiers.comparableIdentifier(table.name))
+        ) {
             while (rs.next()) {
                 columnNames.add(
                         DatabaseIdentifiers.comparableIdentifier(rs.getString("COLUMN_NAME"))
@@ -303,9 +307,9 @@ public class DatabaseValidators {
     private Map<Set<String>, ForeignKey> foreignKeys(Table table) throws SQLException {
         Map<Tuple2<String, Table>, Map<String, String>> map = new HashMap<>();
         try (ResultSet rs = con.getMetaData().getImportedKeys(
-                table.catalog,
-                table.schema,
-                table.name
+                DatabaseIdentifiers.comparableIdentifier(table.catalog),
+                DatabaseIdentifiers.comparableIdentifier(table.schema),
+                DatabaseIdentifiers.comparableIdentifier(table.name)
         )) {
             while (rs.next()) {
                 String constraintName = DatabaseIdentifiers.comparableIdentifier(rs.getString("FK_NAME"));
