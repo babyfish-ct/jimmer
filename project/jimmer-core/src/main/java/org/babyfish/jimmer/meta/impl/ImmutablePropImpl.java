@@ -89,6 +89,8 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     private boolean idViewBasePropResolved;
 
+    private Boolean isRemote;
+
     ImmutablePropImpl(
             ImmutableTypeImpl declaringType,
             int id,
@@ -312,7 +314,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         if (ordinal >= TargetLevel.ENTITY.ordinal() && !getTargetType().isEntity()) {
             return false;
         }
-        if (ordinal >= TargetLevel.PERSISTENT.ordinal() && isTransient) {
+        if (ordinal >= TargetLevel.PERSISTENT.ordinal() && (isTransient || isRemote())) {
             return false;
         }
         return true;
@@ -819,6 +821,20 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
             return getDependenciesImpl(new LinkedList<>());
         }
         return list;
+    }
+
+    @Override
+    public boolean isRemote() {
+        Boolean remote = isRemote;
+        if (remote == null) {
+            if (isAssociation(TargetLevel.ENTITY)) {
+                remote = !declaringType.getMicroServiceName().equals(getTargetType().getMicroServiceName());
+            } else {
+                remote = false;
+            }
+            isRemote = remote;
+        }
+        return remote;
     }
 
     private List<ImmutableProp> getDependenciesImpl(LinkedList<ImmutableProp> stack) {

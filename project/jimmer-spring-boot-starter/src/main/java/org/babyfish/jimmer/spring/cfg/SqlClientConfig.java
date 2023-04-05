@@ -206,6 +206,8 @@ public class SqlClientConfig {
         for (JimmerCustomizer customizer : customizers) {
             customizer.customize(builder);
         }
+
+        builder.setMicroServiceName(properties.getMicroServiceName());
     }
 
     private static void postCreateSqlClient(

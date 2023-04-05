@@ -462,6 +462,27 @@ public class ImmutableProp {
     private void resolveTargetType(TypeUtils typeUtils) {
         if (isAssociation) {
             targetType = typeUtils.getImmutableType(elementType);
+            if (
+                    (targetType.isEntity() || targetType.isMappedSuperClass()) &&
+                    !declaringType.getMicroServiceName().equals(targetType.getMicroServiceName()) &&
+                    (declaringType.getMicroServiceName().isEmpty() || targetType.getMicroServiceName().isEmpty())
+            ) {
+                throw new MetaException(
+                        "Illegal property \"" +
+                                this +
+                                "\", when the micro service name(`" +
+                                declaringType.getMicroServiceName() +
+                                "`) of source type(" +
+                                declaringType.getQualifiedName() +
+                                ") and " +
+                                "the micro service name(`" +
+                                targetType.getMicroServiceName() +
+                                "`) of target type(" +
+                                targetType.getQualifiedName() +
+                                ") are not equal, " +
+                                "neither of them must be empty"
+                );
+            }
         }
     }
 

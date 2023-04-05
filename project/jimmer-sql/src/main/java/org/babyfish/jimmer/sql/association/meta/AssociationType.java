@@ -54,6 +54,14 @@ public class AssociationType implements ImmutableType {
         ImmutableProp mappedBy = baseProp.getMappedBy();
 
         if (mappedBy != null && mappedBy.getStorage() instanceof MiddleTable) {
+            if (baseProp.isRemote()) {
+                throw new IllegalArgumentException(
+                        "The property \"" +
+                                baseProp +
+                                "\", reversed association(with mappedBy) cannot be remote association(" +
+                                "micro service name of source side and micro service name of target side are different)"
+                );
+            }
             middleTable = mappedBy.<MiddleTable>getStorage().getInverse();
         } else if (baseProp.getStorage() instanceof MiddleTable){
             middleTable = baseProp.getStorage();
@@ -261,6 +269,11 @@ public class AssociationType implements ImmutableType {
     @Override
     public IdGenerator getIdGenerator() {
         return null;
+    }
+
+    @Override
+    public String getMicroServiceName() {
+        return baseProp.getDeclaringType().getMicroServiceName();
     }
 
     @Override

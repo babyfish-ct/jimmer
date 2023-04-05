@@ -60,7 +60,7 @@ public class FetcherGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .superclass(
                         ParameterizedTypeName.get(
-                                Constants.ABSTRACT_TYPE_FETCHER_CLASS_NAME,
+                                Constants.ABSTRACT_TYPED_FETCHER_CLASS_NAME,
                                 type.getClassName(),
                                 type.getFetcherClassName()
                         )

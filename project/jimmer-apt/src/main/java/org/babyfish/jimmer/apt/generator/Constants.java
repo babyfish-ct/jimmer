@@ -163,7 +163,7 @@ class Constants {
                     "Cmp"
             );
 
-    public static final ClassName ABSTRACT_TYPE_FETCHER_CLASS_NAME =
+    public static final ClassName ABSTRACT_TYPED_FETCHER_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher.spi",
                     "AbstractTypedFetcher"

@@ -152,6 +152,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public boolean isRemote() {
+        return false;
+    }
+
+    @Override
     public String toString() {
         return declaringType + "." + getName();
     }

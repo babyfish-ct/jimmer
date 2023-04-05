@@ -70,6 +70,8 @@ class ImmutableTypeImpl implements ImmutableType {
 
     private String tableName;
 
+    private final String microServiceName;
+
     ImmutableTypeImpl(
             Class<?> javaClass,
             ImmutableType superType,
@@ -140,6 +142,14 @@ class ImmutableTypeImpl implements ImmutableType {
         tableName = table != null ? table.name() : "";
         if (tableName.isEmpty()) {
             tableName = DatabaseIdentifiers.databaseIdentifier(javaClass.getSimpleName());
+        }
+
+        if (isEntity) {
+            microServiceName = javaClass.getAnnotation(Entity.class).microServiceName();
+        } else if (isMappedSupperClass) {
+            microServiceName = javaClass.getAnnotation(MappedSuperclass.class).microServiceName();
+        } else {
+            microServiceName = "";
         }
     }
 
@@ -581,6 +591,11 @@ class ImmutableTypeImpl implements ImmutableType {
     @Override
     public IdGenerator getIdGenerator() {
         return idGenerator;
+    }
+
+    @Override
+    public String getMicroServiceName() {
+        return microServiceName;
     }
 
     @Override

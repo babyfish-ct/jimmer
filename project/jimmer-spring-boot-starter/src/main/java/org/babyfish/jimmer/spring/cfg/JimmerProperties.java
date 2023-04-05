@@ -40,6 +40,8 @@ public class JimmerProperties {
 
     private final int defaultListBatchSize;
 
+    private final String microServiceName;
+
     @NotNull
     private final Client client;
 
@@ -54,6 +56,7 @@ public class JimmerProperties {
             @Nullable EnumType.Strategy defaultEnumStrategy,
             @Nullable Integer defaultBatchSize,
             @Nullable Integer defaultListBatchSize,
+            @Nullable String microServiceName,
             @Nullable Client client,
             @Nullable Map<String, Client> clients
     ) {
@@ -121,6 +124,10 @@ public class JimmerProperties {
                 defaultListBatchSize != null ?
                         defaultListBatchSize :
                         JSqlClient.Builder.DEFAULT_LIST_BATCH_SIZE;
+        this.microServiceName =
+                microServiceName != null ?
+                        microServiceName :
+                        "";
         if (client == null) {
             this.client = new Client(null, null);
         } else {
@@ -164,6 +171,10 @@ public class JimmerProperties {
 
     public int getDefaultListBatchSize() {
         return defaultListBatchSize;
+    }
+
+    public String getMicroServiceName() {
+        return microServiceName;
     }
 
     @NotNull

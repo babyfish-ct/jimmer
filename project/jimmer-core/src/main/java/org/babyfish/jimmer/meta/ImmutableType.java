@@ -127,6 +127,8 @@ public interface ImmutableType {
     @Nullable
     IdGenerator getIdGenerator();
 
+    String getMicroServiceName();
+
     interface Builder {
 
         Builder id(int id, String name, Class<?> elementType);

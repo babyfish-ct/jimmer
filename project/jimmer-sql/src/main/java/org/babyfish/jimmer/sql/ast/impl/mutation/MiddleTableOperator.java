@@ -54,6 +54,9 @@ class MiddleTableOperator {
             ImmutableProp prop,
             MutationTrigger trigger
     ) {
+        if (prop.isRemote()) {
+            return null;
+        }
         Storage storage = prop.getStorage();
         if (storage instanceof MiddleTable) {
             return new MiddleTableOperator(

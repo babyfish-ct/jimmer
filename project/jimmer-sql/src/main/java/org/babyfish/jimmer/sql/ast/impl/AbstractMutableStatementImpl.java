@@ -38,6 +38,13 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         if (!type.isEntity()) {
             throw new IllegalArgumentException("\"" + type + "\" is not entity");
         }
+        if (sqlClient != null && !sqlClient.getMicroServiceName().equals(type.getMicroServiceName())) {
+            throw new IllegalArgumentException(
+                    "The sql client and entity type \"" +
+                            type +
+                            "\" do not belong to the same micro service"
+            );
+        }
         this.sqlClient = sqlClient;
         this.type = type;
     }
@@ -53,6 +60,13 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
                 sqlClient,
                 "sqlClient cannot be null"
         );
+        if (!sqlClient.getMicroServiceName().equals(table.getImmutableType().getMicroServiceName())) {
+            throw new IllegalArgumentException(
+                    "The sql client and entity type \"" +
+                            table.getImmutableType() +
+                            "\" do not belong to the same micro service"
+            );
+        }
         this.table = table;
         this.type = table.getImmutableType();
     }

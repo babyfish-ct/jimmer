@@ -124,6 +124,9 @@ class FieldImpl implements Field {
         } else if (recursionStrategy != null) {
             joiner.add("recursive: <java-code>");
         }
+        if (filter != null) {
+            joiner.add("filter: <java-code>");
+        }
         if (childFetcher == null) {
             return prop.getName() + joiner;
         }

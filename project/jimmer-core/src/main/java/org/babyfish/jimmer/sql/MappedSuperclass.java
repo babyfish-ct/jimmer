@@ -5,4 +5,7 @@ import java.lang.annotation.*;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface MappedSuperclass {}
+public @interface MappedSuperclass {
+
+    String microServiceName() default "";
+}

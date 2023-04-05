@@ -86,4 +86,6 @@ public interface ImmutableProp {
     ImmutableProp getOpposite();
 
     List<ImmutableProp> getDependencies();
+
+    boolean isRemote();
 }

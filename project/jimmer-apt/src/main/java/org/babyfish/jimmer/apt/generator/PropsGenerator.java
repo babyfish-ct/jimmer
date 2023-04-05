@@ -184,6 +184,11 @@ public class PropsGenerator {
         }
         TypeName returnType;
         if (prop.isAssociation(true)) {
+            if (!prop.getDeclaringType().getMicroServiceName().equals(
+                    prop.getTargetType().getMicroServiceName()
+            )) {
+                return null;
+            }
             if (isTableEx) {
                 returnType = typeUtils
                         .getImmutableType(prop.getElementType())

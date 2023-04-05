@@ -67,6 +67,8 @@ public class ImmutableType {
 
     private final ClassName tableExClassName;
 
+    private final ClassName remoteTableClassName;
+
     private final ClassName fetcherClassName;
 
     private final ClassName propsClassName;
@@ -75,6 +77,8 @@ public class ImmutableType {
 
     private final Map<ClassName, String> validationMessageMap;
 
+    private final String microServiceName;
+
     public ImmutableType(
             TypeUtils typeUtils,
             TypeElement typeElement
@@ -82,6 +86,11 @@ public class ImmutableType {
         this.typeElement = typeElement;
         Class<?> annotationType = typeUtils.getImmutableAnnotationType(typeElement);
         isEntity = annotationType == Entity.class;
+        microServiceName = isEntity ?
+                typeElement.getAnnotation(Entity.class).microServiceName() :
+                annotationType == MappedSuperclass.class ?
+                    typeElement.getAnnotation(MappedSuperclass.class).microServiceName() :
+                    "";
         isMappedSuperClass = annotationType == MappedSuperclass.class;
         isEmbeddable = annotationType == Embeddable.class;
 
@@ -140,6 +149,19 @@ public class ImmutableType {
                                 "\", it super type \"" +
                                 superType.qualifiedName +
                                 "\" cannot be decorated by @Entity or @MappedSuperClass"
+                );
+            }
+            if (!superType.microServiceName.equals(microServiceName)) {
+                throw new MetaException(
+                        "Illegal type \"" +
+                                typeElement.getQualifiedName() +
+                                "\", its micro service name is \"" +
+                                microServiceName +
+                                "\" but the micro service name of its super type \"" +
+                                superType.getQualifiedName() +
+                                "\" is \"" +
+                                superType.microServiceName +
+                                "\""
                 );
             }
         }
@@ -417,6 +439,7 @@ public class ImmutableType {
         mapStructClassName = toClassName(name -> name + "Draft", "MapStruct");
         tableClassName = toClassName(name -> name + "Table");
         tableExClassName = toClassName(name -> name + "TableEx");
+        remoteTableClassName = toClassName(name -> name + "Table", "Remote");
         fetcherClassName = toClassName(name -> name + "Fetcher");
         propsClassName = toClassName(name -> name + "Props");
         propExpressionClassName = toClassName(name -> name + PROP_EXPRESSION_SUFFIX);
@@ -557,6 +580,10 @@ public class ImmutableType {
         return tableExClassName;
     }
 
+    public ClassName getRemoteTableClassName() {
+        return remoteTableClassName;
+    }
+
     public ClassName getFetcherClassName() {
         return fetcherClassName;
     }
@@ -582,6 +609,10 @@ public class ImmutableType {
 
     public Map<ClassName, String> getValidationMessageMap() {
         return validationMessageMap;
+    }
+
+    public String getMicroServiceName() {
+        return microServiceName;
     }
 
     public boolean resolve(TypeUtils typeUtils, int step) {

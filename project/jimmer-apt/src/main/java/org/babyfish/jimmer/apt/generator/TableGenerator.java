@@ -288,4 +288,25 @@ public class TableGenerator {
         }
         typeBuilder.addMethod(builder.build());
     }
+
+    private void addRemote() {
+        if (isTableEx) {
+            return;
+        }
+        TypeSpec.Builder tmpTypeBuilder = typeBuilder;
+        typeBuilder = TypeSpec
+                .classBuilder("Remote")
+                .superclass(
+                        ParameterizedTypeName.get(
+                                ABSTRACT_TYPED_TABLE_CLASS_NAME,
+                                type.getClassName()
+                        )
+                );
+        addRemoteMembers();
+        typeBuilder = tmpTypeBuilder;
+    }
+
+    private void addRemoteMembers() {
+
+    }
 }

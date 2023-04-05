@@ -122,6 +122,16 @@ class Saver {
                     currentDraftSpi.__isLoaded(prop.getId())
             ) {
                 ImmutableType targetType = prop.getTargetType();
+                if (prop.isRemote() && !prop.isTransient()) {
+                    throw new SaveException(
+                            SaveErrorCode.REMOTE_ASSOCIATION,
+                            path,
+                            "The property \"" +
+                                    prop +
+                                    "\" which is not only non-transient but also remote " +
+                                    "cannot be supported by save command"
+                    );
+                }
                 int currentIdPropId = currentType.getIdProp().getId();
                 Object currentId = currentDraftSpi.__isLoaded(currentIdPropId) ?
                         currentDraftSpi.__get(currentIdPropId) :

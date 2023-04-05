@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.lang.NewChain;
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.Example;
