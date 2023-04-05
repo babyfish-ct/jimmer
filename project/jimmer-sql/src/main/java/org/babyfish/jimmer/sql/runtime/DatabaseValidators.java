@@ -4,7 +4,6 @@ import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.DatabaseValidationIgnore;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.*;
@@ -19,9 +18,9 @@ public class DatabaseValidators {
 
     private final List<DatabaseValidationException.Item> items;
 
-    private Map<ImmutableType, org.babyfish.jimmer.lang.Ref<Table>> tableRefMap = new HashMap<>();
+    private final Map<ImmutableType, org.babyfish.jimmer.lang.Ref<Table>> tableRefMap = new HashMap<>();
 
-    private Map<ImmutableProp, org.babyfish.jimmer.lang.Ref<Table>> middleTableRefMap = new HashMap<>();
+    private final Map<ImmutableProp, org.babyfish.jimmer.lang.Ref<Table>> middleTableRefMap = new HashMap<>();
 
     @Nullable
     public static DatabaseValidationException validate(EntityManager entityManager, Connection con) throws SQLException {
@@ -55,18 +54,24 @@ public class DatabaseValidators {
         if (table == null) {
             return;
         }
-        if (type.getIdProp().getAnnotation(DatabaseValidationIgnore.class) != null &&
-                !type.getIdProp().<ColumnDefinition>getStorage().toColumnNames().equals(table.primaryKeyColumns)) {
-            items.add(
-                    new DatabaseValidationException.Item(
-                            type,
-                            null,
-                            "Expected primary key columns are " +
-                                    type.getIdProp().<ColumnDefinition>getStorage().toColumnNames() +
-                                    ", but actual primary key columns are " +
-                                    table.primaryKeyColumns
-                    )
-            );
+        if (type.getIdProp().getAnnotation(DatabaseValidationIgnore.class) != null) {
+            ColumnDefinition idColumnDefinition = type.getIdProp().getStorage();
+            Set<String> idColumnNames = new LinkedHashSet<>((idColumnDefinition.size() * 4 + 2) / 3);
+            for (int i = 0; i < idColumnDefinition.size(); i++) {
+                idColumnNames.add(idColumnDefinition.name(i).toUpperCase());
+            }
+            if (!idColumnNames.equals(table.primaryKeyColumns)) {
+                items.add(
+                        new DatabaseValidationException.Item(
+                                type,
+                                null,
+                                "Expected primary key columns are " +
+                                        type.getIdProp().<ColumnDefinition>getStorage().toColumnNames() +
+                                        ", but actual primary key columns are " +
+                                        table.primaryKeyColumns
+                        )
+                );
+            }
         }
         for (ImmutableProp prop : type.getProps().values()) {
             if (prop.getAnnotation(DatabaseValidationIgnore.class) != null) {
@@ -76,7 +81,7 @@ public class DatabaseValidators {
             if (storage instanceof ColumnDefinition) {
                 ColumnDefinition columnDefinition = (ColumnDefinition)storage;
                 for (int i = 0; i < columnDefinition.size(); i++) {
-                    Column column = table.columnMap.get(DatabaseIdentifiers.comparableIdentifier(columnDefinition.name(i)));
+                    Column column = table.columnMap.get(columnDefinition.name(i).toUpperCase());
                     if (column == null) {
                         items.add(
                                 new DatabaseValidationException.Item(
@@ -93,7 +98,7 @@ public class DatabaseValidators {
                 }
             }
             if (storage instanceof SingleColumn) {
-                Column column = table.columnMap.get(DatabaseIdentifiers.comparableIdentifier(((SingleColumn)storage).getName()));
+                Column column = table.columnMap.get(((SingleColumn)storage).getName().toUpperCase());
                 if (column != null) {
                     boolean nullable = prop.isNullable() && !prop.isInputNotNull();
                     if (nullable != column.nullable) {
@@ -233,7 +238,7 @@ public class DatabaseValidators {
     private Set<Table> tablesOf(String table) throws SQLException {
         String catalogName = null;
         String schemaName = null;
-        String tableName = DatabaseIdentifiers.comparableIdentifier(table);
+        String tableName = table;
         int index = tableName.lastIndexOf('.');
         if (index != -1) {
             schemaName = tableName.substring(0, index);
@@ -250,19 +255,55 @@ public class DatabaseValidators {
     private Set<Table> tablesOf(String catalogName, String schemaName, String tableName) throws SQLException {
         Set<Table> tables = new LinkedHashSet<>();
         try (ResultSet rs = con.getMetaData().getTables(
-                DatabaseIdentifiers.comparableIdentifier(catalogName),
-                DatabaseIdentifiers.comparableIdentifier(schemaName),
-                DatabaseIdentifiers.comparableIdentifier(tableName),
+                catalogName,
+                schemaName,
+                tableName,
                 null
         )) {
             while (rs.next()) {
                 tables.add(
                         new Table(
-                                DatabaseIdentifiers.comparableIdentifier(rs.getString("TABLE_CAT")),
-                                DatabaseIdentifiers.comparableIdentifier(rs.getString("TABLE_SCHEM")),
-                                DatabaseIdentifiers.comparableIdentifier(rs.getString("TABLE_NAME"))
+                                rs.getString("TABLE_CAT"),
+                                rs.getString("TABLE_SCHEM"),
+                                rs.getString("TABLE_NAME")
                         )
                 );
+            }
+        }
+        if (tables.isEmpty()) {
+            try (ResultSet rs = con.getMetaData().getTables(
+                    catalogName,
+                    schemaName,
+                    tableName,
+                    null
+            )) {
+                while (rs.next()) {
+                    tables.add(
+                            new Table(
+                                    rs.getString("TABLE_CAT"),
+                                    rs.getString("TABLE_SCHEM"),
+                                    rs.getString("TABLE_NAME").toUpperCase()
+                            )
+                    );
+                }
+            }
+        }
+        if (tables.isEmpty()) {
+            try (ResultSet rs = con.getMetaData().getTables(
+                    catalogName,
+                    schemaName,
+                    tableName,
+                    null
+            )) {
+                while (rs.next()) {
+                    tables.add(
+                            new Table(
+                                    rs.getString("TABLE_CAT").toUpperCase(),
+                                    rs.getString("TABLE_SCHEM").toUpperCase(),
+                                    rs.getString("TABLE_NAME").toUpperCase()
+                            )
+                    );
+                }
             }
         }
         return tables;
@@ -271,18 +312,18 @@ public class DatabaseValidators {
     private Map<String, Column> columnsOf(Table table) throws SQLException {
         Map<String, Column> columnMap = new HashMap<>();
         try (ResultSet rs = con.getMetaData().getColumns(
-                DatabaseIdentifiers.comparableIdentifier(table.catalog),
-                DatabaseIdentifiers.comparableIdentifier(table.schema),
-                DatabaseIdentifiers.comparableIdentifier(table.name),
+                table.catalog,
+                table.schema,
+                table.name,
                 null
         )) {
             while (rs.next()) {
                 Column column = new Column(
                         table,
-                        DatabaseIdentifiers.comparableIdentifier(rs.getString("COLUMN_NAME")),
+                        rs.getString("COLUMN_NAME"),
                         rs.getInt("NULLABLE") == DatabaseMetaData.columnNullable
                 );
-                columnMap.put(column.name, column);
+                columnMap.put(column.name.toUpperCase(), column);
             }
         }
         return columnMap;
@@ -291,13 +332,13 @@ public class DatabaseValidators {
     private Set<String> primaryKeyColumns(Table table) throws SQLException {
         Set<String> columnNames = new HashSet<>();
         try (ResultSet rs = con.getMetaData().getPrimaryKeys(
-                DatabaseIdentifiers.comparableIdentifier(table.catalog),
-                DatabaseIdentifiers.comparableIdentifier(table.schema),
-                DatabaseIdentifiers.comparableIdentifier(table.name))
-        ) {
+                table.catalog,
+                table.schema,
+                table.name
+        )) {
             while (rs.next()) {
                 columnNames.add(
-                        DatabaseIdentifiers.comparableIdentifier(rs.getString("COLUMN_NAME"))
+                        rs.getString("COLUMN_NAME").toUpperCase()
                 );
             }
         }
@@ -307,19 +348,19 @@ public class DatabaseValidators {
     private Map<Set<String>, ForeignKey> foreignKeys(Table table) throws SQLException {
         Map<Tuple2<String, Table>, Map<String, String>> map = new HashMap<>();
         try (ResultSet rs = con.getMetaData().getImportedKeys(
-                DatabaseIdentifiers.comparableIdentifier(table.catalog),
-                DatabaseIdentifiers.comparableIdentifier(table.schema),
-                DatabaseIdentifiers.comparableIdentifier(table.name)
+                table.catalog,
+                table.schema,
+                table.name
         )) {
             while (rs.next()) {
-                String constraintName = DatabaseIdentifiers.comparableIdentifier(rs.getString("FK_NAME"));
+                String constraintName = rs.getString("FK_NAME");
                 Table referencedTable = tablesOf(
-                        DatabaseIdentifiers.comparableIdentifier(rs.getString("PKTABLE_CAT")),
-                        DatabaseIdentifiers.comparableIdentifier(rs.getString("PKTABLE_SCHEM")),
-                        DatabaseIdentifiers.comparableIdentifier(rs.getString("PKTABLE_NAME"))
+                        rs.getString("PKTABLE_CAT"),
+                        rs.getString("PKTABLE_SCHEM"),
+                        rs.getString("PKTABLE_NAME")
                 ).iterator().next();
-                String columnName = DatabaseIdentifiers.comparableIdentifier(rs.getString("FKCOLUMN_NAME"));
-                String referencedColumnName = DatabaseIdentifiers.comparableIdentifier(rs.getString("PKCOLUMN_NAME"));
+                String columnName = rs.getString("FKCOLUMN_NAME").toUpperCase();
+                String referencedColumnName = rs.getString("PKCOLUMN_NAME").toUpperCase();
                 map.computeIfAbsent(
                         new Tuple2<>(constraintName, referencedTable),
                         it -> new LinkedHashMap<>()).put(columnName, referencedColumnName
@@ -342,7 +383,10 @@ public class DatabaseValidators {
                     referencedTable,
                     new LinkedHashSet<>(referencedColumnNames)
             );
-            foreignKeyMap.put(columnNames, foreignKey);
+            foreignKeyMap.put(
+                    columnNames,
+                    foreignKey
+            );
         }
         return foreignKeyMap;
     }
@@ -387,15 +431,13 @@ public class DatabaseValidators {
                 MultipleJoinColumns multipleJoinColumns = (MultipleJoinColumns) columnDefinition;
                 Set<String> columnNames = new LinkedHashSet<>();
                 for (int i = 0; i < multipleJoinColumns.size(); i++) {
-                    columnNames.add(DatabaseIdentifiers.comparableIdentifier(multipleJoinColumns.name(i)));
+                    columnNames.add(multipleJoinColumns.name(i).toUpperCase());
                 }
                 foreignKey = getForeignKeyMap(ctx).get(columnNames);
             } else {
                 foreignKey = getForeignKeyMap(ctx).get(
                         Collections.singleton(
-                                DatabaseIdentifiers.comparableIdentifier(
-                                        ((SingleColumn) columnDefinition).getName()
-                                )
+                                ((SingleColumn) columnDefinition).getName().toUpperCase()
                         )
                 );
             }

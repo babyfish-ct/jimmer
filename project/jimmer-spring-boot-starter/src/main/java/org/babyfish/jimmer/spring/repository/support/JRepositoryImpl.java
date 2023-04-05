@@ -60,7 +60,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
                                 "\" so that the entityType must be specified"
                 );
             }
-            this.entityType = (Class<E>) typeArguments[0];
+            this.entityType = entityType = (Class<E>) typeArguments[0];
         }
         this.immutableType = ImmutableType.get(entityType);
         if (!immutableType.isEntity()) {
