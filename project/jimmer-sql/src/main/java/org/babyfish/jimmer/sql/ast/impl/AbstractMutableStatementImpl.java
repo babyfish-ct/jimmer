@@ -56,6 +56,9 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         if (table.__unwrap() != null) {
             throw new IllegalArgumentException("table proxy cannot be wrapper");
         }
+        if (table.__prop() != null) {
+            throw new IllegalArgumentException("table proxy must be root table");
+        }
         this.sqlClient = Objects.requireNonNull(
                 sqlClient,
                 "sqlClient cannot be null"

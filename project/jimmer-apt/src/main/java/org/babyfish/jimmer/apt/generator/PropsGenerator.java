@@ -182,14 +182,60 @@ public class PropsGenerator {
         if (withJoinType && !prop.isAssociation(true)) {
             return null;
         }
+        TypeName returnType = returnTypeName(typeUtils, isTableEx, prop);
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder(prop.getName())
+                .addModifiers(Modifier.PUBLIC)
+                .returns(returnType);
+        if (withImplementation) {
+            if (!isTableEx && !ignoreOverride) {
+                builder.addAnnotation(Override.class);
+            }
+        } else {
+            builder.addModifiers(Modifier.ABSTRACT);
+        }
+        if (withJoinType) {
+            builder.addParameter(Constants.JOIN_TYPE_CLASS_NAME, "joinType");
+        }
+        if (withImplementation) {
+            if (prop.isAssociation(true)) {
+                builder.addStatement("__beforeJoin()");
+                if (withJoinType) {
+                    builder
+                            .beginControlFlow("if (raw != null)")
+                            .addStatement("return new $T(raw.joinImplementor($S, joinType))", returnType, prop.getName())
+                            .endControlFlow()
+                            .addStatement("return new $T(joinOperation($S, joinType))", returnType, prop.getName());
+                } else {
+                    builder
+                            .beginControlFlow("if (raw != null)")
+                            .addStatement("return new $T(raw.joinImplementor($S))", returnType, prop.getName())
+                            .endControlFlow()
+                            .addStatement("return new $T(joinOperation($S))", returnType, prop.getName());
+                }
+            } else if (prop.isAssociation(false)) {
+                builder.addStatement("return new $T(get($S))", returnType, prop.getName());
+            } else {
+                builder.addStatement("return get($S)", prop.getName());
+            }
+        }
+        return builder.build();
+    }
+
+    static TypeName returnTypeName(
+            TypeUtils typeUtils,
+            boolean isTableEx,
+            ImmutableProp prop
+    ) {
         TypeName returnType;
         if (prop.isAssociation(true)) {
             if (!prop.getDeclaringType().getMicroServiceName().equals(
                     prop.getTargetType().getMicroServiceName()
             )) {
-                return null;
-            }
-            if (isTableEx) {
+                returnType = typeUtils
+                        .getImmutableType(prop.getElementType())
+                        .getRemoteTableClassName();
+            } else if (isTableEx) {
                 returnType = typeUtils
                         .getImmutableType(prop.getElementType())
                         .getTableExClassName();
@@ -229,42 +275,6 @@ public class PropsGenerator {
                 );
             }
         }
-        MethodSpec.Builder builder = MethodSpec
-                .methodBuilder(prop.getName())
-                .addModifiers(Modifier.PUBLIC)
-                .returns(returnType);
-        if (withImplementation) {
-            if (!isTableEx && !ignoreOverride) {
-                builder.addAnnotation(Override.class);
-            }
-        } else {
-            builder.addModifiers(Modifier.ABSTRACT);
-        }
-        if (withJoinType) {
-            builder.addParameter(Constants.JOIN_TYPE_CLASS_NAME, "joinType");
-        }
-        if (withImplementation) {
-            if (prop.isAssociation(true)) {
-                builder.addStatement("__beforeJoin()");
-                if (withJoinType) {
-                    builder
-                            .beginControlFlow("if (raw != null)")
-                            .addStatement("return new $T(raw.joinImplementor($S, joinType))", returnType, prop.getName())
-                            .endControlFlow()
-                            .addStatement("return new $T(joinOperation($S, joinType))", returnType, prop.getName());
-                } else {
-                    builder
-                            .beginControlFlow("if (raw != null)")
-                            .addStatement("return new $T(raw.joinImplementor($S))", returnType, prop.getName())
-                            .endControlFlow()
-                            .addStatement("return new $T(joinOperation($S))", returnType, prop.getName());
-                }
-            } else if (prop.isAssociation(false)) {
-                builder.addStatement("return new $T(get($S))", returnType, prop.getName());
-            } else {
-                builder.addStatement("return get($S)", prop.getName());
-            }
-        }
-        return builder.build();
+        return returnType;
     }
 }

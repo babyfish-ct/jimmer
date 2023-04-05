@@ -103,6 +103,7 @@ public class TableGenerator {
             addDisableJoin();
             addWeakJoin(false);
             addWeakJoin(true);
+            addRemote();
             return typeBuilder.build();
         } finally {
             typeBuilder = oldTypeBuilder;
@@ -296,17 +297,82 @@ public class TableGenerator {
         TypeSpec.Builder tmpTypeBuilder = typeBuilder;
         typeBuilder = TypeSpec
                 .classBuilder("Remote")
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .superclass(
                         ParameterizedTypeName.get(
                                 ABSTRACT_TYPED_TABLE_CLASS_NAME,
                                 type.getClassName()
                         )
                 );
-        addRemoteMembers();
+        addRemoteConstructor();
+        addRemoteIdProp();
+        addRemoteAsTableEx();
+        addRemoteDisableJoin();
+        tmpTypeBuilder.addType(typeBuilder.build());
         typeBuilder = tmpTypeBuilder;
     }
 
-    private void addRemoteMembers() {
+    private void addRemoteConstructor() {
+        typeBuilder.addMethod(
+                MethodSpec
+                        .constructorBuilder()
+                        .addModifiers(Modifier.PUBLIC)
+                        .addParameter(
+                                DELAYED_OPERATION_CLASS_NAME,
+                                "delayedOperation"
+                        )
+                        .addStatement("super($T.class, delayedOperation)", type.getClassName())
+                        .build()
+        );
+        typeBuilder.addMethod(
+                MethodSpec
+                        .constructorBuilder()
+                        .addModifiers(Modifier.PUBLIC)
+                        .addParameter(
+                                ParameterizedTypeName.get(
+                                        TABLE_IMPLEMENTOR_CLASS_NAME,
+                                        type.getClassName()
+                                ),
+                                "table"
+                        )
+                        .addStatement("super(table)", type.getClassName())
+                        .build()
+        );
+    }
 
+    private void addRemoteIdProp() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder(type.getIdProp().getName())
+                .addModifiers(Modifier.PUBLIC)
+                .returns(PropsGenerator.returnTypeName(typeUtils, false, type.getIdProp()))
+                .addStatement("return get($S)", type.getIdProp().getName());
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addRemoteAsTableEx() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("asTableEx")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addAnnotation(Deprecated.class)
+                .returns(
+                        ParameterizedTypeName.get(
+                                TABLE_EX_CLASS_NAME,
+                                type.getClassName()
+                        )
+                )
+                .addStatement("throw new UnsupportedOperationException()");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addRemoteDisableJoin() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("__disableJoin")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addParameter(STRING_CLASS_NAME, "reason")
+                .returns(type.getRemoteTableClassName())
+                .addStatement("return this");
+        typeBuilder.addMethod(builder.build());
     }
 }

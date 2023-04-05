@@ -233,7 +233,7 @@ public class DatabaseValidators {
     private Set<Table> tablesOf(String table) throws SQLException {
         String catalogName = null;
         String schemaName = null;
-        String tableName = DatabaseIdentifiers.comparableIdentifier(table);
+        String tableName = table;
         int index = tableName.lastIndexOf('.');
         if (index != -1) {
             schemaName = tableName.substring(0, index);
