@@ -511,8 +511,8 @@ interface Book {
 
 这里，并没有为`@JoinTable`指定任何属性，默认属性如下
 - `name`: BOOK_STORE_MAPPING"。
-- `joinColumns`: BOOK_ID。
-- `inverseJoinColumns`: STORE_ID。
+- `joinColumnName`: BOOK_ID。
+- `inverseJoinColumnName`: STORE_ID。
 
 你也可以显式地指定它们
 
@@ -680,8 +680,8 @@ interface Address {
 
 这里，并没有为`@JoinTable`指定任何属性，默认属性如下
 - `name`: ADDRESS_CUSTOMER_MAPPING"。
-- `joinColumns`: ADDRESS_ID。
-- `inverseJoinColumns`: CUSTOMER_ID。
+- `joinColumnName`: ADDRESS_ID。
+- `inverseJoinColumnName`: CUSTOMER_ID。
 
 你也可以显式地指定它们
 
@@ -834,7 +834,7 @@ public interface Book {
 
     @ManyToMany
     @JoinTable
-    List<Author> autors();
+    List<Author> authors();
 
     ...
 }
@@ -879,7 +879,7 @@ public interface Book {
         joinColumnName = "BOOK_ID",
         inverseColumnName = "AUTHOR_ID"
     )
-    List<Author> autors();
+    List<Author> authors();
 
     ...
 }

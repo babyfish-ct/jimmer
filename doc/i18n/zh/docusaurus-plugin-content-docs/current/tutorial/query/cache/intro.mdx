@@ -10,13 +10,13 @@ import TabItem from '@theme/TabItem';
 
 默认情况下，缓存并没未启用，Jimmer查询只操作数据库。
 
-开发人员可以启用缓存，启用缓存后，Jimmer会自动结合数据库操作和缓冲操作。
+开发人员可以启用缓存，启用缓存后，Jimmer会自动结合数据库操作和缓存操作。
 
 :::info
-无论缓存是否被启用，均不会影响业务代码。即，Jimmer缓冲对用户透明。
+无论缓存是否被启用，均不会影响业务代码。即，Jimmer缓存对用户透明。
 :::
 
-要启用缓存，用户手续需要Spring注册一个实现了`org.babyfish.jimmer.sql.cache.CacheFactory`接口的对象。
+要启用缓存，用户首先需要Spring注册一个实现了`org.babyfish.jimmer.sql.cache.CacheFactory`接口的对象。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
