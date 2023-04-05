@@ -88,7 +88,7 @@ public abstract class AbstractDataLoader {
             int limit,
             int offset
     ) {
-        if (!prop.isAssociation(TargetLevel.PERSISTENT) && !prop.hasTransientResolver()) {
+        if (!prop.isAssociation(TargetLevel.ENTITY) && !prop.hasTransientResolver()) {
             throw new IllegalArgumentException(
                     "\"" + prop + "\" is neither association nor transient with resolver"
             );

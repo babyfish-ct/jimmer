@@ -265,7 +265,7 @@ public interface Book {
     BigDecimal price();
 
     @Null
-    @ManyToOne(optional = true)
+    @ManyToOne
     BookStore store();
 
     @ManyToMany
@@ -307,14 +307,14 @@ public interface Book {
 
     val price: BigDecimal
 
-    @ManyToOne(optional = true)
+    @ManyToOne
     val store: BookStore?
 
     @ManyToMany
     @JoinTable(
             name = "BOOK_AUTHOR_MAPPING",
-            joinColumns = @JoinColumn(name = "BOOK_ID"),
-            inverseJoinColumns = @JoinColumn(name = "AUTHOR_ID")
+            joinColumnName = "BOOK_ID",
+            inverseJoinColumnName = "AUTHOR_ID"
     )
     val authors: List<Author>
 }

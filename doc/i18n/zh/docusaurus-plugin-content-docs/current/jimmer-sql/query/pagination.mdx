@@ -258,7 +258,7 @@ where tb_1_.PRICE between ? and ?
 
 针对上文所讨论的无法被优化的这种情况，采用以下任何一种修改，都可以让优化生效
 
-1. 把`Book.store`关联修改为非空，即`@ManyToOne(optional = false)`
+1. 把`Book.store`关联修改为非空
 2. 采用左外连接
 
 在这里，我们选用第二种方案，左外连接

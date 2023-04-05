@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.ManyToOne;
 import org.babyfish.jimmer.sql.Table;
 
-@Entity(microServiceName = "order-item-service")
+@Entity(microServiceName = "item-service")
 @Table(name = "MS_ORDER_ITEM")
 public interface OrderItem {
 

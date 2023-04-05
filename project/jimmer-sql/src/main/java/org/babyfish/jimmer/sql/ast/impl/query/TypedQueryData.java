@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 
 import java.util.Collections;
@@ -143,6 +144,8 @@ class TypedQueryData {
                 if (TUPLE_PACKAGE.equals(type.getPackage())) {
                     throw new IllegalArgumentException("Tuple expression cannot be selected");
                 }
+            } else if (selection instanceof TableSelection && ((TableSelection)selection).isRemote()) {
+                throw new IllegalArgumentException("Remote table cannot be selected");
             }
         }
         return Collections.unmodifiableList(selections);

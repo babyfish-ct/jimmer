@@ -182,6 +182,9 @@ public class PropsGenerator {
         if (withJoinType && !prop.isAssociation(true)) {
             return null;
         }
+        if (prop.isRemote() && (isTableEx || prop.isReverse())) {
+            return null;
+        }
         TypeName returnType = returnTypeName(typeUtils, isTableEx, prop);
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
@@ -229,9 +232,7 @@ public class PropsGenerator {
     ) {
         TypeName returnType;
         if (prop.isAssociation(true)) {
-            if (!prop.getDeclaringType().getMicroServiceName().equals(
-                    prop.getTargetType().getMicroServiceName()
-            )) {
+            if (prop.isRemote()) {
                 returnType = typeUtils
                         .getImmutableType(prop.getElementType())
                         .getRemoteTableClassName();

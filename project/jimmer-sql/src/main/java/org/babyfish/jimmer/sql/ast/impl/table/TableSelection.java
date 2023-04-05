@@ -10,6 +10,8 @@ public interface TableSelection {
 
     ImmutableType getImmutableType();
 
+    boolean isRemote();
+
     default void renderSelection(
             ImmutableProp prop,
             SqlBuilder builder,

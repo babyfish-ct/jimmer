@@ -59,7 +59,7 @@ public class ReaderManager {
             if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
                 return new EmbeddedReader(prop.getTargetType(), this);
             }
-            if (prop.isReference(TargetLevel.PERSISTENT)) {
+            if (prop.isReference(TargetLevel.ENTITY)) {
                 return new ReferenceReader(prop, this);
             }
             return scalarReader(prop);

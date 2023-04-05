@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.Table;
 
 import java.util.List;
 
-@Entity(microServiceName = "order-service")
+@Entity(microServiceName = "summary-service")
 @Table(name = "MS_ORDER")
 public interface Order {
 

@@ -25,6 +25,8 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, It
 
     boolean isEmpty();
 
+    boolean isRemote();
+
     ImmutableProp getJoinProp();
 
     JoinType getJoinType();

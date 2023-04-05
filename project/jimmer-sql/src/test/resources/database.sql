@@ -1,3 +1,5 @@
+drop table ms_order_item if exists;
+drop table ms_order if exists;
 drop table employee if exists;
 drop table department if exists;
 drop table animal if exists;
@@ -520,3 +522,35 @@ alter table employee
 insert into department(id, name) values(1, 'Market');
 insert into employee(id, name, department_id) values(1, 'Sam', 1);
 insert into employee(id, name, department_id) values(2, 'Jessica', 1);
+
+
+
+
+create table ms_order(
+    id bigint not null,
+    name varchar(20) not null
+);
+alter table ms_order
+    add constraint pk_ms_order
+        primary key(id);
+
+create table ms_order_item(
+    id bigint not null,
+    name varchar(20) not null,
+    order_id bigint not null
+);
+alter table ms_order_item
+    add constraint pk_ms_order_item
+        primary key(id);
+alter table ms_order_item
+    add constraint fk_ms_order_item
+        foreign key(order_id)
+            references ms_order(id)
+                on delete cascade;
+
+insert into ms_order(id, name) values(1, 'ms-order-1');
+insert into ms_order(id, name) values(2, 'ms-order-2');
+insert into ms_order_item(id, name, order_id) values(1, 'ms-order-1.item-1', 1);
+insert into ms_order_item(id, name, order_id) values(2, 'ms-order-1.item-2', 1);
+insert into ms_order_item(id, name, order_id) values(3, 'ms-order-2.item-1', 2);
+insert into ms_order_item(id, name, order_id) values(4, 'ms-order-2.item-2', 2);

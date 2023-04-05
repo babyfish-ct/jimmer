@@ -554,8 +554,8 @@ public interface Book {
     @ManyToOne
     @JoinTable(
         name = "BOOK_STORE_MAPPING",
-        joinColumns = @JoinColumn(name = "BOOK_ID")
-        inverseJoinColumns = @JoinColumn(name = "STORE_ID")
+        joinColumnName = "BOOK_ID",
+        inverseJoinColumnName = "STORE_ID"
     )
     BookStore store();
 
@@ -573,8 +573,8 @@ interface Book {
     @ManyToOne
     @JoinTable(
         name = "BOOK_STORE_MAPPING",
-        joinColumns = @JoinColumn(name = "BOOK_ID")
-        inverseJoinColumns = @JoinColumn(name = "STORE_ID")
+        joinColumnName = "BOOK_ID",
+        inverseJoinColumnName = "STORE_ID"
     )
     val store: BookStore?
 
@@ -724,8 +724,8 @@ public interface Address {
     @OneToOne
     @JoinTable(
         name = "ADDRESS_CUSTOMER_MAPPING",
-        joinColumns = @JoinColumn(name = "ADDRESS_ID。")
-        inverseJoinColumns = @JoinColumn(name = "CUSTOMER_ID")
+        joinColumnName = "ADDRESS_ID",
+        inverseJoinColumnName = "CUSTOMER_ID"
     )
     Customer customer();
 
@@ -743,8 +743,8 @@ interface Address {
     @OneToOne
     @JoinTable(
         name = "ADDRESS_CUSTOMER_MAPPING",
-        joinColumns = @JoinColumn(name = "ADDRESS_ID。")
-        inverseJoinColumns = @JoinColumn(name = "CUSTOMER_ID")
+        joinColumnName = "ADDRESS_ID",
+        inverseJoinColumnName = "CUSTOM_ID"
     )
     val customer: Customer?
 
