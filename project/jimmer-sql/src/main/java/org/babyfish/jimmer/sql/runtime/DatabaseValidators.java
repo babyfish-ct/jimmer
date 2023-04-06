@@ -14,6 +14,8 @@ import java.util.*;
 
 public class DatabaseValidators {
 
+    private final String microServiceName;
+
     private final Connection con;
 
     private final List<DatabaseValidationException.Item> items;
@@ -23,22 +25,27 @@ public class DatabaseValidators {
     private final Map<ImmutableProp, org.babyfish.jimmer.lang.Ref<Table>> middleTableRefMap = new HashMap<>();
 
     @Nullable
-    public static DatabaseValidationException validate(EntityManager entityManager, Connection con) throws SQLException {
-        return new DatabaseValidators(con).validate(entityManager);
+    public static DatabaseValidationException validate(
+            EntityManager entityManager,
+            String microServiceName,
+            Connection con
+    ) throws SQLException {
+        return new DatabaseValidators(microServiceName, con).validate(entityManager);
     }
 
-    private DatabaseValidators(Connection con) {
+    private DatabaseValidators(String microServiceName, Connection con) {
+        this.microServiceName = microServiceName;
         this.con = con;
         this.items = new ArrayList<>();
     }
 
     private DatabaseValidationException validate(EntityManager entityManager) throws SQLException {
-        for (ImmutableType type : entityManager.getAllTypes()) {
+        for (ImmutableType type : entityManager.getAllTypes(microServiceName)) {
             if (type.isEntity() && !type.getJavaClass().isAnnotationPresent(DatabaseValidationIgnore.class)) {
                 validateSelf(type);
             }
         }
-        for (ImmutableType type : entityManager.getAllTypes()) {
+        for (ImmutableType type : entityManager.getAllTypes(microServiceName)) {
             if (type.isEntity() && !type.getJavaClass().isAnnotationPresent(DatabaseValidationIgnore.class)) {
                 validateForeignKey(type);
             }

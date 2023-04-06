@@ -39,7 +39,7 @@ public class AbstractTriggerTest extends AbstractMutationTest {
             block.accept(builder);
             builder.setTriggerType(TriggerType.TRANSACTION_ONLY);
         });
-        for (ImmutableType type : JimmerModule.ENTITY_MANAGER.getAllTypes()) {
+        for (ImmutableType type : JimmerModule.ENTITY_MANAGER.getAllTypes(null)) {
             if (type.isEntity()) {
                 sqlClient.getTriggers(true).addEntityListener(type, e -> events.add(e.toString()));
                 for (ImmutableProp prop : type.getProps().values()) {

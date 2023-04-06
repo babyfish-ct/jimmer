@@ -14,7 +14,8 @@ public class EntityManager {
 
     private final Map<ImmutableType, ImmutableTypeInfo> map;
 
-    private final Map<String, ImmutableType> tableNameTypeMap;
+    // Map<MicroServiceName, Map<UpperCase(TableName), *>>
+    private final Map<String, Map<String, ImmutableType>> tableNameTypeMap;
 
     public EntityManager(Class<?> ... classes) {
         this(Arrays.asList(classes));
@@ -85,7 +86,7 @@ public class EntityManager {
             info.allDerivedTypes = Collections.unmodifiableList(info.allDerivedTypes);
             info.backProps = Collections.unmodifiableList(info.backProps);
         }
-        this.map = map;
+        this.map = Collections.unmodifiableMap(map);
         this.tableNameTypeMap = createTableNameTypeMap();
     }
 
@@ -98,15 +99,26 @@ public class EntityManager {
         }
         Set<Class<?>> classes = new LinkedHashSet<>();
         for (EntityManager entityManager : entityManagers) {
-            for (ImmutableType type : entityManager.getAllTypes()) {
+            for (ImmutableType type : entityManager.getAllTypes(null)) {
                 classes.add(type.getJavaClass());
             }
         }
         return new EntityManager(classes);
     }
 
-    public Set<ImmutableType> getAllTypes() {
-        return map.keySet();
+    public Set<ImmutableType> getAllTypes(String microServiceName) {
+        if (microServiceName == null) {
+            return map.keySet();
+        }
+        Set<ImmutableType> set = microServiceName.isEmpty() ?
+                new LinkedHashSet<>((map.size() * 4 + 2) / 3) :
+                new LinkedHashSet<>();
+        for (ImmutableType type : map.keySet()) {
+            if (type.getMicroServiceName().equals(microServiceName)) {
+                set.add(type);
+            }
+        }
+        return set;
     }
 
     public List<ImmutableType> getImplementationTypes(ImmutableType type) {
@@ -126,18 +138,24 @@ public class EntityManager {
     }
 
     @Nullable
-    public ImmutableType getTypeByTableName(String tableName) {
+    public ImmutableType getTypeByTableName(String microServiceName, String tableName) {
+        Map<String, ImmutableType> subMap = tableNameTypeMap.get(microServiceName);
+        if (subMap == null) {
+            return null;
+        }
         String standardTableName = DatabaseIdentifiers.comparableIdentifier(tableName);
-        return tableNameTypeMap.get(standardTableName);
+        return subMap.get(standardTableName);
     }
 
     @NotNull
-    public ImmutableType getNonNullTypeByTableName(String tableName) {
-        ImmutableType type = getTypeByTableName(tableName);
+    public ImmutableType getNonNullTypeByTableName(String microServiceName, String tableName) {
+        ImmutableType type = getTypeByTableName(microServiceName, tableName);
         if (type == null) {
             throw new IllegalArgumentException(
                     "The table \"" +
                             tableName +
+                            "\" of micro service \"" +
+                            microServiceName +
                             "\" is not managed by current EntityManager"
             );
         }
@@ -167,14 +185,18 @@ public class EntityManager {
         return type.getSuperType().isMappedSuperclass();
     }
 
-    private Map<String, ImmutableType> createTableNameTypeMap() {
-        Map<String, ImmutableType> tableNameTypeMap = new HashMap<>();
+    private Map<String, Map<String, ImmutableType>> createTableNameTypeMap() {
+        Map<String, Map<String, ImmutableType>> tableNameTypeMap = new HashMap<>();
         for (ImmutableType type : map.keySet()) {
             if (!type.isEntity()) {
                 continue;
             }
+            Map<String, ImmutableType> subMap = tableNameTypeMap.computeIfAbsent(
+                    type.getMicroServiceName(),
+                    it -> new HashMap<>()
+            );
             String tableName = DatabaseIdentifiers.comparableIdentifier(type.getTableName());
-            ImmutableType oldType = tableNameTypeMap.put(tableName, type);
+            ImmutableType oldType = subMap.put(tableName, type);
             if (oldType != null) {
                 throw new IllegalArgumentException(
                         "Illegal entity manager, the table \"" +
@@ -186,12 +208,12 @@ public class EntityManager {
                                 "\""
                 );
             }
-            tableNameTypeMap.put(tableName, type);
+            subMap.put(tableName, type);
             for (ImmutableProp prop : entityProps(type)) {
                 if (prop.getStorage() instanceof MiddleTable) {
                     AssociationType associationType = AssociationType.of(prop);
                     String associationTableName = DatabaseIdentifiers.comparableIdentifier(associationType.getTableName());
-                    ImmutableType oldAssociationType = tableNameTypeMap.put(associationTableName, associationType);
+                    ImmutableType oldAssociationType = subMap.put(associationTableName, associationType);
                     if (oldAssociationType != null && !oldAssociationType.equals(associationType)) {
                         throw new IllegalArgumentException(
                                 "Illegal mapping, the table \"" +
@@ -203,7 +225,7 @@ public class EntityManager {
                                         "\""
                         );
                     }
-                    tableNameTypeMap.put(associationTableName, associationType);
+                    subMap.put(associationTableName, associationType);
                 }
             }
         }

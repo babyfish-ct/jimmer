@@ -19,10 +19,13 @@ public class BinLog {
 
     private final Triggers triggers;
 
-    public BinLog(EntityManager entityManager, BinLogParser binLogParser, Triggers triggers) {
+    private final String microServiceName;
+
+    public BinLog(EntityManager entityManager, BinLogParser binLogParser, Triggers triggers, String microServiceName) {
         this.entityManager = entityManager;
         this.binLogParser = binLogParser;
         this.triggers = triggers;
+        this.microServiceName = microServiceName;
     }
 
     public void accept(String tableName, JsonNode oldData, JsonNode newData) {
@@ -35,11 +38,12 @@ public class BinLog {
         if (isOldNull && isNewNull) {
             return;
         }
-        ImmutableType type = entityManager.getTypeByTableName(tableName);
+        ImmutableType type = entityManager.getTypeByTableName(microServiceName, tableName);
         if (type == null) {
             LOGGER.warn(
-                    "Illegal table name \"{}\", it is not managed by current entity manager",
-                    tableName
+                    "Illegal table name \"{}\" of micro service \"{}\", it is not managed by current entity manager",
+                    tableName,
+                    microServiceName
             );
             return;
         }

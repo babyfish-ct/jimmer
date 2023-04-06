@@ -17,6 +17,8 @@ public class CacheConfig {
 
     private final EntityManager entityManager;
 
+    private final String microServiceName;
+
     private final Map<ImmutableType, Cache<?, ?>> objectCacheMap =
             new LinkedHashMap<>();
 
@@ -27,8 +29,9 @@ public class CacheConfig {
 
     private CacheAbandonedCallback abandonedCallback;
 
-    public CacheConfig(EntityManager entityManager) {
+    public CacheConfig(EntityManager entityManager, String microServiceName) {
         this.entityManager = entityManager;
+        this.microServiceName = microServiceName;
     }
 
     @OldChain
@@ -36,13 +39,13 @@ public class CacheConfig {
         if (entityManager == null) {
             throw new IllegalStateException("EntityManager must be set before set cache factory");
         }
-        if (entityManager.getAllTypes().isEmpty()) {
+        if (entityManager.getAllTypes(microServiceName).isEmpty()) {
             throw new IllegalStateException("vararg \"entityTypes\" cannot be empty");
         }
         if (cacheFactory == null) {
             throw new IllegalArgumentException("cacheFactory cannot bee null");
         }
-        for (ImmutableType type : entityManager.getAllTypes()) {
+        for (ImmutableType type : entityManager.getAllTypes(microServiceName)) {
             if (type.isEntity()) {
                 if (!objectCacheMap.containsKey(type)) {
                     Cache<?, ?> objectCache = cacheFactory.createObjectCache(type);
@@ -58,18 +61,22 @@ public class CacheConfig {
                     }
                 }
                 for (ImmutableProp prop : type.getProps().values()) {
-                    if (prop.isAssociation(TargetLevel.PERSISTENT) || prop.hasTransientResolver()) {
-                        if (!propCacheMap.containsKey(prop)) {
-                            Cache<?, ?> propCache =
-                                    prop.hasTransientResolver() ?
-                                            cacheFactory.createResolverCache(prop) : (
-                                            prop.isReferenceList(TargetLevel.PERSISTENT) ?
-                                                    cacheFactory.createAssociatedIdListCache(prop) :
-                                                    cacheFactory.createAssociatedIdCache(prop)
-                                    );
-                            if (propCache != null) {
-                                propCacheMap.put(prop, propCache);
-                            }
+                    if (propCacheMap.containsKey(prop)) {
+                        continue;
+                    }
+                    if (prop.isRemote() && prop.getMappedBy() != null) {
+                        continue;
+                    }
+                    if (prop.isAssociation(TargetLevel.ENTITY) || prop.hasTransientResolver()) {
+                        Cache<?, ?> propCache =
+                                prop.hasTransientResolver() ?
+                                        cacheFactory.createResolverCache(prop) : (
+                                        prop.isReferenceList(TargetLevel.ENTITY) ?
+                                                cacheFactory.createAssociatedIdListCache(prop) :
+                                                cacheFactory.createAssociatedIdCache(prop)
+                                );
+                        if (propCache != null) {
+                            propCacheMap.put(prop, propCache);
                         }
                     }
                 }
@@ -89,6 +96,17 @@ public class CacheConfig {
             );
         }
         ImmutableType immutableType = ImmutableType.get(type);
+        if (!immutableType.getMicroServiceName().equals(microServiceName)) {
+            throw new IllegalArgumentException(
+                    "Cannot set object cache for \"" +
+                            immutableType +
+                            "\", it belongs to micro service \"" +
+                            immutableType.getMicroServiceName() +
+                            "\", not \"" +
+                            microServiceName +
+                            "\""
+            );
+        }
         objectCacheMap.put(immutableType, LocatedCacheImpl.unwrap(cache));
         return this;
     }
@@ -106,12 +124,7 @@ public class CacheConfig {
             ImmutableProp prop,
             Cache<?, ?> cache
     ) {
-        if (!prop.isReference(TargetLevel.PERSISTENT)) {
-            throw new IllegalArgumentException("The prop \"" + prop + "\" is not persistent entity reference");
-        }
-        if (!prop.getDeclaringType().isEntity()) {
-            throw new IllegalArgumentException("The prop \"" + prop + "\" is not declared in entity");
-        }
+        validateProp(prop, false);
         propCacheMap.put(prop, LocatedCacheImpl.unwrap(cache));
         return this;
     }
@@ -129,31 +142,26 @@ public class CacheConfig {
             ImmutableProp prop,
             Cache<?, List<?>> cache
     ) {
-        if (!prop.isReferenceList(TargetLevel.PERSISTENT)) {
-            throw new IllegalArgumentException("The prop \"" + prop + "\" is not persistent entity list");
-        }
-        if (!prop.getDeclaringType().isEntity()) {
-            throw new IllegalArgumentException("The prop \"" + prop + "\" is not declared in entity");
-        }
+        validateProp(prop, true);
         propCacheMap.put(prop, LocatedCacheImpl.unwrap(cache));
         return this;
     }
 
     @OldChain
-    public CacheConfig setResolverCache(
+    public CacheConfig setCalculatedCache(
             TypedProp<?, ?> prop,
             Cache<?, ?> cache
     ) {
-        return setResolverCache(prop.unwrap(), cache);
+        return setCalculatedCache(prop.unwrap(), cache);
     }
 
     @OldChain
-    public CacheConfig setResolverCache(
+    public CacheConfig setCalculatedCache(
             ImmutableProp prop,
             Cache<?, ?> cache
     ) {
         if (!prop.hasTransientResolver()) {
-            throw new IllegalArgumentException("The prop \"" + prop + "\" is transient property with resolver");
+            throw new IllegalArgumentException("The prop \"" + prop + "\" is transient");
         }
         if (!prop.getDeclaringType().isEntity()) {
             throw new IllegalArgumentException("The prop \"" + prop + "\" is not declared in entity");
@@ -193,5 +201,36 @@ public class CacheConfig {
                 operator,
                 abandonedCallback
         );
+    }
+
+    private void validateProp(ImmutableProp prop, boolean collection) {
+        if (prop.isTransient()) {
+            throw new IllegalArgumentException("The prop \"" + prop + "\" is transient");
+        }
+        if (collection && !prop.isReferenceList(TargetLevel.ENTITY)) {
+            throw new IllegalArgumentException("The prop \"" + prop + "\" is not entity list");
+        }
+        if (!collection && !prop.isReference(TargetLevel.ENTITY)) {
+            throw new IllegalArgumentException("The prop \"" + prop + "\" is not entity reference");
+        }
+        if (!prop.getDeclaringType().isEntity()) {
+            throw new IllegalArgumentException("The prop \"" + prop + "\" is not declared in entity");
+        }
+        if (!prop.getDeclaringType().getMicroServiceName().equals(microServiceName)) {
+            throw new IllegalArgumentException(
+                    "The declaring type of prop \"" +
+                            prop +
+                            "\" does not belongs to micro service \"" +
+                            microServiceName +
+                            "\""
+            );
+        }
+        if (prop.isRemote() && prop.getMappedBy() != null) {
+            throw new IllegalArgumentException(
+                    "The prop \"" +
+                            prop +
+                            "\" cannot is remote reversed(with `mappedBy`) association"
+            );
+        }
     }
 }

@@ -59,19 +59,19 @@ public class EntityManagerTest {
     public void testTableName() {
         Assertions.assertEquals(
                 ImmutableType.get(Role.class),
-                JimmerModule.ENTITY_MANAGER.getTypeByTableName("`roLE`")
+                JimmerModule.ENTITY_MANAGER.getTypeByTableName("", "`roLE`")
         );
         Assertions.assertEquals(
                 ImmutableType.get(Permission.class),
-                JimmerModule.ENTITY_MANAGER.getTypeByTableName("[PerMission]")
+                JimmerModule.ENTITY_MANAGER.getTypeByTableName("", "[PerMission]")
         );
         Assertions.assertEquals(
                 ImmutableType.get(Administrator.class),
-                JimmerModule.ENTITY_MANAGER.getTypeByTableName("\"Administrator\"")
+                JimmerModule.ENTITY_MANAGER.getTypeByTableName("", "\"Administrator\"")
         );
         Assertions.assertEquals(
                 AssociationType.of(AdministratorProps.ROLES),
-                JimmerModule.ENTITY_MANAGER.getTypeByTableName("`Administrator_Role_Mapping`")
+                JimmerModule.ENTITY_MANAGER.getTypeByTableName("", "`Administrator_Role_Mapping`")
         );
     }
 }

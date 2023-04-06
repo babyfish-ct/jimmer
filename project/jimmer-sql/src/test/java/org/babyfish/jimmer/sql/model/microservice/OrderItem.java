@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.model.microservice;
 
 import org.babyfish.jimmer.sql.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -14,6 +15,7 @@ public interface OrderItem {
     String name();
 
     @ManyToOne
+    @Nullable
     Order order();
 
     @ManyToMany

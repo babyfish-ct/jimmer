@@ -34,7 +34,7 @@ public class JimmerSpringGraphQLAutoConfiguration {
             @Autowired(required = false) KSqlClient kSqlClient
     ) {
         JSqlClient sqlClient = jSqlClient != null ? jSqlClient : kSqlClient.getJavaClient();
-        for (ImmutableType type : sqlClient.getEntityManager().getAllTypes()) {
+        for (ImmutableType type : sqlClient.getEntityManager().getAllTypes(sqlClient.getMicroServiceName())) {
             if (type.isEntity()) {
                 for (ImmutableProp prop : type.getProps().values()) {
                     if (prop.isReference(TargetLevel.ENTITY)) {
@@ -78,16 +78,21 @@ public class JimmerSpringGraphQLAutoConfiguration {
     }
 
     @Bean
-    public RuntimeWiringConfigurer jimmerRuntimeWiringConfigurer(EntityManager entityManager) {
+    public RuntimeWiringConfigurer jimmerRuntimeWiringConfigurer(
+            @Autowired(required = false) JSqlClient jSqlClient,
+            @Autowired(required = false) KSqlClient kSqlClient
+    ) {
+        JSqlClient sqlClient = jSqlClient != null ? jSqlClient : kSqlClient.getJavaClient();
         return wiringBuilder -> {
-            registerJimmerDataFetchers(wiringBuilder, entityManager);
+            registerJimmerDataFetchers(wiringBuilder, sqlClient);
         };
     }
 
     private static void registerJimmerDataFetchers(
             RuntimeWiring.Builder wiringBuilder,
-            EntityManager entityManager) {
-        for (ImmutableType type : entityManager.getAllTypes()) {
+            JSqlClient sqlClient
+    ) {
+        for (ImmutableType type : sqlClient.getEntityManager().getAllTypes(sqlClient.getMicroServiceName())) {
             if (type.isEntity()) {
                 TypeRuntimeWiring.Builder typeBuilder = TypeRuntimeWiring
                         .newTypeWiring(type.getJavaClass().getSimpleName());

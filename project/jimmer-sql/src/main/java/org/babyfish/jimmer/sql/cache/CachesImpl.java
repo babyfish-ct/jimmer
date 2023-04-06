@@ -165,9 +165,10 @@ public class CachesImpl implements Caches {
     public static Caches of(
             Triggers triggers,
             EntityManager entityManager,
+            String microServiceName,
             Consumer<CacheConfig> block
     ) {
-        CacheConfig cfg = new CacheConfig(entityManager);
+        CacheConfig cfg = new CacheConfig(entityManager, microServiceName);
         if (block != null) {
             block.accept(cfg);
         }

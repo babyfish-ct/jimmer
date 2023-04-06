@@ -103,7 +103,7 @@ public class FilterManager implements Filters {
     @Override
     public Filter<Props> getTargetFilter(ImmutableProp prop, boolean shardingOnly) {
         ImmutableType targetType = prop.getTargetType();
-        if (targetType == null) {
+        if (targetType == null || targetType.isEmbeddable()) {
             throw new IllegalArgumentException(
                     "`" +
                             prop +

@@ -675,7 +675,7 @@ public abstract class AbstractDataLoader {
 
     private boolean applyGlobalFilter(Sortable sortable, Table<?> table) {
         if (remote) {
-            return true;
+            return false;
         }
         SortableImplementor sortableImplementor = (SortableImplementor)sortable;
         Filter<Props> globalFiler = this.globalFiler;
@@ -719,7 +719,7 @@ public abstract class AbstractDataLoader {
             Table<?> table
     ) {
         List<OrderedItem> orderedItems = prop.getOrderedItems();
-        if (!orderedItems.isEmpty()) {
+        if (!orderedItems.isEmpty() && !remote) {
             for (OrderedItem orderedItem : orderedItems) {
                 Expression<?> expr = table.get(orderedItem.getProp().getName());
                 if (orderedItem.isDesc()) {
