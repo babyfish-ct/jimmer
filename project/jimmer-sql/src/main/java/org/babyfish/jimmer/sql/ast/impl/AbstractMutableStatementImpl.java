@@ -72,7 +72,12 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
             throw new IllegalArgumentException(
                     "The sql client and entity type \"" +
                             table.getImmutableType() +
-                            "\" do not belong to the same micro service"
+                            "\" do not belong to the same micro service: " +
+                            "{sqlClient: \"" +
+                            sqlClient.getMicroServiceName() +
+                            "\", entity: \"" +
+                            table.getImmutableType().getMicroServiceName() +
+                            "\"}"
             );
         }
         this.table = table;

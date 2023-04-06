@@ -141,6 +141,8 @@ public interface JSqlClient extends SubQueryProvider {
 
     String getMicroServiceName();
 
+    MicroServiceExchange getMicroServiceExchange();
+
     interface Builder {
 
         int DEFAULT_BATCH_SIZE = 128;
@@ -227,6 +229,9 @@ public interface JSqlClient extends SubQueryProvider {
 
         @OldChain
         Builder setMicroServiceName(String microServiceName);
+
+        @OldChain
+        Builder setMicroServiceExchange(MicroServiceExchange exchange);
 
         JSqlClient build();
     }

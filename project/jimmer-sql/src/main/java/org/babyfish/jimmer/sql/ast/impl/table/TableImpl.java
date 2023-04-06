@@ -262,10 +262,20 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     @Override
     public <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType, ImmutableType treatedAs) {
         ImmutableProp immutableProp = immutableType.getProp(prop);
-        if (!immutableProp.isAssociation(TargetLevel.PERSISTENT)) {
+        if (!immutableProp.isAssociation(TargetLevel.ENTITY)) {
             if (isRemote()) {
                 throw new IllegalStateException(
                         "The current table is remote so that join is not supported"
+                );
+            }
+            if (immutableProp.isTransient()) {
+                throw new IllegalArgumentException(
+                        "\"" + prop + "\" cannot be transient"
+                );
+            }
+            if (immutableProp.isRemote() && immutableProp.getMappedBy() != null) {
+                throw new IllegalArgumentException(
+                        "\"" + prop + "\" cannot be remote and reversed(with `mappedBy`)"
                 );
             }
             throw new IllegalArgumentException(

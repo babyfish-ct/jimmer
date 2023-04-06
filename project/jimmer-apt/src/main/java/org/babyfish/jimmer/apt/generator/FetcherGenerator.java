@@ -79,7 +79,9 @@ public class FetcherGenerator {
                         addPropByBoolean(prop);
                         if (prop.isAssociation(true)) {
                             addAssociationProp(prop);
-                            addAssociationPropByFieldConfig(prop);
+                            if (!prop.isRemote()) {
+                                addAssociationPropByFieldConfig(prop);
+                            }
                         }
                     }
                 }

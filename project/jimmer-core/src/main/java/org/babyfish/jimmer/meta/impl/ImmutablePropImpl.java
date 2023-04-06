@@ -694,7 +694,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         if (mappedByResolved) {
             return mappedBy;
         }
-        if (isAssociation(TargetLevel.PERSISTENT)) {
+        if (isAssociation(TargetLevel.ENTITY)) {
             validateDeclaringEntity("mappedBy");
             String mappedBy = "";
             OneToOne oneToOne = getAnnotation(OneToOne.class);

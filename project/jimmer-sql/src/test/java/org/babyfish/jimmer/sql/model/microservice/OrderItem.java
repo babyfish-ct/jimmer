@@ -1,11 +1,10 @@
 package org.babyfish.jimmer.sql.model.microservice;
 
-import org.babyfish.jimmer.sql.Entity;
-import org.babyfish.jimmer.sql.Id;
-import org.babyfish.jimmer.sql.ManyToOne;
-import org.babyfish.jimmer.sql.Table;
+import org.babyfish.jimmer.sql.*;
 
-@Entity(microServiceName = "item-service")
+import java.util.List;
+
+@Entity(microServiceName = "order-item-service")
 @Table(name = "MS_ORDER_ITEM")
 public interface OrderItem {
 
@@ -16,4 +15,12 @@ public interface OrderItem {
 
     @ManyToOne
     Order order();
+
+    @ManyToMany
+    @JoinTable(
+            name = "MS_ORDER_ITEM_PRODUCT_MAPPING",
+            joinColumnName = "ORDER_ITEM_ID",
+            inverseJoinColumnName = "PRODUCT_ID"
+    )
+    List<Product> products();
 }

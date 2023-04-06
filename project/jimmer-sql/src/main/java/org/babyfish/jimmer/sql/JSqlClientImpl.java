@@ -89,6 +89,8 @@ class JSqlClientImpl implements JSqlClient {
 
     private final String microServiceName;
 
+    private final MicroServiceExchange microServiceExchange;
+
     private final Loaders loaders = new LoadersImpl(this);
 
     private final ReaderManager readerManager = new ReaderManager(this);
@@ -113,7 +115,8 @@ class JSqlClientImpl implements JSqlClient {
             FilterManager filterManager,
             TransientResolverManager transientResolverManager,
             DraftInterceptorManager draftInterceptorManager,
-            String microServiceName
+            String microServiceName,
+            MicroServiceExchange microServiceExchange
     ) {
         this.connectionManager =
                 connectionManager != null ?
@@ -150,6 +153,7 @@ class JSqlClientImpl implements JSqlClient {
         this.transientResolverManager = transientResolverManager;
         this.draftInterceptorManager = draftInterceptorManager;
         this.microServiceName = microServiceName;
+        this.microServiceExchange = microServiceExchange;
     }
 
     @Override
@@ -376,7 +380,8 @@ class JSqlClientImpl implements JSqlClient {
                 filterManager,
                 transientResolverManager,
                 draftInterceptorManager,
-                microServiceName
+                microServiceName,
+                microServiceExchange
         );
     }
 
@@ -410,7 +415,8 @@ class JSqlClientImpl implements JSqlClient {
                 cfg.getFilterManager(),
                 transientResolverManager,
                 draftInterceptorManager,
-                microServiceName
+                microServiceName,
+                microServiceExchange
         );
     }
 
@@ -439,7 +445,8 @@ class JSqlClientImpl implements JSqlClient {
                 filterManager,
                 transientResolverManager,
                 draftInterceptorManager,
-                microServiceName
+                microServiceName,
+                microServiceExchange
         );
     }
 
@@ -481,6 +488,11 @@ class JSqlClientImpl implements JSqlClient {
     @Override
     public String getMicroServiceName() {
         return microServiceName;
+    }
+
+    @Override
+    public MicroServiceExchange getMicroServiceExchange() {
+        return microServiceExchange;
     }
 
     public static class BuilderImpl implements JSqlClient.Builder {
@@ -532,6 +544,8 @@ class JSqlClientImpl implements JSqlClient {
         private DatabaseValidationMode databaseValidationMode = DatabaseValidationMode.NONE;
 
         private String microServiceName = "";
+
+        private MicroServiceExchange microServiceExchange;
 
         public BuilderImpl() {}
 
@@ -817,9 +831,20 @@ class JSqlClientImpl implements JSqlClient {
         }
 
         @Override
+        public Builder setMicroServiceExchange(MicroServiceExchange exchange) {
+            this.microServiceExchange = exchange;
+            return this;
+        }
+
+        @Override
         public JSqlClient build() {
             if (entityManager == null) {
                 throw new IllegalStateException("The `entityManager` of SqlClient has not been configured");
+            }
+            if (!microServiceName.isEmpty() && microServiceExchange == null) {
+                throw new IllegalStateException(
+                        "The `microServiceExchange` must be configured when `microServiceName` is configured"
+                );
             }
             FilterManager filterManager = createFilterManager();
             validateFilteredAssociations(filterManager);
@@ -880,7 +905,8 @@ class JSqlClientImpl implements JSqlClient {
                     filterManager,
                     transientResolverManager,
                     new DraftInterceptorManager(interceptors),
-                    microServiceName
+                    microServiceName,
+                    microServiceExchange
             );
             filterManager.initialize(sqlClient);
             binLogParser.initialize(sqlClient, binLogObjectMapper);

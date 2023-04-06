@@ -62,12 +62,12 @@ class Utils {
     }
 
     static <K, T, V> Map<K, V> joinCollectionAndMap(
-            Collection<K> list,
+            Collection<K> c,
             Function<K, T> middleKeyExtractor,
             Map<T, V> map
     ) {
-        Map<K, V> resultMap = new LinkedHashMap<>((list.size() * 4 + 2) / 3);
-        for (K k : list) {
+        Map<K, V> resultMap = new LinkedHashMap<>((c.size() * 4 + 2) / 3);
+        for (K k : c) {
             T t = middleKeyExtractor.apply(k);
             V v = map.get(t);
             if (v != null) {

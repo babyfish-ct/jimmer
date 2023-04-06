@@ -213,7 +213,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
     public Fetcher<E> allScalarFields() {
         FetcherImpl<E> fetcher = this;
         for (ImmutableProp prop : immutableType.getSelectableProps().values()) {
-            if (!prop.isAssociation(TargetLevel.PERSISTENT) && !prop.isLogicalDeleted()) {
+            if (!prop.isAssociation(TargetLevel.ENTITY) && !prop.isLogicalDeleted()) {
                 fetcher = fetcher.addImpl(prop, null);
             }
         }
@@ -257,7 +257,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
     ) {
         Objects.requireNonNull(prop, "'prop' cannot be null");
         ImmutableProp immutableProp = immutableType.getProp(prop);
-        if (!immutableProp.isAssociation(TargetLevel.OBJECT)) {
+        if (!immutableProp.isAssociation(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException(
                     "Cannot load scalar property \"" +
                             immutableProp +
@@ -270,9 +270,34 @@ public class FetcherImpl<E> implements Fetcher<E> {
         FieldConfigImpl<Object, Table<Object>> loaderImpl = new FieldConfigImpl<>(immutableProp, (FetcherImpl<?>) childFetcher);
         if (loaderBlock != null) {
             ((Consumer<FieldConfig<Object, Table<Object>>>) loaderBlock).accept(loaderImpl);
+            if (immutableProp.isRemote()) {
+                if (loaderImpl.getFilter() != null) {
+                    throw new IllegalArgumentException(
+                            "Fetcher field based one \"" +
+                                    immutableProp +
+                                    "\" does not support `field filter` because the association is remote"
+                    );
+                }
+                if (loaderImpl.getOffset() != 0) {
+                    throw new IllegalArgumentException(
+                            "Fetcher field based one \"" +
+                                    immutableProp +
+                                    "\" does not support `offset` because the association is remote"
+                    );
+                }
+                if (loaderImpl.getLimit() != 0) {
+                    throw new IllegalArgumentException(
+                            "Fetcher field based one \"" +
+                                    immutableProp +
+                                    "\" does not support `limit` because the association is remote"
+                    );
+                }
+            }
             if (loaderImpl.getLimit() != Integer.MAX_VALUE && loaderImpl.getBatchSize() != 1) {
                 throw new IllegalArgumentException(
-                        "Fetcher field with limit does not support batch load, " +
+                        "Fetcher field based on \"" +
+                                immutableProp +
+                                "\" with limit does not support batch load, " +
                                 "the batchSize must be set to 1 when limit is set"
                 );
             }

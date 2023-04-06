@@ -1,3 +1,5 @@
+drop table ms_product if exists;
+drop table ms_order_item_product_mapping if exists;
 drop table ms_order_item if exists;
 drop table ms_order if exists;
 drop table employee if exists;
@@ -542,11 +544,27 @@ create table ms_order_item(
 alter table ms_order_item
     add constraint pk_ms_order_item
         primary key(id);
-alter table ms_order_item
-    add constraint fk_ms_order_item
-        foreign key(order_id)
-            references ms_order(id)
+
+create table ms_order_item_product_mapping(
+    order_item_id bigint not null,
+    product_id bigint not null
+);
+alter table ms_order_item_product_mapping
+    add constraint pk_ms_order_item_product_mapping
+        primary key(order_item_id, product_id);
+alter table ms_order_item_product_mapping
+    add constraint fk_ms_order_item_product_mapping_order
+        foreign key(order_item_id)
+            references ms_order_item(id)
                 on delete cascade;
+
+create table ms_product(
+    id bigint not null,
+    name varchar(20) not null
+);
+alter table ms_product
+    add constraint pk_ms_product
+        primary key(id);
 
 insert into ms_order(id, name) values(1, 'ms-order-1');
 insert into ms_order(id, name) values(2, 'ms-order-2');
@@ -554,3 +572,11 @@ insert into ms_order_item(id, name, order_id) values(1, 'ms-order-1.item-1', 1);
 insert into ms_order_item(id, name, order_id) values(2, 'ms-order-1.item-2', 1);
 insert into ms_order_item(id, name, order_id) values(3, 'ms-order-2.item-1', 2);
 insert into ms_order_item(id, name, order_id) values(4, 'ms-order-2.item-2', 2);
+insert into ms_product(id, name) values(1, 'ms-product-1');
+insert into ms_product(id, name) values(2, 'ms-product-2');
+insert into ms_product(id, name) values(3, 'ms-product-3');
+insert into ms_order_item_product_mapping(order_item_id, product_id) values
+    (1, 1), (1, 2),
+    (2, 2), (2, 3),
+    (3, 3), (3, 1),
+    (4, 1), (4, 2), (4, 3);
