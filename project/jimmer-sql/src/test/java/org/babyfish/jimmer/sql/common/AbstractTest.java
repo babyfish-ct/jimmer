@@ -142,11 +142,11 @@ public class AbstractTest {
         }
     }
 
-    protected static void jdbc(SqlConsumer<Connection> block) {
+    public static void jdbc(SqlConsumer<Connection> block) {
         jdbc(null, false, block);
     }
 
-    protected static void jdbc(DataSource dataSource, boolean rollback, SqlConsumer<Connection> block) {
+    public static void jdbc(DataSource dataSource, boolean rollback, SqlConsumer<Connection> block) {
         try (Connection con = dataSource != null ?
                 dataSource.getConnection() :
                 new Driver().connect(JDBC_URL, null)) {
@@ -165,7 +165,7 @@ public class AbstractTest {
         }
     }
 
-    protected interface SqlConsumer<T> {
+    public interface SqlConsumer<T> {
         void accept(T value) throws SQLException;
     }
 

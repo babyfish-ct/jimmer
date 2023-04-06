@@ -182,7 +182,7 @@ public class PropsGenerator {
         if (withJoinType && !prop.isAssociation(true)) {
             return null;
         }
-        if (prop.isRemote() && (isTableEx || prop.isReverse())) {
+        if (prop.isRemote() && prop.isReverse()) {
             return null;
         }
         TypeName returnType = returnTypeName(typeUtils, isTableEx, prop);

@@ -51,9 +51,8 @@ public class MicroServiceExporter {
                 .getTable()
                 .join(prop.getName())
                 .get(prop.getTargetType().getIdProp().getName());
-        query.where(targetIdExpr.in((Collection<Object>) targetIds));
-        query.freeze();
         return query
+                .where(targetIdExpr.in((Collection<Object>) targetIds))
                 .select(
                         targetIdExpr,
                         ((Table<ImmutableSpi>)query.getTable()).fetch(
