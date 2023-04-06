@@ -32,6 +32,8 @@ interface KTypedRootQuery<R> : KExecutable<List<R>> {
             }
         }
 
+    fun <X> map(con: Connection? = null, mapper: (R) -> X): List<X>
+
     fun forEach(
         con: Connection? = null,
         batchSize: Int = 0,

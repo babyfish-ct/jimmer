@@ -15,22 +15,24 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, TypedQueryImplementor {
 
-    private JSqlClient sqlClient;
+    private final JSqlClient sqlClient;
 
-    private String operator;
+    private final String operator;
 
-    private TypedQueryImplementor left;
+    private final TypedQueryImplementor left;
 
-    private TypedQueryImplementor right;
+    private final TypedQueryImplementor right;
 
-    private List<Selection<?>> selections;
+    private final List<Selection<?>> selections;
 
-    private boolean isForUpdate;
+    private final boolean isForUpdate;
 
     public MergedTypedRootQueryImpl(
             JSqlClient sqlClient,
@@ -69,6 +71,16 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, Typed
     private List<R> executeImpl(Connection con) {
         Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
         return Selectors.select(sqlClient, con, sqlResult.get_1(), sqlResult.get_2(), selections, ExecutionPurpose.QUERY);
+    }
+
+    @Override
+    public <X> List<X> map(Connection con, Function<R, X> mapper) {
+        List<R> rows = execute(con);
+        List<X> mapped = new ArrayList<>(rows.size());
+        for (R row : rows) {
+            mapped.add(mapper.apply(row));
+        }
+        return mapped;
     }
 
     @Override

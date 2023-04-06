@@ -13,10 +13,12 @@ import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         extends AbstractConfigurableTypedQueryImpl
@@ -161,6 +163,16 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
                 data.getSelections(),
                 getBaseQuery().getPurpose()
         );
+    }
+
+    @Override
+    public <X> List<X> map(Connection con, Function<R, X> mapper) {
+        List<R> rows = execute(con);
+        List<X> mapped = new ArrayList<>(rows.size());
+        for (R row : rows) {
+            mapped.add(mapper.apply(row));
+        }
+        return mapped;
     }
 
     @Override

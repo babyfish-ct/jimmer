@@ -26,6 +26,9 @@ internal open class KTypedRootQueryImpl<R>(
     override fun execute(con: Connection?): List<R> =
         _javaQuery.execute(con)
 
+    override fun <X> map(con: Connection?, mapper: (R) -> X): List<X> =
+        _javaQuery.map(con, mapper)
+
     override fun forEach(con: Connection?, batchSize: Int, block: (R) -> Unit) {
         _javaQuery.forEach(con, batchSize, block)
     }

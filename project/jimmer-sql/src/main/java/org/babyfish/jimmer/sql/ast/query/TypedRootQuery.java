@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public interface TypedRootQuery<R> extends Executable<List<R>> {
 
@@ -63,6 +64,12 @@ public interface TypedRootQuery<R> extends Executable<List<R>> {
     default Optional<R> fetchOptional(Connection con) {
         return Optional.ofNullable(fetchOneOrNull(con));
     }
+
+    default <X> List<X> map(Function<R, X> mapper) {
+        return map(null, mapper);
+    }
+
+    <X> List<X> map(Connection con, Function<R, X> mapper);
 
     default void forEach(Consumer<R> consumer) {
         forEach(null, -1, consumer);

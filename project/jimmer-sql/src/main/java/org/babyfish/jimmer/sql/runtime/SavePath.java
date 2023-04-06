@@ -25,8 +25,8 @@ public final class SavePath {
     }
 
     private SavePath(ImmutableProp prop, SavePath parent) {
-        if (!prop.isAssociation(TargetLevel.PERSISTENT)) {
-            throw new IllegalArgumentException("\"" + prop + "\" is not persistent association property");
+        if (!prop.isAssociation(TargetLevel.ENTITY) || prop.isTransient()) {
+            throw new IllegalArgumentException("\"" + prop + "\" is not association property");
         }
         this.type = prop.getTargetType();
         this.prop = prop;
