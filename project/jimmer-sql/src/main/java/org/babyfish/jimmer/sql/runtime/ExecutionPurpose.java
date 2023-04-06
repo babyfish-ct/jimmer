@@ -4,7 +4,8 @@ public enum ExecutionPurpose {
     QUERY,
     UPDATE,
     DELETE,
-    LOADER,
+    LOAD,
+    EXPORT,
     MUTATE,
     EVICT,
 }

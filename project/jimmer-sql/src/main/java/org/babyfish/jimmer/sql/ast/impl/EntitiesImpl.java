@@ -87,10 +87,10 @@ public class EntitiesImpl implements Entities {
     }
 
     public Entities forLoader() {
-        if (purpose == ExecutionPurpose.LOADER) {
+        if (purpose == ExecutionPurpose.LOAD) {
             return this;
         }
-        return new EntitiesImpl(sqlClient, forUpdate, con, ExecutionPurpose.LOADER);
+        return new EntitiesImpl(sqlClient, forUpdate, con, ExecutionPurpose.LOAD);
     }
 
     @Override
