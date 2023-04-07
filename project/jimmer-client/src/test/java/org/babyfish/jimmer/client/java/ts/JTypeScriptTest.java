@@ -672,13 +672,15 @@ public class JTypeScriptTest {
                         "    async findSimpleBooks(): Promise<\n" +
                         "        ReadonlyArray<{\n" +
                         "            readonly id: number, \n" +
-                        "            readonly name: string\n" +
+                        "            readonly name: string, \n" +
+                        "            readonly storeId?: number\n" +
                         "        }>\n" +
                         "    > {\n" +
                         "        let _uri = '/java/books/simple';\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<{\n" +
                         "            readonly id: number, \n" +
-                        "            readonly name: string\n" +
+                        "            readonly name: string, \n" +
+                        "            readonly storeId?: number\n" +
                         "        }>\n" +
                         "    }\n" +
                         "    \n" +
@@ -969,7 +971,8 @@ public class JTypeScriptTest {
                 "export type BookDto = {\n" +
                         "    'BookService/SIMPLE_FETCHER': {\n" +
                         "        readonly id: number, \n" +
-                        "        readonly name: string\n" +
+                        "        readonly name: string, \n" +
+                        "        readonly storeId?: number\n" +
                         "    }, \n" +
                         "    'BookService/COMPLEX_FETCHER': {\n" +
                         "        readonly id: number, \n" +

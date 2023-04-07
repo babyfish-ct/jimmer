@@ -122,6 +122,9 @@ public class JFeignTest {
                         "        \n" +
                         "        private String name;\n" +
                         "        \n" +
+                        "        @Nullable\n" +
+                        "        private Long storeId;\n" +
+                        "        \n" +
                         "        public long getId() {\n" +
                         "            return id;\n" +
                         "        }\n" +
@@ -136,6 +139,15 @@ public class JFeignTest {
                         "        \n" +
                         "        public void setName(String name) {\n" +
                         "            this.name = name;\n" +
+                        "        }\n" +
+                        "        \n" +
+                        "        @Nullable\n" +
+                        "        public Long getStoreId() {\n" +
+                        "            return storeId;\n" +
+                        "        }\n" +
+                        "        \n" +
+                        "        public void setStoreId(@Nullable Long storeId) {\n" +
+                        "            this.storeId = storeId;\n" +
                         "        }\n" +
                         "    }\n" +
                         "    \n" +

@@ -9,6 +9,7 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.spi.EntityPropImplementor;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
@@ -131,6 +132,7 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
         return builder.toString();
     }
 
+    @SuppressWarnings("unchecked")
     static ImmutableObjectType fetch(Context ctx, ImmutableType immutableType, Fetcher<?> fetcher, FetchByInfo info) {
         ImmutableObjectTypeImpl impl;
         if (info != null) {
@@ -140,7 +142,7 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
             }
         }
 
-        if (immutableType != fetcher.getImmutableType()) {
+        if (info != null && immutableType != fetcher.getImmutableType()) {
             throw new IllegalDocMetaException(
                     "Illegal " +
                             ctx.getLocation() +
@@ -161,9 +163,16 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
 
         Map<String, Property> props = new LinkedHashMap<>();
         for (Field field : fetcher.getFieldMap().values()) {
+            if (field.isImplicit()) {
+                continue;
+            }
             ImmutableProp prop = field.getProp();
             if (prop.isAssociation(TargetLevel.ENTITY)) {
-                Type type = fetch(ctx, prop.getTargetType(), field.getChildFetcher(), null);
+                Fetcher<?> childFetcher = field.getChildFetcher();
+                if (childFetcher == null) {
+                    childFetcher = new FetcherImpl<>((Class<Object>) prop.getTargetType().getJavaClass());
+                }
+                Type type = fetch(ctx, prop.getTargetType(), childFetcher, null);
                 if (prop.isNullable() && field.getRecursionStrategy() == null) {
                     type = NullableTypeImpl.of(type);
                 }
