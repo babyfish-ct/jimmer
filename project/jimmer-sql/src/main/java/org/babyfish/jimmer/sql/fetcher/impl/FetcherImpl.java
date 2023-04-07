@@ -270,28 +270,12 @@ public class FetcherImpl<E> implements Fetcher<E> {
         FieldConfigImpl<Object, Table<Object>> loaderImpl = new FieldConfigImpl<>(immutableProp, (FetcherImpl<?>) childFetcher);
         if (loaderBlock != null) {
             ((Consumer<FieldConfig<Object, Table<Object>>>) loaderBlock).accept(loaderImpl);
-            if (immutableProp.isRemote()) {
-                if (loaderImpl.getFilter() != null) {
-                    throw new IllegalArgumentException(
-                            "Fetcher field based one \"" +
-                                    immutableProp +
-                                    "\" does not support `field filter` because the association is remote"
-                    );
-                }
-                if (loaderImpl.getOffset() != 0) {
-                    throw new IllegalArgumentException(
-                            "Fetcher field based one \"" +
-                                    immutableProp +
-                                    "\" does not support `offset` because the association is remote"
-                    );
-                }
-                if (loaderImpl.getLimit() != 0) {
-                    throw new IllegalArgumentException(
-                            "Fetcher field based one \"" +
-                                    immutableProp +
-                                    "\" does not support `limit` because the association is remote"
-                    );
-                }
+            if (immutableProp.isRemote() && loaderImpl.getFilter() != null) {
+                throw new IllegalArgumentException(
+                        "Fetcher field based one \"" +
+                                immutableProp +
+                                "\" does not support `field filter` because the association is remote"
+                );
             }
             if (loaderImpl.getLimit() != Integer.MAX_VALUE && loaderImpl.getBatchSize() != 1) {
                 throw new IllegalArgumentException(
