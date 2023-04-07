@@ -40,6 +40,7 @@ public class JimmerProperties {
 
     private final int defaultListBatchSize;
 
+    @NotNull
     private final String microServiceName;
 
     @NotNull
@@ -173,6 +174,7 @@ public class JimmerProperties {
         return defaultListBatchSize;
     }
 
+    @NotNull
     public String getMicroServiceName() {
         return microServiceName;
     }

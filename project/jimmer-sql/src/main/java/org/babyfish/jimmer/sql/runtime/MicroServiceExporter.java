@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.PropExpression;
@@ -11,13 +12,14 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 public class MicroServiceExporter {
 
     private final JSqlClient sqlClient;
 
     public MicroServiceExporter(JSqlClient sqlClient) {
-        this.sqlClient = sqlClient;
+        this.sqlClient = Objects.requireNonNull(sqlClient, "sqlClient cannot be null");
     }
 
     @SuppressWarnings("unchecked")
@@ -40,6 +42,15 @@ public class MicroServiceExporter {
             Collection<?> targetIds,
             Fetcher<?> fetcher
     ) {
+        if (prop.getDeclaringType() != fetcher.getImmutableType()) {
+            throw new IllegalArgumentException(
+                    "The root entity type of fetcher is \"" +
+                            fetcher.getImmutableType() +
+                            "\" is not declaring type of \"" +
+                            prop +
+                            "\""
+            );
+        }
         MutableRootQueryImpl<Table<ImmutableSpi>> query =
                 new MutableRootQueryImpl<>(
                         sqlClient,

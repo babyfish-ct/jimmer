@@ -4,6 +4,7 @@ import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.DatabaseValidationIgnore;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.*;
@@ -65,7 +66,9 @@ public class DatabaseValidators {
             ColumnDefinition idColumnDefinition = type.getIdProp().getStorage();
             Set<String> idColumnNames = new LinkedHashSet<>((idColumnDefinition.size() * 4 + 2) / 3);
             for (int i = 0; i < idColumnDefinition.size(); i++) {
-                idColumnNames.add(idColumnDefinition.name(i).toUpperCase());
+                idColumnNames.add(
+                        DatabaseIdentifiers.comparableIdentifier(idColumnDefinition.name(i))
+                );
             }
             if (!idColumnNames.equals(table.primaryKeyColumns)) {
                 items.add(
@@ -88,7 +91,9 @@ public class DatabaseValidators {
             if (storage instanceof ColumnDefinition) {
                 ColumnDefinition columnDefinition = (ColumnDefinition)storage;
                 for (int i = 0; i < columnDefinition.size(); i++) {
-                    Column column = table.columnMap.get(columnDefinition.name(i).toUpperCase());
+                    Column column = table.columnMap.get(
+                            DatabaseIdentifiers.comparableIdentifier(columnDefinition.name(i))
+                    );
                     if (column == null) {
                         items.add(
                                 new DatabaseValidationException.Item(
@@ -105,7 +110,9 @@ public class DatabaseValidators {
                 }
             }
             if (storage instanceof SingleColumn) {
-                Column column = table.columnMap.get(((SingleColumn)storage).getName().toUpperCase());
+                Column column = table.columnMap.get(
+                        DatabaseIdentifiers.comparableIdentifier(((SingleColumn)storage).getName())
+                );
                 if (column != null) {
                     boolean nullable = prop.isNullable() && !prop.isInputNotNull();
                     if (nullable != column.nullable) {
@@ -287,8 +294,8 @@ public class DatabaseValidators {
                 while (rs.next()) {
                     tables.add(
                             new Table(
-                                    rs.getString("TABLE_CAT"),
-                                    rs.getString("TABLE_SCHEM"),
+                                    rs.getString("TABLE_CAT").toUpperCase(),
+                                    rs.getString("TABLE_SCHEM").toUpperCase(),
                                     rs.getString("TABLE_NAME").toUpperCase()
                             )
                     );
@@ -305,8 +312,8 @@ public class DatabaseValidators {
                 while (rs.next()) {
                     tables.add(
                             new Table(
-                                    rs.getString("TABLE_CAT").toUpperCase(),
-                                    rs.getString("TABLE_SCHEM").toUpperCase(),
+                                    rs.getString("TABLE_CAT"),
+                                    rs.getString("TABLE_SCHEM"),
                                     rs.getString("TABLE_NAME").toUpperCase()
                             )
                     );

@@ -1,11 +1,16 @@
 package org.babyfish.jimmer.spring.cfg;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.client.meta.Metadata;
 import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.spring.client.JavaFeignController;
 import org.babyfish.jimmer.spring.client.MetadataFactoryBean;
 import org.babyfish.jimmer.spring.client.TypeScriptController;
+import org.babyfish.jimmer.spring.cloud.MicroServiceExporterAgent;
+import org.babyfish.jimmer.spring.cloud.MicroServiceExporterController;
 import org.babyfish.jimmer.spring.repository.config.JimmerRepositoriesConfig;
+import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.kt.KSqlClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -51,6 +56,20 @@ public class JimmerAutoConfiguration {
             @Autowired(required = false) ParameterNameDiscoverer parameterNameDiscoverer
     ) {
         return new MetadataFactoryBean(ctx, parameterNameDiscoverer);
+    }
+
+    @Conditional(MicroServiceCondition.class)
+    @ConditionalOnMissingBean(MicroServiceExporterAgent.class)
+    @Bean
+    public MicroServiceExporterAgent microServiceExporterAgent(
+            @Autowired(required = false) JSqlClient jSqlClient,
+            @Autowired(required = false) KSqlClient kSqlClient,
+            ObjectMapper objectMapper
+    ) {
+        return new MicroServiceExporterController(
+                jSqlClient != null ? jSqlClient : kSqlClient.getJavaClient(),
+                objectMapper
+        );
     }
 }
 

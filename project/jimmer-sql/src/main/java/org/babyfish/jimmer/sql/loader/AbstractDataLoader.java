@@ -408,14 +408,24 @@ public abstract class AbstractDataLoader {
             return loadTargetMapDirectly(sources);
         }
         if (remote && prop.getMappedBy() != null) {
-            List<Tuple2<Object, ImmutableSpi>> tuples = sqlClient
-                    .getMicroServiceExchange()
-                    .findByAssociatedIds(
-                            prop.getTargetType().getMicroServiceName(),
-                            prop.getMappedBy(),
-                            toSourceIds(sources),
-                            fetcher
-                    );
+            List<Tuple2<Object, ImmutableSpi>> tuples;
+            try {
+                tuples = sqlClient
+                        .getMicroServiceExchange()
+                        .findByAssociatedIds(
+                                prop.getTargetType().getMicroServiceName(),
+                                prop.getMappedBy(),
+                                toSourceIds(sources),
+                                fetcher
+                        );
+            } catch (Exception ex) {
+                throw new ExecutionException(
+                        "Cannot load the remote association \"" +
+                                prop +
+                                "\" because error raised",
+                        ex
+                );
+            }
             return Utils.joinCollectionAndMap(
                     sources,
                     this::toSourceId,
@@ -477,14 +487,24 @@ public abstract class AbstractDataLoader {
             return loadTargetMultiMapDirectly(sources);
         }
         if (remote && prop.getMappedBy() != null) {
-            List<Tuple2<Object, ImmutableSpi>> tuples = sqlClient
-                    .getMicroServiceExchange()
-                    .findByAssociatedIds(
-                            prop.getTargetType().getMicroServiceName(),
-                            prop.getMappedBy(),
-                            toSourceIds(sources),
-                            fetcher
-                    );
+            List<Tuple2<Object, ImmutableSpi>> tuples;
+            try {
+                tuples = sqlClient
+                        .getMicroServiceExchange()
+                        .findByAssociatedIds(
+                                prop.getTargetType().getMicroServiceName(),
+                                prop.getMappedBy(),
+                                toSourceIds(sources),
+                                fetcher
+                        );
+            } catch (Exception ex) {
+                throw new ExecutionException(
+                        "Cannot load the remote association \"" +
+                                prop +
+                                "\" because error raised",
+                        ex
+                );
+            }
             return Utils.joinCollectionAndMap(
                     sources,
                     this::toSourceId,
@@ -756,11 +776,20 @@ public abstract class AbstractDataLoader {
             return makeIdOnlyTargets(targetIds);
         }
         if (remote) {
-            return sqlClient.getMicroServiceExchange().findByIds(
-                    prop.getTargetType().getMicroServiceName(),
-                    targetIds,
-                    fetcher
-            );
+            try {
+                return sqlClient.getMicroServiceExchange().findByIds(
+                        prop.getTargetType().getMicroServiceName(),
+                        targetIds,
+                        fetcher
+                );
+            } catch (Exception ex) {
+                throw new ExecutionException(
+                        "Cannot load the remote association \"" +
+                                prop +
+                                "\" because error raised",
+                        ex
+                );
+            }
         }
         return ((EntitiesImpl)sqlClient.getEntities()).forLoader().forConnection(con).findByIds(
                 fetcher,

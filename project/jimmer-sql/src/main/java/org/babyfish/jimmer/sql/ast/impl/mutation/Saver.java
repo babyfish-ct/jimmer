@@ -282,14 +282,25 @@ class Saver {
         Set<Object> illegalTargetIds = new LinkedHashSet<>(targetIds);
         if (prop.isRemote()) {
             int targetIdPropId = prop.getTargetType().getIdProp().getId();
-            List<ImmutableSpi> targets = data
-                    .getSqlClient()
-                    .getMicroServiceExchange()
-                    .findByIds(
-                            prop.getTargetType().getMicroServiceName(),
-                            targetIds,
-                            new FetcherImpl<>((Class<ImmutableSpi>)(prop.getTargetType().getJavaClass()))
-                    );
+            List<ImmutableSpi> targets;
+            try {
+                targets = data
+                        .getSqlClient()
+                        .getMicroServiceExchange()
+                        .findByIds(
+                                prop.getTargetType().getMicroServiceName(),
+                                targetIds,
+                                new FetcherImpl<>((Class<ImmutableSpi>) (prop.getTargetType().getJavaClass()))
+                        );
+            } catch (Exception ex) {
+                throw new SaveException(
+                        SaveErrorCode.FAILED_REMOTE_VALIDATION,
+                        path,
+                        "Cannot validate the id-only associated objects of remote association \"" +
+                                prop +
+                                "\""
+                );
+            }
             for (ImmutableSpi target : targets) {
                 illegalTargetIds.remove(target.__get(targetIdPropId));
             }

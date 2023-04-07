@@ -14,12 +14,12 @@ public interface MicroServiceExchange {
             String microServiceName,
             Collection<?> ids,
             Fetcher<?> fetcher
-    );
+    ) throws Exception;
 
     List<Tuple2<Object, ImmutableSpi>> findByAssociatedIds(
             String microServiceName,
             ImmutableProp prop,
             Collection<?> targetIds,
             Fetcher<?> fetcher
-    );
+    ) throws Exception;
 }

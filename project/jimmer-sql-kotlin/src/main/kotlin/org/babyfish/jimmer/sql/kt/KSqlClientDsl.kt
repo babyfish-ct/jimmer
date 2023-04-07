@@ -251,8 +251,8 @@ class KSqlClientDsl internal constructor(
             javaCfg.setAssociatedIdListCache(prop.toImmutableProp(), cache)
         }
 
-        fun <R> setResolverCache(prop: KProperty1<*, R>, cache: Cache<*, R>) {
-            javaCfg.setResolverCache(prop.toImmutableProp(), cache)
+        fun <R> setCalculatedCache(prop: KProperty1<*, R>, cache: Cache<*, R>) {
+            javaCfg.setCalculatedCache(prop.toImmutableProp(), cache)
         }
 
         fun setAbandonedCallback(callback: CacheAbandonedCallback?) {

@@ -50,6 +50,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -104,6 +105,7 @@ public class SpringJavaTest extends AbstractTest {
         // use @ConditionalOnMissBean to resolve conflict
     }
 
+    @EnableWebMvc
     @Configuration
     static class SqlClientConfig {
 

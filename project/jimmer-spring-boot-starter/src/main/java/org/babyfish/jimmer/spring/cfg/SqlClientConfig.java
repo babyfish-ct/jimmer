@@ -1,9 +1,11 @@
 package org.babyfish.jimmer.spring.cfg;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import kotlin.Unit;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.spring.cloud.SpringCloudExchange;
 import org.babyfish.jimmer.spring.repository.SpringConnectionManager;
 import org.babyfish.jimmer.spring.repository.SpringTransientResolverProvider;
 import org.babyfish.jimmer.sql.DraftInterceptor;
@@ -21,10 +23,7 @@ import org.babyfish.jimmer.sql.kt.KSqlClientKt;
 import org.babyfish.jimmer.sql.kt.filter.KFilter;
 import org.babyfish.jimmer.sql.kt.filter.KFilters;
 import org.babyfish.jimmer.sql.kt.filter.impl.JavaFiltersKt;
-import org.babyfish.jimmer.sql.runtime.EntityManager;
-import org.babyfish.jimmer.sql.runtime.Executor;
-import org.babyfish.jimmer.sql.runtime.ScalarProvider;
-import org.babyfish.jimmer.sql.runtime.TransientResolverProvider;
+import org.babyfish.jimmer.sql.runtime.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +32,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
 
 import javax.sql.DataSource;
 import java.util.List;
@@ -58,6 +59,7 @@ public class SqlClientConfig {
             @Autowired(required = false) Dialect dialect,
             @Autowired(required = false) Executor executor,
             @Autowired(required = false) CacheFactory cacheFactory,
+            @Autowired(required = false) MicroServiceExchange exchange,
             List<ScalarProvider<?, ?>> providers,
             List<DraftInterceptor<?>> interceptors,
             List<Filter<?>> filters,
@@ -83,6 +85,7 @@ public class SqlClientConfig {
                 dialect,
                 executor,
                 cacheFactory,
+                exchange,
                 providers,
                 interceptors,
                 filters,
@@ -107,6 +110,7 @@ public class SqlClientConfig {
             @Autowired(required = false) Dialect dialect,
             @Autowired(required = false) Executor executor,
             @Autowired(required = false) CacheFactory cacheFactory,
+            @Autowired(required = false) MicroServiceExchange exchange,
             List<ScalarProvider<?, ?>> providers,
             List<DraftInterceptor<?>> interceptors,
             List<Filter<?>> javaFilters,
@@ -132,6 +136,7 @@ public class SqlClientConfig {
                     dialect,
                     executor,
                     cacheFactory,
+                    exchange,
                     providers,
                     interceptors,
                     filters
@@ -157,6 +162,7 @@ public class SqlClientConfig {
             Dialect dialect,
             Executor executor,
             CacheFactory cacheFactory,
+            MicroServiceExchange exchange,
             List<ScalarProvider<?, ?>> providers,
             List<DraftInterceptor<?>> interceptors,
             List<Filter<?>> filters,
@@ -208,6 +214,19 @@ public class SqlClientConfig {
         }
 
         builder.setMicroServiceName(properties.getMicroServiceName());
+        if (!properties.getMicroServiceName().isEmpty()) {
+            builder.setMicroServiceExchange(exchange);
+        }
+    }
+
+    @Conditional(MicroServiceCondition.class)
+    @ConditionalOnMissingBean(MicroServiceExchange.class)
+    @Bean
+    public MicroServiceExchange microServiceExchange(
+            RestTemplate restTemplate,
+            ObjectMapper mapper
+    ) {
+        return new SpringCloudExchange(restTemplate, mapper);
     }
 
     private static void postCreateSqlClient(

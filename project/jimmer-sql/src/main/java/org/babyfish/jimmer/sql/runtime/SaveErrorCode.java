@@ -56,4 +56,7 @@ public enum SaveErrorCode {
 
     @ErrorField(name = "exportedPath", type = ExportedSavePath.class)
     LONG_REMOTE_ASSOCIATION,
+
+    @ErrorField(name = "exportedPath", type = ExportedSavePath.class)
+    FAILED_REMOTE_VALIDATION,
 }
