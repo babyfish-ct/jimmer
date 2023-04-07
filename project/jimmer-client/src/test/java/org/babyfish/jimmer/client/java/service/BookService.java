@@ -22,7 +22,7 @@ import java.util.List;
 @RequestMapping(value = "/java", method = Operation.HttpMethod.GET)
 public interface BookService {
 
-    Fetcher<Book> SIMPLE_FETCHER = BookFetcher.$.name();
+    Fetcher<Book> SIMPLE_FETCHER = BookFetcher.$.name().storeId();
 
     Fetcher<Book> COMPLEX_FETCHER = BookFetcher.$
             .allScalarFields()
