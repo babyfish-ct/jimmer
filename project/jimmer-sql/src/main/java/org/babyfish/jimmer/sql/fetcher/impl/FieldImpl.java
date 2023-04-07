@@ -107,30 +107,9 @@ class FieldImpl implements Field {
 
     @Override
     public String toString() {
-        StringJoiner joiner = new StringJoiner(", ", "(", ")").setEmptyValue("");
-        if (batchSize != 0) {
-            joiner.add("batchSize: " + batchSize);
-        }
-        if (limit != Integer.MAX_VALUE) {
-            joiner.add("limit: " + limit);
-        }
-        if (recursionStrategy instanceof DefaultRecursionStrategy<?>) {
-            int depth = ((DefaultRecursionStrategy<?>) recursionStrategy).getDepth();
-            if (depth == Integer.MAX_VALUE) {
-                joiner.add("recursive: true");
-            } else if (depth > 1) {
-                joiner.add("depth: " + depth);
-            }
-        } else if (recursionStrategy != null) {
-            joiner.add("recursive: <java-code>");
-        }
-        if (filter != null) {
-            joiner.add("filter: <java-code>");
-        }
-        if (childFetcher == null) {
-            return prop.getName() + joiner;
-        }
-        return prop.getName() + joiner + childFetcher.toString(false);
+        FetcherWriter writer = new FetcherWriter();
+        writer.write(this);
+        return writer.toString();
     }
 
     private boolean determineIsSimpleField() {

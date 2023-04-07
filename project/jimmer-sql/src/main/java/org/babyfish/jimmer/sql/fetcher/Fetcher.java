@@ -75,4 +75,6 @@ public interface Fetcher<E> {
      * @return Checked result
      */
     boolean isSimpleFetcher();
+
+    String toString(boolean multiLine);
 }

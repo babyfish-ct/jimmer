@@ -1,34 +1,37 @@
 grammar Fetcher;
 
-@headers {
+@header {
 package org.babyfish.jimmer.sql.fetcher;
 }
 
 fetcher
     :
-    entityType fetchBody
+    type = entityType body = fetchBody EOF
     ;
 
 fetchBody
     :
-    '{' field+ '}'
+    '{' (fields += field)* '}'
     ;
 
 field
     :
     prop = Identifier
+    ( '(' arguments += argument (',' arguments += argument)* ')' )?
+    (body = fetchBody)?
+    ','?
     ;
 
 argument
     :
     (name = Identifier)
     ':'
-    (value = 'true' | 'false' | '')
+    value = ('true' | 'false' | Number | '<java-code>')
     ;
 
 entityType
     :
-    Identifier ('.' Identifier)*
+    parts += Identifier ('.' parts += Identifier)*
     ;
 
 Identifier
@@ -38,7 +41,7 @@ Identifier
 
 Number
     :
-
+    [0-9]+
     ;
 
 WS

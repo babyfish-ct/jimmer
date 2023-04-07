@@ -270,12 +270,28 @@ public class FetcherImpl<E> implements Fetcher<E> {
         FieldConfigImpl<Object, Table<Object>> loaderImpl = new FieldConfigImpl<>(immutableProp, (FetcherImpl<?>) childFetcher);
         if (loaderBlock != null) {
             ((Consumer<FieldConfig<Object, Table<Object>>>) loaderBlock).accept(loaderImpl);
-            if (immutableProp.isRemote() && loaderImpl.getFilter() != null) {
-                throw new IllegalArgumentException(
-                        "Fetcher field based one \"" +
-                                immutableProp +
-                                "\" does not support `field filter` because the association is remote"
-                );
+            if (immutableProp.isRemote()) {
+                if (loaderImpl.getFilter() != null) {
+                    throw new IllegalArgumentException(
+                            "Fetcher field based one \"" +
+                                    immutableProp +
+                                    "\" does not support `filter` because the association is remote"
+                    );
+                }
+                if (loaderImpl.getLimit() != Integer.MAX_VALUE) {
+                    throw new IllegalArgumentException(
+                            "Fetcher field based one \"" +
+                                    immutableProp +
+                                    "\" does not support `limit` because the association is remote"
+                    );
+                }
+                if (loaderImpl.getOffset() != 0) {
+                    throw new IllegalArgumentException(
+                            "Fetcher field based one \"" +
+                                    immutableProp +
+                                    "\" does not support `offset` because the association is remote"
+                    );
+                }
             }
             if (loaderImpl.getLimit() != Integer.MAX_VALUE && loaderImpl.getBatchSize() != 1) {
                 throw new IllegalArgumentException(
@@ -314,18 +330,14 @@ public class FetcherImpl<E> implements Fetcher<E> {
 
     @Override
     public String toString() {
-        return toString(true);
+        return toString(false);
     }
 
-    String toString(boolean includeTypeName) {
-        StringJoiner joiner = new StringJoiner(", ", " { ", " }");
-        for (Field field : getFieldMap().values()) {
-            joiner.add(field.toString());
-        }
-        if (includeTypeName) {
-            return getJavaClass().getName() + joiner;
-        }
-        return joiner.toString();
+    @Override
+    public String toString(boolean multiLine) {
+        FetcherWriter writer = new FetcherWriter(multiLine ? 4 : 0);
+        writer.writeRoot(this);
+        return writer.toString();
     }
 
     @Override
