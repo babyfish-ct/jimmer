@@ -20,11 +20,14 @@ class ImmutableProp(
     private val ctx: Context,
     val declaringType: ImmutableType,
     val id: Int,
-    private val propDeclaration: KSPropertyDeclaration
+    val propDeclaration: KSPropertyDeclaration
 ) {
     init {
         if (propDeclaration.isMutable) {
-            throw MetaException("Illegal property '${this}', this property of immutable interface must be readonly")
+            throw MetaException(
+                propDeclaration,
+                "the property of immutable interface must be readonly"
+            )
         }
     }
 
@@ -37,15 +40,14 @@ class ImmutableProp(
 
     fun hasTransientResolver(): Boolean =
         annotation(Transient::class)?.let {
-            val resolverClassName = it.get<KSType>("value")?.toClassName()
-            val resolverRef = it.get<String>("ref") ?: ""
+            val resolverClassName = it.getClassArgument(Transient::value)?.toClassName()
+            val resolverRef = it[Transient::ref] ?: ""
             val hasValue = resolverClassName != null && resolverClassName != UNIT
             val hasRef = resolverRef.isNotEmpty()
             if (hasValue && hasRef) {
                 throw MetaException(
-                    "Illegal property \"" +
-                        this +
-                        "\", it is decorated by @Transient, " +
+                    propDeclaration,
+                    "it is decorated by @Transient, " +
                         "the `value` and `ref` are both specified, this is not allowed"
                 )
             }
@@ -59,13 +61,13 @@ class ImmutableProp(
         (resolvedType.declaration as KSClassDeclaration).asStarProjectedType().let { starType ->
             when {
                 isAssociation && ctx.mapType.isAssignableFrom(starType) ->
-                    throw MetaException("Illegal property '$propDeclaration', cannot be map")
+                    throw MetaException(propDeclaration, "it cannot be map")
                 ctx.collectionType.isAssignableFrom(starType) ->
                     if (!ctx.listType.isAssignableFrom(starType) ||
                         !resolvedType.isAssignableFrom(ctx.listType)) {
                         true
                     } else {
-                        throw MetaException("Illegal property '$propDeclaration', collection property must be immutable list")
+                        throw MetaException(propDeclaration, "collection property must be immutable list")
                     }
                 else -> false
             }
@@ -86,7 +88,8 @@ class ImmutableProp(
         }.declaration.also {
             if (it.annotation(MappedSuperclass::class) !== null) {
                 throw MetaException(
-                    "Illegal property \"$this\", its target type \"$it\" is illegal, it cannot be type decorated by @MappedSuperclass"
+                    propDeclaration,
+                    "its target type \"$it\" is illegal, it cannot be type decorated by @MappedSuperclass"
                 )
             }
         } as KSClassDeclaration
@@ -110,7 +113,7 @@ class ImmutableProp(
                 isList,
                 resolvedType.isMarkedNullable
             ) {
-                MetaException(it)
+                MetaException(propDeclaration, it)
             }.apply {
                 for (annotation in propDeclaration.annotations) {
                     add(annotation.fullName)
@@ -129,12 +132,11 @@ class ImmutableProp(
 
     val isInputNotNull: Boolean =
         (annotation(ManyToOne::class) ?: annotation(OneToOne::class)) ?.let {
-            val inputNotNull = it["inputNotNull"] ?: false
-            if (inputNotNull && it.get<String>("mappedBy")?.takeIf { v -> v.isNotEmpty() } !== null) {
+            val inputNotNull = it[ManyToOne::inputNotNull] ?: false
+            if (inputNotNull && it[OneToMany::mappedBy]?.takeIf { v -> v.isNotEmpty() } !== null) {
                 throw MetaException(
-                    "Illegal property \"" +
-                        this +
-                        "\", the `inputNotNull` of annotation @${
+                    propDeclaration,
+                    "the `inputNotNull` of annotation @${
                             it.annotationType.resolve().declaration.qualifiedName
                         } is true but the `mappedBy` of the annotation is specified " +
                         ""
@@ -142,9 +144,8 @@ class ImmutableProp(
             }
             if (inputNotNull && !isNullable) {
                 throw MetaException(
-                    "Illegal property \"" +
-                        this +
-                        "\", the `inputNotNull` of annotation @${
+                    propDeclaration,
+                    "the `inputNotNull` of annotation @${
                             it.annotationType.resolve().declaration.qualifiedName
                         } is true but the property is not nullable"
                 )
@@ -159,10 +160,17 @@ class ImmutableProp(
             }
             ?.let {
                 ctx.typeAnnotationOf(targetDeclaration)
-            }
-            ?.let {
-                true
-            } ?: false
+            }?.also {
+                if (declaringType.isAcrossMicroServices && targetDeclaration.annotation(Entity::class) != null && !isTransient) {
+                    throw MetaException(
+                        propDeclaration,
+                        "association property is not allowed here " +
+                            "because the declaring type is decorated by \"@" +
+                            MappedSuperclass::class.java.name +
+                            "\" with the argument `acrossMicroServices`"
+                    )
+                }
+            } !== null
 
     fun isAssociation(entityLevel: Boolean): Boolean =
         isAssociation && (!entityLevel || targetDeclaration.annotation(Entity::class) != null)
@@ -316,15 +324,14 @@ class ImmutableProp(
 
     private fun resolveIdViewBaseProp() {
         val idView = annotation(IdView::class) ?: return
-        var base: String = idView.get<String>("value") ?: ""
+        var base: String = idView[IdView::value] ?: ""
         if (base.isEmpty()) {
             if (!isList && name.length > 2 && !name[name.length - 3].isUpperCase() && name.endsWith("Id")) {
                 base = name.substring(0, name.length - 2)
             } else {
                 throw MetaException(
-                    "Illegal property \"" +
-                        this +
-                        "\", it is decorated by \"@" +
+                    propDeclaration,
+                    "it is decorated by \"@" +
                         IdView::class.java.name +
                         "\", the argument of that annotation is not specified by " +
                         "the base property name cannot be determined automatically, " +
@@ -334,9 +341,8 @@ class ImmutableProp(
         }
         if (base == name) {
             throw MetaException(
-                "Illegal property \"" +
-                    this +
-                    "\", it is decorated by \"@" +
+                propDeclaration,
+                "it is decorated by \"@" +
                     IdView::class.java.name +
                     "\", the argument of that annotation cannot be equal to the current property name\"" +
                     name +
@@ -345,9 +351,8 @@ class ImmutableProp(
         }
         val baseProp = declaringType.properties[base]
             ?: throw MetaException(
-                "Illegal property \"" +
-                    this +
-                    "\", it is decorated by \"@" +
+                propDeclaration,
+                "it is decorated by \"@" +
                     IdView::class.java.name +
                     "\" but there is no base property \"" +
                     base +
@@ -355,9 +360,8 @@ class ImmutableProp(
             )
         if (!baseProp.isAssociation(true) || baseProp.isTransient) {
             throw MetaException(
-                "Illegal property \"" +
-                    this +
-                    "\", it is decorated by \"@" +
+                propDeclaration,
+                "it is decorated by \"@" +
                     IdView::class.java.name +
                     "\" but the base property \"" +
                     baseProp +
@@ -366,9 +370,8 @@ class ImmutableProp(
         }
         if (isList != baseProp.isList) {
             throw MetaException(
-                "Illegal property \"" +
-                    this +
-                    "\", it " +
+                propDeclaration,
+                "it " +
                     (if (isList) "is" else "is not") +
                     " list and decorated by \"@" +
                     IdView::class.java.name +
@@ -381,9 +384,8 @@ class ImmutableProp(
         }
         if (isNullable != baseProp.isNullable) {
             throw MetaException(
-                "Illegal property \"" +
-                    this +
-                    "\", it " +
+                propDeclaration,
+                "it " +
                     (if (isNullable) "is" else "is not") +
                     " nullable and decorated by \"@" +
                     IdView::class.java.name +
@@ -399,9 +401,8 @@ class ImmutableProp(
         )
         if (targetTypeName() != targetIdTypeName) {
             throw MetaException(
-                "Illegal property \"" +
-                    this +
-                    "\", it is decorated by \"@" +
+                propDeclaration,
+                "it is decorated by \"@" +
                     IdView::class.java.name +
                     "\", the base property \"" +
                     baseProp +
@@ -416,7 +417,7 @@ class ImmutableProp(
     }
 
     private fun resolveFormulaDependencies() {
-        val propNames = annotation(Formula::class)?.get<List<String>>("dependencies") ?: emptyList()
+        val propNames = annotation(Formula::class)?.getListArgument(Formula::dependencies) ?: emptyList()
         if (propNames.isEmpty()) {
             _dependencies = emptySet()
         } else {
@@ -425,9 +426,8 @@ class ImmutableProp(
             for (dependency in propNames) {
                 val prop = propMap[dependency]
                     ?: throw MetaException(
-                        "Illegal property \"" +
-                            this +
-                            "\", it is decorated by \"@" +
+                        propDeclaration,
+                        "it is decorated by \"@" +
                             Formula::class.qualifiedName +
                             "\" but the dependency property \"" +
                             dependency +

@@ -25,7 +25,10 @@ public class ValidationMessages {
                         typeElement.getSimpleName().toString()
                 );
                 if (map.containsKey(className)) {
-                    throw new ModelException("Duplicate annotation \"" + className + "\" for " + element);
+                    throw new MetaException(
+                            element,
+                            "duplicate annotations \"" + className + "\""
+                    );
                 }
                 String message = "";
                 for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e :
@@ -50,8 +53,9 @@ public class ValidationMessages {
             if (annoElement.getQualifiedName().toString().equals(CONSTRAINT_FULL_NAME)) {
                 Retention retention = element.getAnnotation(Retention.class);
                 if (retention == null || retention.value() != RetentionPolicy.RUNTIME) {
-                    throw new ModelException(
-                            "The annotation @" +
+                    throw new MetaException(
+                            element,
+                            "the annotation @" +
                                     element.getQualifiedName().toString() +
                                     " is decorated by @" +
                                     Constraint.class.getName() +

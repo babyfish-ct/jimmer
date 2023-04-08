@@ -92,20 +92,10 @@ public class ImmutableProp {
         getterName = executableElement.getSimpleName().toString();
         returnType = executableElement.getReturnType();
         if (returnType.getKind() == TypeKind.VOID) {
-            throw new MetaException(
-                    String.format(
-                            "'%s' cannot return void",
-                            executableElement
-                    )
-            );
+            throw new MetaException(executableElement, "it cannot return void");
         }
         if (!executableElement.getParameters().isEmpty()) {
-            throw new MetaException(
-                    String.format(
-                            "'%s' cannot have parameters",
-                            executableElement
-                    )
-            );
+            throw new MetaException(executableElement, "it cannot have paremeter(s)");
         }
 
         if (returnType.getKind() == TypeKind.BOOLEAN &&
@@ -146,19 +136,15 @@ public class ImmutableProp {
         if (typeUtils.isCollection(returnType)) {
             if (!typeUtils.isListStrictly(returnType)) {
                 throw new MetaException(
-                        String.format(
-                                "The collection property '%s' must return 'java.util.List'",
-                                executableElement
-                        )
+                        executableElement,
+                        "the collection property must return 'java.util.List'"
                 );
             }
             List<? extends TypeMirror> typeArguments = ((DeclaredType)returnType).getTypeArguments();
             if (typeArguments.isEmpty()) {
                 throw new MetaException(
-                        String.format(
-                                "The return type of '%s' misses generic type",
-                                executableElement
-                        )
+                        executableElement,
+                        "Its return type must be generic type"
                 );
             }
             isList = true;
@@ -170,9 +156,8 @@ public class ImmutableProp {
 
         if (typeUtils.isMappedSuperclass(elementType)) {
             throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", the target type \"" +
+                    executableElement,
+                    "the target type \"" +
                             TypeName.get(elementType) +
                             "\" is illegal, it cannot be type decorated by @MappedSuperclass"
             );
@@ -198,9 +183,8 @@ public class ImmutableProp {
                     }
                     if (hasValue && hasRef) {
                         throw new MetaException(
-                                "Illegal property \"" +
-                                        this +
-                                        "\", it is decorated by @Transient, " +
+                                executableElement,
+                                "it is decorated by @Transient, " +
                                         "the `value` and `ref` are both specified, this is not allowed"
                         );
                     }
@@ -214,12 +198,20 @@ public class ImmutableProp {
         isJavaFormula = formula != null && formula.sql().isEmpty();
 
         isAssociation = typeUtils.isImmutable(elementType);
+        if (declaringType.isAcrossMicroServices() && isAssociation && typeUtils.isEntity(elementType) && !isTransient) {
+            throw new MetaException(
+                    executableElement,
+                    "association property is not allowed here " +
+                            "because the declaring type is decorated by \"@" +
+                            MappedSuperclass.class.getName() +
+                            "\" with the argument `acrossMicroServices`"
+            );
+        }
         isEntityAssociation = typeUtils.isEntity(elementType);
         if (isList && typeUtils.isEmbeddable(elementType)) {
             throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", the target type \"" +
+                    executableElement,
+                    "the target type \"" +
                             TypeName.get(elementType) +
                             "\" is embeddable so that the property type cannot be list"
             );
@@ -246,7 +238,7 @@ public class ImmutableProp {
                 typeName.isPrimitive() || typeName.isBoxedPrimitive() ?
                     typeName.isBoxedPrimitive() :
                     null,
-                MetaException::new
+                reason -> new MetaException(executableElement, reason)
         );
         for (AnnotationMirror annotationMirror : executableElement.getAnnotationMirrors()) {
             String annotationTypeName = ((TypeElement) annotationMirror.getAnnotationType().asElement())
@@ -489,9 +481,8 @@ public class ImmutableProp {
                     (declaringType.getMicroServiceName().isEmpty() || targetType.getMicroServiceName().isEmpty())
             ) {
                 throw new MetaException(
-                        "Illegal property \"" +
-                                this +
-                                "\", when the micro service name(`" +
+                        executableElement,
+                        "when the micro service name(`" +
                                 declaringType.getMicroServiceName() +
                                 "`) of source type(" +
                                 declaringType.getQualifiedName() +
@@ -518,9 +509,8 @@ public class ImmutableProp {
                 ImmutableProp prop = propMap.get(dependency);
                 if (prop == null) {
                     throw new MetaException(
-                            "Illegal property \"" +
-                                    this +
-                                    "\", it is decorated by \"@" +
+                            executableElement,
+                            "it is decorated by \"@" +
                                     Formula.class.getName() +
                                     "\" but the dependency property \"" +
                                     dependency +
@@ -546,9 +536,8 @@ public class ImmutableProp {
                 base = name.substring(0, name.length() - 2);
             } else {
                 throw new MetaException(
-                        "Illegal property \"" +
-                                this +
-                                "\", it is decorated by \"@" +
+                        executableElement,
+                        "it is decorated by \"@" +
                                 IdView.class.getName() +
                                 "\", the argument of that annotation is not specified by " +
                                 "the base property name cannot be determined automatically, " +
@@ -558,9 +547,8 @@ public class ImmutableProp {
         }
         if (base.equals(name)) {
             throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", it is decorated by \"@" +
+                    executableElement,
+                    "it is decorated by \"@" +
                             IdView.class.getName() +
                             "\", the argument of that annotation cannot be equal to the current property name\"" +
                             name +
@@ -570,9 +558,8 @@ public class ImmutableProp {
         ImmutableProp baseProp = declaringType.getProps().get(base);
         if (baseProp == null) {
             throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", it is decorated by \"@" +
+                    executableElement,
+                    "it is decorated by \"@" +
                             IdView.class.getName() +
                             "\" but there is no base property \"" +
                             base +
@@ -581,9 +568,8 @@ public class ImmutableProp {
         }
         if (!baseProp.isAssociation(true) || baseProp.isTransient) {
             throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", it is decorated by \"@" +
+                    executableElement,
+                    "it is decorated by \"@" +
                             IdView.class.getName() +
                             "\" but the base property \"" +
                             baseProp +
@@ -592,9 +578,8 @@ public class ImmutableProp {
         }
         if (isList != baseProp.isList) {
             throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", it " +
+                    executableElement,
+                    "it " +
                             (isList ? "is" : "is not") +
                             " list and decorated by \"@" +
                             IdView.class.getName() +
@@ -607,9 +592,8 @@ public class ImmutableProp {
         }
         if (isNullable != baseProp.isNullable) {
             throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", it " +
+                    executableElement,
+                    "it " +
                             (isNullable ? "is" : "is not") +
                             " nullable and decorated by \"@" +
                             IdView.class.getName() +
@@ -622,9 +606,8 @@ public class ImmutableProp {
         }
         if (!elementTypeName.box().equals(baseProp.targetType.getIdProp().getElementTypeName().box())) {
             throw new MetaException(
-                    "Illegal property \"" +
-                            this +
-                            "\", it is decorated by \"@" +
+                    executableElement,
+                    "it is decorated by \"@" +
                             IdView.class.getName() +
                             "\", the base property \"" +
                             baseProp +
@@ -654,12 +637,15 @@ public class ImmutableProp {
         return associationAnnotation;
     }
 
+    public Map<ClassName, String> getValidationMessageMap() {
+        return validationMessageMap;
+    }
+
+    public ExecutableElement toElement() {
+        return executableElement;
+    }
     @Override
     public String toString() {
         return declaringType.getTypeElement().getQualifiedName().toString() + '.' + name;
-    }
-
-    public Map<ClassName, String> getValidationMessageMap() {
-        return validationMessageMap;
     }
 }

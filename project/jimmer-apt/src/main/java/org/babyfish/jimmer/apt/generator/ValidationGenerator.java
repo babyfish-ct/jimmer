@@ -67,9 +67,8 @@ public class ValidationGenerator {
         }
         if (!isSimpleClass(String.class) && !isSimpleClass(List.class)) {
             throw new MetaException(
-                    "Illegal property \"" +
-                            prop +
-                            "\", it's decorated by the annotation @" +
+                    prop.toElement(),
+                    "it's decorated by the annotation @" +
                             notEmpties[0].annotationType().getName() +
                             " but its type is neither string nor list"
             );
@@ -89,9 +88,8 @@ public class ValidationGenerator {
         }
         if (!isSimpleClass(String.class)) {
             throw new MetaException(
-                    "Illegal property \"" +
-                            prop +
-                            "\", it's decorated by the annotation @" +
+                    prop.toElement(),
+                    "it's decorated by the annotation @" +
                             notBlanks[0].annotationType().getName() +
                             " but its type is not string"
             );
@@ -111,9 +109,8 @@ public class ValidationGenerator {
         }
         if (!isSimpleClass(String.class) && !isSimpleClass(List.class)) {
             throw new MetaException(
-                    "Illegal property \"" +
-                            prop +
-                            "\", it's decorated by the annotation @" +
+                    prop.toElement(),
+                    "it's decorated by the annotation @" +
                             sizes[0].annotationType().getName() +
                             " but its type is neither string nor list"
             );
@@ -134,9 +131,8 @@ public class ValidationGenerator {
         }
         if (min > max) {
             throw new MetaException(
-                    "Illegal property \"" +
-                            prop +
-                            "\", its size validation rules is illegal " +
+                    prop.toElement(),
+                    "its size validation rules is illegal " +
                             "so that there is not valid length"
             );
         }
@@ -185,9 +181,8 @@ public class ValidationGenerator {
                 !isSimpleClass(BigInteger.class) &&
                 !isSimpleClass(BigDecimal.class)) {
             throw new MetaException(
-                    "Illegal property \"" +
-                            prop +
-                            "\", it's decorated by the annotation @" +
+                    prop.toElement(),
+                    "it's decorated by the annotation @" +
                             annotation.annotationType().getName() +
                             " but its type is numeric"
             );
@@ -234,9 +229,8 @@ public class ValidationGenerator {
         }
         if (minValue != null && maxValue != null && minValue > maxValue) {
             throw new MetaException(
-                    "Illegal property \"" +
-                            prop +
-                            "\", its numeric range validation rules is illegal " +
+                    prop.toElement(),
+                    "its numeric range validation rules is illegal " +
                             "so that there is not valid number"
             );
         }
@@ -256,9 +250,8 @@ public class ValidationGenerator {
         }
         if (!isSimpleClass(String.class)) {
             throw new MetaException(
-                    "Illegal property \"" +
-                            prop +
-                            "\", it's decorated by the annotation @" +
+                    prop.toElement(),
+                    "it's decorated by the annotation @" +
                             emails[0].annotationType().getName() +
                             " but its type is not string"
             );
@@ -278,9 +271,8 @@ public class ValidationGenerator {
         }
         if (!isSimpleClass(String.class)) {
             throw new MetaException(
-                    "Illegal property \"" +
-                            prop +
-                            "\", it's decorated by the annotation @" +
+                    prop.toElement(),
+                    "it's decorated by the annotation @" +
                             patterns[0].annotationType().getName() +
                             " but its type is not string"
             );

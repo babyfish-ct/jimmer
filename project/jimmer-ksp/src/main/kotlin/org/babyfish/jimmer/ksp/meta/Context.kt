@@ -47,7 +47,8 @@ class Context(
             val anno = classDeclaration.annotation(sqlAnnotationType) ?: continue
             if (sqlAnnotation !== null) {
                 throw MetaException(
-                    "${classDeclaration.qualifiedName!!.asString()} cannot be decorated by both " +
+                    classDeclaration,
+                    "it cannot be decorated by both " +
                         "@${sqlAnnotation.fullName} and ${anno.fullName}"
                 )
             }

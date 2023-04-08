@@ -27,7 +27,8 @@ class ValidationGenerator(
         }
         if (nullityAnnotations.isNotEmpty()) {
             throw MetaException(
-                "The prop '${prop}' cannot be decorated by that annotation " +
+                prop.propDeclaration,
+                "it cannot be decorated by that annotation " +
                     "'@${nullityAnnotations[0].fullName}', " +
                     "kotlin decides the nullity of property by language, not by annotation"
             )
@@ -48,9 +49,8 @@ class ValidationGenerator(
         }
         if (!isSimpleType(String::class) && !isSimpleType(List::class)) {
             throw MetaException(
-                "Illegal property \"" +
-                    prop +
-                    "\", it's decorated by the annotation @" +
+                prop.propDeclaration,
+                "it's decorated by the annotation @" +
                     notEmpty.fullName +
                     " but its type is neither string nor list"
             )
@@ -58,7 +58,7 @@ class ValidationGenerator(
         validate(
             "%L.isEmpty()",
             arrayOf(prop.name),
-            notEmpty["message"]
+            notEmpty[NotEmpty::message]
         ) { "it cannot be empty" }
     }
 
@@ -69,17 +69,16 @@ class ValidationGenerator(
         }
         if (!isSimpleType(String::class)) {
             throw MetaException(
-                ("Illegal property \"" +
-                    prop +
-                    "\", it's decorated by the annotation @" +
+                prop.propDeclaration,
+                "it's decorated by the annotation @" +
                     notBlank.fullName +
-                    " but its type is not string")
+                    " but its type is not string"
             )
         }
         validate(
             "%L.trim().isEmpty()",
             arrayOf(prop.name),
-            notBlank["message"]
+            notBlank[NotBlank::message]
         ) { "it cannot be empty" }
     }
 
@@ -90,11 +89,10 @@ class ValidationGenerator(
         }
         if (!isSimpleType(String::class) && !isSimpleType(List::class)) {
             throw MetaException(
-                ("Illegal property \"" +
-                    prop +
-                    "\", it's decorated by the annotation @" +
+                prop.propDeclaration,
+                "it's decorated by the annotation @" +
                     Size::class.qualifiedName +
-                    " but its type is neither string nor list")
+                    " but its type is neither string nor list"
             )
         }
         var min = 0
@@ -102,23 +100,22 @@ class ValidationGenerator(
         var minMessage: String? = null
         var maxMessage: String? = null
         for (size in sizes) {
-            val sizeMin: Int = size["min"]!!
+            val sizeMin: Int = size[Size::min]!!
             if (sizeMin > min) {
                 min = sizeMin
-                minMessage = size["message"]
+                minMessage = size[Size::message]
             }
-            val sizeMax: Int = size["max"]!!
+            val sizeMax: Int = size[Size::max]!!
             if (sizeMax < max) {
                 max = sizeMax
-                maxMessage = size["message"]
+                maxMessage = size[Size::message]
             }
         }
         if (min > max) {
             throw MetaException(
-                ("Illegal property \"" +
-                    prop +
-                    "\", its size validation rules is illegal " +
-                    "so that there is not valid length")
+                prop.propDeclaration,
+                "its size validation rules is illegal " +
+                    "so that there is not valid length"
             )
         }
         if (min == 0 && max == Int.MAX_VALUE) {
@@ -161,64 +158,61 @@ class ValidationGenerator(
                 !isSimpleType(BigDecimal::class)
         ) {
             throw MetaException(
-                ("Illegal property \"" +
-                    prop +
-                    "\", it's decorated by the annotation @" +
+                prop.propDeclaration,
+                "it's decorated by the annotation @" +
                     annotations[0].fullName +
-                    " but its type is numeric")
+                    " but its type is numeric"
             )
         }
         var minValue: Long? = null
         var maxValue: Long? = null
         var message: String? = null
         for (min in minArr) {
-            val annoValue: Long = min["value"]!!
+            val annoValue = min[Min::value]!!
             if (minValue == null || annoValue > minValue) {
                 minValue = annoValue
-                message = min["message"]
+                message = min[Min::message]
             }
         }
         for (positive in positives) {
             if (minValue == null || 1L > minValue) {
                 minValue = 1L
-                message = positive["message"]
+                message = positive[Min::message]
             }
         }
         for (positiveOrZero in positiveOrZeros) {
             if (minValue == null || 0L > minValue) {
                 minValue = 0L
-                message = positiveOrZero["message"]
+                message = positiveOrZero[Min::message]
             }
         }
         for (max in maxArr) {
-            val annoValue: Long = max["value"]!!
+            val annoValue = max[Max::value]!!
             if (maxValue == null || annoValue < maxValue) {
                 maxValue = annoValue
-                message = max["message"]
+                message = max[Max::message]
             }
         }
         for (negative in negatives) {
             if (maxValue == null || -1L < maxValue) {
                 maxValue = -1L
-                message = negative["message"]
+                message = negative[Max::message]
             }
         }
         for (negativeOrZero in negativeOrZeros) {
             if (maxValue == null || 0L < maxValue) {
                 maxValue = 0L
-                message = negativeOrZero["message"]
+                message = negativeOrZero[Max::message]
             }
         }
         if ((minValue != null) && (maxValue != null) && (minValue > maxValue)) {
             throw MetaException(
-                ("Illegal property \"" +
-                    prop +
-                    "\", its numeric range validation rules is illegal " +
-                    "so that there is not valid number")
+                prop.propDeclaration,
+                "its numeric range validation rules is illegal " +
+                    "so that there is not valid number"
             )
         }
         if (minValue != null) {
-            val finalValue: Long = minValue
             validateBound(minValue, "<", message)
         }
         if (maxValue != null) {
@@ -233,11 +227,10 @@ class ValidationGenerator(
         }
         if (!isSimpleType(String::class)) {
             throw MetaException(
-                ("Illegal property \"" +
-                    prop +
-                    "\", it's decorated by the annotation @" +
+                prop.propDeclaration,
+                "it's decorated by the annotation @" +
                     email.fullName +
-                    " but its type is not string")
+                    " but its type is not string"
             )
         }
         validate(
@@ -246,7 +239,7 @@ class ValidationGenerator(
                 DRAFT_FIELD_EMAIL_PATTERN,
                 prop.name
             ),
-            email["message"]
+            email[Email::message]
         ) { "it is not email address" }
     }
 
@@ -257,21 +250,20 @@ class ValidationGenerator(
         }
         if (!isSimpleType(String::class)) {
             throw MetaException(
-                ("Illegal property \"" +
-                    prop +
-                    "\", it's decorated by the annotation @" +
+                prop.propDeclaration,
+                "it's decorated by the annotation @" +
                     patterns[0].fullName +
-                    " but its type is not string")
+                    " but its type is not string"
             )
         }
         for (i in patterns.indices) {
             validate(
                 "!%L.matcher(%L).matches()",
                 arrayOf(regexpPatternFieldName(prop, i), prop.name),
-                patterns[i]["message"],
+                patterns[i][Pattern::message],
             ) {
                 ("it does not match the regexp '" +
-                    patterns[i].get<String>("regexp")!!.replace("\\", "\\\\") +
+                    patterns[i][Pattern::regexp]!!.replace("\\", "\\\\") +
                     "'")
             }
         }

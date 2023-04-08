@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.ksp.generator
 
 import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -8,6 +10,7 @@ import org.babyfish.jimmer.ksp.annotations
 import org.babyfish.jimmer.ksp.fullName
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.ksp.meta.MetaException
 import org.babyfish.jimmer.meta.ModelException
 import javax.validation.Constraint
 import kotlin.math.abs
@@ -81,7 +84,14 @@ fun parseValidationMessages(source: KSAnnotated): Map<ClassName, String> =
                         annotationDeclaration.simpleName.asString()
                     )
                 if (map.containsKey(className)) {
-                    throw ModelException("Duplicated annotation $className on $source")
+                    throw MetaException(
+                        when (source) {
+                            is KSClassDeclaration -> source
+                            is KSPropertyDeclaration -> source
+                            else -> throw AssertionError("Internal bug: neither type nor property")
+                        },
+                        "duplicated annotation $className"
+                    )
                 }
                 map[className] = message
             }

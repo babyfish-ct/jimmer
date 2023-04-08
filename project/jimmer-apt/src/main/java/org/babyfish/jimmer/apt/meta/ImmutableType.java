@@ -77,6 +77,8 @@ public class ImmutableType {
 
     private final Map<ClassName, String> validationMessageMap;
 
+    private final boolean acrossMicroServices;
+
     private final String microServiceName;
 
     public ImmutableType(
@@ -86,11 +88,21 @@ public class ImmutableType {
         this.typeElement = typeElement;
         Class<?> annotationType = typeUtils.getImmutableAnnotationType(typeElement);
         isEntity = annotationType == Entity.class;
+        acrossMicroServices = annotationType == MappedSuperclass.class &&
+                typeElement.getAnnotation(MappedSuperclass.class).acrossMicroServices();
         microServiceName = isEntity ?
                 typeElement.getAnnotation(Entity.class).microServiceName() :
                 annotationType == MappedSuperclass.class ?
                     typeElement.getAnnotation(MappedSuperclass.class).microServiceName() :
                     "";
+        if (acrossMicroServices && !microServiceName.isEmpty()) {
+            throw new MetaException(
+                    typeElement,
+                    "the `acrossMicroServices` of its annotation \"@" +
+                            MappedSuperclass.class.getName() +
+                            "\" is true so that `microServiceName` cannot be specified"
+            );
+        }
         isMappedSuperClass = annotationType == MappedSuperclass.class;
         isEmbeddable = annotationType == Embeddable.class;
 
@@ -104,10 +116,8 @@ public class ImmutableType {
             if (typeUtils.isImmutable(itf)) {
                 if (superTypeMirror != null) {
                     throw new MetaException(
-                            String.format(
-                                    "'%s' inherits multiple Immutable interfaces",
-                                    typeElement.getQualifiedName()
-                            )
+                            typeElement,
+                            "it inherits multiple Immutable interfaces"
                     );
                 }
                 superTypeMirror = itf;
@@ -124,9 +134,8 @@ public class ImmutableType {
             if (this.isEntity || this.isMappedSuperClass) {
                 if (superType.isEntity()) {
                     throw new MetaException(
-                            "Illegal type \"" +
-                                    typeElement.getQualifiedName() +
-                                    "\", it super type \"" +
+                            typeElement,
+                            "it super type \"" +
                                     superType.qualifiedName +
                                     "\" is entity. " +
                                     "Super entity is not supported temporarily, " +
@@ -135,27 +144,24 @@ public class ImmutableType {
                 }
                 if (!superType.isMappedSuperClass) {
                     throw new MetaException(
-                            "Illegal type \"" +
-                                    typeElement.getQualifiedName() +
-                                    "\", it super type \"" +
+                            typeElement,
+                            "it super type \"" +
                                     superType.qualifiedName +
                                     "\" is entity is not decorated by @MappedSuperClass"
                     );
                 }
             } else if (superType.isEntity || superType.isMappedSuperClass) {
                 throw new MetaException(
-                        "Illegal type \"" +
-                                typeElement.getQualifiedName() +
-                                "\", it super type \"" +
+                        typeElement,
+                        "it super type \"" +
                                 superType.qualifiedName +
                                 "\" cannot be decorated by @Entity or @MappedSuperClass"
                 );
             }
-            if (!superType.microServiceName.equals(microServiceName)) {
+            if (!superType.isAcrossMicroServices() && !superType.microServiceName.equals(microServiceName)) {
                 throw new MetaException(
-                        "Illegal type \"" +
-                                typeElement.getQualifiedName() +
-                                "\", its micro service name is \"" +
+                        typeElement,
+                        "its micro service name is \"" +
                                 microServiceName +
                                 "\" but the micro service name of its super type \"" +
                                 superType.getQualifiedName() +
@@ -175,7 +181,8 @@ public class ImmutableType {
                     String qualifiedName = ((TypeElement)am.getAnnotationType().asElement()).getQualifiedName().toString();
                     if (qualifiedName.startsWith("org.babyfish.jimmer.") && !qualifiedName.equals(FORMULA_CLASS_NAME)) {
                         throw new MetaException(
-                                "Illegal method \"" + executableElement + "\", it " +
+                                executableElement,
+                                "it " +
                                         "is default method so that it cannot be decorated by " +
                                         "any jimmer annotations except @" +
                                         FORMULA_CLASS_NAME
@@ -195,20 +202,18 @@ public class ImmutableType {
                 Formula formula = executableElement.getAnnotation(Formula.class);
                 if (formula != null) {
                     if (!formula.sql().isEmpty()) {
-                        throw new ModelException(
-                                "The method \"" +
-                                        executableElement +
-                                        "\" is non-abstract and decorated by @" +
+                        throw new MetaException(
+                                executableElement,
+                                "it is non-abstract and decorated by @" +
                                         Formula.class.getName() +
                                         ", non-abstract modifier means simple calculation property based on " +
                                         "java expression so that the `sql` of that annotation cannot be specified"
                         );
                     }
                     if (formula.dependencies().length == 0) {
-                        throw new ModelException(
-                                "The method \"" +
-                                        executableElement +
-                                        "\" is non-abstract and decorated by @" +
+                        throw new MetaException(
+                                executableElement,
+                                "it is non-abstract and decorated by @" +
                                         Formula.class.getName() +
                                         ", non-abstract modifier means simple calculation property based on " +
                                         "java expression so that the `dependencies` of that annotation must be specified"
@@ -221,22 +226,18 @@ public class ImmutableType {
                 Formula formula = executableElement.getAnnotation(Formula.class);
                 if (formula != null) {
                     if (formula.sql().isEmpty()) {
-                        throw new ModelException(
-                                "The method \"" +
-                                        executableElement +
-                                        "\" is abstract and decorated by @" +
+                        throw new MetaException(
+                                executableElement,
+                                "it is abstract and decorated by @" +
                                         Formula.class.getName() +
                                         ", abstract modifier means simple calculation property based on " +
                                         "SQL expression so that the `sql` of that annotation must be specified"
                         );
                     }
                     if (formula.dependencies().length != 0) {
-                        throw new ModelException(
-                                "The property \"" +
-                                        this +
-                                        "." +
-                                        executableElement +
-                                        "\" is abstract and decorated by @" +
+                        throw new MetaException(
+                                executableElement,
+                                "it is abstract and decorated by @" +
                                         Formula.class.getName() +
                                         ", abstract modifier means simple calculation property based on " +
                                         "SQL expression so that the `dependencies` of that annotation cannot be specified"
@@ -250,10 +251,9 @@ public class ImmutableType {
         if (superType != null) {
             for (Map.Entry<String, ImmutableProp> e : map.entrySet()) {
                 if (superType.getProps().containsKey(e.getKey())) {
-                    throw new ModelException(
-                            "The property \"" +
-                                    e.getValue() +
-                                    "\" overrides property of super type, this is not allowed"
+                    throw new MetaException(
+                            e.getValue().toElement(),
+                            "it overrides property of super type, this is not allowed"
                     );
                 }
             }
@@ -277,10 +277,8 @@ public class ImmutableType {
         if (superType != null) {
             if (superType.getIdProp() != null && !idProps.isEmpty()) {
                 throw new MetaException(
-                        "Illegal type \"" +
-                                typeElement.getQualifiedName() +
-                                "\", " +
-                                idProps.get(0) +
+                        typeElement,
+                        idProps.get(0) +
                                 "\" cannot be decorated by `@" +
                                 Id.class.getName() +
                                 "` because id has been declared in super type"
@@ -288,10 +286,8 @@ public class ImmutableType {
             }
             if (superType.getVersionProp() != null && !versionProps.isEmpty()) {
                 throw new MetaException(
-                        "Illegal type \"" +
-                                typeElement.getQualifiedName() +
-                                "\", " +
-                                versionProps.get(0) +
+                        typeElement,
+                        versionProps.get(0) +
                                 "\" cannot be decorated by `@" +
                                 Version.class.getName() +
                                 "` because version has been declared in super type"
@@ -299,10 +295,8 @@ public class ImmutableType {
             }
             if (superType.getLogicalDeletedProp() != null && !logicalDeletedProps.isEmpty()) {
                 throw new MetaException(
-                        "Illegal type \"" +
-                                typeElement.getQualifiedName() +
-                                "\", " +
-                                logicalDeletedProps.get(0) +
+                        typeElement,
+                        logicalDeletedProps.get(0) +
                                 "\" cannot be decorated by `@" +
                                 LogicalDeleted.class.getName() +
                                 "` because version has been declared in super type"
@@ -315,10 +309,8 @@ public class ImmutableType {
         if (!isEntity && !isMappedSuperClass) {
             if (!idProps.isEmpty()) {
                 throw new MetaException(
-                        "Illegal type \"" +
-                                typeElement.getQualifiedName() +
-                                "\", " +
-                                idProps.get(0) +
+                        typeElement,
+                        idProps.get(0) +
                                 "\" cannot be decorated by `@" +
                                 Id.class.getName() +
                                 "` because current type is not entity"
@@ -326,9 +318,7 @@ public class ImmutableType {
             }
             if (!versionProps.isEmpty()) {
                 throw new MetaException(
-                        "Illegal type \"" +
-                                typeElement.getQualifiedName() +
-                                "\", " +
+                        typeElement,
                                 versionProps.get(0) +
                                 "\" cannot be decorated by `@" +
                                 Version.class.getName() +
@@ -337,9 +327,7 @@ public class ImmutableType {
             }
             if (!logicalDeletedProps.isEmpty()) {
                 throw new MetaException(
-                        "Illegal type \"" +
-                                typeElement.getQualifiedName() +
-                                "\", " +
+                        typeElement,
                                 logicalDeletedProps.get(0) +
                                 "\" cannot be decorated by `@" +
                                 LogicalDeleted.class.getName() +
@@ -349,9 +337,8 @@ public class ImmutableType {
         } else {
             if (idProps.size() > 1) {
                 throw new MetaException(
-                        "Illegal type \"" +
-                                typeElement.getQualifiedName() +
-                                "\", multiple id properties are not supported, " +
+                        typeElement,
+                        "multiple id properties are not supported, " +
                                 "but both \"" +
                                 idProps.get(0) +
                                 "\" and \"" +
@@ -363,9 +350,8 @@ public class ImmutableType {
             }
             if (versionProps.size() > 1) {
                 throw new MetaException(
-                        "Illegal type \"" +
-                                typeElement.getQualifiedName() +
-                                "\", multiple version properties are not supported, " +
+                        typeElement,
+                        "multiple version properties are not supported, " +
                                 "but both \"" +
                                 versionProps.get(0) +
                                 "\" and \"" +
@@ -377,9 +363,8 @@ public class ImmutableType {
             }
             if (logicalDeletedProps.size() > 1) {
                 throw new MetaException(
-                        "Illegal type \"" +
-                                typeElement.getQualifiedName() +
-                                "\", multiple logical deleted properties are not supported, " +
+                        typeElement,
+                        "multiple logical deleted properties are not supported, " +
                                 "but both \"" +
                                 logicalDeletedProps.get(0) +
                                 "\" and \"" +
@@ -392,9 +377,8 @@ public class ImmutableType {
             if (idProp == null) {
                 if (isEntity && idProps.isEmpty()) {
                     throw new MetaException(
-                            "Illegal type \"" +
-                                    typeElement.getQualifiedName() +
-                                    "\", entity type must have an id property"
+                            typeElement,
+                            "entity type must have an id property"
                     );
                 }
                 if (!idProps.isEmpty()) {
@@ -403,18 +387,16 @@ public class ImmutableType {
             }
             if (idProp != null && idProp.isAssociation(true)) {
                 throw new MetaException(
-                        "Illegal property \"" +
-                                idProp +
-                                "\", association cannot be id property"
+                        typeElement,
+                        "association cannot be id property"
                 );
             }
             if (versionProp == null && !versionProps.isEmpty()) {
                 versionProp = versionProps.get(0);
                 if (versionProp.isAssociation(false)) {
                     throw new MetaException(
-                            "Illegal property \"" +
-                                    versionProps +
-                                    "\", association cannot be version property"
+                            typeElement,
+                            "association cannot be version property"
                     );
                 }
             }
@@ -422,7 +404,8 @@ public class ImmutableType {
                 logicalDeletedProp = logicalDeletedProps.get(0);
                 if (logicalDeletedProp.isAssociation(false)) {
                     throw new MetaException(
-                            "Illegal property \"" +
+                            typeElement,
+                            "it contains illegal property \"" +
                                     logicalDeletedProps +
                                     "\", association cannot be logical deleted property"
                     );
@@ -461,6 +444,10 @@ public class ImmutableType {
 
     public boolean isEmbeddable() {
         return isEmbeddable;
+    }
+
+    public boolean isAcrossMicroServices() {
+        return acrossMicroServices;
     }
 
     public String getPackageName() {
@@ -621,5 +608,10 @@ public class ImmutableType {
             hasNext |= prop.resolve(typeUtils, step);
         }
         return hasNext;
+    }
+
+    @Override
+    public String toString() {
+        return typeElement.getQualifiedName().toString();
     }
 }

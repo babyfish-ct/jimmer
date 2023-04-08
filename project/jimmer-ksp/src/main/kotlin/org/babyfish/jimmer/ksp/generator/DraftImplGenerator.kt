@@ -574,7 +574,7 @@ class DraftImplGenerator(
                                 addProperty(
                                     PropertySpec
                                         .builder(regexpPatternFieldName(prop, i), PATTERN_CLASS_NAME, KModifier.PRIVATE)
-                                        .initializer("%T.compile(%S)", PATTERN_CLASS_NAME, patterns[i].get<String>("regexp"))
+                                        .initializer("%T.compile(%S)", PATTERN_CLASS_NAME, patterns[i][Pattern::regexp])
                                         .build()
                                 )
                             }

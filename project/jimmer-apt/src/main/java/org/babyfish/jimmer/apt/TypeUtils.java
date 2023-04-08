@@ -68,9 +68,8 @@ public class TypeUtils {
             if (newSqlAnnotation != null) {
                 if (sqlAnnotation != null) {
                     throw new MetaException(
-                            "Illegal type \"" +
-                                    typeElement.getQualifiedName().toString() +
-                                    "\", it can not be decorated by both @" +
+                            typeElement,
+                            "it can not be decorated by both @" +
                                     sqlAnnotation.annotationType().getName() +
                                     " and @" +
                                     newSqlAnnotation.annotationType().getName()

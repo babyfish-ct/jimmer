@@ -4,7 +4,6 @@ import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
-import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toClassName
@@ -13,6 +12,7 @@ import org.babyfish.jimmer.error.ErrorField
 import org.babyfish.jimmer.ksp.annotations
 import org.babyfish.jimmer.ksp.className
 import org.babyfish.jimmer.ksp.get
+import org.babyfish.jimmer.ksp.getClassArgument
 import java.io.OutputStreamWriter
 
 class ErrorGenerator(
@@ -292,17 +292,16 @@ class ErrorGenerator(
 
         private fun fieldsOf(item: KSClassDeclaration): List<Pair<String, TypeName>> =
             item.annotations(ErrorField::class).map { anno ->
-                anno.get<String>("name")!! to
-                    anno.get<KSType>("type")!!
-                        .toClassName()
+                anno[ErrorField::name]!! to
+                    anno.getClassArgument(ErrorField::type)!!.toClassName()
                         .let {
-                            if (anno.get<Boolean>("list") == true) {
+                            if (anno[ErrorField::list] == true) {
                                 LIST.parameterizedBy(it)
                             } else {
                                 it
                             }
                         }
-                        .copy(nullable = anno.get<Boolean>("nullable") == true)
+                        .copy(nullable = anno[ErrorField::nullable] == true)
             }
     }
 }

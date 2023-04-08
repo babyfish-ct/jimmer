@@ -12,6 +12,7 @@ import com.google.devtools.ksp.symbol.KSFile
 import org.babyfish.jimmer.error.ErrorFamily
 import org.babyfish.jimmer.ksp.generator.*
 import org.babyfish.jimmer.ksp.meta.Context
+import org.babyfish.jimmer.ksp.meta.MetaException
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.MappedSuperclass
@@ -45,14 +46,18 @@ class ImmutableProcessor(
             return emptyList()
         }
 
-        val ctx = Context(resolver)
-        val classDeclarationMultiMap = findModelMap(ctx)
-        generateJimmerTypes(resolver, ctx, classDeclarationMultiMap)
+        return try {
+            val ctx = Context(resolver)
+            val classDeclarationMultiMap = findModelMap(ctx)
+            generateJimmerTypes(resolver, ctx, classDeclarationMultiMap)
 
-        val errorDeclarations = findErrorTypes(resolver)
-        generateErrorTypes(resolver, errorDeclarations)
-
-        return classDeclarationMultiMap.values.flatten()
+            val errorDeclarations = findErrorTypes(resolver)
+            generateErrorTypes(resolver, errorDeclarations)
+            classDeclarationMultiMap.values.flatten()
+        } catch (ex: MetaException) {
+            environment.logger.error(ex.message!!, ex.declaration)
+            emptyList()
+        }
     }
 
     private fun findModelMap(ctx: Context): Map<KSFile, List<KSClassDeclaration>> {

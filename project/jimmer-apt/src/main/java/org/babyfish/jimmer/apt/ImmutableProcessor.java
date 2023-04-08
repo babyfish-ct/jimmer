@@ -69,20 +69,24 @@ public class ImmutableProcessor extends AbstractProcessor {
             return true;
         }
 
-        Map<TypeElement, ImmutableType> immutableTypeMap = parseImmutableTypes(roundEnv);
-        generateJimmerTypes(
-                roundEnv
-                        .getRootElements()
-                        .stream()
-                        .filter(it -> it instanceof TypeElement)
-                        .map(immutableTypeMap::get)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList()),
-                roundEnv
-        );
+        try {
+            Map<TypeElement, ImmutableType> immutableTypeMap = parseImmutableTypes(roundEnv);
+            generateJimmerTypes(
+                    roundEnv
+                            .getRootElements()
+                            .stream()
+                            .filter(it -> it instanceof TypeElement)
+                            .map(immutableTypeMap::get)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList()),
+                    roundEnv
+            );
 
-        List<TypeElement> errorElements = getErrorFamilies(roundEnv);
-        generateErrorType(errorElements);
+            List<TypeElement> errorElements = getErrorFamilies(roundEnv);
+            generateErrorType(errorElements);
+        } catch (MetaException ex) {
+            messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage(), ex.getElement());
+        }
 
         return true;
     }
@@ -95,9 +99,8 @@ public class ImmutableProcessor extends AbstractProcessor {
                 if (typeUtils.isImmutable(typeElement) && include(typeElement)) {
                     if (typeElement.getKind() != ElementKind.INTERFACE) {
                         throw new MetaException(
-                                "Illegal class \"" +
-                                        typeElement.getQualifiedName().toString() +
-                                        "\", immutable type must be interface"
+                                typeElement,
+                                "immutable type must be interface"
                         );
                     }
                     ImmutableType immutableType = typeUtils.getImmutableType(typeElement);
@@ -126,9 +129,8 @@ public class ImmutableProcessor extends AbstractProcessor {
                 if (element.getAnnotation(ErrorFamily.class) != null) {
                     if (element.getKind() != ElementKind.ENUM) {
                         throw new MetaException(
-                                "Illegal type \"" +
-                                        element +
-                                        "\", only enum can be decorated by @" +
+                                element,
+                                "only enum can be decorated by @" +
                                         ErrorFamily.class.getName()
                         );
                     }

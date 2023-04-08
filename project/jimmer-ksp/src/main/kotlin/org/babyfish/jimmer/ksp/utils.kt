@@ -5,6 +5,7 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.TypeName
 import org.babyfish.jimmer.ksp.meta.MetaException
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty1
 
 val KSDeclaration.fullName: String
     get() = qualifiedName?.asString() ?: ""
@@ -45,7 +46,8 @@ fun KSAnnotated.annotation(annotationType: KClass<out Annotation>): KSAnnotation
         }
         if (targets.size > 1) {
             throw MetaException(
-                "Illegal property '${this}', it is decorated by multiple annotations of type " +
+                this,
+                "it is decorated by multiple annotations of type " +
                     "'@${annotationType.qualifiedName}' from different annotation targets: $targets"
             )
         }
@@ -84,8 +86,16 @@ val KSAnnotation.fullName: String
     get() = annotationType.resolve().declaration.fullName
 
 @Suppress("UNCHECKED_CAST")
-operator fun <T> KSAnnotation.get(name: String): T? =
-    arguments.firstOrNull { it.name?.asString() == name }?.value as T?
+operator fun <T> KSAnnotation.get(annoProp: KProperty1<out Annotation, T>): T? =
+    arguments.firstOrNull { it.name?.asString() == annoProp.name }?.value as T?
+
+@Suppress("UNCHECKED_CAST")
+fun KSAnnotation.getClassArgument(annoProp: KProperty1<out Annotation, KClass<*>>): KSClassDeclaration? =
+    arguments.firstOrNull { it.name?.asString() == annoProp.name }?.value as KSClassDeclaration?
+
+@Suppress("UNCHECKED_CAST")
+fun <T> KSAnnotation.getListArgument(annoProp: KProperty1<out Annotation, Array<T>>): List<T>? =
+    arguments.firstOrNull { it.name?.asString() == annoProp.name }?.value as List<T>?
 
 fun TypeName.isBuiltInType(nullable: Boolean? = null): Boolean {
     if (this !is ClassName) {

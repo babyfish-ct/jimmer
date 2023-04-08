@@ -132,8 +132,6 @@ public class PropDescriptor {
 
         private final Class<? extends Annotation> typeAnnotationType;
 
-        private final String propText;
-
         private final String elementText;
 
         private final Class<? extends Annotation> elementAnnotationType;
@@ -168,7 +166,6 @@ public class PropDescriptor {
             this.isKotlinType = isKotlinType;
             this.typeText = typeText;
             this.typeAnnotationType = typeAnnotationType;
-            this.propText = propText;
             this.elementText = elementText;
             this.elementAnnotationType = elementAnnotationType;
             this.isList = isList;
@@ -201,9 +198,7 @@ public class PropDescriptor {
                                 REF_ANNOTATION_TYPES;
                 if (!declaringTypes.contains(typeAnnotationType)) {
                     throw exceptionCreator.apply(
-                            "Illegal property \"" +
-                                    propText +
-                                    "\", it cannot be decorated by @" +
+                            "it cannot be decorated by @" +
                                     annotationType.getName() +
                                     " because the declaring type \"" +
                                     typeText +
@@ -294,25 +289,19 @@ public class PropDescriptor {
             }
             if (elementAnnotationType == Embeddable.class && annotationTypes.contains(Column.class)) {
                 throw exceptionCreator.apply(
-                        "Illegal property \"" +
-                                propText +
-                                "\", embedded property cannot be decorated by @" +
+                        "embedded property cannot be decorated by @" +
                                 Column.class.getName()
                 );
             }
             if (elementAnnotationType != Embeddable.class && annotationTypes.contains(PropOverride.class)) {
                 throw exceptionCreator.apply(
-                        "Illegal property \"" +
-                                propText +
-                                "\", only embedded property cannot be decorated by @" +
+                        "only embedded property cannot be decorated by @" +
                                 PropOverride.class.getName()
                 );
             }
             if (elementAnnotationType != Embeddable.class && annotationTypes.contains(PropOverrides.class)) {
                 throw exceptionCreator.apply(
-                        "Illegal property \"" +
-                                propText +
-                                "\", only embedded property cannot be decorated by @" +
+                        "only embedded property cannot be decorated by @" +
                                 PropOverrides.class.getName()
                 );
             }
@@ -327,9 +316,7 @@ public class PropDescriptor {
                 type = Type.BASIC;
             } else {
                 throw exceptionCreator.apply(
-                        "Illegal property \"" +
-                                propText +
-                                "\", there are not enough annotations to determine that " +
+                        "there are not enough annotations to determine that " +
                                 "the current property belongs to one of the following types: " +
                                 implicitMap.keySet()
                 );
@@ -339,9 +326,7 @@ public class PropDescriptor {
                 if (annotationType != type.getAnnotationType() &&
                 !expectedAnnotationTypes.contains(annotationType)) {
                     throw exceptionCreator.apply(
-                            "Illegal property \"" +
-                                    propText +
-                                    "\", the "+
+                            "the "+
                                     type +
                                     " property cannot be decorated by @" +
                                     annotationType.getName()
@@ -355,9 +340,7 @@ public class PropDescriptor {
                 for (Class<?> annotationType : annotationTypes) {
                     if (ASSOCIATION_STORAGE_ANNOTATION_TYPES.contains(annotationType)) {
                         throw exceptionCreator.apply(
-                                "Illegal property \"" +
-                                        propText +
-                                        "\", it cannot be decorated by @" +
+                                "it cannot be decorated by @" +
                                         annotationType.getName() +
                                         " because another annotation @" +
                                         type.getAnnotationType().getName() +
@@ -367,9 +350,7 @@ public class PropDescriptor {
                 }
                 if (type == Type.ONE_TO_ONE && !isNullable) {
                     throw exceptionCreator.apply(
-                            "Illegal property \"" +
-                                    propText +
-                                    "\", its annotation @" +
+                            "its annotation @" +
                                     type.getAnnotationType().getName() +
                                     " has the argument `mappedBy` so that it must be nullable"
                     );
@@ -387,9 +368,7 @@ public class PropDescriptor {
                 case MANY_TO_MANY:
                     if (!isList) {
                         throw exceptionCreator.apply(
-                                "The property \"" +
-                                        propText +
-                                        "\" is illegal, it is not list so that it cannot be decorated by @" +
+                                "it is not list so that it cannot be decorated by @" +
                                         type.getAnnotationType().getName()
                         );
                     }
@@ -397,9 +376,7 @@ public class PropDescriptor {
                 default:
                     if (type.isAssociation && isList) {
                         throw exceptionCreator.apply(
-                                "The property \"" +
-                                        propText +
-                                        "\" is illegal, list association property must be decorated by @" +
+                                "list association property must be decorated by @" +
                                         OneToMany.class +
                                         " or @" +
                                         ManyToMany.class
@@ -412,9 +389,7 @@ public class PropDescriptor {
         private void validateReturnType(Type type) {
             if (type.isAssociation() && elementAnnotationType != Entity.class) {
                 throw exceptionCreator.apply(
-                        "The property \"" +
-                                propText +
-                                "\" is illegal, it is association property so that its target type \"" +
+                        "it is association property so that its target type \"" +
                                 elementText +
                                 "\" must be decorated by @" +
                                 Entity.class.getName()
@@ -425,9 +400,7 @@ public class PropDescriptor {
                     elementAnnotationType != null &&
                     elementAnnotationType != Embeddable.class) {
                 throw exceptionCreator.apply(
-                        "The property \"" +
-                                propText +
-                                "\" is illegal, it is not association property, its target type \"" +
+                        "it is not association property, its target type \"" +
                                 elementText +
                                 "\" is immutable type, immutable type is not enough, please use @" +
                                 Entity.class.getName()
@@ -439,17 +412,13 @@ public class PropDescriptor {
             if (explicitNullable != null) {
                 if (isKotlinType) {
                     throw exceptionCreator.apply(
-                            "The property \"" +
-                                    propText +
-                                    "\" is illegal, it is unnecessary to use \"@" +
+                            "it is unnecessary to use \"@" +
                                     annotationTypeName +
                                     "\" in kotlin"
                     );
                 } else if (explicitNullable != nullable) {
                     throw exceptionCreator.apply(
-                            "The property \"" +
-                                    propText +
-                                    "\" is illegal, it cannot be decorated by \"@" +
+                            "it cannot be decorated by \"@" +
                                     annotationTypeName +
                                     "\" which let the property be " +
                                     (nullable ? "nullable" : "nonnull") +
@@ -463,9 +432,7 @@ public class PropDescriptor {
             if (annotationNullity != null) {
                 if (annotationNullity.isNullable != nullable) {
                     throw exceptionCreator.apply(
-                            "The property \"" +
-                                    propText +
-                                    "\" is illegal, it cannot be decorated by both @" +
+                            "it cannot be decorated by both @" +
                                     annotationNullity.annotationTypeName +
                                     " and @" +
                                     annotationTypeName
@@ -487,9 +454,7 @@ public class PropDescriptor {
                 case MANY_TO_MANY:
                     if (specifiedNullable) {
                         throw exceptionCreator.apply(
-                                "Illegal property \"" +
-                                        propText +
-                                        "\", it cannot be nullable because it is " +
+                                "it cannot be nullable because it is " +
                                         type +
                                         " property"
                         );
@@ -499,9 +464,7 @@ public class PropDescriptor {
                 case MANY_TO_ONE:
                     if (annotationTypes.contains(JoinTable.class) && !specifiedNullable) {
                         throw exceptionCreator.apply(
-                                "Illegal property \"" +
-                                        propText +
-                                        "\", the " +
+                                "the " +
                                         type +
                                         " property decorated by @" +
                                         JoinTable.class +
@@ -521,9 +484,7 @@ public class PropDescriptor {
 
         private void conflict(Class<?> annotationType1, Class<?> annotationType2) {
             throw exceptionCreator.apply(
-                    "Illegal property \"" +
-                            propText +
-                            "\", it cannot be decorated by both @" +
+                    "it cannot be decorated by both @" +
                             annotationType1.getName() +
                             " and @" +
                             annotationType2.getName()
