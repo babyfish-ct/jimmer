@@ -1,0 +1,6 @@
+rootProject.name = 'jimmer-cloud'
+include 'model'
+include 'registry-center'
+include 'book-service'
+include 'store-service'
+

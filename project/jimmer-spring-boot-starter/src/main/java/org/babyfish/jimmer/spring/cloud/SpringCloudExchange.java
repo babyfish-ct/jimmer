@@ -2,6 +2,8 @@ package org.babyfish.jimmer.spring.cloud;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -23,24 +25,29 @@ public class SpringCloudExchange implements MicroServiceExchange {
         this.mapper = mapper;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public List<ImmutableSpi> findByIds(
             String microServiceName,
             Collection<?> ids,
             Fetcher<?> fetcher
     ) throws JsonProcessingException {
-        return restTemplate.getForObject(
+        String json = restTemplate.getForObject(
                 "http://{microServiceName}/jimmerMicroServiceBridge/byIds" +
                         "?ids={ids}&fetcher={fetcher}",
-                List.class,
+                String.class,
                 microServiceName,
                 mapper.writeValueAsString(ids),
                 fetcher.toString(true)
         );
+        return mapper.readValue(
+                json,
+                mapper.getTypeFactory().constructParametricType(
+                        List.class,
+                        fetcher.getImmutableType().getJavaClass()
+                )
+        );
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public List<Tuple2<Object, ImmutableSpi>> findByAssociatedIds(
             String microServiceName,
@@ -48,14 +55,26 @@ public class SpringCloudExchange implements MicroServiceExchange {
             Collection<?> targetIds,
             Fetcher<?> fetcher
     ) throws JsonProcessingException {
-        return restTemplate.getForObject(
+        String json = restTemplate.getForObject(
                 "http://{microServiceName}/jimmerMicroServiceBridge/byAssociatedIds" +
                         "?prop={prop}&targetIds={targetIds}&fetcher={fetcher}",
-                List.class,
+                String.class,
                 microServiceName,
                 prop.getName(),
                 mapper.writeValueAsString(targetIds),
                 fetcher.toString(true)
+        );
+        TypeFactory typeFactory = mapper.getTypeFactory();
+        return mapper.readValue(
+                json,
+                typeFactory.constructParametricType(
+                        List.class,
+                        typeFactory.constructParametricType(
+                                Tuple2.class,
+                                Classes.boxTypeOf(prop.getTargetType().getIdProp().getElementClass()),
+                                fetcher.getImmutableType().getJavaClass()
+                        )
+                )
         );
     }
 }

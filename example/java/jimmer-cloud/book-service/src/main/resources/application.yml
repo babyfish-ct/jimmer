@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: BOOK-SERVICE
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:book-db;database_to_upper=true
+
+jimmer:
+  micro-service-name: ${spring.application.name}
+  show-sql: true
+  database-validation-mode: ERROR
+
+server:
+  port: 7002
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:7000/eureka/
+
+springdoc:
+  swagger-ui:
+    path: /ui

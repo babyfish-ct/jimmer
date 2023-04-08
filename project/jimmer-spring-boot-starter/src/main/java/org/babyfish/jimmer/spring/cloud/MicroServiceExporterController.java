@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.SimpleType;
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
@@ -46,7 +47,7 @@ public class MicroServiceExporterController implements MicroServiceExporterAgent
                         null,
                         null,
                         null,
-                        SimpleType.constructUnsafe(idType)
+                        SimpleType.constructUnsafe(Classes.boxTypeOf(idType))
                 )
         );
         return exporter.findByIds(ids, fetcher);
@@ -69,7 +70,7 @@ public class MicroServiceExporterController implements MicroServiceExporterAgent
                         null,
                         null,
                         null,
-                        SimpleType.constructUnsafe(targetIdType)
+                        SimpleType.constructUnsafe(Classes.boxTypeOf(targetIdType))
                 )
         );
         return exporter.findByAssociatedIds(

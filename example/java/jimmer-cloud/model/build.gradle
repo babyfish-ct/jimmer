@@ -1,0 +1,26 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    // For user code
+    implementation "org.babyfish.jimmer:jimmer-core:$jimmerVersion"
+
+    // For generated code
+    compileOnly "org.babyfish.jimmer:jimmer-sql:$jimmerVersion"
+
+    // Code generator
+    annotationProcessor "org.babyfish.jimmer:jimmer-apt:$jimmerVersion"
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+}
+
+test {
+    useJUnitPlatform()
+}
