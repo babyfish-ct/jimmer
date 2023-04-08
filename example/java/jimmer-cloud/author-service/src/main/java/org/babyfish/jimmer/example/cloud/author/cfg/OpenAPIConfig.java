@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.example.cloud.book.cfg;
+package org.babyfish.jimmer.example.cloud.author.cfg;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -14,7 +14,7 @@ public class OpenAPIConfig {
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI()
-                .info(new Info().title("cloud:book-service").version("0.7.24"))
+                .info(new Info().title("cloud:author-service").version("0.7.24"))
                 .components(
                         new Components()
                                 .addSecuritySchemes(

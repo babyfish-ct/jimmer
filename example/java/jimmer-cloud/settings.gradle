@@ -3,4 +3,5 @@ include 'model'
 include 'registry-center'
 include 'book-service'
 include 'store-service'
+include 'author-service'
 

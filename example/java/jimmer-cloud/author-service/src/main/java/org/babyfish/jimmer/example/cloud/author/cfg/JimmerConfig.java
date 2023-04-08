@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.example.cloud.book.cfg;
+package org.babyfish.jimmer.example.cloud.author.cfg;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.example.cloud.model.JimmerModule;

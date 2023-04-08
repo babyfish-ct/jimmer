@@ -5,11 +5,6 @@ spring:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:store-db;database_to_upper=true
 
-jimmer:
-  micro-service-name: ${spring.application.name}
-  show-sql: true
-  database-validation-mode: ERROR
-
 server:
   port: 7000
 

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.example.cloud.book;
 
 import org.babyfish.jimmer.client.FetchBy;
+import org.babyfish.jimmer.example.cloud.model.AuthorFetcher;
 import org.babyfish.jimmer.example.cloud.model.Book;
 import org.babyfish.jimmer.example.cloud.model.BookFetcher;
 import org.babyfish.jimmer.example.cloud.model.BookStoreFetcher;
@@ -34,13 +35,18 @@ public class BookService {
 
     public static final Fetcher<Book> SIMPLE_BOOK =
             BookFetcher.$
-                    .allScalarFields();
+                    .name()
+                    .edition();
 
     public static final Fetcher<Book> COMPLEX_BOOK =
             BookFetcher.$
                     .allScalarFields()
                     .store(
                             BookStoreFetcher.$
+                                    .allScalarFields()
+                    )
+                    .authors(
+                            AuthorFetcher.$
                                     .allScalarFields()
                     );
 }
