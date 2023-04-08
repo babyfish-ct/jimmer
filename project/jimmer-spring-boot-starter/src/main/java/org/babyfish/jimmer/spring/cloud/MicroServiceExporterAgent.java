@@ -11,13 +11,13 @@ import java.util.List;
 @RequestMapping("/jimmerMicroServiceBridge")
 public interface MicroServiceExporterAgent {
 
-    @GetMapping("/byIds")
+    @GetMapping(value = "/byIds", produces="application/json")
     List<ImmutableSpi> findByIds(
             @RequestParam("ids") String idArrStr,
             @RequestParam("fetcher") String fetcherStr
     ) throws Exception;
 
-    @GetMapping("/byAssociatedIds")
+    @GetMapping(value = "/byAssociatedIds", produces="application/json")
     List<Tuple2<Object, ImmutableSpi>> findByAssociatedIds(
             @RequestParam("prop") String prop,
             @RequestParam("targetIds") String targetIdsArrStr,

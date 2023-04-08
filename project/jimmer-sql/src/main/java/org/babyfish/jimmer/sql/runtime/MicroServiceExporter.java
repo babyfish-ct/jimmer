@@ -3,8 +3,10 @@ package org.babyfish.jimmer.sql.runtime;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -27,13 +29,12 @@ public class MicroServiceExporter {
             Collection<?> ids,
             Fetcher<?> fetcher
     ) {
-        if (sqlClient.getFilters().getFilter(fetcher.getImmutableType()) == null) {
-            return sqlClient.getEntities().findByIds((Fetcher<ImmutableSpi>) fetcher, ids);
-        }
-        return sqlClient
-                .caches(cfg -> cfg.disable(fetcher.getImmutableType()))
-                .getEntities()
-                .findByIds((Fetcher<ImmutableSpi>) fetcher, ids);
+        JSqlClient client =
+                sqlClient.getFilters().getFilter(fetcher.getImmutableType()) == null ?
+                        sqlClient :
+                        sqlClient.caches(cfg -> cfg.disable(fetcher.getImmutableType()));
+        Entities entities = ((EntitiesImpl) client.getEntities()).forExporter();
+        return entities.findByIds((Fetcher<ImmutableSpi>) fetcher, ids);
     }
 
     @SuppressWarnings("unchecked")

@@ -5,7 +5,7 @@ import org.babyfish.jimmer.sql.*;
 import javax.validation.constraints.Null;
 import java.util.List;
 
-@Entity(microServiceName = "STORE-SERVICE")
+@Entity(microServiceName = "store-service")
 public interface BookStore {
 
     @Id

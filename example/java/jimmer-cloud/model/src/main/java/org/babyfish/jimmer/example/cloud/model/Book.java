@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import java.math.BigDecimal;
 import java.util.List;
 
-@Entity(microServiceName = "BOOK-SERVICE")
+@Entity(microServiceName = "book-service")
 public interface Book {
 
     @Id

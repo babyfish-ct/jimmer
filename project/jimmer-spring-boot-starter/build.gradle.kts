@@ -23,6 +23,7 @@ dependencies {
     api(project(":jimmer-client"))
     api("org.springframework.boot:spring-boot-starter-jdbc:2.7.0")
     api("org.springframework.data:spring-data-commons:2.7.0")
+    api("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
     compileOnly("org.springframework.boot:spring-boot-starter-web:2.7.0")
     compileOnly("org.springframework.data:spring-data-redis:2.7.0")
     compileOnly( "com.github.ben-manes.caffeine:caffeine:2.9.1")

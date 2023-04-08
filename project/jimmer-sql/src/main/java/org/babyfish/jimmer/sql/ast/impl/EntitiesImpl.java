@@ -93,6 +93,13 @@ public class EntitiesImpl implements Entities {
         return new EntitiesImpl(sqlClient, forUpdate, con, ExecutionPurpose.LOAD);
     }
 
+    public Entities forExporter() {
+        if (purpose == ExecutionPurpose.EXPORT) {
+            return this;
+        }
+        return new EntitiesImpl(sqlClient, forUpdate, con, ExecutionPurpose.EXPORT);
+    }
+
     @Override
     public <E> E findById(Class<E> entityType, Object id) {
         if (con != null) {

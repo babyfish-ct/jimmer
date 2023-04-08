@@ -25,6 +25,7 @@ dependencies {
 
     runtimeOnly 'com.h2database:h2'
     implementation 'org.springdoc:springdoc-openapi-ui:1.6.13'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'

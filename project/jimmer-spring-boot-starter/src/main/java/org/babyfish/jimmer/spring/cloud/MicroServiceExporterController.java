@@ -32,7 +32,7 @@ public class MicroServiceExporterController implements MicroServiceExporterAgent
         this.mapper = mapper;
     }
 
-    @GetMapping("/byIds")
+    @GetMapping(value = "/byIds", produces="application/json")
     @Override
     public List<ImmutableSpi> findByIds(
             @RequestParam("ids") String idArrStr,
@@ -53,7 +53,7 @@ public class MicroServiceExporterController implements MicroServiceExporterAgent
         return exporter.findByIds(ids, fetcher);
     }
 
-    @GetMapping("/byAssociatedIds")
+    @GetMapping(value = "/byAssociatedIds", produces="application/json")
     @Override
     public List<Tuple2<Object, ImmutableSpi>> findByAssociatedIds(
             @RequestParam("prop") String prop,
