@@ -49,7 +49,7 @@ class ExecutorForLog implements Executor {
             );
         } else {
             Logger logger = LoggerFactory.getLogger(ctx.getPrimaryElement().getClassName());
-            LOGGER.info(
+            logger.info(
                     "jimmer> sql: " +
                             sql +
                             ", variables: " +
@@ -58,7 +58,7 @@ class ExecutorForLog implements Executor {
                             purpose
             );
             for (StackTraceElement element : ctx.getMatchedElements()) {
-                LOGGER.info(
+                logger.info(
                         "jimmer stacktrace-element)> {}",
                         element
                 );

@@ -18,19 +18,25 @@ java {
 }
 
 dependencies {
+
     api(project(":jimmer-sql"))
     api(project(":jimmer-sql-kotlin"))
     api(project(":jimmer-client"))
     api("org.springframework.boot:spring-boot-starter-jdbc:2.7.0")
     api("org.springframework.data:spring-data-commons:2.7.0")
     api("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
+
     compileOnly("org.springframework.boot:spring-boot-starter-web:2.7.0")
     compileOnly("org.springframework.data:spring-data-redis:2.7.0")
     compileOnly( "com.github.ben-manes.caffeine:caffeine:2.9.1")
     compileOnly("org.springframework.graphql:spring-graphql:1.0.0")
+    compileOnly("io.swagger.core.v3:swagger-annotations:2.2.2")
+    compileOnly("io.springfox:springfox-core:3.0.0")
+
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:2.7.0")
     testAnnotationProcessor(project(":jimmer-apt"))
     kspTest(project(":jimmer-ksp"))
+
     testImplementation("org.springframework.boot:spring-boot-starter-test:2.7.0")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
     testImplementation("com.h2database:h2:2.1.212")

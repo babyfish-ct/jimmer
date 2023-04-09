@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.SimpleType;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -13,14 +14,19 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.compiler.FetcherCompiler;
 import org.babyfish.jimmer.sql.runtime.MicroServiceExporter;
 import org.springframework.http.MediaType;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
+@Hidden
+@ApiIgnore
 @RestController
+@Transactional(readOnly = true)
 public class MicroServiceExporterController {
 
     public static final String BY_IDS = "/jimmerMicroServiceBridge/byIds";

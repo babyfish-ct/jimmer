@@ -136,6 +136,9 @@ public class DatabaseValidators {
 
     private void validateForeignKey(ImmutableType type) throws SQLException {
         Table table = tableOf(type);
+        if (table == null) {
+            return;
+        }
         for (ImmutableProp prop : type.getProps().values()) {
             if (!prop.isAssociation(TargetLevel.PERSISTENT) ||
                     prop.getAnnotation(DatabaseValidationIgnore.class) != null ||
