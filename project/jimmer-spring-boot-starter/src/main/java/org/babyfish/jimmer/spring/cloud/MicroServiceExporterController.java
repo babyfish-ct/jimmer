@@ -29,6 +29,7 @@ public class MicroServiceExporterController implements MicroServiceExporterAgent
     }
 
     @PostMapping(value = BY_IDS, produces="application/json")
+    @ResponseBody
     @Override
     public List<ImmutableSpi> findByIds(
             @RequestBody FindByIdsRequest request
@@ -49,6 +50,7 @@ public class MicroServiceExporterController implements MicroServiceExporterAgent
     }
 
     @PostMapping(value = BY_ASSOCIATED_IDS, produces="application/json")
+    @ResponseBody
     @Override
     public List<Tuple2<Object, ImmutableSpi>> findByAssociatedIds(
             @RequestBody FindByAssociatedIdsRequest request

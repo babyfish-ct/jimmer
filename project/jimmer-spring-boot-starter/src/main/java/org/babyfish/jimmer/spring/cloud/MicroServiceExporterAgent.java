@@ -13,11 +13,13 @@ public interface MicroServiceExporterAgent {
     String BY_ASSOCIATED_IDS = "/jimmerMicroServiceBridge/byAssociatedIds";
 
     @PostMapping(value = BY_IDS, produces="application/json")
+    @ResponseBody
     List<ImmutableSpi> findByIds(
             @RequestBody FindByIdsRequest request
     ) throws Exception;
 
     @PostMapping(value = BY_ASSOCIATED_IDS, produces="application/json")
+    @ResponseBody
     List<Tuple2<Object, ImmutableSpi>> findByAssociatedIds(
             @RequestBody FindByAssociatedIdsRequest request
     ) throws Exception;
