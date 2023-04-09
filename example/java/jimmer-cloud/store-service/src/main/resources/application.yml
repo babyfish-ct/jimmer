@@ -8,7 +8,12 @@ spring:
 jimmer:
   micro-service-name: ${spring.application.name}
   show-sql: true
+  executor-context-prefixes:
+    - org.babyfish.jimmer.example.cloud.store.StoreService
   database-validation-mode: ERROR
+  client:
+    ts:
+      path: /store-service-ts.zip
 
 server:
   port: 7001

@@ -6,10 +6,11 @@ spring:
     url: jdbc:h2:mem:author-db;database_to_upper=true
 
 jimmer:
+  language: kotlin
   micro-service-name: ${spring.application.name}
   show-sql: true
   executor-context-prefixes:
-    - org.babyfish.jimmer.example.cloud.author.AuthorService
+    - org.babyfish.jimmer.example.cloud.kt.author.AuthorService
   database-validation-mode: ERROR
   client:
     ts:

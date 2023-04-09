@@ -8,10 +8,12 @@ spring:
 jimmer:
   micro-service-name: ${spring.application.name}
   show-sql: true
+  executor-context-prefixes:
+    - org.babyfish.jimmer.example.cloud.book.BookService
   database-validation-mode: ERROR
   client:
     ts:
-      path: /ts.zip
+      path: /book-service-ts.zip
 
 server:
   port: 7002
