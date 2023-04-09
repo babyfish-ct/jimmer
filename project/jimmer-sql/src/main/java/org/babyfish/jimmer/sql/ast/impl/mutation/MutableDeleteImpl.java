@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.ExecutorContext;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.sql.Connection;
@@ -125,6 +126,7 @@ public class MutableDeleteImpl
                         sqlResult.get_1(),
                         sqlResult.get_2(),
                         getPurpose(),
+                        ExecutorContext.create(sqlClient),
                         null,
                         PreparedStatement::executeUpdate
                 );

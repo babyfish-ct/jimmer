@@ -19,6 +19,7 @@ import org.babyfish.jimmer.sql.model.JimmerModule;
 import org.babyfish.jimmer.sql.model.calc.BookStoreMostPopularAuthorResolver;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.h2.Driver;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,11 +71,12 @@ public class AbstractTest {
                 String sql,
                 List<Object> variables,
                 ExecutionPurpose purpose,
+                @Nullable ExecutorContext ctx,
                 StatementFactory statementFactory,
                 SqlFunction<PreparedStatement, R> block
         ) {
             executions.add(new Execution(sql, variables));
-            return DefaultExecutor.INSTANCE.execute(con, sql, variables, purpose, statementFactory, block);
+            return DefaultExecutor.INSTANCE.execute(con, sql, variables, purpose, ExecutorContext.create(sqlClient), statementFactory, block);
         }
     }
 

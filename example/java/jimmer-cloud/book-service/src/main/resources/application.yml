@@ -9,6 +9,9 @@ jimmer:
   micro-service-name: ${spring.application.name}
   show-sql: true
   database-validation-mode: ERROR
+  client:
+    ts:
+      path: /ts.zip
 
 server:
   port: 7002

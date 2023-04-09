@@ -435,7 +435,7 @@ class Saver {
                 String sql = data.getSqlClient().getDialect().getSelectIdFromSequenceSql(
                         ((SequenceIdGenerator)idGenerator).getSequenceName()
                 );
-                id = data.getSqlClient().getExecutor().execute(con, sql, Collections.emptyList(), ExecutionPurpose.MUTATE, null, stmt -> {
+                id = data.getSqlClient().getExecutor().execute(con, sql, Collections.emptyList(), ExecutionPurpose.MUTATE, ExecutorContext.create(data.getSqlClient()), null, stmt -> {
                     try (ResultSet rs = stmt.executeQuery()) {
                         rs.next();
                         return rs.getObject(1);
@@ -544,6 +544,7 @@ class Saver {
                 sqlResult.get_1(),
                 sqlResult.get_2(),
                 ExecutionPurpose.MUTATE,
+                ExecutorContext.create(data.getSqlClient()),
                 generateKeys ?
                         (c, s) ->
                                 c.prepareStatement(s, Statement.RETURN_GENERATED_KEYS) :
@@ -662,6 +663,7 @@ class Saver {
                 sqlResult.get_1(),
                 sqlResult.get_2(),
                 ExecutionPurpose.MUTATE,
+                ExecutorContext.create(data.getSqlClient()),
                 null,
                 PreparedStatement::executeUpdate
         );

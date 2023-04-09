@@ -6,7 +6,6 @@ import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.spring.client.JavaFeignController;
 import org.babyfish.jimmer.spring.client.MetadataFactoryBean;
 import org.babyfish.jimmer.spring.client.TypeScriptController;
-import org.babyfish.jimmer.spring.cloud.MicroServiceExporterAgent;
 import org.babyfish.jimmer.spring.cloud.MicroServiceExporterController;
 import org.babyfish.jimmer.spring.repository.config.JimmerRepositoriesConfig;
 import org.babyfish.jimmer.sql.JSqlClient;
@@ -59,9 +58,9 @@ public class JimmerAutoConfiguration {
     }
 
     @Conditional(MicroServiceCondition.class)
-    @ConditionalOnMissingBean(MicroServiceExporterAgent.class)
+    @ConditionalOnMissingBean(MicroServiceExporterController.class)
     @Bean
-    public MicroServiceExporterAgent microServiceExporterAgent(
+    public MicroServiceExporterController microServiceExporterController(
             @Autowired(required = false) JSqlClient jSqlClient,
             @Autowired(required = false) KSqlClient kSqlClient,
             ObjectMapper objectMapper

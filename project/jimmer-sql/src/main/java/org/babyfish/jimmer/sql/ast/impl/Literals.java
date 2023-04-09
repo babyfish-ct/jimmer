@@ -162,7 +162,15 @@ public class Literals {
 
         public Any(T value) {
             if (value == null) {
-                throw new IllegalArgumentException("The value of literal expression cannot be null");
+                throw new IllegalArgumentException(
+                        "The value of literal expression cannot be null." +
+                                "Except for `eq` and `ne`, most SQL expressions cannot be constructed " +
+                                "based on using null, in order to avoid this problem:\n" +
+                                "- java users can\n" +
+                                "   Change `whereIf(<cond>, <expression>)` to whereIf(<cond>, () -> <expression>)\n" +
+                                "- kotlin users can\n" +
+                                "   Change `if (value !== null) where(<expression>)` to `value?.let { where(<expression>) }`"
+                );
             }
             this.value = value;
         }

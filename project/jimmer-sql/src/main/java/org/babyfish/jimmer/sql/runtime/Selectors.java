@@ -23,7 +23,7 @@ public class Selectors {
             List<Selection<?>> selections,
             ExecutionPurpose purpose
     ) {
-        return sqlClient.getExecutor().execute(con, sql, variables, purpose, null, stmt -> {
+        return sqlClient.getExecutor().execute(con, sql, variables, purpose, ExecutorContext.create(sqlClient), null, stmt -> {
             Reader<?> reader = Readers.createReader(sqlClient, selections);
             Reader.Col col = new Reader.Col();
             List<R> results = new ArrayList<>();
@@ -49,7 +49,7 @@ public class Selectors {
             int batchSize,
             Consumer<R> consumer
     ) {
-        sqlClient.getExecutor().execute(con, sql, variables, purpose, null, stmt -> {
+        sqlClient.getExecutor().execute(con, sql, variables, purpose, ExecutorContext.create(sqlClient), null, stmt -> {
             Reader<?> reader = Readers.createReader(sqlClient, selections);
             Reader.Col col = new Reader.Col();
             List<R> results = new ArrayList<>();

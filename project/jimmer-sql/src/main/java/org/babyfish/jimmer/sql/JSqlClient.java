@@ -28,6 +28,7 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.*;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Consumer;
 
 public interface JSqlClient extends SubQueryProvider {
@@ -43,6 +44,8 @@ public interface JSqlClient extends SubQueryProvider {
     Dialect getDialect();
 
     Executor getExecutor();
+
+    List<String> getExecutorContextPrefixes();
 
     <T, S> ScalarProvider<T, S> getScalarProvider(Class<T> scalarType);
 
@@ -160,6 +163,9 @@ public interface JSqlClient extends SubQueryProvider {
 
         @OldChain
         Builder setExecutor(Executor executor);
+
+        @OldChain
+        Builder setExecutorContextPrefixes(Collection<String> prefixes);
 
         @OldChain
         Builder setTransientResolverProvider(TransientResolverProvider transientResolverProvider);

@@ -12,7 +12,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.compiler.FetcherCompiler;
 import org.babyfish.jimmer.sql.runtime.MicroServiceExporter;
-import org.springframework.stereotype.Controller;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -20,8 +20,20 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
-@Controller
-public class MicroServiceExporterController implements MicroServiceExporterAgent {
+@RestController
+public class MicroServiceExporterController {
+
+    public static final String BY_IDS = "/jimmerMicroServiceBridge/byIds";
+
+    public static final String BY_ASSOCIATED_IDS = "/jimmerMicroServiceBridge/byAssociatedIds";
+
+    public static final String IDS = "ids";
+
+    public static final String PROP = "prop";
+
+    public static final String TARGET_IDS = "targetIds";
+
+    public static final String FETCHER = "fetcher";
 
     private final MicroServiceExporter exporter;
 
@@ -32,11 +44,10 @@ public class MicroServiceExporterController implements MicroServiceExporterAgent
         this.mapper = mapper;
     }
 
-    @GetMapping(value = BY_IDS)
-    public void findByIds(
+    @GetMapping(value = BY_IDS, produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<ImmutableSpi> findByIds(
             @RequestParam(IDS) String idArrStr,
-            @RequestParam(FETCHER) String fetcherStr,
-            HttpServletResponse response
+            @RequestParam(FETCHER) String fetcherStr
     ) throws JsonProcessingException, IOException {
         Fetcher<?> fetcher = FetcherCompiler.compile(fetcherStr);
         Class<?> idType = fetcher.getImmutableType().getIdProp().getElementClass();
@@ -50,15 +61,11 @@ public class MicroServiceExporterController implements MicroServiceExporterAgent
                         SimpleType.constructUnsafe(Classes.boxTypeOf(idType))
                 )
         );
-        List<ImmutableSpi> data = exporter.findByIds(ids, fetcher);
-        response.setContentType("application/json");
-        try (OutputStream out = response.getOutputStream()) {
-            mapper.writeValue(out, data);
-        }
+        return exporter.findByIds(ids, fetcher);
     }
 
-    @GetMapping(value = BY_ASSOCIATED_IDS)
-    public void findByAssociatedIds(
+    @GetMapping(value = BY_ASSOCIATED_IDS, produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<Tuple2<Object, ImmutableSpi>> findByAssociatedIds(
             @RequestParam(PROP) String prop,
             @RequestParam(TARGET_IDS) String targetIdArrStr,
             @RequestParam(FETCHER) String fetcherStr,
@@ -77,14 +84,10 @@ public class MicroServiceExporterController implements MicroServiceExporterAgent
                         SimpleType.constructUnsafe(Classes.boxTypeOf(targetIdType))
                 )
         );
-        List<Tuple2<Object, ImmutableSpi>> data = exporter.findByAssociatedIds(
+        return exporter.findByAssociatedIds(
                 immutableProp,
                 targetIds,
                 fetcher
         );
-        response.setContentType("application/json");
-        try (OutputStream out = response.getOutputStream()) {
-            mapper.writeValue(out, data);
-        }
     }
 }

@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.*;
@@ -20,6 +22,7 @@ public class DefaultExecutor implements Executor {
             String sql,
             List<Object> variables,
             ExecutionPurpose purpose,
+            @Nullable ExecutorContext ctx,
             StatementFactory statementFactory,
             SqlFunction<PreparedStatement, R> block
     ) {

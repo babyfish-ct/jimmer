@@ -34,11 +34,11 @@ public class SpringCloudExchange implements MicroServiceExchange {
         String json = restTemplate.getForObject(
                 "http://" +
                         microServiceName +
-                        MicroServiceExporterAgent.BY_IDS +
+                        MicroServiceExporterController.BY_IDS +
                         "?" +
-                        MicroServiceExporterAgent.IDS +
+                        MicroServiceExporterController.IDS +
                         "={ids}&" +
-                        MicroServiceExporterAgent.FETCHER +
+                        MicroServiceExporterController.FETCHER +
                         "={fetcher}",
                 String.class,
                 mapper.writeValueAsString(ids),
@@ -63,15 +63,18 @@ public class SpringCloudExchange implements MicroServiceExchange {
         String json = restTemplate.getForObject(
                 "http://" +
                         microServiceName +
-                        MicroServiceExporterAgent.BY_ASSOCIATED_IDS +
+                        MicroServiceExporterController.BY_ASSOCIATED_IDS +
                         "?" +
-                        MicroServiceExporterAgent.PROP +
+                        MicroServiceExporterController.PROP +
                         "={prop}&" +
-                        MicroServiceExporterAgent.TARGET_IDS +
+                        MicroServiceExporterController.TARGET_IDS +
                         "={targetIds}&" +
-                        MicroServiceExporterAgent.FETCHER +
+                        MicroServiceExporterController.FETCHER +
                         "={fetcher}",
-                String.class
+                String.class,
+                prop,
+                mapper.writeValueAsString(targetIds),
+                fetcher.toString(true)
         );
         TypeFactory typeFactory = mapper.getTypeFactory();
         return mapper.readValue(

@@ -1,7 +1,10 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.util.Collection;
 import java.util.List;
 
 public interface Executor {
@@ -11,6 +14,7 @@ public interface Executor {
             String sql,
             List<Object> variables,
             ExecutionPurpose purpose,
+            @Nullable ExecutorContext ctx,
             StatementFactory statementFactory,
             SqlFunction<PreparedStatement, R> block
     );

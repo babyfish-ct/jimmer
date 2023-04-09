@@ -86,11 +86,12 @@ open class SpringKotlinTest : AbstractTest() {
                     sql: String,
                     variables: List<Any>,
                     purpose: ExecutionPurpose,
+                    ctx: ExecutorContext?,
                     statementFactory: StatementFactory?,
                     block: SqlFunction<PreparedStatement, R>
                 ): R {
                     SQL_STATEMENTS.add(sql)
-                    return DefaultExecutor.INSTANCE.execute(con, sql, variables, purpose, statementFactory, block)
+                    return DefaultExecutor.INSTANCE.execute(con, sql, variables, purpose, ctx, statementFactory, block)
                 }
             }
         }

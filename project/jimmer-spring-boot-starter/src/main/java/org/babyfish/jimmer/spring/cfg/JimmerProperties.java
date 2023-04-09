@@ -12,6 +12,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 @ConstructorBinding
@@ -40,6 +42,8 @@ public class JimmerProperties {
 
     private final int defaultListBatchSize;
 
+    private final Collection<String> executorContextPrefixes;
+
     @NotNull
     private final String microServiceName;
 
@@ -57,6 +61,7 @@ public class JimmerProperties {
             @Nullable EnumType.Strategy defaultEnumStrategy,
             @Nullable Integer defaultBatchSize,
             @Nullable Integer defaultListBatchSize,
+            @Nullable Collection<String> executorContextPrefixes,
             @Nullable String microServiceName,
             @Nullable Client client,
             @Nullable Map<String, Client> clients
@@ -125,6 +130,7 @@ public class JimmerProperties {
                 defaultListBatchSize != null ?
                         defaultListBatchSize :
                         JSqlClient.Builder.DEFAULT_LIST_BATCH_SIZE;
+        this.executorContextPrefixes = executorContextPrefixes;
         this.microServiceName =
                 microServiceName != null ?
                         microServiceName :
@@ -172,6 +178,11 @@ public class JimmerProperties {
 
     public int getDefaultListBatchSize() {
         return defaultListBatchSize;
+    }
+
+    @Nullable
+    public Collection<String> getExecutorContextPrefixes() {
+        return executorContextPrefixes;
     }
 
     @NotNull

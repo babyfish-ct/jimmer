@@ -141,6 +141,7 @@ public class MutableUpdateImpl
                         sqlResult.get_1(),
                         sqlResult.get_2(),
                         getPurpose(),
+                        ExecutorContext.create(getSqlClient()),
                         null,
                         PreparedStatement::executeUpdate
                 );
@@ -179,6 +180,7 @@ public class MutableUpdateImpl
                         sqlResult.get_1(),
                         sqlResult.get_2(),
                         getPurpose(),
+                        ExecutorContext.create(getSqlClient()),
                         null,
                         PreparedStatement::executeUpdate
                 );

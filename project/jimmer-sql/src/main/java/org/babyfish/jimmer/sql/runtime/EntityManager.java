@@ -3,6 +3,8 @@ package org.babyfish.jimmer.sql.runtime;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
+import org.babyfish.jimmer.sql.JoinTable;
+import org.babyfish.jimmer.sql.ManyToOne;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.jetbrains.annotations.NotNull;
@@ -198,38 +200,55 @@ public class EntityManager {
             String tableName = DatabaseIdentifiers.comparableIdentifier(type.getTableName());
             ImmutableType oldType = subMap.put(tableName, type);
             if (oldType != null) {
-                throw new IllegalArgumentException(
-                        "Illegal entity manager, the table \"" +
-                                tableName +
-                                "\" is shared by both \"" +
-                                oldType +
-                                "\" and \"" +
-                                type +
-                                "\""
-                );
+                tableSharedBy(tableName, oldType, type);
             }
             subMap.put(tableName, type);
             for (ImmutableProp prop : entityProps(type)) {
                 if (prop.getStorage() instanceof MiddleTable) {
                     AssociationType associationType = AssociationType.of(prop);
                     String associationTableName = DatabaseIdentifiers.comparableIdentifier(associationType.getTableName());
-                    ImmutableType oldAssociationType = subMap.put(associationTableName, associationType);
-                    if (oldAssociationType != null && !oldAssociationType.equals(associationType)) {
-                        throw new IllegalArgumentException(
-                                "Illegal mapping, the table \"" +
-                                        associationTableName +
-                                        "\" is shared by both \"" +
-                                        oldAssociationType +
-                                        "\" and \"" +
-                                        associationType +
-                                        "\""
-                        );
+                    oldType = subMap.put(associationTableName, associationType);
+                    if (oldType != null && !oldType.equals(associationType)) {
+                        tableSharedBy(tableName, oldType, associationType);
                     }
                     subMap.put(associationTableName, associationType);
                 }
             }
         }
         return tableNameTypeMap;
+    }
+
+    private static void tableSharedBy(String tableName, ImmutableType type1, ImmutableType type2) {
+        if (type1 instanceof AssociationType && type2 instanceof AssociationType) {
+            AssociationType associationType1 = (AssociationType) type1;
+            AssociationType associationType2 = (AssociationType) type2;
+            if (associationType1.getSourceType() == associationType2.getTargetType() &&
+                    associationType1.getTargetType() == associationType2.getSourceType()) {
+                throw new IllegalArgumentException(
+                        "Illegal entity manager, the table \"" +
+                                tableName +
+                                "\" is shared by both \"" +
+                                type1 +
+                                "\" and \"" +
+                                type2 +
+                                "\". These two associations seem to form a bidirectional association, " +
+                                "if so, please make one of them real (using @" +
+                                JoinTable.class +
+                                ") and the other image (specify `mappedBy` of @" +
+                                ManyToOne.class +
+                                ")"
+                );
+            }
+        }
+        throw new IllegalArgumentException(
+                "Illegal entity manager, the table \"" +
+                        tableName +
+                        "\" is shared by both \"" +
+                        type1 +
+                        "\" and \"" +
+                        type2 +
+                        "\""
+        );
     }
 
     private static Collection<ImmutableProp> entityProps(ImmutableType type) {

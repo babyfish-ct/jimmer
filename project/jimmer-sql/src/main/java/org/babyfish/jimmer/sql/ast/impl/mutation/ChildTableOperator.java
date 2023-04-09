@@ -105,6 +105,7 @@ class ChildTableOperator {
                 sqlResult.get_1(),
                 sqlResult.get_2(),
                 ExecutionPurpose.MUTATE,
+                ExecutorContext.create(sqlClient),
                 null,
                 stmt -> stmt.executeQuery().next()
         );
@@ -204,6 +205,7 @@ class ChildTableOperator {
                 sqlResult.get_1(),
                 sqlResult.get_2(),
                 ExecutionPurpose.MUTATE,
+                ExecutorContext.create(sqlClient),
                 null,
                 PreparedStatement::executeUpdate
         );
@@ -292,6 +294,7 @@ class ChildTableOperator {
                 sqlResult.get_1(),
                 sqlResult.get_2(),
                 ExecutionPurpose.MUTATE,
+                ExecutorContext.create(sqlClient),
                 null,
                 PreparedStatement::executeUpdate
         );
@@ -316,6 +319,7 @@ class ChildTableOperator {
                 sqlResult.get_1(),
                 sqlResult.get_2(),
                 ExecutionPurpose.MUTATE,
+                ExecutorContext.create(sqlClient),
                 null,
                 stmt -> {
                     List<Object> list = new ArrayList<>();

@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.ExecutorContext;
 import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -222,6 +223,7 @@ class MiddleTableOperator {
                 sqlResult.get_1(),
                 sqlResult.get_2(),
                 ExecutionPurpose.MUTATE,
+                ExecutorContext.create(sqlClient),
                 null,
                 PreparedStatement::executeUpdate
         );
@@ -284,6 +286,7 @@ class MiddleTableOperator {
                 sqlResult.get_1(),
                 sqlResult.get_2(),
                 ExecutionPurpose.MUTATE,
+                ExecutorContext.create(sqlClient),
                 null,
                 PreparedStatement::executeUpdate
         );
@@ -328,6 +331,7 @@ class MiddleTableOperator {
                         sqlResult.get_1(),
                         sqlResult.get_2(),
                         ExecutionPurpose.DELETE,
+                        ExecutorContext.create(sqlClient),
                         null,
                         PreparedStatement::executeUpdate
                 );

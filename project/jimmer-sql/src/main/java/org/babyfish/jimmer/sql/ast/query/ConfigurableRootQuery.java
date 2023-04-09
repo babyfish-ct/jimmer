@@ -20,6 +20,14 @@ public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQ
             .intValue();
     }
 
+    default boolean exists() {
+        return exists(null);
+    }
+
+    default boolean exists(Connection con) {
+        return limit(1, 0).execute(con).size() != 0;
+    }
+
     @NewChain
     <X> ConfigurableRootQuery<T, X> reselect(
             BiFunction<MutableRootQuery<T>, T, ConfigurableRootQuery<T, X>> block

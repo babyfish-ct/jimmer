@@ -57,6 +57,8 @@ class JSqlClientImpl implements JSqlClient {
 
     private final Executor executor;
 
+    private final List<String> executorContextPrefixes;
+
     private final Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap;
 
     private final Map<ImmutableProp, ScalarProvider<?, ?>> propScalarProviderMap;
@@ -100,6 +102,7 @@ class JSqlClientImpl implements JSqlClient {
             ConnectionManager slaveConnectionManager,
             Dialect dialect,
             Executor executor,
+            List<String> executorContextPrefixes,
             Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
             Map<ImmutableProp, ScalarProvider<?, ?>> propScalarProviderMap,
             Map<Class<?>, IdGenerator> idGeneratorMap,
@@ -131,6 +134,10 @@ class JSqlClientImpl implements JSqlClient {
                 executor != null ?
                         executor :
                         DefaultExecutor.INSTANCE;
+        this.executorContextPrefixes =
+                executorContextPrefixes != null ?
+                        Collections.unmodifiableList(executorContextPrefixes) :
+                        null;
         this.scalarProviderMap = scalarProviderMap;
         this.propScalarProviderMap = propScalarProviderMap;
         this.idGeneratorMap = idGeneratorMap;
@@ -178,6 +185,11 @@ class JSqlClientImpl implements JSqlClient {
     @Override
     public Executor getExecutor() {
         return executor;
+    }
+
+    @Override
+    public List<String> getExecutorContextPrefixes() {
+        return executorContextPrefixes;
     }
 
     @SuppressWarnings("unchecked")
@@ -365,6 +377,7 @@ class JSqlClientImpl implements JSqlClient {
                 slaveConnectionManager,
                 dialect,
                 executor,
+                executorContextPrefixes,
                 scalarProviderMap,
                 propScalarProviderMap,
                 idGeneratorMap,
@@ -400,6 +413,7 @@ class JSqlClientImpl implements JSqlClient {
                 slaveConnectionManager,
                 dialect,
                 executor,
+                executorContextPrefixes,
                 scalarProviderMap,
                 propScalarProviderMap,
                 idGeneratorMap,
@@ -430,6 +444,7 @@ class JSqlClientImpl implements JSqlClient {
                 null,
                 dialect,
                 executor,
+                executorContextPrefixes,
                 scalarProviderMap,
                 propScalarProviderMap,
                 idGeneratorMap,
@@ -507,6 +522,8 @@ class JSqlClientImpl implements JSqlClient {
 
         private Executor executor;
 
+        private List<String> executorContextPrefixes;
+
         private TransientResolverProvider transientResolverProvider;
 
         private final Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap = new HashMap<>();
@@ -574,6 +591,27 @@ class JSqlClientImpl implements JSqlClient {
         @OldChain
         public JSqlClient.Builder setExecutor(Executor executor) {
             this.executor = executor;
+            return this;
+        }
+
+        @Override
+        @OldChain
+        public Builder setExecutorContextPrefixes(Collection<String> prefixes) {
+            if (prefixes == null || prefixes.isEmpty()) {
+                executorContextPrefixes = null;
+            } else {
+                Set<String> set = new TreeSet<>();
+                for (String prefix : prefixes) {
+                    if (prefix != null && !prefix.isEmpty()) {
+                        set.add(prefix);
+                    }
+                }
+                if (set.isEmpty()) {
+                    executorContextPrefixes = null;
+                } else {
+                    executorContextPrefixes = new ArrayList<>(set);
+                }
+            }
             return this;
         }
 
@@ -891,6 +929,7 @@ class JSqlClientImpl implements JSqlClient {
                     slaveConnectionManager,
                     dialect,
                     executor,
+                    executorContextPrefixes,
                     scalarProviderMap,
                     propScalarProviderMap,
                     idGeneratorMap,

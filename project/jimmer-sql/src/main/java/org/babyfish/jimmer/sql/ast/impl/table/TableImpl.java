@@ -172,6 +172,9 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
 
     @Override
     public NumericExpression<Long> count(boolean distinct) {
+        if (immutableType instanceof AssociationType) {
+            return this.get(((AssociationType)immutableType).getSourceProp().getName()).count();
+        }
         return this.get(immutableType.getIdProp().getName()).count(distinct);
     }
 
