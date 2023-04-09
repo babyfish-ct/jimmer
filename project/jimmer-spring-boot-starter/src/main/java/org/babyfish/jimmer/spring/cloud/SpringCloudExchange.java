@@ -72,7 +72,7 @@ public class SpringCloudExchange implements MicroServiceExchange {
                         MicroServiceExporterController.FETCHER +
                         "={fetcher}",
                 String.class,
-                prop,
+                prop.getName(),
                 mapper.writeValueAsString(targetIds),
                 fetcher.toString(true)
         );

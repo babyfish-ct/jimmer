@@ -630,6 +630,13 @@ public class ImmutableProp {
         idViewBaseProp = baseProp;
     }
 
+    private void resolveManyToManyViewProp(TypeUtils typeUtils) {
+        ManyToManyView manyToManyView = getAnnotation(ManyToManyView.class);
+        if (manyToManyView == null) {
+            return;
+        }
+    }
+
     public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
         return executableElement.getAnnotation(annotationType);
     }

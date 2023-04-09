@@ -24,6 +24,8 @@ public class TypeUtils {
     private final static Class<? extends Annotation>[] SQL_TYPE_ANNOTATION_TYPES =
             (Class<? extends Annotation>[]) new Class[] { Entity.class, MappedSuperclass.class, Embeddable.class };
 
+    private final Elements elements;
+
     private final Types types;
 
     private final TypeMirror collectionType;
@@ -37,6 +39,7 @@ public class TypeUtils {
     private final Map<TypeElement, ImmutableType> immutableTypeMap = new HashMap<>();
 
     TypeUtils(Elements elements, Types types) {
+        this.elements = elements;
         this.types = types;
         collectionType = types.erasure(
                 elements
@@ -152,5 +155,13 @@ public class TypeUtils {
 
     public boolean isComparable(TypeMirror type) {
         return types.isSubtype(type, comparableType);
+    }
+
+    public Elements getElements() {
+        return elements;
+    }
+
+    public Types getTypes() {
+        return types;
     }
 }

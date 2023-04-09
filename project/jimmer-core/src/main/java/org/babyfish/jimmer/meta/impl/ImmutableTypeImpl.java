@@ -861,7 +861,7 @@ class ImmutableTypeImpl implements ImmutableType {
             ImmutablePropCategory category;
             if (associationType == OneToOne.class || associationType == ManyToOne.class) {
                 category = ImmutablePropCategory.REFERENCE;
-            } else if (associationType == OneToMany.class || associationType == ManyToMany.class) {
+            } else if (associationType == OneToMany.class || associationType == ManyToMany.class || associationType == ManyToManyView.class) {
                 category = ImmutablePropCategory.REFERENCE_LIST;
             } else {
                 throw new IllegalArgumentException("Invalid association type");

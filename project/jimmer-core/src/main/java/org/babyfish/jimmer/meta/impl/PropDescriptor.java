@@ -75,12 +75,13 @@ public class PropDescriptor {
         VERSION(Version.class, false),
         LOGICAL_DELETED(LogicalDeleted.class, false),
         FORMULA(Formula.class, false),
-        ID_VIEW(IdView.class, false),
         BASIC(null, false),
         ONE_TO_ONE(OneToOne.class, true),
         MANY_TO_ONE(ManyToOne.class, true),
         ONE_TO_MANY(OneToMany.class, true),
-        MANY_TO_MANY(ManyToMany.class, true);
+        MANY_TO_MANY(ManyToMany.class, true),
+        ID_VIEW(IdView.class, false),
+        MANY_TO_MANY_VIEW(ManyToManyView.class, true);
 
         private final Class<? extends Annotation> annotationType;
 
@@ -366,6 +367,7 @@ public class PropDescriptor {
                     break;
                 case ONE_TO_MANY:
                 case MANY_TO_MANY:
+                case MANY_TO_MANY_VIEW:
                     if (!isList) {
                         throw exceptionCreator.apply(
                                 "it is not list so that it cannot be decorated by @" +
@@ -377,9 +379,11 @@ public class PropDescriptor {
                     if (type.isAssociation && isList) {
                         throw exceptionCreator.apply(
                                 "list association property must be decorated by @" +
-                                        OneToMany.class +
+                                        OneToMany.class.getName() +
+                                        ", @" +
+                                        ManyToMany.class.getName() +
                                         " or @" +
-                                        ManyToMany.class
+                                        ManyToManyView.class.getName()
                         );
                     }
                     break;
@@ -504,23 +508,25 @@ public class PropDescriptor {
             typeMap.put(Version.class, Type.VERSION);
             typeMap.put(LogicalDeleted.class, Type.LOGICAL_DELETED);
             typeMap.put(Formula.class, Type.FORMULA);
-            typeMap.put(IdView.class, Type.ID_VIEW);
             typeMap.put(OneToOne.class, Type.ONE_TO_ONE);
             typeMap.put(ManyToOne.class, Type.MANY_TO_ONE);
             typeMap.put(OneToMany.class, Type.ONE_TO_MANY);
             typeMap.put(ManyToMany.class, Type.MANY_TO_MANY);
+            typeMap.put(IdView.class, Type.ID_VIEW);
+            typeMap.put(ManyToManyView.class, Type.MANY_TO_MANY_VIEW);
 
             families.put(Type.TRANSIENT, setOf());
             families.put(Type.ID, setOf(Column.class, PropOverrides.class, PropOverride.class));
             families.put(Type.VERSION, setOf(Column.class));
             families.put(Type.LOGICAL_DELETED, setOf(LogicalDeleted.class, Column.class));
             families.put(Type.FORMULA, setOf(Formula.class));
-            families.put(Type.ID_VIEW, setOf(IdView.class));
             families.put(Type.BASIC, setOf(Key.class, Column.class, PropOverrides.class, PropOverride.class));
             families.put(Type.ONE_TO_ONE, setOf(Key.class, OnDissociate.class, JoinColumns.class, JoinColumn.class, JoinTable.class));
             families.put(Type.MANY_TO_ONE, setOf(Key.class, OnDissociate.class, JoinColumns.class, JoinColumn.class, JoinTable.class));
             families.put(Type.ONE_TO_MANY, setOf());
             families.put(Type.MANY_TO_MANY, setOf(JoinTable.class));
+            families.put(Type.ID_VIEW, setOf());
+            families.put(Type.MANY_TO_MANY_VIEW, setOf());
 
             for (Map.Entry<Type, Set<Class<? extends Annotation>>> e : families.entrySet()) {
                 Type type = e.getKey();
