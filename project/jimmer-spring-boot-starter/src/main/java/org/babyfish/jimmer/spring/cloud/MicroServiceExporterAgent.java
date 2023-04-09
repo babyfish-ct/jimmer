@@ -4,6 +4,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 public interface MicroServiceExporterAgent {
@@ -12,15 +13,26 @@ public interface MicroServiceExporterAgent {
 
     String BY_ASSOCIATED_IDS = "/jimmerMicroServiceBridge/byAssociatedIds";
 
-    @PostMapping(value = BY_IDS, produces="application/json")
-    @ResponseBody
-    List<ImmutableSpi> findByIds(
-            @RequestBody FindByIdsRequest request
+    String IDS = "ids";
+
+    String PROP = "prop";
+
+    String TARGET_IDS = "targetIds";
+
+    String FETCHER = "fetcher";
+
+    @GetMapping(value = BY_IDS)
+    void findByIds(
+            @RequestParam(IDS) String idArrStr,
+            @RequestParam(FETCHER) String fetcherStr,
+            HttpServletResponse response
     ) throws Exception;
 
-    @PostMapping(value = BY_ASSOCIATED_IDS, produces="application/json")
-    @ResponseBody
-    List<Tuple2<Object, ImmutableSpi>> findByAssociatedIds(
-            @RequestBody FindByAssociatedIdsRequest request
+    @GetMapping(value = BY_ASSOCIATED_IDS)
+    void findByAssociatedIds(
+            @RequestParam(PROP) String prop,
+            @RequestParam(TARGET_IDS) String targetIdArrStr,
+            @RequestParam(FETCHER) String fetcherStr,
+            HttpServletResponse response
     ) throws Exception;
 }

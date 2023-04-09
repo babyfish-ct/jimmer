@@ -31,15 +31,18 @@ public class SpringCloudExchange implements MicroServiceExchange {
             Collection<?> ids,
             Fetcher<?> fetcher
     ) throws JsonProcessingException {
-        String json = restTemplate.postForObject(
+        String json = restTemplate.getForObject(
                 "http://" +
                         microServiceName +
-                        MicroServiceExporterAgent.BY_IDS,
-                new FindByIdsRequest(
-                        mapper.writeValueAsString(ids),
-                        fetcher.toString(true)
-                ),
-                String.class
+                        MicroServiceExporterAgent.BY_IDS +
+                        "?" +
+                        MicroServiceExporterAgent.IDS +
+                        "={ids}&" +
+                        MicroServiceExporterAgent.FETCHER +
+                        "={fetcher}",
+                String.class,
+                mapper.writeValueAsString(ids),
+                fetcher.toString(true)
         );
         return mapper.readValue(
                 json,
@@ -57,15 +60,17 @@ public class SpringCloudExchange implements MicroServiceExchange {
             Collection<?> targetIds,
             Fetcher<?> fetcher
     ) throws JsonProcessingException {
-        String json = restTemplate.postForObject(
+        String json = restTemplate.getForObject(
                 "http://" +
                         microServiceName +
-                        MicroServiceExporterAgent.BY_ASSOCIATED_IDS,
-                new FindByAssociatedIdsRequest(
-                        prop.getName(),
-                        mapper.writeValueAsString(targetIds),
-                        fetcher.toString(true)
-                ),
+                        MicroServiceExporterAgent.BY_ASSOCIATED_IDS +
+                        "?" +
+                        MicroServiceExporterAgent.PROP +
+                        "={prop}&" +
+                        MicroServiceExporterAgent.TARGET_IDS +
+                        "={targetIds}&" +
+                        MicroServiceExporterAgent.FETCHER +
+                        "={fetcher}",
                 String.class
         );
         TypeFactory typeFactory = mapper.getTypeFactory();

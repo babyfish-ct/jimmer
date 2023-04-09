@@ -12,11 +12,15 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.compiler.FetcherCompiler;
 import org.babyfish.jimmer.sql.runtime.MicroServiceExporter;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 
-@RestController
+@Controller
 public class MicroServiceExporterController implements MicroServiceExporterAgent {
 
     private final MicroServiceExporter exporter;
@@ -28,16 +32,16 @@ public class MicroServiceExporterController implements MicroServiceExporterAgent
         this.mapper = mapper;
     }
 
-    @PostMapping(value = BY_IDS, produces="application/json")
-    @ResponseBody
-    @Override
-    public List<ImmutableSpi> findByIds(
-            @RequestBody FindByIdsRequest request
-    ) throws JsonProcessingException {
-        Fetcher<?> fetcher = FetcherCompiler.compile(request.getFetcherStr());
+    @GetMapping(value = BY_IDS)
+    public void findByIds(
+            @RequestParam(IDS) String idArrStr,
+            @RequestParam(FETCHER) String fetcherStr,
+            HttpServletResponse response
+    ) throws JsonProcessingException, IOException {
+        Fetcher<?> fetcher = FetcherCompiler.compile(fetcherStr);
         Class<?> idType = fetcher.getImmutableType().getIdProp().getElementClass();
         List<?> ids = mapper.readValue(
-                request.getIdArrStr(),
+                idArrStr,
                 CollectionType.construct(
                         List.class,
                         null,
@@ -46,20 +50,25 @@ public class MicroServiceExporterController implements MicroServiceExporterAgent
                         SimpleType.constructUnsafe(Classes.boxTypeOf(idType))
                 )
         );
-        return exporter.findByIds(ids, fetcher);
+        List<ImmutableSpi> data = exporter.findByIds(ids, fetcher);
+        response.setContentType("application/json");
+        try (OutputStream out = response.getOutputStream()) {
+            mapper.writeValue(out, data);
+        }
     }
 
-    @PostMapping(value = BY_ASSOCIATED_IDS, produces="application/json")
-    @ResponseBody
-    @Override
-    public List<Tuple2<Object, ImmutableSpi>> findByAssociatedIds(
-            @RequestBody FindByAssociatedIdsRequest request
-    ) throws JsonProcessingException {
-        Fetcher<?> fetcher = FetcherCompiler.compile(request.getFetcherStr());
-        ImmutableProp immutableProp = fetcher.getImmutableType().getProp(request.getProp());
+    @GetMapping(value = BY_ASSOCIATED_IDS)
+    public void findByAssociatedIds(
+            @RequestParam(PROP) String prop,
+            @RequestParam(TARGET_IDS) String targetIdArrStr,
+            @RequestParam(FETCHER) String fetcherStr,
+            HttpServletResponse response
+    ) throws Exception {
+        Fetcher<?> fetcher = FetcherCompiler.compile(fetcherStr);
+        ImmutableProp immutableProp = fetcher.getImmutableType().getProp(prop);
         Class<?> targetIdType = immutableProp.getTargetType().getIdProp().getElementClass();
         List<?> targetIds = mapper.readValue(
-                request.getTargetIdArrStr(),
+                targetIdArrStr,
                 CollectionType.construct(
                         List.class,
                         null,
@@ -68,10 +77,14 @@ public class MicroServiceExporterController implements MicroServiceExporterAgent
                         SimpleType.constructUnsafe(Classes.boxTypeOf(targetIdType))
                 )
         );
-        return exporter.findByAssociatedIds(
+        List<Tuple2<Object, ImmutableSpi>> data = exporter.findByAssociatedIds(
                 immutableProp,
                 targetIds,
                 fetcher
         );
+        response.setContentType("application/json");
+        try (OutputStream out = response.getOutputStream()) {
+            mapper.writeValue(out, data);
+        }
     }
 }
