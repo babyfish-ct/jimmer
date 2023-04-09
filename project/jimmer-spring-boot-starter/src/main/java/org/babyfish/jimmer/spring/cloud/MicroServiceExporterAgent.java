@@ -2,25 +2,26 @@ package org.babyfish.jimmer.spring.cloud;
 
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RequestMapping("/jimmerMicroServiceBridge")
+@RequestMapping(MicroServiceExporterAgent.JIMMER_MICRO_SERVICE_BRIDGE)
 public interface MicroServiceExporterAgent {
 
-    @GetMapping(value = "/byIds", produces="application/json")
+    String JIMMER_MICRO_SERVICE_BRIDGE = "/jimmerMicroServiceBridge";
+
+    String BY_IDS = "/byIds";
+
+    String BY_ASSOCIATED_IDS = "/byAssociatedIds";
+
+    @PostMapping(value = BY_IDS, produces="application/json")
     List<ImmutableSpi> findByIds(
-            @RequestParam("ids") String idArrStr,
-            @RequestParam("fetcher") String fetcherStr
+            @RequestBody FindByIdsRequest request
     ) throws Exception;
 
-    @GetMapping(value = "/byAssociatedIds", produces="application/json")
+    @PostMapping(value = BY_ASSOCIATED_IDS, produces="application/json")
     List<Tuple2<Object, ImmutableSpi>> findByAssociatedIds(
-            @RequestParam("prop") String prop,
-            @RequestParam("targetIds") String targetIdsArrStr,
-            @RequestParam("fetcher") String fetcherStr
+            @RequestBody FindByAssociatedIdsRequest request
     ) throws Exception;
 }

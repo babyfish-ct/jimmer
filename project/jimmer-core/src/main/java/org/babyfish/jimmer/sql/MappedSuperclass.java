@@ -8,13 +8,27 @@ import java.lang.annotation.*;
 public @interface MappedSuperclass {
 
     /**
-     * If this value is set to true,
+     * Can the current type be super type of derived types of any microservices.
+     *
      * <ul>
-     *     <li>`microServiceName` cannot be specified</li>
-     *     <li>Association property cannot be declared</li>
+     *     <li>
+     *         If this value is set to true,
+     *         <ul>
+     *             <li>`microServiceName` cannot be specified</li>
+     *             <li>Association property cannot be declared</li>
+     *         </ul>
+     *         , that means current type be super type of derived types of any microservices.
+     *     </li>
+     *     <li>
+     *         Otherwise, the `microServiceName` of this annotation must be equal to
+     *         the configuration of derived types
+     *     </li>
      * </ul>
      */
     boolean acrossMicroServices() default false;
-    
+
+    /**
+     * Can only be specified when `acrossMicroServices` is not specified
+     */
     String microServiceName() default "";
 }

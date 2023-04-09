@@ -69,6 +69,22 @@ internal val K_NULLABLE_TABLE_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KNullableTable"
 )
+internal val K_NON_NULL_REMOTE_REF = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table",
+    "KRemoteRef", "NonNull"
+)
+internal val K_NULLABLE_REMOTE_REF = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table",
+    "KRemoteRef", "Nullable"
+)
+internal val K_REMOTE_REF = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table",
+    "KRemoteRef"
+)
+internal val K_REMOTE_REF_IMPLEMENTOR = ClassName(
+    "org.babyfish.jimmer.sql.kt.ast.table.impl",
+    "KRemoteRefImplementor"
+)
 internal val K_NON_NULL_TABLE_CLASS_NAME_EX = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KNonNullTableEx"

@@ -176,13 +176,7 @@ public class PropsGenerator {
             boolean withImplementation,
             boolean ignoreOverride
     ) {
-        if (prop.isTransient() || prop.isJavaFormula()) {
-            return null;
-        }
         if (withJoinType && !prop.isAssociation(true)) {
-            return null;
-        }
-        if (prop.isRemote() && prop.isReverse()) {
             return null;
         }
         TypeName returnType = returnTypeName(typeUtils, isTableEx, prop);

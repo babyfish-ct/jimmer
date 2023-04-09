@@ -141,6 +141,14 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setDatabaseValidationMode(mode)
     }
 
+    fun setMicroServiceName(microServiceName: String) {
+        javaBuilder.setMicroServiceName(microServiceName)
+    }
+
+    fun setMicroServiceExchange(exchange: MicroServiceExchange) {
+        javaBuilder.setMicroServiceExchange(exchange)
+    }
+
     @DslScope
     class ConnectionManagerDsl internal constructor(
         private val javaBlock: Function<Connection, *>

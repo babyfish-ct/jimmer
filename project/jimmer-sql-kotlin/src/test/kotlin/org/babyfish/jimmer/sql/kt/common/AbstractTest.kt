@@ -55,7 +55,7 @@ abstract class AbstractTest {
         private val JDBC_URL = "jdbc:h2:~/jimmer_kt_test_db;database_to_upper=true"
 
         @JvmStatic
-        protected fun jdbc(dataSource: DataSource? = null, rollback: Boolean = false, block: (Connection) -> Unit) {
+        fun jdbc(dataSource: DataSource? = null, rollback: Boolean = false, block: (Connection) -> Unit) {
             try {
                 val con = if (dataSource != null) {
                     dataSource.connection

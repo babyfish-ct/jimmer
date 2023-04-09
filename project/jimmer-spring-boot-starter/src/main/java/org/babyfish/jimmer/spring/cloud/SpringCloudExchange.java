@@ -31,13 +31,15 @@ public class SpringCloudExchange implements MicroServiceExchange {
             Collection<?> ids,
             Fetcher<?> fetcher
     ) throws JsonProcessingException {
-        String json = restTemplate.getForObject(
-                "http://{microServiceName}/jimmerMicroServiceBridge/byIds" +
-                        "?ids={ids}&fetcher={fetcher}",
-                String.class,
-                microServiceName,
-                mapper.writeValueAsString(ids),
-                fetcher.toString(true)
+        String json = restTemplate.postForObject(
+                "http://" +
+                        microServiceName +
+                        "/jimmerMicroServiceBridge/byIds",
+                new FindByIdsRequest(
+                        mapper.writeValueAsString(ids),
+                        fetcher.toString(true)
+                ),
+                String.class
         );
         return mapper.readValue(
                 json,
@@ -55,14 +57,16 @@ public class SpringCloudExchange implements MicroServiceExchange {
             Collection<?> targetIds,
             Fetcher<?> fetcher
     ) throws JsonProcessingException {
-        String json = restTemplate.getForObject(
-                "http://{microServiceName}/jimmerMicroServiceBridge/byAssociatedIds" +
-                        "?prop={prop}&targetIds={targetIds}&fetcher={fetcher}",
-                String.class,
-                microServiceName,
-                prop.getName(),
-                mapper.writeValueAsString(targetIds),
-                fetcher.toString(true)
+        String json = restTemplate.postForObject(
+                "http://" +
+                        microServiceName +
+                        "/jimmerMicroServiceBridge/byAssociatedIds",
+                new FindByAssociatedIdsRequest(
+                        prop.getName(),
+                        mapper.writeValueAsString(targetIds),
+                        fetcher.toString(true)
+                ),
+                String.class
         );
         TypeFactory typeFactory = mapper.getTypeFactory();
         return mapper.readValue(

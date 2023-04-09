@@ -407,6 +407,15 @@ public class ImmutableProp {
         if (idViewBaseProp != null || isJavaFormula || isTransient) {
             return false;
         }
+        if (isRemote() && isReverse) {
+            return false;
+        }
+        if (isTableEx && !isAssociation(true)) {
+            return false;
+        }
+        if (isRemote() && !isList && isTableEx) {
+            return false;
+        }
         if (isList && isAssociation(true)) {
             return isTableEx;
         }

@@ -76,7 +76,9 @@ class ImmutableProp(
     fun isDsl(isTableEx: Boolean): Boolean =
         when {
             idViewBaseProp !== null || isKotlinFormula || isTransient -> false
+            isRemote && isReverse -> false
             isList && isAssociation(true) -> isTableEx
+            !isList && isRemote -> !isTableEx
             else -> true
         }
 
@@ -258,6 +260,19 @@ class ImmutableProp(
         } else {
             false
         }
+
+    val isRemote: Boolean by lazy {
+        targetType?.takeIf {
+            it.microServiceName != declaringType.microServiceName
+        } !== null
+    }
+
+    val isReverse: Boolean =
+        !(
+            annotation(OneToOne::class)
+                ?: annotation(OneToMany::class)
+                ?: annotation(ManyToMany::class)
+        )?.get(OneToOne::mappedBy).isNullOrEmpty()
 
     val valueFieldName: String?
         get() = if (isKotlinFormula || idViewBaseProp !== null) null else "__${name}Value"

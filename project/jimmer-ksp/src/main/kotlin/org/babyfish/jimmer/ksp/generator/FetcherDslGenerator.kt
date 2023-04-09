@@ -150,7 +150,9 @@ class FetcherDslGenerator(
                 .builder(prop.name)
                 .apply {
                     if (lambda) {
-                        addParameter(cfgBlockParameter)
+                        if (!prop.isRemote) {
+                            addParameter(cfgBlockParameter)
+                        }
                         addParameter(
                             "childBlock",
                             LambdaTypeName.get(
@@ -166,7 +168,9 @@ class FetcherDslGenerator(
                                 prop.targetTypeName(overrideNullable = false)
                             )
                         )
-                        addParameter(cfgBlockParameter)
+                        if (!prop.isRemote) {
+                            addParameter(cfgBlockParameter)
+                        }
                     }
                 }
                 .addCode(
@@ -178,16 +182,18 @@ class FetcherDslGenerator(
                             add("%S,\n", prop.name)
                             if (lambda) {
                                 add(
-                                    "%T(%T::class).by(childBlock),\n",
+                                    "%T(%T::class).by(childBlock)",
                                     NEW_FETCHER_FUN_CLASS_NAME,
                                     prop.targetTypeName(overrideNullable = false)
                                 )
                             } else {
-                                add("childFetcher,\n")
+                                add("childFetcher")
                             }
-                            add("%T.%L(cfgBlock)\n", JAVA_FIELD_CONFIG_UTILS, cfgTranName)
+                            if (!prop.isRemote) {
+                                add(",\n%T.%L(cfgBlock)", JAVA_FIELD_CONFIG_UTILS, cfgTranName)
+                            }
                             unindent()
-                            addStatement(")")
+                            add("\n)\n")
                         }
                         .build()
                 )
