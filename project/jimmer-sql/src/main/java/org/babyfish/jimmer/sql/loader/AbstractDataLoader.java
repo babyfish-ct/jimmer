@@ -27,6 +27,7 @@ import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherFactory;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FieldFilterArgsImpl;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
@@ -416,7 +417,7 @@ public abstract class AbstractDataLoader {
                                 prop.getTargetType().getMicroServiceName(),
                                 prop.getMappedBy(),
                                 toSourceIds(sources),
-                                fetcher
+                                FetcherFactory.excludeMicroServiceNameExceptRoot(fetcher, prop.getDeclaringType().getMicroServiceName())
                         );
             } catch (Exception ex) {
                 throw new ExecutionException(
@@ -495,7 +496,7 @@ public abstract class AbstractDataLoader {
                                 prop.getTargetType().getMicroServiceName(),
                                 prop.getMappedBy(),
                                 toSourceIds(sources),
-                                fetcher
+                                FetcherFactory.excludeMicroServiceNameExceptRoot(fetcher, prop.getDeclaringType().getMicroServiceName())
                         );
             } catch (Exception ex) {
                 throw new ExecutionException(
@@ -780,7 +781,7 @@ public abstract class AbstractDataLoader {
                 return sqlClient.getMicroServiceExchange().findByIds(
                         prop.getTargetType().getMicroServiceName(),
                         targetIds,
-                        fetcher
+                        FetcherFactory.excludeMicroServiceNameExceptRoot(fetcher, prop.getDeclaringType().getMicroServiceName())
                 );
             } catch (Exception ex) {
                 throw new ExecutionException(

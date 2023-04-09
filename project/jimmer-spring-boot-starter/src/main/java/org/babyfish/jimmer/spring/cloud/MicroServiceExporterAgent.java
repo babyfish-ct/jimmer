@@ -6,14 +6,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RequestMapping(MicroServiceExporterAgent.JIMMER_MICRO_SERVICE_BRIDGE)
 public interface MicroServiceExporterAgent {
 
-    String JIMMER_MICRO_SERVICE_BRIDGE = "/jimmerMicroServiceBridge";
+    String BY_IDS = "/jimmerMicroServiceBridge/byIds";
 
-    String BY_IDS = "/byIds";
-
-    String BY_ASSOCIATED_IDS = "/byAssociatedIds";
+    String BY_ASSOCIATED_IDS = "/jimmerMicroServiceBridge/byAssociatedIds";
 
     @PostMapping(value = BY_IDS, produces="application/json")
     List<ImmutableSpi> findByIds(

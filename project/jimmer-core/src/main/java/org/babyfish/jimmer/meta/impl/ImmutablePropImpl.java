@@ -580,15 +580,17 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         validateDeclaringEntity("storage");
         storage = Storages.of(this);
         storageResolved = true;
-        if (storage instanceof ColumnDefinition && isReference(TargetLevel.PERSISTENT)) {
-            if (!((ColumnDefinition) storage).isForeignKey()) {
-                throw new ModelException(
-                    "Illegal reference association property \"" +
-                            this +
-                            "\", it is based on fake foreign key(`foreignKey` = false), " +
-                            "so that it must be nullable"
-                );
-            }
+        if (!nullable &&
+                storage instanceof ColumnDefinition &&
+                isReference(TargetLevel.ENTITY) &&
+                !((ColumnDefinition) storage).isForeignKey()
+        ) {
+            throw new ModelException(
+                "Illegal reference association property \"" +
+                        this +
+                        "\", it is based on fake foreign key(`foreignKey` = false), " +
+                        "so that it must be nullable"
+            );
         }
         return (S)storage;
     }

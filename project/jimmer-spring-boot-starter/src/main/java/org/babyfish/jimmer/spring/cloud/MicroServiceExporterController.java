@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping(MicroServiceExporterAgent.JIMMER_MICRO_SERVICE_BRIDGE)
 public class MicroServiceExporterController implements MicroServiceExporterAgent {
 
     private final MicroServiceExporter exporter;

@@ -34,7 +34,7 @@ public class SpringCloudExchange implements MicroServiceExchange {
         String json = restTemplate.postForObject(
                 "http://" +
                         microServiceName +
-                        "/jimmerMicroServiceBridge/byIds",
+                        MicroServiceExporterAgent.BY_IDS,
                 new FindByIdsRequest(
                         mapper.writeValueAsString(ids),
                         fetcher.toString(true)
@@ -60,7 +60,7 @@ public class SpringCloudExchange implements MicroServiceExchange {
         String json = restTemplate.postForObject(
                 "http://" +
                         microServiceName +
-                        "/jimmerMicroServiceBridge/byAssociatedIds",
+                        MicroServiceExporterAgent.BY_ASSOCIATED_IDS,
                 new FindByAssociatedIdsRequest(
                         prop.getName(),
                         mapper.writeValueAsString(targetIds),

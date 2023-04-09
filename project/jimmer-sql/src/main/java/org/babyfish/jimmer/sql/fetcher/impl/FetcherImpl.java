@@ -11,16 +11,18 @@ import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class FetcherImpl<E> implements Fetcher<E> {
 
-    private final FetcherImpl<E> prev;
+    final FetcherImpl<E> prev;
 
     private final ImmutableType immutableType;
 
-    private final boolean negative;
+    final boolean negative;
 
-    private final ImmutableProp prop;
+    final ImmutableProp prop;
 
     private final FieldFilter<?> filter;
 
@@ -32,7 +34,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
 
     private final RecursionStrategy<?> recursionStrategy;
 
-    private final FetcherImpl<?> childFetcher;
+    final FetcherImpl<?> childFetcher;
 
     private Map<String, Field> fieldMap;
 
@@ -118,6 +120,23 @@ public class FetcherImpl<E> implements Fetcher<E> {
             this.recursionStrategy = null;
             this.childFetcher = null;
         }
+    }
+
+    FetcherImpl(
+            FetcherImpl<E> prev,
+            FetcherImpl<E> base,
+            FetcherImpl<?> child
+    ) {
+        this.prev = prev;
+        this.immutableType = base.immutableType;
+        this.negative = base.negative;
+        this.prop = base.prop;
+        this.filter = base.filter;
+        this.batchSize = base.batchSize;
+        this.limit = base.limit;
+        this.offset = base.offset;
+        this.recursionStrategy = base.recursionStrategy;
+        this.childFetcher = child;
     }
 
     @SuppressWarnings("unchecked")
