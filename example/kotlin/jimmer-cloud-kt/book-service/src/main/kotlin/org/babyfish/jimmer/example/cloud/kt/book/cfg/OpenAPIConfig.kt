@@ -9,7 +9,5 @@ import org.springframework.context.annotation.Configuration
 class OpenAPIConfig {
     @Bean
     fun openAPI(): OpenAPI =
-        OpenAPI()
-            .info(Info()
-                .title("cloud:book-service").version("0.7.31"))
+        OpenAPI().info(Info().title("cloud:book-service").version("0.7.31"))
 }
