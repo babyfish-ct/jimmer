@@ -1,6 +1,6 @@
-package org.babyfish.jimmer.sql.example.bll.interceptor.input
+package org.babyfish.jimmer.sql.example.business.interceptor.input
 
-import org.babyfish.jimmer.sql.example.bll.interceptor.TenantProvider
+import org.babyfish.jimmer.sql.example.business.interceptor.TenantProvider
 import org.babyfish.jimmer.kt.isLoaded
 import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.example.model.common.TenantAware

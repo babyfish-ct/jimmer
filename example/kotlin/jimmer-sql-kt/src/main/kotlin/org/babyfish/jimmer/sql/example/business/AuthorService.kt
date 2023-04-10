@@ -1,8 +1,8 @@
-package org.babyfish.jimmer.sql.example.bll
+package org.babyfish.jimmer.sql.example.business
 
 import org.babyfish.jimmer.client.FetchBy
 import org.babyfish.jimmer.client.ThrowsAll
-import org.babyfish.jimmer.sql.example.dal.AuthorRepository
+import org.babyfish.jimmer.sql.example.repository.AuthorRepository
 import org.babyfish.jimmer.sql.example.model.Author
 import org.babyfish.jimmer.sql.example.model.Gender
 import org.babyfish.jimmer.sql.example.model.by

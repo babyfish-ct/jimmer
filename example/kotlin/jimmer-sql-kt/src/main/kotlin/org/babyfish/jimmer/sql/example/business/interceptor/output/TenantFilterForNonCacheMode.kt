@@ -1,6 +1,6 @@
-package org.babyfish.jimmer.sql.example.bll.interceptor.output
+package org.babyfish.jimmer.sql.example.business.interceptor.output
 
-import org.babyfish.jimmer.sql.example.bll.interceptor.TenantProvider
+import org.babyfish.jimmer.sql.example.business.interceptor.TenantProvider
 import org.babyfish.jimmer.sql.example.model.common.TenantAware
 import org.babyfish.jimmer.sql.example.model.common.tenant
 import org.babyfish.jimmer.sql.kt.ast.expression.eq

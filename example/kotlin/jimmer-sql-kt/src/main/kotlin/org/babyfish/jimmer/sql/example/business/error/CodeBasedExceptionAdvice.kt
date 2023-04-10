@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.bll.error
+package org.babyfish.jimmer.sql.example.business.error
 
 import org.babyfish.jimmer.error.CodeBasedException
 import org.babyfish.jimmer.error.ExportedError

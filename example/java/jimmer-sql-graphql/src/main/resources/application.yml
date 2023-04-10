@@ -8,6 +8,8 @@ spring:
 
 jimmer:
   show-sql: true
+  executor-context-prefixes:
+    - org.babyfish.jimmer.sql.example.graphql.business
 
 demo:
   default-tenant: a

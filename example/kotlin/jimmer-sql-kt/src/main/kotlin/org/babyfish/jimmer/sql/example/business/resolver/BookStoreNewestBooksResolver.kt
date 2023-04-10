@@ -1,10 +1,10 @@
-package org.babyfish.jimmer.sql.example.bll.resolver
+package org.babyfish.jimmer.sql.example.business.resolver
 
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.lang.Ref
 import org.babyfish.jimmer.sql.event.AssociationEvent
 import org.babyfish.jimmer.sql.event.EntityEvent
-import org.babyfish.jimmer.sql.example.dal.BookStoreRepository
+import org.babyfish.jimmer.sql.example.repository.BookStoreRepository
 import org.babyfish.jimmer.sql.example.model.Book
 import org.babyfish.jimmer.sql.example.model.BookStore
 import org.babyfish.jimmer.sql.kt.KTransientResolver
@@ -12,19 +12,17 @@ import org.babyfish.jimmer.sql.kt.event.getChangedFieldRef
 import org.babyfish.jimmer.sql.kt.event.getUnchangedFieldRef
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
-import java.math.BigDecimal
 import java.util.*
 
-
 @Component
-class BookStoreAvgPriceResolver(
+class BookStoreNewestBooksResolver(
     private val bookStoreRepository: BookStoreRepository
-) : KTransientResolver<Long, BigDecimal> {
+) : KTransientResolver<Long, List<Long>> {
 
-    override fun resolve(ids: Collection<Long>): Map<Long, BigDecimal> =
+    override fun resolve(ids: Collection<Long>): Map<Long, List<Long>> =
         bookStoreRepository
-            .findIdAndAvgBookPrice(ids)
-            .associateBy({it._1}) {
+            .findIdAndNewestBookId(ids)
+            .groupBy({it._1}) {
                 it._2
             }
 
@@ -48,7 +46,7 @@ class BookStoreAvgPriceResolver(
             //    i. The foreign key `Book.store.id` is changed.
             //    ii. The `TenantFilter` is enabled and the `Book.tenant` is changed.
             bookStoreRepository.sql.caches
-                .getPropertyCache<Any, Any>(BookStore::avgPrice)
+                .getPropertyCache<Any, Any>(BookStore::newestBooks)
                 ?.delete(e.sourceId)
         }
     }
@@ -58,10 +56,10 @@ class BookStoreAvgPriceResolver(
         if (e.connection === null && e.immutableType.javaClass == Book::class.java) {
             val storeId = e.getUnchangedFieldRef(Book::store)?.value?.id
             if (storeId !== null) {
-                // 2. Otherwise, check whether `Book.price` is changed.
-                if (e.getChangedFieldRef(Book::price) !== null) {
+                // 2. Otherwise, check whether `Book.edition` is changed.
+                if (e.getChangedFieldRef(Book::edition) !== null) {
                     bookStoreRepository.sql.caches
-                        .getPropertyCache<Any, Any>(BookStore::avgPrice)
+                        .getPropertyCache<Any, Any>(BookStore::newestBooks)
                         ?.delete(storeId)
                 }
             }

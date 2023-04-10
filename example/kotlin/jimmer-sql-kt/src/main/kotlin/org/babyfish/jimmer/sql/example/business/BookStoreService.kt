@@ -1,8 +1,8 @@
-package org.babyfish.jimmer.sql.example.bll
+package org.babyfish.jimmer.sql.example.business
 
 import org.babyfish.jimmer.client.FetchBy
 import org.babyfish.jimmer.client.ThrowsAll
-import org.babyfish.jimmer.sql.example.dal.BookStoreRepository
+import org.babyfish.jimmer.sql.example.repository.BookStoreRepository
 import org.babyfish.jimmer.sql.example.model.BookStore
 import org.babyfish.jimmer.sql.example.model.by
 import org.babyfish.jimmer.sql.example.model.input.BookStoreInput

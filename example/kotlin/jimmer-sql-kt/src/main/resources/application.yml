@@ -25,6 +25,8 @@ jimmer:
   language: kotlin
   database-validation-mode: ERROR
   show-sql: true
+  executor-context-prefixes:
+    - org.babyfish.jimmer.sql.example.business
   client:
     ts:
       path: /ts.zip

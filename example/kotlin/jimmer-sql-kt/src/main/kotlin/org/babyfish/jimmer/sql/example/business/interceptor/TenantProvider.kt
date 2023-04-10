@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.bll.interceptor
+package org.babyfish.jimmer.sql.example.business.interceptor
 
 import org.springframework.stereotype.Component
 import javax.servlet.http.HttpServletRequest

@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.dal
+package org.babyfish.jimmer.sql.example.repository
 
 import org.babyfish.jimmer.spring.repository.KRepository
 import org.babyfish.jimmer.spring.repository.orderBy

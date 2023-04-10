@@ -24,6 +24,8 @@ spring:
 jimmer:
   show-sql: true
   database-validation-mode: ERROR
+  executor-context-prefixes:
+    - org.babyfish.jimmer.sql.example.business
   client:
     ts:
       path: /ts.zip
