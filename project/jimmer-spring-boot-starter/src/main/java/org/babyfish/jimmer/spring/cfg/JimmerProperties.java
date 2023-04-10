@@ -180,6 +180,24 @@ public class JimmerProperties {
         return defaultListBatchSize;
     }
 
+    /**
+     * If this option is configured, when jimmer calls back
+     * `org.babyfish.jimmer.sql.runtime.Executor.execute` before executing SQL,
+     * it will check the stack trace information of the current thread.
+     *
+     * However, these stack traces have too much information, including
+     * infrastructure call frames represented by jdk, jdbc driver, jimmer, and spring,
+     * and the business-related information you care about will be submerged in the ocean of information.
+     *
+     * Through this configuration, you can specify multiple package or class prefixes, and jimmer will
+     * judge whether there are some call frames in the stack trace whose class names start with some
+     * of these prefixes. If the judgment is true, jimmer believes that the current callback is related
+     * to your business, and the `ctx` parameter of `org.babyfish.jimmer.sql.runtime.Executor.execute`
+     * will be passed as non-null.
+     *
+     * If the SQL logging configuration is enabled at the same time, when a SQL statement is caused by
+     * the business you care about, the business call frame will be printed together with the SQL log.
+     */
     @Nullable
     public Collection<String> getExecutorContextPrefixes() {
         return executorContextPrefixes;
