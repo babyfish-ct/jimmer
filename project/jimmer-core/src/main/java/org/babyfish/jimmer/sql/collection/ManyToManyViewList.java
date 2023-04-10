@@ -120,7 +120,7 @@ public class ManyToManyViewList<M, E> implements List<E> {
     @NotNull
     @Override
     public ListIterator<E> listIterator(int index) {
-        return new Itr(middleList.listIterator(0));
+        return new Itr(middleList.listIterator(index));
     }
 
     @Override
