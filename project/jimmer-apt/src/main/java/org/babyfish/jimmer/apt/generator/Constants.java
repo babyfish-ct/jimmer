@@ -11,6 +11,7 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.impl.validation.Validator;
+import org.babyfish.jimmer.sql.collection.ManyToManyViewList;
 
 import java.beans.ConstructorProperties;
 import java.util.*;
@@ -71,6 +72,9 @@ class Constants {
 
     public static final ClassName VALIDATOR_CLASS_NAME =
             ClassName.get(Validator.class);
+
+    public static final ClassName MANY_TO_MANY_VIEW_LIST_CLASS_NAME =
+            ClassName.get(ManyToManyViewList.class);
 
     public static final ClassName SCALAR_CLASS_NAME =
             ClassName.get(TypedProp.Scalar.class);

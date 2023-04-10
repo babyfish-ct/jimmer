@@ -11,6 +11,8 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 
 import javax.lang.model.element.Modifier;
 
+import static org.babyfish.jimmer.apt.generator.Constants.MANY_TO_MANY_VIEW_LIST_CLASS_NAME;
+
 public class ImplementorGenerator {
 
     private ImmutableType type;
@@ -86,6 +88,23 @@ public class ImplementorGenerator {
     }
 
     private void addGetterIfNecessary(ImmutableProp prop) {
+        ImmutableProp manyToManyViewBaseProp = prop.getManyToManyViewBaseProp();
+        if (manyToManyViewBaseProp != null) {
+            typeBuilder.addMethod(
+                    MethodSpec
+                            .methodBuilder(prop.getGetterName())
+                            .addAnnotation(Override.class)
+                            .addModifiers(Modifier.PUBLIC)
+                            .returns(prop.getTypeName())
+                            .addStatement(
+                                    "return new $T<>($L, $L())",
+                                    MANY_TO_MANY_VIEW_LIST_CLASS_NAME,
+                                    prop.getManyToManyViewBaseDeeperProp().getId(),
+                                    manyToManyViewBaseProp.getGetterName()
+                            )
+                            .build()
+            );
+        }
         if (!prop.isBeanStyle()) {
             String name = prop.getGetterName();
             boolean isBoolean = prop.getTypeName().equals(TypeName.BOOLEAN);

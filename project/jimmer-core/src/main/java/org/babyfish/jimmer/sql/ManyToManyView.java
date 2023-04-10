@@ -10,9 +10,15 @@ import java.lang.annotation.*;
 @Target(ElementType.METHOD)
 public @interface ManyToManyView {
 
-    Class<?> value();
+    /**
+     * The name of a one-to-many association property
+     * pointing from the current entity to the middle entity
+     */
+    String prop();
 
-    String prop() default "";
-
-    String inverseProp() default "";
+    /**
+     * The name of a many-to-one association property
+     * pointing from the middle entity to target entity
+     */
+    String deeperProp() default "";
 }

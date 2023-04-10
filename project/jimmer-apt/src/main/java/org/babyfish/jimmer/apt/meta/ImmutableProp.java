@@ -78,6 +78,10 @@ public class ImmutableProp {
 
     private ImmutableProp idViewBaseProp;
 
+    private ImmutableProp manyToManyViewBaseProp;
+
+    private ImmutableProp manyToManyViewBaseDeeperProp;
+
     private boolean isVisibilityControllable;
 
     public ImmutableProp(
@@ -396,7 +400,7 @@ public class ImmutableProp {
     }
 
     public boolean isValueRequired() {
-        return idViewBaseProp == null && !isJavaFormula;
+        return idViewBaseProp == null && manyToManyViewBaseProp == null && !isJavaFormula;
     }
 
     public boolean isLoadedStateRequired() {
@@ -453,8 +457,20 @@ public class ImmutableProp {
         return dependencies;
     }
 
+    public ImmutableProp getBaseProp() {
+        return idViewBaseProp != null ? idViewBaseProp : manyToManyViewBaseProp;
+    }
+
     public ImmutableProp getIdViewBaseProp() {
         return idViewBaseProp;
+    }
+
+    public ImmutableProp getManyToManyViewBaseProp() {
+        return manyToManyViewBaseProp;
+    }
+
+    public ImmutableProp getManyToManyViewBaseDeeperProp() {
+        return manyToManyViewBaseDeeperProp;
     }
 
     public boolean isVisibilityControllable() {
@@ -476,6 +492,8 @@ public class ImmutableProp {
             case 2:
                 resolveIdViewBaseProp();
                 return true;
+            case 3:
+                resolveManyToManyViewProp();
             default:
                 return false;
         }
@@ -630,11 +648,105 @@ public class ImmutableProp {
         idViewBaseProp = baseProp;
     }
 
-    private void resolveManyToManyViewProp(TypeUtils typeUtils) {
+    private void resolveManyToManyViewProp() {
         ManyToManyView manyToManyView = getAnnotation(ManyToManyView.class);
         if (manyToManyView == null) {
             return;
         }
+        String propName = manyToManyView.prop();
+        ImmutableProp prop = declaringType.getProps().get(propName);
+        if (prop == null) {
+            throw new MetaException(
+                    executableElement,
+                    "it is decorated by \"@" +
+                            ManyToManyView.class +
+                            "\" with `prop` is \"" +
+                            propName +
+                            "\", but there is no such property in the declaring type"
+            );
+        }
+        if (prop.getAnnotation(OneToMany.class) == null) {
+            throw new MetaException(
+                    executableElement,
+                    "it is decorated by \"@" +
+                            ManyToManyView.class +
+                            "\" whose `prop` is \"" +
+                            prop +
+                            "\", but that property is not an one-to-many association"
+            );
+        }
+        ImmutableType middleType = prop.getTargetType();
+        String deeperPropName = manyToManyView.deeperProp();
+        ImmutableProp deeperProp = null;
+        if (deeperPropName.isEmpty()) {
+            for (ImmutableProp middleProp : middleType.getProps().values()) {
+                if (middleProp.getTargetType() == this.targetType && middleProp.getAnnotation(ManyToOne.class) != null) {
+                    if (deeperProp != null) {
+                        throw new MetaException(
+                                executableElement,
+                                "it is decorated by \"@" +
+                                        ManyToManyView.class +
+                                        "\" whose `deeperProp` is not specified, " +
+                                        "however, two many-to-one properties pointing to target type are found: \"" +
+                                        deeperProp +
+                                        "\" and \"" +
+                                        prop +
+                                        "\", please specify its `deeperProp` explicitly"
+                        );
+                    }
+                    deeperProp = prop;
+                }
+            }
+            if (deeperProp == null) {
+                throw new MetaException(
+                        executableElement,
+                        "it is decorated by \"@" +
+                                ManyToManyView.class +
+                                "\" whose `deeperProp` is not specified, " +
+                                "however, there is no many-property pointing to " +
+                                "target type in the middle entity type \"" +
+                                middleType +
+                                "\""
+                );
+            }
+        } else {
+            deeperProp = middleType.getProps().get(deeperPropName);
+            if (deeperProp == null) {
+                throw new MetaException(
+                        executableElement,
+                        "it is decorated by \"@" +
+                                ManyToManyView.class +
+                                "\" whose `deeperProp` is `" +
+                                deeperPropName +
+                                "`, " +
+                                "however, there is no many-property \"" +
+                                deeperPropName +
+                                "\" in the middle entity type \"" +
+                                middleType +
+                                "\""
+                );
+            }
+            if (deeperProp.targetType != targetType || deeperProp.getAnnotation(ManyToOne.class) == null) {
+                throw new MetaException(
+                        executableElement,
+                        "it is decorated by \"@" +
+                                ManyToManyView.class +
+                                "\" whose `deeperProp` is `" +
+                                deeperPropName +
+                                "`, " +
+                                "however, there is no many-property \"" +
+                                deeperPropName +
+                                "\" in the middle entity type \"" +
+                                middleType +
+                                "\""
+                );
+            }
+        }
+        manyToManyViewBaseProp = prop;
+        manyToManyViewBaseDeeperProp = deeperProp;
+        isVisibilityControllable = true;
+        prop.isVisibilityControllable = true;
+        deeperProp.isVisibilityControllable = true;
     }
 
     public <A extends Annotation> A getAnnotation(Class<A> annotationType) {

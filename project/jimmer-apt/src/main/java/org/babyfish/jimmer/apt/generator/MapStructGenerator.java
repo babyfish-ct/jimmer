@@ -58,7 +58,7 @@ public class MapStructGenerator {
     }
 
     private void addSetter(ImmutableProp prop) {
-        if (prop.isJavaFormula()) {
+        if (prop.isJavaFormula() || prop.getManyToManyViewBaseProp() != null) {
             return;
         }
         MethodSpec.Builder builder = MethodSpec
@@ -142,7 +142,7 @@ public class MapStructGenerator {
                 .returns(type.getClassName());
         builder.addCode("return $T.$L.produce(draft -> {$>\n", type.getDraftClassName(), "$");
         for (ImmutableProp prop : type.getProps().values()) {
-            if (!prop.isJavaFormula() && prop.getIdViewBaseProp() == null) {
+            if (prop.isValueRequired()) {
                 if (isMapStructLoadedStateRequired(prop)) {
                     builder.beginControlFlow("if ($L)", prop.getLoadedStateName());
                     builder.addStatement("draft.$L($L)", prop.getSetterName(), prop.getName());

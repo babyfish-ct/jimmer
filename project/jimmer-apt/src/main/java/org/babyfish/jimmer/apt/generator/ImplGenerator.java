@@ -85,8 +85,7 @@ public class ImplGenerator {
     }
 
     private void addGetter(ImmutableProp prop) {
-
-        if (prop.isJavaFormula()) {
+        if (prop.isJavaFormula() || prop.getManyToManyViewBaseProp() != null) {
             return;
         }
 
@@ -99,34 +98,35 @@ public class ImplGenerator {
             builder.addAnnotation(JSON_IGNORE_CLASS_NAME);
         }
 
-        ImmutableProp baseProp = prop.getIdViewBaseProp();
-        if (baseProp != null) {
-            if (baseProp.isList()) {
+        ImmutableProp idViewBaseProp = prop.getIdViewBaseProp();
+        ImmutableProp manyToManyViewBaseProp = prop.getManyToManyViewBaseProp();
+        if (idViewBaseProp != null) {
+            if (idViewBaseProp.isList()) {
                 builder.addStatement(
                         "$T<$T> __ids = new $T($L().size())",
                         LIST_CLASS_NAME,
-                        baseProp.getTargetType().getIdProp().getTypeName().box(),
+                        idViewBaseProp.getTargetType().getIdProp().getTypeName().box(),
                         ArrayList.class,
-                        baseProp.getGetterName()
+                        idViewBaseProp.getGetterName()
                 );
                 builder.beginControlFlow(
                         "for ($T __target : $L())",
-                        baseProp.getElementTypeName(),
-                        baseProp.getGetterName()
+                        idViewBaseProp.getElementTypeName(),
+                        idViewBaseProp.getGetterName()
                 );
                 builder.addStatement(
                         "__ids.add(__target.$L())",
-                        baseProp.getTargetType().getIdProp().getGetterName()
+                        idViewBaseProp.getTargetType().getIdProp().getGetterName()
                 );
                 builder.endControlFlow();
                 builder.addStatement("return __ids");
             } else {
-                builder.addStatement("$T __target = $L()", baseProp.getElementTypeName(), baseProp.getGetterName());
+                builder.addStatement("$T __target = $L()", idViewBaseProp.getElementTypeName(), idViewBaseProp.getGetterName());
                 builder.addStatement(
                         prop.isNullable() ?
                         "return __target != null ? __target.$L() : null" :
                         "__target.$L()",
-                        baseProp.getTargetType().getIdProp().getGetterName()
+                        idViewBaseProp.getTargetType().getIdProp().getGetterName()
                 );
             }
         } else {
@@ -173,26 +173,35 @@ public class ImplGenerator {
         for (ImmutableProp prop : type.getPropsOrderById()) {
             Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
             builder.addCode("case $L: ", arg);
-            ImmutableProp baseProp = prop.getIdViewBaseProp();
-            if (baseProp != null) {
-                if (baseProp.isList()) {
+            ImmutableProp idViewBaseProp = prop.getIdViewBaseProp();
+            ImmutableProp manyToManyViewBaseProp = prop.getManyToManyViewBaseProp();
+            if (idViewBaseProp != null) {
+                if (idViewBaseProp.isList()) {
                     builder.addStatement(
                             "return __isLoaded($L) && $L().stream().allMatch(__each -> (($T)__each).__isLoaded($L))",
-                            baseProp.getId(),
-                            baseProp.getGetterName(),
+                            idViewBaseProp.getId(),
+                            idViewBaseProp.getGetterName(),
                             ImmutableSpi.class,
-                            baseProp.getTargetType().getIdProp().getId()
+                            idViewBaseProp.getTargetType().getIdProp().getId()
                     );
                 } else {
                     builder.addStatement(
                             "return __isLoaded($L) && ($L() == null || (($T)$L()).__isLoaded($L))",
-                            baseProp.getId(),
-                            baseProp.getGetterName(),
+                            idViewBaseProp.getId(),
+                            idViewBaseProp.getGetterName(),
                             ImmutableSpi.class,
-                            baseProp.getGetterName(),
-                            baseProp.getTargetType().getIdProp().getId()
+                            idViewBaseProp.getGetterName(),
+                            idViewBaseProp.getTargetType().getIdProp().getId()
                     );
                 }
+            } else if (manyToManyViewBaseProp != null) {
+                builder.addStatement(
+                        "return __isLoaded($L) && $L().stream().allMatch(__each -> (($T)__each).__isLoaded($L))",
+                        manyToManyViewBaseProp.getId(),
+                        manyToManyViewBaseProp.getGetterName(),
+                        ImmutableSpi.class,
+                        prop.getManyToManyViewBaseDeeperProp().getId()
+                );
             } else if (prop.isJavaFormula()) {
                 boolean first = true;
                 builder.addCode("return $>");

@@ -10,9 +10,11 @@ public interface LearningLink {
     long id();
 
     @ManyToOne
+    @OnDissociate(DissociateAction.DELETE)
     Student student();
 
     @ManyToOne
+    @OnDissociate(DissociateAction.DELETE)
     Course course();
 
     int score();

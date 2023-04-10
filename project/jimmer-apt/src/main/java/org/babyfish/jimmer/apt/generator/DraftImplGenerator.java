@@ -292,6 +292,10 @@ public class DraftImplGenerator {
     }
 
     private void addGetter(ImmutableProp prop) {
+        if (prop.getManyToManyViewBaseProp() != null) {
+            return;
+        }
+
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getGetterName())
                 .addModifiers(Modifier.PUBLIC)
@@ -356,6 +360,9 @@ public class DraftImplGenerator {
     }
 
     private void addCreator(ImmutableProp prop) {
+        if (prop.getManyToManyViewBaseProp() != null) {
+            return;
+        }
         if (!prop.isAssociation(false) && !prop.isList()) {
             return;
         }
@@ -415,7 +422,7 @@ public class DraftImplGenerator {
     }
 
     private void addSetter(ImmutableProp prop) {
-        if (prop.isJavaFormula()) {
+        if (prop.isJavaFormula() || prop.getManyToManyViewBaseProp() != null) {
             return;
         }
         MethodSpec.Builder builder = MethodSpec
@@ -489,7 +496,7 @@ public class DraftImplGenerator {
     }
 
     private void addUtilMethod(ImmutableProp prop, boolean withBase) {
-        if (!prop.isAssociation(false)) {
+        if (!prop.isAssociation(false) || prop.getManyToManyViewBaseProp() != null) {
             return;
         }
         String methodName = prop.isList() ? prop.getAdderByName() : prop.getApplierName();
@@ -554,7 +561,7 @@ public class DraftImplGenerator {
             if (castTo == null) {
                 castTo = prop.getTypeName();
             }
-            if (prop.isJavaFormula()) {
+            if (prop.isJavaFormula() || prop.getManyToManyViewBaseProp() != null) {
                 builder.addStatement("case $L: break", arg);
             } else if (prop.getTypeName().isPrimitive()) {
                 builder.addStatement(
@@ -628,11 +635,11 @@ public class DraftImplGenerator {
         builder.beginControlFlow("switch (prop)");
         for (ImmutableProp prop : type.getPropsOrderById()) {
             Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
-            if (prop.getIdViewBaseProp() != null) {
+            if (prop.getBaseProp() != null) {
                 builder.addStatement(
                         "case $L: __unload($L);break",
                         arg,
-                        prop.getIdViewBaseProp().getId()
+                        prop.getBaseProp().getId()
                 );
             } else if (prop.isJavaFormula()) {
                 builder.addStatement("case $L: break", arg);
@@ -705,7 +712,7 @@ public class DraftImplGenerator {
         if (type.getProps().values().stream().anyMatch(it -> it.isAssociation(false) || it.isList())) {
             builder.beginControlFlow("if (__tmpModified == null)");
             for (ImmutableProp prop : type.getProps().values()) {
-                if (prop.getIdViewBaseProp() == null && (prop.isAssociation(false) || prop.isList())) {
+                if (prop.isValueRequired() && (prop.isAssociation(false) || prop.isList())) {
                     builder.beginControlFlow("if (base.__isLoaded($L))", prop.getId());
                     builder.addStatement(
                             "$T oldValue = base.$L()",
@@ -736,24 +743,26 @@ public class DraftImplGenerator {
 
             builder.beginControlFlow("else");
             for (ImmutableProp prop : type.getProps().values()) {
-                if (prop.isList() && prop.getIdViewBaseProp() == null) {
-                    builder.addStatement(
-                            "__tmpModified.$L = $T.of(__tmpModified.$L, $L.$L(__tmpModified.$L))",
-                            prop.getName(),
-                            NonSharedList.class,
-                            prop.getName(),
-                            DRAFT_FIELD_CTX,
-                            "resolveList",
-                            prop.getName()
-                    );
-                } else if (prop.isAssociation(false)) {
-                    builder.addStatement(
-                            "__tmpModified.$L = $L.$L(__tmpModified.$L)",
-                            prop.getName(),
-                            DRAFT_FIELD_CTX,
-                            "resolveObject",
-                            prop.getName()
-                    );
+                if (prop.isValueRequired()) {
+                    if (prop.isList()) {
+                        builder.addStatement(
+                                "__tmpModified.$L = $T.of(__tmpModified.$L, $L.$L(__tmpModified.$L))",
+                                prop.getName(),
+                                NonSharedList.class,
+                                prop.getName(),
+                                DRAFT_FIELD_CTX,
+                                "resolveList",
+                                prop.getName()
+                        );
+                    } else if (prop.isAssociation(false)) {
+                        builder.addStatement(
+                                "__tmpModified.$L = $L.$L(__tmpModified.$L)",
+                                prop.getName(),
+                                DRAFT_FIELD_CTX,
+                                "resolveObject",
+                                prop.getName()
+                        );
+                    }
                 }
             }
             builder.endControlFlow();
