@@ -52,9 +52,9 @@ public class PropExpressionImpl<T>
                             "\""
             );
         }
-        if (prop.getIdViewBaseProp() != null) {
+        if (prop.isView()) {
             throw new IllegalArgumentException(
-                    "Cannot create prop expression for id-view property \"" +
+                    "Cannot create prop expression for view property \"" +
                             prop +
                             "\""
             );

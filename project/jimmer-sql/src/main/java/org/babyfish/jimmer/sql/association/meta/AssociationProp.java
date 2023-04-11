@@ -107,7 +107,22 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public boolean isView() {
+        return false;
+    }
+
+    @Override
     public ImmutableProp getIdViewBaseProp() {
+        return null;
+    }
+
+    @Override
+    public ImmutableProp getManyToManyViewBaseProp() {
+        return null;
+    }
+
+    @Override
+    public ImmutableProp getManyToManyViewBaseDeeperProp() {
         return null;
     }
 
@@ -142,7 +157,7 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
-    public List<ImmutableProp> getDependencies() {
+    public List<Dependency> getDependencies() {
         return Collections.emptyList();
     }
 

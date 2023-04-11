@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.lang.NewChain;
+import org.babyfish.jimmer.meta.Dependency;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -151,6 +152,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Map<String, Field> getFieldMap() {
         Map<String, Field> map = fieldMap;
         if (map == null) {
@@ -190,23 +192,46 @@ public class FetcherImpl<E> implements Fetcher<E> {
             }
             while (!extensionFields.isEmpty()) {
                 Field field = extensionFields.remove(0);
-                for (ImmutableProp dependencyProp : field.getProp().getDependencies()) {
-                    if (!orderedMap.containsKey(dependencyProp.getName())) {
-                        Field dependencyField = new FieldImpl(
+                for (Dependency dependency : field.getProp().getDependencies()) {
+                    Field dependencyField = orderedMap.get(dependency.getProp().getName());
+                    if (dependencyField == null) {
+                        dependencyField = new FieldImpl(
                                 immutableType,
-                                dependencyProp,
-                                field.getFilter(),
+                                dependency.getProp(),
+                                dependency.getDeeperProp() != null && filter != null ?
+                                        new MiddleEntityJoinFieldFilter(
+                                                (FieldFilter<Table<?>>) field.getFilter(),
+                                                dependency.getDeeperProp().getName()
+                                        ) :
+                                        null,
                                 field.getBatchSize(),
-                                Integer.MAX_VALUE,
-                                0,
+                                field.getLimit(),
+                                field.getOffset(),
                                 null,
-                                null,
+                                dependency.getDeeperProp() != null ?
+                                        (FetcherImpl<?>) (new FetcherImpl<>((Class<Object>) dependency.getProp().getTargetType().getJavaClass())
+                                                .add(
+                                                        dependency.getDeeperProp().getName(),
+                                                        field.getChildFetcher()
+                                                )
+                                        ) :
+                                        null,
                                 true
                         );
-                        orderedMap.put(dependencyProp.getName(), dependencyField);
-                        if (dependencyProp.isFormula() && dependencyProp.getFormulaTemplate() == null) {
+                        orderedMap.put(dependency.getProp().getName(), dependencyField);
+                        if (prop.isFormula() && prop.getFormulaTemplate() == null) {
                             extensionFields.add(dependencyField);
                         }
+                    } else if (dependency.getDeeperProp() != null) {
+                        throw new IllegalStateException("Fuck");
+//                        if (!dependencyField.getChildFetcher().getFieldMap().containsKey(dependency.getDeeperProp().getName())) {
+//                            FetcherImpl<Object> childFetcher =
+//                                    (FetcherImpl<Object>)
+//                                            new FetcherImpl<Object>((FetcherImpl<Object>)dependencyField.getChildFetcher())
+//                                            .add(dependency.getDeeperProp().getName());
+//                            dependencyField = new FieldImpl((FieldImpl) dependencyField, childFetcher);
+//                        }
+//                        orderedMap.put(dependency.getProp().getName(), dependencyField);
                     }
                 }
             }

@@ -61,7 +61,13 @@ public interface ImmutableProp {
     @Nullable
     FormulaTemplate getFormulaTemplate();
 
+    boolean isView();
+
     ImmutableProp getIdViewBaseProp();
+
+    ImmutableProp getManyToManyViewBaseProp();
+
+    ImmutableProp getManyToManyViewBaseDeeperProp();
 
     Converter<?> getConverter();
 
@@ -85,7 +91,7 @@ public interface ImmutableProp {
 
     ImmutableProp getOpposite();
 
-    List<ImmutableProp> getDependencies();
+    List<Dependency> getDependencies();
 
     boolean isRemote();
 }

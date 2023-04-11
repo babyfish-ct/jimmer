@@ -422,7 +422,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         }
         if (immutableType != fetcher.getImmutableType()) {
             throw new IllegalArgumentException(
-                    "Illegal fetcher type, current table is \"" +
+                    "Illegal fetcher type, the entity type of current table is \"" +
                             this +
                             "\" but the fetcher type is \"" +
                             fetcher.getImmutableType() +

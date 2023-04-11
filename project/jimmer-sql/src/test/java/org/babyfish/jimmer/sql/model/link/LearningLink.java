@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.model.link;
 
 import org.babyfish.jimmer.sql.*;
+import org.jetbrains.annotations.Nullable;
 
 @Entity
 public interface LearningLink {
@@ -9,13 +10,15 @@ public interface LearningLink {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
-    @ManyToOne
+    @Nullable
+    @ManyToOne(inputNotNull = true)
     @OnDissociate(DissociateAction.DELETE)
     Student student();
 
-    @ManyToOne
+    @Nullable
+    @ManyToOne(inputNotNull = true)
     @OnDissociate(DissociateAction.DELETE)
     Course course();
 
-    int score();
+    Integer score();
 }
