@@ -96,6 +96,9 @@ class ImplGenerator(
     }
 
     private fun TypeSpec.Builder.addProp(prop: ImmutableProp) {
+        if (prop.isKotlinFormula) {
+            return
+        }
         addProperty(
             PropertySpec
                 .builder(prop.name, prop.typeName())
@@ -108,41 +111,50 @@ class ImplGenerator(
                             CodeBlock
                                 .builder()
                                 .apply {
-                                    if (prop.idViewBaseProp !== null) {
-                                        if (prop.isList) {
-                                            addStatement(
-                                                "return %N.map {it.%N}",
-                                                prop.idViewBaseProp!!.name,
-                                                prop.idViewBaseProp!!.targetType!!.idProp!!.name
-                                            )
-                                        } else {
-                                            addStatement(
-                                                "return %N%L%N",
-                                                prop.idViewBaseProp!!.name,
-                                                if (prop.isNullable) "?." else ".",
-                                                prop.idViewBaseProp!!.targetType!!.idProp!!.name
-                                            )
-                                        }
-                                    } else if (prop.isKotlinFormula) {
-                                        addStatement("return super.%N", prop.name)
-                                    }   else {
-                                        if (prop.loadedFieldName === null) {
-                                            addStatement("val %N = this.%N", prop.valueFieldName, prop.valueFieldName)
-                                        }
-                                        beginControlFlow(
-                                            when {
-                                                prop.loadedFieldName !== null -> "if (!${prop.loadedFieldName})"
-                                                else -> "if (${prop.valueFieldName} === null)"
+                                    val idViewBaseProp = prop.idViewBaseProp
+                                    val manyToManyViewBaseProp = prop.manyToManyViewBaseProp
+                                    when {
+                                        idViewBaseProp !== null ->
+                                            if (prop.isList) {
+                                                addStatement(
+                                                    "return %N.map {it.%N}",
+                                                    idViewBaseProp.name,
+                                                    idViewBaseProp.targetType!!.idProp!!.name
+                                                )
+                                            } else {
+                                                addStatement(
+                                                    "return %N%L%N",
+                                                    idViewBaseProp.name,
+                                                    if (prop.isNullable) "?." else ".",
+                                                    idViewBaseProp.targetType!!.idProp!!.name
+                                                )
                                             }
-                                        )
-                                        addStatement(
-                                            "throw %T(%T::class.java, %S)",
-                                            UNLOADED_EXCEPTION_CLASS_NAME,
-                                            prop.declaringType.className,
-                                            prop.name
-                                        )
-                                        endControlFlow()
-                                        addStatement("return %N", prop.valueFieldName)
+                                        manyToManyViewBaseProp !== null ->
+                                            addStatement(
+                                                "return %T(%L, %N)",
+                                                MANY_TO_MANY_VIEW_LIST_CLASS_NAME,
+                                                prop.manyToManyViewBaseDeeperProp!!.id,
+                                                manyToManyViewBaseProp.name
+                                            )
+                                        else -> {
+                                            if (prop.loadedFieldName === null) {
+                                                addStatement("val %N = this.%N", prop.valueFieldName, prop.valueFieldName)
+                                            }
+                                            beginControlFlow(
+                                                when {
+                                                    prop.loadedFieldName !== null -> "if (!${prop.loadedFieldName})"
+                                                    else -> "if (${prop.valueFieldName} === null)"
+                                                }
+                                            )
+                                            addStatement(
+                                                "throw %T(%T::class.java, %S)",
+                                                UNLOADED_EXCEPTION_CLASS_NAME,
+                                                prop.declaringType.className,
+                                                prop.name
+                                            )
+                                            endControlFlow()
+                                            addStatement("return %N", prop.valueFieldName)
+                                        }
                                     }
                                 }
                                 .build()
@@ -179,45 +191,58 @@ class ImplGenerator(
                             beginControlFlow("when (prop)")
                             for (prop in type.propsOrderById) {
                                 val arg = if (argType == Int::class) prop.id else "\"${prop.name}\""
-                                val baseProp = prop.idViewBaseProp
-                                if (baseProp !== null) {
-                                    if (prop.isList) {
-                                        addStatement(
-                                            "%L -> __isLoaded(%L) && %L.any { (it as %T).__isLoaded(%L) }",
-                                            arg,
-                                            baseProp.id,
-                                            baseProp.name,
-                                            IMMUTABLE_SPI_CLASS_NAME,
-                                            baseProp.targetType!!.idProp!!.id
-                                        )
-                                    } else {
-                                        addStatement(
-                                            "%L -> __isLoaded(%L) && (%L as %T)%L__isLoaded(%L) ?: true",
-                                            arg,
-                                            baseProp.id,
-                                            baseProp.name,
-                                            IMMUTABLE_SPI_CLASS_NAME.copy(nullable = baseProp.isNullable),
-                                            if (baseProp.isNullable) "?." else ".",
-                                            baseProp.targetType!!.idProp!!.id
-                                        )
-                                    }
-                                } else if (prop.isKotlinFormula) {
-                                    add("%L ->", arg)
-                                    indent()
-                                    var first = true
-                                    for (dependency in prop.dependencies) {
-                                        if (first) {
-                                            first = false
+                                val idViewBaseProp = prop.idViewBaseProp
+                                val manyToManyViewBaseProp = prop.manyToManyViewBaseProp
+                                when {
+                                    idViewBaseProp !== null ->
+                                        if (prop.isList) {
+                                            addStatement(
+                                                "%L -> __isLoaded(%L) && %L.all { (it as %T).__isLoaded(%L) }",
+                                                arg,
+                                                idViewBaseProp.id,
+                                                idViewBaseProp.name,
+                                                IMMUTABLE_SPI_CLASS_NAME,
+                                                idViewBaseProp.targetType!!.idProp!!.id
+                                            )
                                         } else {
-                                            add(" && \n")
+                                            addStatement(
+                                                "%L -> __isLoaded(%L) && (%L as %T)%L__isLoaded(%L) ?: true",
+                                                arg,
+                                                idViewBaseProp.id,
+                                                idViewBaseProp.name,
+                                                IMMUTABLE_SPI_CLASS_NAME.copy(nullable = idViewBaseProp.isNullable),
+                                                if (idViewBaseProp.isNullable) "?." else ".",
+                                                idViewBaseProp.targetType!!.idProp!!.id
+                                            )
                                         }
-                                        add("__isLoaded(%L)", dependency.id)
+                                    manyToManyViewBaseProp !== null ->
+                                        addStatement(
+                                            "%L -> __isLoaded(%L) && %L.all { (it as %T).__isLoaded(%L) }",
+                                            arg,
+                                            manyToManyViewBaseProp.id,
+                                            manyToManyViewBaseProp.name,
+                                            IMMUTABLE_SPI_CLASS_NAME,
+                                            prop.manyToManyViewBaseDeeperProp!!.id
+                                        )
+                                    prop.isKotlinFormula -> {
+                                        add("%L ->", arg)
+                                        indent()
+                                        var first = true
+                                        for (dependency in prop.dependencies) {
+                                            if (first) {
+                                                first = false
+                                            } else {
+                                                add(" && \n")
+                                            }
+                                            add("__isLoaded(%L)", dependency.id)
+                                        }
+                                        add("\n")
+                                        unindent()
                                     }
-                                    add("\n")
-                                    unindent()
-                                } else {
-                                    val cond = prop.loadedFieldName ?: "${prop.valueFieldName} !== null"
-                                    addStatement("%L -> %L", arg, cond)
+                                    else -> {
+                                        val cond = prop.loadedFieldName ?: "${prop.valueFieldName} !== null"
+                                        addStatement("%L -> %L", arg, cond)
+                                    }
                                 }
                             }
                             addElseForNonExistingProp(type, argType)

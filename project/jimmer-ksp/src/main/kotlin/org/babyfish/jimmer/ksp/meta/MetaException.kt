@@ -18,7 +18,7 @@ class MetaException(
             when (declaration ){
                 is KSClassDeclaration ->
                     "Illegal type \"" +
-                        declaration.qualifiedName.toString() +
+                        declaration.qualifiedName!!.asString() +
                         "\", " +
                         lowerFirstChar(reason)
                 is KSPropertyDeclaration ->

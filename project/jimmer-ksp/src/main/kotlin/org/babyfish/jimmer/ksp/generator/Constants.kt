@@ -9,6 +9,7 @@ import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.*
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.impl.validation.Validator
+import org.babyfish.jimmer.sql.collection.ManyToManyViewList
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.util.regex.Pattern
@@ -49,6 +50,8 @@ internal val ONE_TO_ONE_CLASS_NAME = OneToOne::class.asClassName()
 internal val MANY_TO_ONE_CLASS_NAME = ManyToOne::class.asClassName()
 internal val ONE_TO_MANY_CLASS_NAME = OneToMany::class.asClassName()
 internal val MANY_TO_MANY_CLASS_NAME = ManyToMany::class.asClassName()
+internal val MANY_TO_MANY_VIEW_CLASS_NAME = ManyToManyView::class.asClassName()
+internal val MANY_TO_MANY_VIEW_LIST_CLASS_NAME = ManyToManyViewList::class.asClassName()
 internal val K_PROPS_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KProps"

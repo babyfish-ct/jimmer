@@ -136,6 +136,7 @@ class ProducerGenerator(
                         prop.primaryAnnotationType == ManyToOne::class.java -> MANY_TO_ONE_CLASS_NAME
                         prop.primaryAnnotationType == OneToMany::class.java -> ONE_TO_MANY_CLASS_NAME
                         prop.primaryAnnotationType == ManyToMany::class.java -> MANY_TO_MANY_CLASS_NAME
+                        prop.primaryAnnotationType == ManyToManyView::class.java -> MANY_TO_MANY_VIEW_CLASS_NAME
                         else -> error("Internal bug: $prop has wrong sql annotation @${prop.primaryAnnotationType.name}")
                     },
                     prop.targetClassName,

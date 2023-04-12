@@ -2,6 +2,7 @@ package org.babyfish.jimmer.ksp.generator
 
 import com.squareup.kotlinpoet.*
 import org.babyfish.jimmer.jackson.ImmutableModuleRequiredException
+import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
 import kotlin.reflect.KClass
 

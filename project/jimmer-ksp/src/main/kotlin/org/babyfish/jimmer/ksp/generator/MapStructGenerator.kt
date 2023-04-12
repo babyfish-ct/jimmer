@@ -21,12 +21,12 @@ class MapStructGenerator(
 
     private fun TypeSpec.Builder.addMembers() {
         for (prop in type.properties.values) {
-            if (!prop.isKotlinFormula) {
+            if (!prop.isKotlinFormula && prop.baseProp === null) {
                 addFields(prop)
             }
         }
         for (prop in type.properties.values) {
-            if (!prop.isKotlinFormula) {
+            if (!prop.isKotlinFormula && prop.manyToManyViewBaseProp === null) {
                 addSetter(prop)
             }
         }
@@ -34,9 +34,6 @@ class MapStructGenerator(
     }
 
     private fun TypeSpec.Builder.addFields(prop: ImmutableProp) {
-        if (prop.isKotlinFormula || prop.idViewBaseProp !== null) {
-            return
-        }
         if (isMapStructLoadedStateRequired(prop)) {
             addProperty(
                 PropertySpec
@@ -113,7 +110,7 @@ class MapStructGenerator(
                             indent()
                             addStatement("val __that = this@%T", type.draftClassName("MapStruct"))
                             for (prop in type.properties.values) {
-                                if (prop.isKotlinFormula || prop.idViewBaseProp !== null) {
+                                if (prop.isKotlinFormula || prop.baseProp !== null) {
                                     continue
                                 }
                                 if (isMapStructLoadedStateRequired(prop)) {

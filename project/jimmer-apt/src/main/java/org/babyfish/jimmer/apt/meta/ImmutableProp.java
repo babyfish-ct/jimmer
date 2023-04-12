@@ -659,7 +659,7 @@ public class ImmutableProp {
             throw new MetaException(
                     executableElement,
                     "it is decorated by \"@" +
-                            ManyToManyView.class +
+                            ManyToManyView.class.getName() +
                             "\" with `prop` is \"" +
                             propName +
                             "\", but there is no such property in the declaring type"
@@ -669,7 +669,7 @@ public class ImmutableProp {
             throw new MetaException(
                     executableElement,
                     "it is decorated by \"@" +
-                            ManyToManyView.class +
+                            ManyToManyView.class.getName() +
                             "\" whose `prop` is \"" +
                             prop +
                             "\", but that property is not an one-to-many association"
@@ -685,7 +685,7 @@ public class ImmutableProp {
                         throw new MetaException(
                                 executableElement,
                                 "it is decorated by \"@" +
-                                        ManyToManyView.class +
+                                        ManyToManyView.class.getName() +
                                         "\" whose `deeperProp` is not specified, " +
                                         "however, two many-to-one properties pointing to target type are found: \"" +
                                         deeperProp +
@@ -701,7 +701,7 @@ public class ImmutableProp {
                 throw new MetaException(
                         executableElement,
                         "it is decorated by \"@" +
-                                ManyToManyView.class +
+                                ManyToManyView.class.getName() +
                                 "\" whose `deeperProp` is not specified, " +
                                 "however, there is no many-property pointing to " +
                                 "target type in the middle entity type \"" +
@@ -715,7 +715,7 @@ public class ImmutableProp {
                 throw new MetaException(
                         executableElement,
                         "it is decorated by \"@" +
-                                ManyToManyView.class +
+                                ManyToManyView.class.getName() +
                                 "\" whose `deeperProp` is `" +
                                 deeperPropName +
                                 "`, " +
@@ -730,7 +730,7 @@ public class ImmutableProp {
                 throw new MetaException(
                         executableElement,
                         "it is decorated by \"@" +
-                                ManyToManyView.class +
+                                ManyToManyView.class.getName() +
                                 "\" whose `deeperProp` is `" +
                                 deeperPropName +
                                 "`, " +

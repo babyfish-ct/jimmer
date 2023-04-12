@@ -275,10 +275,14 @@ class ImmutableProp(
         )?.get(OneToOne::mappedBy).isNullOrEmpty()
 
     val valueFieldName: String?
-        get() = if (isKotlinFormula || idViewBaseProp !== null) null else "__${name}Value"
+        get() = if (idViewBaseProp === null && manyToManyViewBaseProp === null && !isKotlinFormula) {
+            "__${name}Value"
+        } else {
+            null
+        }
 
     val loadedFieldName: String? =
-        if (idViewBaseProp === null && !isKotlinFormula && (isNullable || isPrimitive)) {
+        if (idViewBaseProp === null && manyToManyViewBaseProp == null && !isKotlinFormula && (isNullable || isPrimitive)) {
             "__${name}Loaded"
         } else {
             null
@@ -304,12 +308,25 @@ class ImmutableProp(
 
     private var _idViewBaseProp: ImmutableProp? = null
 
+    private var _manyToManyViewBaseProp: ImmutableProp? = null
+
+    private var _manyToManyViewBaseDeeperProp: ImmutableProp? = null
+
     private lateinit var _dependencies: Set<ImmutableProp>
 
     private var _isVisibilityControllable: Boolean = false
 
+    val baseProp: ImmutableProp?
+        get() = _idViewBaseProp ?: _manyToManyViewBaseProp
+
     val idViewBaseProp: ImmutableProp?
         get() = _idViewBaseProp
+
+    val manyToManyViewBaseProp: ImmutableProp?
+        get() = _manyToManyViewBaseProp
+
+    val manyToManyViewBaseDeeperProp: ImmutableProp?
+        get() = _manyToManyViewBaseDeeperProp
 
     val dependencies: Set<ImmutableProp>
         get() = _dependencies
@@ -326,6 +343,10 @@ class ImmutableProp(
             }
             2 -> {
                 resolveFormulaDependencies()
+                true
+            }
+            3 -> {
+                resolveManyToManyBaseViewProp()
                 true
             }
             else -> false
@@ -429,6 +450,102 @@ class ImmutableProp(
         baseProp._isVisibilityControllable = true
         _isVisibilityControllable = true
         _idViewBaseProp = baseProp
+    }
+
+    private fun resolveManyToManyBaseViewProp() {
+        val manyToManyView = annotation(ManyToManyView::class) ?: return
+        val propName = manyToManyView[ManyToManyView::prop]!!
+        val prop = declaringType.properties[propName]
+            ?: throw MetaException(
+                propDeclaration,
+                "it is decorated by \"@" +
+                    ManyToManyView::class.qualifiedName +
+                    "\" with `prop` is \"" +
+                    propName +
+                    "\", but there is no such property in the declaring type"
+            )
+        if (prop.annotation(OneToMany::class) == null) {
+            throw MetaException(
+                propDeclaration,
+                "it is decorated by \"@" +
+                    ManyToManyView::class.qualifiedName +
+                    "\" whose `prop` is \"" +
+                    prop +
+                    "\", but that property is not an one-to-many association"
+            )
+        }
+        val middleType = prop.targetType!!
+        val deeperPropName = manyToManyView[ManyToManyView::deeperProp] ?: ""
+        val deeperProp = if (deeperPropName.isEmpty()) {
+            var autoFoundProp: ImmutableProp? = null
+            for (middleProp in middleType.properties.values) {
+                if (middleProp.targetType === targetType &&
+                    middleProp.annotation(ManyToOne::class) !== null) {
+                    if (autoFoundProp !== null) {
+                        throw MetaException(
+                            propDeclaration,
+                            "it is decorated by \"@" +
+                                ManyToManyView::class.qualifiedName +
+                                "\" whose `deeperProp` is not specified, " +
+                                "however, two many-to-one properties pointing to target type are found: \"" +
+                                autoFoundProp +
+                                "\" and \"" +
+                                prop +
+                                "\", please specify its `deeperProp` explicitly"
+                        );
+                    }
+                    autoFoundProp = prop;
+                }
+            }
+            autoFoundProp
+                ?: throw MetaException(
+                    propDeclaration,
+                    "it is decorated by \"@" +
+                        ManyToManyView::class.qualifiedName +
+                        "\" whose `deeperProp` is not specified, " +
+                        "however, there is no many-property pointing to " +
+                        "target type in the middle entity type \"" +
+                        middleType +
+                        "\""
+                )
+        } else {
+            middleType.properties[deeperPropName]
+                ?.also {
+                    if (it.targetType !== targetType || it.annotation(ManyToOne::class) === null) {
+                        throw MetaException(
+                            propDeclaration,
+                            "it is decorated by \"@" +
+                                ManyToManyView::class.qualifiedName +
+                                "\" whose `deeperProp` is `" +
+                                deeperPropName +
+                                "`, " +
+                                "however, there is no many-property \"" +
+                                deeperPropName +
+                                "\" in the middle entity type \"" +
+                                middleType +
+                                "\""
+                        )
+                    }
+                }
+                ?: throw MetaException(
+                    propDeclaration,
+                    "it is decorated by \"@" +
+                        ManyToManyView::class.qualifiedName +
+                        "\" whose `deeperProp` is `" +
+                        deeperPropName +
+                        "`, " +
+                        "however, there is no many-property \"" +
+                        deeperPropName +
+                        "\" in the middle entity type \"" +
+                        middleType +
+                        "\""
+                )
+        }
+        _manyToManyViewBaseProp = prop;
+        _manyToManyViewBaseDeeperProp = deeperProp;
+        _isVisibilityControllable = true;
+        prop._isVisibilityControllable = true;
+        deeperProp._isVisibilityControllable = true;
     }
 
     private fun resolveFormulaDependencies() {

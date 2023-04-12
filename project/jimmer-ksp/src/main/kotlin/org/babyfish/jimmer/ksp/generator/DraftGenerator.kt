@@ -74,8 +74,10 @@ class DraftGenerator(
                 }
                 .apply {
                     for (prop in type.declaredProperties.values) {
-                        addProp(prop)
-                        addFun(prop)
+                        if (prop.manyToManyViewBaseProp === null) {
+                            addProp(prop)
+                            addFun(prop)
+                        }
                     }
                     ProducerGenerator(type, this).generate()
                     MapStructGenerator(type, this).generate()
@@ -93,14 +95,14 @@ class DraftGenerator(
                 )
                 .addModifiers(KModifier.OVERRIDE)
                 .apply {
-                    mutable(!prop.isKotlinFormula)
+                    mutable(!prop.isKotlinFormula && prop.manyToManyViewBaseProp === null)
                 }
                 .build()
         )
     }
 
     private fun TypeSpec.Builder.addFun(prop: ImmutableProp) {
-        if (prop.isAssociation(false) || prop.isList) {
+        if ((prop.isAssociation(false) || prop.isList) && prop.manyToManyViewBaseProp == null) {
             addFunction(
                 FunSpec
                     .builder(prop.name)

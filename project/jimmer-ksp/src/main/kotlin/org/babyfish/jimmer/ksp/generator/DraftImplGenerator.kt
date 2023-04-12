@@ -161,48 +161,38 @@ class DraftImplGenerator(
     }
 
     private fun TypeSpec.Builder.addProp(prop: ImmutableProp) {
+        val mutable = prop.manyToManyViewBaseProp === null && !prop.isKotlinFormula
         addProperty(
             PropertySpec
                 .builder(prop.name, prop.typeName(), KModifier.OVERRIDE)
-                .mutable(!prop.isKotlinFormula)
+                .mutable(mutable)
                 .getter(
                     FunSpec
                         .getterBuilder()
                         .addAnnotation(JSON_IGNORE_CLASS_NAME)
                         .apply {
-                            if (prop.idViewBaseProp !== null) {
-                                if (prop.isList) {
-                                    addStatement(
-                                        "return %N.map {it.%N}",
-                                        prop.idViewBaseProp!!.name,
-                                        prop.idViewBaseProp!!.targetType!!.idProp!!.name
+                            val idViewBaseProp = prop.idViewBaseProp
+                            when {
+                                idViewBaseProp !== null ->
+                                    addCode("return %L.%L", MODIFIED, prop.name)
+                                prop.isList || prop.isScalarList ->
+                                    addCode(
+                                        "return __ctx.toDraftList(%L.%L, %T::class.java, %L)",
+                                        UNMODIFIED,
+                                        prop.name,
+                                        prop.targetTypeName(),
+                                        prop.isAssociation(false)
                                     )
-                                } else {
-                                    addStatement(
-                                        "return %N%L%N",
-                                        prop.idViewBaseProp!!.name,
-                                        if (prop.isNullable) "?." else ".",
-                                        prop.idViewBaseProp!!.targetType!!.idProp!!.name
-                                    )
-                                }
-                            } else if (prop.isList || prop.isScalarList) {
-                                addCode(
-                                    "return __ctx.toDraftList(%L.%L, %T::class.java, %L)",
-                                    UNMODIFIED,
-                                    prop.name,
-                                    prop.targetTypeName(),
-                                    prop.isAssociation(false)
-                                )
-                            } else if (prop.isReference) {
-                                addCode("return __ctx.toDraftObject(%L.%L)", UNMODIFIED, prop.name)
-                            } else {
-                                addCode("return %L.%L", UNMODIFIED, prop.name)
+                                prop.isReference ->
+                                    addCode("return __ctx.toDraftObject(%L.%L)", UNMODIFIED, prop.name)
+                                else ->
+                                    addCode("return %L.%L", UNMODIFIED, prop.name)
                             }
                         }
                         .build()
                 )
                 .apply {
-                    if (!prop.isKotlinFormula) {
+                    if (mutable) {
                         setter(
                             FunSpec
                                 .setterBuilder()
@@ -255,7 +245,7 @@ class DraftImplGenerator(
     }
 
     private fun TypeSpec.Builder.addPropFun(prop: ImmutableProp) {
-        if (!prop.isAssociation(false) && !prop.isList) {
+        if ((!prop.isAssociation(false) && !prop.isList) || prop.manyToManyViewBaseProp != null) {
             return
         }
         addFunction(
@@ -335,8 +325,8 @@ class DraftImplGenerator(
                                 add(" ->")
                                 indent()
                                 when {
-                                    prop.idViewBaseProp !== null ->
-                                        addStatement("__unload(%L)", prop.idViewBaseProp!!.id)
+                                    prop.baseProp !== null ->
+                                        addStatement("__unload(%L)", prop.baseProp!!.id)
                                     prop.isKotlinFormula ->
                                         addStatement("{}")
                                     prop.loadedFieldName !== null ->
@@ -368,19 +358,27 @@ class DraftImplGenerator(
                         .apply {
                             beginControlFlow("when (prop)")
                             for (prop in type.propsOrderById) {
-                                if (prop.isKotlinFormula) {
-                                    continue
-                                }
                                 if (argType == Int::class) {
                                     add(prop.id.toString())
                                 } else {
                                     add("%S", prop.name)
                                 }
-                                add(" -> this.%L = value as %T?", prop.name, prop.typeName(overrideNullable = false))
-                                if (!prop.isNullable) {
-                                    add("\n    ?: throw IllegalArgumentException(%S)", "'${prop.name} cannot be null")
+                                if (prop.isKotlinFormula || prop.manyToManyViewBaseProp != null) {
+                                    add(" -> return //%L is readonly, ignore\n", prop.name)
+                                } else {
+                                    add(
+                                        " -> this.%L = value as %T?",
+                                        prop.name,
+                                        prop.typeName(overrideNullable = false)
+                                    )
+                                    if (!prop.isNullable) {
+                                        add(
+                                            "\n    ?: throw IllegalArgumentException(%S)",
+                                            "'${prop.name} cannot be null"
+                                        )
+                                    }
+                                    add("\n")
                                 }
-                                add("\n")
                             }
                             addElseForNonExistingProp(type, argType)
                             endControlFlow()
@@ -470,10 +468,14 @@ class DraftImplGenerator(
                             beginControlFlow("try")
                             addStatement("val base = __base")
                             addStatement("var __tmpModified = __modified")
-                            if (type.properties.values.any { it.isList || it.isReference }) {
+                            if (type.properties.values.any {
+                                    it.valueFieldName !== null && (it.isAssociation(false) || it.isList)
+                            }) {
                                 beginControlFlow("if (__tmpModified === null)")
                                 for (prop in type.properties.values) {
-                                    if (prop.idViewBaseProp == null && (prop.isList || prop.isReference)) {
+                                    if (prop.valueFieldName !== null &&
+                                        (prop.isAssociation(false) || prop.isList)
+                                    ) {
                                         beginControlFlow("if (__isLoaded(%L))", prop.id)
                                         addStatement("val oldValue = base.%L", prop.name)
                                         addStatement(
@@ -498,24 +500,24 @@ class DraftImplGenerator(
                                 addStatement("__tmpModified = __modified")
                                 nextControlFlow("else")
                                 for (prop in type.properties.values) {
-                                    if (prop.idViewBaseProp !== null) {
-                                        continue
-                                    } else if (prop.isList) {
-                                        addStatement(
-                                            "__tmpModified.%L = %T.of(__tmpModified.%L, __ctx.%L(__tmpModified.%L))",
-                                            prop.valueFieldName,
-                                            NON_SHARED_LIST_CLASS_NAME,
-                                            prop.valueFieldName,
-                                            "resolveList",
-                                            prop.valueFieldName
-                                        )
-                                    } else if (prop.isReference) {
-                                        addStatement(
-                                            "__tmpModified.%L = __ctx.%L(__tmpModified.%L)",
-                                            prop.valueFieldName,
-                                            "resolveObject",
-                                            prop.valueFieldName
-                                        )
+                                    if (prop.valueFieldName !== null) {
+                                        if (prop.isList) {
+                                            addStatement(
+                                                "__tmpModified.%L = %T.of(__tmpModified.%L, __ctx.%L(__tmpModified.%L))",
+                                                prop.valueFieldName,
+                                                NON_SHARED_LIST_CLASS_NAME,
+                                                prop.valueFieldName,
+                                                "resolveList",
+                                                prop.valueFieldName
+                                            )
+                                        } else if (prop.isReference) {
+                                            addStatement(
+                                                "__tmpModified.%L = __ctx.%L(__tmpModified.%L)",
+                                                prop.valueFieldName,
+                                                "resolveObject",
+                                                prop.valueFieldName
+                                            )
+                                        }
                                     }
                                 }
                                 endControlFlow()
