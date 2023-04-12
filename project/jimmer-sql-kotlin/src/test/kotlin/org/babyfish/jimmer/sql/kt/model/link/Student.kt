@@ -17,5 +17,5 @@ interface Student {
     val learningLinks: List<LearningLink>
 
     @ManyToManyView(prop = "learningLinks")
-    val course: List<Course>
+    val courses: List<Course>
 }

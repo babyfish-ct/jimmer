@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.link.*;
 import org.junit.jupiter.api.Test;
 
-public class LinkQueryTest extends AbstractQueryTest {
+public class LinkFetcherTest extends AbstractQueryTest {
 
     @Test
     public void testFetchView() {
@@ -187,7 +187,7 @@ public class LinkQueryTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testFetchRawAndViewWithChild() {
+    public void testFetchViewAndRawWithChild() {
         StudentTable table = StudentTable.$;
         executeAndExpect(
                 getSqlClient()

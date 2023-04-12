@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
@@ -12,8 +13,8 @@ import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.FieldFilterArgs;
+import org.babyfish.jimmer.sql.fetcher.spi.FieldFilterArgsImplementor;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.List;
@@ -38,13 +39,13 @@ class MiddleEntityJoinFieldFilter implements FieldFilter<Table<?>> {
         deeperFilter.apply(new Args(args, deeperPropName));
     }
 
-    private static class Args implements FieldFilterArgs<Table<?>> {
+    private static class Args implements FieldFilterArgsImplementor<Table<?>> {
 
         private final FieldFilterArgs<?> raw;
 
         private final String deeperPropName;
 
-        private Args(FieldFilterArgs<?> raw, String deeperPropName) {
+        Args(FieldFilterArgs<?> raw, String deeperPropName) {
             this.raw = raw;
             this.deeperPropName = deeperPropName;
         }
@@ -96,6 +97,11 @@ class MiddleEntityJoinFieldFilter implements FieldFilter<Table<?>> {
         @Override
         public <K> Collection<K> getKeys() {
             return raw.getKeys();
+        }
+
+        @Override
+        public AbstractMutableQueryImpl query() {
+            return ((FieldFilterArgsImplementor<?>)raw).query();
         }
     }
 }

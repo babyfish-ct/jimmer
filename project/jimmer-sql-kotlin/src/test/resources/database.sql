@@ -1,3 +1,6 @@
+drop table learning_link if exists;
+drop table course if exists;
+drop table student if exists;
 drop table ms_product if exists;
 drop table ms_order_item_product_mapping if exists;
 drop table ms_order_item if exists;
@@ -450,3 +453,54 @@ insert into ms_order_item_product_mapping(order_item_id, product_id) values
     (2, 2), (2, 3),
     (3, 3), (3, 1),
     (4, 1), (4, 2), (4, 3);
+
+
+
+create table student(
+    id bigint not null,
+    name varchar(20) not null
+);
+alter table student
+    add constraint pk_student
+        primary key(id);
+
+create table course(
+    id bigint not null,
+    name varchar(20) not null,
+    academic_credit int not null
+);
+alter table course
+    add constraint pk_course
+        primary key(id);
+
+create table learning_link(
+    id bigint not null,
+    student_id bigint not null,
+    course_id bigint not null,
+    score int null
+);
+alter table learning_link
+    add constraint pk_learning_link
+        primary key(id);
+alter table learning_link
+    add constraint fk_learning_link_student
+        foreign key(student_id)
+            references student(id);
+alter table learning_link
+    add constraint fk_learning_link_course
+        foreign key(course_id)
+            references course(id);
+alter table learning_link
+    add constraint uq_course
+        unique(student_id, course_id);
+
+insert into student(id, name) values(1, 'Oakes');
+insert into student(id, name) values(2, 'Roach');
+insert into course(id, name, academic_credit) values(1, 'Java', 2);
+insert into course(id, name, academic_credit) values(2, 'Kotlin', 2);
+insert into course(id, name, academic_credit) values(3, 'SQL', 2);
+insert into learning_link(id, student_id, course_id, score) values
+    (1, 1, 2, 78),
+    (2, 1, 3, null),
+    (3, 2, 3, 87),
+    (4, 2, 1, null);

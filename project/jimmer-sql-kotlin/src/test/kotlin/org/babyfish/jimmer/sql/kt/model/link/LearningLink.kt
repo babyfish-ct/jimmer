@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.*
 interface LearningLink {
 
     @Id
-    val id: String
+    val id: Long
 
     @ManyToOne
     @OnDissociate(DissociateAction.DELETE)

@@ -2,7 +2,9 @@ package org.babyfish.jimmer.sql.kt.fetcher.impl
 
 import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.query.Order
+import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
@@ -16,11 +18,12 @@ import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
 
 internal class KFilterDslImpl<E: Any>(
     private val javaQuery: AbstractMutableQueryImpl,
-    private val keys: Collection<Any>
+    javaTable: TableImplementor<E>,
+    val keys: Collection<Any>
 ) : KFieldFilterDsl<E> {
 
     override val table: KNonNullTableEx<E> =
-        KNonNullTableExImpl(javaQuery.getTable())
+        KNonNullTableExImpl(javaTable)
 
     override fun where(vararg predicates: KNonNullExpression<Boolean>?) {
         javaQuery.where(*predicates.mapNotNull { it?.toJavaPredicate() }.toTypedArray())

@@ -9,12 +9,12 @@ import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.sql.fetcher.FieldFilterArgs;
+import org.babyfish.jimmer.sql.fetcher.spi.FieldFilterArgsImplementor;
 
 import java.util.*;
 import java.util.function.Supplier;
 
-public class FieldFilterArgsImpl<T extends Table<?>> implements FieldFilterArgs<T> {
+public class FieldFilterArgsImpl<T extends Table<?>> implements FieldFilterArgsImplementor<T> {
 
     private final AbstractMutableQueryImpl query;
 
@@ -130,7 +130,8 @@ public class FieldFilterArgsImpl<T extends Table<?>> implements FieldFilterArgs<
         return query.createAssociationSubQuery(table);
     }
 
-    public AbstractMutableQueryImpl unwrap() {
+    @Override
+    public AbstractMutableQueryImpl query() {
         return query;
     }
 }

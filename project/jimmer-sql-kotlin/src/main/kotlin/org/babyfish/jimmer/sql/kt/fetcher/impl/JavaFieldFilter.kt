@@ -1,9 +1,10 @@
 package org.babyfish.jimmer.sql.kt.fetcher.impl
 
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.fetcher.FieldFilter
 import org.babyfish.jimmer.sql.fetcher.FieldFilterArgs
-import org.babyfish.jimmer.sql.fetcher.impl.FieldFilterArgsImpl
+import org.babyfish.jimmer.sql.fetcher.spi.FieldFilterArgsImplementor
 import org.babyfish.jimmer.sql.kt.fetcher.KFieldFilterDsl
 
 internal class JavaFieldFilter<E: Any>(
@@ -11,9 +12,13 @@ internal class JavaFieldFilter<E: Any>(
 ) : FieldFilter<Table<E>> {
 
     override fun apply(args: FieldFilterArgs<Table<E>>) {
-        val javaQuery = (args as FieldFilterArgsImpl<*>).unwrap()
+        val javaQuery = (args as FieldFilterArgsImplementor<*>).query()
         ktFilter.apply {
-            KFilterDslImpl<E>(javaQuery, args.getKeys()).ktFilter()
+            KFilterDslImpl(
+                javaQuery,
+                args.getTable() as TableImplementor<E>,
+                args.getKeys()
+            ).ktFilter()
         }
     }
 
