@@ -15,6 +15,8 @@ public interface Course {
 
     String name();
 
+    int academicCredit();
+
     @OneToMany(mappedBy = "course")
     List<LearningLink> learningLinks();
 

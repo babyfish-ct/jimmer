@@ -596,7 +596,8 @@ alter table student
 
 create table course(
     id bigint not null,
-    name varchar(20) not null
+    name varchar(20) not null,
+    academic_credit int not null
 );
 alter table course
     add constraint pk_course
@@ -625,9 +626,9 @@ alter table learning_link
 
 insert into student(id, name) values(1, 'Oakes');
 insert into student(id, name) values(2, 'Roach');
-insert into course(id, name) values(1, 'Java');
-insert into course(id, name) values(2, 'Kotlin');
-insert into course(id, name) values(3, 'SQL');
+insert into course(id, name, academic_credit) values(1, 'Java', 2);
+insert into course(id, name, academic_credit) values(2, 'Kotlin', 2);
+insert into course(id, name, academic_credit) values(3, 'SQL', 2);
 insert into learning_link(id, student_id, course_id, score) values
     (1, 1, 2, 78),
     (2, 1, 3, null),

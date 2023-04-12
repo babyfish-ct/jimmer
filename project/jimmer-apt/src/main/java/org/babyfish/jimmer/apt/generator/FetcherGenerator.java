@@ -206,7 +206,7 @@ public class FetcherGenerator {
         boolean recursive = typeUtils.isSubType(
                 prop.getElementType(),
                 type.getTypeElement().asType()
-        );
+        ) && prop.getManyToManyViewBaseProp() == null;
         ClassName fieldConfigClassName;
         if (recursive && prop.isList()) {
             fieldConfigClassName = Constants.RECURSIVE_LIST_FIELD_CONFIG_CLASS_NAME;
@@ -283,7 +283,7 @@ public class FetcherGenerator {
 
     private void addCreatorByBoolean() {
         MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("createChildFetcher")
+                .methodBuilder("createFetcher")
                 .addModifiers(Modifier.PROTECTED)
                 .addParameter(
                         org.babyfish.jimmer.meta.ImmutableProp.class,
@@ -298,7 +298,7 @@ public class FetcherGenerator {
 
     private void addCreatorByFieldConfig() {
         MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("createChildFetcher")
+                .methodBuilder("createFetcher")
                 .addModifiers(Modifier.PROTECTED)
                 .addParameter(
                         org.babyfish.jimmer.meta.ImmutableProp.class,

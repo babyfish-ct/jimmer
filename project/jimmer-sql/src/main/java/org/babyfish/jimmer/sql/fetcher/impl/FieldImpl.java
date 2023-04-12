@@ -55,8 +55,10 @@ class FieldImpl implements Field {
         this.implicit = implicit;
     }
 
-    FieldImpl(FieldImpl base, FetcherImpl<?> childFetcher) {
-        this.childFetcher = childFetcher;
+    FieldImpl(
+            FieldImpl base,
+            FetcherImpl<?> childFetcher
+    ) {
         this.entityType = base.entityType;
         this.prop = base.prop;
         this.filter = base.filter;
@@ -64,8 +66,9 @@ class FieldImpl implements Field {
         this.limit = base.limit;
         this.offset = base.offset;
         this.recursionStrategy = base.recursionStrategy;
-        this.isSimpleField = determineIsSimpleField();
         this.implicit = base.implicit;
+        this.childFetcher = childFetcher;
+        this.isSimpleField = determineIsSimpleField();
     }
 
     @Override

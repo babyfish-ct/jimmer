@@ -12,24 +12,30 @@ import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.FieldFilterArgs;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.List;
 
 class MiddleEntityJoinFieldFilter implements FieldFilter<Table<?>> {
 
-    private final FieldFilter<Table<?>> targetFilter;
+    @NotNull
+    private final FieldFilter<Table<?>> deeperFilter;
 
+    @NotNull
     private final String deeperPropName;
 
-    MiddleEntityJoinFieldFilter(FieldFilter<Table<?>> targetFilter, String deeperPropName) {
-        this.targetFilter = targetFilter;
+    MiddleEntityJoinFieldFilter(
+            @NotNull FieldFilter<Table<?>> targetFilter,
+            @NotNull String deeperPropName) {
+        this.deeperFilter = targetFilter;
         this.deeperPropName = deeperPropName;
     }
 
     @Override
     public void apply(FieldFilterArgs<Table<?>> args) {
-        targetFilter.apply(new Args(args, deeperPropName));
+        deeperFilter.apply(new Args(args, deeperPropName));
     }
 
     private static class Args implements FieldFilterArgs<Table<?>> {
