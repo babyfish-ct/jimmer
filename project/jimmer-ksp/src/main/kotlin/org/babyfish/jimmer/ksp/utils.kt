@@ -91,7 +91,7 @@ operator fun <T> KSAnnotation.get(annoProp: KProperty1<out Annotation, T>): T? =
 
 @Suppress("UNCHECKED_CAST")
 fun KSAnnotation.getClassArgument(annoProp: KProperty1<out Annotation, KClass<*>>): KSClassDeclaration? =
-    arguments.firstOrNull { it.name?.asString() == annoProp.name }?.value as KSClassDeclaration?
+    (arguments.firstOrNull { it.name?.asString() == annoProp.name }?.value as KSType?)?.declaration as KSClassDeclaration?
 
 @Suppress("UNCHECKED_CAST")
 fun <T> KSAnnotation.getListArgument(annoProp: KProperty1<out Annotation, Array<T>>): List<T>? =
