@@ -8,6 +8,8 @@ spring:
 
 jimmer:
   language: kotlin
+  dialect: org.babyfish.jimmer.sql.dialect.H2Dialect
+  database-validation-mode: ERROR
   show-sql: true
 
 demo:

@@ -27,9 +27,11 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.*;
 
+import java.sql.Connection;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public interface JSqlClient extends SubQueryProvider {
 
@@ -145,6 +147,10 @@ public interface JSqlClient extends SubQueryProvider {
     String getMicroServiceName();
 
     MicroServiceExchange getMicroServiceExchange();
+
+    <R> R jdbc(Function<Connection, R> block);
+
+    <R> R jdbc(boolean slave, Function<Connection, R> block);
 
     interface Builder {
 

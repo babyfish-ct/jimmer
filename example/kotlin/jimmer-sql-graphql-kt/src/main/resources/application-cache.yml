@@ -18,3 +18,6 @@ spring:
       auto-offset-reset: latest
     listener:
       ack-mode: MANUAL_IMMEDIATE
+
+jimmer:
+  dialect: org.babyfish.jimmer.sql.dialect.MySqlDialect

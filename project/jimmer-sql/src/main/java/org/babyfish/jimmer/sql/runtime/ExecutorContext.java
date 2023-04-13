@@ -51,10 +51,12 @@ public class ExecutorContext {
         StackTraceElement[] elements = Thread.currentThread().getStackTrace();
         List<StackTraceElement> matchedElements = new ArrayList<>();
         for (StackTraceElement element : elements) {
-            for (String prefix : prefixes) {
-                if (element.getClassName().startsWith(prefix)) {
-                    matchedElements.add(element);
-                    break;
+            if (element.getLineNumber() >= 0) {
+                for (String prefix : prefixes) {
+                    if (element.getClassName().startsWith(prefix)) {
+                        matchedElements.add(element);
+                        break;
+                    }
                 }
             }
         }

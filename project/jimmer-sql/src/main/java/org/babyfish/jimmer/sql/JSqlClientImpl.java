@@ -43,9 +43,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 class JSqlClientImpl implements JSqlClient {
 
@@ -510,6 +512,27 @@ class JSqlClientImpl implements JSqlClient {
         return microServiceExchange;
     }
 
+    @Override
+    public <R> R jdbc(Function<Connection, R> block) {
+        return jdbc(false, block);
+    }
+
+    @Override
+    public <R> R jdbc(boolean slave, Function<Connection, R> block) {
+        ConnectionManager cm;
+        if (slave && slaveConnectionManager != null) {
+            cm = slaveConnectionManager;
+        } else {
+            cm = connectionManager;
+            if (cm == null) {
+                throw new IllegalStateException(
+                        "Cannot call `jdbc` of sql client because the connection manager is not specified"
+                );
+            }
+        }
+        return cm.execute(block);
+    }
+
     public static class BuilderImpl implements JSqlClient.Builder {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(BuilderImpl.class);
@@ -886,30 +909,6 @@ class JSqlClientImpl implements JSqlClient {
             }
             FilterManager filterManager = createFilterManager();
             validateAssociations(filterManager);
-            if (databaseValidationMode != DatabaseValidationMode.NONE) {
-                ConnectionManager cm = connectionManager;
-                if (cm == null) {
-                    throw new IllegalStateException(
-                            "The `connectionManager` of must be configured when `validate` is configured"
-                    );
-                }
-                DatabaseValidationException validationException = cm.execute(con -> {
-                    try {
-                        return DatabaseValidators.validate(entityManager, microServiceName, con);
-                    } catch (SQLException ex) {
-                        throw new ExecutionException(
-                                "Cannot validate the database because of SQL exception",
-                                ex
-                        );
-                    }
-                });
-                if (validationException != null) {
-                    if (databaseValidationMode == DatabaseValidationMode.ERROR) {
-                        throw validationException;
-                    }
-                    LOGGER.warn(validationException.getMessage(), validationException);
-                }
-            }
             createTriggersIfNecessary();
             BinLogParser binLogParser = new BinLogParser();
             BinLog binLog = new BinLog(
@@ -951,6 +950,7 @@ class JSqlClientImpl implements JSqlClient {
             filterManager.initialize(sqlClient);
             binLogParser.initialize(sqlClient, binLogObjectMapper);
             transientResolverManager.initialize(sqlClient);
+            validateDatabase();
             return sqlClient;
         }
 
@@ -1015,6 +1015,33 @@ class JSqlClientImpl implements JSqlClient {
                             }
                         }
                     }
+                }
+            }
+        }
+
+        private void validateDatabase() {
+            if (databaseValidationMode != DatabaseValidationMode.NONE) {
+                ConnectionManager cm = connectionManager;
+                if (cm == null) {
+                    throw new IllegalStateException(
+                            "The `connectionManager` of must be configured when `validate` is configured"
+                    );
+                }
+                DatabaseValidationException validationException = cm.execute(con -> {
+                    try {
+                        return DatabaseValidators.validate(entityManager, microServiceName, con);
+                    } catch (SQLException ex) {
+                        throw new ExecutionException(
+                                "Cannot validate the database because of SQL exception",
+                                ex
+                        );
+                    }
+                });
+                if (validationException != null) {
+                    if (databaseValidationMode == DatabaseValidationMode.ERROR) {
+                        throw validationException;
+                    }
+                    LOGGER.warn(validationException.getMessage(), validationException);
                 }
             }
         }

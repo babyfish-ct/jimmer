@@ -21,8 +21,10 @@ spring:
 #
 # The annotation `@org.babyfish.jimmer.client.FetchBy` is used to make the
 # generated TypeScript code contain the DTO model hidden by jimmer backend
+
 jimmer:
   language: kotlin
+  dialect: org.babyfish.jimmer.sql.dialect.H2Dialect
   database-validation-mode: ERROR
   show-sql: true
   executor-context-prefixes:

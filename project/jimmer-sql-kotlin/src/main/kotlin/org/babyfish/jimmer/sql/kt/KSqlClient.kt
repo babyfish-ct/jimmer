@@ -89,6 +89,8 @@ interface KSqlClient {
     @NewChain
     fun disableSlaveConnectionManager(): KSqlClient
 
+    fun <R> jdbc(slave: Boolean = false, block: (Connection) -> R): R
+
     val entityManager: EntityManager
 
     val binLog: BinLog

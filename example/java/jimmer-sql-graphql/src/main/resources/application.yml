@@ -7,6 +7,8 @@ spring:
     url: jdbc:h2:mem:jimmer-sql-graphql;database_to_upper=true
 
 jimmer:
+  dialect: org.babyfish.jimmer.sql.dialect.H2Dialect
+  database-validation-mode: ERROR
   show-sql: true
   executor-context-prefixes:
     - org.babyfish.jimmer.sql.example.graphql.business

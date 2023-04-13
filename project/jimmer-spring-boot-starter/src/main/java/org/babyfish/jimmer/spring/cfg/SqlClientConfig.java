@@ -26,6 +26,7 @@ import org.babyfish.jimmer.sql.kt.filter.impl.JavaFiltersKt;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -211,7 +212,14 @@ public class SqlClientConfig {
         builder.addFilters(filters);
 
         for (JimmerCustomizer customizer : customizers) {
-            customizer.customize(builder);
+            try {
+                customizer.customize(builder);
+            } catch (Exception ex) {
+                throw new BeanCreationException(
+                        "Cannot create sql client because error raised by JimmerCustomizer",
+                        ex
+                );
+            }
         }
 
         builder.setMicroServiceName(properties.getMicroServiceName());
@@ -269,7 +277,14 @@ public class SqlClientConfig {
         }
 
         for (JimmerInitializer initializer : initializers) {
-            initializer.initialize(sqlClient);
+            try {
+                initializer.initialize(sqlClient);
+            } catch (Exception ex) {
+                throw new BeanCreationException(
+                        "Cannot initialize the sql client because error raised by JimmerInitializer",
+                        ex
+                );
+            }
         }
     }
 }
