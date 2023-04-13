@@ -68,10 +68,10 @@ alter table book_store
 ;
 
 create table book(
-    id uuid not null,
     name varchar(50) not null,
     edition integer not null,
     price numeric(10, 2) not null,
+    id uuid not null,
     store_id uuid
 );
 alter table book
@@ -89,10 +89,10 @@ alter table book
 ;
 
 create table author(
-    id uuid not null,
     first_name varchar(25) not null,
     last_name varchar(25) not null,
-    gender varchar(6) not null
+    gender varchar(6) not null,
+    id uuid not null
 );
 alter table author
     add constraint pk_author

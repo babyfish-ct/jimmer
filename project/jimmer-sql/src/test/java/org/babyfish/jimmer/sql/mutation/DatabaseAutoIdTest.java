@@ -100,9 +100,6 @@ public class DatabaseAutoIdTest extends AbstractMutationTest {
                         it.sql("insert into TREE_NODE(NAME) values(?)");
                         it.variables("Computer");
                     });
-//                    ctx.statement(it -> {
-//                        it.sql("select last_insert_id()");
-//                    });
                     ctx.entity(it -> {
                         it.modified("{\"id\":100,\"name\":\"Computer\"}");
                     });

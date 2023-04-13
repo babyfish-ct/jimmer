@@ -19,14 +19,14 @@ import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.dialect.OracleDialect;
+import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.*;
 
 class Saver {
@@ -537,8 +537,21 @@ class Saver {
         }
         builder.leaveTuple();
 
-        Tuple2<String, List<Object>> sqlResult = builder.build();
         boolean generateKeys = id == null;
+        if (generateKeys) {
+            Dialect dialect = data.getSqlClient().getDialect();
+            if (dialect instanceof PostgresDialect) {
+                builder.sql(" returning ").sql(type.getIdProp().<SingleColumn>getStorage().getName());
+            } else if (dialect instanceof OracleDialect) {
+                throw new ExecutionException(
+                        "\"" +
+                                IdentityIdGenerator.class.getName() +
+                                "\" is not supported by Oracle"
+                );
+            }
+        }
+
+        Tuple2<String, List<Object>> sqlResult = builder.build();
         Object insertedResult = data.getSqlClient().getExecutor().execute(
                 con,
                 sqlResult.get_1(),
