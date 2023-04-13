@@ -2,11 +2,9 @@ package org.babyfish.jimmer.apt.generator;
 
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.GeneratorException;
-import org.babyfish.jimmer.apt.TypeUtils;
+import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
-import org.babyfish.jimmer.sql.Entity;
-import org.babyfish.jimmer.sql.JoinType;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
@@ -18,7 +16,7 @@ import static org.babyfish.jimmer.apt.generator.Constants.PROP_EXPRESSION_CLASS_
 
 public class PropsGenerator {
 
-    private final TypeUtils typeUtils;
+    private final Context context;
 
     private final ImmutableType type;
 
@@ -27,11 +25,11 @@ public class PropsGenerator {
     private TypeSpec.Builder typeBuilder;
 
     public PropsGenerator(
-            TypeUtils typeUtils,
+            Context context,
             ImmutableType type,
             Filer filer
     ) {
-        this.typeUtils = typeUtils;
+        this.context = context;
         this.type = type;
         this.filer = filer;
     }
@@ -147,7 +145,7 @@ public class PropsGenerator {
             boolean withJoinType
     ) {
         MethodSpec method = PropsGenerator.property(
-                typeUtils,
+                context,
                 false,
                 prop,
                 withJoinType,
@@ -159,17 +157,17 @@ public class PropsGenerator {
     }
 
     static MethodSpec property(
-            TypeUtils typeUtils,
+            Context context,
             boolean isTableEx,
             ImmutableProp prop,
             boolean withJoinType,
             boolean withImplementation
     ) {
-        return property(typeUtils, isTableEx, prop, withJoinType, withImplementation, false);
+        return property(context, isTableEx, prop, withJoinType, withImplementation, false);
     }
 
     static MethodSpec property(
-            TypeUtils typeUtils,
+            Context context,
             boolean isTableEx,
             ImmutableProp prop,
             boolean withJoinType,
@@ -179,7 +177,7 @@ public class PropsGenerator {
         if (withJoinType && !prop.isAssociation(true)) {
             return null;
         }
-        TypeName returnType = returnTypeName(typeUtils, isTableEx, prop);
+        TypeName returnType = returnTypeName(context, isTableEx, prop);
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)
@@ -220,22 +218,22 @@ public class PropsGenerator {
     }
 
     static TypeName returnTypeName(
-            TypeUtils typeUtils,
+            Context context,
             boolean isTableEx,
             ImmutableProp prop
     ) {
         TypeName returnType;
         if (prop.isAssociation(true)) {
             if (prop.isRemote()) {
-                returnType = typeUtils
+                returnType = context
                         .getImmutableType(prop.getElementType())
                         .getRemoteTableClassName();
             } else if (isTableEx) {
-                returnType = typeUtils
+                returnType = context
                         .getImmutableType(prop.getElementType())
                         .getTableExClassName();
             } else {
-                returnType = typeUtils
+                returnType = context
                         .getImmutableType(prop.getElementType())
                         .getTableClassName();
             }
@@ -251,14 +249,14 @@ public class PropsGenerator {
                         Constants.PROP_NUMERIC_EXPRESSION_CLASS_NAME,
                         prop.getTypeName().box()
                 );
-            } else if (typeUtils.isString(prop.getReturnType())) {
+            } else if (context.isString(prop.getReturnType())) {
                 returnType = Constants.PROP_STRING_EXPRESSION_CLASS_NAME;
-            } else if (typeUtils.isNumber(prop.getReturnType())) {
+            } else if (context.isNumber(prop.getReturnType())) {
                 returnType = ParameterizedTypeName.get(
                         Constants.PROP_NUMERIC_EXPRESSION_CLASS_NAME,
                         prop.getTypeName().box()
                 );
-            } else if (typeUtils.isComparable(prop.getReturnType())) {
+            } else if (context.isComparable(prop.getReturnType())) {
                 returnType = ParameterizedTypeName.get(
                         Constants.PROP_COMPARABLE_EXPRESSION_CLASS_NAME,
                         prop.getTypeName().box()

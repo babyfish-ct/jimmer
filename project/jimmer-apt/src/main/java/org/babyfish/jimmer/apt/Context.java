@@ -16,9 +16,8 @@ import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
-public class TypeUtils {
+public class Context {
 
     @SuppressWarnings("unchecked")
     private final static Class<? extends Annotation>[] SQL_TYPE_ANNOTATION_TYPES =
@@ -38,7 +37,9 @@ public class TypeUtils {
 
     private final Map<TypeElement, ImmutableType> immutableTypeMap = new HashMap<>();
 
-    TypeUtils(Elements elements, Types types) {
+    private final boolean keepIsPrefix;
+
+    Context(Elements elements, Types types, boolean keepIsPrefix) {
         this.elements = elements;
         this.types = types;
         collectionType = types.erasure(
@@ -58,6 +59,7 @@ public class TypeUtils {
                         .getTypeElement(Comparable.class.getName()),
                         types.getWildcardType(null, null)
                 );
+        this.keepIsPrefix = keepIsPrefix;
     }
 
     public Class<? extends Annotation> getImmutableAnnotationType(TypeElement typeElement) {
@@ -163,5 +165,9 @@ public class TypeUtils {
 
     public Types getTypes() {
         return types;
+    }
+
+    public boolean keepIsPrefix() {
+        return keepIsPrefix;
     }
 }

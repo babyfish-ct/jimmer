@@ -2,8 +2,7 @@ package org.babyfish.jimmer.apt.meta;
 
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.Formula;
-import org.babyfish.jimmer.apt.TypeUtils;
-import org.babyfish.jimmer.meta.ModelException;
+import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.sql.*;
 
 import javax.lang.model.element.*;
@@ -82,11 +81,11 @@ public class ImmutableType {
     private final String microServiceName;
 
     public ImmutableType(
-            TypeUtils typeUtils,
+            Context context,
             TypeElement typeElement
     ) {
         this.typeElement = typeElement;
-        Class<?> annotationType = typeUtils.getImmutableAnnotationType(typeElement);
+        Class<?> annotationType = context.getImmutableAnnotationType(typeElement);
         isEntity = annotationType == Entity.class;
         acrossMicroServices = annotationType == MappedSuperclass.class &&
                 typeElement.getAnnotation(MappedSuperclass.class).acrossMicroServices();
@@ -113,7 +112,7 @@ public class ImmutableType {
 
         TypeMirror superTypeMirror = null;
         for (TypeMirror itf : typeElement.getInterfaces()) {
-            if (typeUtils.isImmutable(itf)) {
+            if (context.isImmutable(itf)) {
                 if (superTypeMirror != null) {
                     throw new MetaException(
                             typeElement,
@@ -125,7 +124,7 @@ public class ImmutableType {
         }
 
         if (superTypeMirror != null) {
-            superType = typeUtils.getImmutableType(superTypeMirror);
+            superType = context.getImmutableType(superTypeMirror);
         } else {
             superType = null;
         }
@@ -193,7 +192,7 @@ public class ImmutableType {
         }
         for (ExecutableElement executableElement : executableElements) {
             if (!executableElement.isDefault() && executableElement.getAnnotation(Id.class) != null) {
-                ImmutableProp prop = new ImmutableProp(typeUtils, this, executableElement, ++propIdSequence);
+                ImmutableProp prop = new ImmutableProp(context, this, executableElement, ++propIdSequence);
                 map.put(prop.getName(), prop);
             }
         }
@@ -219,7 +218,7 @@ public class ImmutableType {
                                         "java expression so that the `dependencies` of that annotation must be specified"
                         );
                     }
-                    ImmutableProp prop = new ImmutableProp(typeUtils, this, executableElement, ++propIdSequence);
+                    ImmutableProp prop = new ImmutableProp(context, this, executableElement, ++propIdSequence);
                     map.put(prop.getName(), prop);
                 }
             } else if (executableElement.getAnnotation(Id.class) == null) {
@@ -244,7 +243,7 @@ public class ImmutableType {
                         );
                     }
                 }
-                ImmutableProp prop = new ImmutableProp(typeUtils, this, executableElement, ++propIdSequence);
+                ImmutableProp prop = new ImmutableProp(context, this, executableElement, ++propIdSequence);
                 map.put(prop.getName(), prop);
             }
         }
@@ -602,10 +601,10 @@ public class ImmutableType {
         return microServiceName;
     }
 
-    public boolean resolve(TypeUtils typeUtils, int step) {
+    public boolean resolve(Context context, int step) {
         boolean hasNext = false;
         for (ImmutableProp prop : declaredProps.values()) {
-            hasNext |= prop.resolve(typeUtils, step);
+            hasNext |= prop.resolve(context, step);
         }
         return hasNext;
     }

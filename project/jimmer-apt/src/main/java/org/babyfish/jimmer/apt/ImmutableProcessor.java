@@ -13,7 +13,6 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
-import java.io.File;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -27,7 +26,7 @@ import java.util.stream.Collectors;
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class ImmutableProcessor extends AbstractProcessor {
 
-    private TypeUtils typeUtils;
+    private Context context;
 
     private Filer filer;
 
@@ -51,9 +50,10 @@ public class ImmutableProcessor extends AbstractProcessor {
         if (excludes != null && !excludes.isEmpty()) {
             this.excludes = excludes.trim().split("\\s*,\\s*");
         }
-        typeUtils = new TypeUtils(
+        context = new Context(
                 processingEnv.getElementUtils(),
-                processingEnv.getTypeUtils()
+                processingEnv.getTypeUtils(),
+                "true".equals(processingEnv.getOptions().get("jimmer.keepIsPrefix"))
         );
         filer = processingEnv.getFiler();
     }
@@ -96,14 +96,14 @@ public class ImmutableProcessor extends AbstractProcessor {
         for (Element element : roundEnv.getRootElements()) {
             if (element instanceof TypeElement) {
                 TypeElement typeElement = (TypeElement) element;
-                if (typeUtils.isImmutable(typeElement) && include(typeElement)) {
+                if (context.isImmutable(typeElement) && include(typeElement)) {
                     if (typeElement.getKind() != ElementKind.INTERFACE) {
                         throw new MetaException(
                                 typeElement,
                                 "immutable type must be interface"
                         );
                     }
-                    ImmutableType immutableType = typeUtils.getImmutableType(typeElement);
+                    ImmutableType immutableType = context.getImmutableType(typeElement);
                     map.put(typeElement, immutableType);
                 }
             }
@@ -112,7 +112,7 @@ public class ImmutableProcessor extends AbstractProcessor {
         while (true) {
             boolean hasNext = false;
             for (ImmutableType type : map.values()) {
-                hasNext |= type.resolve(typeUtils, step);
+                hasNext |= type.resolve(context, step);
             }
             if (!hasNext) {
                 break;
@@ -168,7 +168,7 @@ public class ImmutableProcessor extends AbstractProcessor {
                     filer
             ).generate();
             new PropsGenerator(
-                    typeUtils,
+                    context,
                     immutableType,
                     filer
             ).generate();
@@ -176,25 +176,25 @@ public class ImmutableProcessor extends AbstractProcessor {
             if (immutableType.isEntity()) {
                 messager.printMessage(Diagnostic.Kind.NOTE, "Entity: " + immutableType.getQualifiedName());
                 new TableGenerator(
-                        typeUtils,
+                        context,
                         immutableType,
                         false,
                         filer
                 ).generate();
                 new TableGenerator(
-                        typeUtils,
+                        context,
                         immutableType,
                         true,
                         filer
                 ).generate();
                 new FetcherGenerator(
-                        typeUtils,
+                        context,
                         immutableType,
                         filer
                 ).generate();
             } else if (immutableType.isEmbeddable()) {
                 new PropExpressionGenerator(
-                        typeUtils,
+                        context,
                         immutableType,
                         filer
                 ).generate();

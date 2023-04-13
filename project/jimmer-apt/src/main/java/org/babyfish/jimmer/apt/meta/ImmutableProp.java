@@ -4,8 +4,7 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Formula;
-import org.babyfish.jimmer.Immutable;
-import org.babyfish.jimmer.apt.TypeUtils;
+import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.sql.*;
 
@@ -85,7 +84,7 @@ public class ImmutableProp {
     private boolean isVisibilityControllable;
 
     public ImmutableProp(
-            TypeUtils typeUtils,
+            Context context,
             ImmutableType declaringType,
             ExecutableElement executableElement,
             int id
@@ -102,7 +101,8 @@ public class ImmutableProp {
             throw new MetaException(executableElement, "it cannot have paremeter(s)");
         }
 
-        if (returnType.getKind() == TypeKind.BOOLEAN &&
+        if (!context.keepIsPrefix() &&
+                returnType.getKind() == TypeKind.BOOLEAN &&
                 getterName.startsWith("is") &&
                 getterName.length() > 2 &&
                 Character.isUpperCase(getterName.charAt(2))) {
@@ -137,8 +137,8 @@ public class ImmutableProp {
         loadedStateName = "__" + name + "Loaded";
         visibleName = "__" + name + "Visible";
 
-        if (typeUtils.isCollection(returnType)) {
-            if (!typeUtils.isListStrictly(returnType)) {
+        if (context.isCollection(returnType)) {
+            if (!context.isListStrictly(returnType)) {
                 throw new MetaException(
                         executableElement,
                         "the collection property must return 'java.util.List'"
@@ -158,7 +158,7 @@ public class ImmutableProp {
             elementType = returnType;
         }
 
-        if (typeUtils.isMappedSuperclass(elementType)) {
+        if (context.isMappedSuperclass(elementType)) {
             throw new MetaException(
                     executableElement,
                     "the target type \"" +
@@ -201,8 +201,8 @@ public class ImmutableProp {
         Formula formula = executableElement.getAnnotation(Formula.class);
         isJavaFormula = formula != null && formula.sql().isEmpty();
 
-        isAssociation = typeUtils.isImmutable(elementType);
-        if (declaringType.isAcrossMicroServices() && isAssociation && typeUtils.isEntity(elementType) && !isTransient) {
+        isAssociation = context.isImmutable(elementType);
+        if (declaringType.isAcrossMicroServices() && isAssociation && context.isEntity(elementType) && !isTransient) {
             throw new MetaException(
                     executableElement,
                     "association property is not allowed here " +
@@ -211,8 +211,8 @@ public class ImmutableProp {
                             "\" with the argument `acrossMicroServices`"
             );
         }
-        isEntityAssociation = typeUtils.isEntity(elementType);
-        if (isList && typeUtils.isEmbeddable(elementType)) {
+        isEntityAssociation = context.isEntity(elementType);
+        if (isList && context.isEmbeddable(elementType)) {
             throw new MetaException(
                     executableElement,
                     "the target type \"" +
@@ -234,10 +234,10 @@ public class ImmutableProp {
         PropDescriptor.Builder builder = PropDescriptor.newBuilder(
                 false,
                 declaringType.getTypeElement().getQualifiedName().toString(),
-                typeUtils.getImmutableAnnotationType(declaringType.getTypeElement()),
+                context.getImmutableAnnotationType(declaringType.getTypeElement()),
                 this.toString(),
                 ClassName.get(elementType).toString(),
-                typeUtils.getImmutableAnnotationType(elementType),
+                context.getImmutableAnnotationType(elementType),
                 isList,
                 typeName.isPrimitive() || typeName.isBoxedPrimitive() ?
                     typeName.isBoxedPrimitive() :
@@ -481,10 +481,10 @@ public class ImmutableProp {
         return targetType != null && !declaringType.getMicroServiceName().equals(targetType.getMicroServiceName());
     }
 
-    boolean resolve(TypeUtils typeUtils, int step) {
+    boolean resolve(Context context, int step) {
         switch (step) {
             case 0:
-                resolveTargetType(typeUtils);
+                resolveTargetType(context);
                 return true;
             case 1:
                 resolveFormulaDependencies();
@@ -499,9 +499,9 @@ public class ImmutableProp {
         }
     }
 
-    private void resolveTargetType(TypeUtils typeUtils) {
+    private void resolveTargetType(Context context) {
         if (isAssociation) {
-            targetType = typeUtils.getImmutableType(elementType);
+            targetType = context.getImmutableType(elementType);
             if (
                     (targetType.isEntity() || targetType.isMappedSuperClass()) &&
                     isRemote() &&

@@ -5,7 +5,7 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
 import org.babyfish.jimmer.apt.GeneratorException;
-import org.babyfish.jimmer.apt.TypeUtils;
+import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 
@@ -15,7 +15,7 @@ import java.io.IOException;
 
 public class PropExpressionGenerator {
 
-    private final TypeUtils typeUtils;
+    private final Context context;
 
     private final ImmutableType type;
 
@@ -23,8 +23,8 @@ public class PropExpressionGenerator {
 
     private TypeSpec.Builder typeBuilder;
 
-    public PropExpressionGenerator(TypeUtils typeUtils, ImmutableType type, Filer filer) {
-        this.typeUtils = typeUtils;
+    public PropExpressionGenerator(Context context, ImmutableType type, Filer filer) {
+        this.context = context;
         this.type = type;
         this.filer = filer;
     }
@@ -89,7 +89,7 @@ public class PropExpressionGenerator {
         for (ImmutableProp prop : type.getProps().values()) {
             typeBuilder.addMethod(
                     PropsGenerator.property(
-                            typeUtils,
+                            context,
                             false,
                             prop,
                             false,

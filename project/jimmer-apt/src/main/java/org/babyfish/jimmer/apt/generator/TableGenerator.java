@@ -2,7 +2,7 @@ package org.babyfish.jimmer.apt.generator;
 
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.GeneratorException;
-import org.babyfish.jimmer.apt.TypeUtils;
+import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 
@@ -14,7 +14,7 @@ import static org.babyfish.jimmer.apt.generator.Constants.*;
 
 public class TableGenerator {
 
-    private final TypeUtils typeUtils;
+    private final Context context;
 
     private final ImmutableType type;
     
@@ -25,12 +25,12 @@ public class TableGenerator {
     private TypeSpec.Builder typeBuilder;
 
     public TableGenerator(
-            TypeUtils typeUtils,
+            Context context,
             ImmutableType type,
             boolean isTableEx,
             Filer filer
     ) {
-        this.typeUtils = typeUtils;
+        this.context = context;
         this.type = type;
         this.isTableEx = isTableEx;
         this.filer = filer;
@@ -182,7 +182,7 @@ public class TableGenerator {
             boolean withJoinType
     ) {
         MethodSpec method = PropsGenerator.property(
-                typeUtils,
+                context,
                 isTableEx,
                 prop,
                 withJoinType,
@@ -344,7 +344,7 @@ public class TableGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(type.getIdProp().getName())
                 .addModifiers(Modifier.PUBLIC)
-                .returns(PropsGenerator.returnTypeName(typeUtils, false, type.getIdProp()))
+                .returns(PropsGenerator.returnTypeName(context, false, type.getIdProp()))
                 .addStatement("return get($S)", type.getIdProp().getName());
         typeBuilder.addMethod(builder.build());
     }
