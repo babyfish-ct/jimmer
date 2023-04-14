@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.example.save.common
 
 import org.babyfish.jimmer.sql.event.TriggerType
-import org.babyfish.jimmer.sql.kt.KSqlClientDsl
+import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import kotlin.math.min

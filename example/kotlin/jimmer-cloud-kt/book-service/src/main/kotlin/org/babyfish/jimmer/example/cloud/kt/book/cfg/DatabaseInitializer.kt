@@ -1,15 +1,15 @@
 package org.babyfish.jimmer.example.cloud.kt.book.cfg
 
-import org.babyfish.jimmer.spring.cfg.JimmerCustomizer
-import org.babyfish.jimmer.sql.JSqlClient
+import org.babyfish.jimmer.sql.kt.KSqlClient
+import org.babyfish.jimmer.sql.kt.cfg.KInitializer
 import org.springframework.stereotype.Component
 import java.io.InputStreamReader
 import javax.sql.DataSource
 
 @Component
-class DatabaseInitializer(private val dataSource: DataSource) : JimmerCustomizer {
+class DatabaseInitializer(private val dataSource: DataSource) : KInitializer {
 
-    override fun customize(builder: JSqlClient.Builder) {
+    override fun initialize(dsl: KSqlClient) {
         dataSource.connection.use { con ->
             val inputStream = JimmerConfig::class.java
                 .classLoader

@@ -12,7 +12,7 @@ import javax.sql.DataSource
  * Initialize H2 in-memory database if the application is started by default profile.
  */
 @Component
-class H2Customizer(
+class H2Initializer(
     private val dataSource: DataSource,
     @Value("\${spring.datasource.url}") private val url: String
 ) : KInitializer {

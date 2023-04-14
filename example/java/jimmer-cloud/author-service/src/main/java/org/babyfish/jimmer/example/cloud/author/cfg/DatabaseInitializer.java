@@ -1,19 +1,17 @@
 package org.babyfish.jimmer.example.cloud.author.cfg;
 
-import org.babyfish.jimmer.spring.cfg.JimmerCustomizer;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.runtime.Initializer;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.sql.Connection;
-import java.sql.SQLException;
 
 @Component
-public class DatabaseInitializer implements JimmerCustomizer {
+public class DatabaseInitializer implements Initializer {
 
     private final DataSource dataSource;
 
@@ -22,7 +20,7 @@ public class DatabaseInitializer implements JimmerCustomizer {
     }
 
     @Override
-    public void customize(JSqlClient.Builder builder) {
+    public void initialize(JSqlClient sqlClient) throws Exception {
         try (Connection con = dataSource.getConnection()) {
             InputStream inputStream = JimmerConfig.class
                     .getClassLoader()
@@ -42,8 +40,6 @@ public class DatabaseInitializer implements JimmerCustomizer {
                 }
                 con.createStatement().execute(sqlBuilder.toString());
             }
-        } catch (IOException | SQLException ex) {
-            throw new RuntimeException(ex);
         }
     }
 }

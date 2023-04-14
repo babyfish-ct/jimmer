@@ -95,7 +95,7 @@ class ManyToManyTest : AbstractMutationTest() {
             100L, "Ben", "Brumm", "M"
         )
 
-        val ex = Assertions.assertThrows(ExecutionException::class.java) {
+        val ex = Assertions.assertThrows(SaveException::class.java) {
             sql.entities.save(
                 new(Book::class).by {
                     name = "SQL in Action"

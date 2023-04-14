@@ -3,7 +3,7 @@ package org.babyfish.jimmer.example.save.common
 import org.babyfish.jimmer.example.save.model.ENTITY_MANAGER
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.KSqlClient
-import org.babyfish.jimmer.sql.kt.KSqlClientDsl
+import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.newKSqlClient
 import org.h2.Driver
 import org.junit.jupiter.api.AfterEach

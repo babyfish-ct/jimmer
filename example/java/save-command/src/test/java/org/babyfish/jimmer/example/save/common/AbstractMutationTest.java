@@ -132,6 +132,7 @@ public abstract class AbstractMutationTest {
                 String sql,
                 List<Object> variables,
                 ExecutionPurpose purpose,
+                ExecutorContext ctx,
                 StatementFactory statementFactory,
                 SqlFunction<PreparedStatement, R> block
         ) {
@@ -146,6 +147,7 @@ public abstract class AbstractMutationTest {
                     sql,
                     variables,
                     purpose,
+                    ctx,
                     statementFactory,
                     block
             );

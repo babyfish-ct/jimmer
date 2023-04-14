@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.example.graphql.cfg;
 
-import org.babyfish.jimmer.spring.cfg.JimmerCustomizer;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.runtime.Initializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -15,14 +15,9 @@ import java.sql.SQLException;
 
 /*
  * Initialize H2 in-memory database if the application is started by default profile.
- *
- * This class must implement `JimmerCustomizer`(before the sql client is created),
- * not JimmerInitializer(after the sql client is created),
- * because `jimmer.database-validation-mode` in `application.yml` validates database
- * before the sql client is created.
  */
 @Component
-public class H2Initializer implements JimmerCustomizer {
+public class H2Initializer implements Initializer {
 
     private final DataSource dataSource;
 
@@ -36,7 +31,7 @@ public class H2Initializer implements JimmerCustomizer {
     }
 
     @Override
-    public void customize(JSqlClient.Builder builder) {
+    public void initialize(JSqlClient sqlClient) throws Exception {
         if (url.startsWith("jdbc:h2:")) {
             initH2();
         }
