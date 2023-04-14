@@ -512,27 +512,6 @@ class JSqlClientImpl implements JSqlClient {
         return microServiceExchange;
     }
 
-    @Override
-    public <R> R jdbc(Function<Connection, R> block) {
-        return jdbc(false, block);
-    }
-
-    @Override
-    public <R> R jdbc(boolean slave, Function<Connection, R> block) {
-        ConnectionManager cm;
-        if (slave && slaveConnectionManager != null) {
-            cm = slaveConnectionManager;
-        } else {
-            cm = connectionManager;
-            if (cm == null) {
-                throw new IllegalStateException(
-                        "Cannot call `jdbc` of sql client because the connection manager is not specified"
-                );
-            }
-        }
-        return cm.execute(block);
-    }
-
     public static class BuilderImpl implements JSqlClient.Builder {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(BuilderImpl.class);

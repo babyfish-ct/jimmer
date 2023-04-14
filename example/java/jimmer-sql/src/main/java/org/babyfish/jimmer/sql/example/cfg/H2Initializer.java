@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.example.cfg;
 
-import org.babyfish.jimmer.spring.cfg.JimmerInitializer;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.runtime.Initializer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -16,7 +16,7 @@ import java.sql.Connection;
  * Initialize H2 in-memory database if the application is started by default profile.
  */
 @Component
-public class H2Initializer implements JimmerInitializer {
+public class H2Initializer implements Initializer {
 
     private final DataSource dataSource;
 

@@ -142,9 +142,6 @@ internal class KSqlClientImpl(
             }
         }
 
-    override fun <R> jdbc(slave: Boolean, block: (Connection) -> R): R =
-        javaClient.jdbc(slave, block)
-
     override val entityManager: EntityManager
         get() = sqlClient.entityManager
 

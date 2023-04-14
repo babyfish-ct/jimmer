@@ -148,10 +148,6 @@ public interface JSqlClient extends SubQueryProvider {
 
     MicroServiceExchange getMicroServiceExchange();
 
-    <R> R jdbc(Function<Connection, R> block);
-
-    <R> R jdbc(boolean slave, Function<Connection, R> block);
-
     interface Builder {
 
         int DEFAULT_BATCH_SIZE = 128;
