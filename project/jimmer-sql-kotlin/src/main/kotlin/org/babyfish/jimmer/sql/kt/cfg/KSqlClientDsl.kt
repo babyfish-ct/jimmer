@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.kt
+package org.babyfish.jimmer.sql.kt.cfg
 
 import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.kt.toImmutableProp
@@ -12,6 +12,9 @@ import org.babyfish.jimmer.sql.cache.CacheConfig
 import org.babyfish.jimmer.sql.cache.CacheFactory
 import org.babyfish.jimmer.sql.dialect.Dialect
 import org.babyfish.jimmer.sql.event.TriggerType
+import org.babyfish.jimmer.sql.kt.KSqlClient
+import org.babyfish.jimmer.sql.kt.cfg.impl.JavaCustomizer
+import org.babyfish.jimmer.sql.kt.cfg.impl.JavaInitializer
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.filter.impl.toJavaFilter
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
@@ -135,6 +138,22 @@ class KSqlClientDsl internal constructor(
 
     fun addDraftInterceptors(interceptor: List<DraftInterceptor<*>>) {
         javaBuilder.addDraftInterceptors(interceptor)
+    }
+
+    fun addCustomers(vararg customers: KCustomizer) {
+        javaBuilder.addCustomizers(customers.map { JavaCustomizer(it) })
+    }
+
+    fun addCustomers(customers: Collection<KCustomizer>) {
+        javaBuilder.addCustomizers(customers.map { JavaCustomizer(it) })
+    }
+
+    fun addInitializers(vararg initializers: KInitializer) {
+        javaBuilder.addInitializers(initializers.map { JavaInitializer(it) })
+    }
+
+    fun addInitializers(initializers: Collection<KInitializer>) {
+        javaBuilder.addInitializers(initializers.map { JavaInitializer(it) })
     }
 
     fun setDatabaseValidationMode(mode: DatabaseValidationMode) {

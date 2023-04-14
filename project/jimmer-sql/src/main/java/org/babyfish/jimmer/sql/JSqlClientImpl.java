@@ -581,6 +581,10 @@ class JSqlClientImpl implements JSqlClient {
 
         private ObjectMapper binLogObjectMapper;
 
+        private Set<Customizer> customizers = new LinkedHashSet<>();
+
+        private Set<Initializer> initializers = new LinkedHashSet<>();
+
         private DatabaseValidationMode databaseValidationMode = DatabaseValidationMode.NONE;
 
         private String microServiceName = "";
@@ -877,6 +881,46 @@ class JSqlClientImpl implements JSqlClient {
         }
 
         @Override
+        public Builder addCustomizers(Customizer... customizers) {
+            for (Customizer customizer : customizers) {
+                if (customizer != null) {
+                    this.customizers.add(customizer);
+                }
+            }
+            return this;
+        }
+
+        @Override
+        public Builder addCustomizers(Collection<Customizer> customizers) {
+            for (Customizer customizer : customizers) {
+                if (customizer != null) {
+                    this.customizers.add(customizer);
+                }
+            }
+            return this;
+        }
+
+        @Override
+        public Builder addInitializers(Initializer ... initializers) {
+            for (Initializer initializer : initializers) {
+                if (initializer != null) {
+                    this.initializers.add(initializer);
+                }
+            }
+            return this;
+        }
+
+        @Override
+        public Builder addInitializers(Collection<Initializer> initializers) {
+            for (Initializer initializer : initializers) {
+                if (initializer != null) {
+                    this.initializers.add(initializer);
+                }
+            }
+            return this;
+        }
+
+        @Override
         public Builder setDatabaseValidationMode(DatabaseValidationMode databaseValidationMode) {
             this.databaseValidationMode = Objects.requireNonNull(
                     databaseValidationMode,
@@ -899,6 +943,16 @@ class JSqlClientImpl implements JSqlClient {
 
         @Override
         public JSqlClient build() {
+            for (Customizer customizer : customizers) {
+                try {
+                    customizer.customize(this);
+                } catch (Exception ex) {
+                    throw new ExecutionException(
+                            "Failed to execute customizer before create sql client",
+                            ex
+                    );
+                }
+            }
             if (entityManager == null) {
                 throw new IllegalStateException("The `entityManager` of SqlClient has not been configured");
             }
@@ -950,6 +1004,16 @@ class JSqlClientImpl implements JSqlClient {
             filterManager.initialize(sqlClient);
             binLogParser.initialize(sqlClient, binLogObjectMapper);
             transientResolverManager.initialize(sqlClient);
+            for (Initializer initializer : initializers) {
+                try {
+                    initializer.initialize(sqlClient);
+                } catch (Exception ex) {
+                    throw new ExecutionException(
+                            "Failed to execute initializer after create sql client",
+                            ex
+                    );
+                }
+            }
             validateDatabase();
             return sqlClient;
         }

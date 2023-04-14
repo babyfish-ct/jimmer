@@ -1,28 +1,22 @@
 package org.babyfish.jimmer.sql.example.cfg;
 
-import org.babyfish.jimmer.spring.cfg.JimmerCustomizer;
+import org.babyfish.jimmer.spring.cfg.JimmerInitializer;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.sql.Connection;
-import java.sql.SQLException;
 
 /*
  * Initialize H2 in-memory database if the application is started by default profile.
- *
- * This class must implement `JimmerCustomizer`(before the sql client is created),
- * not JimmerInitializer(after the sql client is created),
- * because `jimmer.database-validation-mode` in `application.yml` validates database
- * before the sql client is created.
  */
 @Component
-public class H2Initializer implements JimmerCustomizer {
+public class H2Initializer implements JimmerInitializer {
 
     private final DataSource dataSource;
 
@@ -36,13 +30,13 @@ public class H2Initializer implements JimmerCustomizer {
     }
 
     @Override
-    public void customize(JSqlClient.Builder builder) {
+    public void initialize(@NotNull JSqlClient sqlClient) throws Exception {
         if (url.startsWith("jdbc:h2:")) {
             initH2();
         }
     }
 
-    private void initH2() {
+    private void initH2() throws Exception {
         try (Connection con = dataSource.getConnection()) {
             InputStream inputStream = JimmerConfig.class
                     .getClassLoader()
@@ -62,8 +56,6 @@ public class H2Initializer implements JimmerCustomizer {
                 }
                 con.createStatement().execute(builder.toString());
             }
-        } catch (IOException | SQLException ex) {
-            throw new RuntimeException("Cannot initialize h2 database", ex);
         }
     }
 }

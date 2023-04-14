@@ -2,16 +2,12 @@ package org.babyfish.jimmer.spring.cfg;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import kotlin.Unit;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.spring.cloud.SpringCloudExchange;
 import org.babyfish.jimmer.spring.repository.SpringConnectionManager;
 import org.babyfish.jimmer.spring.repository.SpringTransientResolverProvider;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
-import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
@@ -20,6 +16,10 @@ import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.kt.KCaches;
 import org.babyfish.jimmer.sql.kt.KSqlClient;
 import org.babyfish.jimmer.sql.kt.KSqlClientKt;
+import org.babyfish.jimmer.sql.kt.cfg.KCustomizer;
+import org.babyfish.jimmer.sql.kt.cfg.KCustomizerKt;
+import org.babyfish.jimmer.sql.kt.cfg.KInitializer;
+import org.babyfish.jimmer.sql.kt.cfg.KInitializerKt;
 import org.babyfish.jimmer.sql.kt.filter.KFilter;
 import org.babyfish.jimmer.sql.kt.filter.KFilters;
 import org.babyfish.jimmer.sql.kt.filter.impl.JavaFiltersKt;
@@ -63,14 +63,28 @@ public class SqlClientConfig {
             @Autowired(required = false) MicroServiceExchange exchange,
             List<ScalarProvider<?, ?>> providers,
             List<DraftInterceptor<?>> interceptors,
-            List<Filter<?>> filters,
+            List<Filter<?>> javaFilters,
             List<KFilter<?>> kotlinFilters,
-            List<JimmerCustomizer> customizers,
-            List<JimmerInitializer> initializers
+            List<Customizer> javaCustomizers,
+            List<KCustomizer> kotlinCustomizers,
+            List<Initializer> javaInitializers,
+            List<KInitializer> kotlinInitializers
     ) {
         if (!kotlinFilters.isEmpty()) {
             LOGGER.warn(
                     "Jimmer is working in java mode, but some kotlin filters " +
+                            "has been found in spring context, they will be ignored"
+            );
+        }
+        if (!kotlinCustomizers.isEmpty()) {
+            LOGGER.warn(
+                    "Jimmer is working in java mode, but some kotlin customizers " +
+                            "has been found in spring context, they will be ignored"
+            );
+        }
+        if (!kotlinInitializers.isEmpty()) {
+            LOGGER.warn(
+                    "Jimmer is working in kotlin mode, but some kotlin initializers " +
                             "has been found in spring context, they will be ignored"
             );
         }
@@ -89,11 +103,12 @@ public class SqlClientConfig {
                 exchange,
                 providers,
                 interceptors,
-                filters,
-                customizers
+                javaFilters,
+                javaCustomizers,
+                javaInitializers
         );
         JSqlClient sqlClient = builder.build();
-        postCreateSqlClient(sqlClient, publisher, initializers);
+        postCreateSqlClient(sqlClient, publisher);
         return sqlClient;
     }
 
@@ -115,13 +130,27 @@ public class SqlClientConfig {
             List<ScalarProvider<?, ?>> providers,
             List<DraftInterceptor<?>> interceptors,
             List<Filter<?>> javaFilters,
-            List<KFilter<?>> filters,
-            List<JimmerCustomizer> customizers,
-            List<JimmerInitializer> initializers
+            List<KFilter<?>> kotlinFilters,
+            List<Customizer> javaCustomizers,
+            List<KCustomizer> kotlinCustomizers,
+            List<Initializer> javaInitializers,
+            List<KInitializer> kotlinInitializers
     ) {
         if (!javaFilters.isEmpty()) {
             LOGGER.warn(
                     "Jimmer is working in kotlin mode, but some java filters " +
+                            "has been found in spring context, they will be ignored"
+            );
+        }
+        if (!javaCustomizers.isEmpty()) {
+            LOGGER.warn(
+                    "Jimmer is working in kotlin mode, but some java customizers " +
+                            "has been found in spring context, they will be ignored"
+            );
+        }
+        if (!javaInitializers.isEmpty()) {
+            LOGGER.warn(
+                    "Jimmer is working in kotlin mode, but some java initializers " +
                             "has been found in spring context, they will be ignored"
             );
         }
@@ -140,15 +169,22 @@ public class SqlClientConfig {
                     exchange,
                     providers,
                     interceptors,
-                    filters
+                    kotlinFilters
                             .stream()
                             .map(JavaFiltersKt::toJavaFilter)
                             .collect(Collectors.toList()),
-                    customizers
+                    kotlinCustomizers
+                            .stream()
+                            .map(KCustomizerKt::toJavaCustomizer)
+                            .collect(Collectors.toList()),
+                    kotlinInitializers
+                            .stream()
+                            .map(KInitializerKt::toJavaInitializer)
+                            .collect(Collectors.toList())
             );
             return Unit.INSTANCE;
         });
-        postCreateSqlClient(sqlClient.getJavaClient(), publisher, initializers);
+        postCreateSqlClient(sqlClient.getJavaClient(), publisher);
         return sqlClient;
     }
 
@@ -167,7 +203,8 @@ public class SqlClientConfig {
             List<ScalarProvider<?, ?>> providers,
             List<DraftInterceptor<?>> interceptors,
             List<Filter<?>> filters,
-            List<JimmerCustomizer> customizers
+            List<Customizer> customizers,
+            List<Initializer> initializers
     ) {
         if (connectionManager != null) {
             builder.setConnectionManager(connectionManager);
@@ -208,19 +245,9 @@ public class SqlClientConfig {
         }
 
         builder.addDraftInterceptors(interceptors);
-
         builder.addFilters(filters);
-
-        for (JimmerCustomizer customizer : customizers) {
-            try {
-                customizer.customize(builder);
-            } catch (Exception ex) {
-                throw new BeanCreationException(
-                        "Cannot create sql client because error raised by JimmerCustomizer",
-                        ex
-                );
-            }
-        }
+        builder.addCustomizers(customizers);
+        builder.addInitializers(initializers);
 
         builder.setMicroServiceName(properties.getMicroServiceName());
         if (!properties.getMicroServiceName().isEmpty()) {
@@ -240,8 +267,7 @@ public class SqlClientConfig {
 
     private static void postCreateSqlClient(
             JSqlClient sqlClient,
-            ApplicationEventPublisher publisher,
-            List<JimmerInitializer> initializers
+            ApplicationEventPublisher publisher
     ) {
         if (!(sqlClient.getConnectionManager() instanceof SpringConnectionManager)) {
             throw new IllegalStateException(
@@ -274,17 +300,6 @@ public class SqlClientConfig {
         for (Triggers triggers : triggersArr) {
             triggers.addEntityListener(publisher::publishEvent);
             triggers.addAssociationListener(publisher::publishEvent);
-        }
-
-        for (JimmerInitializer initializer : initializers) {
-            try {
-                initializer.initialize(sqlClient);
-            } catch (Exception ex) {
-                throw new BeanCreationException(
-                        "Cannot initialize the sql client because error raised by JimmerInitializer",
-                        ex
-                );
-            }
         }
     }
 }

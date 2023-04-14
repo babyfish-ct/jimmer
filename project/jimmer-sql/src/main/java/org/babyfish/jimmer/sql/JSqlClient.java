@@ -255,6 +255,18 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setBinLogObjectMapper(ObjectMapper mapper);
 
         @OldChain
+        Builder addCustomizers(Customizer ... customizers);
+
+        @OldChain
+        Builder addCustomizers(Collection<Customizer> customizers);
+
+        @OldChain
+        Builder addInitializers(Initializer ... initializers);
+
+        @OldChain
+        Builder addInitializers(Collection<Initializer> initializers);
+
+        @OldChain
         Builder setDatabaseValidationMode(DatabaseValidationMode mode);
 
         @OldChain
