@@ -6,14 +6,23 @@ title: 快速上手
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 进入Jimmer世界之前
+:::tip
+运行框架附带的demo，永远是最快的上手方式，尤其是`example/java/jimmer-sql`或`/example/kotlin/jimmer-sql-kt`
+:::
+
+## 运行例子必知！
 和[JOOQ](https://www.jooq.org/)，[JPA2.0 Criteria](https://docs.oracle.com/javaee/6/tutorial/doc/gjitv.html)，[QueryDSL](http://querydsl.com/)，[MyBatis-Flex](https://github.com/mybatis-flex/mybatis-flex)，[Fluent-MyBatis](https://github.com/atool/fluent-mybatis)等强类型SQL DSL实现一样, Jimmer需要根据用户代码生成更多的源代码。
 
-对于Java而言，就是annotation processor
-对于kotlin而言，就是ksp
+-   对于Java而言，就是annotation processor
+-   对于kotlin而言，就是ksp
+
 当用户第一次使用IDE（比如Intellij）打开项目配套的例子时，会发现一些本该被自动生成的类不存在。
 
-这时不要惧怕，点下运行按钮，所有错误会自动消失。
+**这时不要惧怕，点下运行按钮，所有错误会自动消失。**
+
+## 各例子介绍
+
+**TODO** 
 
 ## B站视频
 
@@ -24,40 +33,3 @@ import TabItem from '@theme/TabItem';
 |https://www.bilibili.com/video/BV1kd4y1A7K3|所有功能|中|从0.3开始|
 |https://www.bilibili.com/video/BV1Mt4y1u7fz/|多视角缓存|难|从0.5开始|
 
-## 快速上手
-
-1.  jimmer-core *(不可变对象部分)* 快速上手
-
-    [请点击这里](./jimmer-core/usage.mdx)
-
-2.  jimmer-sql *(ORM部分)* 快速上手
-
-    -   我使用spring-boot，期望利用jimmer的spring-boot-starter和spring-data-jimmer大幅简化开发
-        
-        [请点击这里](./jimmer-sql/spring-boot)
-
-    -   我想了解使用Jimmer的所有细节，甚至考虑亲手将Jimmer和非spring的其他框架整合起来
-
-        [请点击这里](./jimmer-sql/basic/usage)
-
-## 快速体验
-
-用Intellij打开[&lt;jimmer-home&gt;/example/java/java-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql/)或[&lt;jimmer-home&gt;/example/kotlin/java-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt/)，
-
-首次打开后，IDE会出现编译报错，请参考[用IDE打开Demo](#用IDE打开Demo)
-
-启动，访问http://localhost:8080/ui。
-
-更多信息，请参考[附带demo](./demo)
-
-## 注意事项
-
-:::caution
-
-和其他所有强类型DSL的Java框架一样，Jimmer使用了代码生成器，对Java而言，是AnnotationProcessor；对Kotlin而言，是KSP。
-
-所以，首次用IDE打开框架附带demo中任何项目，都会因为本该被自动生成的代码暂时不存在而报编译错。
-
-别怕，放心大胆地点击运行按钮，所有问题将会立即自动消失。
-
-:::

@@ -892,12 +892,93 @@ DTO爆炸存在两个问题
 
 所以，Jimmer天生避免了DTO爆炸问题。
 
+Jimmer的动态实体还有如下两个特性
+
+-   未指定属性在Jackson序列化时会被自动忽略
+
+-   虽然作为一个ORM，Jimmer鼓励开发人员在实体**类型**之间声明双向关联，但是，实体**对象**之间只存在单向关联，绝不会有循环引用，开发没有任何手段可以用于构建带有循环引用Jimmer实体数据结构。
+
+所以，Jimmer动态实体可以直接作为web返回类型。若无特殊需求，无需任何转化，直接返回即可。*（注意：需要为Jackson注册一个`ImmutableModule`模块，但这已经被jimmer的spring-starter自动完成了）*
+
 </Collapse>
 
 <Collapse title="为客户端生成TypeScrpt，恢复DTO爆炸">
+
+Jimmer选择在服务端解决了DTO爆炸问题，因为DTO爆炸问题对服务端有害。不拔除这个问题，很难用极少的代码快速实现服务，服务端难以获得极致的开发体验。
+
+然而，对客户端而言，恰恰相反，DTO爆炸问题是有益的。丰富的DTO类型为调用者明确定定义了精确的数据类型。不恢复DTO爆炸，客户端难以获得极致的开发体验。
+
+:::note
+传统的技术方案中，如果期望由框架将前后端对接工作自动化，那么通常会为服务的和客户端的API的理解形式应该一样。
+
+Jimmer不这样认为，双方开发的工作职责相差太大，它们的思维应该不一样。服务端应该简单地返回动态对象，这样很容易实现；客户端应该使用大量定义好的静态对象，这样消费体验好。
+:::
+
+Jimmer提供一种简便的方法，可以为客户端自定生成TypeScrpit代码完成前后端对接，并在其中恢复DTO爆炸
+
+<ViewMore title="被恢复的三种BookDTO" buttonText="查看生成的TypeScript">
+
+```ts
+import type { Gender } from '../enums';
+
+export type BookDto = {
+    // highlight-next-line
+    'BookService/SIMPLE_FETCHER': {
+        readonly id: number, 
+        readonly name: string, 
+        readonly edition: number
+    }, 
+    // highlight-next-line
+    'BookService/COMPLEX_FETCHER': {
+        readonly id: number, 
+        readonly createdTime: string, 
+        readonly modifiedTime: string, 
+        readonly name: string, 
+        readonly edition: number, 
+        readonly price: number, 
+        readonly store?: {
+            readonly id: number, 
+            readonly createdTime: string, 
+            readonly modifiedTime: string, 
+            readonly name: string, 
+            readonly website?: string, 
+            readonly avgPrice: number
+        }, 
+        readonly authors: ReadonlyArray<{
+            readonly id: number, 
+            readonly createdTime: string, 
+            readonly modifiedTime: string, 
+            readonly firstName: string, 
+            readonly lastName: string, 
+            readonly gender: Gender
+        }>
+    }, 
+    // highlight-next-line
+    'BookService/DEFAULT_FETCHER': {
+        readonly id: number, 
+        readonly createdTime: string, 
+        readonly modifiedTime: string, 
+        readonly name: string, 
+        readonly edition: number, 
+        readonly price: number, 
+        readonly store?: {
+            readonly id: number, 
+            readonly name: string
+        }, 
+        readonly authors: ReadonlyArray<{
+            readonly id: number, 
+            readonly firstName: string, 
+            readonly lastName: string
+        }>
+    }
+}
+```
+
+</ViewMore>
+
 </Collapse>
 
-## 拦截器
+## 6. 拦截器
 
 <Collapse title="输入拦截">
 
@@ -914,9 +995,9 @@ TODO
 TODO
 </Collapse>
 
-## 极致性能
+## 7. 极致性能
 
-<Collapse title="解决传统ORM容易被新手诱发低效SQL的问题">
+<Collapse title="解决传统ORM会被新手诱发低效SQL的问题">
 
 TODO
 </Collapse>
@@ -926,11 +1007,418 @@ TODO
 TODO
 </Collapse>
 
-## 其他特性
+## 8. 其他特性
 
 <Collapse title="不可变实体">
 
-TODO
+前面谈到，Jimmer实体是动态对象。不仅如此，Jimmer实体还是不可变对象。
+
+不可变对象优点很多，比如
+
+-   可以所以随意共享，比如，进程内缓存。多人开发模式下不用担心被其他同事无意修改，更无需为为此做防御性复制。
+-   没有线程安全问题。
+-   具备稳定的hashCode，对集合框架友好
+
+Java14和C#9引入了不可变的record类型，kotlin data class对不可变对象支持也非常好。多种编程语言的发展方向显示了这是未来的必然趋势。
+
+对ORM而言，情况略有不同。不但对象字段多，对象的关联也可能很深，即使ORM中对象非常复杂，往往代表一个庞大的数据结构，而非一个简单的孤单对象。
+
+这种复杂对象暴露了不可变对象的最大缺点，基于现有对象对某些属性做出调整后创建新对象，即`复制构造`，将会变成非常复杂的事情。
+
+<ViewMore title="常规不可变对象的最大问题" buttonText="查看原因">
+
+首先定义一个不可变的树节点
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="TreeNode.java"
+record TreeNode(String name, List<TreeNode> childNodes) {}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java title="TreeNode.java"
+data class TreeNode(val name: String, val childNodes: List<TreeNode>)
+```
+
+</TabItem>
+</Tabs>
+
+准备一个旧对象
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+var oldTreeNode = ...blabla...
+```
+
+</TabItem>
+
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val oldTreeNode = ...blabla...
+```
+
+</TabItem>
+</Tabs>
+
+让我们从简单到复杂依次实现三种数据变更操作，创建全新的对象
+
+1.  变更根节点的name属性
+    
+    <Tabs groupId="language">
+    <TabItem value="java" lable="Java">
+    
+    ```java
+    TreeNode newTreeNode = new TreeNode(
+        // highlight-next-line
+        "Hello", // 设置根节点的名称
+        oldTreeNode.childNodes()
+    );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" lable="Kotlin">
+    
+    ```kotlin
+    val newTreeNode = oldTreeNode.copy(
+        // highlight-next-line
+        name = "Hello" // 设置根节点的名称
+    );
+    ```
+
+    </TabItem>
+    </Tabs>
+
+2.  变更第一级子节点的name属性
+    
+    面包屑条件如下：
+    - 第一级子节点的位置: pos1
+    
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    TreeNode newTreeNode = new TreeNode(
+        oldTreeNode.name(),
+        IntStream
+            .range(0, oldTreeNode.childNodes().size())
+            .mapToObj(index1 -> {
+                TreeNode oldChild1 = oldTreeNode.childNodes().get(index1);
+                if (index1 != pos1) {
+                    return oldChild1;
+                }
+                return new TreeNode(
+                    // highlight-next-line
+                    "Hello", // 设置第一级子节点的名称
+                    oldChild1.childNodes()
+                );
+            })
+            .toList()
+    );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val newTreeNode = oldTreeNode.copy(
+        childNodes = oldTreeNode
+            .childNodes
+            .mapIndexed { index1, child1 ->
+                if (index1 == pos1) {
+                    child1.copy(
+                        // highlight-next-line
+                        name = "Hello" // 设置第一级子节点的名称
+                    )
+                } else {
+                    child1
+                }
+            }
+    )
+    ```
+    </TabItem>
+    </Tabs>
+
+2.  变更第二级子节点的name属性
+    
+    面包屑条件如下：
+    - 第一级子节点的位置: pos1
+    - 第二级子节点的位置: pos2
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    TreeNode newTreeNode = new TreeNode(
+        oldTreeNode.name(),
+        IntStream
+            .range(0, oldTreeNode.childNodes().size())
+            .mapToObj(index1 -> {
+                TreeNode oldChild1 = oldTreeNode.childNodes().get(index1);
+                if (index1 != pos1) {
+                    return oldChild1;
+                }
+                return new TreeNode(
+                    oldChild1.name(),
+                    IntStream
+                        .range(0, oldChild1.childNodes().size())
+                        .mapToObj(index2 -> {
+                            TreeNode oldChild2 = oldChild1.childNodes().get(index2);
+                            if (index2 != pos2) {
+                                return oldChild2;
+                            } else {
+                                return new TreeNode(
+                                    // highlight-next-line
+                                    "Hello", // 设置第二级子节点的名称
+                                    oldChild2.childNodes()
+                                );
+                            }
+                        })
+                        .toList()
+                );
+            })
+            .toList()
+    );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val newTreeNode = oldTreeNode.copy(
+        childNodes = oldTreeNode
+            .childNodes
+            .mapIndexed { index1, child1 ->
+                if (index1 == pos1) {
+                    child1.copy(
+                        childNodes = child1
+                            .childNodes
+                            .mapIndexed { index2, child2 -> 
+                                if (index2 == pos2) {
+                                    child2.copy(
+                                        // highlight-next-line
+                                        name = "Hello" // 设置第二级子节点的名称
+                                    )
+                                } else {
+                                    child2
+                                }
+                            }
+                    )
+                } else {
+                    child1
+                }
+            }
+    )
+    ```
+
+    </TabItem>
+    </Tabs>
+
+:::note
+可见，只要对象树有一点深度，基于另一个不可变对象创建新的不可变对象将是一场噩梦。
+:::
+
+</ViewMore>
+
+到目前为止，语言本身支持的不可变对象，为简单不可变对象设计，而非为复杂的不可变对象而设计。对复杂不可变对象的`复制构造`难题无能为力。
+
+因此，诞生了一些不可变对象框架
+-   [Immutables](https://immutables.github.io/immutable.html)
+-   [FreeBuilder](https://github.com/inferred/FreeBuilder)
+-   [Arrow-Kt(Kotlin)](https://arrow-kt.io/learn/immutable-data/intro/)
+-   [Kopyk(Kotlin)](https://kopyk.at/)
+-   [MuteKt(Kotlin)](https://github.com/PatilShreyas/mutekt)
+
+Jimmer也解决这个问题，期望让复杂不可变对象的`复制构造`变得如同修改可变对象一样简单，并同时适用于java和kotlin的方案。
+
+幸运的是，js/ts领域已经存在一个足够强大和优雅的方案：[immmer](https://github.com/immerjs/immer)
+
+Jimmer将它移植到了java/kotlin下，复杂不可变对象的`复制构造`变得如同直接修改可变对象一样简单，非常简单自然 *（尤其是kotlin版本）*
+
+<ViewMore title="复杂不可变对象的复制构造" buttonText="查看例子">
+
+# 定义不可变类型
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+package yourpackage;
+
+import java.util.List;
+
+import org.babyfish.jimmer.Immutable;
+import org.jetbrains.annotations.Nullable;
+
+// 演示此功能无需ORM的@Entity，非ORM的@Immutable足够
+@Immutable 
+public interface TreeNode {
+    
+    String name();
+
+    @Nullable
+    TreeNode parent();
+
+    List<TreeNode> childNodes();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="TreeNode.kt"
+package yourpackage
+
+import org.babyfish.jimmer.Immutable
+
+// 演示此功能无需ORM的@Entity，非ORM的@Immutable足够
+@Immutable
+interface TreeNode {
+
+    val name: String
+
+    val parent: TreeNode?
+
+    val childNodes: List<TreeNode>
+}
+```
+
+</TabItem>
+</Tabs>
+
+# 使用
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+// 第一步，从头构建全新的数据
+TreeNode treeNode = TreeNodeDraft.$.produce(root -> {
+    root.setName("Root").addIntoChildNodes(food -> {
+        food
+            .setName("Food")
+            .addIntoChildNodes(drink -> {
+                drink
+                    .setName("Drink")
+                    .addIntoChildNodes(cococola -> {
+                        cococola.setName("Cococola");
+                    })
+                    .addIntoChildNodes(fanta -> {
+                        fanta.setName("Fanta");
+                    });
+                ;
+            });
+        ;
+    });
+});
+
+// 第二步，基于现有数据对象，做某些“变更”，创建新的数据对象。
+TreeNode newTreeNode = TreeNodeDraft.$.produce(
+        // highlight-next-line
+        treeNode, // existing data
+        root -> {
+            root
+                .childNodes(false).get(0) // Food
+                .childNodes(false).get(0) // Drink
+                .childNodes(false).get(0) // Cococola
+                .setName("Cococola plus");
+        }
+);
+
+System.out.println("treeNode:" + treeNode);
+System.out.println("newTreeNode:" + newTreeNode);
+```
+
+</TabItem>
+
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+// 第一步，从头构建全新的数据
+val treeNode = new(TreeNode::class).by {
+    name = "Root"
+    childNodes().addBy {
+        name = "Food"
+        childNodes().addBy {
+            name = "Drinks"
+            childNodes().addBy {
+                name = "Cococola"
+            }
+            childNodes().addBy {
+                name = "Fanta"
+            }
+        }
+    }
+}
+
+// 第二步，基于现有数据对象，做某些“变更”，创建新的数据对象。
+val newTreeNode = new(TreeNode::class).by(
+    // highlight-next-line
+    treeNode // existing data
+) {
+    childNodes()[0] // Food
+        .childNodes()[0] // Drinks
+        .childNodes()[0] // Cococola
+        .name += " plus"
+}
+
+println("treeNode: $treeNode")
+println("newTreeNode: $newTreeNode")
+```
+
+</TabItem>
+</Tabs>
+
+输出结果（实际打印结果是紧凑的，但为了方便阅读，这里进行了格式化）
+
+```javascript
+treeNode: {
+    "name":"Root",
+    "childNodes":[
+        {
+            "name":"Food",
+            "childNodes":[
+                {
+                    "name":"Drink",
+                    "childNodes":[
+                        // highlight-next-line
+                        {"name":"Coco Cola"},
+                        {"name":"Fanta"}
+                    ]
+                }
+            ]
+        }
+    ]
+}
+newTreeNode: {
+    "name":"Root",
+    "childNodes":[
+        {
+            "name":"Food",
+            "childNodes":[
+                {
+                    "name":"Drink",
+                    "childNodes":[
+                        // highlight-next-line
+                        {"name":"Coco Cola plus"},
+                        {"name":"Fanta"}
+                    ]
+                }
+            ]
+        }
+    ]
+}
+```
+</ViewMore>
+
+:::note
+本框架叫Jimmer，是为了致敬[immmer](https://github.com/immerjs/immer)
+:::
+
 </Collapse>
 
 <Collapse title="极简设计">
@@ -942,6 +1430,6 @@ Jimmer没有类似的抽象，一个无状态的全局SqlClient对象就是所�
 
 ORM本身应该保持高度的体系中立，其底层API不应该和spring、quarkus等胶水框架耦合。Jimmer这样的极简设计带来了一个明显的好处，就是和胶水框架的耦合非常简单。
 
-假如jimmer本身没有提供spring整合的能力，用户自己把jimmer整合到spring *(注意，不是spring-data)* 中非常容易，整合难度远低于同类框架。
+**假如**jimmer本身没有提供spring整合的能力，需要用户自己把jimmer整合到spring *(注意，不是spring-data)* 中，也非常容易，整合难度远低于同类框架。
 
 </Collapse>
