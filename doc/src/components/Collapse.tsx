@@ -13,7 +13,7 @@ export const Collapse: FC<
 > = memo(({title, children}) => {
     return (
         <Accordion id={`acccordion-${++accordionId}`}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>{<h3>{title}</h3>}</AccordionSummary>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>{<h4>{title}</h4>}</AccordionSummary>
             <AccordionDetails>{children}</AccordionDetails>
         </Accordion>
     );

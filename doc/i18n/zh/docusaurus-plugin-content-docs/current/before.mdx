@@ -10,12 +10,80 @@ import TabItem from '@theme/TabItem';
 
 import JavaFetcherMp4 from '@site/static/img/java-fetcher.mp4';
 import KotlinFetcherMp4 from '@site/static/img/kotlin-fetcher.mp4';
+import { Benchmark } from '@site/src/components/Benchmark';
 
-首先，Jimmer是一个基于Java或Kotlin的革命性的ORM。
+一个基于Java或Kotlin的革命性的ORM，却不限于ORM
 
-其实，Jimmer不局限于ORM，提供优秀的缓存管理能力，以及跨越微服务的协调能力。
+## 思维导图
 
-## 1. 动态对象的灵活性 + 静态语言的安全性
+![jimmer-mind](@site/static/img/jimmer-mind.svg)
+
+## 方案类比
+
+Jimmer是一个全面的解决方案，有很多强大的功能。其中有一部分功能是Jimmer独创的，还有一部分和某些其他技术体系有相似性，可以通过类比来帮助理解。
+
+可和其他相似技术体系类比的功能点有：
+
+<table>
+<thead>
+<tr>
+<th>Jimmer功能点</th>
+<th>类似方案</th>
+<th>必要说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>查询任意数据结构</td>
+<td><a href="https://graphql.org/)">GraphQL</a></td>
+<td>
+
+-   和GraphQL作为协议仅用于HTTP接口暴露不同，Jimmer将此能力拓展成了ORM的API，即无处不在的本地代码调用。*(当然，你也可以选择利用Jimmer的能力快速暴露GraphQL)*
+
+-   Jimmer可以对自关联属性进行递归查询
+
+</td>
+</tr>
+<tr>
+<td>实体对象计算属性</td>
+<td><a href="https://github.com/graphql/dataloader">DataLoader</a></td>
+<td>
+
+-   计算规则和ORM解耦，可以使用任何信息（比如身份权限信息）用做计算，也可以使用关系型库以外的技术进行计算
+-   计算属性没有没有[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题
+
+</td>
+</tr>
+<tr>
+<td>实体对象远程关联属性</td>
+<td><a href="https://www.apollographql.com/docs/federation/">Apollo Federation</a></td>
+<td>
+-   跨越微服务的实体关系，关联双方实体隶属于不同的微服务（也表示，隶属于不同数据库）
+-   如果被查询的数据结构的形状包含远程关联，将会自动使用远程数据访问完成跨服务数据访问，对开发人员透明
+-   将不同微服务的关系型数据库模型，合并成一个全局的关系模型
+</td>
+</tr>
+<tr>
+<td>不可变对象</td>
+<td><a href="https://github.com/immerjs/immer">immer</a></td>
+<td>
+    
+开发人员直接修改可变对象的直观方法，完成不可变对象的“复制构造”，尤其适合深层次的不可变对象。
+
+原因：java record和kotilin data class的copy函数为简单不可变对象二十几，难以简洁地处理复杂的深层次不可变对象，需要移植足够强大方案。
+
+:::note
+本框架命名为Jimmer，即致敬[immer](https://github.com/immerjs/immer)
+:::
+
+</td>
+</tr>
+</tbody>
+</table>
+
+## 功能点介绍
+
+### 1. 动态对象的灵活性 + 静态语言的安全性
 
 <Collapse title="动态实体的灵活性">
 
@@ -330,7 +398,7 @@ interface Book {
 :::
 </Collapse>
 
-## 2. 不局限于ORM: 计算属性和远程关联
+### 2. 不局限于ORM: 计算属性和远程关联
 
 <Collapse title="计算属性">
 
@@ -338,9 +406,9 @@ interface Book {
 
 -   由于Jimmer可以精细地控制被查询数据结构的形状，只有明确需要查询计算属性是才会被计算。
 
--   Jimmer内置了一套和[graphql/datloader框架](https://github.com/graphql/dataloader)类似的机制，和普通的ORM属性一样，计算属性没有[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题。
+-   和其他ORM的技术属性不同，Jimmer的计算规则和ORM解耦，可以使用只有业务层才能拿到的信息（比如权限系统的信息）做计算
 
--   开发人员指定的计算规则和ORM解耦，可以使用只有业务层才能拿到的信息（比如权限系统的信息）做计算
+-   Jimmer内置了一套和[graphql/datloader框架](https://github.com/graphql/dataloader)类似的机制，和普通的ORM属性一样，计算属性没有[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题。
 
 -   计算过程可以使用任何技术完成计算，可以使用SQL之外的技术，比如OLAP相关技术，来完成计算
 
@@ -453,7 +521,7 @@ Jimmer不仅仅是一个单体应用（也可说单个微服务内部）的ORM�
 其中，`Local assocaition`表示微服务(数据库)内部的ORM关联，这类关联的查询会被翻译为SQL或缓存操作；而`Remote association`表示不同微服务（数据库）之间的远程关联，这类关联的查询会被翻译为远程数据获取。然而，这一切，对用户透明。
 </Collapse>
 
-## 3. 缓存、缓存一致性、触发器
+### 3. 缓存、缓存一致性、触发器
 
 <Collapse title="完全透明的缓存">
 
@@ -522,7 +590,7 @@ Jimmer提供了两种触发器
 
 </Collapse>
 
-## 4. SQL DSL，隐式表连接
+### 4. SQL DSL，隐式表连接
 
 <Collapse title="SQL DSL">
 
@@ -576,7 +644,7 @@ Jimmer隐式表连接就是为`动态join`而设计，完美解决了上述问�
 
 </Collapse>
 
-## 5. 解决DTO爆炸 + TypeScript代码生成
+### 5. 解决DTO爆炸 + TypeScript代码生成
 
 <Collapse title="服务端解决DTO爆炸问题">
 
@@ -978,36 +1046,133 @@ export type BookDto = {
 
 </Collapse>
 
-## 6. 拦截器
+### 6. 拦截器
 
 <Collapse title="输入拦截">
 
-TODO
+输入拦截器可以拦截Jimmer插入或更新实体的行为，在数据被保存之前给予用户一次调整被保存数据的机会。
+
+输入拦截器和ORM解耦，可以使用只有业务层才能拿到的信息（比如权限系统的信息）来调整即将被保存的数据对象。
+
 </Collapse>
 
 <Collapse title="输出拦截：全局过滤器">
 
-TODO
+输出拦截器也称全局过滤器，在绝大部分查询中自动为某些实体类型添加而外的过滤条件，其功能和Hibernate的[@Where](https://docs.jboss.org/hibernate/orm/6.2/javadocs/org/hibernate/annotations/Where.html)类似。
+
+全局过滤器和ORM解耦，可以使用只有业务层才能拿到的信息（比如权限系统的信息）来添加额外的过滤条件。
+
+:::note
+这类需求中有一个非常常见：软删除；Jimmer对其进行了特别支持，其全局过滤器被Jimmer内置，无需开发人员提供。
+:::
+
 </Collapse>
 
 <Collapse title="多视角缓存">
 
-TODO
+全局过滤器可以使用业务层权限系统的信息来为查询添加额外的过滤条件，这会导致一个现象：即便透过完全相同的查询功能，不同身份的用户也会看到不同的数据。
+
+为此，Jimmer引入了多视角缓存，让不同身份的用户也会看到不同的缓存。
+
+<ViewMore buttonText="查看示意图" title="多视角缓存图示">
+
+![multi-view-cache](@site/static/img/multi-view-cache.png)
+
+</ViewMore>
+
 </Collapse>
 
-## 7. 极致性能
+### 7. 极致性能
 
-<Collapse title="解决传统ORM会被新手诱发低效SQL的问题">
+<Collapse title="解决传统ORM会被新手诱发低性能SQL的问题">
 
-TODO
+传统ORM容易被新手诱发地性能SQL，这类问题是有两个方面的原因导致的，Jimmer都给予了解决。
+
+-   绝不会导致内存分页
+
+    以Hibernate为例，当开发人员同事使用`collection-join-fetch`和分页查询时，会诱发内存分页，请参见[这里](https://vladmihalcea.com/fix-hibernate-hhh000104-entity-fetch-pagination-warning-message/)
+
+    Jimmer中没有`join-fetch`的概念，所以，不会有这个问题
+
+-   不会因lazy-loading导致[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题
+
+    Jimmer不支持lazy-loading，被查询的数据结构的形状都是事先指定的。因为
+    
+    -   B/S或微服务架构不允许实体对象持有数据库连接，lazy-loading方案无用
+
+    -   一旦支持lazy-loading，新手就可能不做任何深入配置，放任lazy-loading机制频繁制造[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题。
+    
+    Jimmer灵活控制被查询数据结构的形状，其内部机制对用户透明。底层查询可能涉及数据库访问，缓存访问，用户自定义计算甚至跨越微服务边界的远程调用。但无论时何种底层行为，都没有[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题，因为被查询的数据结构的形状总是事先指定的，而非查询后的lazy-loading。
+
+    :::note
+    事实上，Jimmer生成SQL并执行，一定是因为开发人员**显式**调用了其具有明确CRUD性质的API，绝不会如传统ORM一样在其他操作，比如对数据对象的处理过程中，因lazy-loading这类行为导致SQL被**隐式**地执行。
+
+    因此，在Spring项目中设置[Transactinal.readOnly()](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/annotation/Transactional.html#readOnly())对Jimmer而言没有意义。
+
+    所以，在Jimmer的Spring项目中，直接用[@Transactional](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/annotation/Transactional.html)修饰业务类即可；没有必要用[@Transactional](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/annotation/Transactional.html)修饰每个业务方法，并将所有查询方法的[@Transactional](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/annotation/Transactional.html)指定`readOnly = true`。
+    :::
+
+
 </Collapse>
 
 <Collapse title="高性能的对象映射">
 
-TODO
+除了保证不会被新手诱导地性能SQL外，Jimmer本身对结果集的映射性能也非常高。
+
+-   以前，数据库项目的大部分时间都是在等待JDBC阻塞，ORM本身的映射性能无关痛痒。
+
+-   现在，JVM力推虚拟线程。在这个模式下，ORM本身的映射性能高，可以让其carrier线程进口完成任务后去扛起更多的虚拟现场，具备很重要的意义。
+
+<ViewMore buttonText="查看性能报告" title="Benchmark">
+
+基准测试的源代码[在此](https://github.com/babyfish-ct/jimmer/tree/main/benchmark)，使用H2的内存数据库，无需任何环境准备即可直接运行。
+
+# 实现原则
+
+1.  所有框架禁用缓存
+
+2.  所有框架关闭日志
+
+3.  所有框架每次都打开和关闭连接/会话，不做共享；靠连接池保证性能。
+
+4.  接入Spring的连接管理机制。因不同框架API不同，实现方法略有不同。
+    
+    - 有的使用[DataSourceUtils](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/jdbc/datasource/DataSourceUtils.html)的getConnection和releaseConnection
+    - 有的使用[TransactionAwareDataSourceProxy](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/jdbc/datasource/TransactionAwareDataSourceProxy.html)
+    
+    但最终效果都一样
+
+5.  不使用事务
+    
+    `Exposed`比较特殊，其API强制要求事务，给予假的实现。
+
+6.  使用嵌入的H2内数据库，尽可能压缩数据库的消耗，凸显ORM本身的性能，即映射的性能。
+
+:::note
+由于Spring移除了对OpenJPA的支持，本基准测试不包含`JPA(OpenJPA)`
+:::
+
+# 结果数据
+
+-   每秒重复查询次数
+
+    <Benchmark type="OPS" locale="zh"/>
+
+    - 横坐标：每次从数据库中查询到的数据对象的数量
+    - 纵坐标：每秒操作次数
+
+-   每次操作耗时
+
+    <Benchmark type="TIME" locale="zh"/>
+
+    - 横坐标：每次从数据库中查询到的数据对象的数量
+    - 纵坐标：每次操作耗时(微秒)
+
+</ViewMore>
+
 </Collapse>
 
-## 8. 其他特性
+### 8. 不可变对象 + 极简设计
 
 <Collapse title="不可变实体">
 
@@ -1019,7 +1184,7 @@ TODO
 -   没有线程安全问题。
 -   具备稳定的hashCode，对集合框架友好
 
-Java14和C#9引入了不可变的record类型，kotlin data class对不可变对象支持也非常好。多种编程语言的发展方向显示了这是未来的必然趋势。
+现代语言逐渐重视不可变对象，比如，Java14和C#9引入了不可变的record类型，kotlin data class对不可变对象支持也非常好。这些编程语言的发展方向显示了这是未来的必然趋势。
 
 对ORM而言，情况略有不同。不但对象字段多，对象的关联也可能很深，即使ORM中对象非常复杂，往往代表一个庞大的数据结构，而非一个简单的孤单对象。
 

@@ -8,10 +8,9 @@ export const ViewMore: FC<
     PropsWithChildren<{
         readonly buttonText: string,
         readonly fullScreen?: boolean,
-        readonly ctxName: string,
         readonly title: string
     }>
-> = memo(({buttonText, fullScreen = false, ctxName, title, children}) => {
+> = memo(({buttonText, fullScreen = false, title, children}) => {
     
     const [open, setOpen] = useState(false);
     const [maximize, setMaximize] = useState(fullScreen);
