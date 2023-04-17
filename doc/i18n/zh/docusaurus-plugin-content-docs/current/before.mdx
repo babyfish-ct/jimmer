@@ -49,8 +49,9 @@ Jimmer是一个全面的解决方案，有很多强大的功能。其中有一�
 <td><a href="https://github.com/graphql/dataloader">DataLoader</a></td>
 <td>
 
--   计算规则和ORM解耦，可以使用任何信息（比如身份权限信息）用做计算，也可以使用关系型库以外的技术进行计算
 -   计算属性没有没有[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题
+
+-   计算规则和ORM解耦，可以使用任何信息（比如身份权限信息）用做计算，也可以使用关系型库以外的技术进行计算
 
 </td>
 </tr>
@@ -58,9 +59,28 @@ Jimmer是一个全面的解决方案，有很多强大的功能。其中有一�
 <td>实体对象远程关联属性</td>
 <td><a href="https://www.apollographql.com/docs/federation/">Apollo Federation</a></td>
 <td>
+
 -   跨越微服务的实体关系，关联双方实体隶属于不同的微服务（也表示，隶属于不同数据库）
+
 -   如果被查询的数据结构的形状包含远程关联，将会自动使用远程数据访问完成跨服务数据访问，对开发人员透明
+
 -   将不同微服务的关系型数据库模型，合并成一个全局的关系模型
+
+</td>
+</tr>
+<tr>
+<td>事务内触发器</td>
+<td><a href="https://seata.io/zh-cn/docs/dev/mode/at-mode.html">Seata的AT模式</a></td>
+<td>
+
+-   相似点：在修改数据库时植入额外的查询SQL，以捕获数据库的变更
+
+-   不同点：和seata会进行更多操作不同，Jimmer事务内触发器仅仅发送事件通知用户；另外不需要如同[Seata的AT模式](https://seata.io/zh-cn/docs/dev/mode/at-mode.html)一样代理JDBC连接池。
+
+:::note
+若条件允许，应优先使用binlog触发器，而非事务内触发器
+:::
+
 </td>
 </tr>
 <tr>
@@ -70,7 +90,7 @@ Jimmer是一个全面的解决方案，有很多强大的功能。其中有一�
     
 开发人员直接修改可变对象的直观方法，完成不可变对象的“复制构造”，尤其适合深层次的不可变对象。
 
-原因：java record和kotilin data class的copy函数为简单不可变对象二十几，难以简洁地处理复杂的深层次不可变对象，需要移植足够强大方案。
+原因：java record和kotilin data class的copy函数为简单不可变对象而设计，难以简洁地处理复杂的深层次不可变对象，需要移植足够强大方案。
 
 :::note
 本框架命名为Jimmer，即致敬[immer](https://github.com/immerjs/immer)
@@ -928,7 +948,7 @@ Jimmer的动态实体还有如下两个特性
 
 -   未指定属性在Jackson序列化时会被自动忽略
 
--   虽然作为一个ORM，Jimmer鼓励开发人员在实体**类型**之间声明双向关联，但是，实体**对象**之间只存在单向关联，绝不会有循环引用，开发没有任何手段可以用于构建带有循环引用Jimmer实体数据结构。
+-   虽然作为一个ORM，Jimmer鼓励开发人员在实体**类型**之间声明双向关联，但是，实体**对象**之间只存在单向关联，绝不会有循环引用，开发人员没有任何手段可以用于构建带有循环引用Jimmer实体数据结构。
 
 所以，Jimmer动态实体可以直接作为web返回类型。若无特殊需求，无需任何转化，直接返回即可。*（注意：需要为Jackson注册一个`ImmutableModule`模块，但这已经被jimmer的spring-starter自动完成了）*
 
