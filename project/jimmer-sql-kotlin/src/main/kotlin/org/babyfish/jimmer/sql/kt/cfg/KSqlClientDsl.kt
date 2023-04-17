@@ -160,6 +160,10 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setDatabaseValidationMode(mode)
     }
 
+    fun setDatabaseValidationCatalog(catalog: String?) {
+        javaBuilder.setDatabaseValidationCatalog(catalog)
+    }
+
     fun setMicroServiceName(microServiceName: String) {
         javaBuilder.setMicroServiceName(microServiceName)
     }
