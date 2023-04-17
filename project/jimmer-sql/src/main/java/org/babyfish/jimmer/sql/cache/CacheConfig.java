@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.sql.meta.JoinTemplate;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -67,7 +68,9 @@ public class CacheConfig {
                     if (prop.isRemote() && prop.getMappedBy() != null) {
                         continue;
                     }
-                    if (prop.isAssociation(TargetLevel.ENTITY) || prop.hasTransientResolver()) {
+                    if (prop.getSqlTemplate() == null && (
+                            prop.isAssociation(TargetLevel.ENTITY) || prop.hasTransientResolver())
+                    ) {
                         Cache<?, ?> propCache =
                                 prop.hasTransientResolver() ?
                                         cacheFactory.createResolverCache(prop) : (
@@ -206,6 +209,15 @@ public class CacheConfig {
     private void validateProp(ImmutableProp prop, boolean collection) {
         if (prop.isTransient()) {
             throw new IllegalArgumentException("The prop \"" + prop + "\" is transient");
+        }
+        if (prop.getSqlTemplate() instanceof JoinTemplate) {
+            throw new IllegalArgumentException(
+                    "The prop \"" +
+                            prop +
+                            "\" is decorated by \"@" +
+                            JoinTemplate.class.getName() +
+                            "\" which does not support cache"
+            );
         }
         if (collection && !prop.isReferenceList(TargetLevel.ENTITY)) {
             throw new IllegalArgumentException("The prop \"" + prop + "\" is not entity list");

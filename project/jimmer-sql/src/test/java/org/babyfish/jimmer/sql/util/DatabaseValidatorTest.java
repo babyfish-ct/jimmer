@@ -10,7 +10,7 @@ public class DatabaseValidatorTest extends AbstractTest {
     @Test
     public void testH2() {
         jdbc(con -> {
-            DatabaseValidators.validate(JimmerModule.ENTITY_MANAGER, "", con);
+            DatabaseValidators.validate(JimmerModule.ENTITY_MANAGER, "", null, con);
         });
     }
 }

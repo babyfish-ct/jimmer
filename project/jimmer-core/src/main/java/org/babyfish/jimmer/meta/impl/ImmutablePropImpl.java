@@ -11,9 +11,7 @@ import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.spi.EntityPropImplementor;
 import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
-import org.babyfish.jimmer.sql.meta.FormulaTemplate;
-import org.babyfish.jimmer.sql.meta.Storage;
+import org.babyfish.jimmer.sql.meta.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,7 +51,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     private final boolean isFormula;
 
-    private final FormulaTemplate formulaTemplate;
+    private final SqlTemplate sqlTemplate;
 
     private final DissociateAction dissociateAction;
 
@@ -174,9 +172,11 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
                             "\" so that it cannot be association"
             );
         }
+
+        JoinSql joinSql = getAnnotation(JoinSql.class);
         if (formula != null && !formula.sql().isEmpty()) {
             try {
-                formulaTemplate = FormulaTemplate.of(formula.sql());
+                sqlTemplate = FormulaTemplate.of(formula.sql());
             } catch (IllegalArgumentException ex) {
                 throw new ModelException(
                         "Illegal property \"" +
@@ -185,8 +185,10 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
                                 ex.getMessage()
                 );
             }
+        } else if (joinSql != null) {
+            sqlTemplate = JoinTemplate.of(joinSql.value());
         } else {
-            formulaTemplate = null;
+            sqlTemplate = null;
         }
 
         ManyToOne manyToOne = getAnnotation(ManyToOne.class);
@@ -250,7 +252,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         this.associationAnnotation = base.associationAnnotation;
         this.isTransient = base.isTransient;
         this.isFormula = base.isFormula;
-        this.formulaTemplate = base.formulaTemplate;
+        this.sqlTemplate = base.sqlTemplate;
         this.hasTransientResolver = base.hasTransientResolver;
         this.dissociateAction = base.dissociateAction;
         this.base = base.base != null ? base.base : base;
@@ -348,7 +350,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     @Override
     public boolean isMutable() {
-        return !isFormula || formulaTemplate != null;
+        return !isFormula || sqlTemplate instanceof FormulaTemplate;
     }
 
     @Override
@@ -432,8 +434,8 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     @Nullable
     @Override
-    public FormulaTemplate getFormulaTemplate() {
-        return formulaTemplate;
+    public SqlTemplate getSqlTemplate() {
+        return sqlTemplate;
     }
 
     @Override
@@ -922,7 +924,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
                                     "\""
                     );
                 }
-                if (resolved.getStorage() == null) {
+                if (resolved.getStorage() == null && !(resolved.getSqlTemplate() instanceof JoinTemplate)) {
                     throw new ModelException(
                             "The property \"" +
                                     resolved +
@@ -1027,6 +1029,16 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         if (remote == null) {
             if (isAssociation(TargetLevel.ENTITY)) {
                 remote = !declaringType.getMicroServiceName().equals(getTargetType().getMicroServiceName());
+                if (remote && sqlTemplate != null) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", remote association(micro-service names of declaring type and target type " +
+                                    "are different) cannot be decorated by \"@" +
+                                    JoinSql.class.getName() +
+                                    "\""
+                    );
+                }
             } else {
                 remote = false;
             }
@@ -1082,7 +1094,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
                                 );
                             }
                             if (prop.isFormula()) {
-                                if (prop.getFormulaTemplate() != null) {
+                                if (prop.getSqlTemplate() instanceof FormulaTemplate) {
                                     throw new ModelException(
                                             "Illegal property \"" +
                                                     this +

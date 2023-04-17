@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
+import org.babyfish.jimmer.sql.meta.SqlTemplate;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +34,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
     public void accept(@NotNull AstVisitor visitor) {
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
-            if (prop.getStorage() instanceof ColumnDefinition || prop.getFormulaTemplate() != null) {
+            if (prop.getStorage() instanceof ColumnDefinition || prop.getSqlTemplate() instanceof FormulaTemplate) {
                 visitor.visitTableReference(TableProxies.resolve(table, visitor.getAstContext()), prop);
             }
         }
@@ -46,15 +47,15 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             ImmutableProp prop = field.getProp();
             String alias = TableProxies.resolve(table, builder.getAstContext()).getAlias();
             Storage storage = prop.getStorage();
-            FormulaTemplate template = prop.getFormulaTemplate();
+            SqlTemplate template = prop.getSqlTemplate();
             if (storage instanceof ColumnDefinition) {
                 builder.sql(separator);
                 separator = ", ";
                 builder.sql(alias, (ColumnDefinition) storage);
-            } else if (template != null) {
+            } else if (template instanceof FormulaTemplate) {
                 builder.sql(separator);
                 separator = ", ";
-                builder.sql(template.toSql(alias));
+                builder.sql(((FormulaTemplate)template).toSql(alias));
             }
         }
     }

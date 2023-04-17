@@ -263,7 +263,17 @@ class ImmutableProp(
 
     val isRemote: Boolean by lazy {
         targetType?.takeIf {
-            it.microServiceName != declaringType.microServiceName
+            val remote = it.microServiceName != declaringType.microServiceName
+            if (remote && annotation(JoinSql::class) !== null) {
+                throw MetaException(
+                    propDeclaration,
+                    "remote association(micro-service names of declaring type and target type are different) " +
+                        "cannot be decorated by \"@" +
+                        JoinSql::class.qualifiedName +
+                        "\""
+                )
+            }
+            remote
         } !== null
     }
 

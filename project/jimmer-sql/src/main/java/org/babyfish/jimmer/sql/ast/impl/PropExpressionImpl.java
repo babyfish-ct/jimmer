@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
+import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -93,7 +94,7 @@ public class PropExpressionImpl<T>
         if (prop.isAssociation(TargetLevel.PERSISTENT)) {
             throw new IllegalArgumentException("prop '" + prop + "' cannot be association property");
         }
-        if (!(prop.getStorage() instanceof ColumnDefinition) && prop.getFormulaTemplate() == null) {
+        if (!(prop.getStorage() instanceof ColumnDefinition) && !(prop.getSqlTemplate() instanceof FormulaTemplate)) {
             throw new IllegalArgumentException("prop is not selectable");
         }
         this.table = table;

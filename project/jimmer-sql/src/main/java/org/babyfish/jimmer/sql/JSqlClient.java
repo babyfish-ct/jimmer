@@ -266,6 +266,9 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setDatabaseValidationMode(DatabaseValidationMode mode);
 
         @OldChain
+        Builder setDatabaseValidationCatalog(String catalog);
+
+        @OldChain
         Builder setMicroServiceName(String microServiceName);
 
         @OldChain

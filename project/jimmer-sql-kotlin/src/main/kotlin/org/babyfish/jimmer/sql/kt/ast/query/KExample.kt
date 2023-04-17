@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.Predicate
 import org.babyfish.jimmer.sql.ast.StringExpression
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.meta.ColumnDefinition
+import org.babyfish.jimmer.sql.meta.FormulaTemplate
 import org.babyfish.jimmer.sql.meta.Storage
 import kotlin.reflect.KProperty1
 
@@ -87,7 +88,7 @@ class KExample<E: Any> internal constructor(
         val predicates = mutableListOf<Predicate?>()
         for (prop in spi.__type().props.values) {
             if (spi.__isLoaded(prop.id) &&
-                (prop.getStorage<Storage>() is ColumnDefinition || prop.formulaTemplate != null)) {
+                (prop.getStorage<Storage>() is ColumnDefinition || prop.sqlTemplate is FormulaTemplate)) {
                 val value = valueOf(spi, prop)
                 val expr = expressionOf(table, prop, value == null)
                 val data = propDataMap[prop]

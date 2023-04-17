@@ -125,7 +125,7 @@ public class PropDescriptor {
                 setOf(Entity.class, MappedSuperclass.class);
 
         private static final Set<Class<? extends Annotation>> ASSOCIATION_STORAGE_ANNOTATION_TYPES =
-                setOf(JoinColumns.class, JoinColumn.class, JoinTable.class);
+                setOf(JoinColumns.class, JoinColumn.class, JoinTable.class, JoinSql.class);
 
         private final boolean isKotlinType;
 
@@ -279,8 +279,20 @@ public class PropDescriptor {
             if (annotationTypes.contains(JoinColumn.class) && annotationTypes.contains(JoinTable.class)) {
                 conflict(JoinColumn.class, JoinTable.class);
             }
+            if (annotationTypes.contains(JoinColumns.class) && annotationTypes.contains(JoinSql.class)) {
+                conflict(JoinColumns.class, JoinSql.class);
+            }
+            if (annotationTypes.contains(JoinColumn.class) && annotationTypes.contains(JoinSql.class)) {
+                conflict(JoinColumn.class, JoinSql.class);
+            }
+            if (annotationTypes.contains(JoinTable.class) && annotationTypes.contains(JoinSql.class)) {
+                conflict(JoinTable.class, JoinSql.class);
+            }
             if (annotationTypes.contains(Key.class) && annotationTypes.contains(JoinTable.class)) {
                 conflict(Key.class, JoinTable.class);
+            }
+            if (annotationTypes.contains(Key.class) && annotationTypes.contains(JoinSql.class)) {
+                conflict(Key.class, JoinSql.class);
             }
             if (annotationTypes.contains(PropOverrides.class) && annotationTypes.contains(Column.class)) {
                 conflict(PropOverrides.class, Column.class);
@@ -524,7 +536,7 @@ public class PropDescriptor {
             families.put(Type.ONE_TO_ONE, setOf(Key.class, OnDissociate.class, JoinColumns.class, JoinColumn.class, JoinTable.class));
             families.put(Type.MANY_TO_ONE, setOf(Key.class, OnDissociate.class, JoinColumns.class, JoinColumn.class, JoinTable.class));
             families.put(Type.ONE_TO_MANY, setOf());
-            families.put(Type.MANY_TO_MANY, setOf(JoinTable.class));
+            families.put(Type.MANY_TO_MANY, setOf(JoinTable.class, JoinSql.class));
             families.put(Type.ID_VIEW, setOf());
             families.put(Type.MANY_TO_MANY_VIEW, setOf());
 

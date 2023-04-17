@@ -13,7 +13,12 @@ import java.util.*;
 public class Storages {
 
     static Storage of(ImmutableProp prop) {
-        if (prop.isTransient() || prop.isFormula() || !prop.getDependencies().isEmpty() || prop.getDeclaringType().isEmbeddable()) {
+        if (prop.isTransient() ||
+                prop.isFormula() ||
+                !prop.getDependencies().isEmpty() ||
+                prop.getDeclaringType().isEmbeddable() ||
+                prop.getSqlTemplate() instanceof JoinTemplate
+        ) {
             return null;
         }
         Annotation annotation = prop.getAssociationAnnotation();

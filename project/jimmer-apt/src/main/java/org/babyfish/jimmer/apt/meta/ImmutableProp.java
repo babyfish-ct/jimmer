@@ -83,6 +83,8 @@ public class ImmutableProp {
 
     private boolean isVisibilityControllable;
 
+    private Boolean remote;
+
     public ImmutableProp(
             Context context,
             ImmutableType declaringType,
@@ -478,7 +480,21 @@ public class ImmutableProp {
     }
 
     public boolean isRemote() {
-        return targetType != null && !declaringType.getMicroServiceName().equals(targetType.getMicroServiceName());
+        Boolean remote = this.remote;
+        if (remote == null) {
+            remote = targetType != null && !declaringType.getMicroServiceName().equals(targetType.getMicroServiceName());
+            if (remote && getAnnotation(JoinSql.class) != null) {
+                throw new MetaException(
+                        executableElement,
+                        "the remote association(micro-service names of declaring type and target type are different) " +
+                                "cannot be decorated by \"@" +
+                                JoinSql.class +
+                                "\""
+                );
+            }
+            this.remote = remote;
+        }
+        return remote;
     }
 
     boolean resolve(Context context, int step) {

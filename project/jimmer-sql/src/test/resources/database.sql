@@ -1,3 +1,6 @@
+drop alias contains_id if exists;
+drop table category if exists;
+drop table post if exists;
 drop table learning_link if exists;
 drop table course if exists;
 drop table student if exists;
@@ -634,3 +637,36 @@ insert into learning_link(id, student_id, course_id, score) values
     (2, 1, 3, null),
     (3, 2, 3, 87),
     (4, 2, 1, null);
+
+
+
+
+create table post(
+    id bigint not null,
+    name varchar(20) not null,
+    category_ids varchar(200) not null
+);
+alter table post
+    add constraint pk_post
+        primary key(id);
+
+create table category(
+    id bigint not null,
+    name varchar(20) not null
+);
+alter table category
+    add constraint pk_category
+        primary key(id);
+
+insert into post(id, name, category_ids) values
+    (1, 'post-1', '1, 2'),
+    (2, 'post-2', '1, 2'),
+    (3, 'post-3', '2, 3'),
+    (4, 'post-4', '2, 3');
+
+insert into category(id, name) values
+    (1, 'category-1'),
+    (2, 'category-2'),
+    (3, 'category-3');
+
+create alias contains_id for "org.babyfish.jimmer.sql.model.joinsql.H2ContainsIdFun.contains";

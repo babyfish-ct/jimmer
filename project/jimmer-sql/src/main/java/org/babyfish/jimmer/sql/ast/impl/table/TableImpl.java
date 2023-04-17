@@ -16,9 +16,7 @@ import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
-import org.babyfish.jimmer.sql.meta.FormulaTemplate;
-import org.babyfish.jimmer.sql.meta.MiddleTable;
+import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -83,7 +81,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         if (joinProp != null) {
             if (joinProp.getStorage() instanceof MiddleTable) {
                 middleTableAlias = statement.getContext().allocateTableAlias();
-            } else if (joinProp.getStorage() == null) {
+            } else if (joinProp.getSqlTemplate() == null && joinProp.getStorage() == null) {
                 throw new AssertionError("Internal bug: Join property has not storage");
             }
         }
@@ -514,6 +512,11 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             return;
         }
 
+        if (joinProp.getSqlTemplate() instanceof JoinTemplate) {
+            renderJoinBySql(builder, (JoinTemplate) joinProp.getSqlTemplate(), mode);
+            return;
+        }
+
         if (joinProp instanceof AssociationProp) {
             if (builder.getAstContext().getTableUsedState(this) == TableUsedState.USED) {
                 renderJoinImpl(
@@ -581,6 +584,12 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
 
         TableImpl<?> parent = this.parent;
         JoinType joinType = this.joinType;
+
+        if (joinProp.getSqlTemplate() instanceof JoinTemplate) {
+            renderJoinBySql(sqlBuilder, (JoinTemplate) joinProp.getSqlTemplate(), mode);
+            return;
+        }
+
         MiddleTable middleTable = null;
         if (joinProp.getStorage() instanceof MiddleTable) {
             middleTable = joinProp.getStorage();
@@ -623,6 +632,40 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                     joinProp.getStorage(),
                     mode
             );
+        }
+    }
+
+    private void renderJoinBySql(
+            SqlBuilder builder,
+            JoinTemplate joinTemplate,
+            RenderMode mode
+    ) {
+        if (builder.getAstContext().getTableUsedState(this) != TableUsedState.NONE) {
+            switch (mode) {
+                case NORMAL:
+                    builder
+                            .sql(" ")
+                            .sql(joinType.name().toLowerCase())
+                            .sql(" join ")
+                            .sql(immutableType.getTableName())
+                            .sql(" as ")
+                            .sql(alias)
+                            .sql(" on ");
+                    break;
+                case FROM_ONLY:
+                    builder
+                            .sql(immutableType.getTableName())
+                            .sql(" as ")
+                            .sql(alias);
+                    break;
+            }
+            if (mode == RenderMode.NORMAL || mode == RenderMode.WHERE_ONLY) {
+                if (isInverse) {
+                    builder.sql(joinTemplate.toSql(alias, parent.alias));
+                } else {
+                    builder.sql(joinTemplate.toSql(parent.alias, alias));
+                }
+            }
         }
     }
 
@@ -685,7 +728,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             ColumnDefinition optionalDefinition,
             boolean withPrefix
     ) {
-        if (prop.isId() && joinProp != null) {
+        if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate)) {
             MiddleTable middleTable;
             if (joinProp.getStorage() instanceof MiddleTable) {
                 middleTable = joinProp.getStorage();
@@ -746,9 +789,9 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                 return;
             }
         }
-        FormulaTemplate template = prop.getFormulaTemplate();
-        if (template != null) {
-            builder.sql(template.toSql(alias));
+        SqlTemplate template = prop.getSqlTemplate();
+        if (template instanceof FormulaTemplate) {
+            builder.sql(((FormulaTemplate)template).toSql(alias));
         } else {
             ColumnDefinition definition = optionalDefinition != null ? optionalDefinition : prop.getStorage();
             builder.sql(withPrefix ? alias : null, definition);

@@ -39,6 +39,7 @@ import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -566,6 +567,8 @@ class JSqlClientImpl implements JSqlClient {
 
         private DatabaseValidationMode databaseValidationMode = DatabaseValidationMode.NONE;
 
+        private String databaseValidationCatalog;
+
         private String microServiceName = "";
 
         private MicroServiceExchange microServiceExchange;
@@ -909,6 +912,12 @@ class JSqlClientImpl implements JSqlClient {
         }
 
         @Override
+        public Builder setDatabaseValidationCatalog(String catalog) {
+            this.databaseValidationCatalog = catalog != null && !catalog.isEmpty() ? catalog : null;
+            return this;
+        }
+
+        @Override
         public Builder setMicroServiceName(String microServiceName) {
             this.microServiceName = microServiceName != null ? microServiceName : "";
             return this;
@@ -1072,7 +1081,7 @@ class JSqlClientImpl implements JSqlClient {
                 }
                 DatabaseValidationException validationException = cm.execute(con -> {
                     try {
-                        return DatabaseValidators.validate(entityManager, microServiceName, con);
+                        return DatabaseValidators.validate(entityManager, microServiceName, databaseValidationCatalog, con);
                     } catch (SQLException ex) {
                         throw new ExecutionException(
                                 "Cannot validate the database because of SQL exception",

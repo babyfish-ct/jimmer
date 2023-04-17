@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
+import org.babyfish.jimmer.sql.meta.SqlTemplate;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.impl.util.StaticCache;
 
@@ -64,8 +65,8 @@ public class ReaderManager {
             }
             return scalarReader(prop);
         }
-        FormulaTemplate template = prop.getFormulaTemplate();
-        if (template != null) {
+        SqlTemplate template = prop.getSqlTemplate();
+        if (template instanceof FormulaTemplate) {
             return scalarReader(prop);
         }
         return null;

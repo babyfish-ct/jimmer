@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.loader.AbstractDataLoader;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
+import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 
 import java.sql.Connection;
 
@@ -54,7 +55,7 @@ class DataLoader extends AbstractDataLoader {
         Fetcher<?> fetcher = new FetcherImpl<>(targetType.getJavaClass()).allTableFields();
         for (ImmutableProp prop : targetType.getProps().values()) {
             // Note, GraphQL only support formula property based on java/kotlin expression
-            if (prop.isFormula() && prop.getFormulaTemplate() == null) {
+            if (prop.isFormula() && !(prop.getSqlTemplate() instanceof FormulaTemplate)) {
                 fetcher = fetcher.add(prop.getName());
             }
         }

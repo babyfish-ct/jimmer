@@ -12,10 +12,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class DatabaseValidators {
 
     private final String microServiceName;
+
+    private final String catalog;
 
     private final Connection con;
 
@@ -29,13 +32,15 @@ public class DatabaseValidators {
     public static DatabaseValidationException validate(
             EntityManager entityManager,
             String microServiceName,
+            String catalog,
             Connection con
     ) throws SQLException {
-        return new DatabaseValidators(microServiceName, con).validate(entityManager);
+        return new DatabaseValidators(microServiceName, catalog, con).validate(entityManager);
     }
 
-    private DatabaseValidators(String microServiceName, Connection con) {
+    private DatabaseValidators(String microServiceName, String catalog, Connection con) {
         this.microServiceName = microServiceName;
+        this.catalog = catalog;
         this.con = con;
         this.items = new ArrayList<>();
     }
@@ -266,7 +271,14 @@ public class DatabaseValidators {
                 schemaName = schemaName.substring(index + 1);
             }
         }
-        return tablesOf(catalogName, schemaName, tableName);
+        return tablesOf(optional(catalogName), optional(schemaName), tableName);
+    }
+
+    private static String optional(String value) {
+        if ("".equals(value) || "null".equals(value)) {
+            return null;
+        }
+        return value;
     }
 
     private Set<Table> tablesOf(String catalogName, String schemaName, String tableName) throws SQLException {
@@ -322,6 +334,12 @@ public class DatabaseValidators {
                     );
                 }
             }
+        }
+        if (catalog != null && !catalog.isEmpty()) {
+            return tables
+                    .stream()
+                    .filter(it -> it.catalog.equals(catalog))
+                    .collect(Collectors.toSet());
         }
         return tables;
     }

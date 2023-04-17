@@ -5,7 +5,6 @@ import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.model.calc.BookStoreAvgPriceResolver;
-import org.babyfish.jimmer.sql.model.calc.BookStoreMostPopularAuthorResolver;
 import org.babyfish.jimmer.sql.model.calc.BookStoreNewestBooksResolver;
 import org.jetbrains.annotations.Nullable;
 

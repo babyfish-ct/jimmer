@@ -660,7 +660,7 @@ Jimmer DSL引入了一个非常强大能力，隐式表连接。
 仅仅有`动态where`和`动态 order by`是不够的，还需要`动态join`。
 :::
 
-Jimmer隐式表连接就是为`动态join`而设计，完美解决了上述问题，即便面对这种非常繁琐的动态查询也能优雅快捷低实现。这是其他所有方案 *(无论是`(x)ql`还是DSL风格)* 都没有的功能，也是Jimmer项目被创建的最初动机。
+Jimmer隐式表连接就是为`动态join`而设计，完美解决了上述问题，即便面对这种非常繁琐的动态查询也能优雅快捷地实现。这是其他所有方案 *(无论是`(x)ql`还是DSL风格)* 都没有的功能，也是Jimmer项目被创建的最初动机。
 
 </Collapse>
 
@@ -1086,7 +1086,7 @@ export type BookDto = {
 
     -   一旦支持lazy-loading，新手就可能不做任何深入配置，放任lazy-loading机制频繁制造[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题。
     
-    Jimmer灵活控制被查询数据结构的形状，其内部机制对用户透明。底层查询可能涉及数据库访问，缓存访问，用户自定义计算甚至跨越微服务边界的远程调用。但无论时何种底层行为，都没有[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题，因为被查询的数据结构的形状总是事先指定的，而非查询后的lazy-loading。
+    Jimmer灵活控制被查询数据结构的形状，其内部机制对用户透明。底层查询可能涉及数据库访问，缓存访问，用户自定义计算甚至跨越微服务边界的远程调用。但无论是何种底层行为，都没有[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题，因为被查询的数据结构的形状总是事先指定的，而非查询后的lazy-loading。
 
     :::note
     事实上，Jimmer生成SQL并执行，一定是因为开发人员**显式**调用了其具有明确CRUD性质的API，绝不会如传统ORM一样在其他操作，比如对数据对象的处理过程中，因lazy-loading这类行为导致SQL被**隐式**地执行。
@@ -1101,11 +1101,11 @@ export type BookDto = {
 
 <Collapse title="高性能的对象映射">
 
-除了保证不会被新手诱导地性能SQL外，Jimmer本身对结果集的映射性能也非常高。
+除了保证不会被新手诱导出低性能SQL外，Jimmer本身对结果集的映射性能也非常高。
 
 -   以前，数据库项目的大部分时间都是在等待JDBC阻塞，ORM本身的映射性能无关痛痒。
 
--   现在，JVM力推虚拟线程。在这个模式下，ORM本身的映射性能高，可以让其carrier线程进口完成任务后去扛起更多的虚拟现场，具备很重要的意义。
+-   现在，JVM力推虚拟线程。在这个模式下，ORM本身的映射性能高，可以让其carrier线程尽快完成任务后去扛起更多的虚拟线程，具备很重要的意义。
 
 <ViewMore buttonText="查看性能报告" title="Benchmark">
 

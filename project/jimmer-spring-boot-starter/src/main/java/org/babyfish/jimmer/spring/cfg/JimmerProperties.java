@@ -13,7 +13,6 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 @ConstructorBinding
@@ -30,7 +29,7 @@ public class JimmerProperties {
     private final boolean showSql;
 
     @NotNull
-    private final DatabaseValidationMode databaseValidationMode;
+    private final DatabaseValidation databaseValidation;
 
     @NotNull
     private final TriggerType triggerType;
@@ -56,7 +55,8 @@ public class JimmerProperties {
             @Nullable String language,
             @Nullable String dialect,
             boolean showSql,
-            @Nullable DatabaseValidationMode databaseValidationMode,
+            @Deprecated @Nullable DatabaseValidationMode databaseValidationMode,
+            @Nullable DatabaseValidation databaseValidation,
             @Nullable TriggerType triggerType,
             @Nullable EnumType.Strategy defaultEnumStrategy,
             @Nullable Integer defaultBatchSize,
@@ -113,10 +113,23 @@ public class JimmerProperties {
             }
         }
         this.showSql = showSql;
-        this.databaseValidationMode =
-                databaseValidationMode != null ?
-                        databaseValidationMode :
-                        DatabaseValidationMode.NONE;
+        if (databaseValidationMode != null && databaseValidation != null) {
+            throw new IllegalArgumentException(
+                    "Conflict configuration properties: \"jimmer.database-validation.mode\" and " +
+                            "\"jimmer.database-validation-mode(deprecated)\""
+            );
+        }
+        if (databaseValidation != null) {
+            this.databaseValidation = databaseValidation;
+        } else {
+            this.databaseValidation =
+                    new DatabaseValidation(
+                            databaseValidationMode != null ?
+                                    databaseValidationMode :
+                                    DatabaseValidationMode.NONE,
+                            null
+                    );
+        }
         this.triggerType = triggerType != null ? triggerType : TriggerType.BINLOG_ONLY;
         this.defaultEnumStrategy =
                 defaultEnumStrategy != null ?
@@ -158,8 +171,8 @@ public class JimmerProperties {
     }
 
     @NotNull
-    public DatabaseValidationMode getDatabaseValidationMode() {
-        return databaseValidationMode;
+    public DatabaseValidation getDatabaseValidation() {
+        return databaseValidation;
     }
 
     @NotNull
@@ -225,6 +238,39 @@ public class JimmerProperties {
                 ", client=" + client +
                 ", clients=" + clients +
                 '}';
+    }
+
+    @ConstructorBinding
+    public static class DatabaseValidation {
+
+        @NotNull
+        private final DatabaseValidationMode mode;
+
+        @Nullable
+        private final String catalog;
+
+        public DatabaseValidation(@Nullable DatabaseValidationMode mode, @Nullable String catalog) {
+            this.mode = mode != null ? mode : DatabaseValidationMode.NONE;
+            this.catalog = catalog != null && !catalog.isEmpty() ? catalog : null;
+        }
+
+        @NotNull
+        public DatabaseValidationMode getMode() {
+            return mode;
+        }
+
+        @Nullable
+        public String getCatalog() {
+            return catalog;
+        }
+
+        @Override
+        public String toString() {
+            return "Validation{" +
+                    "mode=" + mode +
+                    ", catalog='" + catalog + '\'' +
+                    '}';
+        }
     }
 
     @ConstructorBinding

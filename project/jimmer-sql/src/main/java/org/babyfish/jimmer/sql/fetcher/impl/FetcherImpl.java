@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.*;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -218,7 +219,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
                                 true
                         );
                         orderedMap.put(dependency.getProp().getName(), dependencyField);
-                        if (prop.isFormula() && prop.getFormulaTemplate() == null) {
+                        if (prop.isFormula() && !(prop.getSqlTemplate() instanceof FormulaTemplate)) {
                             extensionFields.add(dependencyField);
                         }
                     } else if (dependency.getDeeperProp() != null) {
