@@ -26,7 +26,7 @@ export const ViewMore: FC<
 
     return (
         <>
-            <Button onClick={onButtonClick}>{buttonText}</Button>
+            <Button onClick={onButtonClick} variant="contained">{buttonText}</Button>
             <Dialog open={open} onClose={onClose} fullScreen={maximize} TransitionComponent={Transition}>
                 <AppBar sx={{ position: 'relative' }}>
                     <Toolbar>

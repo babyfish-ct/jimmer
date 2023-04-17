@@ -651,43 +651,7 @@ Jimmer隐式表连接就是为`动态join`而设计，完美解决了上述问�
 所谓DTO爆炸，指由于不同的业务查询的数据格式的不同，即使聚合根对象类型相同，也要为不同的数据结构定义不同的类型。
 <ViewMore title="传统方案下的DTO类型定义爆炸示范" buttonText="查看例子">
 
--   只有那个部分属性的Book类型的定义
-
-    ```java
-    @Data
-    public class PartialBookDTO {
-        private long id;
-        private Strin name;
-    }
-    ```
--   具有所属非关联属性的Book类型的定义
-
-    ```java
-    @Data
-    public class FlatBookDTO {
-        private long id;
-        private String name;
-        private int edition;
-        private BigDecimal price;
-    }
-    ```
-
--   具备非关联属性的Book类型的定义
-
-    ```java
-    @Data
-    public class FlatBookDTO {
-        private long id;
-        private String name;
-        private int edition;
-        private BigDecimal price;
-        private TargetOf_Store store;
-        private List<TargetOf_Author> authors;
-        
-        public static class TargetOf_Store {...略...}
-        public static clsss TargetOf_Authors {...略...}
-    }
-    ```
+![dto-explosion](@site/static/img/dto-explosion.png)
 
 </ViewMore>
 
