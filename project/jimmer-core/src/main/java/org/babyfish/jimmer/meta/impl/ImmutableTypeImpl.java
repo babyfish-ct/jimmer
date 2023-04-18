@@ -5,6 +5,7 @@ import kotlin.reflect.KClass;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
@@ -502,7 +503,7 @@ class ImmutableTypeImpl implements ImmutableType {
                                 "\""
                 );
             }
-            if (parsedType != returnType) {
+            if (!Classes.matches(parsedType, returnType)) {
                 throw new ModelException(
                         "Illegal property \"" +
                                 idProp +

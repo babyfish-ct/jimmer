@@ -22,11 +22,15 @@ import java.lang.annotation.Target;
  * <ul>
  *     <li>Can only used with {@link ManyToMany}</li>
  *     <li>
- *         Cannot be used by remote association
- *         (The microservice names of declaring type and target type are different)
+ *         Cannot be used by remote association,
+ *         so the microservice names of declaring type and target type must be same
  *     </li>
  *     <li>Cannot be optimized by `half-join`</li>
  *     <li>Cannot be cached</li>
+ *     <li>
+ *         Object tree with unstructured association can not be argument of save-command,
+ *         otherwise, error will be raised
+ *     </li>
  * </ul>
  */
 @Retention(RetentionPolicy.RUNTIME)
@@ -34,5 +38,11 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface JoinSql {
 
+    /**
+     * A sql fragment must contain `%alias` and `%target_alias`,
+     * return a sql predicate describes how to join the current
+     * table referenced by `%alias` and target table referenced by
+     * `%target_alias`
+     */
     String value();
 }

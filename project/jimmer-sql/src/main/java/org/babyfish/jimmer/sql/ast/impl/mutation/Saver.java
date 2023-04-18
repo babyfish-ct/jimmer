@@ -133,6 +133,18 @@ class Saver {
                                     "cannot be supported by save command"
                     );
                 }
+                if (prop.getSqlTemplate() instanceof JoinTemplate) {
+                    throw new SaveException(
+                            SaveErrorCode.UNSTRUCTURED_ASSOCIATION,
+                            path,
+                            "The property \"" +
+                                    prop +
+                                    "\" which is unstructured association(decorated by @" +
+                                    JoinSql.class.getName() +
+                                    ") " +
+                                    "cannot be supported by save command"
+                    );
+                }
                 int currentIdPropId = currentType.getIdProp().getId();
                 Object currentId = currentDraftSpi.__isLoaded(currentIdPropId) ?
                         currentDraftSpi.__get(currentIdPropId) :

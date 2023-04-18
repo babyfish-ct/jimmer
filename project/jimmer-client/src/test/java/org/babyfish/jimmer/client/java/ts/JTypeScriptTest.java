@@ -147,6 +147,11 @@ public class JTypeScriptTest {
                         "        readonly family: \"SaveErrorCode\",\n" +
                         "        readonly code: \"REVERSED_REMOTE_ASSOCIATION\",\n" +
                         "        readonly \"exportedPath\": ExportedSavePath\n" +
+                        "    } | \n" +
+                        "    {\n" +
+                        "        readonly family: \"SaveErrorCode\",\n" +
+                        "        readonly code: \"UNSTRUCTURED_ASSOCIATION\",\n" +
+                        "        readonly \"exportedPath\": ExportedSavePath\n" +
                         "    }\n" +
                         ";\n" +
                         "\n" +
@@ -257,6 +262,11 @@ public class JTypeScriptTest {
                         "            {\n" +
                         "                readonly family: 'SaveErrorCode',\n" +
                         "                readonly code: 'FAILED_REMOTE_VALIDATION',\n" +
+                        "                readonly [key:string]: any\n" +
+                        "            } | \n" +
+                        "            {\n" +
+                        "                readonly family: 'SaveErrorCode',\n" +
+                        "                readonly code: 'UNSTRUCTURED_ASSOCIATION',\n" +
                         "                readonly [key:string]: any\n" +
                         "            }\n" +
                         "        )\n" +
