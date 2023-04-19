@@ -6,44 +6,24 @@ title: Get started
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+:::tip
+Running the demos that come with the framework is always the fastest way to get started, 
+especially `example/java/jimmer-sql` or `/example/kotlin/jimmer-sql-kt`
+:::
+
+## Essential Information to Run the Example!
+Like the strong-typed SQL DSL implementations such as
+[JOOQ](https://www.jooq.org/)，[JPA2.0 Criteria](https://docs.oracle.com/javaee/6/tutorial/doc/gjitv.html)，[QueryDSL](http://querydsl.com/)，[MyBatis-Flex](https://github.com/mybatis-flex/mybatis-flex)，[Fluent-MyBatis](https://github.com/atool/fluent-mybatis),
+Jimmer needs to generate more source code based on user code.
+
+-   For Java, this means annotation processor.
+-   For Kotlin, this means KSP.
+
+When users first use an IDE (such as IntelliJ) to open the project's accompanying examples, 
+they will find that some classes that should have been automatically generated do not exist.
+
+**Don't be afraid at this point, click the Run/Debug button, and all errors will disappear automatically**
+
 ## Youtube video
 
 https://www.youtube.com/watch?v=Rt5zNv0YR2E
-
-## Tutorual pages
-
-1.  jimmer-core
-    
-    [Click here](./jimmer-core/usage.mdx)
-
-2.  jimmer-sql
-    
-    -   I use spring-boot and expect to greatly simplify development with jimmer's spring-boot-starter and spring-data-jimmer
-        
-        [Click here](./jimmer-sql/spring-boot)
-
-    -   I want to know all the details of using Jimmer, and even consider integrating Jimmer with other non-spring frameworks
-
-        [Click here](./jimmer-sql/basic/usage.mdx)
-
-## Quick experience
-
-Use intellij to open [&lt;jimmer-home&gt;/example/java/java-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql/) or [&lt;jimmer-home&gt;/example/kotlin/java-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt/), 
-
-After opening it for the first time, compilation errors will appear in the IDE, please refer to [Open Demo with IDE](#open-demo-with-ide)
-
-Start it, Access http://localhost:8080/ui
-
-For more information, please view [Demos](./demo)
-
-## Note 
-
-:::caution
-
-Like other strong type dsl frameworks, jimmer uses a code generator, which is AnnotationProcessor for Java and KSP for Kotlin.
-
-Therefore, when you open any project in the demo with the framework attached to the IDE for the first time, compilation errors will be reported because the code that should be automatically generated does not exist temporarily.
-
-Don't be afraid, click the "Run" button with confidence, and all problems will disappear automatically and immediately.
-
-:::

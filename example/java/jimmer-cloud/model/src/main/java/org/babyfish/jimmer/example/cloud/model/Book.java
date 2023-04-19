@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.example.cloud.model;
 
+import org.babyfish.jimmer.example.cloud.model.common.BaseEntity;
 import org.babyfish.jimmer.sql.*;
 import org.jetbrains.annotations.Nullable;
 
@@ -7,7 +8,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Entity(microServiceName = "book-service")
-public interface Book {
+public interface Book extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

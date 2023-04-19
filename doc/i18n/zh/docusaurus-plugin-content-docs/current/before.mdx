@@ -16,11 +16,11 @@ import { Benchmark } from '@site/src/components/Benchmark';
 
 ## 思维导图
 
-![jimmer-mind](@site/static/img/jimmer-mind.svg)
+![jimmer-mind](@site/static/img/jimmer-mind-zh.svg)
 
 ## 方案类比
 
-Jimmer是一个全面的解决方案，有很多强大的功能。其中有一部分功能是Jimmer独创的，还有一部分和某些其他技术体系有相似性，可以通过类比来帮助理解。
+Jimmer是一个全面的解决方案，有很多强大的功能。其中有一部分功能是Jimmer独创的，还有一部分和某些其他技术体系有相似性，可以通过类比来帮助用相关经验的用户理解。
 
 可和其他相似技术体系类比的功能点有：
 
@@ -314,9 +314,13 @@ Jimmer是一个全面的解决方案，有很多强大的功能。其中有一�
 
 -   对于保存而言，也和传统的ORM有巨大的区别。
 
-    以JPA/Hibernate为例，对象的普通属性是否需要被保存通过`@Column`注解的`insertable`和`updatable`参数控制，关联属性是否需要被保存通过以`@OneToMany`注解的`cascade`参数为代表的配置控制。但无论如何开发人员如何配置，JPA/Hibernate能够为你保存的数据结构的形状是固定的。
+    以JPA/Hibernate为例，对象的普通属性是否需要被保存通过[Column.insertable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#insertable--)和[Column.updatable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--)控制，关联属性是否需要被保存通过[OneToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--)、[ManyToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--)、[OneToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--)或[ManyToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--)控制。但无论如何开发人员如何配置，JPA/Hibernate能够为你保存的数据结构的形状是固定的。
 
     Jimmer采用完全不同方法，直接保存动态实体。被设置的属性会被保存，而未被设置的属性会被忽略，这样，就可以保存任意形状的数据结构。
+
+    这样做的目的是：
+	-   快速开发任意复杂的表单保存业务
+	-   对同一个聚合根类型而言，多种不同表单格式的保存业务可并存
 
 :::note
 无论查询输出还是保存输入，Jimmer的基本操作单元都是任意形状的数据结构，而非简单的实体对象
@@ -441,39 +445,43 @@ interface Book {
 |    Entity A      |
 | (Aggregate-root) |
 +--------+---------+
-            |
+         |
     (ORM association)
-            |
-            ↓
+         |
+         ↓
 +------------------+
 |    Entity B      |
 +--------+---------+
-            |
+         |
 (Calculated association)
-            |
-            ↓
+         |
+         ↓
 +------------------+
 |    Entity C      |
 +--------+---------+
-            |
+         |
     (ORM association)
-            |
-            ↓
+         |
+         ↓
 +------------------+
 |    Entity D      |
 +--------+---------+
-            |
+         |
 (Calculated association)
-            |
-            ↓
+         |
+         ↓
 +------------------+
 |    Entity E      |
 +--------+---------+
 ```
-其中，`ORM assocition`表示传统的ORM的关联，比如@OneToOne, @ManyToOne, @OneToMany和@ManyToMany，由数据库数据决定的关联，这是被Jimmer自动执行的SQL操作；而`Calculated association`表示用户实现的计算关联，可能使用非SQL的技术处理。
+其中
+
+-   `ORM assocition`表示传统的ORM的关联，比如@OneToOne, @ManyToOne, @OneToMany和@ManyToMany，由数据库数据决定的关联，这是被Jimmer自动执行的SQL操作
+
+-   `Calculated association`表示用户实现的计算关联，其行为由用户决定，有可能使用非SQL的技术实现计算逻辑
 
 在不考虑缓存的情况下，Jimmer将把ORM自动负责的SQL操作和用户实现的计算（可能是SQL以外的技术实现）结合起来，交替执行，直到查出整个数据结构。
-``
+
 </Collapse>
 
 <Collapse title="远程关联属性">
@@ -520,7 +528,6 @@ Jimmer不仅仅是一个单体应用（也可说单个微服务内部）的ORM�
             |
     (Remote association)
             |
-            ↓
 +-----------+------------+
 |     Micro | service: γ |
 |           ↓            |
@@ -538,7 +545,14 @@ Jimmer不仅仅是一个单体应用（也可说单个微服务内部）的ORM�
 +-----------+------------+
 ```
 
-其中，`Local assocaition`表示微服务(数据库)内部的ORM关联，这类关联的查询会被翻译为SQL或缓存操作；而`Remote association`表示不同微服务（数据库）之间的远程关联，这类关联的查询会被翻译为远程数据获取。然而，这一切，对用户透明。
+其中
+
+-   `Local assocaition`表示微服务(数据库)内部的ORM关联，这类关联的查询会被翻译为SQL或缓存操作
+
+-   `Remote association`表示不同微服务（数据库）之间的远程关联，这类关联的查询会被翻译为远程数据获取。
+
+然而，这一切，对用户透明。
+
 </Collapse>
 
 ### 3. 缓存、缓存一致性、触发器
@@ -553,7 +567,7 @@ Jimmer不仅仅是一个单体应用（也可说单个微服务内部）的ORM�
 
 -   从底层实现看，Jimmer支持如下3种缓存
     -   对象缓存：将id映射为孤单（没有关联）对象
-        <ViewMore buttonText="查看图片" title="对象缓冲">
+        <ViewMore buttonText="查看图片" title="对象缓存">
         
         ![object-cache](@site/static/img/object-cache.jpeg)
         
@@ -564,7 +578,7 @@ Jimmer不仅仅是一个单体应用（也可说单个微服务内部）的ORM�
         ![association-cache](@site/static/img/association-cache.png)
         
         </ViewMore>
-    -   计算缓存：将当前对象id映射为计算属性，缓存计算属性的计算结果
+    -   计算缓存：将当前对象id映射为计算属性的结果
         <ViewMore buttonText="查看图片" title="计算缓存">
         
         ![association-cache](@site/static/img/calculated-cache.png)
@@ -614,17 +628,24 @@ Jimmer提供了两种触发器
 
 <Collapse title="SQL DSL">
 
-数据库操作框架，有两则风格
+用于操作数据库的框架通常有两种风格
 
 -   字符串`(x)ql`风格的设计
     -   代表：[Hiberante](https://hibernate.org/)的[HQL](https://docs.jboss.org/hibernate/core/3.3/reference/en/html/queryhql.html)，[JPA](https://www.oracle.com/java/technologies/persistence-jsp.html)的[JPQL](https://docs.oracle.com/html/E13946_04/ejb3_langref.html)，[MyBatis](https://mybatis.org/mybatis-3)的[mapper](https://mybatis.org/mybatis-3/sqlmap-xml.html)。
     -   优点：简单易懂
-    -   缺点：弱类型，不能编译时提前发现问题（IDE特殊支持可以缓解）可维护性差；动态查询需要引入一套特定的sql拼接模板语法且控制力一般。
+    -   缺点：
+        -   弱类型，不能编译时提前发现问题（IDE特殊支持可以缓解）可维护性差。
+        -   动态查询需要引入一套特定的sql拼接模板语法，且控制力一般。
 
 -   [DSL](https://en.wikipedia.org/wiki/Domain-specific_language)风格设计
     -   代表: [JOOQ](https://www.jooq.org/)，[JPA2.0 Criteria](https://docs.oracle.com/javaee/6/tutorial/doc/gjitv.html)，[QueryDSL](http://querydsl.com/)，[MyBatis-Flex](https://github.com/mybatis-flex/mybatis-flex)，[Fluent-MyBatis](https://github.com/atool/fluent-mybatis)，[Exposed(Kotlin)](https://github.com/JetBrains/Exposed)，[Squeryl(Scala)](http://max-l.github.io/Squeryl/introduction.html)。
-    -   优点：强类型，编译时发现问题，可维护性好，重构项目时尤其有用；动态查询控制力可以非常强 *(和具体DSL设计相关)*。
-    -   缺点：有轻微的学习成本 *(和具体DSL设计相关)*、尚未熟练掌握SQL的新手会面临困难。
+    -   优点：
+        -   强类型，编译时发现问题，可维护性好，重构项目时尤其有用。
+        -   有IDE智能提示支持，代码书写流畅。
+        -   良好的动态查询控制力可以非常强 *(和具体DSL设计相关)*。
+    -   缺点：
+        -   有轻微的学习成本 *(和具体DSL设计相关)*。
+        -   尚未熟练掌握SQL的新手会面临困难。
 
 DSL风格更符合Java/Kotlin这类静态语言的设计理念，因此Jimmer选择以DSL作为数据库操作API。同时，对于特定数据库产品相关的非通用性SQL表达式，允许在强类型DSL中插入Native SQL片段。
 

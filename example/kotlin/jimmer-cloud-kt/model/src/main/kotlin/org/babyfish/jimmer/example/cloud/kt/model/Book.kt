@@ -1,10 +1,11 @@
 package org.babyfish.jimmer.example.cloud.kt.model
 
+import org.babyfish.jimmer.example.cloud.kt.model.common.BaseEntity
 import org.babyfish.jimmer.sql.*
 import java.math.BigDecimal
 
 @Entity(microServiceName = "book-service")
-interface Book {
+interface Book : BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,9 +1,10 @@
 package org.babyfish.jimmer.example.cloud.kt.model
 
+import org.babyfish.jimmer.example.cloud.kt.model.common.BaseEntity
 import org.babyfish.jimmer.sql.*
 
 @Entity(microServiceName = "store-service")
-interface BookStore {
+interface BookStore : BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

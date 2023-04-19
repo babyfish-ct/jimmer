@@ -1,11 +1,12 @@
 package org.babyfish.jimmer.example.cloud.model;
 
+import org.babyfish.jimmer.example.cloud.model.common.BaseEntity;
 import org.babyfish.jimmer.sql.*;
 
 import java.util.List;
 
 @Entity(microServiceName = "author-service")
-public interface Author {
+public interface Author extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
