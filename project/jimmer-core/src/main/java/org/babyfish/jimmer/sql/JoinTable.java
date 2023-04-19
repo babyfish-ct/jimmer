@@ -10,14 +10,12 @@ import java.lang.annotation.*;
  *
  * <p>The annotation cannot be used by the reversed(with `mappedBy`) property</p>
  *
- * <p>
- * The middle table should only have two columns:
+ * <p>The middle table should only have two columns:</p>
  * <ul>
  *     <li>one pointing to the foreign key of the entity in which the current property resides</li>
- *     <li>and the other pointing to the foreign key of the entity returned by the current property</li>.
+ *     <li>and the other pointing to the foreign key of the entity returned by the current property</li>
  * </ul>
  * The two foreign keys are combined to serve as the primary key.
- * </p>
  *
  * <ul>
  *     <li>

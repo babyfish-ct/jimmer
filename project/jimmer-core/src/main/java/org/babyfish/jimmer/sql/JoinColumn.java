@@ -17,8 +17,6 @@ import java.lang.annotation.*;
  *
  * <p>Note: This annotation can only be used to map foreign key.
  * For scalar column, {@link Column} is useful</p>
- *
- * <p></p>
  */
 @Retention(RetentionPolicy.RUNTIME)
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
