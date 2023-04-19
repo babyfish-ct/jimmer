@@ -25,6 +25,7 @@ spring:
 jimmer:
   dialect: org.babyfish.jimmer.sql.dialect.H2Dialect
   show-sql: true
+  min-offset-for-id-only-scan-mode: 10
   database-validation-mode: ERROR
   executor-context-prefixes:
     - org.babyfish.jimmer.sql.example.business

@@ -226,6 +226,7 @@ public class SqlClientConfig {
         builder.setDefaultEnumStrategy(properties.getDefaultEnumStrategy());
         builder.setDefaultBatchSize(properties.getDefaultBatchSize());
         builder.setDefaultListBatchSize(properties.getDefaultListBatchSize());
+        builder.setMinOffsetForIdOnlyScanMode(properties.getMinOffsetForIdOnlyScanMode());
         builder.setExecutorContextPrefixes(properties.getExecutorContextPrefixes());
         if (properties.isShowSql()) {
             builder.setExecutor(Executor.log(executor));
